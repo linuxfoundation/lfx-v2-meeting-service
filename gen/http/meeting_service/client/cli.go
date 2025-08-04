@@ -8,6 +8,9 @@
 package client
 
 import (
+	"encoding/json"
+	"fmt"
+
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -43,8 +46,60 @@ func BuildGetMeetingsPayload(meetingServiceGetMeetingsVersion string, meetingSer
 
 // BuildCreateMeetingPayload builds the payload for the Meeting Service
 // create-meeting endpoint from CLI flags.
-func BuildCreateMeetingPayload(meetingServiceCreateMeetingVersion string, meetingServiceCreateMeetingBearerToken string) (*meetingservice.CreateMeetingPayload, error) {
+func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingServiceCreateMeetingVersion string, meetingServiceCreateMeetingBearerToken string) (*meetingservice.CreateMeetingPayload, error) {
 	var err error
+	var body struct {
+		// The UID of the LF project
+		ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
+		// The start time of the meeting in RFC3339 format
+		StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
+		// The duration of the meeting in minutes
+		Duration *int `form:"duration" json:"duration" xml:"duration"`
+		// The timezone of the meeting (e.g. 'America/New_York')
+		Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
+		// The recurrence of the meeting
+		Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
+		// The title of the meeting
+		Title *string `form:"title" json:"title" xml:"title"`
+		// The description of the meeting
+		Description *string `form:"description" json:"description" xml:"description"`
+		// The committees associated with the meeting
+		Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
+		// The platform name of where the meeting is hosted
+		Platform *string `form:"platform" json:"platform" xml:"platform"`
+		// The number of minutes that users are allowed to join the meeting early
+		// without being kicked out
+		EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
+		// The type of meeting. This is usually dependent on the committee(s)
+		// associated with the meeting
+		MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
+		// The visibility of the meeting's existence to other users
+		Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
+		// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+		// only invited users or anyone?)
+		Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
+		// The visibility of artifacts to users (e.g. public, only for registrants,
+		// only for hosts)
+		ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
+		// The public join URL for participants to join the meeting via the LFX
+		// platform (e.g.
+		// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+		PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
+		// Whether recording is enabled for the meeting
+		RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
+		// Whether transcription is enabled for the meeting
+		TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
+		// Whether automatic youtube uploading is enabled for the meeting
+		YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
+		// For zoom platform meetings: the configuration for the meeting
+		ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
+	}
+	{
+		err = json.Unmarshal([]byte(meetingServiceCreateMeetingBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         }\n      ],\n      \"description\": \"Veritatis expedita voluptatibus aut consequuntur possimus.\",\n      \"duration\": 228,\n      \"early_join_time_minutes\": 59,\n      \"meeting_type\": \"Marketing\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"A animi recusandae.\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1976-09-10T11:24:39Z\",\n         \"end_times\": 1192397136127484557,\n         \"monthly_day\": 842616163289885711,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 3,\n         \"type\": 2,\n         \"weekly_days\": \"Officia neque nobis iste ipsam.\"\n      },\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"At perferendis aliquid.\",\n      \"title\": \"Provident accusamus error consequatur aut.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+		}
+	}
 	var version *string
 	{
 		if meetingServiceCreateMeetingVersion != "" {
@@ -63,7 +118,48 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingVersion string, meetin
 			bearerToken = &meetingServiceCreateMeetingBearerToken
 		}
 	}
-	v := &meetingservice.CreateMeetingPayload{}
+	v := &meetingservice.CreateMeetingPayload{
+		Platform:             body.Platform,
+		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
+		MeetingType:          body.MeetingType,
+		Visibility:           body.Visibility,
+		Restricted:           body.Restricted,
+		ArtifactVisibility:   body.ArtifactVisibility,
+		PublicLink:           body.PublicLink,
+		RecordingEnabled:     body.RecordingEnabled,
+		TranscriptEnabled:    body.TranscriptEnabled,
+		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+	}
+	if body.ProjectUID != nil {
+		v.ProjectUID = *body.ProjectUID
+	}
+	if body.StartTime != nil {
+		v.StartTime = *body.StartTime
+	}
+	if body.Duration != nil {
+		v.Duration = *body.Duration
+	}
+	if body.Timezone != nil {
+		v.Timezone = *body.Timezone
+	}
+	if body.Title != nil {
+		v.Title = *body.Title
+	}
+	if body.Description != nil {
+		v.Description = *body.Description
+	}
+	if body.Recurrence != nil {
+		v.Recurrence = marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	if body.Committees != nil {
+		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
+		for i, val := range body.Committees {
+			v.Committees[i] = marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(val)
+		}
+	}
+	if body.ZoomConfig != nil {
+		v.ZoomConfig = marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
+	}
 	v.Version = version
 	v.BearerToken = bearerToken
 
@@ -110,11 +206,67 @@ func BuildGetMeetingPayload(meetingServiceGetMeetingUID string, meetingServiceGe
 
 // BuildUpdateMeetingPayload builds the payload for the Meeting Service
 // update-meeting endpoint from CLI flags.
-func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingUID string, meetingServiceUpdateMeetingVersion string, meetingServiceUpdateMeetingBearerToken string, meetingServiceUpdateMeetingEtag string) (*meetingservice.UpdateMeetingPayload, error) {
+func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingServiceUpdateMeetingUID string, meetingServiceUpdateMeetingVersion string, meetingServiceUpdateMeetingBearerToken string, meetingServiceUpdateMeetingEtag string) (*meetingservice.UpdateMeetingPayload, error) {
 	var err error
+	var body struct {
+		// The UID of the LF project
+		ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
+		// The start time of the meeting in RFC3339 format
+		StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
+		// The duration of the meeting in minutes
+		Duration *int `form:"duration" json:"duration" xml:"duration"`
+		// The timezone of the meeting (e.g. 'America/New_York')
+		Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
+		// The recurrence of the meeting
+		Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
+		// The title of the meeting
+		Title *string `form:"title" json:"title" xml:"title"`
+		// The description of the meeting
+		Description *string `form:"description" json:"description" xml:"description"`
+		// The committees associated with the meeting
+		Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
+		// The platform name of where the meeting is hosted
+		Platform *string `form:"platform" json:"platform" xml:"platform"`
+		// The number of minutes that users are allowed to join the meeting early
+		// without being kicked out
+		EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
+		// The type of meeting. This is usually dependent on the committee(s)
+		// associated with the meeting
+		MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
+		// The visibility of the meeting's existence to other users
+		Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
+		// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+		// only invited users or anyone?)
+		Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
+		// The visibility of artifacts to users (e.g. public, only for registrants,
+		// only for hosts)
+		ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
+		// The public join URL for participants to join the meeting via the LFX
+		// platform (e.g.
+		// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+		PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
+		// Whether recording is enabled for the meeting
+		RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
+		// Whether transcription is enabled for the meeting
+		TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
+		// Whether automatic youtube uploading is enabled for the meeting
+		YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
+		// For zoom platform meetings: the configuration for the meeting
+		ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
+	}
+	{
+		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         }\n      ],\n      \"description\": \"Laudantium tempora omnis accusantium rem.\",\n      \"duration\": 320,\n      \"early_join_time_minutes\": 33,\n      \"meeting_type\": \"None\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Rerum necessitatibus architecto voluptate et omnis rerum.\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1976-09-10T11:24:39Z\",\n         \"end_times\": 1192397136127484557,\n         \"monthly_day\": 842616163289885711,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 3,\n         \"type\": 2,\n         \"weekly_days\": \"Officia neque nobis iste ipsam.\"\n      },\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Iusto consectetur non et vero placeat in.\",\n      \"title\": \"Unde vitae.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+		}
+	}
 	var uid string
 	{
 		uid = meetingServiceUpdateMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
 	}
 	var version *string
 	{
@@ -140,7 +292,48 @@ func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingUID string, meetingSer
 			etag = &meetingServiceUpdateMeetingEtag
 		}
 	}
-	v := &meetingservice.UpdateMeetingPayload{}
+	v := &meetingservice.UpdateMeetingPayload{
+		Platform:             body.Platform,
+		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
+		MeetingType:          body.MeetingType,
+		Visibility:           body.Visibility,
+		Restricted:           body.Restricted,
+		ArtifactVisibility:   body.ArtifactVisibility,
+		PublicLink:           body.PublicLink,
+		RecordingEnabled:     body.RecordingEnabled,
+		TranscriptEnabled:    body.TranscriptEnabled,
+		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+	}
+	if body.ProjectUID != nil {
+		v.ProjectUID = *body.ProjectUID
+	}
+	if body.StartTime != nil {
+		v.StartTime = *body.StartTime
+	}
+	if body.Duration != nil {
+		v.Duration = *body.Duration
+	}
+	if body.Timezone != nil {
+		v.Timezone = *body.Timezone
+	}
+	if body.Title != nil {
+		v.Title = *body.Title
+	}
+	if body.Description != nil {
+		v.Description = *body.Description
+	}
+	if body.Recurrence != nil {
+		v.Recurrence = marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	if body.Committees != nil {
+		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
+		for i, val := range body.Committees {
+			v.Committees[i] = marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(val)
+		}
+	}
+	if body.ZoomConfig != nil {
+		v.ZoomConfig = marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
+	}
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken

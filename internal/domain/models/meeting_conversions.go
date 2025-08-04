@@ -1,0 +1,299 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
+package models
+
+import (
+	"time"
+
+	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
+)
+
+// ToMeetingDBModel converts a Goa Meeting type to the domain Meeting model for database storage
+func ToMeetingDBModel(goaMeeting *meetingservice.Meeting) *Meeting {
+	if goaMeeting == nil {
+		return nil
+	}
+
+	meeting := &Meeting{
+		UID:                             utils.StringValue(goaMeeting.UID),
+		ProjectUID:                      utils.StringValue(goaMeeting.ProjectUID),
+		Title:                           utils.StringValue(goaMeeting.Title),
+		Description:                     utils.StringValue(goaMeeting.Description),
+		Timezone:                        utils.StringValue(goaMeeting.Timezone),
+		Platform:                        utils.StringValue(goaMeeting.Platform),
+		Duration:                        utils.IntValue(goaMeeting.Duration),
+		EarlyJoinTimeMinutes:            utils.IntValue(goaMeeting.EarlyJoinTimeMinutes),
+		MeetingType:                     utils.StringValue(goaMeeting.MeetingType),
+		Visibility:                      utils.StringValue(goaMeeting.Visibility),
+		Restricted:                      utils.BoolValue(goaMeeting.Restricted),
+		ArtifactVisibility:              utils.StringValue(goaMeeting.ArtifactVisibility),
+		PublicLink:                      utils.StringValue(goaMeeting.PublicLink),
+		EmailDeliveryErrorCount:         utils.IntValue(goaMeeting.EmailDeliveryErrorCount),
+		RecordingEnabled:                utils.BoolValue(goaMeeting.RecordingEnabled),
+		TranscriptEnabled:               utils.BoolValue(goaMeeting.TranscriptEnabled),
+		YoutubeUploadEnabled:            utils.BoolValue(goaMeeting.YoutubeUploadEnabled),
+		RegistrantCount:                 utils.IntValue(goaMeeting.RegistrantCount),
+		RegistrantResponseDeclinedCount: utils.IntValue(goaMeeting.RegistrantResponseDeclinedCount),
+		RegistrantResponseAcceptedCount: utils.IntValue(goaMeeting.RegistrantResponseAcceptedCount),
+	}
+
+	// Convert StartTime
+	if goaMeeting.StartTime != nil {
+		startTime, err := time.Parse(time.RFC3339, *goaMeeting.StartTime)
+		if err == nil {
+			meeting.StartTime = startTime
+		}
+	}
+
+	// Convert timestamps
+	if goaMeeting.CreatedAt != nil {
+		createdAt, err := time.Parse(time.RFC3339, *goaMeeting.CreatedAt)
+		if err == nil {
+			meeting.CreatedAt = &createdAt
+		}
+	}
+
+	if goaMeeting.UpdatedAt != nil {
+		updatedAt, err := time.Parse(time.RFC3339, *goaMeeting.UpdatedAt)
+		if err == nil {
+			meeting.UpdatedAt = &updatedAt
+		}
+	}
+
+	// Convert Recurrence
+	if goaMeeting.Recurrence != nil {
+		meeting.Recurrence = toDBRecurrence(goaMeeting.Recurrence)
+	}
+
+	// Convert Committees
+	if len(goaMeeting.Committees) > 0 {
+		meeting.Committees = make([]Committee, 0, len(goaMeeting.Committees))
+		for _, c := range goaMeeting.Committees {
+			if c != nil {
+				meeting.Committees = append(meeting.Committees, toDBCommittee(c))
+			}
+		}
+	}
+
+	// Convert ZoomConfig
+	if goaMeeting.ZoomConfig != nil {
+		meeting.ZoomConfig = toDBZoomConfig(goaMeeting.ZoomConfig)
+	}
+
+	// Convert Occurrences
+	if len(goaMeeting.Occurrences) > 0 {
+		meeting.Occurrences = make([]Occurrence, 0, len(goaMeeting.Occurrences))
+		for _, o := range goaMeeting.Occurrences {
+			if o != nil {
+				meeting.Occurrences = append(meeting.Occurrences, toDBOccurrence(o))
+			}
+		}
+	}
+
+	return meeting
+}
+
+// FromMeetingDBModel converts a domain Meeting model to a Goa Meeting type for API responses
+func FromMeetingDBModel(meeting *Meeting) *meetingservice.Meeting {
+	if meeting == nil {
+		return nil
+	}
+
+	goaMeeting := &meetingservice.Meeting{
+		UID:                             utils.StringPtr(meeting.UID),
+		ProjectUID:                      utils.StringPtr(meeting.ProjectUID),
+		StartTime:                       utils.StringPtr(meeting.StartTime.Format(time.RFC3339)),
+		Duration:                        utils.IntPtr(meeting.Duration),
+		Timezone:                        utils.StringPtr(meeting.Timezone),
+		Title:                           utils.StringPtr(meeting.Title),
+		Description:                     utils.StringPtr(meeting.Description),
+		Platform:                        utils.StringPtr(meeting.Platform),
+		EarlyJoinTimeMinutes:            utils.IntPtr(meeting.EarlyJoinTimeMinutes),
+		MeetingType:                     utils.StringPtr(meeting.MeetingType),
+		Visibility:                      utils.StringPtr(meeting.Visibility),
+		Restricted:                      utils.BoolPtr(meeting.Restricted),
+		ArtifactVisibility:              utils.StringPtr(meeting.ArtifactVisibility),
+		PublicLink:                      utils.StringPtr(meeting.PublicLink),
+		EmailDeliveryErrorCount:         utils.IntPtr(meeting.EmailDeliveryErrorCount),
+		RecordingEnabled:                utils.BoolPtr(meeting.RecordingEnabled),
+		TranscriptEnabled:               utils.BoolPtr(meeting.TranscriptEnabled),
+		YoutubeUploadEnabled:            utils.BoolPtr(meeting.YoutubeUploadEnabled),
+		RegistrantCount:                 utils.IntPtr(meeting.RegistrantCount),
+		RegistrantResponseDeclinedCount: utils.IntPtr(meeting.RegistrantResponseDeclinedCount),
+		RegistrantResponseAcceptedCount: utils.IntPtr(meeting.RegistrantResponseAcceptedCount),
+	}
+
+	// Convert timestamps
+	if meeting.CreatedAt != nil {
+		goaMeeting.CreatedAt = utils.StringPtr(meeting.CreatedAt.Format(time.RFC3339))
+	}
+	if meeting.UpdatedAt != nil {
+		goaMeeting.UpdatedAt = utils.StringPtr(meeting.UpdatedAt.Format(time.RFC3339))
+	}
+
+	// Convert Recurrence
+	if meeting.Recurrence != nil {
+		goaMeeting.Recurrence = fromDBRecurrence(meeting.Recurrence)
+	}
+
+	// Convert Committees
+	if len(meeting.Committees) > 0 {
+		goaMeeting.Committees = make([]*meetingservice.Committee, 0, len(meeting.Committees))
+		for _, c := range meeting.Committees {
+			goaMeeting.Committees = append(goaMeeting.Committees, fromDBCommittee(&c))
+		}
+	}
+
+	// Convert ZoomConfig
+	if meeting.ZoomConfig != nil {
+		goaMeeting.ZoomConfig = fromDBZoomConfig(meeting.ZoomConfig)
+	}
+
+	// Convert Occurrences
+	if len(meeting.Occurrences) > 0 {
+		goaMeeting.Occurrences = make([]*meetingservice.Occurrence, 0, len(meeting.Occurrences))
+		for _, o := range meeting.Occurrences {
+			goaMeeting.Occurrences = append(goaMeeting.Occurrences, fromDBOccurrence(&o))
+		}
+	}
+
+	return goaMeeting
+}
+
+// Helper functions for nested types
+
+func toDBCommittee(c *meetingservice.Committee) Committee {
+	return Committee{
+		UID:                   c.UID,
+		AllowedVotingStatuses: c.AllowedVotingStatuses,
+	}
+}
+
+func fromDBCommittee(c *Committee) *meetingservice.Committee {
+	return &meetingservice.Committee{
+		UID:                   c.UID,
+		AllowedVotingStatuses: c.AllowedVotingStatuses,
+	}
+}
+
+func toDBRecurrence(r *meetingservice.Recurrence) *Recurrence {
+	return &Recurrence{
+		Type:           r.Type,
+		RepeatInterval: r.RepeatInterval,
+		WeeklyDays:     utils.StringValue(r.WeeklyDays),
+		MonthlyDay:     utils.IntValue(r.MonthlyDay),
+		MonthlyWeek:    utils.IntValue(r.MonthlyWeek),
+		MonthlyWeekDay: utils.IntValue(r.MonthlyWeekDay),
+		EndTimes:       utils.IntValue(r.EndTimes),
+		EndDateTime:    utils.StringValue(r.EndDateTime),
+	}
+}
+
+func fromDBRecurrence(r *Recurrence) *meetingservice.Recurrence {
+	rec := &meetingservice.Recurrence{
+		Type:           r.Type,
+		RepeatInterval: r.RepeatInterval,
+	}
+
+	if r.WeeklyDays != "" {
+		rec.WeeklyDays = utils.StringPtr(r.WeeklyDays)
+	}
+	if r.MonthlyDay != 0 {
+		rec.MonthlyDay = utils.IntPtr(r.MonthlyDay)
+	}
+	if r.MonthlyWeek != 0 {
+		rec.MonthlyWeek = utils.IntPtr(r.MonthlyWeek)
+	}
+	if r.MonthlyWeekDay != 0 {
+		rec.MonthlyWeekDay = utils.IntPtr(r.MonthlyWeekDay)
+	}
+	if r.EndTimes != 0 {
+		rec.EndTimes = utils.IntPtr(r.EndTimes)
+	}
+	if r.EndDateTime != "" {
+		rec.EndDateTime = utils.StringPtr(r.EndDateTime)
+	}
+
+	return rec
+}
+
+func toDBZoomConfig(z *meetingservice.ZoomConfigFull) *ZoomConfig {
+	return &ZoomConfig{
+		MeetingID:                utils.StringValue(z.MeetingID),
+		AICompanionEnabled:       utils.BoolValue(z.AiCompanionEnabled),
+		AISummaryRequireApproval: utils.BoolValue(z.AiSummaryRequireApproval),
+	}
+}
+
+func fromDBZoomConfig(z *ZoomConfig) *meetingservice.ZoomConfigFull {
+	zc := &meetingservice.ZoomConfigFull{
+		AiCompanionEnabled:       utils.BoolPtr(z.AICompanionEnabled),
+		AiSummaryRequireApproval: utils.BoolPtr(z.AISummaryRequireApproval),
+	}
+
+	if z.MeetingID != "" {
+		zc.MeetingID = utils.StringPtr(z.MeetingID)
+	}
+
+	return zc
+}
+
+func toDBOccurrence(o *meetingservice.Occurrence) Occurrence {
+	occ := Occurrence{
+		OccurrenceID:     utils.StringValue(o.OccurrenceID),
+		StartTime:        utils.StringValue(o.StartTime),
+		Title:            utils.StringValue(o.Title),
+		Description:      utils.StringValue(o.Description),
+		Duration:         utils.IntValue(o.Duration),
+		RegistrantCount:  utils.IntValue(o.RegistrantCount),
+		ResponseCountNo:  utils.IntValue(o.ResponseCountNo),
+		ResponseCountYes: utils.IntValue(o.ResponseCountYes),
+		Status:           utils.StringValue(o.Status),
+	}
+
+	if o.Recurrence != nil {
+		occ.Recurrence = toDBRecurrence(o.Recurrence)
+	}
+
+	return occ
+}
+
+func fromDBOccurrence(o *Occurrence) *meetingservice.Occurrence {
+	occ := &meetingservice.Occurrence{}
+
+	if o.OccurrenceID != "" {
+		occ.OccurrenceID = utils.StringPtr(o.OccurrenceID)
+	}
+	if o.StartTime != "" {
+		occ.StartTime = utils.StringPtr(o.StartTime)
+	}
+	if o.Title != "" {
+		occ.Title = utils.StringPtr(o.Title)
+	}
+	if o.Description != "" {
+		occ.Description = utils.StringPtr(o.Description)
+	}
+	if o.Duration != 0 {
+		occ.Duration = utils.IntPtr(o.Duration)
+	}
+	if o.RegistrantCount != 0 {
+		occ.RegistrantCount = utils.IntPtr(o.RegistrantCount)
+	}
+	if o.ResponseCountNo != 0 {
+		occ.ResponseCountNo = utils.IntPtr(o.ResponseCountNo)
+	}
+	if o.ResponseCountYes != 0 {
+		occ.ResponseCountYes = utils.IntPtr(o.ResponseCountYes)
+	}
+	if o.Status != "" {
+		occ.Status = utils.StringPtr(o.Status)
+	}
+
+	if o.Recurrence != nil {
+		occ.Recurrence = fromDBRecurrence(o.Recurrence)
+	}
+
+	return occ
+}

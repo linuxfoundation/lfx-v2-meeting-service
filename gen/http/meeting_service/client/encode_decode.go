@@ -189,6 +189,10 @@ func EncodeCreateMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 			values.Add("v", *p.Version)
 		}
 		req.URL.RawQuery = values.Encode()
+		body := NewStructTheUIDofTheLFprojectProjectUIDstringForm(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-meeting", err)
+		}
 		return nil
 	}
 }
@@ -491,6 +495,10 @@ func EncodeUpdateMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 			values.Add("v", *p.Version)
 		}
 		req.URL.RawQuery = values.Encode()
+		body := NewStructTheUIDofTheLFprojectProjectUIDstringForm(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-meeting", err)
+		}
 		return nil
 	}
 }
@@ -1793,6 +1801,122 @@ func unmarshalOccurrenceResponseBodyToMeetingserviceOccurrence(v *OccurrenceResp
 	}
 	if v.Recurrence != nil {
 		res.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v.Recurrence)
+	}
+
+	return res
+}
+
+// marshalMeetingserviceRecurrenceToRecurrenceRequestBodyRequestBody builds a
+// value of type *RecurrenceRequestBodyRequestBody from a value of type
+// *meetingservice.Recurrence.
+func marshalMeetingserviceRecurrenceToRecurrenceRequestBodyRequestBody(v *meetingservice.Recurrence) *RecurrenceRequestBodyRequestBody {
+	if v == nil {
+		return nil
+	}
+	res := &RecurrenceRequestBodyRequestBody{
+		Type:           v.Type,
+		RepeatInterval: v.RepeatInterval,
+		WeeklyDays:     v.WeeklyDays,
+		MonthlyDay:     v.MonthlyDay,
+		MonthlyWeek:    v.MonthlyWeek,
+		MonthlyWeekDay: v.MonthlyWeekDay,
+		EndTimes:       v.EndTimes,
+		EndDateTime:    v.EndDateTime,
+	}
+
+	return res
+}
+
+// marshalMeetingserviceCommitteeToCommitteeRequestBodyRequestBody builds a
+// value of type *CommitteeRequestBodyRequestBody from a value of type
+// *meetingservice.Committee.
+func marshalMeetingserviceCommitteeToCommitteeRequestBodyRequestBody(v *meetingservice.Committee) *CommitteeRequestBodyRequestBody {
+	if v == nil {
+		return nil
+	}
+	res := &CommitteeRequestBodyRequestBody{
+		UID: v.UID,
+	}
+	if v.AllowedVotingStatuses != nil {
+		res.AllowedVotingStatuses = make([]string, len(v.AllowedVotingStatuses))
+		for i, val := range v.AllowedVotingStatuses {
+			res.AllowedVotingStatuses[i] = val
+		}
+	} else {
+		res.AllowedVotingStatuses = []string{}
+	}
+
+	return res
+}
+
+// marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBodyRequestBody
+// builds a value of type *ZoomConfigPostRequestBodyRequestBody from a value of
+// type *meetingservice.ZoomConfigPost.
+func marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBodyRequestBody(v *meetingservice.ZoomConfigPost) *ZoomConfigPostRequestBodyRequestBody {
+	if v == nil {
+		return nil
+	}
+	res := &ZoomConfigPostRequestBodyRequestBody{
+		AiCompanionEnabled:       v.AiCompanionEnabled,
+		AiSummaryRequireApproval: v.AiSummaryRequireApproval,
+	}
+
+	return res
+}
+
+// marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence builds a
+// value of type *meetingservice.Recurrence from a value of type
+// *RecurrenceRequestBodyRequestBody.
+func marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequestBodyRequestBody) *meetingservice.Recurrence {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.Recurrence{
+		Type:           v.Type,
+		RepeatInterval: v.RepeatInterval,
+		WeeklyDays:     v.WeeklyDays,
+		MonthlyDay:     v.MonthlyDay,
+		MonthlyWeek:    v.MonthlyWeek,
+		MonthlyWeekDay: v.MonthlyWeekDay,
+		EndTimes:       v.EndTimes,
+		EndDateTime:    v.EndDateTime,
+	}
+
+	return res
+}
+
+// marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee builds a
+// value of type *meetingservice.Committee from a value of type
+// *CommitteeRequestBodyRequestBody.
+func marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBodyRequestBody) *meetingservice.Committee {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.Committee{
+		UID: v.UID,
+	}
+	if v.AllowedVotingStatuses != nil {
+		res.AllowedVotingStatuses = make([]string, len(v.AllowedVotingStatuses))
+		for i, val := range v.AllowedVotingStatuses {
+			res.AllowedVotingStatuses[i] = val
+		}
+	} else {
+		res.AllowedVotingStatuses = []string{}
+	}
+
+	return res
+}
+
+// marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost
+// builds a value of type *meetingservice.ZoomConfigPost from a value of type
+// *ZoomConfigPostRequestBodyRequestBody.
+func marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost(v *ZoomConfigPostRequestBodyRequestBody) *meetingservice.ZoomConfigPost {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.ZoomConfigPost{
+		AiCompanionEnabled:       v.AiCompanionEnabled,
+		AiSummaryRequireApproval: v.AiSummaryRequireApproval,
 	}
 
 	return res

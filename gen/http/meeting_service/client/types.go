@@ -822,6 +822,86 @@ type OccurrenceResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
+// RecurrenceRequestBodyRequestBody is used to define fields on request body
+// types.
+type RecurrenceRequestBodyRequestBody struct {
+	// The recurrence type
+	Type int `form:"type" json:"type" xml:"type"`
+	// Define the interval at which the meeting should recur.
+	// For instance, if you would like to schedule a meeting that recurs every two
+	// months,
+	// you must set the value of this field as '2' and the value of the 'type'
+	// parameter as '3'.
+	// For a daily meeting, the maximum interval you can set is '90' days.
+	// For a weekly meeting the maximum interval that you can set is of '12' weeks.
+	// For a monthly meeting, there is a maximum of '3' months.
+	RepeatInterval int `form:"repeat_interval" json:"repeat_interval" xml:"repeat_interval"`
+	// This field is required if you're scheduling a recurring meeting of type '2'
+	// to state which day(s)
+	// of the week the meeting should repeat. The value for this field could be a
+	// number between '1' to '7' in string format.
+	// For instance, if the meeting should recur on Sunday, provide '1' as the
+	// value of this field.
+	// If you would like the meeting to occur on multiple days of a week, you
+	// should provide comma separated values for this field.
+	// For instance, if the meeting should recur on Sundays and Tuesdays provide
+	// '1,3' as the value of this field.
+	// 1 - Sunday
+	// 2 - Monday
+	// 3 - Tuesday
+	// 4 - Wednesday
+	// 5 - Thursday
+	// 6 - Friday
+	// 7 - Saturday
+	WeeklyDays *string `form:"weekly_days,omitempty" json:"weekly_days,omitempty" xml:"weekly_days,omitempty"`
+	// Use this field only if you're scheduling a recurring meeting of type '3' to
+	// state which day in a month, the meeting should recur. The value range is
+	// from 1 to 31. For instance, if you would like the meeting to recur on 23rd
+	// of each month, provide '23' as the value of this field and '1' as the value
+	// of the 'repeat_interval' field. Instead, if you would like the meeting to
+	// recur every three months, on 23rd of the month, change the value of the
+	// 'repeat_interval' field to '3'.
+	MonthlyDay *int `form:"monthly_day,omitempty" json:"monthly_day,omitempty" xml:"monthly_day,omitempty"`
+	// Use this field only if you're scheduling a recurring meeting of type '3' to
+	// state the week of the month when the meeting should recur. If you use this
+	// field, you must also use the 'monthly_week_day' field to state the day of
+	// the week when the meeting should recur. '-1' - Last week of the month. 1 -
+	// First week of the month. 2 - Second week of the month. 3 - Third week of the
+	// month. 4 - Fourth week of the month.
+	MonthlyWeek *int `form:"monthly_week,omitempty" json:"monthly_week,omitempty" xml:"monthly_week,omitempty"`
+	// Use this field only if you're scheduling a recurring meeting of type '3' to
+	// state a specific day in a week when the monthly meeting should recur. To use
+	// this field, you must also use the 'monthly_week' field. 1 - Sunday 2 -
+	// Monday 3 - Tuesday 4 - Wednesday 5 - Thursday 6 - Friday 7 - Saturday
+	MonthlyWeekDay *int `form:"monthly_week_day,omitempty" json:"monthly_week_day,omitempty" xml:"monthly_week_day,omitempty"`
+	// Select how many times the meeting should recur before it is canceled. Cannot
+	// be used with 'end_date_time'.
+	EndTimes *int `form:"end_times,omitempty" json:"end_times,omitempty" xml:"end_times,omitempty"`
+	// Select the final date on which the meeting will recur before it is canceled.
+	// Cannot be used with 'end_times'. should be in GMT. should be in
+	// 'yyyy-MM-ddTHH:mm:ssZ' format.
+	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
+}
+
+// CommitteeRequestBodyRequestBody is used to define fields on request body
+// types.
+type CommitteeRequestBodyRequestBody struct {
+	// The UID of the committee
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// The committee voting statuses required for committee members to be added to
+	// the meeting
+	AllowedVotingStatuses []string `form:"allowed_voting_statuses" json:"allowed_voting_statuses" xml:"allowed_voting_statuses"`
+}
+
+// ZoomConfigPostRequestBodyRequestBody is used to define fields on request
+// body types.
+type ZoomConfigPostRequestBodyRequestBody struct {
+	// For zoom platform meetings: whether Zoom AI companion is enabled
+	AiCompanionEnabled *bool `form:"ai_companion_enabled,omitempty" json:"ai_companion_enabled,omitempty" xml:"ai_companion_enabled,omitempty"`
+	// For zoom platform meetings: whether AI summary approval is required
+	AiSummaryRequireApproval *bool `form:"ai_summary_require_approval,omitempty" json:"ai_summary_require_approval,omitempty" xml:"ai_summary_require_approval,omitempty"`
+}
+
 // RegistrantResponseBody is used to define fields on response body types.
 type RegistrantResponseBody struct {
 	// The UID of the registrant
@@ -858,6 +938,133 @@ type RegistrantResponseBody struct {
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// NewStructTheUIDofTheLFprojectProjectUIDstringForm builds the HTTP request
+// body from the payload of the "create-meeting" endpoint of the "Meeting
+// Service" service.
+func NewStructTheUIDofTheLFprojectProjectUIDstringForm(p *meetingservice.CreateMeetingPayload) struct {
+	// The UID of the LF project
+	ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
+	// The start time of the meeting in RFC3339 format
+	StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
+	// The duration of the meeting in minutes
+	Duration *int `form:"duration" json:"duration" xml:"duration"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
+	// The title of the meeting
+	Title *string `form:"title" json:"title" xml:"title"`
+	// The description of the meeting
+	Description *string `form:"description" json:"description" xml:"description"`
+	// The committees associated with the meeting
+	Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
+	// The platform name of where the meeting is hosted
+	Platform *string `form:"platform" json:"platform" xml:"platform"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
+	// For zoom platform meetings: the configuration for the meeting
+	ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
+} {
+	body := &struct {
+		// The UID of the LF project
+		ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
+		// The start time of the meeting in RFC3339 format
+		StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
+		// The duration of the meeting in minutes
+		Duration *int `form:"duration" json:"duration" xml:"duration"`
+		// The timezone of the meeting (e.g. 'America/New_York')
+		Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
+		// The recurrence of the meeting
+		Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
+		// The title of the meeting
+		Title *string `form:"title" json:"title" xml:"title"`
+		// The description of the meeting
+		Description *string `form:"description" json:"description" xml:"description"`
+		// The committees associated with the meeting
+		Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
+		// The platform name of where the meeting is hosted
+		Platform *string `form:"platform" json:"platform" xml:"platform"`
+		// The number of minutes that users are allowed to join the meeting early
+		// without being kicked out
+		EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
+		// The type of meeting. This is usually dependent on the committee(s)
+		// associated with the meeting
+		MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
+		// The visibility of the meeting's existence to other users
+		Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
+		// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+		// only invited users or anyone?)
+		Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
+		// The visibility of artifacts to users (e.g. public, only for registrants,
+		// only for hosts)
+		ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
+		// The public join URL for participants to join the meeting via the LFX
+		// platform (e.g.
+		// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+		PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
+		// Whether recording is enabled for the meeting
+		RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
+		// Whether transcription is enabled for the meeting
+		TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
+		// Whether automatic youtube uploading is enabled for the meeting
+		YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
+		// For zoom platform meetings: the configuration for the meeting
+		ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
+	}{
+		ProjectUID:           &p.ProjectUID,
+		StartTime:            &p.StartTime,
+		Duration:             &p.Duration,
+		Timezone:             &p.Timezone,
+		Title:                &p.Title,
+		Description:          &p.Description,
+		Platform:             p.Platform,
+		EarlyJoinTimeMinutes: p.EarlyJoinTimeMinutes,
+		MeetingType:          p.MeetingType,
+		Visibility:           p.Visibility,
+		Restricted:           p.Restricted,
+		ArtifactVisibility:   p.ArtifactVisibility,
+		PublicLink:           p.PublicLink,
+		RecordingEnabled:     p.RecordingEnabled,
+		TranscriptEnabled:    p.TranscriptEnabled,
+		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+	}
+	if p.Recurrence != nil {
+		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBodyRequestBody(p.Recurrence)
+	}
+	if p.Committees != nil {
+		body.Committees = make([]*CommitteeRequestBodyRequestBody, len(p.Committees))
+		for i, val := range p.Committees {
+			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeRequestBodyRequestBody(val)
+		}
+	}
+	if p.ZoomConfig != nil {
+		body.ZoomConfig = marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBodyRequestBody(p.ZoomConfig)
+	}
+	return body
 }
 
 // NewGetMeetingsResultOK builds a "Meeting Service" service "get-meetings"
@@ -2617,6 +2824,40 @@ func ValidateOccurrenceResponseBody(body *OccurrenceResponseBody) (err error) {
 		if !(*body.Status == "active" || *body.Status == "cancelled") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"active", "cancelled"}))
 		}
+	}
+	return
+}
+
+// ValidateRecurrenceRequestBodyRequestBody runs the validations defined on
+// RecurrenceRequestBodyRequestBody
+func ValidateRecurrenceRequestBodyRequestBody(body *RecurrenceRequestBodyRequestBody) (err error) {
+	if !(body.Type == 1 || body.Type == 2 || body.Type == 3) {
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{1, 2, 3}))
+	}
+	if !(body.RepeatInterval == 1 || body.RepeatInterval == 2 || body.RepeatInterval == 3) {
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.repeat_interval", body.RepeatInterval, []any{1, 2, 3}))
+	}
+	if body.MonthlyWeek != nil {
+		if !(*body.MonthlyWeek == -1 || *body.MonthlyWeek == 1 || *body.MonthlyWeek == 2 || *body.MonthlyWeek == 3 || *body.MonthlyWeek == 4) {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.monthly_week", *body.MonthlyWeek, []any{-1, 1, 2, 3, 4}))
+		}
+	}
+	if body.MonthlyWeekDay != nil {
+		if !(*body.MonthlyWeekDay == 1 || *body.MonthlyWeekDay == 2 || *body.MonthlyWeekDay == 3 || *body.MonthlyWeekDay == 4 || *body.MonthlyWeekDay == 5 || *body.MonthlyWeekDay == 6 || *body.MonthlyWeekDay == 7) {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.monthly_week_day", *body.MonthlyWeekDay, []any{1, 2, 3, 4, 5, 6, 7}))
+		}
+	}
+	if body.EndDateTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.end_date_time", *body.EndDateTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateCommitteeRequestBodyRequestBody runs the validations defined on
+// CommitteeRequestBodyRequestBody
+func ValidateCommitteeRequestBodyRequestBody(body *CommitteeRequestBodyRequestBody) (err error) {
+	if body.AllowedVotingStatuses == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("allowed_voting_statuses", "body"))
 	}
 	return
 }

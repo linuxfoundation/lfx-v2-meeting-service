@@ -49,6 +49,7 @@ func ParseEndpoint(
 		meetingServiceGetMeetingsBearerTokenFlag = meetingServiceGetMeetingsFlags.String("bearer-token", "", "")
 
 		meetingServiceCreateMeetingFlags           = flag.NewFlagSet("create-meeting", flag.ExitOnError)
+		meetingServiceCreateMeetingBodyFlag        = meetingServiceCreateMeetingFlags.String("body", "REQUIRED", "")
 		meetingServiceCreateMeetingVersionFlag     = meetingServiceCreateMeetingFlags.String("version", "", "")
 		meetingServiceCreateMeetingBearerTokenFlag = meetingServiceCreateMeetingFlags.String("bearer-token", "", "")
 
@@ -58,7 +59,8 @@ func ParseEndpoint(
 		meetingServiceGetMeetingBearerTokenFlag = meetingServiceGetMeetingFlags.String("bearer-token", "", "")
 
 		meetingServiceUpdateMeetingFlags           = flag.NewFlagSet("update-meeting", flag.ExitOnError)
-		meetingServiceUpdateMeetingUIDFlag         = meetingServiceUpdateMeetingFlags.String("uid", "REQUIRED", "")
+		meetingServiceUpdateMeetingBodyFlag        = meetingServiceUpdateMeetingFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateMeetingUIDFlag         = meetingServiceUpdateMeetingFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceUpdateMeetingVersionFlag     = meetingServiceUpdateMeetingFlags.String("version", "", "")
 		meetingServiceUpdateMeetingBearerTokenFlag = meetingServiceUpdateMeetingFlags.String("bearer-token", "", "")
 		meetingServiceUpdateMeetingEtagFlag        = meetingServiceUpdateMeetingFlags.String("etag", "", "")
@@ -217,13 +219,13 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingsPayload(*meetingServiceGetMeetingsVersionFlag, *meetingServiceGetMeetingsBearerTokenFlag)
 			case "create-meeting":
 				endpoint = c.CreateMeeting()
-				data, err = meetingservicec.BuildCreateMeetingPayload(*meetingServiceCreateMeetingVersionFlag, *meetingServiceCreateMeetingBearerTokenFlag)
+				data, err = meetingservicec.BuildCreateMeetingPayload(*meetingServiceCreateMeetingBodyFlag, *meetingServiceCreateMeetingVersionFlag, *meetingServiceCreateMeetingBearerTokenFlag)
 			case "get-meeting":
 				endpoint = c.GetMeeting()
 				data, err = meetingservicec.BuildGetMeetingPayload(*meetingServiceGetMeetingUIDFlag, *meetingServiceGetMeetingVersionFlag, *meetingServiceGetMeetingBearerTokenFlag)
 			case "update-meeting":
 				endpoint = c.UpdateMeeting()
-				data, err = meetingservicec.BuildUpdateMeetingPayload(*meetingServiceUpdateMeetingUIDFlag, *meetingServiceUpdateMeetingVersionFlag, *meetingServiceUpdateMeetingBearerTokenFlag, *meetingServiceUpdateMeetingEtagFlag)
+				data, err = meetingservicec.BuildUpdateMeetingPayload(*meetingServiceUpdateMeetingBodyFlag, *meetingServiceUpdateMeetingUIDFlag, *meetingServiceUpdateMeetingVersionFlag, *meetingServiceUpdateMeetingBearerTokenFlag, *meetingServiceUpdateMeetingEtagFlag)
 			case "delete-meeting":
 				endpoint = c.DeleteMeeting()
 				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingEtagFlag)
@@ -295,15 +297,85 @@ Example:
 }
 
 func meetingServiceCreateMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting -body JSON -version STRING -bearer-token STRING
 
 Create a new meeting for a project. An actual meeting in the specific platform will be created by
 			this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.
+    -body JSON: 
     -version STRING: 
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service create-meeting --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service create-meeting --body '{
+      "artifact_visibility": "public",
+      "committees": [
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         }
+      ],
+      "description": "Veritatis expedita voluptatibus aut consequuntur possimus.",
+      "duration": 228,
+      "early_join_time_minutes": 59,
+      "meeting_type": "Marketing",
+      "platform": "Zoom",
+      "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
+      "public_link": "A animi recusandae.",
+      "recording_enabled": false,
+      "recurrence": {
+         "end_date_time": "1976-09-10T11:24:39Z",
+         "end_times": 1192397136127484557,
+         "monthly_day": 842616163289885711,
+         "monthly_week": 4,
+         "monthly_week_day": 4,
+         "repeat_interval": 3,
+         "type": 2,
+         "weekly_days": "Officia neque nobis iste ipsam."
+      },
+      "restricted": false,
+      "start_time": "2021-01-01T00:00:00Z",
+      "timezone": "At perferendis aliquid.",
+      "title": "Provident accusamus error consequatur aut.",
+      "transcript_enabled": false,
+      "visibility": "public",
+      "youtube_upload_enabled": false,
+      "zoom_config": {
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": true
+      }
+   }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -321,16 +393,86 @@ Example:
 }
 
 func meetingServiceUpdateMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting -uid STRING -version STRING -bearer-token STRING -etag STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting -body JSON -uid STRING -version STRING -bearer-token STRING -etag STRING
 
 Update an existing meeting.
-    -uid STRING: 
+    -body JSON: 
+    -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
     -etag STRING: 
 
 Example:
-    %[1]s meeting-service update-meeting --uid "Aperiam quia aperiam atque id est molestias." --version "1" --bearer-token "eyJhbGci..." --etag "123"
+    %[1]s meeting-service update-meeting --body '{
+      "artifact_visibility": "meeting_hosts",
+      "committees": [
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Non fuga.",
+               "Veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem.",
+               "Et nihil quia iusto atque autem qui."
+            ],
+            "uid": "Ut assumenda maxime aut."
+         }
+      ],
+      "description": "Laudantium tempora omnis accusantium rem.",
+      "duration": 320,
+      "early_join_time_minutes": 33,
+      "meeting_type": "None",
+      "platform": "Zoom",
+      "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
+      "public_link": "Rerum necessitatibus architecto voluptate et omnis rerum.",
+      "recording_enabled": true,
+      "recurrence": {
+         "end_date_time": "1976-09-10T11:24:39Z",
+         "end_times": 1192397136127484557,
+         "monthly_day": 842616163289885711,
+         "monthly_week": 4,
+         "monthly_week_day": 4,
+         "repeat_interval": 3,
+         "type": 2,
+         "weekly_days": "Officia neque nobis iste ipsam."
+      },
+      "restricted": false,
+      "start_time": "2021-01-01T00:00:00Z",
+      "timezone": "Iusto consectetur non et vero placeat in.",
+      "title": "Unde vitae.",
+      "transcript_enabled": true,
+      "visibility": "private",
+      "youtube_upload_enabled": false,
+      "zoom_config": {
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": true
+      }
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
 `, os.Args[0])
 }
 

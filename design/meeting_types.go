@@ -14,7 +14,6 @@ var CreateMeetingPayload = Type("CreateMeetingPayload", func() {
 	DescriptionAttribute()
 	CommitteesAttribute()
 	PlatformAttribute()
-	ZoomMeetingIDAttribute()
 	EarlyJoinTimeMinutesAttribute()
 	MeetingTypeAttribute()
 	VisibilityAttribute()
@@ -23,9 +22,8 @@ var CreateMeetingPayload = Type("CreateMeetingPayload", func() {
 	PublicLinkAttribute()
 	RecordingEnabledAttribute()
 	TranscriptEnabledAttribute()
-	ZoomAICompanionEnabledAttribute()
-	ZoomAISummaryRequireApprovalAttribute()
 	YoutubeUploadEnabledAttribute()
+	ZoomConfigPostAttribute()
 	Required("project_uid", "start_time", "duration", "timezone", "title", "description")
 })
 

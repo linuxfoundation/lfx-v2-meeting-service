@@ -96,6 +96,50 @@ type CreateMeetingPayload struct {
 	BearerToken *string
 	// Version of the API
 	Version *string
+	// The UID of the LF project
+	ProjectUID string
+	// The start time of the meeting in RFC3339 format
+	StartTime string
+	// The duration of the meeting in minutes
+	Duration int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
+	// The title of the meeting
+	Title string
+	// The description of the meeting
+	Description string
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The platform name of where the meeting is hosted
+	Platform *string
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string
+	// The visibility of the meeting's existence to other users
+	Visibility *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	PublicLink *string
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// For zoom platform meetings: the configuration for the meeting
+	ZoomConfig *ZoomConfigPost
 }
 
 // CreateMeetingRegistrantPayload is the payload type of the Meeting Service
@@ -437,6 +481,52 @@ type UpdateMeetingPayload struct {
 	Etag *string
 	// Version of the API
 	Version *string
+	// The UID of the meeting
+	UID string
+	// The UID of the LF project
+	ProjectUID string
+	// The start time of the meeting in RFC3339 format
+	StartTime string
+	// The duration of the meeting in minutes
+	Duration int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
+	// The title of the meeting
+	Title string
+	// The description of the meeting
+	Description string
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The platform name of where the meeting is hosted
+	Platform *string
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string
+	// The visibility of the meeting's existence to other users
+	Visibility *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	PublicLink *string
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// For zoom platform meetings: the configuration for the meeting
+	ZoomConfig *ZoomConfigPost
 }
 
 // UpdateMeetingRegistrantPayload is the payload type of the Meeting Service
@@ -459,6 +549,14 @@ type UpdateMeetingRegistrantPayload struct {
 type ZoomConfigFull struct {
 	// The ID of the created meeting in Zoom
 	MeetingID *string
+	// For zoom platform meetings: whether Zoom AI companion is enabled
+	AiCompanionEnabled *bool
+	// For zoom platform meetings: whether AI summary approval is required
+	AiSummaryRequireApproval *bool
+}
+
+// Meeting attributes specific to Zoom platform that are writable
+type ZoomConfigPost struct {
 	// For zoom platform meetings: whether Zoom AI companion is enabled
 	AiCompanionEnabled *bool
 	// For zoom platform meetings: whether AI summary approval is required
