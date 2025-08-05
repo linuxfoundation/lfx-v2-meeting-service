@@ -56,7 +56,8 @@ func TestRequestLoggerMiddleware(t *testing.T) {
 				// Simulate some processing time
 				time.Sleep(10 * time.Millisecond)
 				w.WriteHeader(tc.expectedStatus)
-				w.Write([]byte("test response")) //nolint:errcheck
+				_, err := w.Write([]byte("test response"))
+				assertion.NoError(err)
 			})
 
 			// Wrap with RequestLoggerMiddleware

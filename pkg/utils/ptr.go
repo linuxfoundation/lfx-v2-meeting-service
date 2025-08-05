@@ -3,6 +3,8 @@
 
 package utils
 
+import "time"
+
 // StringPtr converts a string to a pointer to a string.
 func StringPtr(s string) *string {
 	return &s
@@ -40,4 +42,17 @@ func IntValue(i *int) int {
 		return *i
 	}
 	return 0
+}
+
+// TimePtr converts a time.Time to a pointer to a time.Time.
+func TimePtr(t time.Time) *time.Time {
+	return &t
+}
+
+// TimeValue safely dereferences a time.Time pointer, returning zero time if nil.
+func TimeValue(t *time.Time) time.Time {
+	if t != nil {
+		return *t
+	}
+	return time.Time{}
 }

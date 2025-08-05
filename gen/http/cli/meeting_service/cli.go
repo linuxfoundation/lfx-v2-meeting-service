@@ -307,54 +307,72 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "meeting_participants",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
+               "In consectetur mollitia nisi explicabo eos.",
+               "Odit ut assumenda maxime aut occaecati.",
                "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
+               "Veniam similique fugit."
             ],
-            "uid": "Ut assumenda maxime aut."
+            "uid": "Velit voluptates ea consequatur."
          },
          {
             "allowed_voting_statuses": [
+               "In consectetur mollitia nisi explicabo eos.",
+               "Odit ut assumenda maxime aut occaecati.",
                "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
+               "Veniam similique fugit."
             ],
-            "uid": "Ut assumenda maxime aut."
+            "uid": "Velit voluptates ea consequatur."
+         },
+         {
+            "allowed_voting_statuses": [
+               "In consectetur mollitia nisi explicabo eos.",
+               "Odit ut assumenda maxime aut occaecati.",
+               "Non fuga.",
+               "Veniam similique fugit."
+            ],
+            "uid": "Velit voluptates ea consequatur."
+         },
+         {
+            "allowed_voting_statuses": [
+               "In consectetur mollitia nisi explicabo eos.",
+               "Odit ut assumenda maxime aut occaecati.",
+               "Non fuga.",
+               "Veniam similique fugit."
+            ],
+            "uid": "Velit voluptates ea consequatur."
          }
       ],
-      "description": "In consectetur mollitia nisi explicabo eos.",
-      "duration": 123,
-      "early_join_time_minutes": 30,
-      "meeting_type": "Marketing",
+      "description": "Eligendi sed vel qui.",
+      "duration": 30,
+      "early_join_time_minutes": 14,
+      "meeting_type": "Maintainers",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Laborum natus sapiente.",
-      "recording_enabled": true,
+      "public_link": "Et nihil quia iusto atque autem qui.",
+      "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1976-09-10T11:24:39Z",
-         "end_times": 1192397136127484557,
-         "monthly_day": 842616163289885711,
-         "monthly_week": 4,
-         "monthly_week_day": 4,
-         "repeat_interval": 3,
-         "type": 2,
-         "weekly_days": "Officia neque nobis iste ipsam."
+         "end_date_time": "2010-06-29T05:53:12Z",
+         "end_times": 5057334274904799540,
+         "monthly_day": 3,
+         "monthly_week": 2,
+         "monthly_week_day": 3,
+         "repeat_interval": 3052459884445073472,
+         "type": 1,
+         "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Voluptas est in accusantium minima consequatur aut.",
-      "title": "Quis velit voluptates ea consequatur sit.",
-      "transcript_enabled": false,
-      "visibility": "private",
-      "youtube_upload_enabled": false,
+      "timezone": "Dolores unde dolores.",
+      "title": "Distinctio voluptas aspernatur dolorum quidem qui eos.",
+      "transcript_enabled": true,
+      "visibility": "public",
+      "youtube_upload_enabled": true,
       "zoom_config": {
-         "ai_companion_enabled": true,
+         "ai_companion_enabled": false,
          "ai_summary_require_approval": true
       }
    }' --version "1" --bearer-token "eyJhbGci..."
@@ -386,72 +404,63 @@ Update an existing meeting.
 
 Example:
     %[1]s meeting-service update-meeting --body '{
-      "artifact_visibility": "meeting_hosts",
+      "artifact_visibility": "meeting_participants",
       "committees": [
          {
             "allowed_voting_statuses": [
+               "In consectetur mollitia nisi explicabo eos.",
+               "Odit ut assumenda maxime aut occaecati.",
                "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
+               "Veniam similique fugit."
             ],
-            "uid": "Ut assumenda maxime aut."
+            "uid": "Velit voluptates ea consequatur."
          },
          {
             "allowed_voting_statuses": [
+               "In consectetur mollitia nisi explicabo eos.",
+               "Odit ut assumenda maxime aut occaecati.",
                "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
+               "Veniam similique fugit."
             ],
-            "uid": "Ut assumenda maxime aut."
+            "uid": "Velit voluptates ea consequatur."
          },
          {
             "allowed_voting_statuses": [
+               "In consectetur mollitia nisi explicabo eos.",
+               "Odit ut assumenda maxime aut occaecati.",
                "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
+               "Veniam similique fugit."
             ],
-            "uid": "Ut assumenda maxime aut."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
-            ],
-            "uid": "Ut assumenda maxime aut."
+            "uid": "Velit voluptates ea consequatur."
          }
       ],
-      "description": "Saepe temporibus minima atque.",
-      "duration": 14,
-      "early_join_time_minutes": 10,
-      "meeting_type": "Marketing",
+      "description": "Doloribus pariatur.",
+      "duration": 184,
+      "early_join_time_minutes": 33,
+      "meeting_type": "Legal",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Fugiat dolorem soluta at perferendis aliquid.",
-      "recording_enabled": true,
+      "public_link": "Consequuntur voluptate animi saepe temporibus minima.",
+      "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1976-09-10T11:24:39Z",
-         "end_times": 1192397136127484557,
-         "monthly_day": 842616163289885711,
-         "monthly_week": 4,
-         "monthly_week_day": 4,
-         "repeat_interval": 3,
-         "type": 2,
-         "weekly_days": "Officia neque nobis iste ipsam."
+         "end_date_time": "2010-06-29T05:53:12Z",
+         "end_times": 5057334274904799540,
+         "monthly_day": 3,
+         "monthly_week": 2,
+         "monthly_week_day": 3,
+         "repeat_interval": 3052459884445073472,
+         "type": 1,
+         "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Sed reiciendis eaque rerum velit sit.",
-      "title": "Voluptates consequuntur voluptate.",
-      "transcript_enabled": true,
+      "timezone": "Voluptatum quidem.",
+      "title": "Voluptatem eos id dolores quaerat cumque qui.",
+      "transcript_enabled": false,
       "visibility": "private",
       "youtube_upload_enabled": false,
       "zoom_config": {
-         "ai_companion_enabled": true,
+         "ai_companion_enabled": false,
          "ai_summary_require_approval": true
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"

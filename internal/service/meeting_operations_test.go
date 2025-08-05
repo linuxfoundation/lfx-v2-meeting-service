@@ -304,38 +304,3 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 		})
 	}
 }
-
-func TestMeetingsService_MeetingValidation(t *testing.T) {
-	tests := []struct {
-		name     string
-		testFunc func(*testing.T, *MeetingsService)
-	}{
-		{
-			name: "service validates meeting creation",
-			testFunc: func(t *testing.T, service *MeetingsService) {
-				// Test that the service properly validates inputs
-				// This is a placeholder for validation logic tests
-				assert.NotNil(t, service)
-			},
-		},
-		{
-			name: "service handles concurrent operations",
-			testFunc: func(t *testing.T, service *MeetingsService) {
-				// Test that the service can handle multiple concurrent operations
-				// This is a placeholder for concurrency tests
-				assert.NotNil(t, service)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder, _ := setupServiceForTesting()
-			// Setup basic mocks to ensure service is ready
-			_ = mockRepo
-			_ = mockBuilder
-
-			tt.testFunc(t, service)
-		})
-	}
-}

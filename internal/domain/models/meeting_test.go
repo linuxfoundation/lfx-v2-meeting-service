@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 func TestMeeting_JSONSerialization(t *testing.T) {
@@ -96,7 +98,7 @@ func TestRecurrence_JSONSerialization(t *testing.T) {
 		MonthlyWeek:    2,
 		MonthlyWeekDay: 3,
 		EndTimes:       10,
-		EndDateTime:    "2024-12-31T23:59:59Z",
+		EndDateTime:    utils.TimePtr(time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC)),
 	}
 
 	data, err := json.Marshal(recurrence)
@@ -129,7 +131,7 @@ func TestOccurrence_JSONSerialization(t *testing.T) {
 
 	occurrence := Occurrence{
 		OccurrenceID:     "occurrence-123",
-		StartTime:        "2024-01-15T10:00:00Z",
+		StartTime:        utils.TimePtr(time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)),
 		Title:            "Occurrence Title",
 		Description:      "Occurrence Description",
 		Duration:         60,
@@ -227,7 +229,7 @@ func TestMeeting_WithComplexStructures(t *testing.T) {
 		Occurrences: []Occurrence{
 			{
 				OccurrenceID:     "occ-1",
-				StartTime:        "2024-01-15T10:00:00Z",
+				StartTime:        utils.TimePtr(time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)),
 				Title:            "First Occurrence",
 				Duration:         90,
 				RegistrantCount:  10,

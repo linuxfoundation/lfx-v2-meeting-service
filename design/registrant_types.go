@@ -17,8 +17,6 @@ var CreateRegistrantPayload = Type("CreateRegistrantPayload", func() {
 	RegistrantHostAttribute()
 	RegistrantJobTitleAttribute()
 	RegistrantOccurrenceIDAttribute()
-	RegistrantOrgNameAttribute()
-	RegistrantOrgIsMemberAttribute()
 	RegistrantOrgIsProjectMemberAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUserIDAttribute()
@@ -35,8 +33,6 @@ var UpdateRegistrantPayload = Type("UpdateRegistrantPayload", func() {
 	RegistrantHostAttribute()
 	RegistrantJobTitleAttribute()
 	RegistrantOccurrenceIDAttribute()
-	RegistrantOrgNameAttribute()
-	RegistrantOrgIsMemberAttribute()
 	RegistrantOrgIsProjectMemberAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUserIDAttribute()
@@ -96,6 +92,8 @@ func RegistrantEmailAttribute() {
 // RegistrantFirstNameAttribute is the DSL attribute for registrant first name.
 func RegistrantFirstNameAttribute() {
 	Attribute("first_name", String, "User's first name", func() {
+		MinLength(1)
+		MaxLength(100)
 		Example("John")
 	})
 }
@@ -103,6 +101,8 @@ func RegistrantFirstNameAttribute() {
 // RegistrantLastNameAttribute is the DSL attribute for registrant last name.
 func RegistrantLastNameAttribute() {
 	Attribute("last_name", String, "User's last name", func() {
+		MinLength(1)
+		MaxLength(100)
 		Example("Doe")
 	})
 }
@@ -123,6 +123,7 @@ func RegistrantJobTitleAttribute() {
 func RegistrantOccurrenceIDAttribute() {
 	Attribute("occurrence_id", String, "The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences", func() {
 		Example("1640995200")
+		Pattern("^[0-9]*$") // Validate as numeric string if it's a timestamp
 	})
 }
 

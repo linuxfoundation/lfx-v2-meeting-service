@@ -46,20 +46,20 @@ type Committee struct {
 
 // Recurrence represents the recurrence pattern of a meeting
 type Recurrence struct {
-	Type           int    `json:"type"`
-	RepeatInterval int    `json:"repeat_interval"`
-	WeeklyDays     string `json:"weekly_days,omitempty"`
-	MonthlyDay     int    `json:"monthly_day,omitempty"`
-	MonthlyWeek    int    `json:"monthly_week,omitempty"`
-	MonthlyWeekDay int    `json:"monthly_week_day,omitempty"`
-	EndTimes       int    `json:"end_times,omitempty"`
-	EndDateTime    string `json:"end_date_time,omitempty"`
+	Type           int        `json:"type"`
+	RepeatInterval int        `json:"repeat_interval"`
+	WeeklyDays     string     `json:"weekly_days,omitempty"`
+	MonthlyDay     int        `json:"monthly_day,omitempty"`
+	MonthlyWeek    int        `json:"monthly_week,omitempty"`
+	MonthlyWeekDay int        `json:"monthly_week_day,omitempty"`
+	EndTimes       int        `json:"end_times,omitempty"`
+	EndDateTime    *time.Time `json:"end_date_time,omitempty"`
 }
 
 // Occurrence represents a single occurrence of a recurring meeting
 type Occurrence struct {
 	OccurrenceID     string      `json:"occurrence_id"`
-	StartTime        string      `json:"start_time"`
+	StartTime        *time.Time  `json:"start_time"`
 	Title            string      `json:"title,omitempty"`
 	Description      string      `json:"description,omitempty"`
 	Duration         int         `json:"duration,omitempty"`

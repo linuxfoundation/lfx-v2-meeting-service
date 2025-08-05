@@ -2118,6 +2118,29 @@ func ValidateCreateMeetingRegistrantResponseBody(body *CreateMeetingRegistrantRe
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
@@ -2157,6 +2180,29 @@ func ValidateGetMeetingRegistrantResponseBody(body *GetMeetingRegistrantResponse
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
@@ -2195,6 +2241,29 @@ func ValidateUpdateMeetingRegistrantResponseBody(body *UpdateMeetingRegistrantRe
 	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
@@ -2797,9 +2866,17 @@ func ValidateRecurrenceResponseBody(body *RecurrenceResponseBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{1, 2, 3}))
 		}
 	}
-	if body.RepeatInterval != nil {
-		if !(*body.RepeatInterval == 1 || *body.RepeatInterval == 2 || *body.RepeatInterval == 3) {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.repeat_interval", *body.RepeatInterval, []any{1, 2, 3}))
+	if body.WeeklyDays != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.weekly_days", *body.WeeklyDays, "^[1-7](,[1-7])*$"))
+	}
+	if body.MonthlyDay != nil {
+		if *body.MonthlyDay < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.monthly_day", *body.MonthlyDay, 1, true))
+		}
+	}
+	if body.MonthlyDay != nil {
+		if *body.MonthlyDay > 31 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.monthly_day", *body.MonthlyDay, 31, false))
 		}
 	}
 	if body.MonthlyWeek != nil {
@@ -2874,8 +2951,18 @@ func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	if !(body.Type == 1 || body.Type == 2 || body.Type == 3) {
 		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{1, 2, 3}))
 	}
-	if !(body.RepeatInterval == 1 || body.RepeatInterval == 2 || body.RepeatInterval == 3) {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.repeat_interval", body.RepeatInterval, []any{1, 2, 3}))
+	if body.WeeklyDays != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.weekly_days", *body.WeeklyDays, "^[1-7](,[1-7])*$"))
+	}
+	if body.MonthlyDay != nil {
+		if *body.MonthlyDay < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.monthly_day", *body.MonthlyDay, 1, true))
+		}
+	}
+	if body.MonthlyDay != nil {
+		if *body.MonthlyDay > 31 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.monthly_day", *body.MonthlyDay, 31, false))
+		}
 	}
 	if body.MonthlyWeek != nil {
 		if !(*body.MonthlyWeek == -1 || *body.MonthlyWeek == 1 || *body.MonthlyWeek == 2 || *body.MonthlyWeek == 3 || *body.MonthlyWeek == 4) {
@@ -2928,6 +3015,29 @@ func ValidateRegistrantResponseBody(body *RegistrantResponseBody) (err error) {
 	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))

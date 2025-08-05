@@ -81,12 +81,12 @@ build: clean
 # Run the service
 run: apigen
 	@echo "==> Running $(BINARY_NAME)..."
-	go run $(LDFLAGS) .
+	go run $(LDFLAGS) $(CMD_PATH) .
 
 # Run with debug logging
 debug: apigen
 	@echo "==> Running $(BINARY_NAME) in debug mode..."
-	go run $(LDFLAGS) . -d
+	go run $(LDFLAGS) $(CMD_PATH) . -d
 
 # Run tests
 test:

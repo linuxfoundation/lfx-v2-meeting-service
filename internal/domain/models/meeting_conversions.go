@@ -179,7 +179,7 @@ func fromDBCommittee(c *Committee) *meetingservice.Committee {
 }
 
 func toDBRecurrence(r *meetingservice.Recurrence) *Recurrence {
-	return &Recurrence{
+	recurrence := &Recurrence{
 		Type:           r.Type,
 		RepeatInterval: r.RepeatInterval,
 		WeeklyDays:     utils.StringValue(r.WeeklyDays),
@@ -187,8 +187,17 @@ func toDBRecurrence(r *meetingservice.Recurrence) *Recurrence {
 		MonthlyWeek:    utils.IntValue(r.MonthlyWeek),
 		MonthlyWeekDay: utils.IntValue(r.MonthlyWeekDay),
 		EndTimes:       utils.IntValue(r.EndTimes),
-		EndDateTime:    utils.StringValue(r.EndDateTime),
 	}
+
+	// Convert EndDateTime
+	if r.EndDateTime != nil {
+		endDateTime, err := time.Parse(time.RFC3339, *r.EndDateTime)
+		if err == nil {
+			recurrence.EndDateTime = &endDateTime
+		}
+	}
+
+	return recurrence
 }
 
 func fromDBRecurrence(r *Recurrence) *meetingservice.Recurrence {
@@ -212,8 +221,8 @@ func fromDBRecurrence(r *Recurrence) *meetingservice.Recurrence {
 	if r.EndTimes != 0 {
 		rec.EndTimes = utils.IntPtr(r.EndTimes)
 	}
-	if r.EndDateTime != "" {
-		rec.EndDateTime = utils.StringPtr(r.EndDateTime)
+	if r.EndDateTime != nil {
+		rec.EndDateTime = utils.StringPtr(r.EndDateTime.Format(time.RFC3339))
 	}
 
 	return rec
@@ -243,7 +252,6 @@ func fromDBZoomConfig(z *ZoomConfig) *meetingservice.ZoomConfigFull {
 func toDBOccurrence(o *meetingservice.Occurrence) Occurrence {
 	occ := Occurrence{
 		OccurrenceID:     utils.StringValue(o.OccurrenceID),
-		StartTime:        utils.StringValue(o.StartTime),
 		Title:            utils.StringValue(o.Title),
 		Description:      utils.StringValue(o.Description),
 		Duration:         utils.IntValue(o.Duration),
@@ -251,6 +259,14 @@ func toDBOccurrence(o *meetingservice.Occurrence) Occurrence {
 		ResponseCountNo:  utils.IntValue(o.ResponseCountNo),
 		ResponseCountYes: utils.IntValue(o.ResponseCountYes),
 		Status:           utils.StringValue(o.Status),
+	}
+
+	// Convert StartTime
+	if o.StartTime != nil {
+		startTime, err := time.Parse(time.RFC3339, *o.StartTime)
+		if err == nil {
+			occ.StartTime = &startTime
+		}
 	}
 
 	if o.Recurrence != nil {
@@ -266,8 +282,8 @@ func fromDBOccurrence(o *Occurrence) *meetingservice.Occurrence {
 	if o.OccurrenceID != "" {
 		occ.OccurrenceID = utils.StringPtr(o.OccurrenceID)
 	}
-	if o.StartTime != "" {
-		occ.StartTime = utils.StringPtr(o.StartTime)
+	if o.StartTime != nil {
+		occ.StartTime = utils.StringPtr(o.StartTime.Format(time.RFC3339))
 	}
 	if o.Title != "" {
 		occ.Title = utils.StringPtr(o.Title)

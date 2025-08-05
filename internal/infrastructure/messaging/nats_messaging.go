@@ -73,7 +73,7 @@ func (m *MessageBuilder) sendIndexerMessage(ctx context.Context, subject string,
 		}
 	case models.ActionDeleted:
 		// The data should just be a string of the UID being deleted.
-		payload = data
+		payload = string(data)
 	}
 
 	// TODO: use the model from the indexer service to keep the message body consistent.

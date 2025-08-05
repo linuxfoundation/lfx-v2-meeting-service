@@ -85,7 +85,6 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 	meetingDB := models.ToMeetingDBModel(meeting)
 
 	// Create the meeting in the repository
-	slog.With("meeting_uid", meetingDB.UID)
 	err := s.MeetingRepository.CreateMeeting(ctx, meetingDB)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -106,7 +105,7 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 		return nil, domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "returning created meeting", "meeting", meeting)
+	slog.DebugContext(ctx, "returning created meeting", "meeting", meeting, "meeting_uid", meetingDB.UID)
 
 	return meeting, nil
 }

@@ -111,7 +111,6 @@ you must set the value of this field as '2' and the value of the 'type' paramete
 For a daily meeting, the maximum interval you can set is '90' days. 
 For a weekly meeting the maximum interval that you can set is of '12' weeks. 
 For a monthly meeting, there is a maximum of '3' months.`)
-		Enum(1, 2, 3)
 	})
 	Field(3, "weekly_days", String, func() {
 		Description(`This field is required if you're scheduling a recurring meeting of type '2' to state which day(s) 
@@ -126,9 +125,13 @@ For instance, if the meeting should recur on Sundays and Tuesdays provide '1,3' 
 5 - Thursday
 6 - Friday
 7 - Saturday`)
+		Pattern(`^[1-7](,[1-7])*$`)
+		Example("1,3,5")
 	})
 	Field(4, "monthly_day", Int, func() {
 		Description("Use this field only if you're scheduling a recurring meeting of type '3' to state which day in a month, the meeting should recur. The value range is from 1 to 31. For instance, if you would like the meeting to recur on 23rd of each month, provide '23' as the value of this field and '1' as the value of the 'repeat_interval' field. Instead, if you would like the meeting to recur every three months, on 23rd of the month, change the value of the 'repeat_interval' field to '3'.")
+		Minimum(1)
+		Maximum(31)
 	})
 	Field(5, "monthly_week", Int, func() {
 		Description("Use this field only if you're scheduling a recurring meeting of type '3' to state the week of the month when the meeting should recur. If you use this field, you must also use the 'monthly_week_day' field to state the day of the week when the meeting should recur. '-1' - Last week of the month. 1 - First week of the month. 2 - Second week of the month. 3 - Third week of the month. 4 - Fourth week of the month.")
@@ -275,7 +278,9 @@ func PublicLinkAttribute() {
 
 // PasswordAttribute is the DSL attribute for password.
 func PasswordAttribute() {
-	Attribute("password", String, "Unique, non-guessable, password for the meeting - is needed to join a meeting and is included in invites")
+	Attribute("password", String, "Unique, non-guessable, password for the meeting - is needed to join a meeting and is included in invites", func() {
+		Format(FormatUUID)
+	})
 }
 
 // EmailDeliveryErrorCountAttribute is the DSL attribute for email delivery error count.

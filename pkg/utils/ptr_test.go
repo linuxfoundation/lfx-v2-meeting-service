@@ -4,7 +4,9 @@
 package utils
 
 import (
+	"strconv"
 	"testing"
+	"time"
 )
 
 func TestStringPtr(t *testing.T) {
@@ -160,7 +162,7 @@ func TestIntPtr(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(string(rune(test)), func(t *testing.T) {
+		t.Run(strconv.Itoa(test), func(t *testing.T) {
 			ptr := IntPtr(test)
 			if ptr == nil {
 				t.Error("expected non-nil pointer")
@@ -192,7 +194,7 @@ func TestIntValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(string(rune(test)), func(t *testing.T) {
+		t.Run(strconv.Itoa(test), func(t *testing.T) {
 			ptr := &test
 			result := IntValue(ptr)
 			if result != test {
@@ -214,7 +216,7 @@ func TestIntPtrValueRoundTrip(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(string(rune(test)), func(t *testing.T) {
+		t.Run(strconv.Itoa(test), func(t *testing.T) {
 			// Convert to pointer and back
 			ptr := IntPtr(test)
 			result := IntValue(ptr)
@@ -248,6 +250,74 @@ func TestPointerIndependence(t *testing.T) {
 	}
 }
 
+func TestTimePtr(t *testing.T) {
+	tests := []time.Time{
+		time.Time{}, // Zero time
+		time.Now(),
+		time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2023, 12, 31, 23, 59, 59, 999999999, time.UTC),
+	}
+
+	for _, test := range tests {
+		t.Run(test.String(), func(t *testing.T) {
+			ptr := TimePtr(test)
+			if ptr == nil {
+				t.Error("expected non-nil pointer")
+				return
+			}
+			if !ptr.Equal(test) {
+				t.Errorf("expected %v, got %v", test, *ptr)
+			}
+		})
+	}
+}
+
+func TestTimeValue(t *testing.T) {
+	// Test with nil pointer
+	result := TimeValue(nil)
+	if !result.IsZero() {
+		t.Errorf("expected zero time for nil pointer, got %v", result)
+	}
+
+	// Test with valid pointers
+	tests := []time.Time{
+		time.Time{}, // Zero time
+		time.Now(),
+		time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2023, 12, 31, 23, 59, 59, 999999999, time.UTC),
+	}
+
+	for _, test := range tests {
+		t.Run(test.String(), func(t *testing.T) {
+			ptr := &test
+			result := TimeValue(ptr)
+			if !result.Equal(test) {
+				t.Errorf("expected %v, got %v", test, result)
+			}
+		})
+	}
+}
+
+func TestTimePtrValueRoundTrip(t *testing.T) {
+	tests := []time.Time{
+		time.Time{}, // Zero time
+		time.Now(),
+		time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2023, 12, 31, 23, 59, 59, 999999999, time.UTC),
+	}
+
+	for _, test := range tests {
+		t.Run(test.String(), func(t *testing.T) {
+			// Convert to pointer and back
+			ptr := TimePtr(test)
+			result := TimeValue(ptr)
+			if !result.Equal(test) {
+				t.Errorf("round trip failed: expected %v, got %v", test, result)
+			}
+		})
+	}
+}
+
 func TestNilSafety(t *testing.T) {
 	// Test that all Value functions handle nil safely
 	stringResult := StringValue(nil)
@@ -263,5 +333,10 @@ func TestNilSafety(t *testing.T) {
 	intResult := IntValue(nil)
 	if intResult != 0 {
 		t.Errorf("IntValue(nil) should return 0, got %d", intResult)
+	}
+
+	timeResult := TimeValue(nil)
+	if !timeResult.IsZero() {
+		t.Errorf("TimeValue(nil) should return zero time, got %v", timeResult)
 	}
 }
