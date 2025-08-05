@@ -6,7 +6,7 @@ BINARY_NAME=meeting-api
 BINARY_PATH=bin/$(BINARY_NAME)
 GO_MODULE=github.com/linuxfoundation/lfx-v2-meeting-service
 CMD_PATH=$(GO_MODULE)/cmd/meeting-api
-DESIGN_MODULE=./design
+DESIGN_MODULE=$(GO_MODULE)/design
 GO_FILES=$(shell find . -name '*.go' -not -path './gen/*' -not -path './vendor/*')
 GOA_VERSION=v3
 
