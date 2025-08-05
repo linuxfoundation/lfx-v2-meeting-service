@@ -307,26 +307,8 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_participants",
       "committees": [
-         {
-            "allowed_voting_statuses": [
-               "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
-            ],
-            "uid": "Ut assumenda maxime aut."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Non fuga.",
-               "Veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem.",
-               "Et nihil quia iusto atque autem qui."
-            ],
-            "uid": "Ut assumenda maxime aut."
-         },
          {
             "allowed_voting_statuses": [
                "Non fuga.",
@@ -346,14 +328,14 @@ Example:
             "uid": "Ut assumenda maxime aut."
          }
       ],
-      "description": "Veritatis expedita voluptatibus aut consequuntur possimus.",
-      "duration": 228,
-      "early_join_time_minutes": 59,
+      "description": "In consectetur mollitia nisi explicabo eos.",
+      "duration": 123,
+      "early_join_time_minutes": 30,
       "meeting_type": "Marketing",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "A animi recusandae.",
-      "recording_enabled": false,
+      "public_link": "Laborum natus sapiente.",
+      "recording_enabled": true,
       "recurrence": {
          "end_date_time": "1976-09-10T11:24:39Z",
          "end_times": 1192397136127484557,
@@ -364,12 +346,12 @@ Example:
          "type": 2,
          "weekly_days": "Officia neque nobis iste ipsam."
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "At perferendis aliquid.",
-      "title": "Provident accusamus error consequatur aut.",
+      "timezone": "Voluptas est in accusantium minima consequatur aut.",
+      "title": "Quis velit voluptates ea consequatur sit.",
       "transcript_enabled": false,
-      "visibility": "public",
+      "visibility": "private",
       "youtube_upload_enabled": false,
       "zoom_config": {
          "ai_companion_enabled": true,
@@ -443,13 +425,13 @@ Example:
             "uid": "Ut assumenda maxime aut."
          }
       ],
-      "description": "Laudantium tempora omnis accusantium rem.",
-      "duration": 320,
-      "early_join_time_minutes": 33,
-      "meeting_type": "None",
+      "description": "Saepe temporibus minima atque.",
+      "duration": 14,
+      "early_join_time_minutes": 10,
+      "meeting_type": "Marketing",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Rerum necessitatibus architecto voluptate et omnis rerum.",
+      "public_link": "Fugiat dolorem soluta at perferendis aliquid.",
       "recording_enabled": true,
       "recurrence": {
          "end_date_time": "1976-09-10T11:24:39Z",
@@ -461,10 +443,10 @@ Example:
          "type": 2,
          "weekly_days": "Officia neque nobis iste ipsam."
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Iusto consectetur non et vero placeat in.",
-      "title": "Unde vitae.",
+      "timezone": "Sed reiciendis eaque rerum velit sit.",
+      "title": "Voluptates consequuntur voluptate.",
       "transcript_enabled": true,
       "visibility": "private",
       "youtube_upload_enabled": false,

@@ -48,56 +48,64 @@ func BuildGetMeetingsPayload(meetingServiceGetMeetingsVersion string, meetingSer
 // create-meeting endpoint from CLI flags.
 func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingServiceCreateMeetingVersion string, meetingServiceCreateMeetingBearerToken string) (*meetingservice.CreateMeetingPayload, error) {
 	var err error
-	var body struct {
-		// The UID of the LF project
-		ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
-		// The start time of the meeting in RFC3339 format
-		StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
-		// The duration of the meeting in minutes
-		Duration *int `form:"duration" json:"duration" xml:"duration"`
-		// The timezone of the meeting (e.g. 'America/New_York')
-		Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
-		// The recurrence of the meeting
-		Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
-		// The title of the meeting
-		Title *string `form:"title" json:"title" xml:"title"`
-		// The description of the meeting
-		Description *string `form:"description" json:"description" xml:"description"`
-		// The committees associated with the meeting
-		Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
-		// The platform name of where the meeting is hosted
-		Platform *string `form:"platform" json:"platform" xml:"platform"`
-		// The number of minutes that users are allowed to join the meeting early
-		// without being kicked out
-		EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
-		// The type of meeting. This is usually dependent on the committee(s)
-		// associated with the meeting
-		MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
-		// The visibility of the meeting's existence to other users
-		Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
-		// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-		// only invited users or anyone?)
-		Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
-		// The visibility of artifacts to users (e.g. public, only for registrants,
-		// only for hosts)
-		ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
-		// The public join URL for participants to join the meeting via the LFX
-		// platform (e.g.
-		// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-		PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
-		// Whether recording is enabled for the meeting
-		RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
-		// Whether transcription is enabled for the meeting
-		TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
-		// Whether automatic youtube uploading is enabled for the meeting
-		YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
-		// For zoom platform meetings: the configuration for the meeting
-		ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
-	}
+	var body CreateMeetingRequestBody
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreateMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         }\n      ],\n      \"description\": \"Veritatis expedita voluptatibus aut consequuntur possimus.\",\n      \"duration\": 228,\n      \"early_join_time_minutes\": 59,\n      \"meeting_type\": \"Marketing\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"A animi recusandae.\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1976-09-10T11:24:39Z\",\n         \"end_times\": 1192397136127484557,\n         \"monthly_day\": 842616163289885711,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 3,\n         \"type\": 2,\n         \"weekly_days\": \"Officia neque nobis iste ipsam.\"\n      },\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"At perferendis aliquid.\",\n      \"title\": \"Provident accusamus error consequatur aut.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         }\n      ],\n      \"description\": \"In consectetur mollitia nisi explicabo eos.\",\n      \"duration\": 123,\n      \"early_join_time_minutes\": 30,\n      \"meeting_type\": \"Marketing\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Laborum natus sapiente.\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1976-09-10T11:24:39Z\",\n         \"end_times\": 1192397136127484557,\n         \"monthly_day\": 842616163289885711,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 3,\n         \"type\": 2,\n         \"weekly_days\": \"Officia neque nobis iste ipsam.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Voluptas est in accusantium minima consequatur aut.\",\n      \"title\": \"Quis velit voluptates ea consequatur sit.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", body.ProjectUID, goa.FormatUUID))
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
+		if body.Duration < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", body.Duration, 0, true))
+		}
+		if body.Duration > 600 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", body.Duration, 600, false))
+		}
+		if body.Recurrence != nil {
+			if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+		for _, e := range body.Committees {
+			if e != nil {
+				if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+					err = goa.MergeErrors(err, err2)
+				}
+			}
+		}
+		if body.Platform != nil {
+			if !(*body.Platform == "Zoom") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom"}))
+			}
+		}
+		if body.EarlyJoinTimeMinutes != nil {
+			if *body.EarlyJoinTimeMinutes < 10 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
+			}
+		}
+		if body.EarlyJoinTimeMinutes != nil {
+			if *body.EarlyJoinTimeMinutes > 60 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
+			}
+		}
+		if body.MeetingType != nil {
+			if !(*body.MeetingType == "Board" || *body.MeetingType == "Maintainers" || *body.MeetingType == "Marketing" || *body.MeetingType == "Technical" || *body.MeetingType == "Legal" || *body.MeetingType == "Other" || *body.MeetingType == "None") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.meeting_type", *body.MeetingType, []any{"Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None"}))
+			}
+		}
+		if body.Visibility != nil {
+			if !(*body.Visibility == "public" || *body.Visibility == "private") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.visibility", *body.Visibility, []any{"public", "private"}))
+			}
+		}
+		if body.ArtifactVisibility != nil {
+			if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+			}
+		}
+		if err != nil {
+			return nil, err
 		}
 	}
 	var version *string
@@ -119,6 +127,12 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 		}
 	}
 	v := &meetingservice.CreateMeetingPayload{
+		ProjectUID:           body.ProjectUID,
+		StartTime:            body.StartTime,
+		Duration:             body.Duration,
+		Timezone:             body.Timezone,
+		Title:                body.Title,
+		Description:          body.Description,
 		Platform:             body.Platform,
 		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
 		MeetingType:          body.MeetingType,
@@ -130,35 +144,17 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
 	}
-	if body.ProjectUID != nil {
-		v.ProjectUID = *body.ProjectUID
-	}
-	if body.StartTime != nil {
-		v.StartTime = *body.StartTime
-	}
-	if body.Duration != nil {
-		v.Duration = *body.Duration
-	}
-	if body.Timezone != nil {
-		v.Timezone = *body.Timezone
-	}
-	if body.Title != nil {
-		v.Title = *body.Title
-	}
-	if body.Description != nil {
-		v.Description = *body.Description
-	}
 	if body.Recurrence != nil {
-		v.Recurrence = marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+		v.Recurrence = marshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
 	}
 	if body.Committees != nil {
 		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
 		for i, val := range body.Committees {
-			v.Committees[i] = marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(val)
+			v.Committees[i] = marshalCommitteeRequestBodyToMeetingserviceCommittee(val)
 		}
 	}
 	if body.ZoomConfig != nil {
-		v.ZoomConfig = marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
+		v.ZoomConfig = marshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
 	}
 	v.Version = version
 	v.BearerToken = bearerToken
@@ -208,56 +204,64 @@ func BuildGetMeetingPayload(meetingServiceGetMeetingUID string, meetingServiceGe
 // update-meeting endpoint from CLI flags.
 func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingServiceUpdateMeetingUID string, meetingServiceUpdateMeetingVersion string, meetingServiceUpdateMeetingBearerToken string, meetingServiceUpdateMeetingEtag string) (*meetingservice.UpdateMeetingPayload, error) {
 	var err error
-	var body struct {
-		// The UID of the LF project
-		ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
-		// The start time of the meeting in RFC3339 format
-		StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
-		// The duration of the meeting in minutes
-		Duration *int `form:"duration" json:"duration" xml:"duration"`
-		// The timezone of the meeting (e.g. 'America/New_York')
-		Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
-		// The recurrence of the meeting
-		Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
-		// The title of the meeting
-		Title *string `form:"title" json:"title" xml:"title"`
-		// The description of the meeting
-		Description *string `form:"description" json:"description" xml:"description"`
-		// The committees associated with the meeting
-		Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
-		// The platform name of where the meeting is hosted
-		Platform *string `form:"platform" json:"platform" xml:"platform"`
-		// The number of minutes that users are allowed to join the meeting early
-		// without being kicked out
-		EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
-		// The type of meeting. This is usually dependent on the committee(s)
-		// associated with the meeting
-		MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
-		// The visibility of the meeting's existence to other users
-		Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
-		// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-		// only invited users or anyone?)
-		Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
-		// The visibility of artifacts to users (e.g. public, only for registrants,
-		// only for hosts)
-		ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
-		// The public join URL for participants to join the meeting via the LFX
-		// platform (e.g.
-		// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-		PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
-		// Whether recording is enabled for the meeting
-		RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
-		// Whether transcription is enabled for the meeting
-		TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
-		// Whether automatic youtube uploading is enabled for the meeting
-		YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
-		// For zoom platform meetings: the configuration for the meeting
-		ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
-	}
+	var body UpdateMeetingRequestBody
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         }\n      ],\n      \"description\": \"Laudantium tempora omnis accusantium rem.\",\n      \"duration\": 320,\n      \"early_join_time_minutes\": 33,\n      \"meeting_type\": \"None\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Rerum necessitatibus architecto voluptate et omnis rerum.\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1976-09-10T11:24:39Z\",\n         \"end_times\": 1192397136127484557,\n         \"monthly_day\": 842616163289885711,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 3,\n         \"type\": 2,\n         \"weekly_days\": \"Officia neque nobis iste ipsam.\"\n      },\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Iusto consectetur non et vero placeat in.\",\n      \"title\": \"Unde vitae.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Non fuga.\",\n               \"Veniam similique fugit.\",\n               \"Occaecati dolorem ut iure dolorem.\",\n               \"Et nihil quia iusto atque autem qui.\"\n            ],\n            \"uid\": \"Ut assumenda maxime aut.\"\n         }\n      ],\n      \"description\": \"Saepe temporibus minima atque.\",\n      \"duration\": 14,\n      \"early_join_time_minutes\": 10,\n      \"meeting_type\": \"Marketing\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Fugiat dolorem soluta at perferendis aliquid.\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1976-09-10T11:24:39Z\",\n         \"end_times\": 1192397136127484557,\n         \"monthly_day\": 842616163289885711,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 3,\n         \"type\": 2,\n         \"weekly_days\": \"Officia neque nobis iste ipsam.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Sed reiciendis eaque rerum velit sit.\",\n      \"title\": \"Voluptates consequuntur voluptate.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", body.ProjectUID, goa.FormatUUID))
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
+		if body.Duration < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", body.Duration, 0, true))
+		}
+		if body.Duration > 600 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", body.Duration, 600, false))
+		}
+		if body.Recurrence != nil {
+			if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+		for _, e := range body.Committees {
+			if e != nil {
+				if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+					err = goa.MergeErrors(err, err2)
+				}
+			}
+		}
+		if body.Platform != nil {
+			if !(*body.Platform == "Zoom") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom"}))
+			}
+		}
+		if body.EarlyJoinTimeMinutes != nil {
+			if *body.EarlyJoinTimeMinutes < 10 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
+			}
+		}
+		if body.EarlyJoinTimeMinutes != nil {
+			if *body.EarlyJoinTimeMinutes > 60 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
+			}
+		}
+		if body.MeetingType != nil {
+			if !(*body.MeetingType == "Board" || *body.MeetingType == "Maintainers" || *body.MeetingType == "Marketing" || *body.MeetingType == "Technical" || *body.MeetingType == "Legal" || *body.MeetingType == "Other" || *body.MeetingType == "None") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.meeting_type", *body.MeetingType, []any{"Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None"}))
+			}
+		}
+		if body.Visibility != nil {
+			if !(*body.Visibility == "public" || *body.Visibility == "private") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.visibility", *body.Visibility, []any{"public", "private"}))
+			}
+		}
+		if body.ArtifactVisibility != nil {
+			if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+			}
+		}
+		if err != nil {
+			return nil, err
 		}
 	}
 	var uid string
@@ -293,6 +297,12 @@ func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingSe
 		}
 	}
 	v := &meetingservice.UpdateMeetingPayload{
+		ProjectUID:           body.ProjectUID,
+		StartTime:            body.StartTime,
+		Duration:             body.Duration,
+		Timezone:             body.Timezone,
+		Title:                body.Title,
+		Description:          body.Description,
 		Platform:             body.Platform,
 		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
 		MeetingType:          body.MeetingType,
@@ -304,35 +314,17 @@ func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingSe
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
 	}
-	if body.ProjectUID != nil {
-		v.ProjectUID = *body.ProjectUID
-	}
-	if body.StartTime != nil {
-		v.StartTime = *body.StartTime
-	}
-	if body.Duration != nil {
-		v.Duration = *body.Duration
-	}
-	if body.Timezone != nil {
-		v.Timezone = *body.Timezone
-	}
-	if body.Title != nil {
-		v.Title = *body.Title
-	}
-	if body.Description != nil {
-		v.Description = *body.Description
-	}
 	if body.Recurrence != nil {
-		v.Recurrence = marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+		v.Recurrence = marshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
 	}
 	if body.Committees != nil {
 		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
 		for i, val := range body.Committees {
-			v.Committees[i] = marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(val)
+			v.Committees[i] = marshalCommitteeRequestBodyToMeetingserviceCommittee(val)
 		}
 	}
 	if body.ZoomConfig != nil {
-		v.ZoomConfig = marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
+		v.ZoomConfig = marshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
 	}
 	v.UID = uid
 	v.Version = version

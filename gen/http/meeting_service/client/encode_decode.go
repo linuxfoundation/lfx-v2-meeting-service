@@ -189,7 +189,7 @@ func EncodeCreateMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 			values.Add("v", *p.Version)
 		}
 		req.URL.RawQuery = values.Encode()
-		body := NewStructTheUIDofTheLFprojectProjectUIDstringForm(p)
+		body := NewCreateMeetingRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
 			return goahttp.ErrEncodingError("Meeting Service", "create-meeting", err)
 		}
@@ -495,7 +495,7 @@ func EncodeUpdateMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 			values.Add("v", *p.Version)
 		}
 		req.URL.RawQuery = values.Encode()
-		body := NewStructTheUIDofTheLFprojectProjectUIDstringForm(p)
+		body := NewUpdateMeetingRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
 			return goahttp.ErrEncodingError("Meeting Service", "update-meeting", err)
 		}
@@ -1806,14 +1806,13 @@ func unmarshalOccurrenceResponseBodyToMeetingserviceOccurrence(v *OccurrenceResp
 	return res
 }
 
-// marshalMeetingserviceRecurrenceToRecurrenceRequestBodyRequestBody builds a
-// value of type *RecurrenceRequestBodyRequestBody from a value of type
-// *meetingservice.Recurrence.
-func marshalMeetingserviceRecurrenceToRecurrenceRequestBodyRequestBody(v *meetingservice.Recurrence) *RecurrenceRequestBodyRequestBody {
+// marshalMeetingserviceRecurrenceToRecurrenceRequestBody builds a value of
+// type *RecurrenceRequestBody from a value of type *meetingservice.Recurrence.
+func marshalMeetingserviceRecurrenceToRecurrenceRequestBody(v *meetingservice.Recurrence) *RecurrenceRequestBody {
 	if v == nil {
 		return nil
 	}
-	res := &RecurrenceRequestBodyRequestBody{
+	res := &RecurrenceRequestBody{
 		Type:           v.Type,
 		RepeatInterval: v.RepeatInterval,
 		WeeklyDays:     v.WeeklyDays,
@@ -1827,14 +1826,13 @@ func marshalMeetingserviceRecurrenceToRecurrenceRequestBodyRequestBody(v *meetin
 	return res
 }
 
-// marshalMeetingserviceCommitteeToCommitteeRequestBodyRequestBody builds a
-// value of type *CommitteeRequestBodyRequestBody from a value of type
-// *meetingservice.Committee.
-func marshalMeetingserviceCommitteeToCommitteeRequestBodyRequestBody(v *meetingservice.Committee) *CommitteeRequestBodyRequestBody {
+// marshalMeetingserviceCommitteeToCommitteeRequestBody builds a value of type
+// *CommitteeRequestBody from a value of type *meetingservice.Committee.
+func marshalMeetingserviceCommitteeToCommitteeRequestBody(v *meetingservice.Committee) *CommitteeRequestBody {
 	if v == nil {
 		return nil
 	}
-	res := &CommitteeRequestBodyRequestBody{
+	res := &CommitteeRequestBody{
 		UID: v.UID,
 	}
 	if v.AllowedVotingStatuses != nil {
@@ -1849,14 +1847,14 @@ func marshalMeetingserviceCommitteeToCommitteeRequestBodyRequestBody(v *meetings
 	return res
 }
 
-// marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBodyRequestBody
-// builds a value of type *ZoomConfigPostRequestBodyRequestBody from a value of
-// type *meetingservice.ZoomConfigPost.
-func marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBodyRequestBody(v *meetingservice.ZoomConfigPost) *ZoomConfigPostRequestBodyRequestBody {
+// marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBody builds a
+// value of type *ZoomConfigPostRequestBody from a value of type
+// *meetingservice.ZoomConfigPost.
+func marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBody(v *meetingservice.ZoomConfigPost) *ZoomConfigPostRequestBody {
 	if v == nil {
 		return nil
 	}
-	res := &ZoomConfigPostRequestBodyRequestBody{
+	res := &ZoomConfigPostRequestBody{
 		AiCompanionEnabled:       v.AiCompanionEnabled,
 		AiSummaryRequireApproval: v.AiSummaryRequireApproval,
 	}
@@ -1864,10 +1862,9 @@ func marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBodyRequestBody(v
 	return res
 }
 
-// marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence builds a
-// value of type *meetingservice.Recurrence from a value of type
-// *RecurrenceRequestBodyRequestBody.
-func marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequestBodyRequestBody) *meetingservice.Recurrence {
+// marshalRecurrenceRequestBodyToMeetingserviceRecurrence builds a value of
+// type *meetingservice.Recurrence from a value of type *RecurrenceRequestBody.
+func marshalRecurrenceRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequestBody) *meetingservice.Recurrence {
 	if v == nil {
 		return nil
 	}
@@ -1885,10 +1882,9 @@ func marshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(v *Recurr
 	return res
 }
 
-// marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee builds a
-// value of type *meetingservice.Committee from a value of type
-// *CommitteeRequestBodyRequestBody.
-func marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBodyRequestBody) *meetingservice.Committee {
+// marshalCommitteeRequestBodyToMeetingserviceCommittee builds a value of type
+// *meetingservice.Committee from a value of type *CommitteeRequestBody.
+func marshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBody) *meetingservice.Committee {
 	if v == nil {
 		return nil
 	}
@@ -1907,10 +1903,10 @@ func marshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(v *Committe
 	return res
 }
 
-// marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost
-// builds a value of type *meetingservice.ZoomConfigPost from a value of type
-// *ZoomConfigPostRequestBodyRequestBody.
-func marshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost(v *ZoomConfigPostRequestBodyRequestBody) *meetingservice.ZoomConfigPost {
+// marshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost builds a
+// value of type *meetingservice.ZoomConfigPost from a value of type
+// *ZoomConfigPostRequestBody.
+func marshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(v *ZoomConfigPostRequestBody) *meetingservice.ZoomConfigPost {
 	if v == nil {
 		return nil
 	}

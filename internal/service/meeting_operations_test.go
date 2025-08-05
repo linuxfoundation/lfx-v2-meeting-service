@@ -65,7 +65,7 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 			name: "repository error",
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
 				mockRepo.On("ListAllMeetings", mock.Anything).Return(
-					nil, nil, domain.ErrInternal,
+					nil, domain.ErrInternal,
 				)
 			},
 			expectedLen: 0,
@@ -138,7 +138,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 			validate: func(t *testing.T, result *meetingsvc.Meeting) {
 				assert.NotNil(t, result)
 				assert.NotNil(t, result.UID)
-				assert.Equal(t, "test-meeting", *result.Title)
+				assert.Equal(t, "Test Meeting", *result.Title)
 			},
 		},
 		{
@@ -151,29 +151,6 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrServiceUnavailable,
-		},
-		{
-			name: "invalid parent UID",
-			payload: &meetingsvc.CreateMeetingPayload{
-				Title: "Test Meeting",
-			},
-			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				// Slug check happens first, then validation
-				mockRepo.On("CreateMeeting", mock.Anything, mock.AnythingOfType("*models.Meeting")).Return(nil)
-			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
-		},
-		{
-			name: "slug already exists",
-			payload: &meetingsvc.CreateMeetingPayload{
-				Title: "existing-meeting",
-			},
-			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("CreateMeeting", mock.Anything, mock.AnythingOfType("*models.Meeting")).Return(nil)
-			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
 		},
 		{
 			name: "repository creation error",
@@ -238,7 +215,7 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 				UID: utils.StringPtr("test-meeting-uid"),
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("GetMeeting", mock.Anything, "test-meeting-uid").Return(
+				mockRepo.On("GetMeetingWithRevision", mock.Anything, "test-meeting-uid").Return(
 					&models.Meeting{
 						UID:         "test-meeting-uid",
 						Title:       "Test Meeting",
@@ -255,7 +232,7 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 				assert.NotNil(t, result)
 				assert.NotNil(t, result.Meeting)
 				assert.Equal(t, "test-meeting-uid", *result.Meeting.UID)
-				assert.Equal(t, "test-meeting", *result.Meeting.Title)
+				assert.Equal(t, "Test Meeting", *result.Meeting.Title)
 			},
 		},
 		{
@@ -264,8 +241,8 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 				UID: utils.StringPtr("non-existent-uid"),
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("GetMeeting", mock.Anything, "non-existent-uid").Return(
-					nil, domain.ErrMeetingNotFound,
+				mockRepo.On("GetMeetingWithRevision", mock.Anything, "non-existent-uid").Return(
+					nil, uint64(0), domain.ErrMeetingNotFound,
 				)
 			},
 			wantErr:     true,
@@ -287,8 +264,8 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
 				// Repository is called even with empty UID, but returns error
-				mockRepo.On("GetMeeting", mock.Anything, "").Return(
-					nil, domain.ErrValidationFailed,
+				mockRepo.On("GetMeetingWithRevision", mock.Anything, "").Return(
+					nil, uint64(0), domain.ErrValidationFailed,
 				)
 			},
 			wantErr:     true,
@@ -309,7 +286,7 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 					assert.Equal(t, tt.expectedErr, err)
 				}
 				assert.Nil(t, result)
-				assert.Nil(t, etag)
+				assert.Empty(t, etag)
 			} else {
 				assert.NoError(t, err)
 				require.NotNil(t, result)

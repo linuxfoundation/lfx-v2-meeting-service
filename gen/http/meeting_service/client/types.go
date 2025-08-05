@@ -14,6 +14,104 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
+// CreateMeetingRequestBody is the type of the "Meeting Service" service
+// "create-meeting" endpoint HTTP request body.
+type CreateMeetingRequestBody struct {
+	// The UID of the LF project
+	ProjectUID string `form:"project_uid" json:"project_uid" xml:"project_uid"`
+	// The start time of the meeting in RFC3339 format
+	StartTime string `form:"start_time" json:"start_time" xml:"start_time"`
+	// The duration of the meeting in minutes
+	Duration int `form:"duration" json:"duration" xml:"duration"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string `form:"timezone" json:"timezone" xml:"timezone"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The title of the meeting
+	Title string `form:"title" json:"title" xml:"title"`
+	// The description of the meeting
+	Description string `form:"description" json:"description" xml:"description"`
+	// The committees associated with the meeting
+	Committees []*CommitteeRequestBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
+	// The platform name of where the meeting is hosted
+	Platform *string `form:"platform,omitempty" json:"platform,omitempty" xml:"platform,omitempty"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes,omitempty" json:"early_join_time_minutes,omitempty" xml:"early_join_time_minutes,omitempty"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// For zoom platform meetings: the configuration for the meeting
+	ZoomConfig *ZoomConfigPostRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+}
+
+// UpdateMeetingRequestBody is the type of the "Meeting Service" service
+// "update-meeting" endpoint HTTP request body.
+type UpdateMeetingRequestBody struct {
+	// The UID of the LF project
+	ProjectUID string `form:"project_uid" json:"project_uid" xml:"project_uid"`
+	// The start time of the meeting in RFC3339 format
+	StartTime string `form:"start_time" json:"start_time" xml:"start_time"`
+	// The duration of the meeting in minutes
+	Duration int `form:"duration" json:"duration" xml:"duration"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string `form:"timezone" json:"timezone" xml:"timezone"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The title of the meeting
+	Title string `form:"title" json:"title" xml:"title"`
+	// The description of the meeting
+	Description string `form:"description" json:"description" xml:"description"`
+	// The committees associated with the meeting
+	Committees []*CommitteeRequestBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
+	// The platform name of where the meeting is hosted
+	Platform *string `form:"platform,omitempty" json:"platform,omitempty" xml:"platform,omitempty"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes,omitempty" json:"early_join_time_minutes,omitempty" xml:"early_join_time_minutes,omitempty"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// For zoom platform meetings: the configuration for the meeting
+	ZoomConfig *ZoomConfigPostRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -822,9 +920,8 @@ type OccurrenceResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
-// RecurrenceRequestBodyRequestBody is used to define fields on request body
-// types.
-type RecurrenceRequestBodyRequestBody struct {
+// RecurrenceRequestBody is used to define fields on request body types.
+type RecurrenceRequestBody struct {
 	// The recurrence type
 	Type int `form:"type" json:"type" xml:"type"`
 	// Define the interval at which the meeting should recur.
@@ -883,9 +980,8 @@ type RecurrenceRequestBodyRequestBody struct {
 	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
 }
 
-// CommitteeRequestBodyRequestBody is used to define fields on request body
-// types.
-type CommitteeRequestBodyRequestBody struct {
+// CommitteeRequestBody is used to define fields on request body types.
+type CommitteeRequestBody struct {
 	// The UID of the committee
 	UID string `form:"uid" json:"uid" xml:"uid"`
 	// The committee voting statuses required for committee members to be added to
@@ -893,9 +989,8 @@ type CommitteeRequestBodyRequestBody struct {
 	AllowedVotingStatuses []string `form:"allowed_voting_statuses" json:"allowed_voting_statuses" xml:"allowed_voting_statuses"`
 }
 
-// ZoomConfigPostRequestBodyRequestBody is used to define fields on request
-// body types.
-type ZoomConfigPostRequestBodyRequestBody struct {
+// ZoomConfigPostRequestBody is used to define fields on request body types.
+type ZoomConfigPostRequestBody struct {
 	// For zoom platform meetings: whether Zoom AI companion is enabled
 	AiCompanionEnabled *bool `form:"ai_companion_enabled,omitempty" json:"ai_companion_enabled,omitempty" xml:"ai_companion_enabled,omitempty"`
 	// For zoom platform meetings: whether AI summary approval is required
@@ -940,107 +1035,16 @@ type RegistrantResponseBody struct {
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
-// NewStructTheUIDofTheLFprojectProjectUIDstringForm builds the HTTP request
-// body from the payload of the "create-meeting" endpoint of the "Meeting
-// Service" service.
-func NewStructTheUIDofTheLFprojectProjectUIDstringForm(p *meetingservice.CreateMeetingPayload) struct {
-	// The UID of the LF project
-	ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
-	// The start time of the meeting in RFC3339 format
-	StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
-	// The duration of the meeting in minutes
-	Duration *int `form:"duration" json:"duration" xml:"duration"`
-	// The timezone of the meeting (e.g. 'America/New_York')
-	Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
-	// The recurrence of the meeting
-	Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
-	// The title of the meeting
-	Title *string `form:"title" json:"title" xml:"title"`
-	// The description of the meeting
-	Description *string `form:"description" json:"description" xml:"description"`
-	// The committees associated with the meeting
-	Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
-	// The platform name of where the meeting is hosted
-	Platform *string `form:"platform" json:"platform" xml:"platform"`
-	// The number of minutes that users are allowed to join the meeting early
-	// without being kicked out
-	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
-	// The type of meeting. This is usually dependent on the committee(s)
-	// associated with the meeting
-	MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
-	// The visibility of the meeting's existence to other users
-	Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
-	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-	// only invited users or anyone?)
-	Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
-	// The visibility of artifacts to users (e.g. public, only for registrants,
-	// only for hosts)
-	ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
-	// Whether recording is enabled for the meeting
-	RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
-	// Whether transcription is enabled for the meeting
-	TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
-	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
-	// For zoom platform meetings: the configuration for the meeting
-	ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
-} {
-	body := &struct {
-		// The UID of the LF project
-		ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
-		// The start time of the meeting in RFC3339 format
-		StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
-		// The duration of the meeting in minutes
-		Duration *int `form:"duration" json:"duration" xml:"duration"`
-		// The timezone of the meeting (e.g. 'America/New_York')
-		Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
-		// The recurrence of the meeting
-		Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
-		// The title of the meeting
-		Title *string `form:"title" json:"title" xml:"title"`
-		// The description of the meeting
-		Description *string `form:"description" json:"description" xml:"description"`
-		// The committees associated with the meeting
-		Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
-		// The platform name of where the meeting is hosted
-		Platform *string `form:"platform" json:"platform" xml:"platform"`
-		// The number of minutes that users are allowed to join the meeting early
-		// without being kicked out
-		EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
-		// The type of meeting. This is usually dependent on the committee(s)
-		// associated with the meeting
-		MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
-		// The visibility of the meeting's existence to other users
-		Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
-		// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-		// only invited users or anyone?)
-		Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
-		// The visibility of artifacts to users (e.g. public, only for registrants,
-		// only for hosts)
-		ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
-		// The public join URL for participants to join the meeting via the LFX
-		// platform (e.g.
-		// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-		PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
-		// Whether recording is enabled for the meeting
-		RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
-		// Whether transcription is enabled for the meeting
-		TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
-		// Whether automatic youtube uploading is enabled for the meeting
-		YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
-		// For zoom platform meetings: the configuration for the meeting
-		ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
-	}{
-		ProjectUID:           &p.ProjectUID,
-		StartTime:            &p.StartTime,
-		Duration:             &p.Duration,
-		Timezone:             &p.Timezone,
-		Title:                &p.Title,
-		Description:          &p.Description,
+// NewCreateMeetingRequestBody builds the HTTP request body from the payload of
+// the "create-meeting" endpoint of the "Meeting Service" service.
+func NewCreateMeetingRequestBody(p *meetingservice.CreateMeetingPayload) *CreateMeetingRequestBody {
+	body := &CreateMeetingRequestBody{
+		ProjectUID:           p.ProjectUID,
+		StartTime:            p.StartTime,
+		Duration:             p.Duration,
+		Timezone:             p.Timezone,
+		Title:                p.Title,
+		Description:          p.Description,
 		Platform:             p.Platform,
 		EarlyJoinTimeMinutes: p.EarlyJoinTimeMinutes,
 		MeetingType:          p.MeetingType,
@@ -1053,16 +1057,52 @@ func NewStructTheUIDofTheLFprojectProjectUIDstringForm(p *meetingservice.CreateM
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
 	}
 	if p.Recurrence != nil {
-		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBodyRequestBody(p.Recurrence)
+		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
 	}
 	if p.Committees != nil {
-		body.Committees = make([]*CommitteeRequestBodyRequestBody, len(p.Committees))
+		body.Committees = make([]*CommitteeRequestBody, len(p.Committees))
 		for i, val := range p.Committees {
-			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeRequestBodyRequestBody(val)
+			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeRequestBody(val)
 		}
 	}
 	if p.ZoomConfig != nil {
-		body.ZoomConfig = marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBodyRequestBody(p.ZoomConfig)
+		body.ZoomConfig = marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBody(p.ZoomConfig)
+	}
+	return body
+}
+
+// NewUpdateMeetingRequestBody builds the HTTP request body from the payload of
+// the "update-meeting" endpoint of the "Meeting Service" service.
+func NewUpdateMeetingRequestBody(p *meetingservice.UpdateMeetingPayload) *UpdateMeetingRequestBody {
+	body := &UpdateMeetingRequestBody{
+		ProjectUID:           p.ProjectUID,
+		StartTime:            p.StartTime,
+		Duration:             p.Duration,
+		Timezone:             p.Timezone,
+		Title:                p.Title,
+		Description:          p.Description,
+		Platform:             p.Platform,
+		EarlyJoinTimeMinutes: p.EarlyJoinTimeMinutes,
+		MeetingType:          p.MeetingType,
+		Visibility:           p.Visibility,
+		Restricted:           p.Restricted,
+		ArtifactVisibility:   p.ArtifactVisibility,
+		PublicLink:           p.PublicLink,
+		RecordingEnabled:     p.RecordingEnabled,
+		TranscriptEnabled:    p.TranscriptEnabled,
+		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+	}
+	if p.Recurrence != nil {
+		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
+	}
+	if p.Committees != nil {
+		body.Committees = make([]*CommitteeRequestBody, len(p.Committees))
+		for i, val := range p.Committees {
+			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeRequestBody(val)
+		}
+	}
+	if p.ZoomConfig != nil {
+		body.ZoomConfig = marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBody(p.ZoomConfig)
 	}
 	return body
 }
@@ -2828,9 +2868,9 @@ func ValidateOccurrenceResponseBody(body *OccurrenceResponseBody) (err error) {
 	return
 }
 
-// ValidateRecurrenceRequestBodyRequestBody runs the validations defined on
-// RecurrenceRequestBodyRequestBody
-func ValidateRecurrenceRequestBodyRequestBody(body *RecurrenceRequestBodyRequestBody) (err error) {
+// ValidateRecurrenceRequestBody runs the validations defined on
+// RecurrenceRequestBody
+func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	if !(body.Type == 1 || body.Type == 2 || body.Type == 3) {
 		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{1, 2, 3}))
 	}
@@ -2853,9 +2893,9 @@ func ValidateRecurrenceRequestBodyRequestBody(body *RecurrenceRequestBodyRequest
 	return
 }
 
-// ValidateCommitteeRequestBodyRequestBody runs the validations defined on
-// CommitteeRequestBodyRequestBody
-func ValidateCommitteeRequestBodyRequestBody(body *CommitteeRequestBodyRequestBody) (err error) {
+// ValidateCommitteeRequestBody runs the validations defined on
+// CommitteeRequestBody
+func ValidateCommitteeRequestBody(body *CommitteeRequestBody) (err error) {
 	if body.AllowedVotingStatuses == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("allowed_voting_statuses", "body"))
 	}

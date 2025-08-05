@@ -144,53 +144,8 @@ func EncodeCreateMeetingResponse(encoder func(context.Context, http.ResponseWrit
 func DecodeCreateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			body struct {
-				// The UID of the LF project
-				ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
-				// The start time of the meeting in RFC3339 format
-				StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
-				// The duration of the meeting in minutes
-				Duration *int `form:"duration" json:"duration" xml:"duration"`
-				// The timezone of the meeting (e.g. 'America/New_York')
-				Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
-				// The recurrence of the meeting
-				Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
-				// The title of the meeting
-				Title *string `form:"title" json:"title" xml:"title"`
-				// The description of the meeting
-				Description *string `form:"description" json:"description" xml:"description"`
-				// The committees associated with the meeting
-				Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
-				// The platform name of where the meeting is hosted
-				Platform *string `form:"platform" json:"platform" xml:"platform"`
-				// The number of minutes that users are allowed to join the meeting early
-				// without being kicked out
-				EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
-				// The type of meeting. This is usually dependent on the committee(s)
-				// associated with the meeting
-				MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
-				// The visibility of the meeting's existence to other users
-				Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
-				// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-				// only invited users or anyone?)
-				Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
-				// The visibility of artifacts to users (e.g. public, only for registrants,
-				// only for hosts)
-				ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
-				// The public join URL for participants to join the meeting via the LFX
-				// platform (e.g.
-				// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-				PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
-				// Whether recording is enabled for the meeting
-				RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
-				// Whether transcription is enabled for the meeting
-				TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
-				// Whether automatic youtube uploading is enabled for the meeting
-				YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
-				// For zoom platform meetings: the configuration for the meeting
-				ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
-			}
-			err error
+			body CreateMeetingRequestBody
+			err  error
 		)
 		err = decoder(r).Decode(&body)
 		if err != nil {
@@ -203,64 +158,7 @@ func DecodeCreateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
-		if body.ProjectUID != nil {
-			err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", *body.ProjectUID, goa.FormatUUID))
-		}
-		if body.StartTime != nil {
-			err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
-		}
-		if body.Duration != nil {
-			if *body.Duration < 0 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
-			}
-		}
-		if body.Duration != nil {
-			if *body.Duration > 600 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
-			}
-		}
-		if body.Recurrence != nil {
-			if err2 := ValidateRecurrenceRequestBodyRequestBody(body.Recurrence); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-		for _, e := range body.Committees {
-			if e != nil {
-				if err2 := ValidateCommitteeRequestBodyRequestBody(e); err2 != nil {
-					err = goa.MergeErrors(err, err2)
-				}
-			}
-		}
-		if body.Platform != nil {
-			if !(*body.Platform == "Zoom") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom"}))
-			}
-		}
-		if body.EarlyJoinTimeMinutes != nil {
-			if *body.EarlyJoinTimeMinutes < 10 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
-			}
-		}
-		if body.EarlyJoinTimeMinutes != nil {
-			if *body.EarlyJoinTimeMinutes > 60 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
-			}
-		}
-		if body.MeetingType != nil {
-			if !(*body.MeetingType == "Board" || *body.MeetingType == "Maintainers" || *body.MeetingType == "Marketing" || *body.MeetingType == "Technical" || *body.MeetingType == "Legal" || *body.MeetingType == "Other" || *body.MeetingType == "None") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.meeting_type", *body.MeetingType, []any{"Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None"}))
-			}
-		}
-		if body.Visibility != nil {
-			if !(*body.Visibility == "public" || *body.Visibility == "private") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.visibility", *body.Visibility, []any{"public", "private"}))
-			}
-		}
-		if body.ArtifactVisibility != nil {
-			if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
-			}
-		}
+		err = ValidateCreateMeetingRequestBody(&body)
 		if err != nil {
 			return nil, err
 		}
@@ -285,7 +183,7 @@ func DecodeCreateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreateMeetingPayload(body, version, bearerToken)
+		payload := NewCreateMeetingPayload(&body, version, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -496,53 +394,8 @@ func EncodeUpdateMeetingResponse(encoder func(context.Context, http.ResponseWrit
 func DecodeUpdateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			body struct {
-				// The UID of the LF project
-				ProjectUID *string `form:"project_uid" json:"project_uid" xml:"project_uid"`
-				// The start time of the meeting in RFC3339 format
-				StartTime *string `form:"start_time" json:"start_time" xml:"start_time"`
-				// The duration of the meeting in minutes
-				Duration *int `form:"duration" json:"duration" xml:"duration"`
-				// The timezone of the meeting (e.g. 'America/New_York')
-				Timezone *string `form:"timezone" json:"timezone" xml:"timezone"`
-				// The recurrence of the meeting
-				Recurrence *RecurrenceRequestBodyRequestBody `form:"recurrence" json:"recurrence" xml:"recurrence"`
-				// The title of the meeting
-				Title *string `form:"title" json:"title" xml:"title"`
-				// The description of the meeting
-				Description *string `form:"description" json:"description" xml:"description"`
-				// The committees associated with the meeting
-				Committees []*CommitteeRequestBodyRequestBody `form:"committees" json:"committees" xml:"committees"`
-				// The platform name of where the meeting is hosted
-				Platform *string `form:"platform" json:"platform" xml:"platform"`
-				// The number of minutes that users are allowed to join the meeting early
-				// without being kicked out
-				EarlyJoinTimeMinutes *int `form:"early_join_time_minutes" json:"early_join_time_minutes" xml:"early_join_time_minutes"`
-				// The type of meeting. This is usually dependent on the committee(s)
-				// associated with the meeting
-				MeetingType *string `form:"meeting_type" json:"meeting_type" xml:"meeting_type"`
-				// The visibility of the meeting's existence to other users
-				Visibility *string `form:"visibility" json:"visibility" xml:"visibility"`
-				// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-				// only invited users or anyone?)
-				Restricted *bool `form:"restricted" json:"restricted" xml:"restricted"`
-				// The visibility of artifacts to users (e.g. public, only for registrants,
-				// only for hosts)
-				ArtifactVisibility *string `form:"artifact_visibility" json:"artifact_visibility" xml:"artifact_visibility"`
-				// The public join URL for participants to join the meeting via the LFX
-				// platform (e.g.
-				// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-				PublicLink *string `form:"public_link" json:"public_link" xml:"public_link"`
-				// Whether recording is enabled for the meeting
-				RecordingEnabled *bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
-				// Whether transcription is enabled for the meeting
-				TranscriptEnabled *bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
-				// Whether automatic youtube uploading is enabled for the meeting
-				YoutubeUploadEnabled *bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
-				// For zoom platform meetings: the configuration for the meeting
-				ZoomConfig *ZoomConfigPostRequestBodyRequestBody `form:"zoom_config" json:"zoom_config" xml:"zoom_config"`
-			}
-			err error
+			body UpdateMeetingRequestBody
+			err  error
 		)
 		err = decoder(r).Decode(&body)
 		if err != nil {
@@ -555,64 +408,7 @@ func DecodeUpdateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
-		if body.ProjectUID != nil {
-			err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", *body.ProjectUID, goa.FormatUUID))
-		}
-		if body.StartTime != nil {
-			err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
-		}
-		if body.Duration != nil {
-			if *body.Duration < 0 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
-			}
-		}
-		if body.Duration != nil {
-			if *body.Duration > 600 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
-			}
-		}
-		if body.Recurrence != nil {
-			if err2 := ValidateRecurrenceRequestBodyRequestBody(body.Recurrence); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-		for _, e := range body.Committees {
-			if e != nil {
-				if err2 := ValidateCommitteeRequestBodyRequestBody(e); err2 != nil {
-					err = goa.MergeErrors(err, err2)
-				}
-			}
-		}
-		if body.Platform != nil {
-			if !(*body.Platform == "Zoom") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom"}))
-			}
-		}
-		if body.EarlyJoinTimeMinutes != nil {
-			if *body.EarlyJoinTimeMinutes < 10 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
-			}
-		}
-		if body.EarlyJoinTimeMinutes != nil {
-			if *body.EarlyJoinTimeMinutes > 60 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
-			}
-		}
-		if body.MeetingType != nil {
-			if !(*body.MeetingType == "Board" || *body.MeetingType == "Maintainers" || *body.MeetingType == "Marketing" || *body.MeetingType == "Technical" || *body.MeetingType == "Legal" || *body.MeetingType == "Other" || *body.MeetingType == "None") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.meeting_type", *body.MeetingType, []any{"Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None"}))
-			}
-		}
-		if body.Visibility != nil {
-			if !(*body.Visibility == "public" || *body.Visibility == "private") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.visibility", *body.Visibility, []any{"public", "private"}))
-			}
-		}
-		if body.ArtifactVisibility != nil {
-			if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
-			}
-		}
+		err = ValidateUpdateMeetingRequestBody(&body)
 		if err != nil {
 			return nil, err
 		}
@@ -647,7 +443,7 @@ func DecodeUpdateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdateMeetingPayload(body, uid, version, bearerToken, etag)
+		payload := NewUpdateMeetingPayload(&body, uid, version, bearerToken, etag)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -1689,10 +1485,9 @@ func marshalMeetingserviceOccurrenceToOccurrenceResponseBody(v *meetingservice.O
 	return res
 }
 
-// unmarshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence builds a
-// value of type *meetingservice.Recurrence from a value of type
-// *RecurrenceRequestBodyRequestBody.
-func unmarshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequestBodyRequestBody) *meetingservice.Recurrence {
+// unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence builds a value of
+// type *meetingservice.Recurrence from a value of type *RecurrenceRequestBody.
+func unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequestBody) *meetingservice.Recurrence {
 	if v == nil {
 		return nil
 	}
@@ -1710,10 +1505,9 @@ func unmarshalRecurrenceRequestBodyRequestBodyToMeetingserviceRecurrence(v *Recu
 	return res
 }
 
-// unmarshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee builds a
-// value of type *meetingservice.Committee from a value of type
-// *CommitteeRequestBodyRequestBody.
-func unmarshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBodyRequestBody) *meetingservice.Committee {
+// unmarshalCommitteeRequestBodyToMeetingserviceCommittee builds a value of
+// type *meetingservice.Committee from a value of type *CommitteeRequestBody.
+func unmarshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBody) *meetingservice.Committee {
 	if v == nil {
 		return nil
 	}
@@ -1728,10 +1522,10 @@ func unmarshalCommitteeRequestBodyRequestBodyToMeetingserviceCommittee(v *Commit
 	return res
 }
 
-// unmarshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost
-// builds a value of type *meetingservice.ZoomConfigPost from a value of type
-// *ZoomConfigPostRequestBodyRequestBody.
-func unmarshalZoomConfigPostRequestBodyRequestBodyToMeetingserviceZoomConfigPost(v *ZoomConfigPostRequestBodyRequestBody) *meetingservice.ZoomConfigPost {
+// unmarshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost builds a
+// value of type *meetingservice.ZoomConfigPost from a value of type
+// *ZoomConfigPostRequestBody.
+func unmarshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(v *ZoomConfigPostRequestBody) *meetingservice.ZoomConfigPost {
 	if v == nil {
 		return nil
 	}
