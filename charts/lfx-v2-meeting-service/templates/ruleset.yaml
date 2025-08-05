@@ -1,0 +1,310 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+---
+apiVersion: heimdall.dadrus.github.com/v1alpha4
+kind: RuleSet
+metadata:
+  name: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  rules:
+    - id: "rule:lfx:lfx-v2-meeting-service:health"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /livez
+          - path: /readyz
+      execute:
+        - authenticator: anonymous_authenticator
+        - authorizer: allow_all
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:create"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /meetings
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "meeting"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    # TODO: remove this rule once we remove the list meetings endpoint.
+    # It is not meant to be used by applications, it should only be used
+    # in local development, therefore the authorizer allows all requests.
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:list"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /meetings
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        - authorizer: allow_all
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /meetings/:id
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: viewer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:update"
+      match:
+        methods:
+          - PUT
+        routes:
+          - path: /meetings/:id
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:delete"
+      match:
+        methods:
+          - DELETE
+        routes:
+          - path: /meetings/:id
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: owner
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:create"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /meetings/:id/registrants
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    # TODO: remove this rule once we remove the list meeting registrants endpoint.
+    # It is not meant to be used by applications, it should only be used
+    # in local development, therefore the authorizer allows all requests.
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:list"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /meetings/:id/registrants
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: auditor
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:update"
+      match:
+        methods:
+          - PUT
+        routes:
+          - path: /meetings/:id/registrants
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /meetings/:id/registrants/:registrant_id
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: auditor
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:delete"
+      match:
+        methods:
+          - DELETE
+        routes:
+          - path: /meetings/:id/registrants/:registrant_id
+      execute:
+        {{- if .Values.authelia.enabled }}
+        - authenticator: authelia
+        - contextualizer: authelia_userinfo
+        {{- else }}
+        - authenticator: anonymous_authenticator
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
