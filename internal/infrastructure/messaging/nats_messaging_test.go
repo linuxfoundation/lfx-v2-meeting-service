@@ -16,9 +16,9 @@ import (
 
 // mockNatsConn implements INatsConn for testing
 type mockNatsConn struct {
-	connected      bool
-	publishedMsgs  []publishedMessage
-	publishError   error
+	connected     bool
+	publishedMsgs []publishedMessage
+	publishError  error
 }
 
 type publishedMessage struct {
@@ -173,8 +173,8 @@ func TestMessageBuilder_SendIndexMeeting_WithContext(t *testing.T) {
 	ctx = context.WithValue(ctx, constants.PrincipalContextID, "user123")
 
 	meeting := models.Meeting{
-		UID:    "test-meeting-uid",
-		Title:  "Test Meeting",
+		UID:   "test-meeting-uid",
+		Title: "Test Meeting",
 	}
 
 	err := builder.SendIndexMeeting(ctx, models.ActionUpdated, meeting)
@@ -250,11 +250,9 @@ func TestMessageBuilder_SendDeleteIndexMeeting(t *testing.T) {
 			if decodedStr != meetingUID {
 				t.Errorf("expected decoded data %q, got %q", meetingUID, decodedStr)
 			}
-		} else {
+		} else if dataStr != meetingUID {
 			// If not base64, compare directly
-			if dataStr != meetingUID {
-				t.Errorf("expected data %q, got %q", meetingUID, dataStr)
-			}
+			t.Errorf("expected data %q, got %q", meetingUID, dataStr)
 		}
 	} else {
 		t.Errorf("expected data to be string, got %T", indexerMsg.Data)

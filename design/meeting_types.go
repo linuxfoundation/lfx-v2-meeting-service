@@ -3,7 +3,9 @@
 
 package design
 
-import . "goa.design/goa/v3/dsl"
+import (
+	. "goa.design/goa/v3/dsl" //nolint:ST1001 // the recommended way of using the goa DSL package is with the . import
+)
 
 // CreateMeetingPayload represents the payload for creating a meeting
 var CreateMeetingPayload = Type("CreateMeetingPayload", func() {
@@ -315,7 +317,6 @@ func RegistrantResponseAcceptedCountAttribute() {
 	// Read-only attribute
 	Attribute("registrant_response_accepted_count", Int, "The number of registrants that have accepted the meeting invitation")
 }
-
 
 // OccurrencesAttribute is the DSL attribute for meeting occurrences.
 func OccurrencesAttribute() {

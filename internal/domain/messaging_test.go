@@ -12,8 +12,8 @@ import (
 
 // mockMessage implements the Message interface for testing
 type mockMessage struct {
-	subject string
-	data    []byte
+	subject   string
+	data      []byte
 	responded bool
 }
 
@@ -41,10 +41,10 @@ func (m *mockMessageHandler) HandleMessage(ctx context.Context, msg Message) {
 
 // mockMessageBuilder implements the MessageBuilder interface for testing
 type mockMessageBuilder struct {
-	indexMeetingCalls         []models.Meeting
-	deleteIndexMeetingCalls   []string
-	updateAccessMeetingCalls  []models.MeetingAccessMessage
-	deleteAllAccessCalls      []string
+	indexMeetingCalls        []models.Meeting
+	deleteIndexMeetingCalls  []string
+	updateAccessMeetingCalls []models.MeetingAccessMessage
+	deleteAllAccessCalls     []string
 }
 
 func (m *mockMessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.Meeting) error {

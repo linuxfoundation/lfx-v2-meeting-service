@@ -12,29 +12,29 @@ import (
 func TestMeeting_JSONSerialization(t *testing.T) {
 	now := time.Now()
 	meeting := Meeting{
-		UID:        "test-uid",
-		ProjectUID: "project-uid",
-		StartTime:  now,
-		Duration:   60,
-		Timezone:   "UTC",
-		Title:      "Test Meeting",
-		Description: "Test Description",
-		Platform:   "zoom",
-		EarlyJoinTimeMinutes: 15,
-		MeetingType:         "standard",
-		Visibility:          "public",
-		Restricted:          false,
-		ArtifactVisibility:  "public",
-		PublicLink:          "https://example.com",
-		EmailDeliveryErrorCount: 0,
-		RecordingEnabled:     true,
-		TranscriptEnabled:    true,
-		YoutubeUploadEnabled: false,
-		RegistrantCount:      10,
+		UID:                             "test-uid",
+		ProjectUID:                      "project-uid",
+		StartTime:                       now,
+		Duration:                        60,
+		Timezone:                        "UTC",
+		Title:                           "Test Meeting",
+		Description:                     "Test Description",
+		Platform:                        "zoom",
+		EarlyJoinTimeMinutes:            15,
+		MeetingType:                     "standard",
+		Visibility:                      "public",
+		Restricted:                      false,
+		ArtifactVisibility:              "public",
+		PublicLink:                      "https://example.com",
+		EmailDeliveryErrorCount:         0,
+		RecordingEnabled:                true,
+		TranscriptEnabled:               true,
+		YoutubeUploadEnabled:            false,
+		RegistrantCount:                 10,
 		RegistrantResponseDeclinedCount: 2,
 		RegistrantResponseAcceptedCount: 8,
-		CreatedAt: &now,
-		UpdatedAt: &now,
+		CreatedAt:                       &now,
+		UpdatedAt:                       &now,
 	}
 
 	// Test JSON marshaling
@@ -64,7 +64,7 @@ func TestMeeting_JSONSerialization(t *testing.T) {
 
 func TestCommittee_JSONSerialization(t *testing.T) {
 	committee := Committee{
-		UID: "committee-uid",
+		UID:                   "committee-uid",
 		AllowedVotingStatuses: []string{"active", "pending"},
 	}
 
@@ -196,14 +196,14 @@ func TestZoomConfig_JSONSerialization(t *testing.T) {
 func TestMeeting_WithComplexStructures(t *testing.T) {
 	now := time.Now()
 	meeting := Meeting{
-		UID:        "complex-meeting",
-		ProjectUID: "project-123",
-		StartTime:  now,
-		Duration:   90,
-		Timezone:   "America/New_York",
-		Title:      "Complex Meeting",
+		UID:         "complex-meeting",
+		ProjectUID:  "project-123",
+		StartTime:   now,
+		Duration:    90,
+		Timezone:    "America/New_York",
+		Title:       "Complex Meeting",
 		Description: "Meeting with all structures",
-		Platform:   "zoom",
+		Platform:    "zoom",
 		Recurrence: &Recurrence{
 			Type:           2,
 			RepeatInterval: 1,
@@ -211,11 +211,11 @@ func TestMeeting_WithComplexStructures(t *testing.T) {
 		},
 		Committees: []Committee{
 			{
-				UID: "committee-1",
+				UID:                   "committee-1",
 				AllowedVotingStatuses: []string{"active"},
 			},
 			{
-				UID: "committee-2",
+				UID:                   "committee-2",
 				AllowedVotingStatuses: []string{"active", "pending"},
 			},
 		},

@@ -21,6 +21,7 @@ func TestStringPtr(t *testing.T) {
 			ptr := StringPtr(test)
 			if ptr == nil {
 				t.Error("expected non-nil pointer")
+				return
 			}
 			if *ptr != test {
 				t.Errorf("expected %q, got %q", test, *ptr)
@@ -78,7 +79,7 @@ func TestStringPtrValueRoundTrip(t *testing.T) {
 
 func TestBoolPtr(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		value bool
 	}{
 		{"true", true},
@@ -90,6 +91,7 @@ func TestBoolPtr(t *testing.T) {
 			ptr := BoolPtr(test.value)
 			if ptr == nil {
 				t.Error("expected non-nil pointer")
+				return
 			}
 			if *ptr != test.value {
 				t.Errorf("expected %t, got %t", test.value, *ptr)
@@ -107,7 +109,7 @@ func TestBoolValue(t *testing.T) {
 
 	// Test with valid pointers
 	tests := []struct {
-		name string
+		name  string
 		value bool
 	}{
 		{"true", true},
@@ -127,7 +129,7 @@ func TestBoolValue(t *testing.T) {
 
 func TestBoolPtrValueRoundTrip(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		value bool
 	}{
 		{"true", true},
@@ -162,6 +164,7 @@ func TestIntPtr(t *testing.T) {
 			ptr := IntPtr(test)
 			if ptr == nil {
 				t.Error("expected non-nil pointer")
+				return
 			}
 			if *ptr != test {
 				t.Errorf("expected %d, got %d", test, *ptr)

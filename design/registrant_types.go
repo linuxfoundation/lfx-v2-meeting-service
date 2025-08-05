@@ -3,7 +3,9 @@
 
 package design
 
-import . "goa.design/goa/v3/dsl"
+import (
+	. "goa.design/goa/v3/dsl" //nolint:ST1001 // the recommended way of using the goa DSL package is with the . import
+)
 
 // CreateRegistrantPayload represents the payload for creating a registrant
 var CreateRegistrantPayload = Type("CreateRegistrantPayload", func() {

@@ -9,12 +9,12 @@ import (
 
 // Test structs for testing FieldByTag
 type testStruct struct {
-	Name        string  `json:"name" xml:"name"`
-	Age         int     `json:"age" xml:"age"`
-	Email       string  `json:"email"`
-	Active      bool    `json:"active"`
-	private     string  `json:"private"` // unexported field
-	NoTags      string  // field without tags
+	Name    string `json:"name" xml:"name"`
+	Age     int    `json:"age" xml:"age"`
+	Email   string `json:"email"`
+	Active  bool   `json:"active"`
+	private string `json:"private"` //nolint:govet // unexported field used for testing
+	NoTags  string // field without tags
 }
 
 type nestedStruct struct {
@@ -30,11 +30,11 @@ func TestFieldByTag_BasicUsage(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		tagType   string
-		tagValue  string
-		expected  interface{}
-		found     bool
+		name     string
+		tagType  string
+		tagValue string
+		expected interface{}
+		found    bool
 	}{
 		{
 			name:     "json name tag",
@@ -210,7 +210,7 @@ func TestFieldByTag_EmptyTagValue(t *testing.T) {
 func TestFieldByTag_DuplicateTags(t *testing.T) {
 	type duplicateTagStruct struct {
 		Field1 string `json:"duplicate"`
-		Field2 string `json:"duplicate"`
+		Field2 string `json:"duplicate"` //nolint:govet // duplicate tag used for testing
 	}
 
 	obj := duplicateTagStruct{
@@ -230,10 +230,10 @@ func TestFieldByTag_DuplicateTags(t *testing.T) {
 
 func TestFieldByTag_ComplexTypes(t *testing.T) {
 	type complexStruct struct {
-		Slice     []string           `json:"slice"`
-		Map       map[string]int     `json:"map"`
-		Interface interface{}        `json:"interface"`
-		Pointer   *string           `json:"pointer"`
+		Slice     []string       `json:"slice"`
+		Map       map[string]int `json:"map"`
+		Interface interface{}    `json:"interface"`
+		Pointer   *string        `json:"pointer"`
 	}
 
 	str := "pointer value"
@@ -260,7 +260,7 @@ func TestFieldByTag_ComplexTypes(t *testing.T) {
 			if !found {
 				t.Error("expected to find field")
 			}
-			
+
 			// For comparison, we need to handle different types appropriately
 			switch expected := tt.expected.(type) {
 			case []string:
@@ -318,7 +318,7 @@ func TestFieldByTag_NestedStruct(t *testing.T) {
 	if !found {
 		t.Error("expected to find nested struct field")
 	}
-	
+
 	if innerStruct, ok := result.(testStruct); ok {
 		if innerStruct.Name != "nested" {
 			t.Errorf("expected nested name 'nested', got %q", innerStruct.Name)

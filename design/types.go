@@ -3,7 +3,9 @@
 
 package design
 
-import . "goa.design/goa/v3/dsl"
+import (
+	. "goa.design/goa/v3/dsl" //nolint:ST1001 // the recommended way of using the goa DSL package is with the . import
+)
 
 // BearerTokenAttribute is a reusable token attribute for JWT authentication.
 func BearerTokenAttribute() {

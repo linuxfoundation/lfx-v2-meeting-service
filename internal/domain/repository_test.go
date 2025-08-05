@@ -12,7 +12,7 @@ import (
 
 // mockMeetingRepository implements the MeetingRepository interface for testing
 type mockMeetingRepository struct {
-	meetings map[string]*models.Meeting
+	meetings  map[string]*models.Meeting
 	revisions map[string]uint64
 }
 
@@ -80,7 +80,7 @@ func (m *mockMeetingRepository) ListAllMeetings(ctx context.Context) ([]*models.
 func TestMeetingRepository_CreateMeeting(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
-	
+
 	meeting := &models.Meeting{
 		UID:   "test-uid",
 		Title: "Test Meeting",
@@ -103,7 +103,7 @@ func TestMeetingRepository_CreateMeeting(t *testing.T) {
 func TestMeetingRepository_GetMeeting(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
-	
+
 	meeting := &models.Meeting{
 		UID:   "test-uid",
 		Title: "Test Meeting",
@@ -133,7 +133,7 @@ func TestMeetingRepository_GetMeeting(t *testing.T) {
 func TestMeetingRepository_GetMeetingWithRevision(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
-	
+
 	meeting := &models.Meeting{
 		UID:   "test-uid",
 		Title: "Test Meeting",
@@ -160,7 +160,7 @@ func TestMeetingRepository_GetMeetingWithRevision(t *testing.T) {
 func TestMeetingRepository_UpdateMeeting(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
-	
+
 	meeting := &models.Meeting{
 		UID:   "test-uid",
 		Title: "Test Meeting",
@@ -201,7 +201,7 @@ func TestMeetingRepository_UpdateMeeting(t *testing.T) {
 func TestMeetingRepository_DeleteMeeting(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
-	
+
 	meeting := &models.Meeting{
 		UID:   "test-uid",
 		Title: "Test Meeting",
@@ -238,7 +238,7 @@ func TestMeetingRepository_DeleteMeeting(t *testing.T) {
 func TestMeetingRepository_ListAllMeetings(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
-	
+
 	// Empty list
 	meetings, err := repo.ListAllMeetings(ctx)
 	if err != nil {
@@ -251,7 +251,7 @@ func TestMeetingRepository_ListAllMeetings(t *testing.T) {
 	// Add meetings
 	meeting1 := &models.Meeting{UID: "uid1", Title: "Meeting 1"}
 	meeting2 := &models.Meeting{UID: "uid2", Title: "Meeting 2"}
-	
+
 	err = repo.CreateMeeting(ctx, meeting1)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

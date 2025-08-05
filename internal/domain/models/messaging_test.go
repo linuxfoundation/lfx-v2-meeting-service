@@ -193,8 +193,8 @@ func TestMeetingIndexerMessage_WithDifferentDataTypes(t *testing.T) {
 		{
 			name: "map data",
 			data: map[string]interface{}{
-				"id":    123,
-				"name":  "test",
+				"id":     123,
+				"name":   "test",
 				"active": true,
 			},
 		},

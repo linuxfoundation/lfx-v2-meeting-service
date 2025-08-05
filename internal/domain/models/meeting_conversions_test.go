@@ -224,7 +224,7 @@ func TestConversionWithComplexStructures(t *testing.T) {
 		Duration:   120,
 		Committees: []Committee{
 			{
-				UID: "committee-1",
+				UID:                   "committee-1",
 				AllowedVotingStatuses: []string{"active", "pending"},
 			},
 		},
