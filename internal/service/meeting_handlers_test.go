@@ -188,9 +188,10 @@ func TestMeetingsService_MessageHandling_ErrorCases(t *testing.T) {
 			name: "service not ready",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository: nil,
-					MessageBuilder:    nil,
-					Auth:              &auth.MockJWTAuth{},
+					MeetingRepository:    nil,
+					RegistrantRepository: nil,
+					MessageBuilder:       nil,
+					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
 			subject:     models.MeetingGetTitleSubject,
@@ -206,9 +207,10 @@ func TestMeetingsService_MessageHandling_ErrorCases(t *testing.T) {
 				)
 
 				return &MeetingsService{
-					MeetingRepository: mockRepo,
-					MessageBuilder:    &domain.MockMessageBuilder{},
-					Auth:              &auth.MockJWTAuth{},
+					MeetingRepository:    mockRepo,
+					RegistrantRepository: &domain.MockRegistrantRepository{},
+					MessageBuilder:       &domain.MockMessageBuilder{},
+					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
 			subject:     models.MeetingGetTitleSubject,

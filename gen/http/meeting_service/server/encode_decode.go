@@ -792,10 +792,29 @@ func EncodeCreateMeetingRegistrantResponse(encoder func(context.Context, http.Re
 func DecodeCreateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
+			body CreateMeetingRegistrantRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return nil, gerr
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateCreateMeetingRegistrantRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
 			uid         string
 			version     *string
 			bearerToken *string
-			err         error
 
 			params = mux.Vars(r)
 		)
@@ -817,7 +836,7 @@ func DecodeCreateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreateMeetingRegistrantPayload(uid, version, bearerToken)
+		payload := NewCreateMeetingRegistrantPayload(&body, uid, version, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -1044,12 +1063,31 @@ func EncodeUpdateMeetingRegistrantResponse(encoder func(context.Context, http.Re
 func DecodeUpdateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
+			body UpdateMeetingRegistrantRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return nil, gerr
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateUpdateMeetingRegistrantRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
 			meetingUID  string
 			uid         string
 			version     *string
 			bearerToken *string
 			etag        *string
-			err         error
 
 			params = mux.Vars(r)
 		)
@@ -1077,7 +1115,7 @@ func DecodeUpdateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdateMeetingRegistrantPayload(meetingUID, uid, version, bearerToken, etag)
+		payload := NewUpdateMeetingRegistrantPayload(&body, meetingUID, uid, version, bearerToken, etag)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")

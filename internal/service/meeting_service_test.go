@@ -48,9 +48,10 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service ready with all dependencies",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository: &domain.MockMeetingRepository{},
-					MessageBuilder:    &domain.MockMessageBuilder{},
-					Auth:              &auth.MockJWTAuth{},
+					MeetingRepository:    &domain.MockMeetingRepository{},
+					RegistrantRepository: &domain.MockRegistrantRepository{},
+					MessageBuilder:       &domain.MockMessageBuilder{},
+					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: true,
@@ -78,12 +79,25 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			expectedReady: false,
 		},
 		{
+			name: "service not ready - missing registrant repository",
+			setupService: func() *MeetingsService {
+				return &MeetingsService{
+					MeetingRepository:    &domain.MockMeetingRepository{},
+					RegistrantRepository: nil,
+					MessageBuilder:       &domain.MockMessageBuilder{},
+					Auth:                 &auth.MockJWTAuth{},
+				}
+			},
+			expectedReady: false,
+		},
+		{
 			name: "service not ready - missing both critical dependencies",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository: nil,
-					MessageBuilder:    nil,
-					Auth:              &auth.MockJWTAuth{},
+					MeetingRepository:    nil,
+					RegistrantRepository: nil,
+					MessageBuilder:       nil,
+					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -92,9 +106,10 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service ready without auth (auth is not checked in ServiceReady)",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository: &domain.MockMeetingRepository{},
-					MessageBuilder:    &domain.MockMessageBuilder{},
-					Auth:              nil,
+					MeetingRepository:    &domain.MockMeetingRepository{},
+					RegistrantRepository: &domain.MockRegistrantRepository{},
+					MessageBuilder:       &domain.MockMessageBuilder{},
+					Auth:                 nil,
 				}
 			},
 			expectedReady: true,
@@ -113,15 +128,18 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 func TestMeetingsService_Dependencies(t *testing.T) {
 	t.Run("service maintains dependency references", func(t *testing.T) {
 		mockRepo := &domain.MockMeetingRepository{}
+		mockRegistrantRepo := &domain.MockRegistrantRepository{}
 		mockAuth := &auth.MockJWTAuth{}
 		mockBuilder := &domain.MockMessageBuilder{}
 
 		service := NewMeetingsService(mockAuth, ServiceConfig{})
 		service.MeetingRepository = mockRepo
+		service.RegistrantRepository = mockRegistrantRepo
 		service.MessageBuilder = mockBuilder
 
 		// Verify dependencies are correctly set
 		assert.Same(t, mockRepo, service.MeetingRepository)
+		assert.Same(t, mockRegistrantRepo, service.RegistrantRepository)
 		assert.Same(t, mockAuth, service.Auth)
 		assert.Same(t, mockBuilder, service.MessageBuilder)
 	})
@@ -142,6 +160,7 @@ func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, 
 
 	service := NewMeetingsService(mockAuth, ServiceConfig{})
 	service.MeetingRepository = mockRepo
+	service.RegistrantRepository = &domain.MockRegistrantRepository{}
 	service.MessageBuilder = mockBuilder
 
 	return service, mockRepo, mockBuilder, mockAuth

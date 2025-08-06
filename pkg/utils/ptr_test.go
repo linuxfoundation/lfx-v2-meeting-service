@@ -252,7 +252,7 @@ func TestPointerIndependence(t *testing.T) {
 
 func TestTimePtr(t *testing.T) {
 	tests := []time.Time{
-		time.Time{}, // Zero time
+		{}, // Zero time
 		time.Now(),
 		time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 		time.Date(2023, 12, 31, 23, 59, 59, 999999999, time.UTC),
@@ -281,7 +281,7 @@ func TestTimeValue(t *testing.T) {
 
 	// Test with valid pointers
 	tests := []time.Time{
-		time.Time{}, // Zero time
+		{}, // Zero time
 		time.Now(),
 		time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 		time.Date(2023, 12, 31, 23, 59, 59, 999999999, time.UTC),
@@ -300,7 +300,7 @@ func TestTimeValue(t *testing.T) {
 
 func TestTimePtrValueRoundTrip(t *testing.T) {
 	tests := []time.Time{
-		time.Time{}, // Zero time
+		{}, // Zero time
 		time.Now(),
 		time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 		time.Date(2023, 12, 31, 23, 59, 59, 999999999, time.UTC),

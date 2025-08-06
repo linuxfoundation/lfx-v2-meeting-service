@@ -112,6 +112,60 @@ type UpdateMeetingRequestBody struct {
 	ZoomConfig *ZoomConfigPostRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 }
 
+// CreateMeetingRegistrantRequestBody is the type of the "Meeting Service"
+// service "create-meeting-registrant" endpoint HTTP request body.
+type CreateMeetingRegistrantRequestBody struct {
+	// The UID of the meeting
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
+	// User's email address
+	Email string `form:"email" json:"email" xml:"email"`
+	// User's first name
+	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	// User's last name
+	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+}
+
+// UpdateMeetingRegistrantRequestBody is the type of the "Meeting Service"
+// service "update-meeting-registrant" endpoint HTTP request body.
+type UpdateMeetingRegistrantRequestBody struct {
+	// User's email address
+	Email string `form:"email" json:"email" xml:"email"`
+	// User's first name
+	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	// User's last name
+	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -1103,6 +1157,43 @@ func NewUpdateMeetingRequestBody(p *meetingservice.UpdateMeetingPayload) *Update
 	}
 	if p.ZoomConfig != nil {
 		body.ZoomConfig = marshalMeetingserviceZoomConfigPostToZoomConfigPostRequestBody(p.ZoomConfig)
+	}
+	return body
+}
+
+// NewCreateMeetingRegistrantRequestBody builds the HTTP request body from the
+// payload of the "create-meeting-registrant" endpoint of the "Meeting Service"
+// service.
+func NewCreateMeetingRegistrantRequestBody(p *meetingservice.CreateMeetingRegistrantPayload) *CreateMeetingRegistrantRequestBody {
+	body := &CreateMeetingRegistrantRequestBody{
+		MeetingUID:         p.MeetingUID,
+		Email:              p.Email,
+		FirstName:          p.FirstName,
+		LastName:           p.LastName,
+		Host:               p.Host,
+		JobTitle:           p.JobTitle,
+		OccurrenceID:       p.OccurrenceID,
+		OrgIsProjectMember: p.OrgIsProjectMember,
+		AvatarURL:          p.AvatarURL,
+		UserID:             p.UserID,
+	}
+	return body
+}
+
+// NewUpdateMeetingRegistrantRequestBody builds the HTTP request body from the
+// payload of the "update-meeting-registrant" endpoint of the "Meeting Service"
+// service.
+func NewUpdateMeetingRegistrantRequestBody(p *meetingservice.UpdateMeetingRegistrantPayload) *UpdateMeetingRegistrantRequestBody {
+	body := &UpdateMeetingRegistrantRequestBody{
+		Email:              p.Email,
+		FirstName:          p.FirstName,
+		LastName:           p.LastName,
+		Host:               p.Host,
+		JobTitle:           p.JobTitle,
+		OccurrenceID:       p.OccurrenceID,
+		OrgIsProjectMember: p.OrgIsProjectMember,
+		AvatarURL:          p.AvatarURL,
+		UserID:             p.UserID,
 	}
 	return body
 }

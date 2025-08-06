@@ -77,6 +77,7 @@ func ParseEndpoint(
 		meetingServiceGetMeetingRegistrantsBearerTokenFlag = meetingServiceGetMeetingRegistrantsFlags.String("bearer-token", "", "")
 
 		meetingServiceCreateMeetingRegistrantFlags           = flag.NewFlagSet("create-meeting-registrant", flag.ExitOnError)
+		meetingServiceCreateMeetingRegistrantBodyFlag        = meetingServiceCreateMeetingRegistrantFlags.String("body", "REQUIRED", "")
 		meetingServiceCreateMeetingRegistrantUIDFlag         = meetingServiceCreateMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceCreateMeetingRegistrantVersionFlag     = meetingServiceCreateMeetingRegistrantFlags.String("version", "", "")
 		meetingServiceCreateMeetingRegistrantBearerTokenFlag = meetingServiceCreateMeetingRegistrantFlags.String("bearer-token", "", "")
@@ -88,6 +89,7 @@ func ParseEndpoint(
 		meetingServiceGetMeetingRegistrantBearerTokenFlag = meetingServiceGetMeetingRegistrantFlags.String("bearer-token", "", "")
 
 		meetingServiceUpdateMeetingRegistrantFlags           = flag.NewFlagSet("update-meeting-registrant", flag.ExitOnError)
+		meetingServiceUpdateMeetingRegistrantBodyFlag        = meetingServiceUpdateMeetingRegistrantFlags.String("body", "REQUIRED", "")
 		meetingServiceUpdateMeetingRegistrantMeetingUIDFlag  = meetingServiceUpdateMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceUpdateMeetingRegistrantUIDFlag         = meetingServiceUpdateMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
 		meetingServiceUpdateMeetingRegistrantVersionFlag     = meetingServiceUpdateMeetingRegistrantFlags.String("version", "", "")
@@ -234,13 +236,13 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingRegistrantsPayload(*meetingServiceGetMeetingRegistrantsUIDFlag, *meetingServiceGetMeetingRegistrantsVersionFlag, *meetingServiceGetMeetingRegistrantsBearerTokenFlag)
 			case "create-meeting-registrant":
 				endpoint = c.CreateMeetingRegistrant()
-				data, err = meetingservicec.BuildCreateMeetingRegistrantPayload(*meetingServiceCreateMeetingRegistrantUIDFlag, *meetingServiceCreateMeetingRegistrantVersionFlag, *meetingServiceCreateMeetingRegistrantBearerTokenFlag)
+				data, err = meetingservicec.BuildCreateMeetingRegistrantPayload(*meetingServiceCreateMeetingRegistrantBodyFlag, *meetingServiceCreateMeetingRegistrantUIDFlag, *meetingServiceCreateMeetingRegistrantVersionFlag, *meetingServiceCreateMeetingRegistrantBearerTokenFlag)
 			case "get-meeting-registrant":
 				endpoint = c.GetMeetingRegistrant()
 				data, err = meetingservicec.BuildGetMeetingRegistrantPayload(*meetingServiceGetMeetingRegistrantMeetingUIDFlag, *meetingServiceGetMeetingRegistrantUIDFlag, *meetingServiceGetMeetingRegistrantVersionFlag, *meetingServiceGetMeetingRegistrantBearerTokenFlag)
 			case "update-meeting-registrant":
 				endpoint = c.UpdateMeetingRegistrant()
-				data, err = meetingservicec.BuildUpdateMeetingRegistrantPayload(*meetingServiceUpdateMeetingRegistrantMeetingUIDFlag, *meetingServiceUpdateMeetingRegistrantUIDFlag, *meetingServiceUpdateMeetingRegistrantVersionFlag, *meetingServiceUpdateMeetingRegistrantBearerTokenFlag, *meetingServiceUpdateMeetingRegistrantEtagFlag)
+				data, err = meetingservicec.BuildUpdateMeetingRegistrantPayload(*meetingServiceUpdateMeetingRegistrantBodyFlag, *meetingServiceUpdateMeetingRegistrantMeetingUIDFlag, *meetingServiceUpdateMeetingRegistrantUIDFlag, *meetingServiceUpdateMeetingRegistrantVersionFlag, *meetingServiceUpdateMeetingRegistrantBearerTokenFlag, *meetingServiceUpdateMeetingRegistrantEtagFlag)
 			case "delete-meeting-registrant":
 				endpoint = c.DeleteMeetingRegistrant()
 				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantEtagFlag)
@@ -311,69 +313,54 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "In consectetur mollitia nisi explicabo eos.",
-               "Odit ut assumenda maxime aut occaecati.",
-               "Non fuga.",
-               "Veniam similique fugit."
+               "Fuga a veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem."
             ],
-            "uid": "Velit voluptates ea consequatur."
+            "uid": "Assumenda maxime aut occaecati."
          },
          {
             "allowed_voting_statuses": [
-               "In consectetur mollitia nisi explicabo eos.",
-               "Odit ut assumenda maxime aut occaecati.",
-               "Non fuga.",
-               "Veniam similique fugit."
+               "Fuga a veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem."
             ],
-            "uid": "Velit voluptates ea consequatur."
+            "uid": "Assumenda maxime aut occaecati."
          },
          {
             "allowed_voting_statuses": [
-               "In consectetur mollitia nisi explicabo eos.",
-               "Odit ut assumenda maxime aut occaecati.",
-               "Non fuga.",
-               "Veniam similique fugit."
+               "Fuga a veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem."
             ],
-            "uid": "Velit voluptates ea consequatur."
-         },
-         {
-            "allowed_voting_statuses": [
-               "In consectetur mollitia nisi explicabo eos.",
-               "Odit ut assumenda maxime aut occaecati.",
-               "Non fuga.",
-               "Veniam similique fugit."
-            ],
-            "uid": "Velit voluptates ea consequatur."
+            "uid": "Assumenda maxime aut occaecati."
          }
       ],
-      "description": "Eligendi sed vel qui.",
-      "duration": 30,
-      "early_join_time_minutes": 14,
-      "meeting_type": "Maintainers",
+      "description": "Explicabo eos voluptatum.",
+      "duration": 427,
+      "early_join_time_minutes": 12,
+      "meeting_type": "Board",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Et nihil quia iusto atque autem qui.",
+      "public_link": "Qui architecto sint mollitia.",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "2010-06-29T05:53:12Z",
-         "end_times": 5057334274904799540,
-         "monthly_day": 3,
-         "monthly_week": 2,
-         "monthly_week_day": 3,
-         "repeat_interval": 3052459884445073472,
-         "type": 1,
+         "end_date_time": "2012-04-06T18:34:31Z",
+         "end_times": 4918391209221064697,
+         "monthly_day": 7,
+         "monthly_week": -1,
+         "monthly_week_day": 2,
+         "repeat_interval": 1192397136127484557,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
       "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Dolores unde dolores.",
-      "title": "Distinctio voluptas aspernatur dolorum quidem qui eos.",
+      "timezone": "Ab repudiandae.",
+      "title": "Sit quo in consectetur mollitia.",
       "transcript_enabled": true,
       "visibility": "public",
       "youtube_upload_enabled": true,
       "zoom_config": {
-         "ai_companion_enabled": false,
-         "ai_summary_require_approval": true
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": false
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -408,60 +395,61 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "In consectetur mollitia nisi explicabo eos.",
-               "Odit ut assumenda maxime aut occaecati.",
-               "Non fuga.",
-               "Veniam similique fugit."
+               "Fuga a veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem."
             ],
-            "uid": "Velit voluptates ea consequatur."
+            "uid": "Assumenda maxime aut occaecati."
          },
          {
             "allowed_voting_statuses": [
-               "In consectetur mollitia nisi explicabo eos.",
-               "Odit ut assumenda maxime aut occaecati.",
-               "Non fuga.",
-               "Veniam similique fugit."
+               "Fuga a veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem."
             ],
-            "uid": "Velit voluptates ea consequatur."
+            "uid": "Assumenda maxime aut occaecati."
          },
          {
             "allowed_voting_statuses": [
-               "In consectetur mollitia nisi explicabo eos.",
-               "Odit ut assumenda maxime aut occaecati.",
-               "Non fuga.",
-               "Veniam similique fugit."
+               "Fuga a veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem."
             ],
-            "uid": "Velit voluptates ea consequatur."
+            "uid": "Assumenda maxime aut occaecati."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Fuga a veniam similique fugit.",
+               "Occaecati dolorem ut iure dolorem."
+            ],
+            "uid": "Assumenda maxime aut occaecati."
          }
       ],
-      "description": "Doloribus pariatur.",
-      "duration": 184,
-      "early_join_time_minutes": 33,
+      "description": "Eaque rerum.",
+      "duration": 565,
+      "early_join_time_minutes": 30,
       "meeting_type": "Legal",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Consequuntur voluptate animi saepe temporibus minima.",
-      "recording_enabled": false,
+      "public_link": "Temporibus minima atque sit totam.",
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "2010-06-29T05:53:12Z",
-         "end_times": 5057334274904799540,
-         "monthly_day": 3,
-         "monthly_week": 2,
-         "monthly_week_day": 3,
-         "repeat_interval": 3052459884445073472,
-         "type": 1,
+         "end_date_time": "2012-04-06T18:34:31Z",
+         "end_times": 4918391209221064697,
+         "monthly_day": 7,
+         "monthly_week": -1,
+         "monthly_week_day": 2,
+         "repeat_interval": 1192397136127484557,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Voluptatum quidem.",
-      "title": "Voluptatem eos id dolores quaerat cumque qui.",
+      "timezone": "Dolores quaerat cumque qui rem.",
+      "title": "Pariatur sed.",
       "transcript_enabled": false,
       "visibility": "private",
       "youtube_upload_enabled": false,
       "zoom_config": {
-         "ai_companion_enabled": false,
-         "ai_summary_require_approval": true
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": false
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
 `, os.Args[0])
@@ -495,15 +483,27 @@ Example:
 }
 
 func meetingServiceCreateMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-registrant -uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-registrant -body JSON -uid STRING -version STRING -bearer-token STRING
 
 Create a new registrant for a meeting
+    -body JSON: 
     -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service create-meeting-registrant --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service create-meeting-registrant --body '{
+      "avatar_url": "https://example.com/avatar.jpg",
+      "email": "user@example.com",
+      "first_name": "John",
+      "host": false,
+      "job_title": "Software Engineer",
+      "last_name": "Doe",
+      "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
+      "occurrence_id": "1640995200",
+      "org_is_project_member": true,
+      "user_id": "Assumenda molestias veritatis eos et quod ea."
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -522,9 +522,10 @@ Example:
 }
 
 func meetingServiceUpdateMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-registrant -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -etag STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-registrant -body JSON -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -etag STRING
 
 Update an existing registrant for a meeting
+    -body JSON: 
     -meeting-uid STRING: The UID of the meeting
     -uid STRING: The UID of the registrant
     -version STRING: 
@@ -532,7 +533,17 @@ Update an existing registrant for a meeting
     -etag STRING: 
 
 Example:
-    %[1]s meeting-service update-meeting-registrant --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
+    %[1]s meeting-service update-meeting-registrant --body '{
+      "avatar_url": "https://example.com/avatar.jpg",
+      "email": "user@example.com",
+      "first_name": "John",
+      "host": true,
+      "job_title": "Software Engineer",
+      "last_name": "Doe",
+      "occurrence_id": "1640995200",
+      "org_is_project_member": false,
+      "user_id": "Nihil et magni."
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
 `, os.Args[0])
 }
 

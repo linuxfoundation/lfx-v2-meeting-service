@@ -19,4 +19,8 @@ var (
 	ErrServiceUnavailable = errors.New("service unavailable")
 	// ErrValidationFailed is returned when a validation failed.
 	ErrValidationFailed = errors.New("validation failed")
+	// ErrRegistrantNotFound is returned when a registrant is not found.
+	ErrRegistrantNotFound = errors.New("registrant not found")
+	// ErrRegistrantAlreadyExists is returned when a registrant already exists.
+	ErrRegistrantAlreadyExists = errors.New("registrant already exists")
 )

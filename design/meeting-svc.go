@@ -280,7 +280,7 @@ var _ = Service("Meeting Service", func() {
 		Security(JWTAuth)
 
 		Payload(func() {
-			Reference(CreateRegistrantPayload)
+			Extend(CreateRegistrantPayload)
 			BearerTokenAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
@@ -354,7 +354,7 @@ var _ = Service("Meeting Service", func() {
 		Security(JWTAuth)
 
 		Payload(func() {
-			Reference(UpdateRegistrantPayload)
+			Extend(UpdateRegistrantPayload)
 			BearerTokenAttribute()
 			EtagAttribute()
 			VersionAttribute()

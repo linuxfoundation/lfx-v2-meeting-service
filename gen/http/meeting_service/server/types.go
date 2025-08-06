@@ -8,6 +8,8 @@
 package server
 
 import (
+	"unicode/utf8"
+
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -108,6 +110,60 @@ type UpdateMeetingRequestBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigPostRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+}
+
+// CreateMeetingRegistrantRequestBody is the type of the "Meeting Service"
+// service "create-meeting-registrant" endpoint HTTP request body.
+type CreateMeetingRegistrantRequestBody struct {
+	// The UID of the meeting
+	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
+	// User's email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// User's first name
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// User's last name
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+}
+
+// UpdateMeetingRegistrantRequestBody is the type of the "Meeting Service"
+// service "update-meeting-registrant" endpoint HTTP request body.
+type UpdateMeetingRegistrantRequestBody struct {
+	// User's email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// User's first name
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// User's last name
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 }
 
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
@@ -1839,8 +1895,19 @@ func NewGetMeetingRegistrantsPayload(uid string, version *string, bearerToken *s
 
 // NewCreateMeetingRegistrantPayload builds a Meeting Service service
 // create-meeting-registrant endpoint payload.
-func NewCreateMeetingRegistrantPayload(uid string, version *string, bearerToken *string) *meetingservice.CreateMeetingRegistrantPayload {
-	v := &meetingservice.CreateMeetingRegistrantPayload{}
+func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody, uid string, version *string, bearerToken *string) *meetingservice.CreateMeetingRegistrantPayload {
+	v := &meetingservice.CreateMeetingRegistrantPayload{
+		MeetingUID:         *body.MeetingUID,
+		Email:              *body.Email,
+		FirstName:          *body.FirstName,
+		LastName:           *body.LastName,
+		Host:               body.Host,
+		JobTitle:           body.JobTitle,
+		OccurrenceID:       body.OccurrenceID,
+		OrgIsProjectMember: body.OrgIsProjectMember,
+		AvatarURL:          body.AvatarURL,
+		UserID:             body.UserID,
+	}
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
@@ -1862,8 +1929,18 @@ func NewGetMeetingRegistrantPayload(meetingUID string, uid string, version *stri
 
 // NewUpdateMeetingRegistrantPayload builds a Meeting Service service
 // update-meeting-registrant endpoint payload.
-func NewUpdateMeetingRegistrantPayload(meetingUID string, uid string, version *string, bearerToken *string, etag *string) *meetingservice.UpdateMeetingRegistrantPayload {
-	v := &meetingservice.UpdateMeetingRegistrantPayload{}
+func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody, meetingUID string, uid string, version *string, bearerToken *string, etag *string) *meetingservice.UpdateMeetingRegistrantPayload {
+	v := &meetingservice.UpdateMeetingRegistrantPayload{
+		Email:              *body.Email,
+		FirstName:          *body.FirstName,
+		LastName:           *body.LastName,
+		Host:               body.Host,
+		JobTitle:           body.JobTitle,
+		OccurrenceID:       body.OccurrenceID,
+		OrgIsProjectMember: body.OrgIsProjectMember,
+		AvatarURL:          body.AvatarURL,
+		UserID:             body.UserID,
+	}
 	v.MeetingUID = meetingUID
 	v.UID = &uid
 	v.Version = version
@@ -2046,6 +2123,100 @@ func ValidateUpdateMeetingRequestBody(body *UpdateMeetingRequestBody) (err error
 		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
+	}
+	return
+}
+
+// ValidateCreateMeetingRegistrantRequestBody runs the validations defined on
+// Create-Meeting-RegistrantRequestBody
+func ValidateCreateMeetingRegistrantRequestBody(body *CreateMeetingRegistrantRequestBody) (err error) {
+	if body.MeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
+	}
+	if body.Email == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
+	}
+	if body.FirstName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
+	}
+	if body.LastName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
+	}
+	if body.MeetingUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+	}
+	if body.AvatarURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+	}
+	return
+}
+
+// ValidateUpdateMeetingRegistrantRequestBody runs the validations defined on
+// Update-Meeting-RegistrantRequestBody
+func ValidateUpdateMeetingRegistrantRequestBody(body *UpdateMeetingRegistrantRequestBody) (err error) {
+	if body.Email == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
+	}
+	if body.FirstName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
+	}
+	if body.LastName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+	}
+	if body.AvatarURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
 	return
 }

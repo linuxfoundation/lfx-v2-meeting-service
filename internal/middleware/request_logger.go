@@ -16,7 +16,7 @@ import (
 func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
+			start := time.Now().UTC()
 
 			// Add request URL attributes to the context so that they can be used in all request handler logs
 			ctx := r.Context()

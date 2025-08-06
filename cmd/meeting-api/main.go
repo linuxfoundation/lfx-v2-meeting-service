@@ -264,10 +264,12 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 	}
 
 	// Get the key-value stores for the service.
-	svc.service.MeetingRepository, err = getKeyValueStores(ctx, natsConn)
+	meetingRepo, registrantRepo, err := getKeyValueStores(ctx, natsConn)
 	if err != nil {
 		return natsConn, err
 	}
+	svc.service.MeetingRepository = meetingRepo
+	svc.service.RegistrantRepository = registrantRepo
 
 	svc.service.MessageBuilder = &messaging.MessageBuilder{
 		NatsConn: natsConn,
@@ -282,30 +284,30 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 	return natsConn, nil
 }
 
-// getKeyValueStores creates a JetStream client and gets the key-value store for meetings.
-func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*store.NatsRepository, error) {
-	kvStores := &store.NatsRepository{}
-
+// getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.
+func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*store.NatsMeetingRepository, *store.NatsRegistrantRepository, error) {
 	js, err := jetstream.New(natsConn)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating NATS JetStream client", "nats_url", natsConn.ConnectedUrl(), errKey, err)
-		return kvStores, err
+		return nil, nil, err
 	}
+
 	meetingsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetings)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNameMeetings)
-		return kvStores, err
+		return nil, nil, err
 	}
-	kvStores.Meetings = meetingsKV
 
 	meetingRegistrantsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetingRegistrants)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNameMeetingRegistrants)
-		return kvStores, err
+		return nil, nil, err
 	}
-	kvStores.MeetingRegistrants = meetingRegistrantsKV
 
-	return kvStores, nil
+	meetingRepo := store.NewNatsMeetingRepository(meetingsKV)
+	registrantRepo := store.NewNatsRegistrantRepository(meetingRegistrantsKV)
+
+	return meetingRepo, registrantRepo, nil
 }
 
 // createNatsSubcriptions creates the NATS subscriptions for the meeting service.

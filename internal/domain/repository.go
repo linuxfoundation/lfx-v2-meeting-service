@@ -25,3 +25,20 @@ type MeetingRepository interface {
 	// Bulk operations
 	ListAllMeetings(ctx context.Context) ([]*models.Meeting, error)
 }
+
+// RegistrantRepository defines the interface for registrant storage operations.
+// This interface can be implemented by different storage backends (NATS, PostgreSQL, etc.)
+type RegistrantRepository interface {
+	// Registrant full operations
+	CreateRegistrant(ctx context.Context, registrant *models.Registrant) error
+	RegistrantExists(ctx context.Context, registrantUID string) (bool, error)
+	DeleteRegistrant(ctx context.Context, registrantUID string, revision uint64) error
+
+	// Registrant base operations
+	GetRegistrant(ctx context.Context, registrantUID string) (*models.Registrant, error)
+	GetRegistrantWithRevision(ctx context.Context, registrantUID string) (*models.Registrant, uint64, error)
+	UpdateRegistrant(ctx context.Context, registrant *models.Registrant, revision uint64) error
+
+	// Bulk operations
+	ListMeetingRegistrants(ctx context.Context, meetingUID string) ([]*models.Registrant, error)
+}

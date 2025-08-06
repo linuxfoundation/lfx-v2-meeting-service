@@ -30,12 +30,9 @@ spec:
         routes:
           - path: /meetings
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -62,12 +59,9 @@ spec:
         routes:
           - path: /meetings
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         - authorizer: allow_all
         - finalizer: create_jwt
           config:
@@ -81,12 +75,9 @@ spec:
         routes:
           - path: /meetings/:id
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -110,12 +101,9 @@ spec:
         routes:
           - path: /meetings/:id
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -139,12 +127,9 @@ spec:
         routes:
           - path: /meetings/:id
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -168,12 +153,9 @@ spec:
         routes:
           - path: /meetings/:id/registrants
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -200,12 +182,9 @@ spec:
         routes:
           - path: /meetings/:id/registrants
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -229,12 +208,9 @@ spec:
         routes:
           - path: /meetings/:id/registrants
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -258,12 +234,9 @@ spec:
         routes:
           - path: /meetings/:id/registrants/:registrant_id
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
+        - contextualizer: authelia_userinfo
         {{- if .Values.openfga.enabled }}
         - authorizer: openfga_check
           config:
@@ -287,13 +260,9 @@ spec:
         routes:
           - path: /meetings/:id/registrants/:registrant_id
       execute:
-        {{- if .Values.authelia.enabled }}
         - authenticator: authelia
-        - contextualizer: authelia_userinfo
-        {{- else }}
         - authenticator: anonymous_authenticator
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
+        - contextualizer: authelia_userinfo
         - authorizer: openfga_check
           config:
             values:

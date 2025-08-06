@@ -961,6 +961,10 @@ func EncodeCreateMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 			values.Add("v", *p.Version)
 		}
 		req.URL.RawQuery = values.Encode()
+		body := NewCreateMeetingRegistrantRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-meeting-registrant", err)
+		}
 		return nil
 	}
 }
@@ -1289,6 +1293,10 @@ func EncodeUpdateMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 			values.Add("v", *p.Version)
 		}
 		req.URL.RawQuery = values.Encode()
+		body := NewUpdateMeetingRegistrantRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-meeting-registrant", err)
+		}
 		return nil
 	}
 }

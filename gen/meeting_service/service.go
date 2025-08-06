@@ -151,6 +151,29 @@ type CreateMeetingRegistrantPayload struct {
 	Version *string
 	// The UID of the meeting
 	UID *string
+	// The UID of the meeting
+	MeetingUID string
+	// User's email address
+	Email string
+	// User's first name
+	FirstName string
+	// User's last name
+	LastName string
+	// If user should have access as a meeting host
+	Host *bool
+	// User's job title
+	JobTitle *string
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool
+	// User's avatar URL
+	AvatarURL *string
+	// User's LF ID
+	UserID *string
 }
 
 // DeleteMeetingPayload is the payload type of the Meeting Service service
@@ -542,6 +565,27 @@ type UpdateMeetingRegistrantPayload struct {
 	MeetingUID string
 	// The UID of the registrant
 	UID *string
+	// User's email address
+	Email string
+	// User's first name
+	FirstName string
+	// User's last name
+	LastName string
+	// If user should have access as a meeting host
+	Host *bool
+	// User's job title
+	JobTitle *string
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool
+	// User's avatar URL
+	AvatarURL *string
+	// User's LF ID
+	UserID *string
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and

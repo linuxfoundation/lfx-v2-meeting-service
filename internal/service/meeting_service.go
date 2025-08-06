@@ -10,10 +10,11 @@ import (
 
 // MeetingsService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingsService struct {
-	MeetingRepository domain.MeetingRepository
-	MessageBuilder    domain.MessageBuilder
-	Auth              auth.IJWTAuth
-	Config            ServiceConfig
+	MeetingRepository    domain.MeetingRepository
+	RegistrantRepository domain.RegistrantRepository
+	MessageBuilder       domain.MessageBuilder
+	Auth                 auth.IJWTAuth
+	Config               ServiceConfig
 }
 
 // NewMeetingsService creates a new MeetingsService.
@@ -26,7 +27,7 @@ func NewMeetingsService(auth auth.IJWTAuth, config ServiceConfig) *MeetingsServi
 
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingsService) ServiceReady() bool {
-	return s.MeetingRepository != nil && s.MessageBuilder != nil
+	return s.MeetingRepository != nil && s.RegistrantRepository != nil && s.MessageBuilder != nil
 }
 
 // ServiceConfig is the configuration for the MeetingsService.

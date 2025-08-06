@@ -112,3 +112,57 @@ func NewMockMessage(data []byte, subject string) *MockMessage {
 		subject: subject,
 	}
 }
+
+// MockRegistrantRepository implements RegistrantRepository for testing
+type MockRegistrantRepository struct {
+	mock.Mock
+}
+
+func (m *MockRegistrantRepository) CreateRegistrant(ctx context.Context, registrant *models.Registrant) error {
+	args := m.Called(ctx, registrant)
+	return args.Error(0)
+}
+
+func (m *MockRegistrantRepository) RegistrantExists(ctx context.Context, registrantUID string) (bool, error) {
+	args := m.Called(ctx, registrantUID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockRegistrantRepository) DeleteRegistrant(ctx context.Context, registrantUID string, revision uint64) error {
+	args := m.Called(ctx, registrantUID, revision)
+	return args.Error(0)
+}
+
+func (m *MockRegistrantRepository) GetRegistrant(ctx context.Context, registrantUID string) (*models.Registrant, error) {
+	args := m.Called(ctx, registrantUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Registrant), args.Error(1)
+}
+
+func (m *MockRegistrantRepository) GetRegistrantWithRevision(ctx context.Context, registrantUID string) (*models.Registrant, uint64, error) {
+	args := m.Called(ctx, registrantUID)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(uint64), args.Error(2)
+	}
+	return args.Get(0).(*models.Registrant), args.Get(1).(uint64), args.Error(2)
+}
+
+func (m *MockRegistrantRepository) UpdateRegistrant(ctx context.Context, registrant *models.Registrant, revision uint64) error {
+	args := m.Called(ctx, registrant, revision)
+	return args.Error(0)
+}
+
+func (m *MockRegistrantRepository) ListMeetingRegistrants(ctx context.Context, meetingUID string) ([]*models.Registrant, error) {
+	args := m.Called(ctx, meetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Registrant), args.Error(1)
+}
+
+// NewMockRegistrantRepository creates a new mock registrant repository for testing
+func NewMockRegistrantRepository(t interface{ Cleanup(func()) }) *MockRegistrantRepository {
+	return &MockRegistrantRepository{}
+}

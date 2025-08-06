@@ -12,7 +12,7 @@ import (
 )
 
 func TestMeeting_JSONSerialization(t *testing.T) {
-	now := time.Now()
+	now := time.Now().UTC()
 	meeting := Meeting{
 		UID:                             "test-uid",
 		ProjectUID:                      "project-uid",
@@ -156,7 +156,7 @@ func TestOccurrence_JSONSerialization(t *testing.T) {
 	if unmarshaled.OccurrenceID != occurrence.OccurrenceID {
 		t.Errorf("expected OccurrenceID %q, got %q", occurrence.OccurrenceID, unmarshaled.OccurrenceID)
 	}
-	if unmarshaled.StartTime != occurrence.StartTime {
+	if unmarshaled.StartTime == nil || occurrence.StartTime == nil || !unmarshaled.StartTime.Equal(*occurrence.StartTime) {
 		t.Errorf("expected StartTime %q, got %q", occurrence.StartTime, unmarshaled.StartTime)
 	}
 	if unmarshaled.Recurrence == nil {
@@ -196,7 +196,7 @@ func TestZoomConfig_JSONSerialization(t *testing.T) {
 }
 
 func TestMeeting_WithComplexStructures(t *testing.T) {
-	now := time.Now()
+	now := time.Now().UTC()
 	meeting := Meeting{
 		UID:         "complex-meeting",
 		ProjectUID:  "project-123",
