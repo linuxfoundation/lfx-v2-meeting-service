@@ -146,10 +146,18 @@ func TestContextHandler_Handle(t *testing.T) {
 func TestInitStructureLogConfig_DefaultLevel(t *testing.T) {
 	// Clear LOG_LEVEL environment variable
 	originalLogLevel := os.Getenv("LOG_LEVEL")
-	os.Unsetenv("LOG_LEVEL")
+	err := os.Unsetenv("LOG_LEVEL")
+	if err != nil {
+		t.Errorf("error unsetting LOG_LEVEL: %v", err)
+		return
+	}
 	defer func() {
 		if originalLogLevel != "" {
-			os.Setenv("LOG_LEVEL", originalLogLevel)
+			err := os.Setenv("LOG_LEVEL", originalLogLevel)
+			if err != nil {
+				t.Errorf("error setting LOG_LEVEL: %v", err)
+				return
+			}
 		}
 	}()
 
@@ -174,15 +182,27 @@ func TestInitStructureLogConfig_WithLogLevel(t *testing.T) {
 	originalLogLevel := os.Getenv("LOG_LEVEL")
 	defer func() {
 		if originalLogLevel != "" {
-			os.Setenv("LOG_LEVEL", originalLogLevel)
+			err := os.Setenv("LOG_LEVEL", originalLogLevel)
+			if err != nil {
+				t.Errorf("error setting LOG_LEVEL: %v", err)
+				return
+			}
 		} else {
-			os.Unsetenv("LOG_LEVEL")
+			err := os.Unsetenv("LOG_LEVEL")
+			if err != nil {
+				t.Errorf("error unsetting LOG_LEVEL: %v", err)
+				return
+			}
 		}
 	}()
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			os.Setenv("LOG_LEVEL", tc.logLevel)
+			err := os.Setenv("LOG_LEVEL", tc.logLevel)
+			if err != nil {
+				t.Errorf("error setting LOG_LEVEL: %v", err)
+				return
+			}
 			handler := InitStructureLogConfig()
 			if handler == nil {
 				t.Error("expected non-nil handler")
@@ -206,15 +226,27 @@ func TestInitStructureLogConfig_WithAddSource(t *testing.T) {
 	originalAddSource := os.Getenv("LOG_ADD_SOURCE")
 	defer func() {
 		if originalAddSource != "" {
-			os.Setenv("LOG_ADD_SOURCE", originalAddSource)
+			err := os.Setenv("LOG_ADD_SOURCE", originalAddSource)
+			if err != nil {
+				t.Errorf("error setting LOG_ADD_SOURCE: %v", err)
+				return
+			}
 		} else {
-			os.Unsetenv("LOG_ADD_SOURCE")
+			err := os.Unsetenv("LOG_ADD_SOURCE")
+			if err != nil {
+				t.Errorf("error unsetting LOG_ADD_SOURCE: %v", err)
+				return
+			}
 		}
 	}()
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			os.Setenv("LOG_ADD_SOURCE", tc.addSource)
+			err := os.Setenv("LOG_ADD_SOURCE", tc.addSource)
+			if err != nil {
+				t.Errorf("error setting LOG_ADD_SOURCE: %v", err)
+				return
+			}
 			handler := InitStructureLogConfig()
 			if handler == nil {
 				t.Error("expected non-nil handler")

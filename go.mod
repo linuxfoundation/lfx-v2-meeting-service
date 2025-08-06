@@ -3,9 +3,7 @@
 
 module github.com/linuxfoundation/lfx-v2-meeting-service
 
-go 1.24.0
-
-toolchain go1.24.4
+go 1.23.0
 
 require (
 	goa.design/clue v1.2.1

@@ -4,7 +4,7 @@
 package design
 
 import (
-	. "goa.design/goa/v3/dsl" //nolint:ST1001 // the recommended way of using the goa DSL package is with the . import
+	. "goa.design/goa/v3/dsl" //nolint:staticcheck // ST1001: the recommended way of using the goa DSL package is with the . import
 )
 
 // CreateMeetingPayload represents the payload for creating a meeting
