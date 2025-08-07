@@ -69,6 +69,11 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 
 	// Convert payload to domain model
 	registrantDB := models.ToRegistrantDBModelFromCreatePayload(payload)
+	if registrantDB == nil {
+		// This should never happen since we validate the payload above.
+		// Therefore we can return an internal error.
+		return nil, domain.ErrInternal
+	}
 
 	// Generate UID for the registrant
 	registrantDB.UID = uuid.New().String()
@@ -298,6 +303,11 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 
 	// Convert payload to domain model
 	registrantDB := models.ToRegistrantDBModelFromUpdatePayload(payload, existingRegistrantDB)
+	if registrantDB == nil {
+		// This should never happen since we validate the payload above.
+		// Therefore we can return an internal error.
+		return nil, domain.ErrInternal
+	}
 
 	// Update the registrant
 	err = s.RegistrantRepository.Update(ctx, registrantDB, revision)

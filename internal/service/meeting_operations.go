@@ -76,6 +76,11 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 
 	// Convert payload to DB model
 	meetingDB := models.ToMeetingDBModelFromCreatePayload(payload)
+	if meetingDB == nil {
+		// This should never happen since we validate the payload above.
+		// Therefore we can return an internal error.
+		return nil, domain.ErrInternal
+	}
 
 	// Generate UID for the meeting
 	meetingDB.UID = uuid.New().String()
@@ -219,6 +224,11 @@ func (s *MeetingsService) UpdateMeeting(ctx context.Context, payload *meetingsvc
 
 	// Convert payload to DB model
 	meetingDB := models.ToMeetingDBModelFromUpdatePayload(payload, existingMeetingDB)
+	if meetingDB == nil {
+		// This should never happen since we validate the payload above.
+		// Therefore we can return an internal error.
+		return nil, domain.ErrInternal
+	}
 
 	// Update the meeting in the repository
 	err = s.MeetingRepository.Update(ctx, meetingDB, revision)

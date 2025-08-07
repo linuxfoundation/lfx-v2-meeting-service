@@ -261,9 +261,6 @@ func (s *NatsRegistrantRepository) Create(ctx context.Context, registrant *model
 		return err
 	}
 
-	// TODO: figure out encoding of keys since certain characters like @ are not allowed in NATS KV store keys
-	// meaning the email address needs to be encoded.
-	// https://docs.nats.io/nats-concepts/jetstream/key-value-store#notes
 	err = s.createIndices(ctx, registrant)
 	if err != nil {
 		return err

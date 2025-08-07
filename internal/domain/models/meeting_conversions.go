@@ -185,7 +185,7 @@ func FromMeetingDBModel(meeting *Meeting) *meetingservice.Meeting {
 // ToMeetingDBModelFromCreatePayload converts a Goa CreateMeetingPayload to a domain Meeting model
 func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayload) *Meeting {
 	if payload == nil {
-		return &Meeting{}
+		return nil
 	}
 
 	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
@@ -193,7 +193,7 @@ func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayl
 		slog.Error("failed to parse start time", logging.ErrKey, err,
 			"start_time", payload.StartTime,
 		)
-		return &Meeting{}
+		return nil
 	}
 
 	now := time.Now().UTC()
@@ -226,7 +226,7 @@ func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayl
 
 func ToMeetingDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingPayload, existingMeeting *Meeting) *Meeting {
 	if payload == nil || existingMeeting == nil {
-		return &Meeting{}
+		return nil
 	}
 
 	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
@@ -234,7 +234,7 @@ func ToMeetingDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingPayl
 		slog.Error("failed to parse start time", logging.ErrKey, err,
 			"start_time", payload.StartTime,
 		)
-		return &Meeting{}
+		return nil
 	}
 
 	now := time.Now().UTC()

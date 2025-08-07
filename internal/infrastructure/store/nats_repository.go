@@ -24,6 +24,8 @@ type INatsKeyValue interface {
 
 // encodeKey encodes a key for NATS KV store.
 // From https://github.com/ripienaar/encodedkv
+//
+// NATS limitations: https://docs.nats.io/nats-concepts/jetstream/key-value-store#notes
 func encodeKey(key string) (string, error) {
 	res := []string{}
 	for _, part := range strings.Split(strings.TrimPrefix(key, "/"), "/") {
@@ -46,6 +48,8 @@ func encodeKey(key string) (string, error) {
 
 // decodeKey decodes a key for NATS KV store.
 // From https://github.com/ripienaar/encodedkv
+//
+// NATS limitations: https://docs.nats.io/nats-concepts/jetstream/key-value-store#notes
 func decodeKey(key string) (string, error) {
 	res := []string{}
 	for _, part := range strings.Split(key, ".") {
