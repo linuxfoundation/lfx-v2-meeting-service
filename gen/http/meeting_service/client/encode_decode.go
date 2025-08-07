@@ -917,18 +917,16 @@ func DecodeGetMeetingRegistrantsResponse(decoder func(*http.Response) goahttp.De
 // "create-meeting-registrant" endpoint
 func (c *Client) BuildCreateMeetingRegistrantRequest(ctx context.Context, v any) (*http.Request, error) {
 	var (
-		uid string
+		meetingUID string
 	)
 	{
 		p, ok := v.(*meetingservice.CreateMeetingRegistrantPayload)
 		if !ok {
 			return nil, goahttp.ErrInvalidType("Meeting Service", "create-meeting-registrant", "*meetingservice.CreateMeetingRegistrantPayload", v)
 		}
-		if p.UID != nil {
-			uid = *p.UID
-		}
+		meetingUID = p.MeetingUID
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateMeetingRegistrantMeetingServicePath(uid)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateMeetingRegistrantMeetingServicePath(meetingUID)}
 	req, err := http.NewRequest("POST", u.String(), nil)
 	if err != nil {
 		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-meeting-registrant", u.String(), err)

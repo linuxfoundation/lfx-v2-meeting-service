@@ -115,8 +115,6 @@ type UpdateMeetingRequestBody struct {
 // CreateMeetingRegistrantRequestBody is the type of the "Meeting Service"
 // service "create-meeting-registrant" endpoint HTTP request body.
 type CreateMeetingRegistrantRequestBody struct {
-	// The UID of the meeting
-	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
@@ -127,13 +125,11 @@ type CreateMeetingRegistrantRequestBody struct {
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
 	// user is invited to all occurrences
 	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
@@ -153,13 +149,11 @@ type UpdateMeetingRegistrantRequestBody struct {
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
 	// user is invited to all occurrences
 	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
@@ -1166,16 +1160,15 @@ func NewUpdateMeetingRequestBody(p *meetingservice.UpdateMeetingPayload) *Update
 // service.
 func NewCreateMeetingRegistrantRequestBody(p *meetingservice.CreateMeetingRegistrantPayload) *CreateMeetingRegistrantRequestBody {
 	body := &CreateMeetingRegistrantRequestBody{
-		MeetingUID:         p.MeetingUID,
-		Email:              p.Email,
-		FirstName:          p.FirstName,
-		LastName:           p.LastName,
-		Host:               p.Host,
-		JobTitle:           p.JobTitle,
-		OccurrenceID:       p.OccurrenceID,
-		OrgIsProjectMember: p.OrgIsProjectMember,
-		AvatarURL:          p.AvatarURL,
-		UserID:             p.UserID,
+		Email:        p.Email,
+		FirstName:    p.FirstName,
+		LastName:     p.LastName,
+		Host:         p.Host,
+		JobTitle:     p.JobTitle,
+		OrgName:      p.OrgName,
+		OccurrenceID: p.OccurrenceID,
+		AvatarURL:    p.AvatarURL,
+		UserID:       p.UserID,
 	}
 	return body
 }
@@ -1185,15 +1178,15 @@ func NewCreateMeetingRegistrantRequestBody(p *meetingservice.CreateMeetingRegist
 // service.
 func NewUpdateMeetingRegistrantRequestBody(p *meetingservice.UpdateMeetingRegistrantPayload) *UpdateMeetingRegistrantRequestBody {
 	body := &UpdateMeetingRegistrantRequestBody{
-		Email:              p.Email,
-		FirstName:          p.FirstName,
-		LastName:           p.LastName,
-		Host:               p.Host,
-		JobTitle:           p.JobTitle,
-		OccurrenceID:       p.OccurrenceID,
-		OrgIsProjectMember: p.OrgIsProjectMember,
-		AvatarURL:          p.AvatarURL,
-		UserID:             p.UserID,
+		Email:        p.Email,
+		FirstName:    p.FirstName,
+		LastName:     p.LastName,
+		Host:         p.Host,
+		JobTitle:     p.JobTitle,
+		OrgName:      p.OrgName,
+		OccurrenceID: p.OccurrenceID,
+		AvatarURL:    p.AvatarURL,
+		UserID:       p.UserID,
 	}
 	return body
 }

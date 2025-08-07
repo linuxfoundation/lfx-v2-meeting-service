@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 )
 
 func TestNewNatsRegistrantRepository(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+	meetingRegistrants := newMockNatsKeyValue()
 
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
@@ -27,7 +28,7 @@ func TestNewNatsRegistrantRepository(t *testing.T) {
 	}
 }
 
-func TestNatsRegistrantRepository_CreateRegistrant(t *testing.T) {
+func TestNatsRegistrantRepository_Create(t *testing.T) {
 	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
@@ -42,16 +43,20 @@ func TestNatsRegistrantRepository_CreateRegistrant(t *testing.T) {
 		UpdatedAt:  &now,
 	}
 
-	err := repo.CreateRegistrant(context.Background(), registrant)
+	err := repo.Create(context.Background(), registrant)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	// Verify the registrant was stored
-	key := registrant.UID
-	storedData, exists := meetingRegistrants.data[key]
+	// Verify the registrant was stored with encoded key
+	// The repository uses getRegistrantKey which returns an already encoded key
+	// So we need to match exactly what the repository passes to Put
+	key := fmt.Sprintf("%s/%s", "registrant", registrant.UID)
+	encodedKey, _ := encodeKey(key)
+	storedData, exists := meetingRegistrants.data[encodedKey]
 	if !exists {
 		t.Error("expected registrant to be stored")
+		return
 	}
 
 	var storedRegistrant models.Registrant
@@ -67,8 +72,8 @@ func TestNatsRegistrantRepository_CreateRegistrant(t *testing.T) {
 	}
 }
 
-func TestNatsRegistrantRepository_CreateRegistrant_AlreadyExists(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_Create_AlreadyExists(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	registrant := &models.Registrant{
@@ -79,13 +84,15 @@ func TestNatsRegistrantRepository_CreateRegistrant_AlreadyExists(t *testing.T) {
 		LastName:   "Doe",
 	}
 
-	// Add existing registrant
+	// Add existing registrant with encoded key
 	registrantData, _ := json.Marshal(registrant)
+	key := fmt.Sprintf("registrant/%s", registrant.UID)
+	encodedKey, _ := encodeKey(key)
 	meetingRegistrants.data = map[string][]byte{
-		registrant.UID: registrantData,
+		encodedKey: registrantData,
 	}
 
-	err := repo.CreateRegistrant(context.Background(), registrant)
+	err := repo.Create(context.Background(), registrant)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -94,8 +101,8 @@ func TestNatsRegistrantRepository_CreateRegistrant_AlreadyExists(t *testing.T) {
 	}
 }
 
-func TestNatsRegistrantRepository_GetRegistrant(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_Get(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	now := time.Now()
@@ -110,11 +117,13 @@ func TestNatsRegistrantRepository_GetRegistrant(t *testing.T) {
 	}
 
 	registrantData, _ := json.Marshal(registrant)
+	key := fmt.Sprintf("registrant/%s", registrant.UID)
+	encodedKey, _ := encodeKey(key)
 	meetingRegistrants.data = map[string][]byte{
-		registrant.UID: registrantData,
+		encodedKey: registrantData,
 	}
 
-	result, err := repo.GetRegistrant(context.Background(), registrant.UID)
+	result, err := repo.Get(context.Background(), registrant.UID)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -127,11 +136,11 @@ func TestNatsRegistrantRepository_GetRegistrant(t *testing.T) {
 	}
 }
 
-func TestNatsRegistrantRepository_GetRegistrant_NotFound(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_Get_NotFound(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
-	_, err := repo.GetRegistrant(context.Background(), "non-existent")
+	_, err := repo.Get(context.Background(), "non-existent")
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -140,8 +149,8 @@ func TestNatsRegistrantRepository_GetRegistrant_NotFound(t *testing.T) {
 	}
 }
 
-func TestNatsRegistrantRepository_GetRegistrantWithRevision(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_GetWithRevision(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	now := time.Now()
@@ -157,14 +166,16 @@ func TestNatsRegistrantRepository_GetRegistrantWithRevision(t *testing.T) {
 
 	registrantData, _ := json.Marshal(registrant)
 	expectedRevision := uint64(42)
+	key := fmt.Sprintf("registrant/%s", registrant.UID)
+	encodedKey, _ := encodeKey(key)
 	meetingRegistrants.data = map[string][]byte{
-		registrant.UID: registrantData,
+		encodedKey: registrantData,
 	}
 	meetingRegistrants.revisions = map[string]uint64{
-		registrant.UID: expectedRevision,
+		encodedKey: expectedRevision,
 	}
 
-	result, revision, err := repo.GetRegistrantWithRevision(context.Background(), registrant.UID)
+	result, revision, err := repo.GetWithRevision(context.Background(), registrant.UID)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -177,8 +188,8 @@ func TestNatsRegistrantRepository_GetRegistrantWithRevision(t *testing.T) {
 	}
 }
 
-func TestNatsRegistrantRepository_UpdateRegistrant(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_Update(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	now := time.Now()
@@ -192,30 +203,34 @@ func TestNatsRegistrantRepository_UpdateRegistrant(t *testing.T) {
 		UpdatedAt:  &now,
 	}
 
-	// Set up existing registrant
+	// Set up existing registrant with encoded key
 	initialData, _ := json.Marshal(registrant)
 	initialRevision := uint64(1)
+	key := fmt.Sprintf("registrant/%s", registrant.UID)
+	encodedKey, _ := encodeKey(key)
 	meetingRegistrants.data = map[string][]byte{
-		registrant.UID: initialData,
+		encodedKey: initialData,
 	}
 	meetingRegistrants.revisions = map[string]uint64{
-		registrant.UID: initialRevision,
+		encodedKey: initialRevision,
 	}
 
-	err := repo.UpdateRegistrant(context.Background(), registrant, initialRevision)
+	err := repo.Update(context.Background(), registrant, initialRevision)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
 	// Verify the registrant was updated
-	revision := meetingRegistrants.revisions[registrant.UID]
+	key = fmt.Sprintf("registrant/%s", registrant.UID)
+	encodedKey, _ = encodeKey(key)
+	revision := meetingRegistrants.revisions[encodedKey]
 	if revision != initialRevision+1 {
 		t.Errorf("expected revision to be incremented to %d, got %d", initialRevision+1, revision)
 	}
 }
 
-func TestNatsRegistrantRepository_UpdateRegistrant_RevisionMismatch(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_Update_RevisionMismatch(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	registrant := &models.Registrant{
@@ -229,16 +244,18 @@ func TestNatsRegistrantRepository_UpdateRegistrant_RevisionMismatch(t *testing.T
 	// Set up existing registrant with different revision
 	initialData, _ := json.Marshal(registrant)
 	initialRevision := uint64(1)
+	key := fmt.Sprintf("registrant/%s", registrant.UID)
+	encodedKey, _ := encodeKey(key)
 	meetingRegistrants.data = map[string][]byte{
-		registrant.UID: initialData,
+		encodedKey: initialData,
 	}
 	meetingRegistrants.revisions = map[string]uint64{
-		registrant.UID: initialRevision,
+		encodedKey: initialRevision,
 	}
 
 	// Try to update with wrong revision
 	wrongRevision := uint64(3)
-	err := repo.UpdateRegistrant(context.Background(), registrant, wrongRevision)
+	err := repo.Update(context.Background(), registrant, wrongRevision)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -247,37 +264,47 @@ func TestNatsRegistrantRepository_UpdateRegistrant_RevisionMismatch(t *testing.T
 	}
 }
 
-func TestNatsRegistrantRepository_DeleteRegistrant(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_Delete(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	registrantUID := "registrant-123"
 	revision := uint64(1)
 
-	// Set up existing registrant
+	// Set up existing registrant with encoded key
+	key := fmt.Sprintf("registrant/%s", registrantUID)
+	encodedKey, _ := encodeKey(key)
 	meetingRegistrants.data = map[string][]byte{
-		registrantUID: []byte(`{"uid":"registrant-123","email":"user@example.com"}`),
+		encodedKey: []byte(`{"uid":"registrant-123","email":"user@example.com"}`),
 	}
 
-	err := repo.DeleteRegistrant(context.Background(), registrantUID, revision)
+	err := repo.Delete(context.Background(), registrantUID, revision)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
 	// Verify registrant was deleted
-	if _, exists := meetingRegistrants.data[registrantUID]; exists {
+	if _, exists := meetingRegistrants.data[encodedKey]; exists {
 		t.Error("expected registrant to be deleted")
 	}
 }
 
-func TestNatsRegistrantRepository_DeleteRegistrant_RevisionMismatch(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{deleteError: errors.New("wrong last sequence")}
+func TestNatsRegistrantRepository_Delete_RevisionMismatch(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
+	meetingRegistrants.deleteError = errors.New("wrong last sequence")
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	registrantUID := "registrant-123"
 	wrongRevision := uint64(3)
 
-	err := repo.DeleteRegistrant(context.Background(), registrantUID, wrongRevision)
+	// Set up existing registrant so it can be found first with encoded key
+	key := fmt.Sprintf("registrant/%s", registrantUID)
+	encodedKey, _ := encodeKey(key)
+	meetingRegistrants.data = map[string][]byte{
+		encodedKey: []byte(`{"uid":"registrant-123","email":"user@example.com"}`),
+	}
+
+	err := repo.Delete(context.Background(), registrantUID, wrongRevision)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -286,8 +313,8 @@ func TestNatsRegistrantRepository_DeleteRegistrant_RevisionMismatch(t *testing.T
 	}
 }
 
-func TestNatsRegistrantRepository_ListMeetingRegistrants(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_ListByMeeting(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	now := time.Now()
@@ -310,15 +337,26 @@ func TestNatsRegistrantRepository_ListMeetingRegistrants(t *testing.T) {
 		UpdatedAt:  &now,
 	}
 
-	// Set up registrants
+	// Set up registrants with encoded keys and indices
 	registrant1Data, _ := json.Marshal(registrant1)
 	registrant2Data, _ := json.Marshal(registrant2)
+
+	// Encode registrant keys
+	reg1Key, _ := encodeKey(fmt.Sprintf("registrant/%s", registrant1.UID))
+	reg2Key, _ := encodeKey(fmt.Sprintf("registrant/%s", registrant2.UID))
+
+	// Encode index keys for meeting
+	index1Key, _ := encodeKey(fmt.Sprintf("index/meeting/%s/%s", registrant1.MeetingUID, registrant1.UID))
+	index2Key, _ := encodeKey(fmt.Sprintf("index/meeting/%s/%s", registrant2.MeetingUID, registrant2.UID))
+
 	meetingRegistrants.data = map[string][]byte{
-		"registrant-1": registrant1Data,
-		"registrant-2": registrant2Data,
+		reg1Key:   registrant1Data,
+		reg2Key:   registrant2Data,
+		index1Key: {},
+		index2Key: {},
 	}
 
-	result, err := repo.ListMeetingRegistrants(context.Background(), "meeting-123")
+	result, err := repo.ListByMeeting(context.Background(), "meeting-123")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -347,12 +385,12 @@ func TestNatsRegistrantRepository_ListMeetingRegistrants(t *testing.T) {
 	}
 }
 
-func TestNatsRegistrantRepository_RegistrantExists(t *testing.T) {
-	meetingRegistrants := &mockNatsKeyValue{}
+func TestNatsRegistrantRepository_Exists(t *testing.T) {
+	meetingRegistrants := newMockNatsKeyValue()
 	repo := NewNatsRegistrantRepository(meetingRegistrants)
 
 	// Test non-existing registrant
-	exists, err := repo.RegistrantExists(context.Background(), "non-existent")
+	exists, err := repo.Exists(context.Background(), "non-existent")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -360,14 +398,16 @@ func TestNatsRegistrantRepository_RegistrantExists(t *testing.T) {
 		t.Error("expected registrant to not exist")
 	}
 
-	// Add a registrant
+	// Add a registrant with encoded key
 	registrantData := `{"uid":"existing-registrant","email":"user@example.com"}`
+	key := fmt.Sprintf("registrant/%s", "existing-registrant")
+	encodedKey, _ := encodeKey(key)
 	meetingRegistrants.data = map[string][]byte{
-		"existing-registrant": []byte(registrantData),
+		encodedKey: []byte(registrantData),
 	}
 
 	// Test existing registrant
-	exists, err = repo.RegistrantExists(context.Background(), "existing-registrant")
+	exists, err = repo.Exists(context.Background(), "existing-registrant")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

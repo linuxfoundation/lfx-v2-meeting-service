@@ -95,6 +95,7 @@ func (m *mockNatsKeyValue) Put(ctx context.Context, key string, data []byte) (ui
 	if m.putError != nil {
 		return 0, m.putError
 	}
+	// Store with the key as-is (already encoded)
 	m.data[key] = data
 	revision := uint64(1)
 	if existingRevision, exists := m.revisions[key]; exists {

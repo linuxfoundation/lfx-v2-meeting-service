@@ -39,7 +39,6 @@ func ToRegistrantDBModel(goaRegistrant *meetingservice.Registrant) *Registrant {
 			registrant.CreatedAt = &createdAt
 		}
 	}
-
 	if goaRegistrant.UpdatedAt != nil {
 		updatedAt, err := time.Parse(time.RFC3339, *goaRegistrant.UpdatedAt)
 		if err == nil {
@@ -63,13 +62,25 @@ func FromRegistrantDBModel(domainRegistrant *Registrant) *meetingservice.Registr
 		FirstName:          domainRegistrant.FirstName,
 		LastName:           domainRegistrant.LastName,
 		Host:               utils.BoolPtr(domainRegistrant.Host),
-		JobTitle:           utils.StringPtr(domainRegistrant.JobTitle),
-		OccurrenceID:       utils.StringPtr(domainRegistrant.OccurrenceID),
-		OrgName:            utils.StringPtr(domainRegistrant.OrgName),
 		OrgIsMember:        utils.BoolPtr(domainRegistrant.OrgIsMember),
 		OrgIsProjectMember: utils.BoolPtr(domainRegistrant.OrgIsProjectMember),
-		AvatarURL:          utils.StringPtr(domainRegistrant.AvatarURL),
-		UserID:             utils.StringPtr(domainRegistrant.UserID),
+	}
+
+	// Set fields that are optional and should only be set if they are not empty
+	if domainRegistrant.AvatarURL != "" {
+		registrant.AvatarURL = utils.StringPtr(domainRegistrant.AvatarURL)
+	}
+	if domainRegistrant.UserID != "" {
+		registrant.UserID = utils.StringPtr(domainRegistrant.UserID)
+	}
+	if domainRegistrant.JobTitle != "" {
+		registrant.JobTitle = utils.StringPtr(domainRegistrant.JobTitle)
+	}
+	if domainRegistrant.OrgName != "" {
+		registrant.OrgName = utils.StringPtr(domainRegistrant.OrgName)
+	}
+	if domainRegistrant.OccurrenceID != "" {
+		registrant.OccurrenceID = utils.StringPtr(domainRegistrant.OccurrenceID)
 	}
 
 	// Convert timestamps
@@ -92,19 +103,23 @@ func ToRegistrantDBModelFromCreatePayload(payload *meetingservice.CreateMeetingR
 
 	now := time.Now().UTC()
 	registrant := &Registrant{
-		MeetingUID:         payload.MeetingUID,
-		Email:              payload.Email,
-		FirstName:          payload.FirstName,
-		LastName:           payload.LastName,
-		Host:               utils.BoolValue(payload.Host),
-		JobTitle:           utils.StringValue(payload.JobTitle),
-		OccurrenceID:       utils.StringValue(payload.OccurrenceID),
-		OrgIsProjectMember: utils.BoolValue(payload.OrgIsProjectMember),
-		AvatarURL:          utils.StringValue(payload.AvatarURL),
-		UserID:             utils.StringValue(payload.UserID),
-		CreatedAt:          &now,
-		UpdatedAt:          &now,
+		MeetingUID:   payload.MeetingUID,
+		Email:        payload.Email,
+		FirstName:    payload.FirstName,
+		LastName:     payload.LastName,
+		Host:         utils.BoolValue(payload.Host),
+		JobTitle:     utils.StringValue(payload.JobTitle),
+		OccurrenceID: utils.StringValue(payload.OccurrenceID),
+		OrgName:      utils.StringValue(payload.OrgName),
+		AvatarURL:    utils.StringValue(payload.AvatarURL),
+		UserID:       utils.StringValue(payload.UserID),
+		CreatedAt:    &now,
+		UpdatedAt:    &now,
 	}
+
+	// TODO: get the actual values from the system once there is an org service
+	registrant.OrgIsProjectMember = false
+	registrant.OrgIsMember = false
 
 	return registrant
 }
@@ -117,23 +132,23 @@ func ToRegistrantDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingR
 
 	now := time.Now().UTC()
 	registrant := &Registrant{
-		UID:                existingRegistrant.UID,
-		MeetingUID:         payload.MeetingUID,
-		Email:              payload.Email,
-		FirstName:          payload.FirstName,
-		LastName:           payload.LastName,
-		Host:               utils.BoolValue(payload.Host),
-		JobTitle:           utils.StringValue(payload.JobTitle),
-		OccurrenceID:       utils.StringValue(payload.OccurrenceID),
-		OrgIsProjectMember: utils.BoolValue(payload.OrgIsProjectMember),
-		AvatarURL:          utils.StringValue(payload.AvatarURL),
-		UserID:             utils.StringValue(payload.UserID),
-		CreatedAt:          existingRegistrant.CreatedAt,
-		UpdatedAt:          &now,
+		UID:          existingRegistrant.UID,
+		MeetingUID:   payload.MeetingUID,
+		Email:        payload.Email,
+		FirstName:    payload.FirstName,
+		LastName:     payload.LastName,
+		Host:         utils.BoolValue(payload.Host),
+		JobTitle:     utils.StringValue(payload.JobTitle),
+		OccurrenceID: utils.StringValue(payload.OccurrenceID),
+		OrgName:      utils.StringValue(payload.OrgName),
+		AvatarURL:    utils.StringValue(payload.AvatarURL),
+		UserID:       utils.StringValue(payload.UserID),
+		CreatedAt:    existingRegistrant.CreatedAt,
+		UpdatedAt:    &now,
 	}
 
-	// Preserve the org membership fields as they might be set by the system
-	registrant.OrgName = existingRegistrant.OrgName
+	// TODO: get the actual values from the system once there is an org service
+	registrant.OrgIsProjectMember = existingRegistrant.OrgIsProjectMember
 	registrant.OrgIsMember = existingRegistrant.OrgIsMember
 
 	return registrant

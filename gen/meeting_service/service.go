@@ -150,8 +150,6 @@ type CreateMeetingRegistrantPayload struct {
 	// Version of the API
 	Version *string
 	// The UID of the meeting
-	UID *string
-	// The UID of the meeting
 	MeetingUID string
 	// User's email address
 	Email string
@@ -163,13 +161,11 @@ type CreateMeetingRegistrantPayload struct {
 	Host *bool
 	// User's job title
 	JobTitle *string
+	// User's organization
+	OrgName *string
 	// The ID of the specific occurrence the user should be invited to. If blank,
 	// user is invited to all occurrences
 	OccurrenceID *string
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
@@ -575,13 +571,11 @@ type UpdateMeetingRegistrantPayload struct {
 	Host *bool
 	// User's job title
 	JobTitle *string
+	// User's organization
+	OrgName *string
 	// The ID of the specific occurrence the user should be invited to. If blank,
 	// user is invited to all occurrences
 	OccurrenceID *string
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID

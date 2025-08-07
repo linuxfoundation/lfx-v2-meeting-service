@@ -16,7 +16,6 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -28,7 +27,7 @@ func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*meetingsvc.Meetin
 	}
 
 	// Get all meetings from the store
-	meetingsBase, err := s.MeetingRepository.ListAllMeetings(ctx)
+	meetingsBase, err := s.MeetingRepository.ListAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +42,24 @@ func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*meetingsvc.Meetin
 	return meetings, nil
 }
 
+func (s *MeetingsService) validateCreateMeetingPayload(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) error {
+	if payload == nil {
+		return domain.ErrValidationFailed
+	}
+
+	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
+	if err != nil {
+		return domain.ErrValidationFailed
+	}
+
+	if startTime.Before(time.Now().UTC()) {
+		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", payload.StartTime)
+		return domain.ErrValidationFailed
+	}
+
+	return nil
+}
+
 // CreateMeeting creates a new meeting
 func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.Meeting, error) {
 	if !s.ServiceReady() {
@@ -50,42 +67,21 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 		return nil, domain.ErrServiceUnavailable
 	}
 
+	if err := s.validateCreateMeetingPayload(ctx, payload); err != nil {
+		return nil, err
+	}
+
+	// TODO: Check if project exists - integrate with project service
 	// TODO: Check if committees exist once the committee service is implemented.
 
-	// Create the meeting struct
-	id := uuid.NewString()
-	meeting := &meetingsvc.Meeting{
-		UID:                  &id,
-		ProjectUID:           &payload.ProjectUID,
-		StartTime:            &payload.StartTime,
-		Duration:             &payload.Duration,
-		Timezone:             &payload.Timezone,
-		Recurrence:           payload.Recurrence,
-		Title:                &payload.Title,
-		Description:          &payload.Description,
-		Committees:           payload.Committees,
-		Platform:             payload.Platform,
-		EarlyJoinTimeMinutes: payload.EarlyJoinTimeMinutes,
-		MeetingType:          payload.MeetingType,
-		Visibility:           payload.Visibility,
-		Restricted:           payload.Restricted,
-		ArtifactVisibility:   payload.ArtifactVisibility,
-		PublicLink:           payload.PublicLink,
-		RecordingEnabled:     payload.RecordingEnabled,
-		TranscriptEnabled:    payload.TranscriptEnabled,
-		YoutubeUploadEnabled: payload.YoutubeUploadEnabled,
-	}
-	if payload.ZoomConfig != nil {
-		meeting.ZoomConfig = &meetingsvc.ZoomConfigFull{
-			AiCompanionEnabled:       payload.ZoomConfig.AiCompanionEnabled,
-			AiSummaryRequireApproval: payload.ZoomConfig.AiSummaryRequireApproval,
-		}
-	}
+	// Convert payload to DB model
+	meetingDB := models.ToMeetingDBModelFromCreatePayload(payload)
 
-	meetingDB := models.ToMeetingDBModel(meeting)
+	// Generate UID for the meeting
+	meetingDB.UID = uuid.New().String()
 
 	// Create the meeting in the repository
-	err := s.MeetingRepository.CreateMeeting(ctx, meetingDB)
+	err := s.MeetingRepository.Create(ctx, meetingDB)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
@@ -105,9 +101,9 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 		return nil, domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "returning created meeting", "meeting", meeting, "meeting_uid", meetingDB.UID)
+	slog.DebugContext(ctx, "returning created meeting", "meeting_uid", meetingDB.UID)
 
-	return meeting, nil
+	return models.FromMeetingDBModel(meetingDB), nil
 }
 
 func (s *MeetingsService) GetOneMeeting(ctx context.Context, payload *meetingsvc.GetMeetingPayload) (*meetingsvc.Meeting, string, error) {
@@ -124,7 +120,7 @@ func (s *MeetingsService) GetOneMeeting(ctx context.Context, payload *meetingsvc
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
 
 	// Get meeting with revision from store
-	meetingDB, revision, err := s.MeetingRepository.GetMeetingWithRevision(ctx, *payload.UID)
+	meetingDB, revision, err := s.MeetingRepository.GetWithRevision(ctx, *payload.UID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -143,6 +139,24 @@ func (s *MeetingsService) GetOneMeeting(ctx context.Context, payload *meetingsvc
 	slog.DebugContext(ctx, "returning meeting", "meeting", meeting, "revision", revision)
 
 	return meeting, revisionStr, nil
+}
+
+func (s *MeetingsService) validateUpdateMeetingPayload(ctx context.Context, payload *meetingsvc.UpdateMeetingPayload) error {
+	if payload == nil {
+		return domain.ErrValidationFailed
+	}
+
+	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
+	if err != nil {
+		return domain.ErrValidationFailed
+	}
+
+	if startTime.Before(time.Now().UTC()) {
+		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", payload.StartTime)
+		return domain.ErrValidationFailed
+	}
+
+	return nil
 }
 
 // Update a meeting's base information.
@@ -171,7 +185,7 @@ func (s *MeetingsService) UpdateMeeting(ctx context.Context, payload *meetingsvc
 		}
 	} else {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetMeetingWithRevision(ctx, payload.UID)
+		_, revision, err = s.MeetingRepository.GetWithRevision(ctx, payload.UID)
 		if err != nil {
 			if errors.Is(err, domain.ErrMeetingNotFound) {
 				slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -186,7 +200,7 @@ func (s *MeetingsService) UpdateMeeting(ctx context.Context, payload *meetingsvc
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the meeting exists and use some of the existing meeting data for the update.
-	existingMeetingDB, err := s.MeetingRepository.GetMeeting(ctx, payload.UID)
+	existingMeetingDB, err := s.MeetingRepository.Get(ctx, payload.UID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -196,46 +210,18 @@ func (s *MeetingsService) UpdateMeeting(ctx context.Context, payload *meetingsvc
 		return nil, domain.ErrInternal
 	}
 
+	if err := s.validateUpdateMeetingPayload(ctx, payload); err != nil {
+		return nil, err
+	}
+
+	// TODO: Check if project exists - integrate with project service
 	// TODO: Check if committees exist once the committee service is implemented.
 
-	// Prepare the updated meeting
-	currentTime := time.Now().UTC()
-	meeting := &meetingsvc.Meeting{
-		UID:                  &payload.UID,
-		ProjectUID:           &payload.ProjectUID,
-		StartTime:            &payload.StartTime,
-		Duration:             &payload.Duration,
-		Timezone:             &payload.Timezone,
-		Recurrence:           payload.Recurrence,
-		Title:                &payload.Title,
-		Description:          &payload.Description,
-		Committees:           payload.Committees,
-		Platform:             payload.Platform,
-		EarlyJoinTimeMinutes: payload.EarlyJoinTimeMinutes,
-		MeetingType:          payload.MeetingType,
-		Visibility:           payload.Visibility,
-		Restricted:           payload.Restricted,
-		ArtifactVisibility:   payload.ArtifactVisibility,
-		PublicLink:           payload.PublicLink,
-		RecordingEnabled:     payload.RecordingEnabled,
-		TranscriptEnabled:    payload.TranscriptEnabled,
-		YoutubeUploadEnabled: payload.YoutubeUploadEnabled,
-		UpdatedAt:            utils.StringPtr(currentTime.Format(time.RFC3339)),
-	}
-	if payload.ZoomConfig != nil {
-		meeting.ZoomConfig = &meetingsvc.ZoomConfigFull{
-			AiCompanionEnabled:       payload.ZoomConfig.AiCompanionEnabled,
-			AiSummaryRequireApproval: payload.ZoomConfig.AiSummaryRequireApproval,
-		}
-	}
-	if existingMeetingDB.CreatedAt != nil {
-		meeting.CreatedAt = utils.StringPtr(existingMeetingDB.CreatedAt.Format(time.RFC3339))
-	}
-
-	meetingDB := models.ToMeetingDBModel(meeting)
+	// Convert payload to DB model
+	meetingDB := models.ToMeetingDBModelFromUpdatePayload(payload, existingMeetingDB)
 
 	// Update the meeting in the repository
-	err = s.MeetingRepository.UpdateMeeting(ctx, meetingDB, revision)
+	err = s.MeetingRepository.Update(ctx, meetingDB, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
 			slog.WarnContext(ctx, "etag header is invalid", logging.ErrKey, err)
@@ -297,7 +283,7 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 		}
 	} else {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetMeetingWithRevision(ctx, *payload.UID)
+		_, revision, err = s.MeetingRepository.GetWithRevision(ctx, *payload.UID)
 		if err != nil {
 			if errors.Is(err, domain.ErrMeetingNotFound) {
 				slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -312,7 +298,7 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Delete the meeting using the store
-	err = s.MeetingRepository.DeleteMeeting(ctx, *payload.UID, revision)
+	err = s.MeetingRepository.Delete(ctx, *payload.UID, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
 			slog.WarnContext(ctx, "etag header is invalid", logging.ErrKey, err)

@@ -20,6 +20,8 @@ func handleError(err error) error {
 		return createResponse(http.StatusBadRequest, domain.ErrValidationFailed)
 	case domain.ErrRevisionMismatch:
 		return createResponse(http.StatusBadRequest, domain.ErrRevisionMismatch)
+	case domain.ErrRegistrantAlreadyExists:
+		return createResponse(http.StatusBadRequest, domain.ErrRegistrantAlreadyExists)
 	case domain.ErrMeetingNotFound:
 		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
 	case domain.ErrRegistrantNotFound:

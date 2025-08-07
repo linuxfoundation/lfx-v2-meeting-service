@@ -115,8 +115,6 @@ type UpdateMeetingRequestBody struct {
 // CreateMeetingRegistrantRequestBody is the type of the "Meeting Service"
 // service "create-meeting-registrant" endpoint HTTP request body.
 type CreateMeetingRegistrantRequestBody struct {
-	// The UID of the meeting
-	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
 	// User's email address
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// User's first name
@@ -127,13 +125,11 @@ type CreateMeetingRegistrantRequestBody struct {
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
 	// user is invited to all occurrences
 	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
@@ -153,13 +149,11 @@ type UpdateMeetingRegistrantRequestBody struct {
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
 	// user is invited to all occurrences
 	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
@@ -1895,20 +1889,19 @@ func NewGetMeetingRegistrantsPayload(uid string, version *string, bearerToken *s
 
 // NewCreateMeetingRegistrantPayload builds a Meeting Service service
 // create-meeting-registrant endpoint payload.
-func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody, uid string, version *string, bearerToken *string) *meetingservice.CreateMeetingRegistrantPayload {
+func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody, meetingUID string, version *string, bearerToken *string) *meetingservice.CreateMeetingRegistrantPayload {
 	v := &meetingservice.CreateMeetingRegistrantPayload{
-		MeetingUID:         *body.MeetingUID,
-		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
-		Host:               body.Host,
-		JobTitle:           body.JobTitle,
-		OccurrenceID:       body.OccurrenceID,
-		OrgIsProjectMember: body.OrgIsProjectMember,
-		AvatarURL:          body.AvatarURL,
-		UserID:             body.UserID,
+		Email:        *body.Email,
+		FirstName:    *body.FirstName,
+		LastName:     *body.LastName,
+		Host:         body.Host,
+		JobTitle:     body.JobTitle,
+		OrgName:      body.OrgName,
+		OccurrenceID: body.OccurrenceID,
+		AvatarURL:    body.AvatarURL,
+		UserID:       body.UserID,
 	}
-	v.UID = &uid
+	v.MeetingUID = meetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
 
@@ -1931,15 +1924,15 @@ func NewGetMeetingRegistrantPayload(meetingUID string, uid string, version *stri
 // update-meeting-registrant endpoint payload.
 func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody, meetingUID string, uid string, version *string, bearerToken *string, etag *string) *meetingservice.UpdateMeetingRegistrantPayload {
 	v := &meetingservice.UpdateMeetingRegistrantPayload{
-		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
-		Host:               body.Host,
-		JobTitle:           body.JobTitle,
-		OccurrenceID:       body.OccurrenceID,
-		OrgIsProjectMember: body.OrgIsProjectMember,
-		AvatarURL:          body.AvatarURL,
-		UserID:             body.UserID,
+		Email:        *body.Email,
+		FirstName:    *body.FirstName,
+		LastName:     *body.LastName,
+		Host:         body.Host,
+		JobTitle:     body.JobTitle,
+		OrgName:      body.OrgName,
+		OccurrenceID: body.OccurrenceID,
+		AvatarURL:    body.AvatarURL,
+		UserID:       body.UserID,
 	}
 	v.MeetingUID = meetingUID
 	v.UID = &uid
@@ -2130,9 +2123,6 @@ func ValidateUpdateMeetingRequestBody(body *UpdateMeetingRequestBody) (err error
 // ValidateCreateMeetingRegistrantRequestBody runs the validations defined on
 // Create-Meeting-RegistrantRequestBody
 func ValidateCreateMeetingRegistrantRequestBody(body *CreateMeetingRegistrantRequestBody) (err error) {
-	if body.MeetingUID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
-	}
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
@@ -2141,9 +2131,6 @@ func ValidateCreateMeetingRegistrantRequestBody(body *CreateMeetingRegistrantReq
 	}
 	if body.LastName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
-	if body.MeetingUID != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
 	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))

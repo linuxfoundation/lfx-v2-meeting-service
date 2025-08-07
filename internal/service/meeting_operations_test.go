@@ -29,11 +29,13 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 			name: "successful get all meetings",
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
 				now := time.Now()
-				mockRepo.On("ListAllMeetings", mock.Anything).Return(
+				startTime := now.Add(time.Hour * 24)
+				mockRepo.On("ListAll", mock.Anything).Return(
 					[]*models.Meeting{
 						{
 							UID:         "meeting-1",
 							Title:       "Test Meeting 1",
+							StartTime:   startTime,
 							Description: "Description 1",
 							CreatedAt:   &now,
 							UpdatedAt:   &now,
@@ -41,6 +43,7 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 						{
 							UID:         "meeting-2",
 							Title:       "Test Meeting 2",
+							StartTime:   startTime,
 							Description: "Description 2",
 							CreatedAt:   &now,
 							UpdatedAt:   &now,
@@ -64,7 +67,7 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 		{
 			name: "repository error",
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("ListAllMeetings", mock.Anything).Return(
+				mockRepo.On("ListAll", mock.Anything).Return(
 					nil, domain.ErrInternal,
 				)
 			},
@@ -75,7 +78,7 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 		{
 			name: "empty meetings list",
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("ListAllMeetings", mock.Anything).Return(
+				mockRepo.On("ListAll", mock.Anything).Return(
 					[]*models.Meeting{},
 					nil,
 				)
@@ -127,10 +130,11 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 		{
 			name: "successful meeting creation",
 			payload: &meetingsvc.CreateMeetingPayload{
-				Title: "Test Meeting",
+				Title:     "Test Meeting",
+				StartTime: time.Now().Add(time.Hour * 24).Format(time.RFC3339),
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("CreateMeeting", mock.Anything, mock.AnythingOfType("*models.Meeting")).Return(nil)
+				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.Meeting")).Return(nil)
 				mockBuilder.On("SendIndexMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
 				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.Anything).Return(nil)
 			},
@@ -144,7 +148,8 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 		{
 			name: "service not ready",
 			payload: &meetingsvc.CreateMeetingPayload{
-				Title: "Test Meeting",
+				Title:     "Test Meeting",
+				StartTime: time.Now().Add(time.Hour * 24).Format(time.RFC3339),
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
 				// Service will not be ready
@@ -155,10 +160,11 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 		{
 			name: "repository creation error",
 			payload: &meetingsvc.CreateMeetingPayload{
-				Title: "Test Meeting",
+				Title:     "Test Meeting",
+				StartTime: time.Now().Add(time.Hour * 24).Format(time.RFC3339),
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("CreateMeeting", mock.Anything, mock.AnythingOfType("*models.Meeting")).Return(domain.ErrInternal)
+				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.Meeting")).Return(domain.ErrInternal)
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrInternal,
@@ -215,10 +221,11 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 				UID: utils.StringPtr("test-meeting-uid"),
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("GetMeetingWithRevision", mock.Anything, "test-meeting-uid").Return(
+				mockRepo.On("GetWithRevision", mock.Anything, "test-meeting-uid").Return(
 					&models.Meeting{
 						UID:         "test-meeting-uid",
 						Title:       "Test Meeting",
+						StartTime:   now.Add(time.Hour * 24),
 						Description: "Test Description",
 						CreatedAt:   &now,
 						UpdatedAt:   &now,
@@ -241,7 +248,7 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 				UID: utils.StringPtr("non-existent-uid"),
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRepo.On("GetMeetingWithRevision", mock.Anything, "non-existent-uid").Return(
+				mockRepo.On("GetWithRevision", mock.Anything, "non-existent-uid").Return(
 					nil, uint64(0), domain.ErrMeetingNotFound,
 				)
 			},
@@ -264,7 +271,7 @@ func TestMeetingsService_GetOneMeeting(t *testing.T) {
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
 				// Repository is called even with empty UID, but returns error
-				mockRepo.On("GetMeetingWithRevision", mock.Anything, "").Return(
+				mockRepo.On("GetWithRevision", mock.Anything, "").Return(
 					nil, uint64(0), domain.ErrValidationFailed,
 				)
 			},

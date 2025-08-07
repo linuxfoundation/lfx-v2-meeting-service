@@ -283,7 +283,7 @@ var _ = Service("Meeting Service", func() {
 			Extend(CreateRegistrantPayload)
 			BearerTokenAttribute()
 			VersionAttribute()
-			MeetingUIDAttribute()
+			RegistrantMeetingUIDAttribute()
 		})
 
 		Result(Registrant)
@@ -295,9 +295,9 @@ var _ = Service("Meeting Service", func() {
 		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
 
 		HTTP(func() {
-			POST("/meetings/{uid}/registrants")
+			POST("/meetings/{meeting_uid}/registrants")
 			Param("version:v")
-			Param("uid")
+			Param("meeting_uid")
 			Header("bearer_token:Authorization")
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)

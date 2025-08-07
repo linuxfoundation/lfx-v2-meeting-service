@@ -10,14 +10,13 @@ import (
 // CreateRegistrantPayload represents the payload for creating a registrant
 var CreateRegistrantPayload = Type("CreateRegistrantPayload", func() {
 	Description("Payload for creating a new meeting registrant")
-	RegistrantMeetingUIDAttribute()
 	RegistrantEmailAttribute()
 	RegistrantFirstNameAttribute()
 	RegistrantLastNameAttribute()
 	RegistrantHostAttribute()
 	RegistrantJobTitleAttribute()
+	RegistrantOrgNameAttribute()
 	RegistrantOccurrenceIDAttribute()
-	RegistrantOrgIsProjectMemberAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUserIDAttribute()
 	Required("meeting_uid", "email", "first_name", "last_name")
@@ -26,14 +25,13 @@ var CreateRegistrantPayload = Type("CreateRegistrantPayload", func() {
 // UpdateRegistrantPayload represents the payload for updating a registrant
 var UpdateRegistrantPayload = Type("UpdateRegistrantPayload", func() {
 	Description("Payload for updating an existing meeting registrant")
-	RegistrantMeetingUIDAttribute()
 	RegistrantEmailAttribute()
 	RegistrantFirstNameAttribute()
 	RegistrantLastNameAttribute()
 	RegistrantHostAttribute()
 	RegistrantJobTitleAttribute()
+	RegistrantOrgNameAttribute()
 	RegistrantOccurrenceIDAttribute()
-	RegistrantOrgIsProjectMemberAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUserIDAttribute()
 	Required("meeting_uid", "email", "first_name", "last_name")

@@ -16,7 +16,7 @@ type MockMeetingRepository struct {
 	mock.Mock
 }
 
-func (m *MockMeetingRepository) GetMeeting(ctx context.Context, meetingUID string) (*models.Meeting, error) {
+func (m *MockMeetingRepository) Get(ctx context.Context, meetingUID string) (*models.Meeting, error) {
 	args := m.Called(ctx, meetingUID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -24,7 +24,7 @@ func (m *MockMeetingRepository) GetMeeting(ctx context.Context, meetingUID strin
 	return args.Get(0).(*models.Meeting), args.Error(1)
 }
 
-func (m *MockMeetingRepository) GetMeetingWithRevision(ctx context.Context, meetingUID string) (*models.Meeting, uint64, error) {
+func (m *MockMeetingRepository) GetWithRevision(ctx context.Context, meetingUID string) (*models.Meeting, uint64, error) {
 	args := m.Called(ctx, meetingUID)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(uint64), args.Error(2)
@@ -32,17 +32,17 @@ func (m *MockMeetingRepository) GetMeetingWithRevision(ctx context.Context, meet
 	return args.Get(0).(*models.Meeting), args.Get(1).(uint64), args.Error(2)
 }
 
-func (m *MockMeetingRepository) UpdateMeeting(ctx context.Context, meeting *models.Meeting, revision uint64) error {
+func (m *MockMeetingRepository) Update(ctx context.Context, meeting *models.Meeting, revision uint64) error {
 	args := m.Called(ctx, meeting, revision)
 	return args.Error(0)
 }
 
-func (m *MockMeetingRepository) MeetingExists(ctx context.Context, meetingUID string) (bool, error) {
+func (m *MockMeetingRepository) Exists(ctx context.Context, meetingUID string) (bool, error) {
 	args := m.Called(ctx, meetingUID)
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockMeetingRepository) ListAllMeetings(ctx context.Context) ([]*models.Meeting, error) {
+func (m *MockMeetingRepository) ListAll(ctx context.Context) ([]*models.Meeting, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -50,12 +50,12 @@ func (m *MockMeetingRepository) ListAllMeetings(ctx context.Context) ([]*models.
 	return args.Get(0).([]*models.Meeting), args.Error(1)
 }
 
-func (m *MockMeetingRepository) CreateMeeting(ctx context.Context, meeting *models.Meeting) error {
+func (m *MockMeetingRepository) Create(ctx context.Context, meeting *models.Meeting) error {
 	args := m.Called(ctx, meeting)
 	return args.Error(0)
 }
 
-func (m *MockMeetingRepository) DeleteMeeting(ctx context.Context, meetingUID string, revision uint64) error {
+func (m *MockMeetingRepository) Delete(ctx context.Context, meetingUID string, revision uint64) error {
 	args := m.Called(ctx, meetingUID, revision)
 	return args.Error(0)
 }
@@ -118,22 +118,22 @@ type MockRegistrantRepository struct {
 	mock.Mock
 }
 
-func (m *MockRegistrantRepository) CreateRegistrant(ctx context.Context, registrant *models.Registrant) error {
+func (m *MockRegistrantRepository) Create(ctx context.Context, registrant *models.Registrant) error {
 	args := m.Called(ctx, registrant)
 	return args.Error(0)
 }
 
-func (m *MockRegistrantRepository) RegistrantExists(ctx context.Context, registrantUID string) (bool, error) {
+func (m *MockRegistrantRepository) Exists(ctx context.Context, registrantUID string) (bool, error) {
 	args := m.Called(ctx, registrantUID)
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockRegistrantRepository) DeleteRegistrant(ctx context.Context, registrantUID string, revision uint64) error {
+func (m *MockRegistrantRepository) Delete(ctx context.Context, registrantUID string, revision uint64) error {
 	args := m.Called(ctx, registrantUID, revision)
 	return args.Error(0)
 }
 
-func (m *MockRegistrantRepository) GetRegistrant(ctx context.Context, registrantUID string) (*models.Registrant, error) {
+func (m *MockRegistrantRepository) Get(ctx context.Context, registrantUID string) (*models.Registrant, error) {
 	args := m.Called(ctx, registrantUID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -141,7 +141,7 @@ func (m *MockRegistrantRepository) GetRegistrant(ctx context.Context, registrant
 	return args.Get(0).(*models.Registrant), args.Error(1)
 }
 
-func (m *MockRegistrantRepository) GetRegistrantWithRevision(ctx context.Context, registrantUID string) (*models.Registrant, uint64, error) {
+func (m *MockRegistrantRepository) GetWithRevision(ctx context.Context, registrantUID string) (*models.Registrant, uint64, error) {
 	args := m.Called(ctx, registrantUID)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(uint64), args.Error(2)
@@ -149,13 +149,21 @@ func (m *MockRegistrantRepository) GetRegistrantWithRevision(ctx context.Context
 	return args.Get(0).(*models.Registrant), args.Get(1).(uint64), args.Error(2)
 }
 
-func (m *MockRegistrantRepository) UpdateRegistrant(ctx context.Context, registrant *models.Registrant, revision uint64) error {
+func (m *MockRegistrantRepository) Update(ctx context.Context, registrant *models.Registrant, revision uint64) error {
 	args := m.Called(ctx, registrant, revision)
 	return args.Error(0)
 }
 
-func (m *MockRegistrantRepository) ListMeetingRegistrants(ctx context.Context, meetingUID string) ([]*models.Registrant, error) {
+func (m *MockRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.Registrant, error) {
 	args := m.Called(ctx, meetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Registrant), args.Error(1)
+}
+
+func (m *MockRegistrantRepository) ListByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
+	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

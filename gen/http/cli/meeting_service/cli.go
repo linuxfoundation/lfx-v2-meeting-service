@@ -78,7 +78,7 @@ func ParseEndpoint(
 
 		meetingServiceCreateMeetingRegistrantFlags           = flag.NewFlagSet("create-meeting-registrant", flag.ExitOnError)
 		meetingServiceCreateMeetingRegistrantBodyFlag        = meetingServiceCreateMeetingRegistrantFlags.String("body", "REQUIRED", "")
-		meetingServiceCreateMeetingRegistrantUIDFlag         = meetingServiceCreateMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceCreateMeetingRegistrantMeetingUIDFlag  = meetingServiceCreateMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceCreateMeetingRegistrantVersionFlag     = meetingServiceCreateMeetingRegistrantFlags.String("version", "", "")
 		meetingServiceCreateMeetingRegistrantBearerTokenFlag = meetingServiceCreateMeetingRegistrantFlags.String("bearer-token", "", "")
 
@@ -236,7 +236,7 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingRegistrantsPayload(*meetingServiceGetMeetingRegistrantsUIDFlag, *meetingServiceGetMeetingRegistrantsVersionFlag, *meetingServiceGetMeetingRegistrantsBearerTokenFlag)
 			case "create-meeting-registrant":
 				endpoint = c.CreateMeetingRegistrant()
-				data, err = meetingservicec.BuildCreateMeetingRegistrantPayload(*meetingServiceCreateMeetingRegistrantBodyFlag, *meetingServiceCreateMeetingRegistrantUIDFlag, *meetingServiceCreateMeetingRegistrantVersionFlag, *meetingServiceCreateMeetingRegistrantBearerTokenFlag)
+				data, err = meetingservicec.BuildCreateMeetingRegistrantPayload(*meetingServiceCreateMeetingRegistrantBodyFlag, *meetingServiceCreateMeetingRegistrantMeetingUIDFlag, *meetingServiceCreateMeetingRegistrantVersionFlag, *meetingServiceCreateMeetingRegistrantBearerTokenFlag)
 			case "get-meeting-registrant":
 				endpoint = c.GetMeetingRegistrant()
 				data, err = meetingservicec.BuildGetMeetingRegistrantPayload(*meetingServiceGetMeetingRegistrantMeetingUIDFlag, *meetingServiceGetMeetingRegistrantUIDFlag, *meetingServiceGetMeetingRegistrantVersionFlag, *meetingServiceGetMeetingRegistrantBearerTokenFlag)
@@ -313,48 +313,43 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Fuga a veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem."
+               "Mollitia est quo tempore quia.",
+               "Natus sapiente sit tempore totam est numquam.",
+               "Distinctio temporibus."
             ],
-            "uid": "Assumenda maxime aut occaecati."
+            "uid": "Autem qui."
          },
          {
             "allowed_voting_statuses": [
-               "Fuga a veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem."
+               "Mollitia est quo tempore quia.",
+               "Natus sapiente sit tempore totam est numquam.",
+               "Distinctio temporibus."
             ],
-            "uid": "Assumenda maxime aut occaecati."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Fuga a veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem."
-            ],
-            "uid": "Assumenda maxime aut occaecati."
+            "uid": "Autem qui."
          }
       ],
-      "description": "Explicabo eos voluptatum.",
-      "duration": 427,
+      "description": "Iure dolorem nobis et nihil quia.",
+      "duration": 0,
       "early_join_time_minutes": 12,
-      "meeting_type": "Board",
+      "meeting_type": "Other",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Qui architecto sint mollitia.",
+      "public_link": "Et ea distinctio dolorum.",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "2012-04-06T18:34:31Z",
-         "end_times": 4918391209221064697,
-         "monthly_day": 7,
-         "monthly_week": -1,
-         "monthly_week_day": 2,
-         "repeat_interval": 1192397136127484557,
-         "type": 3,
+         "end_date_time": "1973-06-01T02:12:35Z",
+         "end_times": 7993769279223694559,
+         "monthly_day": 11,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 4028306957488540937,
+         "type": 2,
          "weekly_days": "1,3,5"
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Ab repudiandae.",
-      "title": "Sit quo in consectetur mollitia.",
+      "timezone": "Ut et ut culpa optio nam.",
+      "title": "A veniam similique fugit et occaecati dolorem.",
       "transcript_enabled": true,
       "visibility": "public",
       "youtube_upload_enabled": true,
@@ -391,59 +386,63 @@ Update an existing meeting.
 
 Example:
     %[1]s meeting-service update-meeting --body '{
-      "artifact_visibility": "meeting_participants",
+      "artifact_visibility": "public",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Fuga a veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem."
+               "Mollitia est quo tempore quia.",
+               "Natus sapiente sit tempore totam est numquam.",
+               "Distinctio temporibus."
             ],
-            "uid": "Assumenda maxime aut occaecati."
+            "uid": "Autem qui."
          },
          {
             "allowed_voting_statuses": [
-               "Fuga a veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem."
+               "Mollitia est quo tempore quia.",
+               "Natus sapiente sit tempore totam est numquam.",
+               "Distinctio temporibus."
             ],
-            "uid": "Assumenda maxime aut occaecati."
+            "uid": "Autem qui."
          },
          {
             "allowed_voting_statuses": [
-               "Fuga a veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem."
+               "Mollitia est quo tempore quia.",
+               "Natus sapiente sit tempore totam est numquam.",
+               "Distinctio temporibus."
             ],
-            "uid": "Assumenda maxime aut occaecati."
+            "uid": "Autem qui."
          },
          {
             "allowed_voting_statuses": [
-               "Fuga a veniam similique fugit.",
-               "Occaecati dolorem ut iure dolorem."
+               "Mollitia est quo tempore quia.",
+               "Natus sapiente sit tempore totam est numquam.",
+               "Distinctio temporibus."
             ],
-            "uid": "Assumenda maxime aut occaecati."
+            "uid": "Autem qui."
          }
       ],
-      "description": "Eaque rerum.",
-      "duration": 565,
-      "early_join_time_minutes": 30,
-      "meeting_type": "Legal",
+      "description": "Consequatur aut enim veritatis expedita voluptatibus aut.",
+      "duration": 107,
+      "early_join_time_minutes": 53,
+      "meeting_type": "Maintainers",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Temporibus minima atque sit totam.",
-      "recording_enabled": true,
+      "public_link": "Aut excepturi a animi recusandae possimus.",
+      "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "2012-04-06T18:34:31Z",
-         "end_times": 4918391209221064697,
-         "monthly_day": 7,
-         "monthly_week": -1,
-         "monthly_week_day": 2,
-         "repeat_interval": 1192397136127484557,
-         "type": 3,
+         "end_date_time": "1973-06-01T02:12:35Z",
+         "end_times": 7993769279223694559,
+         "monthly_day": 11,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 4028306957488540937,
+         "type": 2,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Dolores quaerat cumque qui rem.",
-      "title": "Pariatur sed.",
+      "timezone": "Sunt qui aut quia temporibus fugiat.",
+      "title": "Soluta at perferendis aliquid incidunt provident accusamus.",
       "transcript_enabled": false,
       "visibility": "private",
       "youtube_upload_enabled": false,
@@ -483,11 +482,11 @@ Example:
 }
 
 func meetingServiceCreateMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-registrant -body JSON -uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-registrant -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
 
 Create a new registrant for a meeting
     -body JSON: 
-    -uid STRING: The UID of the meeting
+    -meeting-uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
 
@@ -496,14 +495,13 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": false,
+      "host": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "occurrence_id": "1640995200",
-      "org_is_project_member": true,
-      "user_id": "Assumenda molestias veritatis eos et quod ea."
-   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+      "org_name": "Occaecati molestias facilis non aut.",
+      "user_id": "Aut explicabo."
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -537,12 +535,12 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": true,
+      "host": false,
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_is_project_member": false,
-      "user_id": "Nihil et magni."
+      "org_name": "Facilis possimus.",
+      "user_id": "Perferendis neque ut sint."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
 `, os.Args[0])
 }

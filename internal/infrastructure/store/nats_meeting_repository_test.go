@@ -27,7 +27,7 @@ func TestNewNatsMeetingRepository(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_CreateMeeting(t *testing.T) {
+func TestNatsMeetingRepository_Create(t *testing.T) {
 	meetings := newMockNatsKeyValue()
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -39,7 +39,7 @@ func TestNatsMeetingRepository_CreateMeeting(t *testing.T) {
 		UpdatedAt: &now,
 	}
 
-	err := repo.CreateMeeting(context.Background(), meeting)
+	err := repo.Create(context.Background(), meeting)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -63,13 +63,13 @@ func TestNatsMeetingRepository_CreateMeeting(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_CreateMeeting_Error(t *testing.T) {
+func TestNatsMeetingRepository_Create_Error(t *testing.T) {
 	meetings := &mockNatsKeyValue{putError: errors.New("put failed")}
 	repo := NewNatsMeetingRepository(meetings)
 
 	meeting := &models.Meeting{UID: "test-meeting-123", Title: "Test Meeting"}
 
-	err := repo.CreateMeeting(context.Background(), meeting)
+	err := repo.Create(context.Background(), meeting)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -78,12 +78,12 @@ func TestNatsMeetingRepository_CreateMeeting_Error(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_MeetingExists(t *testing.T) {
+func TestNatsMeetingRepository_Exists(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
 	// Test non-existing meeting
-	exists, err := repo.MeetingExists(context.Background(), "non-existent")
+	exists, err := repo.Exists(context.Background(), "non-existent")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestNatsMeetingRepository_MeetingExists(t *testing.T) {
 	}
 
 	// Test existing meeting
-	exists, err = repo.MeetingExists(context.Background(), "existing-meeting")
+	exists, err = repo.Exists(context.Background(), "existing-meeting")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestNatsMeetingRepository_MeetingExists(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_GetMeeting(t *testing.T) {
+func TestNatsMeetingRepository_Get(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -124,7 +124,7 @@ func TestNatsMeetingRepository_GetMeeting(t *testing.T) {
 		meeting.UID: meetingData,
 	}
 
-	result, err := repo.GetMeeting(context.Background(), meeting.UID)
+	result, err := repo.Get(context.Background(), meeting.UID)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestNatsMeetingRepository_GetMeeting(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_GetMeetingWithRevision(t *testing.T) {
+func TestNatsMeetingRepository_GetWithRevision(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -158,7 +158,7 @@ func TestNatsMeetingRepository_GetMeetingWithRevision(t *testing.T) {
 		meeting.UID: expectedRevision,
 	}
 
-	result, revision, err := repo.GetMeetingWithRevision(context.Background(), meeting.UID)
+	result, revision, err := repo.GetWithRevision(context.Background(), meeting.UID)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -171,7 +171,7 @@ func TestNatsMeetingRepository_GetMeetingWithRevision(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_UpdateMeeting(t *testing.T) {
+func TestNatsMeetingRepository_Update(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -193,7 +193,7 @@ func TestNatsMeetingRepository_UpdateMeeting(t *testing.T) {
 		meeting.UID: initialRevision,
 	}
 
-	err := repo.UpdateMeeting(context.Background(), meeting, initialRevision)
+	err := repo.Update(context.Background(), meeting, initialRevision)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestNatsMeetingRepository_UpdateMeeting(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_UpdateMeeting_RevisionMismatch(t *testing.T) {
+func TestNatsMeetingRepository_Update_RevisionMismatch(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -226,7 +226,7 @@ func TestNatsMeetingRepository_UpdateMeeting_RevisionMismatch(t *testing.T) {
 
 	// Try to update with wrong revision
 	wrongRevision := uint64(3)
-	err := repo.UpdateMeeting(context.Background(), meeting, wrongRevision)
+	err := repo.Update(context.Background(), meeting, wrongRevision)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -235,7 +235,7 @@ func TestNatsMeetingRepository_UpdateMeeting_RevisionMismatch(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_DeleteMeeting(t *testing.T) {
+func TestNatsMeetingRepository_Delete(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -247,7 +247,7 @@ func TestNatsMeetingRepository_DeleteMeeting(t *testing.T) {
 		meetingUID: []byte(`{"uid":"test-meeting-123","title":"Test Meeting"}`),
 	}
 
-	err := repo.DeleteMeeting(context.Background(), meetingUID, revision)
+	err := repo.Delete(context.Background(), meetingUID, revision)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -258,7 +258,7 @@ func TestNatsMeetingRepository_DeleteMeeting(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_DeleteMeeting_RevisionMismatch(t *testing.T) {
+func TestNatsMeetingRepository_Delete_RevisionMismatch(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -273,7 +273,7 @@ func TestNatsMeetingRepository_DeleteMeeting_RevisionMismatch(t *testing.T) {
 	meetings.deleteError = errors.New("wrong last sequence")
 
 	wrongRevision := uint64(3)
-	err := repo.DeleteMeeting(context.Background(), meetingUID, wrongRevision)
+	err := repo.Delete(context.Background(), meetingUID, wrongRevision)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -282,7 +282,7 @@ func TestNatsMeetingRepository_DeleteMeeting_RevisionMismatch(t *testing.T) {
 	}
 }
 
-func TestNatsMeetingRepository_ListAllMeetings(t *testing.T) {
+func TestNatsMeetingRepository_ListAll(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
 	repo := NewNatsMeetingRepository(meetings)
 
@@ -308,7 +308,7 @@ func TestNatsMeetingRepository_ListAllMeetings(t *testing.T) {
 		"meeting-2": meeting2Data,
 	}
 
-	result, err := repo.ListAllMeetings(context.Background())
+	result, err := repo.ListAll(context.Background())
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

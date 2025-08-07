@@ -812,14 +812,14 @@ func DecodeCreateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		}
 
 		var (
-			uid         string
+			meetingUID  string
 			version     *string
 			bearerToken *string
 
 			params = mux.Vars(r)
 		)
-		uid = params["uid"]
-		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		meetingUID = params["meeting_uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("meeting_uid", meetingUID, goa.FormatUUID))
 		versionRaw := r.URL.Query().Get("v")
 		if versionRaw != "" {
 			version = &versionRaw
@@ -836,7 +836,7 @@ func DecodeCreateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreateMeetingRegistrantPayload(&body, uid, version, bearerToken)
+		payload := NewCreateMeetingRegistrantPayload(&body, meetingUID, version, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")

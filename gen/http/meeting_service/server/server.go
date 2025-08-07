@@ -73,7 +73,7 @@ func New(
 			{"UpdateMeeting", "PUT", "/meetings/{uid}"},
 			{"DeleteMeeting", "DELETE", "/meetings/{uid}"},
 			{"GetMeetingRegistrants", "GET", "/meetings/{uid}/registrants"},
-			{"CreateMeetingRegistrant", "POST", "/meetings/{uid}/registrants"},
+			{"CreateMeetingRegistrant", "POST", "/meetings/{meeting_uid}/registrants"},
 			{"GetMeetingRegistrant", "GET", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"UpdateMeetingRegistrant", "PUT", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"DeleteMeetingRegistrant", "DELETE", "/meetings/{meeting_uid}/registrants/{uid}"},
@@ -457,7 +457,7 @@ func MountCreateMeetingRegistrantHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("POST", "/meetings/{uid}/registrants", f)
+	mux.Handle("POST", "/meetings/{meeting_uid}/registrants", f)
 }
 
 // NewCreateMeetingRegistrantHandler creates a HTTP handler which loads the

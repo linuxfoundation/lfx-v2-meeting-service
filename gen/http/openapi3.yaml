@@ -62,269 +62,206 @@ paths:
                                     - artifact_visibility: meeting_hosts
                                       committees:
                                         - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                            - Maiores modi laborum voluptatibus aut aperiam.
+                                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                                            - Labore perspiciatis sint sequi tempore.
+                                          uid: Et voluptatem.
                                         - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                        - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                            - Maiores modi laborum voluptatibus aut aperiam.
+                                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                                            - Labore perspiciatis sint sequi tempore.
+                                          uid: Et voluptatem.
                                       created_at: "2021-01-01T00:00:00Z"
-                                      description: Fuga molestiae et non qui sit.
-                                      duration: 264
-                                      early_join_time_minutes: 18
-                                      email_delivery_error_count: 1525952564354982314
+                                      description: Modi enim tenetur eligendi.
+                                      duration: 595
+                                      early_join_time_minutes: 54
+                                      email_delivery_error_count: 5057334274904799540
                                       meeting_type: None
                                       occurrences:
-                                        - description: Consequatur aut.
-                                          duration: 1593840103266195025
+                                        - description: Ut ipsum iste.
+                                          duration: 1549525017367875752
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2013-11-10T14:07:34Z"
-                                            end_times: 4701682536807366624
-                                            monthly_day: 10
-                                            monthly_week: 3
-                                            monthly_week_day: 4
-                                            repeat_interval: 9105352176115504289
-                                            type: 1
+                                            end_date_time: "1981-10-26T05:45:34Z"
+                                            end_times: 3130928916872009331
+                                            monthly_day: 25
+                                            monthly_week: 4
+                                            monthly_week_day: 7
+                                            repeat_interval: 8837189727705721375
+                                            type: 2
                                             weekly_days: 1,3,5
-                                          registrant_count: 7707029304260535299
-                                          response_count_no: 7601203275471959643
-                                          response_count_yes: 2719122732674748944
+                                          registrant_count: 4918391209221064697
+                                          response_count_no: 6135749273744839255
+                                          response_count_yes: 8647620820325443268
                                           start_time: "2021-01-01T10:00:00Z"
-                                          status: active
-                                          title: In accusantium.
-                                        - description: Consequatur aut.
-                                          duration: 1593840103266195025
+                                          status: cancelled
+                                          title: Ab repudiandae.
+                                        - description: Ut ipsum iste.
+                                          duration: 1549525017367875752
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2013-11-10T14:07:34Z"
-                                            end_times: 4701682536807366624
-                                            monthly_day: 10
-                                            monthly_week: 3
-                                            monthly_week_day: 4
-                                            repeat_interval: 9105352176115504289
-                                            type: 1
+                                            end_date_time: "1981-10-26T05:45:34Z"
+                                            end_times: 3130928916872009331
+                                            monthly_day: 25
+                                            monthly_week: 4
+                                            monthly_week_day: 7
+                                            repeat_interval: 8837189727705721375
+                                            type: 2
                                             weekly_days: 1,3,5
-                                          registrant_count: 7707029304260535299
-                                          response_count_no: 7601203275471959643
-                                          response_count_yes: 2719122732674748944
+                                          registrant_count: 4918391209221064697
+                                          response_count_no: 6135749273744839255
+                                          response_count_yes: 8647620820325443268
                                           start_time: "2021-01-01T10:00:00Z"
-                                          status: active
-                                          title: In accusantium.
+                                          status: cancelled
+                                          title: Ab repudiandae.
+                                        - description: Ut ipsum iste.
+                                          duration: 1549525017367875752
+                                          occurrence_id: "1640995200"
+                                          recurrence:
+                                            end_date_time: "1981-10-26T05:45:34Z"
+                                            end_times: 3130928916872009331
+                                            monthly_day: 25
+                                            monthly_week: 4
+                                            monthly_week_day: 7
+                                            repeat_interval: 8837189727705721375
+                                            type: 2
+                                            weekly_days: 1,3,5
+                                          registrant_count: 4918391209221064697
+                                          response_count_no: 6135749273744839255
+                                          response_count_yes: 8647620820325443268
+                                          start_time: "2021-01-01T10:00:00Z"
+                                          status: cancelled
+                                          title: Ab repudiandae.
                                       platform: Zoom
                                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                                      recording_enabled: true
+                                      public_link: Est in accusantium.
+                                      recording_enabled: false
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 6544693447296871776
-                                      registrant_response_accepted_count: 6818425833915952086
-                                      registrant_response_declined_count: 1376532247590729123
+                                      registrant_count: 2719122732674748944
+                                      registrant_response_accepted_count: 7532607959111294362
+                                      registrant_response_declined_count: 5237990459479629398
                                       restricted: false
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Ut cupiditate suscipit nemo illum.
-                                      title: Necessitatibus sed deserunt quas quia.
+                                      timezone: Molestiae voluptas maiores commodi nostrum et.
+                                      title: Omnis delectus error sint ea laborum.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
                                       visibility: public
-                                      youtube_upload_enabled: true
+                                      youtube_upload_enabled: false
                                       zoom_config:
-                                        ai_companion_enabled: true
-                                        ai_summary_require_approval: true
+                                        ai_companion_enabled: false
+                                        ai_summary_require_approval: false
                                         meeting_id: "1234567890"
                                     - artifact_visibility: meeting_hosts
                                       committees:
                                         - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                            - Maiores modi laborum voluptatibus aut aperiam.
+                                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                                            - Labore perspiciatis sint sequi tempore.
+                                          uid: Et voluptatem.
                                         - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                        - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                            - Maiores modi laborum voluptatibus aut aperiam.
+                                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                                            - Labore perspiciatis sint sequi tempore.
+                                          uid: Et voluptatem.
                                       created_at: "2021-01-01T00:00:00Z"
-                                      description: Fuga molestiae et non qui sit.
-                                      duration: 264
-                                      early_join_time_minutes: 18
-                                      email_delivery_error_count: 1525952564354982314
+                                      description: Modi enim tenetur eligendi.
+                                      duration: 595
+                                      early_join_time_minutes: 54
+                                      email_delivery_error_count: 5057334274904799540
                                       meeting_type: None
                                       occurrences:
-                                        - description: Consequatur aut.
-                                          duration: 1593840103266195025
+                                        - description: Ut ipsum iste.
+                                          duration: 1549525017367875752
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2013-11-10T14:07:34Z"
-                                            end_times: 4701682536807366624
-                                            monthly_day: 10
-                                            monthly_week: 3
-                                            monthly_week_day: 4
-                                            repeat_interval: 9105352176115504289
-                                            type: 1
+                                            end_date_time: "1981-10-26T05:45:34Z"
+                                            end_times: 3130928916872009331
+                                            monthly_day: 25
+                                            monthly_week: 4
+                                            monthly_week_day: 7
+                                            repeat_interval: 8837189727705721375
+                                            type: 2
                                             weekly_days: 1,3,5
-                                          registrant_count: 7707029304260535299
-                                          response_count_no: 7601203275471959643
-                                          response_count_yes: 2719122732674748944
+                                          registrant_count: 4918391209221064697
+                                          response_count_no: 6135749273744839255
+                                          response_count_yes: 8647620820325443268
                                           start_time: "2021-01-01T10:00:00Z"
-                                          status: active
-                                          title: In accusantium.
-                                        - description: Consequatur aut.
-                                          duration: 1593840103266195025
+                                          status: cancelled
+                                          title: Ab repudiandae.
+                                        - description: Ut ipsum iste.
+                                          duration: 1549525017367875752
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2013-11-10T14:07:34Z"
-                                            end_times: 4701682536807366624
-                                            monthly_day: 10
-                                            monthly_week: 3
-                                            monthly_week_day: 4
-                                            repeat_interval: 9105352176115504289
-                                            type: 1
+                                            end_date_time: "1981-10-26T05:45:34Z"
+                                            end_times: 3130928916872009331
+                                            monthly_day: 25
+                                            monthly_week: 4
+                                            monthly_week_day: 7
+                                            repeat_interval: 8837189727705721375
+                                            type: 2
                                             weekly_days: 1,3,5
-                                          registrant_count: 7707029304260535299
-                                          response_count_no: 7601203275471959643
-                                          response_count_yes: 2719122732674748944
+                                          registrant_count: 4918391209221064697
+                                          response_count_no: 6135749273744839255
+                                          response_count_yes: 8647620820325443268
                                           start_time: "2021-01-01T10:00:00Z"
-                                          status: active
-                                          title: In accusantium.
+                                          status: cancelled
+                                          title: Ab repudiandae.
+                                        - description: Ut ipsum iste.
+                                          duration: 1549525017367875752
+                                          occurrence_id: "1640995200"
+                                          recurrence:
+                                            end_date_time: "1981-10-26T05:45:34Z"
+                                            end_times: 3130928916872009331
+                                            monthly_day: 25
+                                            monthly_week: 4
+                                            monthly_week_day: 7
+                                            repeat_interval: 8837189727705721375
+                                            type: 2
+                                            weekly_days: 1,3,5
+                                          registrant_count: 4918391209221064697
+                                          response_count_no: 6135749273744839255
+                                          response_count_yes: 8647620820325443268
+                                          start_time: "2021-01-01T10:00:00Z"
+                                          status: cancelled
+                                          title: Ab repudiandae.
                                       platform: Zoom
                                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                                      recording_enabled: true
+                                      public_link: Est in accusantium.
+                                      recording_enabled: false
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 6544693447296871776
-                                      registrant_response_accepted_count: 6818425833915952086
-                                      registrant_response_declined_count: 1376532247590729123
+                                      registrant_count: 2719122732674748944
+                                      registrant_response_accepted_count: 7532607959111294362
+                                      registrant_response_declined_count: 5237990459479629398
                                       restricted: false
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Ut cupiditate suscipit nemo illum.
-                                      title: Necessitatibus sed deserunt quas quia.
+                                      timezone: Molestiae voluptas maiores commodi nostrum et.
+                                      title: Omnis delectus error sint ea laborum.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
                                       visibility: public
-                                      youtube_upload_enabled: true
+                                      youtube_upload_enabled: false
                                       zoom_config:
-                                        ai_companion_enabled: true
-                                        ai_summary_require_approval: true
-                                        meeting_id: "1234567890"
-                                    - artifact_visibility: meeting_hosts
-                                      committees:
-                                        - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                        - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                        - allowed_voting_statuses:
-                                            - Sint ea laborum quos.
-                                            - Enim tenetur eligendi aliquid deserunt et.
-                                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                      created_at: "2021-01-01T00:00:00Z"
-                                      description: Fuga molestiae et non qui sit.
-                                      duration: 264
-                                      early_join_time_minutes: 18
-                                      email_delivery_error_count: 1525952564354982314
-                                      meeting_type: None
-                                      occurrences:
-                                        - description: Consequatur aut.
-                                          duration: 1593840103266195025
-                                          occurrence_id: "1640995200"
-                                          recurrence:
-                                            end_date_time: "2013-11-10T14:07:34Z"
-                                            end_times: 4701682536807366624
-                                            monthly_day: 10
-                                            monthly_week: 3
-                                            monthly_week_day: 4
-                                            repeat_interval: 9105352176115504289
-                                            type: 1
-                                            weekly_days: 1,3,5
-                                          registrant_count: 7707029304260535299
-                                          response_count_no: 7601203275471959643
-                                          response_count_yes: 2719122732674748944
-                                          start_time: "2021-01-01T10:00:00Z"
-                                          status: active
-                                          title: In accusantium.
-                                        - description: Consequatur aut.
-                                          duration: 1593840103266195025
-                                          occurrence_id: "1640995200"
-                                          recurrence:
-                                            end_date_time: "2013-11-10T14:07:34Z"
-                                            end_times: 4701682536807366624
-                                            monthly_day: 10
-                                            monthly_week: 3
-                                            monthly_week_day: 4
-                                            repeat_interval: 9105352176115504289
-                                            type: 1
-                                            weekly_days: 1,3,5
-                                          registrant_count: 7707029304260535299
-                                          response_count_no: 7601203275471959643
-                                          response_count_yes: 2719122732674748944
-                                          start_time: "2021-01-01T10:00:00Z"
-                                          status: active
-                                          title: In accusantium.
-                                      platform: Zoom
-                                      project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                                      recording_enabled: true
-                                      recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
-                                        weekly_days: 1,3,5
-                                      registrant_count: 6544693447296871776
-                                      registrant_response_accepted_count: 6818425833915952086
-                                      registrant_response_declined_count: 1376532247590729123
-                                      restricted: false
-                                      start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Ut cupiditate suscipit nemo illum.
-                                      title: Necessitatibus sed deserunt quas quia.
-                                      transcript_enabled: false
-                                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      updated_at: "2021-01-01T00:00:00Z"
-                                      visibility: public
-                                      youtube_upload_enabled: true
-                                      zoom_config:
-                                        ai_companion_enabled: true
-                                        ai_summary_require_approval: true
+                                        ai_companion_enabled: false
+                                        ai_summary_require_approval: false
                                         meeting_id: "1234567890"
                 "400":
                     description: 'BadRequest: Bad request'
@@ -385,38 +322,36 @@ paths:
                             artifact_visibility: meeting_hosts
                             committees:
                                 - allowed_voting_statuses:
-                                    - Fuga a veniam similique fugit.
-                                    - Occaecati dolorem ut iure dolorem.
-                                  uid: Assumenda maxime aut occaecati.
+                                    - Mollitia est quo tempore quia.
+                                    - Natus sapiente sit tempore totam est numquam.
+                                    - Distinctio temporibus.
+                                  uid: Autem qui.
                                 - allowed_voting_statuses:
-                                    - Fuga a veniam similique fugit.
-                                    - Occaecati dolorem ut iure dolorem.
-                                  uid: Assumenda maxime aut occaecati.
-                                - allowed_voting_statuses:
-                                    - Fuga a veniam similique fugit.
-                                    - Occaecati dolorem ut iure dolorem.
-                                  uid: Assumenda maxime aut occaecati.
-                            description: Explicabo eos voluptatum.
-                            duration: 427
+                                    - Mollitia est quo tempore quia.
+                                    - Natus sapiente sit tempore totam est numquam.
+                                    - Distinctio temporibus.
+                                  uid: Autem qui.
+                            description: Iure dolorem nobis et nihil quia.
+                            duration: 0
                             early_join_time_minutes: 12
-                            meeting_type: Board
+                            meeting_type: Other
                             platform: Zoom
                             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                            public_link: Qui architecto sint mollitia.
+                            public_link: Et ea distinctio dolorum.
                             recording_enabled: false
                             recurrence:
-                                end_date_time: "2012-04-06T18:34:31Z"
-                                end_times: 4918391209221064697
-                                monthly_day: 7
-                                monthly_week: -1
-                                monthly_week_day: 2
-                                repeat_interval: 1192397136127484557
-                                type: 3
+                                end_date_time: "1973-06-01T02:12:35Z"
+                                end_times: 7993769279223694559
+                                monthly_day: 11
+                                monthly_week: 1
+                                monthly_week_day: 5
+                                repeat_interval: 4028306957488540937
+                                type: 2
                                 weekly_days: 1,3,5
-                            restricted: false
+                            restricted: true
                             start_time: "2021-01-01T00:00:00Z"
-                            timezone: Ab repudiandae.
-                            title: Sit quo in consectetur mollitia.
+                            timezone: Ut et ut culpa optio nam.
+                            title: A veniam similique fugit et occaecati dolorem.
                             transcript_enabled: true
                             visibility: public
                             youtube_upload_enabled: true
@@ -434,109 +369,122 @@ paths:
                                 artifact_visibility: meeting_participants
                                 committees:
                                     - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                        - Maiores modi laborum voluptatibus aut aperiam.
+                                        - Aperiam atque id est molestias voluptatibus repudiandae.
+                                        - Labore perspiciatis sint sequi tempore.
+                                      uid: Et voluptatem.
                                     - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                    - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                        - Maiores modi laborum voluptatibus aut aperiam.
+                                        - Aperiam atque id est molestias voluptatibus repudiandae.
+                                        - Labore perspiciatis sint sequi tempore.
+                                      uid: Et voluptatem.
                                 created_at: "2021-01-01T00:00:00Z"
-                                description: Et ea distinctio dolorum.
-                                duration: 442
-                                early_join_time_minutes: 14
-                                email_delivery_error_count: 3951716461962699775
-                                meeting_type: Maintainers
+                                description: Animi voluptatem eos id.
+                                duration: 189
+                                early_join_time_minutes: 30
+                                email_delivery_error_count: 2320077394680589063
+                                meeting_type: None
                                 occurrences:
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
+                                      occurrence_id: "1640995200"
+                                      recurrence:
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
+                                        weekly_days: 1,3,5
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
+                                      start_time: "2021-01-01T10:00:00Z"
+                                      status: cancelled
+                                      title: Ab repudiandae.
                                 platform: Zoom
                                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                public_link: Eveniet libero ducimus.
-                                recording_enabled: false
+                                public_link: Reiciendis eaque rerum velit sit eligendi voluptates.
+                                recording_enabled: true
                                 recurrence:
-                                    end_date_time: "2013-11-10T14:07:34Z"
-                                    end_times: 4701682536807366624
-                                    monthly_day: 10
-                                    monthly_week: 3
-                                    monthly_week_day: 4
-                                    repeat_interval: 9105352176115504289
-                                    type: 1
+                                    end_date_time: "1981-10-26T05:45:34Z"
+                                    end_times: 3130928916872009331
+                                    monthly_day: 25
+                                    monthly_week: 4
+                                    monthly_week_day: 7
+                                    repeat_interval: 8837189727705721375
+                                    type: 2
                                     weekly_days: 1,3,5
-                                registrant_count: 8216192821406399321
-                                registrant_response_accepted_count: 2682652470518753882
-                                registrant_response_declined_count: 7126905755880140625
-                                restricted: false
+                                registrant_count: 2802624290332683148
+                                registrant_response_accepted_count: 5005973239524369447
+                                registrant_response_declined_count: 6148764683209660534
+                                restricted: true
                                 start_time: "2021-01-01T00:00:00Z"
-                                timezone: Sit tempore totam est numquam adipisci distinctio.
-                                title: Distinctio nihil labore quasi laboriosam quis.
+                                timezone: Ex eveniet libero ducimus neque nam.
+                                title: Iure voluptatum.
                                 transcript_enabled: true
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
                                 visibility: private
                                 youtube_upload_enabled: false
                                 zoom_config:
-                                    ai_companion_enabled: true
-                                    ai_summary_require_approval: true
+                                    ai_companion_enabled: false
+                                    ai_summary_require_approval: false
                                     meeting_id: "1234567890"
                 "400":
                     description: 'BadRequest: Bad request'
@@ -549,6 +497,121 @@ paths:
                                 message: The request was invalid.
                 "409":
                     description: 'Conflict: Conflict'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ConflictError'
+                            example:
+                                code: "409"
+                                message: The resource already exists.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
+    /meetings/{meeting_uid}/registrants:
+        post:
+            tags:
+                - Meeting Service
+            summary: create-meeting-registrant Meeting Service
+            description: Create a new registrant for a meeting
+            operationId: Meeting Service#create-meeting-registrant
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: meeting_uid
+                  in: path
+                  description: The UID of the meeting
+                  required: true
+                  schema:
+                    type: string
+                    description: The UID of the meeting
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
+                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateMeetingRegistrantRequestBody'
+                        example:
+                            avatar_url: https://example.com/avatar.jpg
+                            email: user@example.com
+                            first_name: John
+                            host: true
+                            job_title: Software Engineer
+                            last_name: Doe
+                            occurrence_id: "1640995200"
+                            org_name: Occaecati molestias facilis non aut.
+                            user_id: Aut explicabo.
+            responses:
+                "201":
+                    description: Created response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Registrant'
+                            example:
+                                avatar_url: https://example.com/avatar.jpg
+                                created_at: "2021-01-01T00:00:00Z"
+                                email: user@example.com
+                                first_name: John
+                                host: true
+                                job_title: Software Engineer
+                                last_name: Doe
+                                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                occurrence_id: "1640995200"
+                                org_is_member: true
+                                org_is_project_member: true
+                                org_name: Similique aut adipisci excepturi.
+                                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                updated_at: "2021-01-01T00:00:00Z"
+                                user_id: Amet quidem.
+                "400":
+                    description: 'BadRequest: Bad request'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BadRequestError'
+                            example:
+                                code: "400"
+                                message: The request was invalid.
+                "404":
+                    description: 'NotFound: Meeting not found'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "409":
+                    description: 'Conflict: Registrant already exists'
                     content:
                         application/json:
                             schema:
@@ -728,12 +791,12 @@ paths:
                                 last_name: Doe
                                 meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 occurrence_id: "1640995200"
-                                org_is_member: false
+                                org_is_member: true
                                 org_is_project_member: true
-                                org_name: Repellendus ut.
+                                org_name: Nihil et magni.
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
-                                user_id: Consequatur voluptatibus et.
+                                user_id: Expedita corrupti.
                 "404":
                     description: 'NotFound: Meeting or registrant not found'
                     content:
@@ -815,17 +878,17 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/UpdateMeetingRegistrantRequestBody'
+                            $ref: '#/components/schemas/CreateMeetingRegistrantRequestBody'
                         example:
                             avatar_url: https://example.com/avatar.jpg
                             email: user@example.com
                             first_name: John
-                            host: true
+                            host: false
                             job_title: Software Engineer
                             last_name: Doe
                             occurrence_id: "1640995200"
-                            org_is_project_member: false
-                            user_id: Nihil et magni.
+                            org_name: Facilis possimus.
+                            user_id: Perferendis neque ut sint.
             responses:
                 "200":
                     description: OK response.
@@ -845,10 +908,10 @@ paths:
                                 occurrence_id: "1640995200"
                                 org_is_member: false
                                 org_is_project_member: true
-                                org_name: Et expedita.
+                                org_name: Officiis qui quia perferendis.
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
-                                user_id: Ratione occaecati molestias facilis.
+                                user_id: Ducimus labore.
                 "400":
                     description: 'BadRequest: Bad request'
                     content:
@@ -1022,91 +1085,104 @@ paths:
                                 artifact_visibility: meeting_hosts
                                 committees:
                                     - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                        - Maiores modi laborum voluptatibus aut aperiam.
+                                        - Aperiam atque id est molestias voluptatibus repudiandae.
+                                        - Labore perspiciatis sint sequi tempore.
+                                      uid: Et voluptatem.
                                     - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                    - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                        - Maiores modi laborum voluptatibus aut aperiam.
+                                        - Aperiam atque id est molestias voluptatibus repudiandae.
+                                        - Labore perspiciatis sint sequi tempore.
+                                      uid: Et voluptatem.
                                 created_at: "2021-01-01T00:00:00Z"
-                                description: Fuga molestiae et non qui sit.
-                                duration: 264
-                                early_join_time_minutes: 18
-                                email_delivery_error_count: 1525952564354982314
+                                description: Modi enim tenetur eligendi.
+                                duration: 595
+                                early_join_time_minutes: 54
+                                email_delivery_error_count: 5057334274904799540
                                 meeting_type: None
                                 occurrences:
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
+                                      occurrence_id: "1640995200"
+                                      recurrence:
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
+                                        weekly_days: 1,3,5
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
+                                      start_time: "2021-01-01T10:00:00Z"
+                                      status: cancelled
+                                      title: Ab repudiandae.
                                 platform: Zoom
                                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                                recording_enabled: true
+                                public_link: Est in accusantium.
+                                recording_enabled: false
                                 recurrence:
-                                    end_date_time: "2013-11-10T14:07:34Z"
-                                    end_times: 4701682536807366624
-                                    monthly_day: 10
-                                    monthly_week: 3
-                                    monthly_week_day: 4
-                                    repeat_interval: 9105352176115504289
-                                    type: 1
+                                    end_date_time: "1981-10-26T05:45:34Z"
+                                    end_times: 3130928916872009331
+                                    monthly_day: 25
+                                    monthly_week: 4
+                                    monthly_week_day: 7
+                                    repeat_interval: 8837189727705721375
+                                    type: 2
                                     weekly_days: 1,3,5
-                                registrant_count: 6544693447296871776
-                                registrant_response_accepted_count: 6818425833915952086
-                                registrant_response_declined_count: 1376532247590729123
+                                registrant_count: 2719122732674748944
+                                registrant_response_accepted_count: 7532607959111294362
+                                registrant_response_declined_count: 5237990459479629398
                                 restricted: false
                                 start_time: "2021-01-01T00:00:00Z"
-                                timezone: Ut cupiditate suscipit nemo illum.
-                                title: Necessitatibus sed deserunt quas quia.
+                                timezone: Molestiae voluptas maiores commodi nostrum et.
+                                title: Omnis delectus error sint ea laborum.
                                 transcript_enabled: false
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
                                 visibility: public
-                                youtube_upload_enabled: true
+                                youtube_upload_enabled: false
                                 zoom_config:
-                                    ai_companion_enabled: true
-                                    ai_summary_require_approval: true
+                                    ai_companion_enabled: false
+                                    ai_summary_require_approval: false
                                     meeting_id: "1234567890"
                 "404":
                     description: 'NotFound: Resource not found'
@@ -1181,45 +1257,49 @@ paths:
                         schema:
                             $ref: '#/components/schemas/CreateMeetingPayload'
                         example:
-                            artifact_visibility: meeting_participants
+                            artifact_visibility: public
                             committees:
                                 - allowed_voting_statuses:
-                                    - Fuga a veniam similique fugit.
-                                    - Occaecati dolorem ut iure dolorem.
-                                  uid: Assumenda maxime aut occaecati.
+                                    - Mollitia est quo tempore quia.
+                                    - Natus sapiente sit tempore totam est numquam.
+                                    - Distinctio temporibus.
+                                  uid: Autem qui.
                                 - allowed_voting_statuses:
-                                    - Fuga a veniam similique fugit.
-                                    - Occaecati dolorem ut iure dolorem.
-                                  uid: Assumenda maxime aut occaecati.
+                                    - Mollitia est quo tempore quia.
+                                    - Natus sapiente sit tempore totam est numquam.
+                                    - Distinctio temporibus.
+                                  uid: Autem qui.
                                 - allowed_voting_statuses:
-                                    - Fuga a veniam similique fugit.
-                                    - Occaecati dolorem ut iure dolorem.
-                                  uid: Assumenda maxime aut occaecati.
+                                    - Mollitia est quo tempore quia.
+                                    - Natus sapiente sit tempore totam est numquam.
+                                    - Distinctio temporibus.
+                                  uid: Autem qui.
                                 - allowed_voting_statuses:
-                                    - Fuga a veniam similique fugit.
-                                    - Occaecati dolorem ut iure dolorem.
-                                  uid: Assumenda maxime aut occaecati.
-                            description: Eaque rerum.
-                            duration: 565
-                            early_join_time_minutes: 30
-                            meeting_type: Legal
+                                    - Mollitia est quo tempore quia.
+                                    - Natus sapiente sit tempore totam est numquam.
+                                    - Distinctio temporibus.
+                                  uid: Autem qui.
+                            description: Consequatur aut enim veritatis expedita voluptatibus aut.
+                            duration: 107
+                            early_join_time_minutes: 53
+                            meeting_type: Maintainers
                             platform: Zoom
                             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                            public_link: Temporibus minima atque sit totam.
-                            recording_enabled: true
+                            public_link: Aut excepturi a animi recusandae possimus.
+                            recording_enabled: false
                             recurrence:
-                                end_date_time: "2012-04-06T18:34:31Z"
-                                end_times: 4918391209221064697
-                                monthly_day: 7
-                                monthly_week: -1
-                                monthly_week_day: 2
-                                repeat_interval: 1192397136127484557
-                                type: 3
+                                end_date_time: "1973-06-01T02:12:35Z"
+                                end_times: 7993769279223694559
+                                monthly_day: 11
+                                monthly_week: 1
+                                monthly_week_day: 5
+                                repeat_interval: 4028306957488540937
+                                type: 2
                                 weekly_days: 1,3,5
                             restricted: true
                             start_time: "2021-01-01T00:00:00Z"
-                            timezone: Dolores quaerat cumque qui rem.
-                            title: Pariatur sed.
+                            timezone: Sunt qui aut quia temporibus fugiat.
+                            title: Soluta at perferendis aliquid incidunt provident accusamus.
                             transcript_enabled: false
                             visibility: private
                             youtube_upload_enabled: false
@@ -1234,135 +1314,125 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Meeting'
                             example:
-                                artifact_visibility: meeting_participants
+                                artifact_visibility: public
                                 committees:
                                     - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                        - Maiores modi laborum voluptatibus aut aperiam.
+                                        - Aperiam atque id est molestias voluptatibus repudiandae.
+                                        - Labore perspiciatis sint sequi tempore.
+                                      uid: Et voluptatem.
                                     - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                    - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                                    - allowed_voting_statuses:
-                                        - Sint ea laborum quos.
-                                        - Enim tenetur eligendi aliquid deserunt et.
-                                        - Commodi corrupti maiores modi laborum voluptatibus aut.
-                                      uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                        - Maiores modi laborum voluptatibus aut aperiam.
+                                        - Aperiam atque id est molestias voluptatibus repudiandae.
+                                        - Labore perspiciatis sint sequi tempore.
+                                      uid: Et voluptatem.
                                 created_at: "2021-01-01T00:00:00Z"
-                                description: Aut enim veritatis.
-                                duration: 214
-                                early_join_time_minutes: 26
-                                email_delivery_error_count: 2021793513680499921
-                                meeting_type: Marketing
+                                description: Quaerat magni.
+                                duration: 23
+                                early_join_time_minutes: 54
+                                email_delivery_error_count: 779129986286991692
+                                meeting_type: Legal
                                 occurrences:
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
-                                    - description: Consequatur aut.
-                                      duration: 1593840103266195025
+                                      status: cancelled
+                                      title: Ab repudiandae.
+                                    - description: Ut ipsum iste.
+                                      duration: 1549525017367875752
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2013-11-10T14:07:34Z"
-                                        end_times: 4701682536807366624
-                                        monthly_day: 10
-                                        monthly_week: 3
-                                        monthly_week_day: 4
-                                        repeat_interval: 9105352176115504289
-                                        type: 1
+                                        end_date_time: "1981-10-26T05:45:34Z"
+                                        end_times: 3130928916872009331
+                                        monthly_day: 25
+                                        monthly_week: 4
+                                        monthly_week_day: 7
+                                        repeat_interval: 8837189727705721375
+                                        type: 2
                                         weekly_days: 1,3,5
-                                      registrant_count: 7707029304260535299
-                                      response_count_no: 7601203275471959643
-                                      response_count_yes: 2719122732674748944
+                                      registrant_count: 4918391209221064697
+                                      response_count_no: 6135749273744839255
+                                      response_count_yes: 8647620820325443268
                                       start_time: "2021-01-01T10:00:00Z"
-                                      status: active
-                                      title: In accusantium.
+                                      status: cancelled
+                                      title: Ab repudiandae.
                                 platform: Zoom
                                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                public_link: Accusantium vero et aut excepturi.
-                                recording_enabled: false
+                                public_link: Porro accusantium aut.
+                                recording_enabled: true
                                 recurrence:
-                                    end_date_time: "2013-11-10T14:07:34Z"
-                                    end_times: 4701682536807366624
-                                    monthly_day: 10
-                                    monthly_week: 3
-                                    monthly_week_day: 4
-                                    repeat_interval: 9105352176115504289
-                                    type: 1
+                                    end_date_time: "1981-10-26T05:45:34Z"
+                                    end_times: 3130928916872009331
+                                    monthly_day: 25
+                                    monthly_week: 4
+                                    monthly_week_day: 7
+                                    repeat_interval: 8837189727705721375
+                                    type: 2
                                     weekly_days: 1,3,5
-                                registrant_count: 3952849599387121567
-                                registrant_response_accepted_count: 4306241545243018423
-                                registrant_response_declined_count: 7920044294783111897
+                                registrant_count: 8336878342789861392
+                                registrant_response_accepted_count: 4599191793588255186
+                                registrant_response_declined_count: 2460601840135235660
                                 restricted: false
                                 start_time: "2021-01-01T00:00:00Z"
-                                timezone: Temporibus fugiat dolorem soluta at.
-                                title: Aliquid incidunt provident accusamus error.
+                                timezone: Earum repellendus ut eaque explicabo.
+                                title: Consequatur voluptatibus et.
                                 transcript_enabled: false
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
                                 visibility: public
-                                youtube_upload_enabled: false
+                                youtube_upload_enabled: true
                                 zoom_config:
-                                    ai_companion_enabled: true
-                                    ai_summary_require_approval: true
+                                    ai_companion_enabled: false
+                                    ai_summary_require_approval: false
                                     meeting_id: "1234567890"
                 "400":
                     description: 'BadRequest: Bad request'
@@ -1466,12 +1536,12 @@ paths:
                                       last_name: Doe
                                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       occurrence_id: "1640995200"
-                                      org_is_member: false
+                                      org_is_member: true
                                       org_is_project_member: true
-                                      org_name: Repellendus ut.
+                                      org_name: Nihil et magni.
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
-                                      user_id: Consequatur voluptatibus et.
+                                      user_id: Expedita corrupti.
                                     - avatar_url: https://example.com/avatar.jpg
                                       created_at: "2021-01-01T00:00:00Z"
                                       email: user@example.com
@@ -1481,42 +1551,12 @@ paths:
                                       last_name: Doe
                                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       occurrence_id: "1640995200"
-                                      org_is_member: false
+                                      org_is_member: true
                                       org_is_project_member: true
-                                      org_name: Repellendus ut.
+                                      org_name: Nihil et magni.
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
-                                      user_id: Consequatur voluptatibus et.
-                                    - avatar_url: https://example.com/avatar.jpg
-                                      created_at: "2021-01-01T00:00:00Z"
-                                      email: user@example.com
-                                      first_name: John
-                                      host: false
-                                      job_title: Software Engineer
-                                      last_name: Doe
-                                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      occurrence_id: "1640995200"
-                                      org_is_member: false
-                                      org_is_project_member: true
-                                      org_name: Repellendus ut.
-                                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      updated_at: "2021-01-01T00:00:00Z"
-                                      user_id: Consequatur voluptatibus et.
-                                    - avatar_url: https://example.com/avatar.jpg
-                                      created_at: "2021-01-01T00:00:00Z"
-                                      email: user@example.com
-                                      first_name: John
-                                      host: false
-                                      job_title: Software Engineer
-                                      last_name: Doe
-                                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      occurrence_id: "1640995200"
-                                      org_is_member: false
-                                      org_is_project_member: true
-                                      org_name: Repellendus ut.
-                                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                      updated_at: "2021-01-01T00:00:00Z"
-                                      user_id: Consequatur voluptatibus et.
+                                      user_id: Expedita corrupti.
                 "404":
                     description: 'NotFound: Meeting not found'
                     content:
@@ -1526,121 +1566,6 @@ paths:
                             example:
                                 code: "404"
                                 message: The resource was not found.
-                "500":
-                    description: 'InternalServerError: Internal server error'
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/InternalServerError'
-                            example:
-                                code: "500"
-                                message: An internal server error occurred.
-                "503":
-                    description: 'ServiceUnavailable: Service unavailable'
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ServiceUnavailableError'
-                            example:
-                                code: "503"
-                                message: The service is unavailable.
-            security:
-                - jwt_header_Authorization: []
-        post:
-            tags:
-                - Meeting Service
-            summary: create-meeting-registrant Meeting Service
-            description: Create a new registrant for a meeting
-            operationId: Meeting Service#create-meeting-registrant
-            parameters:
-                - name: v
-                  in: query
-                  description: Version of the API
-                  allowEmptyValue: true
-                  schema:
-                    type: string
-                    description: Version of the API
-                    example: "1"
-                    enum:
-                        - "1"
-                  example: "1"
-                - name: uid
-                  in: path
-                  description: The UID of the meeting
-                  required: true
-                  schema:
-                    type: string
-                    description: The UID of the meeting
-                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    format: uuid
-                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/CreateRegistrantPayload'
-                        example:
-                            avatar_url: https://example.com/avatar.jpg
-                            email: user@example.com
-                            first_name: John
-                            host: false
-                            job_title: Software Engineer
-                            last_name: Doe
-                            meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                            occurrence_id: "1640995200"
-                            org_is_project_member: true
-                            user_id: Assumenda molestias veritatis eos et quod ea.
-            responses:
-                "201":
-                    description: Created response.
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Registrant'
-                            example:
-                                avatar_url: https://example.com/avatar.jpg
-                                created_at: "2021-01-01T00:00:00Z"
-                                email: user@example.com
-                                first_name: John
-                                host: false
-                                job_title: Software Engineer
-                                last_name: Doe
-                                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                occurrence_id: "1640995200"
-                                org_is_member: true
-                                org_is_project_member: false
-                                org_name: Aut corrupti.
-                                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                                updated_at: "2021-01-01T00:00:00Z"
-                                user_id: Voluptatem enim ad.
-                "400":
-                    description: 'BadRequest: Bad request'
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/BadRequestError'
-                            example:
-                                code: "400"
-                                message: The request was invalid.
-                "404":
-                    description: 'NotFound: Meeting not found'
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/NotFoundError'
-                            example:
-                                code: "404"
-                                message: The resource was not found.
-                "409":
-                    description: 'Conflict: Registrant already exists'
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ConflictError'
-                            example:
-                                code: "409"
-                                message: The resource already exists.
                 "500":
                     description: 'InternalServerError: Internal server error'
                     content:
@@ -1722,23 +1647,23 @@ components:
                     type: array
                     items:
                         type: string
-                        example: Dolor facilis exercitationem rem unde dolorum sed.
+                        example: Maxime sit.
                     description: The committee voting statuses required for committee members to be added to the meeting
                     example:
-                        - Doloremque sunt et et.
-                        - Dolores et doloremque et voluptatem vel voluptates.
+                        - Accusantium nobis eaque neque.
+                        - Officia quo.
+                        - Provident et dolor distinctio quis.
                 uid:
                     type: string
                     description: The UID of the committee
-                    example: Et ut molestias quis sit quia.
+                    example: Perferendis quis at omnis voluptatem.
             description: Committee data for association with meeting
             example:
                 allowed_voting_statuses:
-                    - Tempore vel qui placeat repudiandae voluptas.
-                    - Ut earum vel quasi praesentium perferendis.
-                    - Dignissimos fuga ratione.
-                    - Architecto consequatur perferendis quis.
-                uid: Numquam consectetur fugiat et unde molestiae.
+                    - Libero nihil aliquam deleniti.
+                    - Earum et nemo omnis.
+                    - Ut ut voluptatem.
+                uid: Est molestias eligendi nulla porro necessitatibus et.
             required:
                 - uid
                 - allowed_voting_statuses
@@ -1794,21 +1719,27 @@ components:
                             - Magnam suscipit a qui voluptatem delectus.
                             - Ut ut voluptas voluptates.
                           uid: Commodi laboriosam quasi ut sunt illo.
+                        - allowed_voting_statuses:
+                            - Et eligendi tempore ipsum consequatur ab.
+                            - Et eius.
+                            - Magnam suscipit a qui voluptatem delectus.
+                            - Ut ut voluptas voluptates.
+                          uid: Commodi laboriosam quasi ut sunt illo.
                 description:
                     type: string
                     description: The description of the meeting
-                    example: Consequatur labore est autem dicta voluptas sapiente.
+                    example: Et soluta velit sunt impedit in dicta.
                 duration:
                     type: integer
                     description: The duration of the meeting in minutes
-                    example: 104
+                    example: 7
                     format: int64
                     minimum: 0
                     maximum: 600
                 early_join_time_minutes:
                     type: integer
                     description: The number of minutes that users are allowed to join the meeting early without being kicked out
-                    example: 56
+                    example: 31
                     format: int64
                     minimum: 10
                     maximum: 60
@@ -1838,7 +1769,7 @@ components:
                 public_link:
                     type: string
                     description: The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-                    example: Sequi doloribus numquam eveniet qui incidunt.
+                    example: Deleniti voluptas ad numquam.
                 recording_enabled:
                     type: boolean
                     description: Whether recording is enabled for the meeting
@@ -1848,7 +1779,7 @@ components:
                 restricted:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
-                    example: false
+                    example: true
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -1857,11 +1788,11 @@ components:
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
-                    example: Quis delectus modi quisquam non recusandae soluta.
+                    example: Consequuntur illo tempore.
                 title:
                     type: string
                     description: The title of the meeting
-                    example: Aut natus sit.
+                    example: Et deserunt explicabo.
                 transcript_enabled:
                     type: boolean
                     description: Whether transcription is enabled for the meeting
@@ -1876,12 +1807,12 @@ components:
                 youtube_upload_enabled:
                     type: boolean
                     description: Whether automatic youtube uploading is enabled for the meeting
-                    example: false
+                    example: true
                 zoom_config:
                     $ref: '#/components/schemas/ZoomConfigPost'
             description: Payload for creating a new meeting
             example:
-                artifact_visibility: meeting_hosts
+                artifact_visibility: meeting_participants
                 committees:
                     - allowed_voting_statuses:
                         - Et eligendi tempore ipsum consequatur ab.
@@ -1901,13 +1832,19 @@ components:
                         - Magnam suscipit a qui voluptatem delectus.
                         - Ut ut voluptas voluptates.
                       uid: Commodi laboriosam quasi ut sunt illo.
-                description: Illo tempore beatae et deserunt explicabo.
-                duration: 156
-                early_join_time_minutes: 37
-                meeting_type: Legal
+                    - allowed_voting_statuses:
+                        - Et eligendi tempore ipsum consequatur ab.
+                        - Et eius.
+                        - Magnam suscipit a qui voluptatem delectus.
+                        - Ut ut voluptas voluptates.
+                      uid: Commodi laboriosam quasi ut sunt illo.
+                description: Ab perspiciatis fuga omnis.
+                duration: 94
+                early_join_time_minutes: 31
+                meeting_type: Board
                 platform: Zoom
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                public_link: Repudiandae et ipsum corrupti consequatur.
+                public_link: Possimus quas.
                 recording_enabled: true
                 recurrence:
                     end_date_time: "2015-09-30T12:28:08Z"
@@ -1920,8 +1857,8 @@ components:
                     weekly_days: 1,3,5
                 restricted: true
                 start_time: "2021-01-01T00:00:00Z"
-                timezone: Autem iste enim.
-                title: Aperiam consequatur sed eveniet.
+                timezone: Officia necessitatibus quis reprehenderit dolorem omnis.
+                title: Consectetur ipsa hic exercitationem.
                 transcript_enabled: false
                 visibility: private
                 youtube_upload_enabled: false
@@ -1935,6 +1872,66 @@ components:
                 - timezone
                 - title
                 - description
+        CreateMeetingRegistrantRequestBody:
+            type: object
+            properties:
+                avatar_url:
+                    type: string
+                    description: User's avatar URL
+                    example: https://example.com/avatar.jpg
+                    format: uri
+                email:
+                    type: string
+                    description: User's email address
+                    example: user@example.com
+                    format: email
+                first_name:
+                    type: string
+                    description: User's first name
+                    example: John
+                    minLength: 1
+                    maxLength: 100
+                host:
+                    type: boolean
+                    description: If user should have access as a meeting host
+                    example: true
+                job_title:
+                    type: string
+                    description: User's job title
+                    example: Software Engineer
+                last_name:
+                    type: string
+                    description: User's last name
+                    example: Doe
+                    minLength: 1
+                    maxLength: 100
+                occurrence_id:
+                    type: string
+                    description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
+                    example: "1640995200"
+                    pattern: ^[0-9]*$
+                org_name:
+                    type: string
+                    description: User's organization
+                    example: Omnis fugiat repudiandae et nihil repellat.
+                user_id:
+                    type: string
+                    description: User's LF ID
+                    example: Officiis enim veritatis est.
+            example:
+                avatar_url: https://example.com/avatar.jpg
+                email: user@example.com
+                first_name: John
+                host: false
+                job_title: Software Engineer
+                last_name: Doe
+                occurrence_id: "1640995200"
+                org_name: Magni eaque aut distinctio.
+                user_id: Expedita voluptatem ut minus vel qui animi.
+            required:
+                - email
+                - first_name
+                - last_name
         CreateRegistrantPayload:
             type: object
             properties:
@@ -1968,24 +1965,19 @@ components:
                     example: Doe
                     minLength: 1
                     maxLength: 100
-                meeting_uid:
-                    type: string
-                    description: The UID of the meeting
-                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    format: uuid
                 occurrence_id:
                     type: string
                     description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
                     example: "1640995200"
                     pattern: ^[0-9]*$
-                org_is_project_member:
-                    type: boolean
-                    description: Whether the registrant is in an organization that has a membership with the project (of the meeting). If unknown, don't pass this field; the API will find the value by default
-                    example: false
+                org_name:
+                    type: string
+                    description: User's organization
+                    example: Officiis expedita in.
                 user_id:
                     type: string
                     description: User's LF ID
-                    example: Quas ipsum voluptatem ut voluptas laboriosam officia.
+                    example: Minima eos inventore quisquam quo voluptatibus.
             description: Payload for creating a new meeting registrant
             example:
                 avatar_url: https://example.com/avatar.jpg
@@ -1994,10 +1986,9 @@ components:
                 host: true
                 job_title: Software Engineer
                 last_name: Doe
-                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 occurrence_id: "1640995200"
-                org_is_project_member: true
-                user_id: Itaque qui nemo dolores.
+                org_name: Eos tempora.
+                user_id: Dolor repudiandae sint tenetur.
             required:
                 - meeting_uid
                 - email
@@ -2021,12 +2012,12 @@ components:
                           last_name: Doe
                           meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           occurrence_id: "1640995200"
-                          org_is_member: false
+                          org_is_member: true
                           org_is_project_member: true
-                          org_name: Repellendus ut.
+                          org_name: Nihil et magni.
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
-                          user_id: Consequatur voluptatibus et.
+                          user_id: Expedita corrupti.
                         - avatar_url: https://example.com/avatar.jpg
                           created_at: "2021-01-01T00:00:00Z"
                           email: user@example.com
@@ -2036,42 +2027,12 @@ components:
                           last_name: Doe
                           meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           occurrence_id: "1640995200"
-                          org_is_member: false
+                          org_is_member: true
                           org_is_project_member: true
-                          org_name: Repellendus ut.
+                          org_name: Nihil et magni.
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
-                          user_id: Consequatur voluptatibus et.
-                        - avatar_url: https://example.com/avatar.jpg
-                          created_at: "2021-01-01T00:00:00Z"
-                          email: user@example.com
-                          first_name: John
-                          host: false
-                          job_title: Software Engineer
-                          last_name: Doe
-                          meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          occurrence_id: "1640995200"
-                          org_is_member: false
-                          org_is_project_member: true
-                          org_name: Repellendus ut.
-                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          updated_at: "2021-01-01T00:00:00Z"
-                          user_id: Consequatur voluptatibus et.
-                        - avatar_url: https://example.com/avatar.jpg
-                          created_at: "2021-01-01T00:00:00Z"
-                          email: user@example.com
-                          first_name: John
-                          host: false
-                          job_title: Software Engineer
-                          last_name: Doe
-                          meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          occurrence_id: "1640995200"
-                          org_is_member: false
-                          org_is_project_member: true
-                          org_name: Repellendus ut.
-                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          updated_at: "2021-01-01T00:00:00Z"
-                          user_id: Consequatur voluptatibus et.
+                          user_id: Expedita corrupti.
             example:
                 registrants:
                     - avatar_url: https://example.com/avatar.jpg
@@ -2083,12 +2044,12 @@ components:
                       last_name: Doe
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       occurrence_id: "1640995200"
-                      org_is_member: false
+                      org_is_member: true
                       org_is_project_member: true
-                      org_name: Repellendus ut.
+                      org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Consequatur voluptatibus et.
+                      user_id: Expedita corrupti.
                     - avatar_url: https://example.com/avatar.jpg
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
@@ -2098,42 +2059,12 @@ components:
                       last_name: Doe
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       occurrence_id: "1640995200"
-                      org_is_member: false
+                      org_is_member: true
                       org_is_project_member: true
-                      org_name: Repellendus ut.
+                      org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Consequatur voluptatibus et.
-                    - avatar_url: https://example.com/avatar.jpg
-                      created_at: "2021-01-01T00:00:00Z"
-                      email: user@example.com
-                      first_name: John
-                      host: false
-                      job_title: Software Engineer
-                      last_name: Doe
-                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      occurrence_id: "1640995200"
-                      org_is_member: false
-                      org_is_project_member: true
-                      org_name: Repellendus ut.
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Consequatur voluptatibus et.
-                    - avatar_url: https://example.com/avatar.jpg
-                      created_at: "2021-01-01T00:00:00Z"
-                      email: user@example.com
-                      first_name: John
-                      host: false
-                      job_title: Software Engineer
-                      last_name: Doe
-                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      occurrence_id: "1640995200"
-                      org_is_member: false
-                      org_is_project_member: true
-                      org_name: Repellendus ut.
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Consequatur voluptatibus et.
+                      user_id: Expedita corrupti.
             required:
                 - registrants
         GetMeetingsResponseBody:
@@ -2148,449 +2079,514 @@ components:
                         - artifact_visibility: meeting_hosts
                           committees:
                             - allowed_voting_statuses:
-                                - Sint ea laborum quos.
-                                - Enim tenetur eligendi aliquid deserunt et.
-                                - Commodi corrupti maiores modi laborum voluptatibus aut.
-                              uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                - Maiores modi laborum voluptatibus aut aperiam.
+                                - Aperiam atque id est molestias voluptatibus repudiandae.
+                                - Labore perspiciatis sint sequi tempore.
+                              uid: Et voluptatem.
                             - allowed_voting_statuses:
-                                - Sint ea laborum quos.
-                                - Enim tenetur eligendi aliquid deserunt et.
-                                - Commodi corrupti maiores modi laborum voluptatibus aut.
-                              uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                            - allowed_voting_statuses:
-                                - Sint ea laborum quos.
-                                - Enim tenetur eligendi aliquid deserunt et.
-                                - Commodi corrupti maiores modi laborum voluptatibus aut.
-                              uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                - Maiores modi laborum voluptatibus aut aperiam.
+                                - Aperiam atque id est molestias voluptatibus repudiandae.
+                                - Labore perspiciatis sint sequi tempore.
+                              uid: Et voluptatem.
                           created_at: "2021-01-01T00:00:00Z"
-                          description: Fuga molestiae et non qui sit.
-                          duration: 264
-                          early_join_time_minutes: 18
-                          email_delivery_error_count: 1525952564354982314
+                          description: Modi enim tenetur eligendi.
+                          duration: 595
+                          early_join_time_minutes: 54
+                          email_delivery_error_count: 5057334274904799540
                           meeting_type: None
                           occurrences:
-                            - description: Consequatur aut.
-                              duration: 1593840103266195025
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2013-11-10T14:07:34Z"
-                                end_times: 4701682536807366624
-                                monthly_day: 10
-                                monthly_week: 3
-                                monthly_week_day: 4
-                                repeat_interval: 9105352176115504289
-                                type: 1
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
                                 weekly_days: 1,3,5
-                              registrant_count: 7707029304260535299
-                              response_count_no: 7601203275471959643
-                              response_count_yes: 2719122732674748944
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
                               start_time: "2021-01-01T10:00:00Z"
-                              status: active
-                              title: In accusantium.
-                            - description: Consequatur aut.
-                              duration: 1593840103266195025
+                              status: cancelled
+                              title: Ab repudiandae.
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2013-11-10T14:07:34Z"
-                                end_times: 4701682536807366624
-                                monthly_day: 10
-                                monthly_week: 3
-                                monthly_week_day: 4
-                                repeat_interval: 9105352176115504289
-                                type: 1
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
                                 weekly_days: 1,3,5
-                              registrant_count: 7707029304260535299
-                              response_count_no: 7601203275471959643
-                              response_count_yes: 2719122732674748944
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
                               start_time: "2021-01-01T10:00:00Z"
-                              status: active
-                              title: In accusantium.
+                              status: cancelled
+                              title: Ab repudiandae.
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
+                                weekly_days: 1,3,5
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Ab repudiandae.
                           platform: Zoom
                           project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                          recording_enabled: true
+                          public_link: Est in accusantium.
+                          recording_enabled: false
                           recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 6544693447296871776
-                          registrant_response_accepted_count: 6818425833915952086
-                          registrant_response_declined_count: 1376532247590729123
+                          registrant_count: 2719122732674748944
+                          registrant_response_accepted_count: 7532607959111294362
+                          registrant_response_declined_count: 5237990459479629398
                           restricted: false
                           start_time: "2021-01-01T00:00:00Z"
-                          timezone: Ut cupiditate suscipit nemo illum.
-                          title: Necessitatibus sed deserunt quas quia.
+                          timezone: Molestiae voluptas maiores commodi nostrum et.
+                          title: Omnis delectus error sint ea laborum.
                           transcript_enabled: false
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
                           visibility: public
-                          youtube_upload_enabled: true
+                          youtube_upload_enabled: false
                           zoom_config:
-                            ai_companion_enabled: true
-                            ai_summary_require_approval: true
+                            ai_companion_enabled: false
+                            ai_summary_require_approval: false
                             meeting_id: "1234567890"
                         - artifact_visibility: meeting_hosts
                           committees:
                             - allowed_voting_statuses:
-                                - Sint ea laborum quos.
-                                - Enim tenetur eligendi aliquid deserunt et.
-                                - Commodi corrupti maiores modi laborum voluptatibus aut.
-                              uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                - Maiores modi laborum voluptatibus aut aperiam.
+                                - Aperiam atque id est molestias voluptatibus repudiandae.
+                                - Labore perspiciatis sint sequi tempore.
+                              uid: Et voluptatem.
                             - allowed_voting_statuses:
-                                - Sint ea laborum quos.
-                                - Enim tenetur eligendi aliquid deserunt et.
-                                - Commodi corrupti maiores modi laborum voluptatibus aut.
-                              uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                            - allowed_voting_statuses:
-                                - Sint ea laborum quos.
-                                - Enim tenetur eligendi aliquid deserunt et.
-                                - Commodi corrupti maiores modi laborum voluptatibus aut.
-                              uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                                - Maiores modi laborum voluptatibus aut aperiam.
+                                - Aperiam atque id est molestias voluptatibus repudiandae.
+                                - Labore perspiciatis sint sequi tempore.
+                              uid: Et voluptatem.
                           created_at: "2021-01-01T00:00:00Z"
-                          description: Fuga molestiae et non qui sit.
-                          duration: 264
-                          early_join_time_minutes: 18
-                          email_delivery_error_count: 1525952564354982314
+                          description: Modi enim tenetur eligendi.
+                          duration: 595
+                          early_join_time_minutes: 54
+                          email_delivery_error_count: 5057334274904799540
                           meeting_type: None
                           occurrences:
-                            - description: Consequatur aut.
-                              duration: 1593840103266195025
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2013-11-10T14:07:34Z"
-                                end_times: 4701682536807366624
-                                monthly_day: 10
-                                monthly_week: 3
-                                monthly_week_day: 4
-                                repeat_interval: 9105352176115504289
-                                type: 1
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
                                 weekly_days: 1,3,5
-                              registrant_count: 7707029304260535299
-                              response_count_no: 7601203275471959643
-                              response_count_yes: 2719122732674748944
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
                               start_time: "2021-01-01T10:00:00Z"
-                              status: active
-                              title: In accusantium.
-                            - description: Consequatur aut.
-                              duration: 1593840103266195025
+                              status: cancelled
+                              title: Ab repudiandae.
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2013-11-10T14:07:34Z"
-                                end_times: 4701682536807366624
-                                monthly_day: 10
-                                monthly_week: 3
-                                monthly_week_day: 4
-                                repeat_interval: 9105352176115504289
-                                type: 1
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
                                 weekly_days: 1,3,5
-                              registrant_count: 7707029304260535299
-                              response_count_no: 7601203275471959643
-                              response_count_yes: 2719122732674748944
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
                               start_time: "2021-01-01T10:00:00Z"
-                              status: active
-                              title: In accusantium.
+                              status: cancelled
+                              title: Ab repudiandae.
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
+                                weekly_days: 1,3,5
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Ab repudiandae.
                           platform: Zoom
                           project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                          recording_enabled: true
+                          public_link: Est in accusantium.
+                          recording_enabled: false
                           recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 6544693447296871776
-                          registrant_response_accepted_count: 6818425833915952086
-                          registrant_response_declined_count: 1376532247590729123
+                          registrant_count: 2719122732674748944
+                          registrant_response_accepted_count: 7532607959111294362
+                          registrant_response_declined_count: 5237990459479629398
                           restricted: false
                           start_time: "2021-01-01T00:00:00Z"
-                          timezone: Ut cupiditate suscipit nemo illum.
-                          title: Necessitatibus sed deserunt quas quia.
+                          timezone: Molestiae voluptas maiores commodi nostrum et.
+                          title: Omnis delectus error sint ea laborum.
                           transcript_enabled: false
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
                           visibility: public
-                          youtube_upload_enabled: true
+                          youtube_upload_enabled: false
                           zoom_config:
-                            ai_companion_enabled: true
-                            ai_summary_require_approval: true
+                            ai_companion_enabled: false
+                            ai_summary_require_approval: false
+                            meeting_id: "1234567890"
+                        - artifact_visibility: meeting_hosts
+                          committees:
+                            - allowed_voting_statuses:
+                                - Maiores modi laborum voluptatibus aut aperiam.
+                                - Aperiam atque id est molestias voluptatibus repudiandae.
+                                - Labore perspiciatis sint sequi tempore.
+                              uid: Et voluptatem.
+                            - allowed_voting_statuses:
+                                - Maiores modi laborum voluptatibus aut aperiam.
+                                - Aperiam atque id est molestias voluptatibus repudiandae.
+                                - Labore perspiciatis sint sequi tempore.
+                              uid: Et voluptatem.
+                          created_at: "2021-01-01T00:00:00Z"
+                          description: Modi enim tenetur eligendi.
+                          duration: 595
+                          early_join_time_minutes: 54
+                          email_delivery_error_count: 5057334274904799540
+                          meeting_type: None
+                          occurrences:
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
+                                weekly_days: 1,3,5
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Ab repudiandae.
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
+                                weekly_days: 1,3,5
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Ab repudiandae.
+                            - description: Ut ipsum iste.
+                              duration: 1549525017367875752
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1981-10-26T05:45:34Z"
+                                end_times: 3130928916872009331
+                                monthly_day: 25
+                                monthly_week: 4
+                                monthly_week_day: 7
+                                repeat_interval: 8837189727705721375
+                                type: 2
+                                weekly_days: 1,3,5
+                              registrant_count: 4918391209221064697
+                              response_count_no: 6135749273744839255
+                              response_count_yes: 8647620820325443268
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Ab repudiandae.
+                          platform: Zoom
+                          project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          public_link: Est in accusantium.
+                          recording_enabled: false
+                          recurrence:
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
+                            weekly_days: 1,3,5
+                          registrant_count: 2719122732674748944
+                          registrant_response_accepted_count: 7532607959111294362
+                          registrant_response_declined_count: 5237990459479629398
+                          restricted: false
+                          start_time: "2021-01-01T00:00:00Z"
+                          timezone: Molestiae voluptas maiores commodi nostrum et.
+                          title: Omnis delectus error sint ea laborum.
+                          transcript_enabled: false
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          updated_at: "2021-01-01T00:00:00Z"
+                          visibility: public
+                          youtube_upload_enabled: false
+                          zoom_config:
+                            ai_companion_enabled: false
+                            ai_summary_require_approval: false
                             meeting_id: "1234567890"
             example:
                 meetings:
                     - artifact_visibility: meeting_hosts
                       committees:
                         - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                            - Maiores modi laborum voluptatibus aut aperiam.
+                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                            - Labore perspiciatis sint sequi tempore.
+                          uid: Et voluptatem.
                         - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                        - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                            - Maiores modi laborum voluptatibus aut aperiam.
+                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                            - Labore perspiciatis sint sequi tempore.
+                          uid: Et voluptatem.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Fuga molestiae et non qui sit.
-                      duration: 264
-                      early_join_time_minutes: 18
-                      email_delivery_error_count: 1525952564354982314
+                      description: Modi enim tenetur eligendi.
+                      duration: 595
+                      early_join_time_minutes: 54
+                      email_delivery_error_count: 5057334274904799540
                       meeting_type: None
                       occurrences:
-                        - description: Consequatur aut.
-                          duration: 1593840103266195025
+                        - description: Ut ipsum iste.
+                          duration: 1549525017367875752
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 7707029304260535299
-                          response_count_no: 7601203275471959643
-                          response_count_yes: 2719122732674748944
+                          registrant_count: 4918391209221064697
+                          response_count_no: 6135749273744839255
+                          response_count_yes: 8647620820325443268
                           start_time: "2021-01-01T10:00:00Z"
-                          status: active
-                          title: In accusantium.
-                        - description: Consequatur aut.
-                          duration: 1593840103266195025
+                          status: cancelled
+                          title: Ab repudiandae.
+                        - description: Ut ipsum iste.
+                          duration: 1549525017367875752
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 7707029304260535299
-                          response_count_no: 7601203275471959643
-                          response_count_yes: 2719122732674748944
+                          registrant_count: 4918391209221064697
+                          response_count_no: 6135749273744839255
+                          response_count_yes: 8647620820325443268
                           start_time: "2021-01-01T10:00:00Z"
-                          status: active
-                          title: In accusantium.
+                          status: cancelled
+                          title: Ab repudiandae.
+                        - description: Ut ipsum iste.
+                          duration: 1549525017367875752
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
+                            weekly_days: 1,3,5
+                          registrant_count: 4918391209221064697
+                          response_count_no: 6135749273744839255
+                          response_count_yes: 8647620820325443268
+                          start_time: "2021-01-01T10:00:00Z"
+                          status: cancelled
+                          title: Ab repudiandae.
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                      recording_enabled: true
+                      public_link: Est in accusantium.
+                      recording_enabled: false
                       recurrence:
-                        end_date_time: "2013-11-10T14:07:34Z"
-                        end_times: 4701682536807366624
-                        monthly_day: 10
-                        monthly_week: 3
-                        monthly_week_day: 4
-                        repeat_interval: 9105352176115504289
-                        type: 1
+                        end_date_time: "1981-10-26T05:45:34Z"
+                        end_times: 3130928916872009331
+                        monthly_day: 25
+                        monthly_week: 4
+                        monthly_week_day: 7
+                        repeat_interval: 8837189727705721375
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 6544693447296871776
-                      registrant_response_accepted_count: 6818425833915952086
-                      registrant_response_declined_count: 1376532247590729123
+                      registrant_count: 2719122732674748944
+                      registrant_response_accepted_count: 7532607959111294362
+                      registrant_response_declined_count: 5237990459479629398
                       restricted: false
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Ut cupiditate suscipit nemo illum.
-                      title: Necessitatibus sed deserunt quas quia.
+                      timezone: Molestiae voluptas maiores commodi nostrum et.
+                      title: Omnis delectus error sint ea laborum.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       visibility: public
-                      youtube_upload_enabled: true
+                      youtube_upload_enabled: false
                       zoom_config:
-                        ai_companion_enabled: true
-                        ai_summary_require_approval: true
+                        ai_companion_enabled: false
+                        ai_summary_require_approval: false
                         meeting_id: "1234567890"
                     - artifact_visibility: meeting_hosts
                       committees:
                         - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                            - Maiores modi laborum voluptatibus aut aperiam.
+                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                            - Labore perspiciatis sint sequi tempore.
+                          uid: Et voluptatem.
                         - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                        - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
+                            - Maiores modi laborum voluptatibus aut aperiam.
+                            - Aperiam atque id est molestias voluptatibus repudiandae.
+                            - Labore perspiciatis sint sequi tempore.
+                          uid: Et voluptatem.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Fuga molestiae et non qui sit.
-                      duration: 264
-                      early_join_time_minutes: 18
-                      email_delivery_error_count: 1525952564354982314
+                      description: Modi enim tenetur eligendi.
+                      duration: 595
+                      early_join_time_minutes: 54
+                      email_delivery_error_count: 5057334274904799540
                       meeting_type: None
                       occurrences:
-                        - description: Consequatur aut.
-                          duration: 1593840103266195025
+                        - description: Ut ipsum iste.
+                          duration: 1549525017367875752
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 7707029304260535299
-                          response_count_no: 7601203275471959643
-                          response_count_yes: 2719122732674748944
+                          registrant_count: 4918391209221064697
+                          response_count_no: 6135749273744839255
+                          response_count_yes: 8647620820325443268
                           start_time: "2021-01-01T10:00:00Z"
-                          status: active
-                          title: In accusantium.
-                        - description: Consequatur aut.
-                          duration: 1593840103266195025
+                          status: cancelled
+                          title: Ab repudiandae.
+                        - description: Ut ipsum iste.
+                          duration: 1549525017367875752
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 7707029304260535299
-                          response_count_no: 7601203275471959643
-                          response_count_yes: 2719122732674748944
+                          registrant_count: 4918391209221064697
+                          response_count_no: 6135749273744839255
+                          response_count_yes: 8647620820325443268
                           start_time: "2021-01-01T10:00:00Z"
-                          status: active
-                          title: In accusantium.
+                          status: cancelled
+                          title: Ab repudiandae.
+                        - description: Ut ipsum iste.
+                          duration: 1549525017367875752
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1981-10-26T05:45:34Z"
+                            end_times: 3130928916872009331
+                            monthly_day: 25
+                            monthly_week: 4
+                            monthly_week_day: 7
+                            repeat_interval: 8837189727705721375
+                            type: 2
+                            weekly_days: 1,3,5
+                          registrant_count: 4918391209221064697
+                          response_count_no: 6135749273744839255
+                          response_count_yes: 8647620820325443268
+                          start_time: "2021-01-01T10:00:00Z"
+                          status: cancelled
+                          title: Ab repudiandae.
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                      recording_enabled: true
+                      public_link: Est in accusantium.
+                      recording_enabled: false
                       recurrence:
-                        end_date_time: "2013-11-10T14:07:34Z"
-                        end_times: 4701682536807366624
-                        monthly_day: 10
-                        monthly_week: 3
-                        monthly_week_day: 4
-                        repeat_interval: 9105352176115504289
-                        type: 1
+                        end_date_time: "1981-10-26T05:45:34Z"
+                        end_times: 3130928916872009331
+                        monthly_day: 25
+                        monthly_week: 4
+                        monthly_week_day: 7
+                        repeat_interval: 8837189727705721375
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 6544693447296871776
-                      registrant_response_accepted_count: 6818425833915952086
-                      registrant_response_declined_count: 1376532247590729123
+                      registrant_count: 2719122732674748944
+                      registrant_response_accepted_count: 7532607959111294362
+                      registrant_response_declined_count: 5237990459479629398
                       restricted: false
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Ut cupiditate suscipit nemo illum.
-                      title: Necessitatibus sed deserunt quas quia.
+                      timezone: Molestiae voluptas maiores commodi nostrum et.
+                      title: Omnis delectus error sint ea laborum.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       visibility: public
-                      youtube_upload_enabled: true
+                      youtube_upload_enabled: false
                       zoom_config:
-                        ai_companion_enabled: true
-                        ai_summary_require_approval: true
-                        meeting_id: "1234567890"
-                    - artifact_visibility: meeting_hosts
-                      committees:
-                        - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                        - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                        - allowed_voting_statuses:
-                            - Sint ea laborum quos.
-                            - Enim tenetur eligendi aliquid deserunt et.
-                            - Commodi corrupti maiores modi laborum voluptatibus aut.
-                          uid: Quaerat voluptatibus repellat numquam eligendi omnis.
-                      created_at: "2021-01-01T00:00:00Z"
-                      description: Fuga molestiae et non qui sit.
-                      duration: 264
-                      early_join_time_minutes: 18
-                      email_delivery_error_count: 1525952564354982314
-                      meeting_type: None
-                      occurrences:
-                        - description: Consequatur aut.
-                          duration: 1593840103266195025
-                          occurrence_id: "1640995200"
-                          recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
-                            weekly_days: 1,3,5
-                          registrant_count: 7707029304260535299
-                          response_count_no: 7601203275471959643
-                          response_count_yes: 2719122732674748944
-                          start_time: "2021-01-01T10:00:00Z"
-                          status: active
-                          title: In accusantium.
-                        - description: Consequatur aut.
-                          duration: 1593840103266195025
-                          occurrence_id: "1640995200"
-                          recurrence:
-                            end_date_time: "2013-11-10T14:07:34Z"
-                            end_times: 4701682536807366624
-                            monthly_day: 10
-                            monthly_week: 3
-                            monthly_week_day: 4
-                            repeat_interval: 9105352176115504289
-                            type: 1
-                            weekly_days: 1,3,5
-                          registrant_count: 7707029304260535299
-                          response_count_no: 7601203275471959643
-                          response_count_yes: 2719122732674748944
-                          start_time: "2021-01-01T10:00:00Z"
-                          status: active
-                          title: In accusantium.
-                      platform: Zoom
-                      project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: Voluptatibus repudiandae adipisci labore perspiciatis.
-                      recording_enabled: true
-                      recurrence:
-                        end_date_time: "2013-11-10T14:07:34Z"
-                        end_times: 4701682536807366624
-                        monthly_day: 10
-                        monthly_week: 3
-                        monthly_week_day: 4
-                        repeat_interval: 9105352176115504289
-                        type: 1
-                        weekly_days: 1,3,5
-                      registrant_count: 6544693447296871776
-                      registrant_response_accepted_count: 6818425833915952086
-                      registrant_response_declined_count: 1376532247590729123
-                      restricted: false
-                      start_time: "2021-01-01T00:00:00Z"
-                      timezone: Ut cupiditate suscipit nemo illum.
-                      title: Necessitatibus sed deserunt quas quia.
-                      transcript_enabled: false
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      updated_at: "2021-01-01T00:00:00Z"
-                      visibility: public
-                      youtube_upload_enabled: true
-                      zoom_config:
-                        ai_companion_enabled: true
-                        ai_summary_require_approval: true
+                        ai_companion_enabled: false
+                        ai_summary_require_approval: false
                         meeting_id: "1234567890"
             required:
                 - meetings
@@ -2617,7 +2613,7 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: meeting_participants
+                    example: public
                     enum:
                         - meeting_hosts
                         - meeting_participants
@@ -2640,18 +2636,6 @@ components:
                             - Magnam suscipit a qui voluptatem delectus.
                             - Ut ut voluptas voluptates.
                           uid: Commodi laboriosam quasi ut sunt illo.
-                        - allowed_voting_statuses:
-                            - Et eligendi tempore ipsum consequatur ab.
-                            - Et eius.
-                            - Magnam suscipit a qui voluptatem delectus.
-                            - Ut ut voluptas voluptates.
-                          uid: Commodi laboriosam quasi ut sunt illo.
-                        - allowed_voting_statuses:
-                            - Et eligendi tempore ipsum consequatur ab.
-                            - Et eius.
-                            - Magnam suscipit a qui voluptatem delectus.
-                            - Ut ut voluptas voluptates.
-                          uid: Commodi laboriosam quasi ut sunt illo.
                 created_at:
                     type: string
                     description: The date and time the resource was created
@@ -2660,25 +2644,25 @@ components:
                 description:
                     type: string
                     description: The description of the meeting
-                    example: Soluta officiis in et reiciendis rerum quam.
+                    example: Unde aut dicta quod.
                 duration:
                     type: integer
                     description: The duration of the meeting in minutes
-                    example: 212
+                    example: 388
                     format: int64
                     minimum: 0
                     maximum: 600
                 early_join_time_minutes:
                     type: integer
                     description: The number of minutes that users are allowed to join the meeting early without being kicked out
-                    example: 50
+                    example: 19
                     format: int64
                     minimum: 10
                     maximum: 60
                 email_delivery_error_count:
                     type: integer
                     description: The number of registrants that have an email delivery error with their invite. The delivery errors are counted as the last invite that was sent to the registrant, so if a registrant previously had a delivery error but not in their most recent invite received, then it does not count towards this field value.
-                    example: 3492169287790778278
+                    example: 1973514553016111883
                     format: int64
                 meeting_type:
                     type: string
@@ -2752,6 +2736,24 @@ components:
                           start_time: "2021-01-01T10:00:00Z"
                           status: active
                           title: Doloremque dolor quis.
+                        - description: Ex sint et fugiat sed saepe.
+                          duration: 7013231128997070736
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "2015-09-30T12:28:08Z"
+                            end_times: 6181027306472416327
+                            monthly_day: 8
+                            monthly_week: 2
+                            monthly_week_day: 4
+                            repeat_interval: 2817369812233191236
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 7562189353405078679
+                          response_count_no: 2042006474036547331
+                          response_count_yes: 957941077608806810
+                          start_time: "2021-01-01T10:00:00Z"
+                          status: active
+                          title: Doloremque dolor quis.
                 platform:
                     type: string
                     description: The platform name of where the meeting is hosted
@@ -2766,7 +2768,7 @@ components:
                 public_link:
                     type: string
                     description: The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-                    example: Itaque culpa commodi maiores.
+                    example: Temporibus occaecati ut delectus repudiandae dolores.
                 recording_enabled:
                     type: boolean
                     description: Whether recording is enabled for the meeting
@@ -2776,22 +2778,22 @@ components:
                 registrant_count:
                     type: integer
                     description: The number of registrants for the meeting
-                    example: 30058876820940359
+                    example: 6128835191966401044
                     format: int64
                 registrant_response_accepted_count:
                     type: integer
                     description: The number of registrants that have accepted the meeting invitation
-                    example: 6333255709882096444
+                    example: 2516047719102407696
                     format: int64
                 registrant_response_declined_count:
                     type: integer
                     description: The number of registrants that have declined the meeting invitation
-                    example: 996270232991161574
+                    example: 9178369744328334804
                     format: int64
                 restricted:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
-                    example: true
+                    example: false
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -2800,11 +2802,11 @@ components:
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
-                    example: Qui tenetur.
+                    example: Temporibus rerum quidem voluptatem est nobis optio.
                 title:
                     type: string
                     description: The title of the meeting
-                    example: Officiis aut sint aperiam beatae et.
+                    example: At occaecati reprehenderit.
                 transcript_enabled:
                     type: boolean
                     description: Whether transcription is enabled for the meeting
@@ -2822,7 +2824,7 @@ components:
                 visibility:
                     type: string
                     description: The visibility of the meeting's existence to other users
-                    example: private
+                    example: public
                     enum:
                         - public
                         - private
@@ -2834,7 +2836,7 @@ components:
                     $ref: '#/components/schemas/ZoomConfigFull'
             description: Meeting object
             example:
-                artifact_visibility: public
+                artifact_visibility: meeting_participants
                 committees:
                     - allowed_voting_statuses:
                         - Et eligendi tempore ipsum consequatur ab.
@@ -2849,11 +2851,11 @@ components:
                         - Ut ut voluptas voluptates.
                       uid: Commodi laboriosam quasi ut sunt illo.
                 created_at: "2021-01-01T00:00:00Z"
-                description: Unde aut dicta quod.
-                duration: 361
-                early_join_time_minutes: 19
-                email_delivery_error_count: 1973514553016111883
-                meeting_type: Marketing
+                description: Maiores porro at itaque qui nemo dolores.
+                duration: 332
+                early_join_time_minutes: 14
+                email_delivery_error_count: 4658033088367030994
+                meeting_type: None
                 occurrences:
                     - description: Ex sint et fugiat sed saepe.
                       duration: 7013231128997070736
@@ -2891,46 +2893,10 @@ components:
                       start_time: "2021-01-01T10:00:00Z"
                       status: active
                       title: Doloremque dolor quis.
-                    - description: Ex sint et fugiat sed saepe.
-                      duration: 7013231128997070736
-                      occurrence_id: "1640995200"
-                      recurrence:
-                        end_date_time: "2015-09-30T12:28:08Z"
-                        end_times: 6181027306472416327
-                        monthly_day: 8
-                        monthly_week: 2
-                        monthly_week_day: 4
-                        repeat_interval: 2817369812233191236
-                        type: 1
-                        weekly_days: 1,3,5
-                      registrant_count: 7562189353405078679
-                      response_count_no: 2042006474036547331
-                      response_count_yes: 957941077608806810
-                      start_time: "2021-01-01T10:00:00Z"
-                      status: active
-                      title: Doloremque dolor quis.
-                    - description: Ex sint et fugiat sed saepe.
-                      duration: 7013231128997070736
-                      occurrence_id: "1640995200"
-                      recurrence:
-                        end_date_time: "2015-09-30T12:28:08Z"
-                        end_times: 6181027306472416327
-                        monthly_day: 8
-                        monthly_week: 2
-                        monthly_week_day: 4
-                        repeat_interval: 2817369812233191236
-                        type: 1
-                        weekly_days: 1,3,5
-                      registrant_count: 7562189353405078679
-                      response_count_no: 2042006474036547331
-                      response_count_yes: 957941077608806810
-                      start_time: "2021-01-01T10:00:00Z"
-                      status: active
-                      title: Doloremque dolor quis.
                 platform: Zoom
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                public_link: Temporibus occaecati ut delectus repudiandae dolores.
-                recording_enabled: true
+                public_link: Qui sint.
+                recording_enabled: false
                 recurrence:
                     end_date_time: "2015-09-30T12:28:08Z"
                     end_times: 6181027306472416327
@@ -2940,13 +2906,13 @@ components:
                     repeat_interval: 2817369812233191236
                     type: 1
                     weekly_days: 1,3,5
-                registrant_count: 6128835191966401044
-                registrant_response_accepted_count: 2516047719102407696
-                registrant_response_declined_count: 9178369744328334804
+                registrant_count: 352946519207131885
+                registrant_response_accepted_count: 329474305011486173
+                registrant_response_declined_count: 6766320496104838436
                 restricted: false
                 start_time: "2021-01-01T00:00:00Z"
-                timezone: Rerum quidem voluptatem est nobis optio.
-                title: At occaecati reprehenderit.
+                timezone: Magnam quas ipsum.
+                title: Ut voluptas laboriosam.
                 transcript_enabled: false
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "2021-01-01T00:00:00Z"
@@ -2979,11 +2945,11 @@ components:
                 description:
                     type: string
                     description: Meeting description for this occurrence
-                    example: Minus vitae dolores.
+                    example: Voluptas sapiente temporibus qui magnam.
                 duration:
                     type: integer
                     description: Occurrence duration in minutes
-                    example: 2498023645064153129
+                    example: 6256339878646942126
                     format: int64
                 occurrence_id:
                     type: string
@@ -2994,17 +2960,17 @@ components:
                 registrant_count:
                     type: integer
                     description: Number of registrants for this meeting occurrence
-                    example: 7508086479319852967
+                    example: 2415232529273358694
                     format: int64
                 response_count_no:
                     type: integer
                     description: Number of registrants who declined the invite for this occurrence
-                    example: 5586870578572380363
+                    example: 9039606314117922851
                     format: int64
                 response_count_yes:
                     type: integer
                     description: Number of registrants who accepted the invite for this occurrence
-                    example: 6151370016006149748
+                    example: 3164465076978568542
                     format: int64
                 start_time:
                     type: string
@@ -3014,18 +2980,18 @@ components:
                 status:
                     type: string
                     description: Occurrence status from platform
-                    example: active
+                    example: cancelled
                     enum:
                         - active
                         - cancelled
                 title:
                     type: string
                     description: Meeting title for this occurrence
-                    example: Id vero.
+                    example: Labore est autem.
             description: Meeting occurrence object - read-only data from platform API
             example:
-                description: Quaerat perspiciatis dolorem.
-                duration: 7474753012606798090
+                description: Aut voluptatem.
+                duration: 329348061374989575
                 occurrence_id: "1640995200"
                 recurrence:
                     end_date_time: "2015-09-30T12:28:08Z"
@@ -3036,24 +3002,24 @@ components:
                     repeat_interval: 2817369812233191236
                     type: 1
                     weekly_days: 1,3,5
-                registrant_count: 2472486207783454386
-                response_count_no: 2251043046995174070
-                response_count_yes: 4394898623810235556
+                registrant_count: 3976430388464406756
+                response_count_no: 1694804623729361142
+                response_count_yes: 7284366555040250646
                 start_time: "2021-01-01T10:00:00Z"
                 status: cancelled
-                title: A blanditiis ex.
+                title: Doloribus numquam eveniet qui.
         Recurrence:
             type: object
             properties:
                 end_date_time:
                     type: string
                     description: Select the final date on which the meeting will recur before it is canceled. Cannot be used with 'end_times'. should be in GMT. should be in 'yyyy-MM-ddTHH:mm:ssZ' format.
-                    example: "1975-02-12T10:26:47Z"
+                    example: "1977-04-01T19:10:29Z"
                     format: date-time
                 end_times:
                     type: integer
                     description: Select how many times the meeting should recur before it is canceled. Cannot be used with 'end_date_time'.
-                    example: 6388514068374989346
+                    example: 5301760018635342495
                     format: int64
                 monthly_day:
                     type: integer
@@ -3065,7 +3031,7 @@ components:
                 monthly_week:
                     type: integer
                     description: Use this field only if you're scheduling a recurring meeting of type '3' to state the week of the month when the meeting should recur. If you use this field, you must also use the 'monthly_week_day' field to state the day of the week when the meeting should recur. '-1' - Last week of the month. 1 - First week of the month. 2 - Second week of the month. 3 - Third week of the month. 4 - Fourth week of the month.
-                    example: 2
+                    example: 4
                     enum:
                         - -1
                         - 1
@@ -3076,7 +3042,7 @@ components:
                 monthly_week_day:
                     type: integer
                     description: Use this field only if you're scheduling a recurring meeting of type '3' to state a specific day in a week when the monthly meeting should recur. To use this field, you must also use the 'monthly_week' field. 1 - Sunday 2 - Monday 3 - Tuesday 4 - Wednesday 5 - Thursday 6 - Friday 7 - Saturday
-                    example: 5
+                    example: 2
                     enum:
                         - 1
                         - 2
@@ -3089,12 +3055,12 @@ components:
                 repeat_interval:
                     type: integer
                     description: "Define the interval at which the meeting should recur. \nFor instance, if you would like to schedule a meeting that recurs every two months, \nyou must set the value of this field as '2' and the value of the 'type' parameter as '3'. \nFor a daily meeting, the maximum interval you can set is '90' days. \nFor a weekly meeting the maximum interval that you can set is of '12' weeks. \nFor a monthly meeting, there is a maximum of '3' months."
-                    example: 8053658369419006394
+                    example: 6979061403422663374
                     format: int64
                 type:
                     type: integer
                     description: The recurrence type
-                    example: 1
+                    example: 3
                     enum:
                         - 1
                         - 2
@@ -3107,12 +3073,12 @@ components:
                     pattern: ^[1-7](,[1-7])*$
             description: Meeting recurrence object
             example:
-                end_date_time: "2014-10-07T08:24:59Z"
-                end_times: 4938922738031923877
-                monthly_day: 5
-                monthly_week: 4
-                monthly_week_day: 2
-                repeat_interval: 291547409878189765
+                end_date_time: "1977-08-03T14:38:03Z"
+                end_times: 4239706229166785785
+                monthly_day: 4
+                monthly_week: -1
+                monthly_week_day: 1
+                repeat_interval: 2971378553632796073
                 type: 1
                 weekly_days: 1,3,5
             required:
@@ -3145,7 +3111,7 @@ components:
                 host:
                     type: boolean
                     description: If user should have access as a meeting host
-                    example: true
+                    example: false
                 job_title:
                     type: string
                     description: User's job title
@@ -3173,11 +3139,11 @@ components:
                 org_is_project_member:
                     type: boolean
                     description: Whether the registrant is in an organization that has a membership with the project (of the meeting). If unknown, don't pass this field; the API will find the value by default
-                    example: false
+                    example: true
                 org_name:
                     type: string
                     description: User's organization
-                    example: Officiis expedita in.
+                    example: Quos esse officia necessitatibus aliquid.
                 uid:
                     type: string
                     description: The UID of the registrant
@@ -3191,7 +3157,7 @@ components:
                 user_id:
                     type: string
                     description: User's LF ID
-                    example: Inventore quisquam quo.
+                    example: Cum iusto velit.
             description: Meeting registrant object
             example:
                 avatar_url: https://example.com/avatar.jpg
@@ -3204,11 +3170,11 @@ components:
                 meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 occurrence_id: "1640995200"
                 org_is_member: false
-                org_is_project_member: true
-                org_name: Ducimus eos tempora quis dolor repudiandae.
+                org_is_project_member: false
+                org_name: Ut quisquam debitis sint.
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "2021-01-01T00:00:00Z"
-                user_id: Ut voluptatem dolorum.
+                user_id: Sint laboriosam.
             required:
                 - uid
                 - meeting_uid
@@ -3238,7 +3204,7 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: meeting_participants
+                    example: public
                     enum:
                         - meeting_hosts
                         - meeting_participants
@@ -3270,25 +3236,25 @@ components:
                 description:
                     type: string
                     description: The description of the meeting
-                    example: Omnis sequi consectetur.
+                    example: Omnis consequatur voluptas sapiente.
                 duration:
                     type: integer
                     description: The duration of the meeting in minutes
-                    example: 177
+                    example: 149
                     format: int64
                     minimum: 0
                     maximum: 600
                 early_join_time_minutes:
                     type: integer
                     description: The number of minutes that users are allowed to join the meeting early without being kicked out
-                    example: 35
+                    example: 46
                     format: int64
                     minimum: 10
                     maximum: 60
                 meeting_type:
                     type: string
                     description: The type of meeting. This is usually dependent on the committee(s) associated with the meeting
-                    example: Board
+                    example: Technical
                     enum:
                         - Board
                         - Maintainers
@@ -3311,7 +3277,7 @@ components:
                 public_link:
                     type: string
                     description: The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-                    example: Recusandae autem.
+                    example: Architecto vero qui.
                 recording_enabled:
                     type: boolean
                     description: Whether recording is enabled for the meeting
@@ -3330,11 +3296,11 @@ components:
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
-                    example: Ad numquam corporis distinctio.
+                    example: Quisquam eveniet ullam.
                 title:
                     type: string
                     description: The title of the meeting
-                    example: Quia ut officia necessitatibus quis reprehenderit.
+                    example: Quasi recusandae.
                 transcript_enabled:
                     type: boolean
                     description: Whether transcription is enabled for the meeting
@@ -3347,7 +3313,7 @@ components:
                 visibility:
                     type: string
                     description: The visibility of the meeting's existence to other users
-                    example: public
+                    example: private
                     enum:
                         - public
                         - private
@@ -3379,14 +3345,20 @@ components:
                         - Magnam suscipit a qui voluptatem delectus.
                         - Ut ut voluptas voluptates.
                       uid: Commodi laboriosam quasi ut sunt illo.
-                description: Quasi recusandae.
-                duration: 404
-                early_join_time_minutes: 54
-                meeting_type: Other
+                    - allowed_voting_statuses:
+                        - Et eligendi tempore ipsum consequatur ab.
+                        - Et eius.
+                        - Magnam suscipit a qui voluptatem delectus.
+                        - Ut ut voluptas voluptates.
+                      uid: Commodi laboriosam quasi ut sunt illo.
+                description: Soluta officiis in et reiciendis rerum quam.
+                duration: 212
+                early_join_time_minutes: 50
+                meeting_type: Marketing
                 platform: Zoom
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                public_link: Molestiae esse occaecati rem.
-                recording_enabled: false
+                public_link: Itaque culpa commodi maiores.
+                recording_enabled: true
                 recurrence:
                     end_date_time: "2015-09-30T12:28:08Z"
                     end_times: 6181027306472416327
@@ -3396,13 +3368,13 @@ components:
                     repeat_interval: 2817369812233191236
                     type: 1
                     weekly_days: 1,3,5
-                restricted: false
+                restricted: true
                 start_time: "2021-01-01T00:00:00Z"
-                timezone: Cumque possimus quas architecto eos.
-                title: Voluptatibus natus quisquam eveniet ullam.
-                transcript_enabled: false
+                timezone: Qui tenetur.
+                title: Officiis aut sint aperiam beatae et.
+                transcript_enabled: true
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                visibility: public
+                visibility: private
                 youtube_upload_enabled: false
                 zoom_config:
                     ai_companion_enabled: false
@@ -3415,66 +3387,6 @@ components:
                 - timezone
                 - title
                 - description
-        UpdateMeetingRegistrantRequestBody:
-            type: object
-            properties:
-                avatar_url:
-                    type: string
-                    description: User's avatar URL
-                    example: https://example.com/avatar.jpg
-                    format: uri
-                email:
-                    type: string
-                    description: User's email address
-                    example: user@example.com
-                    format: email
-                first_name:
-                    type: string
-                    description: User's first name
-                    example: John
-                    minLength: 1
-                    maxLength: 100
-                host:
-                    type: boolean
-                    description: If user should have access as a meeting host
-                    example: false
-                job_title:
-                    type: string
-                    description: User's job title
-                    example: Software Engineer
-                last_name:
-                    type: string
-                    description: User's last name
-                    example: Doe
-                    minLength: 1
-                    maxLength: 100
-                occurrence_id:
-                    type: string
-                    description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
-                    example: "1640995200"
-                    pattern: ^[0-9]*$
-                org_is_project_member:
-                    type: boolean
-                    description: Whether the registrant is in an organization that has a membership with the project (of the meeting). If unknown, don't pass this field; the API will find the value by default
-                    example: true
-                user_id:
-                    type: string
-                    description: User's LF ID
-                    example: Perferendis placeat qui perspiciatis ea maiores.
-            example:
-                avatar_url: https://example.com/avatar.jpg
-                email: user@example.com
-                first_name: John
-                host: false
-                job_title: Software Engineer
-                last_name: Doe
-                occurrence_id: "1640995200"
-                org_is_project_member: false
-                user_id: Quo velit enim tempora atque quos.
-            required:
-                - email
-                - first_name
-                - last_name
         UpdateRegistrantPayload:
             type: object
             properties:
@@ -3508,36 +3420,30 @@ components:
                     example: Doe
                     minLength: 1
                     maxLength: 100
-                meeting_uid:
-                    type: string
-                    description: The UID of the meeting
-                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    format: uuid
                 occurrence_id:
                     type: string
                     description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
                     example: "1640995200"
                     pattern: ^[0-9]*$
-                org_is_project_member:
-                    type: boolean
-                    description: Whether the registrant is in an organization that has a membership with the project (of the meeting). If unknown, don't pass this field; the API will find the value by default
-                    example: false
+                org_name:
+                    type: string
+                    description: User's organization
+                    example: Voluptatem dolorum alias sunt.
                 user_id:
                     type: string
                     description: User's LF ID
-                    example: Dolor ad sit voluptatem delectus qui sint.
+                    example: Quasi porro neque natus perferendis placeat qui.
             description: Payload for updating an existing meeting registrant
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
                 first_name: John
-                host: true
+                host: false
                 job_title: Software Engineer
                 last_name: Doe
-                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 occurrence_id: "1640995200"
-                org_is_project_member: false
-                user_id: Qui ipsum voluptas quia consequatur.
+                org_name: Maiores eos ea omnis.
+                user_id: Velit enim.
             required:
                 - meeting_uid
                 - email
@@ -3549,7 +3455,7 @@ components:
                 ai_companion_enabled:
                     type: boolean
                     description: 'For zoom platform meetings: whether Zoom AI companion is enabled'
-                    example: false
+                    example: true
                 ai_summary_require_approval:
                     type: boolean
                     description: 'For zoom platform meetings: whether AI summary approval is required'
@@ -3564,7 +3470,7 @@ components:
             description: Meeting attributes specific to Zoom platform that contain both writable and read-only attributes
             example:
                 ai_companion_enabled: true
-                ai_summary_require_approval: false
+                ai_summary_require_approval: true
                 meeting_id: "1234567890"
         ZoomConfigPost:
             type: object
@@ -3572,7 +3478,7 @@ components:
                 ai_companion_enabled:
                     type: boolean
                     description: 'For zoom platform meetings: whether Zoom AI companion is enabled'
-                    example: true
+                    example: false
                 ai_summary_require_approval:
                     type: boolean
                     description: 'For zoom platform meetings: whether AI summary approval is required'

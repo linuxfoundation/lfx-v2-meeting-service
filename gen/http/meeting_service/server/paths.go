@@ -42,8 +42,8 @@ func GetMeetingRegistrantsMeetingServicePath(uid string) string {
 }
 
 // CreateMeetingRegistrantMeetingServicePath returns the URL path to the Meeting Service service create-meeting-registrant HTTP endpoint.
-func CreateMeetingRegistrantMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v/registrants", uid)
+func CreateMeetingRegistrantMeetingServicePath(meetingUID string) string {
+	return fmt.Sprintf("/meetings/%v/registrants", meetingUID)
 }
 
 // GetMeetingRegistrantMeetingServicePath returns the URL path to the Meeting Service service get-meeting-registrant HTTP endpoint.

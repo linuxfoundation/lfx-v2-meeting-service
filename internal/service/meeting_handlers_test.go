@@ -32,7 +32,7 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 			messageData: []byte("01234567-89ab-cdef-0123-456789abcdef"),
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
 				now := time.Now()
-				mockRepo.On("GetMeeting", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
+				mockRepo.On("Get", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
 					&models.Meeting{
 						UID:       "01234567-89ab-cdef-0123-456789abcdef",
 						Title:     "Test Meeting",
@@ -97,7 +97,7 @@ func TestMeetingsService_HandleMeetingGetTitle(t *testing.T) {
 			messageData: []byte("01234567-89ab-cdef-0123-456789abcdef"),
 			setupMocks: func(mockRepo *domain.MockMeetingRepository) {
 				now := time.Now()
-				mockRepo.On("GetMeeting", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
+				mockRepo.On("Get", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
 					&models.Meeting{
 						UID:       "01234567-89ab-cdef-0123-456789abcdef",
 						Title:     "Test Meeting Title",
@@ -116,7 +116,7 @@ func TestMeetingsService_HandleMeetingGetTitle(t *testing.T) {
 			name:        "meeting not found",
 			messageData: []byte("01234567-89ab-cdef-0123-456789abcd00"),
 			setupMocks: func(mockRepo *domain.MockMeetingRepository) {
-				mockRepo.On("GetMeeting", mock.Anything, "01234567-89ab-cdef-0123-456789abcd00").Return(
+				mockRepo.On("Get", mock.Anything, "01234567-89ab-cdef-0123-456789abcd00").Return(
 					nil, domain.ErrMeetingNotFound,
 				)
 			},
@@ -202,7 +202,7 @@ func TestMeetingsService_MessageHandling_ErrorCases(t *testing.T) {
 			name: "repository error",
 			setupService: func() *MeetingsService {
 				mockRepo := &domain.MockMeetingRepository{}
-				mockRepo.On("GetMeeting", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
+				mockRepo.On("Get", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
 					nil, domain.ErrInternal,
 				)
 
@@ -247,7 +247,7 @@ func TestMeetingsService_MessageHandling_Integration(t *testing.T) {
 
 		// Setup expectations for a complete flow
 		now := time.Now()
-		mockRepo.On("GetMeeting", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
+		mockRepo.On("Get", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
 			&models.Meeting{
 				UID:       "integration-test-uid",
 				Title:     "Integration Test Meeting",

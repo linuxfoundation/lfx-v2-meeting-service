@@ -38,11 +38,13 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
 				// Meeting exists check
-				mockMeetingRepo.On("GetMeeting", mock.Anything, "meeting-1").Return(&models.Meeting{
+				mockMeetingRepo.On("Get", mock.Anything, "meeting-1").Return(&models.Meeting{
 					UID: "meeting-1",
 				}, nil)
+				// Check for existing registrant with same email (should return empty list)
+				mockRegistrantRepo.On("ListByEmail", mock.Anything, "user@example.com").Return([]*models.Registrant{}, nil)
 				// Create registrant
-				mockRegistrantRepo.On("CreateRegistrant", mock.Anything, mock.MatchedBy(func(r *models.Registrant) bool {
+				mockRegistrantRepo.On("Create", mock.Anything, mock.MatchedBy(func(r *models.Registrant) bool {
 					return r.Email == "user@example.com" && r.FirstName == "John" && r.LastName == "Doe" && r.MeetingUID == "meeting-1"
 				})).Return(nil)
 			},
@@ -58,7 +60,7 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 				LastName:   "Doe",
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockMeetingRepo.On("GetMeeting", mock.Anything, "nonexistent-meeting").Return(nil, domain.ErrMeetingNotFound)
+				mockMeetingRepo.On("Get", mock.Anything, "nonexistent-meeting").Return(nil, domain.ErrMeetingNotFound)
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrMeetingNotFound,
@@ -72,7 +74,7 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 			expectedErrContext: "payload is required",
 		},
 		{
-			name: "registrant already exists",
+			name: "email already exists for meeting",
 			payload: &meetingsvc.CreateMeetingRegistrantPayload{
 				MeetingUID: "meeting-1",
 				Email:      "existing@example.com",
@@ -80,10 +82,19 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 				LastName:   "Smith",
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockMeetingRepo.On("GetMeeting", mock.Anything, "meeting-1").Return(&models.Meeting{
+				// Meeting exists check
+				mockMeetingRepo.On("Get", mock.Anything, "meeting-1").Return(&models.Meeting{
 					UID: "meeting-1",
 				}, nil)
-				mockRegistrantRepo.On("CreateRegistrant", mock.Anything, mock.AnythingOfType("*models.Registrant")).Return(domain.ErrRegistrantAlreadyExists)
+				// Check for existing registrant with same email (returns existing registrant)
+				existingRegistrant := &models.Registrant{
+					UID:        "existing-registrant",
+					MeetingUID: "meeting-1",
+					Email:      "existing@example.com",
+					FirstName:  "Existing",
+					LastName:   "User",
+				}
+				mockRegistrantRepo.On("ListByEmail", mock.Anything, "existing@example.com").Return([]*models.Registrant{existingRegistrant}, nil)
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrRegistrantAlreadyExists,
@@ -153,12 +164,12 @@ func TestMeetingsService_GetMeetingRegistrants(t *testing.T) {
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
 				// Meeting exists check
-				mockMeetingRepo.On("GetMeeting", mock.Anything, "meeting-1").Return(&models.Meeting{
+				mockMeetingRepo.On("Get", mock.Anything, "meeting-1").Return(&models.Meeting{
 					UID: "meeting-1",
 				}, nil)
 				// Get registrants
 				now := time.Now()
-				mockRegistrantRepo.On("ListMeetingRegistrants", mock.Anything, "meeting-1").Return([]*models.Registrant{
+				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-1").Return([]*models.Registrant{
 					{
 						UID:        "registrant-1",
 						MeetingUID: "meeting-1",
@@ -188,7 +199,7 @@ func TestMeetingsService_GetMeetingRegistrants(t *testing.T) {
 				UID: utils.StringPtr("nonexistent-meeting"),
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockMeetingRepo.On("GetMeeting", mock.Anything, "nonexistent-meeting").Return(nil, domain.ErrMeetingNotFound)
+				mockMeetingRepo.On("Get", mock.Anything, "nonexistent-meeting").Return(nil, domain.ErrMeetingNotFound)
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrMeetingNotFound,
@@ -260,8 +271,10 @@ func TestMeetingsService_GetMeetingRegistrant(t *testing.T) {
 				UID:        utils.StringPtr("registrant-1"),
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				// Check if meeting exists
+				mockMeetingRepo.On("Exists", mock.Anything, "meeting-1").Return(true, nil)
 				now := time.Now()
-				mockRegistrantRepo.On("GetRegistrantWithRevision", mock.Anything, "registrant-1").Return(&models.Registrant{
+				mockRegistrantRepo.On("GetWithRevision", mock.Anything, "registrant-1").Return(&models.Registrant{
 					UID:        "registrant-1",
 					MeetingUID: "meeting-1",
 					Email:      "user@example.com",
@@ -281,7 +294,9 @@ func TestMeetingsService_GetMeetingRegistrant(t *testing.T) {
 				UID:        utils.StringPtr("nonexistent-registrant"),
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRegistrantRepo.On("GetRegistrantWithRevision", mock.Anything, "nonexistent-registrant").Return(nil, uint64(0), domain.ErrRegistrantNotFound)
+				// Check if meeting exists
+				mockMeetingRepo.On("Exists", mock.Anything, "meeting-1").Return(true, nil)
+				mockRegistrantRepo.On("GetWithRevision", mock.Anything, "nonexistent-registrant").Return(nil, uint64(0), domain.ErrRegistrantNotFound)
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrRegistrantNotFound,
@@ -370,8 +385,10 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 					CreatedAt:  &now,
 					UpdatedAt:  &now,
 				}
-				mockRegistrantRepo.On("GetRegistrant", mock.Anything, "registrant-1").Return(existingRegistrant, nil)
-				mockRegistrantRepo.On("UpdateRegistrant", mock.Anything, mock.MatchedBy(func(r *models.Registrant) bool {
+				mockMeetingRepo.On("Exists", mock.Anything, "meeting-1").Return(true, nil)
+				mockRegistrantRepo.On("ListByEmail", mock.Anything, "updated@example.com").Return([]*models.Registrant{}, nil)
+				mockRegistrantRepo.On("Get", mock.Anything, "registrant-1").Return(existingRegistrant, nil)
+				mockRegistrantRepo.On("Update", mock.Anything, mock.MatchedBy(func(r *models.Registrant) bool {
 					return r.Email == "updated@example.com" && r.UID == "registrant-1"
 				}), uint64(1)).Return(nil)
 			},
@@ -383,6 +400,41 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 			setupMocks:  func(*domain.MockMeetingRepository, *domain.MockRegistrantRepository, *domain.MockMessageBuilder) {},
 			wantErr:     true,
 			expectedErr: domain.ErrValidationFailed,
+		},
+		{
+			name: "email already exists for meeting",
+			payload: &meetingsvc.UpdateMeetingRegistrantPayload{
+				UID:        utils.StringPtr("registrant-1"),
+				MeetingUID: "meeting-1",
+				Email:      "updated@example.com", // trying to change email address to one that already exists for this meeting
+				FirstName:  "Existing",
+				LastName:   "User",
+				Etag:       utils.StringPtr("1"),
+			},
+			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				// Meeting exists check
+				mockMeetingRepo.On("Exists", mock.Anything, "meeting-1").Return(true, nil)
+				mockRegistrantRepo.On("Get", mock.Anything, "registrant-1").Return(&models.Registrant{
+					UID:        "registrant-1",
+					MeetingUID: "meeting-1",
+					Email:      "old@example.com",
+					FirstName:  "Existing",
+					LastName:   "User",
+				}, nil)
+				// Check for existing registrant with same email (returns existing registrant)
+				existingRegistrants := []*models.Registrant{
+					{
+						UID:        "registrant-2",
+						MeetingUID: "meeting-1",
+						Email:      "updated@example.com",
+						FirstName:  "Jane",
+						LastName:   "Smith",
+					},
+				}
+				mockRegistrantRepo.On("ListByEmail", mock.Anything, "updated@example.com").Return(existingRegistrants, nil)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrRegistrantAlreadyExists,
 		},
 	}
 
@@ -443,7 +495,8 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 				Etag:       utils.StringPtr("1"),
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRegistrantRepo.On("DeleteRegistrant", mock.Anything, "registrant-1", uint64(1)).Return(nil)
+				mockMeetingRepo.On("Exists", mock.Anything, "meeting-1").Return(true, nil)
+				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(1)).Return(nil)
 			},
 			wantErr: false,
 		},
@@ -455,6 +508,19 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 			expectedErr: domain.ErrValidationFailed,
 		},
 		{
+			name: "meeting not found",
+			payload: &meetingsvc.DeleteMeetingRegistrantPayload{
+				MeetingUID: utils.StringPtr("nonexistent-meeting"),
+				UID:        utils.StringPtr("registrant-1"),
+				Etag:       utils.StringPtr("1"),
+			},
+			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				mockMeetingRepo.On("Exists", mock.Anything, "nonexistent-meeting").Return(false, nil)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrMeetingNotFound,
+		},
+		{
 			name: "registrant not found",
 			payload: &meetingsvc.DeleteMeetingRegistrantPayload{
 				MeetingUID: utils.StringPtr("meeting-1"),
@@ -462,7 +528,8 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 				Etag:       utils.StringPtr("1"),
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
-				mockRegistrantRepo.On("DeleteRegistrant", mock.Anything, "nonexistent-registrant", uint64(1)).Return(domain.ErrRegistrantNotFound)
+				mockMeetingRepo.On("Exists", mock.Anything, "meeting-1").Return(true, nil)
+				mockRegistrantRepo.On("Delete", mock.Anything, "nonexistent-registrant", uint64(1)).Return(domain.ErrRegistrantNotFound)
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrRegistrantNotFound,

@@ -4,9 +4,11 @@
 package models
 
 import (
+	"log/slog"
 	"time"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -60,6 +62,24 @@ func ToMeetingDBModel(goaMeeting *meetingservice.Meeting) *Meeting {
 		if err == nil {
 			meeting.UpdatedAt = &updatedAt
 		}
+	}
+
+	currentTime := time.Now()
+	if goaMeeting.CreatedAt != nil {
+		createdAt, err := time.Parse(time.RFC3339, *goaMeeting.CreatedAt)
+		if err == nil {
+			meeting.CreatedAt = &createdAt
+		}
+	} else {
+		meeting.CreatedAt = &currentTime
+	}
+	if goaMeeting.UpdatedAt != nil {
+		updatedAt, err := time.Parse(time.RFC3339, *goaMeeting.UpdatedAt)
+		if err == nil {
+			meeting.UpdatedAt = &updatedAt
+		}
+	} else {
+		meeting.UpdatedAt = &currentTime
 	}
 
 	// Convert Recurrence
@@ -162,9 +182,119 @@ func FromMeetingDBModel(meeting *Meeting) *meetingservice.Meeting {
 	return goaMeeting
 }
 
+// ToMeetingDBModelFromCreatePayload converts a Goa CreateMeetingPayload to a domain Meeting model
+func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayload) *Meeting {
+	if payload == nil {
+		return &Meeting{}
+	}
+
+	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
+	if err != nil {
+		slog.Error("failed to parse start time", logging.ErrKey, err,
+			"start_time", payload.StartTime,
+		)
+		return &Meeting{}
+	}
+
+	now := time.Now().UTC()
+	meeting := &Meeting{
+		ProjectUID:           payload.ProjectUID,
+		StartTime:            startTime,
+		Duration:             payload.Duration,
+		Timezone:             payload.Timezone,
+		Recurrence:           toDBRecurrence(payload.Recurrence),
+		Title:                payload.Title,
+		Description:          payload.Description,
+		Committees:           toDBCommittees(payload.Committees),
+		Platform:             utils.StringValue(payload.Platform),
+		EarlyJoinTimeMinutes: utils.IntValue(payload.EarlyJoinTimeMinutes),
+		MeetingType:          utils.StringValue(payload.MeetingType),
+		Visibility:           utils.StringValue(payload.Visibility),
+		Restricted:           utils.BoolValue(payload.Restricted),
+		ArtifactVisibility:   utils.StringValue(payload.ArtifactVisibility),
+		PublicLink:           utils.StringValue(payload.PublicLink),
+		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
+		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
+		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
+		ZoomConfig:           toDBZoomConfigFromPost(payload.ZoomConfig),
+		CreatedAt:            &now,
+		UpdatedAt:            &now,
+	}
+
+	return meeting
+}
+
+func ToMeetingDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingPayload, existingMeeting *Meeting) *Meeting {
+	if payload == nil || existingMeeting == nil {
+		return &Meeting{}
+	}
+
+	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
+	if err != nil {
+		slog.Error("failed to parse start time", logging.ErrKey, err,
+			"start_time", payload.StartTime,
+		)
+		return &Meeting{}
+	}
+
+	now := time.Now().UTC()
+	meeting := &Meeting{
+		UID:                  existingMeeting.UID,
+		ProjectUID:           payload.ProjectUID,
+		StartTime:            startTime,
+		Duration:             payload.Duration,
+		Timezone:             payload.Timezone,
+		Recurrence:           toDBRecurrence(payload.Recurrence),
+		Title:                payload.Title,
+		Description:          payload.Description,
+		Committees:           toDBCommittees(payload.Committees),
+		Platform:             utils.StringValue(payload.Platform),
+		EarlyJoinTimeMinutes: utils.IntValue(payload.EarlyJoinTimeMinutes),
+		MeetingType:          utils.StringValue(payload.MeetingType),
+		Visibility:           utils.StringValue(payload.Visibility),
+		Restricted:           utils.BoolValue(payload.Restricted),
+		ArtifactVisibility:   utils.StringValue(payload.ArtifactVisibility),
+		PublicLink:           utils.StringValue(payload.PublicLink),
+		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
+		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
+		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
+		ZoomConfig:           toDBZoomConfigFromPost(payload.ZoomConfig),
+		CreatedAt:            existingMeeting.CreatedAt,
+		UpdatedAt:            &now,
+	}
+
+	return meeting
+}
+
 // Helper functions for nested types
 
+func toDBZoomConfigFromPost(z *meetingservice.ZoomConfigPost) *ZoomConfig {
+	if z == nil {
+		return nil
+	}
+
+	return &ZoomConfig{
+		MeetingID:                "", // TODO: replace with actual zoom meeting ID once we have zoom integration
+		AICompanionEnabled:       utils.BoolValue(z.AiCompanionEnabled),
+		AISummaryRequireApproval: utils.BoolValue(z.AiSummaryRequireApproval),
+	}
+}
+
+func toDBCommittees(committees []*meetingservice.Committee) []Committee {
+	dbCommittees := make([]Committee, 0, len(committees))
+	for _, c := range committees {
+		if c != nil {
+			dbCommittees = append(dbCommittees, toDBCommittee(c))
+		}
+	}
+	return dbCommittees
+}
+
 func toDBCommittee(c *meetingservice.Committee) Committee {
+	if c == nil {
+		return Committee{}
+	}
+
 	return Committee{
 		UID:                   c.UID,
 		AllowedVotingStatuses: c.AllowedVotingStatuses,
@@ -172,6 +302,10 @@ func toDBCommittee(c *meetingservice.Committee) Committee {
 }
 
 func fromDBCommittee(c *Committee) *meetingservice.Committee {
+	if c == nil {
+		return nil
+	}
+
 	return &meetingservice.Committee{
 		UID:                   c.UID,
 		AllowedVotingStatuses: c.AllowedVotingStatuses,
@@ -179,6 +313,10 @@ func fromDBCommittee(c *Committee) *meetingservice.Committee {
 }
 
 func toDBRecurrence(r *meetingservice.Recurrence) *Recurrence {
+	if r == nil {
+		return nil
+	}
+
 	recurrence := &Recurrence{
 		Type:           r.Type,
 		RepeatInterval: r.RepeatInterval,
@@ -201,6 +339,10 @@ func toDBRecurrence(r *meetingservice.Recurrence) *Recurrence {
 }
 
 func fromDBRecurrence(r *Recurrence) *meetingservice.Recurrence {
+	if r == nil {
+		return nil
+	}
+
 	rec := &meetingservice.Recurrence{
 		Type:           r.Type,
 		RepeatInterval: r.RepeatInterval,
@@ -229,6 +371,10 @@ func fromDBRecurrence(r *Recurrence) *meetingservice.Recurrence {
 }
 
 func toDBZoomConfig(z *meetingservice.ZoomConfigFull) *ZoomConfig {
+	if z == nil {
+		return nil
+	}
+
 	return &ZoomConfig{
 		MeetingID:                utils.StringValue(z.MeetingID),
 		AICompanionEnabled:       utils.BoolValue(z.AiCompanionEnabled),
@@ -237,6 +383,10 @@ func toDBZoomConfig(z *meetingservice.ZoomConfigFull) *ZoomConfig {
 }
 
 func fromDBZoomConfig(z *ZoomConfig) *meetingservice.ZoomConfigFull {
+	if z == nil {
+		return nil
+	}
+
 	zc := &meetingservice.ZoomConfigFull{
 		AiCompanionEnabled:       utils.BoolPtr(z.AICompanionEnabled),
 		AiSummaryRequireApproval: utils.BoolPtr(z.AISummaryRequireApproval),
@@ -250,6 +400,10 @@ func fromDBZoomConfig(z *ZoomConfig) *meetingservice.ZoomConfigFull {
 }
 
 func toDBOccurrence(o *meetingservice.Occurrence) Occurrence {
+	if o == nil {
+		return Occurrence{}
+	}
+
 	occ := Occurrence{
 		OccurrenceID:     utils.StringValue(o.OccurrenceID),
 		Title:            utils.StringValue(o.Title),
@@ -277,6 +431,10 @@ func toDBOccurrence(o *meetingservice.Occurrence) Occurrence {
 }
 
 func fromDBOccurrence(o *Occurrence) *meetingservice.Occurrence {
+	if o == nil {
+		return nil
+	}
+
 	occ := &meetingservice.Occurrence{}
 
 	if o.OccurrenceID != "" {
