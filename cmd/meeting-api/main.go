@@ -51,7 +51,7 @@ func main() {
 	// Set up JWT validator needed by the [MeetingsService.JWTAuth] security handler.
 	jwtAuthConfig := auth.JWTAuthConfig{
 		JWKSURL:            os.Getenv("JWKS_URL"),
-		Audience:           os.Getenv("AUDIENCE"),
+		Audience:           os.Getenv("JWT_AUDIENCE"),
 		MockLocalPrincipal: os.Getenv("JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL"),
 	}
 	jwtAuth, err := auth.NewJWTAuth(jwtAuthConfig)
