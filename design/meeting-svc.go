@@ -1,0 +1,457 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
+package design
+
+import (
+	. "goa.design/goa/v3/dsl" //nolint:staticcheck // ST1001: the recommended way of using the goa DSL package is with the . import
+)
+
+// JWTAuth is the DSL JWT security type for authentication.
+var JWTAuth = JWTSecurity("jwt", func() {
+	Description("Heimdall authorization")
+})
+
+var _ = Service("Meeting Service", func() {
+	Description("The meeting service handles all meeting-related operations for LF projects.")
+
+	// TODO: delete this endpoint once the query service supports meeting queries
+	// GET all meetings endpoint
+	Method("get-meetings", func() {
+		Description("Get all meetings.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+		})
+
+		Result(func() {
+			Attribute("meetings", ArrayOf(Meeting), "Resources found", func() {})
+			Attribute("cache_control", String, "Cache control header", func() {
+				Example("public, max-age=300")
+			})
+			Required("meetings")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Header("cache_control:Cache-Control")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// POST meeting endpoint
+	Method("create-meeting", func() {
+		Description(`Create a new meeting for a project. An actual meeting in the specific platform will be created by
+		this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.`)
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			// Meeting fields from CreateMeetingPayload
+			ProjectUIDAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+			RecurrenceAttribute()
+			TitleAttribute()
+			DescriptionAttribute()
+			CommitteesAttribute()
+			PlatformAttribute()
+			EarlyJoinTimeMinutesAttribute()
+			MeetingTypeAttribute()
+			VisibilityAttribute()
+			RestrictedAttribute()
+			ArtifactVisibilityAttribute()
+			PublicLinkAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			YoutubeUploadEnabledAttribute()
+			Attribute("zoom_config", ZoomConfigPost, "For zoom platform meetings: the configuration for the meeting")
+			Required("project_uid", "start_time", "duration", "timezone", "title", "description")
+		})
+
+		Result(Meeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Conflict", ConflictError, "Conflict")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET meeting by ID endpoint
+	Method("get-meeting", func() {
+		Description("Get a meeting by ID")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			MeetingUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("meeting", Meeting)
+			EtagAttribute()
+			Required("meeting")
+		})
+
+		Error("NotFound", NotFoundError, "Resource not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{uid}")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Body("meeting")
+				Header("etag:ETag")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// PUT meeting endpoint
+	Method("update-meeting", func() {
+		Description("Update an existing meeting.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			EtagAttribute()
+			VersionAttribute()
+			// Meeting fields from UpdateMeetingPayload
+			MeetingUIDAttribute()
+			ProjectUIDAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+			RecurrenceAttribute()
+			TitleAttribute()
+			DescriptionAttribute()
+			CommitteesAttribute()
+			PlatformAttribute()
+			EarlyJoinTimeMinutesAttribute()
+			MeetingTypeAttribute()
+			VisibilityAttribute()
+			RestrictedAttribute()
+			ArtifactVisibilityAttribute()
+			PublicLinkAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			YoutubeUploadEnabledAttribute()
+			Attribute("zoom_config", ZoomConfigPost, "For zoom platform meetings: the configuration for the meeting")
+			Required("uid", "project_uid", "start_time", "duration", "timezone", "title", "description")
+		})
+
+		Result(Meeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Resource not found")
+		Error("Conflict", ConflictError, "Conflict")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/meetings/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("uid")
+			})
+			Header("bearer_token:Authorization")
+			Header("etag:ETag")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE meeting endpoint
+	Method("delete-meeting", func() {
+		Description("Delete an existing meeting.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			EtagAttribute()
+			VersionAttribute()
+			MeetingUIDAttribute()
+		})
+
+		Error("NotFound", NotFoundError, "Resource not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/meetings/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("uid")
+			})
+			Header("bearer_token:Authorization")
+			Header("etag:ETag")
+			Response(StatusNoContent)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// TODO: delete this endpoint once the query service supports meeting registrant queries
+	// GET meeting registrants endpoint
+	Method("get-meeting-registrants", func() {
+		Description("Get all registrants for a meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			MeetingUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("registrants", ArrayOf(Registrant), "Meeting registrants")
+			Attribute("cache_control", String, "Cache control header", func() {
+				Example("public, max-age=300")
+			})
+			Required("registrants")
+		})
+
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{uid}/registrants")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Header("cache_control:Cache-Control")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// POST meeting registrant endpoint
+	Method("create-meeting-registrant", func() {
+		Description("Create a new registrant for a meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			Extend(CreateRegistrantPayload)
+			BearerTokenAttribute()
+			VersionAttribute()
+			RegistrantMeetingUIDAttribute()
+		})
+
+		Result(Registrant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("Conflict", ConflictError, "Registrant already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/meetings/{meeting_uid}/registrants")
+			Param("version:v")
+			Param("meeting_uid")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET meeting registrant by UID endpoint
+	Method("get-meeting-registrant", func() {
+		Description("Get a specific registrant for a meeting by UID")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			RegistrantMeetingUIDAttribute()
+			RegistrantUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("registrant", Registrant)
+			EtagAttribute()
+			Required("registrant")
+		})
+
+		Error("NotFound", NotFoundError, "Meeting or registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{meeting_uid}/registrants/{uid}")
+			Param("version:v")
+			Param("meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Body("registrant")
+				Header("etag:ETag")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// PUT meeting registrant endpoint
+	Method("update-meeting-registrant", func() {
+		Description("Update an existing registrant for a meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			Extend(UpdateRegistrantPayload)
+			BearerTokenAttribute()
+			EtagAttribute()
+			VersionAttribute()
+			RegistrantMeetingUIDAttribute()
+			RegistrantUIDAttribute()
+		})
+
+		Result(Registrant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Meeting or registrant not found")
+		Error("Conflict", ConflictError, "Conflict")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/meetings/{meeting_uid}/registrants/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("meeting_uid")
+				Param("uid")
+			})
+			Header("bearer_token:Authorization")
+			Header("etag:ETag")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE meeting registrant endpoint
+	Method("delete-meeting-registrant", func() {
+		Description("Delete a registrant from a meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			EtagAttribute()
+			VersionAttribute()
+			RegistrantMeetingUIDAttribute()
+			RegistrantUIDAttribute()
+		})
+
+		Error("NotFound", NotFoundError, "Meeting or registrant not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/meetings/{meeting_uid}/registrants/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("meeting_uid")
+				Param("uid")
+			})
+			Header("bearer_token:Authorization")
+			Header("etag:ETag")
+			Response(StatusNoContent)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("readyz", func() {
+		Description("Check if the service is able to take inbound requests.")
+		Result(Bytes, func() {
+			Example("OK")
+		})
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service is unavailable")
+		HTTP(func() {
+			GET("/readyz")
+			Response(StatusOK, func() {
+				ContentType("text/plain")
+			})
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("livez", func() {
+		Description("Check if the service is alive.")
+		Result(Bytes, func() {
+			Example("OK")
+		})
+		HTTP(func() {
+			GET("/livez")
+			Response(StatusOK, func() {
+				ContentType("text/plain")
+			})
+		})
+	})
+
+	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
+	Files("/openapi.json", "gen/http/openapi3.json")
+})
