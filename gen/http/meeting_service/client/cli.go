@@ -53,7 +53,7 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreateMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Mollitia est quo tempore quia.\",\n               \"Natus sapiente sit tempore totam est numquam.\",\n               \"Distinctio temporibus.\"\n            ],\n            \"uid\": \"Autem qui.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Mollitia est quo tempore quia.\",\n               \"Natus sapiente sit tempore totam est numquam.\",\n               \"Distinctio temporibus.\"\n            ],\n            \"uid\": \"Autem qui.\"\n         }\n      ],\n      \"description\": \"Iure dolorem nobis et nihil quia.\",\n      \"duration\": 0,\n      \"early_join_time_minutes\": 12,\n      \"meeting_type\": \"Other\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Et ea distinctio dolorum.\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1973-06-01T02:12:35Z\",\n         \"end_times\": 7993769279223694559,\n         \"monthly_day\": 11,\n         \"monthly_week\": 1,\n         \"monthly_week_day\": 5,\n         \"repeat_interval\": 4028306957488540937,\n         \"type\": 2,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Ut et ut culpa optio nam.\",\n      \"title\": \"A veniam similique fugit et occaecati dolorem.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": false\n      }\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Repellendus ut.\",\n               \"Explicabo dolorum.\"\n            ],\n            \"uid\": \"Porro repellat iure esse.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Repellendus ut.\",\n               \"Explicabo dolorum.\"\n            ],\n            \"uid\": \"Porro repellat iure esse.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Repellendus ut.\",\n               \"Explicabo dolorum.\"\n            ],\n            \"uid\": \"Porro repellat iure esse.\"\n         }\n      ],\n      \"description\": \"Et aut excepturi a animi.\",\n      \"duration\": 535,\n      \"early_join_time_minutes\": 26,\n      \"meeting_type\": \"Board\",\n      \"organizers\": [\n         \"Modi et voluptatem enim ad.\",\n         \"Quod eos.\",\n         \"Et magni quasi placeat et expedita.\",\n         \"Impedit enim ratione.\"\n      ],\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Assumenda molestias veritatis eos et quod ea.\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"2014-01-06T09:24:02Z\",\n         \"end_times\": 1989923452977874675,\n         \"monthly_day\": 19,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 6,\n         \"repeat_interval\": 6470627151182217547,\n         \"type\": 1,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Ab beatae omnis.\",\n      \"title\": \"Cupiditate quasi aspernatur accusantium.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", body.ProjectUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
@@ -154,6 +154,12 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 			v.Committees[i] = marshalCommitteeRequestBodyToMeetingserviceCommittee(val)
 		}
 	}
+	if body.Organizers != nil {
+		v.Organizers = make([]string, len(body.Organizers))
+		for i, val := range body.Organizers {
+			v.Organizers[i] = val
+		}
+	}
 	if body.ZoomConfig != nil {
 		v.ZoomConfig = marshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
 	}
@@ -163,13 +169,13 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 	return v, nil
 }
 
-// BuildGetMeetingPayload builds the payload for the Meeting Service
-// get-meeting endpoint from CLI flags.
-func BuildGetMeetingPayload(meetingServiceGetMeetingUID string, meetingServiceGetMeetingVersion string, meetingServiceGetMeetingBearerToken string) (*meetingservice.GetMeetingPayload, error) {
+// BuildGetMeetingBasePayload builds the payload for the Meeting Service
+// get-meeting-base endpoint from CLI flags.
+func BuildGetMeetingBasePayload(meetingServiceGetMeetingBaseUID string, meetingServiceGetMeetingBaseVersion string, meetingServiceGetMeetingBaseBearerToken string) (*meetingservice.GetMeetingBasePayload, error) {
 	var err error
 	var uid string
 	{
-		uid = meetingServiceGetMeetingUID
+		uid = meetingServiceGetMeetingBaseUID
 		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -177,8 +183,8 @@ func BuildGetMeetingPayload(meetingServiceGetMeetingUID string, meetingServiceGe
 	}
 	var version *string
 	{
-		if meetingServiceGetMeetingVersion != "" {
-			version = &meetingServiceGetMeetingVersion
+		if meetingServiceGetMeetingBaseVersion != "" {
+			version = &meetingServiceGetMeetingBaseVersion
 			if !(*version == "1") {
 				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
 			}
@@ -189,11 +195,11 @@ func BuildGetMeetingPayload(meetingServiceGetMeetingUID string, meetingServiceGe
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetMeetingBearerToken != "" {
-			bearerToken = &meetingServiceGetMeetingBearerToken
+		if meetingServiceGetMeetingBaseBearerToken != "" {
+			bearerToken = &meetingServiceGetMeetingBaseBearerToken
 		}
 	}
-	v := &meetingservice.GetMeetingPayload{}
+	v := &meetingservice.GetMeetingBasePayload{}
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
@@ -201,15 +207,53 @@ func BuildGetMeetingPayload(meetingServiceGetMeetingUID string, meetingServiceGe
 	return v, nil
 }
 
-// BuildUpdateMeetingPayload builds the payload for the Meeting Service
-// update-meeting endpoint from CLI flags.
-func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingServiceUpdateMeetingUID string, meetingServiceUpdateMeetingVersion string, meetingServiceUpdateMeetingBearerToken string, meetingServiceUpdateMeetingEtag string) (*meetingservice.UpdateMeetingPayload, error) {
+// BuildGetMeetingSettingsPayload builds the payload for the Meeting Service
+// get-meeting-settings endpoint from CLI flags.
+func BuildGetMeetingSettingsPayload(meetingServiceGetMeetingSettingsUID string, meetingServiceGetMeetingSettingsVersion string, meetingServiceGetMeetingSettingsBearerToken string) (*meetingservice.GetMeetingSettingsPayload, error) {
 	var err error
-	var body UpdateMeetingRequestBody
+	var uid string
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingBody), &body)
+		uid = meetingServiceGetMeetingSettingsUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Mollitia est quo tempore quia.\",\n               \"Natus sapiente sit tempore totam est numquam.\",\n               \"Distinctio temporibus.\"\n            ],\n            \"uid\": \"Autem qui.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Mollitia est quo tempore quia.\",\n               \"Natus sapiente sit tempore totam est numquam.\",\n               \"Distinctio temporibus.\"\n            ],\n            \"uid\": \"Autem qui.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Mollitia est quo tempore quia.\",\n               \"Natus sapiente sit tempore totam est numquam.\",\n               \"Distinctio temporibus.\"\n            ],\n            \"uid\": \"Autem qui.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Mollitia est quo tempore quia.\",\n               \"Natus sapiente sit tempore totam est numquam.\",\n               \"Distinctio temporibus.\"\n            ],\n            \"uid\": \"Autem qui.\"\n         }\n      ],\n      \"description\": \"Consequatur aut enim veritatis expedita voluptatibus aut.\",\n      \"duration\": 107,\n      \"early_join_time_minutes\": 53,\n      \"meeting_type\": \"Maintainers\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Aut excepturi a animi recusandae possimus.\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1973-06-01T02:12:35Z\",\n         \"end_times\": 7993769279223694559,\n         \"monthly_day\": 11,\n         \"monthly_week\": 1,\n         \"monthly_week_day\": 5,\n         \"repeat_interval\": 4028306957488540937,\n         \"type\": 2,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Sunt qui aut quia temporibus fugiat.\",\n      \"title\": \"Soluta at perferendis aliquid incidunt provident accusamus.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": false\n      }\n   }'")
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceGetMeetingSettingsVersion != "" {
+			version = &meetingServiceGetMeetingSettingsVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetMeetingSettingsBearerToken != "" {
+			bearerToken = &meetingServiceGetMeetingSettingsBearerToken
+		}
+	}
+	v := &meetingservice.GetMeetingSettingsPayload{}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
+// BuildUpdateMeetingBasePayload builds the payload for the Meeting Service
+// update-meeting-base endpoint from CLI flags.
+func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, meetingServiceUpdateMeetingBaseUID string, meetingServiceUpdateMeetingBaseVersion string, meetingServiceUpdateMeetingBaseBearerToken string, meetingServiceUpdateMeetingBaseEtag string) (*meetingservice.UpdateMeetingBasePayload, error) {
+	var err error
+	var body UpdateMeetingBaseRequestBody
+	{
+		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingBaseBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Repellendus ut.\",\n               \"Explicabo dolorum.\"\n            ],\n            \"uid\": \"Porro repellat iure esse.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Repellendus ut.\",\n               \"Explicabo dolorum.\"\n            ],\n            \"uid\": \"Porro repellat iure esse.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Repellendus ut.\",\n               \"Explicabo dolorum.\"\n            ],\n            \"uid\": \"Porro repellat iure esse.\"\n         }\n      ],\n      \"description\": \"Non autem.\",\n      \"duration\": 155,\n      \"early_join_time_minutes\": 39,\n      \"meeting_type\": \"None\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"Et qui id sed delectus quod sunt.\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2014-01-06T09:24:02Z\",\n         \"end_times\": 1989923452977874675,\n         \"monthly_day\": 19,\n         \"monthly_week\": 4,\n         \"monthly_week_day\": 6,\n         \"repeat_interval\": 6470627151182217547,\n         \"type\": 1,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Voluptatem officia fugit.\",\n      \"title\": \"Voluptatibus nobis.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", body.ProjectUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
@@ -267,7 +311,7 @@ func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingSe
 	}
 	var uid string
 	{
-		uid = meetingServiceUpdateMeetingUID
+		uid = meetingServiceUpdateMeetingBaseUID
 		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -275,8 +319,8 @@ func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingSe
 	}
 	var version *string
 	{
-		if meetingServiceUpdateMeetingVersion != "" {
-			version = &meetingServiceUpdateMeetingVersion
+		if meetingServiceUpdateMeetingBaseVersion != "" {
+			version = &meetingServiceUpdateMeetingBaseVersion
 			if !(*version == "1") {
 				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
 			}
@@ -287,17 +331,17 @@ func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingSe
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateMeetingBearerToken != "" {
-			bearerToken = &meetingServiceUpdateMeetingBearerToken
+		if meetingServiceUpdateMeetingBaseBearerToken != "" {
+			bearerToken = &meetingServiceUpdateMeetingBaseBearerToken
 		}
 	}
 	var etag *string
 	{
-		if meetingServiceUpdateMeetingEtag != "" {
-			etag = &meetingServiceUpdateMeetingEtag
+		if meetingServiceUpdateMeetingBaseEtag != "" {
+			etag = &meetingServiceUpdateMeetingBaseEtag
 		}
 	}
-	v := &meetingservice.UpdateMeetingPayload{
+	v := &meetingservice.UpdateMeetingBasePayload{
 		ProjectUID:           body.ProjectUID,
 		StartTime:            body.StartTime,
 		Duration:             body.Duration,
@@ -328,6 +372,64 @@ func BuildUpdateMeetingPayload(meetingServiceUpdateMeetingBody string, meetingSe
 		v.ZoomConfig = marshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
 	}
 	v.UID = uid
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.Etag = etag
+
+	return v, nil
+}
+
+// BuildUpdateMeetingSettingsPayload builds the payload for the Meeting Service
+// update-meeting-settings endpoint from CLI flags.
+func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody string, meetingServiceUpdateMeetingSettingsUID string, meetingServiceUpdateMeetingSettingsVersion string, meetingServiceUpdateMeetingSettingsBearerToken string, meetingServiceUpdateMeetingSettingsEtag string) (*meetingservice.UpdateMeetingSettingsPayload, error) {
+	var err error
+	var body UpdateMeetingSettingsRequestBody
+	{
+		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingSettingsBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"organizers\": [\n         \"Tenetur vitae vel possimus et consequuntur.\",\n         \"Ut aliquam sunt possimus unde quia.\"\n      ]\n   }'")
+		}
+	}
+	var uid string
+	{
+		uid = meetingServiceUpdateMeetingSettingsUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceUpdateMeetingSettingsVersion != "" {
+			version = &meetingServiceUpdateMeetingSettingsVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceUpdateMeetingSettingsBearerToken != "" {
+			bearerToken = &meetingServiceUpdateMeetingSettingsBearerToken
+		}
+	}
+	var etag *string
+	{
+		if meetingServiceUpdateMeetingSettingsEtag != "" {
+			etag = &meetingServiceUpdateMeetingSettingsEtag
+		}
+	}
+	v := &meetingservice.UpdateMeetingSettingsPayload{}
+	if body.Organizers != nil {
+		v.Organizers = make([]string, len(body.Organizers))
+		for i, val := range body.Organizers {
+			v.Organizers[i] = val
+		}
+	}
+	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
 	v.Etag = etag
@@ -426,7 +528,7 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreateMeetingRegistrantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Occaecati molestias facilis non aut.\",\n      \"username\": \"Aut explicabo.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Nesciunt officiis vel suscipit ipsum.\",\n      \"username\": \"Officia nihil voluptatem sunt.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if utf8.RuneCountInString(body.FirstName) < 1 {
@@ -550,7 +652,7 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingRegistrantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Facilis possimus.\",\n      \"username\": \"Perferendis neque ut sint.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Repudiandae laborum quibusdam ut ut earum assumenda.\",\n      \"username\": \"Aut veniam.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if utf8.RuneCountInString(body.FirstName) < 1 {

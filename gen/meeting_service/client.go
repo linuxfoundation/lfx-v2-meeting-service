@@ -17,8 +17,10 @@ import (
 type Client struct {
 	GetMeetingsEndpoint             goa.Endpoint
 	CreateMeetingEndpoint           goa.Endpoint
-	GetMeetingEndpoint              goa.Endpoint
-	UpdateMeetingEndpoint           goa.Endpoint
+	GetMeetingBaseEndpoint          goa.Endpoint
+	GetMeetingSettingsEndpoint      goa.Endpoint
+	UpdateMeetingBaseEndpoint       goa.Endpoint
+	UpdateMeetingSettingsEndpoint   goa.Endpoint
 	DeleteMeetingEndpoint           goa.Endpoint
 	GetMeetingRegistrantsEndpoint   goa.Endpoint
 	CreateMeetingRegistrantEndpoint goa.Endpoint
@@ -30,12 +32,14 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeeting, updateMeeting, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:             getMeetings,
 		CreateMeetingEndpoint:           createMeeting,
-		GetMeetingEndpoint:              getMeeting,
-		UpdateMeetingEndpoint:           updateMeeting,
+		GetMeetingBaseEndpoint:          getMeetingBase,
+		GetMeetingSettingsEndpoint:      getMeetingSettings,
+		UpdateMeetingBaseEndpoint:       updateMeetingBase,
+		UpdateMeetingSettingsEndpoint:   updateMeetingSettings,
 		DeleteMeetingEndpoint:           deleteMeeting,
 		GetMeetingRegistrantsEndpoint:   getMeetingRegistrants,
 		CreateMeetingRegistrantEndpoint: createMeetingRegistrant,
@@ -71,46 +75,80 @@ func (c *Client) GetMeetings(ctx context.Context, p *GetMeetingsPayload) (res *G
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) CreateMeeting(ctx context.Context, p *CreateMeetingPayload) (res *Meeting, err error) {
+func (c *Client) CreateMeeting(ctx context.Context, p *CreateMeetingPayload) (res *MeetingFull, err error) {
 	var ires any
 	ires, err = c.CreateMeetingEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*Meeting), nil
+	return ires.(*MeetingFull), nil
 }
 
-// GetMeeting calls the "get-meeting" endpoint of the "Meeting Service" service.
-// GetMeeting may return the following errors:
+// GetMeetingBase calls the "get-meeting-base" endpoint of the "Meeting
+// Service" service.
+// GetMeetingBase may return the following errors:
 //   - "NotFound" (type *NotFoundError): Resource not found
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) GetMeeting(ctx context.Context, p *GetMeetingPayload) (res *GetMeetingResult, err error) {
+func (c *Client) GetMeetingBase(ctx context.Context, p *GetMeetingBasePayload) (res *GetMeetingBaseResult, err error) {
 	var ires any
-	ires, err = c.GetMeetingEndpoint(ctx, p)
+	ires, err = c.GetMeetingBaseEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*GetMeetingResult), nil
+	return ires.(*GetMeetingBaseResult), nil
 }
 
-// UpdateMeeting calls the "update-meeting" endpoint of the "Meeting Service"
-// service.
-// UpdateMeeting may return the following errors:
+// GetMeetingSettings calls the "get-meeting-settings" endpoint of the "Meeting
+// Service" service.
+// GetMeetingSettings may return the following errors:
+//   - "NotFound" (type *NotFoundError): Resource not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetMeetingSettings(ctx context.Context, p *GetMeetingSettingsPayload) (res *GetMeetingSettingsResult, err error) {
+	var ires any
+	ires, err = c.GetMeetingSettingsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*GetMeetingSettingsResult), nil
+}
+
+// UpdateMeetingBase calls the "update-meeting-base" endpoint of the "Meeting
+// Service" service.
+// UpdateMeetingBase may return the following errors:
 //   - "BadRequest" (type *BadRequestError): Bad request
 //   - "NotFound" (type *NotFoundError): Resource not found
 //   - "Conflict" (type *ConflictError): Conflict
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) UpdateMeeting(ctx context.Context, p *UpdateMeetingPayload) (res *Meeting, err error) {
+func (c *Client) UpdateMeetingBase(ctx context.Context, p *UpdateMeetingBasePayload) (res *MeetingBase, err error) {
 	var ires any
-	ires, err = c.UpdateMeetingEndpoint(ctx, p)
+	ires, err = c.UpdateMeetingBaseEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*Meeting), nil
+	return ires.(*MeetingBase), nil
+}
+
+// UpdateMeetingSettings calls the "update-meeting-settings" endpoint of the
+// "Meeting Service" service.
+// UpdateMeetingSettings may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "NotFound" (type *NotFoundError): Resource not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateMeetingSettings(ctx context.Context, p *UpdateMeetingSettingsPayload) (res *MeetingSettings, err error) {
+	var ires any
+	ires, err = c.UpdateMeetingSettingsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*MeetingSettings), nil
 }
 
 // DeleteMeeting calls the "delete-meeting" endpoint of the "Meeting Service"

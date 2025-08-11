@@ -22,8 +22,10 @@ type Server struct {
 	Mounts                  []*MountPoint
 	GetMeetings             http.Handler
 	CreateMeeting           http.Handler
-	GetMeeting              http.Handler
-	UpdateMeeting           http.Handler
+	GetMeetingBase          http.Handler
+	GetMeetingSettings      http.Handler
+	UpdateMeetingBase       http.Handler
+	UpdateMeetingSettings   http.Handler
 	DeleteMeeting           http.Handler
 	GetMeetingRegistrants   http.Handler
 	CreateMeetingRegistrant http.Handler
@@ -69,8 +71,10 @@ func New(
 		Mounts: []*MountPoint{
 			{"GetMeetings", "GET", "/meetings"},
 			{"CreateMeeting", "POST", "/meetings"},
-			{"GetMeeting", "GET", "/meetings/{uid}"},
-			{"UpdateMeeting", "PUT", "/meetings/{uid}"},
+			{"GetMeetingBase", "GET", "/meetings/{uid}"},
+			{"GetMeetingSettings", "GET", "/meetings/{uid}/settings"},
+			{"UpdateMeetingBase", "PUT", "/meetings/{uid}"},
+			{"UpdateMeetingSettings", "PUT", "/meetings/{uid}/settings"},
 			{"DeleteMeeting", "DELETE", "/meetings/{uid}"},
 			{"GetMeetingRegistrants", "GET", "/meetings/{uid}/registrants"},
 			{"CreateMeetingRegistrant", "POST", "/meetings/{meeting_uid}/registrants"},
@@ -83,8 +87,10 @@ func New(
 		},
 		GetMeetings:             NewGetMeetingsHandler(e.GetMeetings, mux, decoder, encoder, errhandler, formatter),
 		CreateMeeting:           NewCreateMeetingHandler(e.CreateMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetMeeting:              NewGetMeetingHandler(e.GetMeeting, mux, decoder, encoder, errhandler, formatter),
-		UpdateMeeting:           NewUpdateMeetingHandler(e.UpdateMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingBase:          NewGetMeetingBaseHandler(e.GetMeetingBase, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingSettings:      NewGetMeetingSettingsHandler(e.GetMeetingSettings, mux, decoder, encoder, errhandler, formatter),
+		UpdateMeetingBase:       NewUpdateMeetingBaseHandler(e.UpdateMeetingBase, mux, decoder, encoder, errhandler, formatter),
+		UpdateMeetingSettings:   NewUpdateMeetingSettingsHandler(e.UpdateMeetingSettings, mux, decoder, encoder, errhandler, formatter),
 		DeleteMeeting:           NewDeleteMeetingHandler(e.DeleteMeeting, mux, decoder, encoder, errhandler, formatter),
 		GetMeetingRegistrants:   NewGetMeetingRegistrantsHandler(e.GetMeetingRegistrants, mux, decoder, encoder, errhandler, formatter),
 		CreateMeetingRegistrant: NewCreateMeetingRegistrantHandler(e.CreateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
@@ -104,8 +110,10 @@ func (s *Server) Service() string { return "Meeting Service" }
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.GetMeetings = m(s.GetMeetings)
 	s.CreateMeeting = m(s.CreateMeeting)
-	s.GetMeeting = m(s.GetMeeting)
-	s.UpdateMeeting = m(s.UpdateMeeting)
+	s.GetMeetingBase = m(s.GetMeetingBase)
+	s.GetMeetingSettings = m(s.GetMeetingSettings)
+	s.UpdateMeetingBase = m(s.UpdateMeetingBase)
+	s.UpdateMeetingSettings = m(s.UpdateMeetingSettings)
 	s.DeleteMeeting = m(s.DeleteMeeting)
 	s.GetMeetingRegistrants = m(s.GetMeetingRegistrants)
 	s.CreateMeetingRegistrant = m(s.CreateMeetingRegistrant)
@@ -123,8 +131,10 @@ func (s *Server) MethodNames() []string { return meetingservice.MethodNames[:] }
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetMeetingsHandler(mux, h.GetMeetings)
 	MountCreateMeetingHandler(mux, h.CreateMeeting)
-	MountGetMeetingHandler(mux, h.GetMeeting)
-	MountUpdateMeetingHandler(mux, h.UpdateMeeting)
+	MountGetMeetingBaseHandler(mux, h.GetMeetingBase)
+	MountGetMeetingSettingsHandler(mux, h.GetMeetingSettings)
+	MountUpdateMeetingBaseHandler(mux, h.UpdateMeetingBase)
+	MountUpdateMeetingSettingsHandler(mux, h.UpdateMeetingSettings)
 	MountDeleteMeetingHandler(mux, h.DeleteMeeting)
 	MountGetMeetingRegistrantsHandler(mux, h.GetMeetingRegistrants)
 	MountCreateMeetingRegistrantHandler(mux, h.CreateMeetingRegistrant)
@@ -243,9 +253,9 @@ func NewCreateMeetingHandler(
 	})
 }
 
-// MountGetMeetingHandler configures the mux to serve the "Meeting Service"
-// service "get-meeting" endpoint.
-func MountGetMeetingHandler(mux goahttp.Muxer, h http.Handler) {
+// MountGetMeetingBaseHandler configures the mux to serve the "Meeting Service"
+// service "get-meeting-base" endpoint.
+func MountGetMeetingBaseHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -255,9 +265,9 @@ func MountGetMeetingHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("GET", "/meetings/{uid}", f)
 }
 
-// NewGetMeetingHandler creates a HTTP handler which loads the HTTP request and
-// calls the "Meeting Service" service "get-meeting" endpoint.
-func NewGetMeetingHandler(
+// NewGetMeetingBaseHandler creates a HTTP handler which loads the HTTP request
+// and calls the "Meeting Service" service "get-meeting-base" endpoint.
+func NewGetMeetingBaseHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -266,13 +276,13 @@ func NewGetMeetingHandler(
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeGetMeetingRequest(mux, decoder)
-		encodeResponse = EncodeGetMeetingResponse(encoder)
-		encodeError    = EncodeGetMeetingError(encoder, formatter)
+		decodeRequest  = DecodeGetMeetingBaseRequest(mux, decoder)
+		encodeResponse = EncodeGetMeetingBaseResponse(encoder)
+		encodeError    = EncodeGetMeetingBaseError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting")
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting-base")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -294,9 +304,61 @@ func NewGetMeetingHandler(
 	})
 }
 
-// MountUpdateMeetingHandler configures the mux to serve the "Meeting Service"
-// service "update-meeting" endpoint.
-func MountUpdateMeetingHandler(mux goahttp.Muxer, h http.Handler) {
+// MountGetMeetingSettingsHandler configures the mux to serve the "Meeting
+// Service" service "get-meeting-settings" endpoint.
+func MountGetMeetingSettingsHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/meetings/{uid}/settings", f)
+}
+
+// NewGetMeetingSettingsHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "get-meeting-settings"
+// endpoint.
+func NewGetMeetingSettingsHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetMeetingSettingsRequest(mux, decoder)
+		encodeResponse = EncodeGetMeetingSettingsResponse(encoder)
+		encodeError    = EncodeGetMeetingSettingsError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting-settings")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountUpdateMeetingBaseHandler configures the mux to serve the "Meeting
+// Service" service "update-meeting-base" endpoint.
+func MountUpdateMeetingBaseHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -306,9 +368,10 @@ func MountUpdateMeetingHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("PUT", "/meetings/{uid}", f)
 }
 
-// NewUpdateMeetingHandler creates a HTTP handler which loads the HTTP request
-// and calls the "Meeting Service" service "update-meeting" endpoint.
-func NewUpdateMeetingHandler(
+// NewUpdateMeetingBaseHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "update-meeting-base"
+// endpoint.
+func NewUpdateMeetingBaseHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -317,13 +380,65 @@ func NewUpdateMeetingHandler(
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeUpdateMeetingRequest(mux, decoder)
-		encodeResponse = EncodeUpdateMeetingResponse(encoder)
-		encodeError    = EncodeUpdateMeetingError(encoder, formatter)
+		decodeRequest  = DecodeUpdateMeetingBaseRequest(mux, decoder)
+		encodeResponse = EncodeUpdateMeetingBaseResponse(encoder)
+		encodeError    = EncodeUpdateMeetingBaseError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "update-meeting")
+		ctx = context.WithValue(ctx, goa.MethodKey, "update-meeting-base")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountUpdateMeetingSettingsHandler configures the mux to serve the "Meeting
+// Service" service "update-meeting-settings" endpoint.
+func MountUpdateMeetingSettingsHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("PUT", "/meetings/{uid}/settings", f)
+}
+
+// NewUpdateMeetingSettingsHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "update-meeting-settings"
+// endpoint.
+func NewUpdateMeetingSettingsHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeUpdateMeetingSettingsRequest(mux, decoder)
+		encodeResponse = EncodeUpdateMeetingSettingsResponse(encoder)
+		encodeError    = EncodeUpdateMeetingSettingsError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "update-meeting-settings")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

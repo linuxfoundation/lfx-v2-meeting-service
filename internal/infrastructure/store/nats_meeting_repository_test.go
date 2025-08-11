@@ -16,8 +16,9 @@ import (
 
 func TestNewNatsMeetingRepository(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
+	meetingSettings := &mockNatsKeyValue{}
 
-	repo := NewNatsMeetingRepository(meetings)
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	if repo == nil {
 		t.Fatal("expected repository to be created")
@@ -29,17 +30,24 @@ func TestNewNatsMeetingRepository(t *testing.T) {
 
 func TestNatsMeetingRepository_Create(t *testing.T) {
 	meetings := newMockNatsKeyValue()
-	repo := NewNatsMeetingRepository(meetings)
+	meetingSettings := newMockNatsKeyValue()
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	now := time.Now()
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:       "test-meeting-123",
 		Title:     "Test Meeting",
 		CreatedAt: &now,
 		UpdatedAt: &now,
 	}
+	settings := &models.MeetingSettings{
+		UID:        "test-meeting-settings-123",
+		Organizers: []string{"test-organizer-123"},
+		CreatedAt:  &now,
+		UpdatedAt:  &now,
+	}
 
-	err := repo.Create(context.Background(), meeting)
+	err := repo.Create(context.Background(), meeting, settings)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -50,7 +58,7 @@ func TestNatsMeetingRepository_Create(t *testing.T) {
 		t.Error("expected meeting to be stored")
 	}
 
-	var storedMeeting models.Meeting
+	var storedMeeting models.MeetingBase
 	if err := json.Unmarshal(storedData, &storedMeeting); err != nil {
 		t.Errorf("failed to unmarshal stored meeting: %v", err)
 	}
@@ -65,11 +73,24 @@ func TestNatsMeetingRepository_Create(t *testing.T) {
 
 func TestNatsMeetingRepository_Create_Error(t *testing.T) {
 	meetings := &mockNatsKeyValue{putError: errors.New("put failed")}
-	repo := NewNatsMeetingRepository(meetings)
+	meetingSettings := &mockNatsKeyValue{}
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
-	meeting := &models.Meeting{UID: "test-meeting-123", Title: "Test Meeting"}
+	now := time.Now()
+	meeting := &models.MeetingBase{
+		UID:       "test-meeting-123",
+		Title:     "Test Meeting",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
 
-	err := repo.Create(context.Background(), meeting)
+	settings := &models.MeetingSettings{
+		UID:        "test-meeting-settings-123",
+		Organizers: []string{"test-organizer-123"},
+		CreatedAt:  &now,
+		UpdatedAt:  &now,
+	}
+	err := repo.Create(context.Background(), meeting, settings)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -80,7 +101,8 @@ func TestNatsMeetingRepository_Create_Error(t *testing.T) {
 
 func TestNatsMeetingRepository_Exists(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetingSettings := &mockNatsKeyValue{}
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	// Test non-existing meeting
 	exists, err := repo.Exists(context.Background(), "non-existent")
@@ -109,10 +131,11 @@ func TestNatsMeetingRepository_Exists(t *testing.T) {
 
 func TestNatsMeetingRepository_Get(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetingSettings := &mockNatsKeyValue{}
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	now := time.Now()
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:       "test-meeting-123",
 		Title:     "Test Meeting",
 		CreatedAt: &now,
@@ -124,7 +147,7 @@ func TestNatsMeetingRepository_Get(t *testing.T) {
 		meeting.UID: meetingData,
 	}
 
-	result, err := repo.Get(context.Background(), meeting.UID)
+	result, err := repo.GetBase(context.Background(), meeting.UID)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -139,10 +162,11 @@ func TestNatsMeetingRepository_Get(t *testing.T) {
 
 func TestNatsMeetingRepository_GetWithRevision(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetingSettings := &mockNatsKeyValue{}
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	now := time.Now()
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:       "test-meeting-123",
 		Title:     "Test Meeting",
 		CreatedAt: &now,
@@ -158,7 +182,7 @@ func TestNatsMeetingRepository_GetWithRevision(t *testing.T) {
 		meeting.UID: expectedRevision,
 	}
 
-	result, revision, err := repo.GetWithRevision(context.Background(), meeting.UID)
+	result, revision, err := repo.GetBaseWithRevision(context.Background(), meeting.UID)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -173,10 +197,11 @@ func TestNatsMeetingRepository_GetWithRevision(t *testing.T) {
 
 func TestNatsMeetingRepository_Update(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetingSettings := &mockNatsKeyValue{}
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	now := time.Now()
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:       "test-meeting-123",
 		Title:     "Updated Meeting",
 		CreatedAt: &now,
@@ -193,7 +218,7 @@ func TestNatsMeetingRepository_Update(t *testing.T) {
 		meeting.UID: initialRevision,
 	}
 
-	err := repo.Update(context.Background(), meeting, initialRevision)
+	err := repo.UpdateBase(context.Background(), meeting, initialRevision)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -207,9 +232,10 @@ func TestNatsMeetingRepository_Update(t *testing.T) {
 
 func TestNatsMeetingRepository_Update_RevisionMismatch(t *testing.T) {
 	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetingSettings := &mockNatsKeyValue{}
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:   "test-meeting-123",
 		Title: "Updated Meeting",
 	}
@@ -226,7 +252,7 @@ func TestNatsMeetingRepository_Update_RevisionMismatch(t *testing.T) {
 
 	// Try to update with wrong revision
 	wrongRevision := uint64(3)
-	err := repo.Update(context.Background(), meeting, wrongRevision)
+	err := repo.UpdateBase(context.Background(), meeting, wrongRevision)
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
@@ -236,8 +262,9 @@ func TestNatsMeetingRepository_Update_RevisionMismatch(t *testing.T) {
 }
 
 func TestNatsMeetingRepository_Delete(t *testing.T) {
-	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetings := newMockNatsKeyValue()
+	meetingSettings := newMockNatsKeyValue()
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	meetingUID := "test-meeting-123"
 	revision := uint64(1)
@@ -245,6 +272,10 @@ func TestNatsMeetingRepository_Delete(t *testing.T) {
 	// Set up existing meeting
 	meetings.data = map[string][]byte{
 		meetingUID: []byte(`{"uid":"test-meeting-123","title":"Test Meeting"}`),
+	}
+	// Set up existing meeting settings
+	meetingSettings.data = map[string][]byte{
+		meetingUID: []byte(`{"uid":"test-meeting-123","organizers":["org1"]}`),
 	}
 
 	err := repo.Delete(context.Background(), meetingUID, revision)
@@ -256,11 +287,16 @@ func TestNatsMeetingRepository_Delete(t *testing.T) {
 	if _, exists := meetings.data[meetingUID]; exists {
 		t.Error("expected meeting to be deleted")
 	}
+	// Verify settings were deleted
+	if _, exists := meetingSettings.data[meetingUID]; exists {
+		t.Error("expected meeting settings to be deleted")
+	}
 }
 
 func TestNatsMeetingRepository_Delete_RevisionMismatch(t *testing.T) {
-	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetings := newMockNatsKeyValue()
+	meetingSettings := newMockNatsKeyValue()
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	meetingUID := "test-meeting-123"
 
@@ -283,17 +319,18 @@ func TestNatsMeetingRepository_Delete_RevisionMismatch(t *testing.T) {
 }
 
 func TestNatsMeetingRepository_ListAll(t *testing.T) {
-	meetings := &mockNatsKeyValue{}
-	repo := NewNatsMeetingRepository(meetings)
+	meetings := newMockNatsKeyValue()
+	meetingSettings := newMockNatsKeyValue()
+	repo := NewNatsMeetingRepository(meetings, meetingSettings)
 
 	now := time.Now()
-	meeting1 := &models.Meeting{
+	meeting1 := &models.MeetingBase{
 		UID:       "meeting-1",
 		Title:     "First Meeting",
 		CreatedAt: &now,
 		UpdatedAt: &now,
 	}
-	meeting2 := &models.Meeting{
+	meeting2 := &models.MeetingBase{
 		UID:       "meeting-2",
 		Title:     "Second Meeting",
 		CreatedAt: &now,
@@ -308,13 +345,35 @@ func TestNatsMeetingRepository_ListAll(t *testing.T) {
 		"meeting-2": meeting2Data,
 	}
 
-	result, err := repo.ListAll(context.Background())
+	// Set up meeting settings
+	settings1 := &models.MeetingSettings{
+		UID:        "meeting-1",
+		Organizers: []string{"org1"},
+		CreatedAt:  &now,
+		UpdatedAt:  &now,
+	}
+	settings2 := &models.MeetingSettings{
+		UID:        "meeting-2",
+		Organizers: []string{"org2"},
+		CreatedAt:  &now,
+		UpdatedAt:  &now,
+	}
+	settings1Data, _ := json.Marshal(settings1)
+	settings2Data, _ := json.Marshal(settings2)
+	meetingSettings.data = map[string][]byte{
+		"meeting-1": settings1Data,
+		"meeting-2": settings2Data,
+	}
+
+	result, settings, err := repo.ListAll(context.Background())
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 
 	if len(result) != 2 {
 		t.Errorf("expected 2 meetings, got %d", len(result))
+	} else if len(settings) != 2 {
+		t.Errorf("expected 2 meeting settings, got %d", len(settings))
 	}
 
 	// Check if both meetings are present
@@ -330,9 +389,27 @@ func TestNatsMeetingRepository_ListAll(t *testing.T) {
 	}
 
 	if !foundMeeting1 {
-		t.Error("expected to find meeting-1")
+		t.Error("expected to find meeting-1 base")
 	}
 	if !foundMeeting2 {
-		t.Error("expected to find meeting-2")
+		t.Error("expected to find meeting-2 base")
+	}
+
+	// Check if both meeting settings are present
+	foundMeetingSetting1 := false
+	foundMeetingSetting2 := false
+	for _, setting := range settings {
+		if setting.UID == "meeting-1" {
+			foundMeetingSetting1 = true
+		}
+		if setting.UID == "meeting-2" {
+			foundMeetingSetting2 = true
+		}
+	}
+	if !foundMeetingSetting1 {
+		t.Error("expected to find meeting-1 settings")
+	}
+	if !foundMeetingSetting2 {
+		t.Error("expected to find meeting-2 settings")
 	}
 }

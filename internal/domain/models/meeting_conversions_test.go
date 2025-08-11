@@ -11,9 +11,9 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
-func TestToMeetingDBModel(t *testing.T) {
+func TestToMeetingBaseDBModel(t *testing.T) {
 	// Test with nil input
-	result := ToMeetingDBModel(nil)
+	result := ToMeetingBaseDBModel(nil)
 	if result != nil {
 		t.Error("expected nil result for nil input")
 	}
@@ -24,7 +24,7 @@ func TestToMeetingDBModel(t *testing.T) {
 	createdAtStr := now.Format(time.RFC3339)
 	updatedAtStr := now.Format(time.RFC3339)
 
-	goaMeeting := &meetingservice.Meeting{
+	goaMeeting := &meetingservice.MeetingBase{
 		UID:                             utils.StringPtr("test-uid"),
 		ProjectUID:                      utils.StringPtr("project-uid"),
 		Title:                           utils.StringPtr("Test Meeting"),
@@ -50,7 +50,7 @@ func TestToMeetingDBModel(t *testing.T) {
 		UpdatedAt:                       &updatedAtStr,
 	}
 
-	meeting := ToMeetingDBModel(goaMeeting)
+	meeting := ToMeetingBaseDBModel(goaMeeting)
 	if meeting == nil {
 		t.Fatal("expected non-nil meeting result")
 	}
@@ -86,16 +86,16 @@ func TestToMeetingDBModel(t *testing.T) {
 	}
 }
 
-func TestFromMeetingDBModel(t *testing.T) {
+func TestFromMeetingBaseDBModel(t *testing.T) {
 	// Test with nil input
-	result := FromMeetingDBModel(nil)
+	result := FromMeetingBaseDBModel(nil)
 	if result != nil {
 		t.Error("expected nil result for nil input")
 	}
 
 	// Test with valid domain meeting
 	now := time.Now()
-	meeting := &Meeting{
+	meeting := &MeetingBase{
 		UID:                             "test-uid",
 		ProjectUID:                      "project-uid",
 		Title:                           "Test Meeting",
@@ -121,7 +121,7 @@ func TestFromMeetingDBModel(t *testing.T) {
 		UpdatedAt:                       &now,
 	}
 
-	goaMeeting := FromMeetingDBModel(meeting)
+	goaMeeting := FromMeetingBaseDBModel(meeting)
 	if goaMeeting == nil {
 		t.Fatal("expected non-nil goa meeting result")
 	}
@@ -164,7 +164,7 @@ func TestFromMeetingDBModel(t *testing.T) {
 func TestConversionRoundTrip(t *testing.T) {
 	// Test round trip conversion: Domain -> Goa -> Domain
 	now := time.Now().Truncate(time.Second) // Truncate to avoid precision issues
-	originalMeeting := &Meeting{
+	originalMeeting := &MeetingBase{
 		UID:               "round-trip-uid",
 		ProjectUID:        "project-123",
 		Title:             "Round Trip Test",
@@ -181,13 +181,13 @@ func TestConversionRoundTrip(t *testing.T) {
 	}
 
 	// Convert to Goa type
-	goaMeeting := FromMeetingDBModel(originalMeeting)
+	goaMeeting := FromMeetingBaseDBModel(originalMeeting)
 	if goaMeeting == nil {
 		t.Fatal("failed to convert to Goa meeting")
 	}
 
 	// Convert back to domain type
-	convertedMeeting := ToMeetingDBModel(goaMeeting)
+	convertedMeeting := ToMeetingBaseDBModel(goaMeeting)
 	if convertedMeeting == nil {
 		t.Fatal("failed to convert back to domain meeting")
 	}
@@ -216,7 +216,7 @@ func TestConversionRoundTrip(t *testing.T) {
 func TestConversionWithComplexStructures(t *testing.T) {
 	// Test conversion with nested structures
 	now := time.Now().Truncate(time.Second)
-	meeting := &Meeting{
+	meeting := &MeetingBase{
 		UID:        "complex-uid",
 		ProjectUID: "project-456",
 		Title:      "Complex Meeting",
@@ -243,12 +243,12 @@ func TestConversionWithComplexStructures(t *testing.T) {
 	}
 
 	// Convert to Goa and back
-	goaMeeting := FromMeetingDBModel(meeting)
+	goaMeeting := FromMeetingBaseDBModel(meeting)
 	if goaMeeting == nil {
 		t.Fatal("failed to convert complex meeting to Goa")
 	}
 
-	convertedMeeting := ToMeetingDBModel(goaMeeting)
+	convertedMeeting := ToMeetingBaseDBModel(goaMeeting)
 	if convertedMeeting == nil {
 		t.Fatal("failed to convert complex Goa meeting back to domain")
 	}

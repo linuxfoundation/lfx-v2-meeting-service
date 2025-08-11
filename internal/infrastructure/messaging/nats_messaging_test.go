@@ -124,7 +124,7 @@ func TestMessageBuilder_SendIndexMeeting(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	meeting := models.Meeting{
+	meeting := models.MeetingBase{
 		UID:         "test-meeting-uid",
 		Title:       "Test Meeting",
 		ProjectUID:  "project-123",
@@ -172,7 +172,7 @@ func TestMessageBuilder_SendIndexMeeting_WithContext(t *testing.T) {
 	ctx = context.WithValue(ctx, constants.AuthorizationContextID, "Bearer token123")
 	ctx = context.WithValue(ctx, constants.PrincipalContextID, "user123")
 
-	meeting := models.Meeting{
+	meeting := models.MeetingBase{
 		UID:   "test-meeting-uid",
 		Title: "Test Meeting",
 	}
@@ -350,7 +350,7 @@ func TestMessageBuilder_PublishErrors(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	meeting := models.Meeting{UID: "test-uid", Title: "Test"}
+	meeting := models.MeetingBase{UID: "test-uid", Title: "Test"}
 
 	// Test SendIndexMeeting error
 	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)

@@ -133,11 +133,11 @@ func TestMeetingIndexerMessage_JSONSerialization(t *testing.T) {
 
 func TestMeetingAccessMessage_JSONSerialization(t *testing.T) {
 	message := MeetingAccessMessage{
-		UID:       "meeting-456",
-		Public:    true,
-		ParentUID: "project-789",
-		Writers:   []string{"user-1", "user-2"},
-		Auditors:  []string{"auditor-1", "auditor-2", "auditor-3"},
+		UID:        "meeting-456",
+		Public:     true,
+		ProjectUID: "project-789",
+		Organizers: []string{"user-1", "user-2"},
+		Committees: []string{"committee-1", "committee-2", "committee-3"},
 	}
 
 	// Test JSON marshaling
@@ -160,23 +160,23 @@ func TestMeetingAccessMessage_JSONSerialization(t *testing.T) {
 	if unmarshaled.Public != message.Public {
 		t.Errorf("expected Public %t, got %t", message.Public, unmarshaled.Public)
 	}
-	if unmarshaled.ParentUID != message.ParentUID {
-		t.Errorf("expected ParentUID %q, got %q", message.ParentUID, unmarshaled.ParentUID)
+	if unmarshaled.ProjectUID != message.ProjectUID {
+		t.Errorf("expected ProjectUID %q, got %q", message.ProjectUID, unmarshaled.ProjectUID)
 	}
-	if len(unmarshaled.Writers) != len(message.Writers) {
-		t.Errorf("expected %d writers, got %d", len(message.Writers), len(unmarshaled.Writers))
+	if len(unmarshaled.Organizers) != len(message.Organizers) {
+		t.Errorf("expected %d organizers, got %d", len(message.Organizers), len(unmarshaled.Organizers))
 	}
-	for i, writer := range message.Writers {
-		if unmarshaled.Writers[i] != writer {
-			t.Errorf("expected writer[%d] %q, got %q", i, writer, unmarshaled.Writers[i])
+	for i, organizer := range message.Organizers {
+		if unmarshaled.Organizers[i] != organizer {
+			t.Errorf("expected organizer[%d] %q, got %q", i, organizer, unmarshaled.Organizers[i])
 		}
 	}
-	if len(unmarshaled.Auditors) != len(message.Auditors) {
-		t.Errorf("expected %d auditors, got %d", len(message.Auditors), len(unmarshaled.Auditors))
+	if len(unmarshaled.Committees) != len(message.Committees) {
+		t.Errorf("expected %d committees, got %d", len(message.Committees), len(unmarshaled.Committees))
 	}
-	for i, auditor := range message.Auditors {
-		if unmarshaled.Auditors[i] != auditor {
-			t.Errorf("expected auditor[%d] %q, got %q", i, auditor, unmarshaled.Auditors[i])
+	for i, committee := range message.Committees {
+		if unmarshaled.Committees[i] != committee {
+			t.Errorf("expected committee[%d] %q, got %q", i, committee, unmarshaled.Committees[i])
 		}
 	}
 }
@@ -239,11 +239,11 @@ func TestMeetingIndexerMessage_WithDifferentDataTypes(t *testing.T) {
 
 func TestMeetingAccessMessage_EmptySlices(t *testing.T) {
 	message := MeetingAccessMessage{
-		UID:       "meeting-empty",
-		Public:    false,
-		ParentUID: "parent-empty",
-		Writers:   []string{},
-		Auditors:  []string{},
+		UID:        "meeting-empty",
+		Public:     false,
+		ProjectUID: "project-empty",
+		Organizers: []string{},
+		Committees: []string{},
 	}
 
 	data, err := json.Marshal(message)
@@ -257,10 +257,10 @@ func TestMeetingAccessMessage_EmptySlices(t *testing.T) {
 		t.Errorf("failed to unmarshal message with empty slices: %v", err)
 	}
 
-	if len(unmarshaled.Writers) != 0 {
-		t.Errorf("expected empty Writers slice, got %d items", len(unmarshaled.Writers))
+	if len(unmarshaled.Organizers) != 0 {
+		t.Errorf("expected empty Organizers slice, got %d items", len(unmarshaled.Organizers))
 	}
-	if len(unmarshaled.Auditors) != 0 {
-		t.Errorf("expected empty Auditors slice, got %d items", len(unmarshaled.Auditors))
+	if len(unmarshaled.Committees) != 0 {
+		t.Errorf("expected empty Committees slice, got %d items", len(unmarshaled.Committees))
 	}
 }

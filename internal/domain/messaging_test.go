@@ -41,13 +41,13 @@ func (m *mockMessageHandler) HandleMessage(ctx context.Context, msg Message) {
 
 // mockMessageBuilder implements the MessageBuilder interface for testing
 type mockMessageBuilder struct {
-	indexMeetingCalls        []models.Meeting
+	indexMeetingCalls        []models.MeetingBase
 	deleteIndexMeetingCalls  []string
 	updateAccessMeetingCalls []models.MeetingAccessMessage
 	deleteAllAccessCalls     []string
 }
 
-func (m *mockMessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.Meeting) error {
+func (m *mockMessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.MeetingBase) error {
 	m.indexMeetingCalls = append(m.indexMeetingCalls, data)
 	return nil
 }
@@ -110,7 +110,7 @@ func TestMessageBuilder_Interface(t *testing.T) {
 	builder := &mockMessageBuilder{}
 
 	// Test SendIndexMeeting
-	meeting := models.Meeting{UID: "test-uid"}
+	meeting := models.MeetingBase{UID: "test-uid"}
 	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

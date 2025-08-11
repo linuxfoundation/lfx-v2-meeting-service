@@ -19,7 +19,7 @@ import (
 
 func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) error {
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.Get(ctx, payload.MeetingUID)
+	_, err := s.MeetingRepository.GetBase(ctx, payload.MeetingUID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -126,7 +126,7 @@ func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *me
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
 
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.Get(ctx, meetingUID)
+	_, err := s.MeetingRepository.GetBase(ctx, meetingUID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)

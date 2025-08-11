@@ -13,7 +13,7 @@ import (
 
 func TestMeeting_JSONSerialization(t *testing.T) {
 	now := time.Now().UTC()
-	meeting := Meeting{
+	meeting := MeetingBase{
 		UID:                             "test-uid",
 		ProjectUID:                      "project-uid",
 		StartTime:                       now,
@@ -46,7 +46,7 @@ func TestMeeting_JSONSerialization(t *testing.T) {
 	}
 
 	// Test JSON unmarshaling
-	var unmarshaled Meeting
+	var unmarshaled MeetingBase
 	err = json.Unmarshal(data, &unmarshaled)
 	if err != nil {
 		t.Errorf("failed to unmarshal meeting: %v", err)
@@ -197,7 +197,7 @@ func TestZoomConfig_JSONSerialization(t *testing.T) {
 
 func TestMeeting_WithComplexStructures(t *testing.T) {
 	now := time.Now().UTC()
-	meeting := Meeting{
+	meeting := MeetingBase{
 		UID:         "complex-meeting",
 		ProjectUID:  "project-123",
 		StartTime:   now,
@@ -247,7 +247,7 @@ func TestMeeting_WithComplexStructures(t *testing.T) {
 		t.Errorf("failed to marshal complex meeting: %v", err)
 	}
 
-	var unmarshaled Meeting
+	var unmarshaled MeetingBase
 	err = json.Unmarshal(data, &unmarshaled)
 	if err != nil {
 		t.Errorf("failed to unmarshal complex meeting: %v", err)

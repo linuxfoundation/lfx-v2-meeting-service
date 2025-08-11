@@ -28,7 +28,7 @@ var _ = Service("Meeting Service", func() {
 		})
 
 		Result(func() {
-			Attribute("meetings", ArrayOf(Meeting), "Resources found", func() {})
+			Attribute("meetings", ArrayOf(MeetingFull), "Resources found", func() {})
 			Attribute("cache_control", String, "Cache control header", func() {
 				Example("public, max-age=300")
 			})
@@ -81,11 +81,12 @@ var _ = Service("Meeting Service", func() {
 			RecordingEnabledAttribute()
 			TranscriptEnabledAttribute()
 			YoutubeUploadEnabledAttribute()
+			MeetingOrganizersAttribute()
 			Attribute("zoom_config", ZoomConfigPost, "For zoom platform meetings: the configuration for the meeting")
 			Required("project_uid", "start_time", "duration", "timezone", "title", "description")
 		})
 
-		Result(Meeting)
+		Result(MeetingFull)
 
 		Error("BadRequest", BadRequestError, "Bad request")
 		Error("Conflict", ConflictError, "Conflict")
@@ -104,8 +105,8 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
-	// GET meeting by ID endpoint
-	Method("get-meeting", func() {
+	// GET meeting base by ID endpoint
+	Method("get-meeting-base", func() {
 		Description("Get a meeting by ID")
 
 		Security(JWTAuth)
@@ -117,7 +118,7 @@ var _ = Service("Meeting Service", func() {
 		})
 
 		Result(func() {
-			Attribute("meeting", Meeting)
+			Attribute("meeting", MeetingBase)
 			EtagAttribute()
 			Required("meeting")
 		})
@@ -141,9 +142,46 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
-	// PUT meeting endpoint
-	Method("update-meeting", func() {
-		Description("Update an existing meeting.")
+	// GET meeting settings by ID endpoint
+	Method("get-meeting-settings", func() {
+		Description("Get a single meeting's settings.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			MeetingUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("meeting_settings", MeetingSettings)
+			EtagAttribute()
+			Required("meeting_settings")
+		})
+
+		Error("NotFound", NotFoundError, "Resource not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{uid}/settings")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Body("meeting_settings")
+				Header("etag:ETag")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// PUT meeting base endpoint by ID
+	Method("update-meeting-base", func() {
+		Description("Update an existing meeting base.")
 
 		Security(JWTAuth)
 
@@ -175,7 +213,7 @@ var _ = Service("Meeting Service", func() {
 			Required("uid", "project_uid", "start_time", "duration", "timezone", "title", "description")
 		})
 
-		Result(Meeting)
+		Result(MeetingBase)
 
 		Error("BadRequest", BadRequestError, "Bad request")
 		Error("NotFound", NotFoundError, "Resource not found")
@@ -200,7 +238,43 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
-	// DELETE meeting endpoint
+	Method("update-meeting-settings", func() {
+		Description("Update an existing meeting's settings.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			EtagAttribute()
+			VersionAttribute()
+			MeetingUIDAttribute()
+			MeetingOrganizersAttribute()
+		})
+
+		Result(MeetingSettings)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Resource not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/meetings/{uid}/settings")
+			Params(func() {
+				Param("version:v")
+				Param("uid")
+			})
+			Header("bearer_token:Authorization")
+			Header("etag:ETag")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE meeting endpoint by ID
 	Method("delete-meeting", func() {
 		Description("Delete an existing meeting.")
 

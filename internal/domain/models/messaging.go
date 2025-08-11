@@ -9,6 +9,10 @@ const (
 	// The subject is of the form: lfx.index.meeting
 	IndexMeetingSubject = "lfx.index.meeting"
 
+	// IndexMeetingSettingsSubject is the subject for the meeting settings indexing.
+	// The subject is of the form: lfx.index.meeting_settings
+	IndexMeetingSettingsSubject = "lfx.index.meeting_settings"
+
 	// UpdateAccessMeetingSubject is the subject for the meeting access control updates.
 	// The subject is of the form: lfx.update_access.meeting
 	UpdateAccessMeetingSubject = "lfx.update_access.meeting"

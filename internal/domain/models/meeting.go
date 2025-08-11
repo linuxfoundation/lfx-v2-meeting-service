@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// Meeting is the key-value store representation of a meeting.
-type Meeting struct {
+// MeetingBase is the key-value store representation of a meeting base.
+type MeetingBase struct {
 	UID                             string       `json:"uid"`
 	ProjectUID                      string       `json:"project_uid"`
 	StartTime                       time.Time    `json:"start_time"`
@@ -36,6 +36,14 @@ type Meeting struct {
 	Occurrences                     []Occurrence `json:"occurrences,omitempty"`
 	CreatedAt                       *time.Time   `json:"created_at,omitempty"`
 	UpdatedAt                       *time.Time   `json:"updated_at,omitempty"`
+}
+
+// MeetingSettings is the key-value store representation of a meeting settings.
+type MeetingSettings struct {
+	UID        string     `json:"uid"`
+	Organizers []string   `json:"organizers"`
+	CreatedAt  *time.Time `json:"created_at,omitempty"`
+	UpdatedAt  *time.Time `json:"updated_at,omitempty"`
 }
 
 // Committee represents a committee associated with a meeting

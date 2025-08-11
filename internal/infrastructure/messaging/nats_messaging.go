@@ -102,7 +102,7 @@ func (m *MessageBuilder) setIndexerTags(tags ...string) []string {
 }
 
 // SendIndexMeeting sends the message to the NATS server for the meeting indexing.
-func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.Meeting) error {
+func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.MeetingBase) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
@@ -117,6 +117,24 @@ func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.Mes
 // SendDeleteIndexMeeting sends the message to the NATS server for the meeting indexing.
 func (m *MessageBuilder) SendDeleteIndexMeeting(ctx context.Context, data string) error {
 	return m.sendIndexerMessage(ctx, models.IndexMeetingSubject, models.ActionDeleted, []byte(data), nil)
+}
+
+// SendIndexMeetingSettings sends the message to the NATS server for the meeting settings indexing.
+func (m *MessageBuilder) SendIndexMeetingSettings(ctx context.Context, action models.MessageAction, data models.MeetingSettings) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.UID)
+
+	return m.sendIndexerMessage(ctx, models.IndexMeetingSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexMeetingSettings sends the message to the NATS server for the meeting settings indexing.
+func (m *MessageBuilder) SendDeleteIndexMeetingSettings(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexMeetingSettingsSubject, models.ActionDeleted, []byte(data), nil)
 }
 
 // SendUpdateAccessMeeting sends the message to the NATS server for the access control updates.

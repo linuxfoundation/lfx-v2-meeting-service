@@ -29,6 +29,7 @@ var CreateMeetingPayload = Type("CreateMeetingPayload", func() {
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
 	ZoomConfigPostAttribute()
+	MeetingOrganizersAttribute()
 	Required("project_uid", "start_time", "duration", "timezone", "title", "description")
 })
 
@@ -58,9 +59,21 @@ var UpdateMeetingPayload = Type("UpdateMeetingPayload", func() {
 	Required("uid", "project_uid", "start_time", "duration", "timezone", "title", "description")
 })
 
-// Meeting represents a complete meeting with all platform-specific fields
-var Meeting = Type("Meeting", func() {
-	Description("Meeting object")
+// MeetingFull is the DSL type for a full representation of a meeting.
+var MeetingFull = Type("MeetingFull", func() {
+	Description("A full representation of LF Meetings with sub-objects populated.")
+
+	MeetingBaseAttributes()
+	MeetingSettingsAttributes()
+})
+
+// MeetingBase represents a base representation of a meeting.
+var MeetingBase = Type("MeetingBase", func() {
+	Description("A base representation of a meeting.")
+	MeetingBaseAttributes()
+})
+
+func MeetingBaseAttributes() {
 	MeetingUIDAttribute()
 	ProjectUIDAttribute()
 	StartTimeAttribute()
@@ -88,7 +101,21 @@ var Meeting = Type("Meeting", func() {
 	OccurrencesAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
+}
+
+// ProjectSettings is the DSL type for a project settings.
+var MeetingSettings = Type("MeetingSettings", func() {
+	Description("A representation of LF Meeting settings.")
+	MeetingSettingsAttributes()
 })
+
+// MeetingSettingsAttributes is the DSL attributes for a meeting settings.
+func MeetingSettingsAttributes() {
+	MeetingUIDAttribute()
+	MeetingOrganizersAttribute()
+	CreatedAtAttribute()
+	UpdatedAtAttribute()
+}
 
 // Committee represents a committee associated with a meeting
 var Committee = Type("Committee", func() {
@@ -172,6 +199,13 @@ var Occurrence = Type("Occurrence", func() {
 		Enum("active", "cancelled")
 	})
 })
+
+// MeetingOrganizersAttribute is the DSL attribute for meeting organizers.
+func MeetingOrganizersAttribute() {
+	Attribute("organizers", ArrayOf(String), func() {
+		Description("The organizers of the meeting. This is a list of LFIDs of the meeting organizers.")
+	})
+}
 
 // MeetingUIDAttribute is the DSL attribute for meeting UID.
 func MeetingUIDAttribute() {

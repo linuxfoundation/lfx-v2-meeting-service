@@ -16,24 +16,45 @@ type MockMeetingRepository struct {
 	mock.Mock
 }
 
-func (m *MockMeetingRepository) Get(ctx context.Context, meetingUID string) (*models.Meeting, error) {
+func (m *MockMeetingRepository) GetBase(ctx context.Context, meetingUID string) (*models.MeetingBase, error) {
 	args := m.Called(ctx, meetingUID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*models.Meeting), args.Error(1)
+	return args.Get(0).(*models.MeetingBase), args.Error(1)
 }
 
-func (m *MockMeetingRepository) GetWithRevision(ctx context.Context, meetingUID string) (*models.Meeting, uint64, error) {
+func (m *MockMeetingRepository) GetBaseWithRevision(ctx context.Context, meetingUID string) (*models.MeetingBase, uint64, error) {
 	args := m.Called(ctx, meetingUID)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(uint64), args.Error(2)
 	}
-	return args.Get(0).(*models.Meeting), args.Get(1).(uint64), args.Error(2)
+	return args.Get(0).(*models.MeetingBase), args.Get(1).(uint64), args.Error(2)
 }
 
-func (m *MockMeetingRepository) Update(ctx context.Context, meeting *models.Meeting, revision uint64) error {
+func (m *MockMeetingRepository) UpdateBase(ctx context.Context, meeting *models.MeetingBase, revision uint64) error {
 	args := m.Called(ctx, meeting, revision)
+	return args.Error(0)
+}
+
+func (m *MockMeetingRepository) GetSettings(ctx context.Context, meetingUID string) (*models.MeetingSettings, error) {
+	args := m.Called(ctx, meetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.MeetingSettings), args.Error(1)
+}
+
+func (m *MockMeetingRepository) GetSettingsWithRevision(ctx context.Context, meetingUID string) (*models.MeetingSettings, uint64, error) {
+	args := m.Called(ctx, meetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(uint64), args.Error(2)
+	}
+	return args.Get(0).(*models.MeetingSettings), args.Get(1).(uint64), args.Error(2)
+}
+
+func (m *MockMeetingRepository) UpdateSettings(ctx context.Context, meetingSettings *models.MeetingSettings, revision uint64) error {
+	args := m.Called(ctx, meetingSettings, revision)
 	return args.Error(0)
 }
 
@@ -42,16 +63,16 @@ func (m *MockMeetingRepository) Exists(ctx context.Context, meetingUID string) (
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockMeetingRepository) ListAll(ctx context.Context) ([]*models.Meeting, error) {
+func (m *MockMeetingRepository) ListAll(ctx context.Context) ([]*models.MeetingBase, []*models.MeetingSettings, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, nil, args.Error(2)
 	}
-	return args.Get(0).([]*models.Meeting), args.Error(1)
+	return args.Get(0).([]*models.MeetingBase), args.Get(1).([]*models.MeetingSettings), args.Error(2)
 }
 
-func (m *MockMeetingRepository) Create(ctx context.Context, meeting *models.Meeting) error {
-	args := m.Called(ctx, meeting)
+func (m *MockMeetingRepository) Create(ctx context.Context, meeting *models.MeetingBase, settings *models.MeetingSettings) error {
+	args := m.Called(ctx, meeting, settings)
 	return args.Error(0)
 }
 
@@ -65,12 +86,22 @@ type MockMessageBuilder struct {
 	mock.Mock
 }
 
-func (m *MockMessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.Meeting) error {
+func (m *MockMessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.MeetingBase) error {
 	args := m.Called(ctx, action, data)
 	return args.Error(0)
 }
 
 func (m *MockMessageBuilder) SendDeleteIndexMeeting(ctx context.Context, data string) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendIndexMeetingSettings(ctx context.Context, action models.MessageAction, data models.MeetingSettings) error {
+	args := m.Called(ctx, action, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendDeleteIndexMeetingSettings(ctx context.Context, data string) error {
 	args := m.Called(ctx, data)
 	return args.Error(0)
 }

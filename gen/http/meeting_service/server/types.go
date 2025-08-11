@@ -59,13 +59,16 @@ type CreateMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string `form:"organizers,omitempty" json:"organizers,omitempty" xml:"organizers,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigPostRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 }
 
-// UpdateMeetingRequestBody is the type of the "Meeting Service" service
-// "update-meeting" endpoint HTTP request body.
-type UpdateMeetingRequestBody struct {
+// UpdateMeetingBaseRequestBody is the type of the "Meeting Service" service
+// "update-meeting-base" endpoint HTTP request body.
+type UpdateMeetingBaseRequestBody struct {
 	// The UID of the LF project
 	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
 	// The start time of the meeting in RFC3339 format
@@ -110,6 +113,14 @@ type UpdateMeetingRequestBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigPostRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+}
+
+// UpdateMeetingSettingsRequestBody is the type of the "Meeting Service"
+// service "update-meeting-settings" endpoint HTTP request body.
+type UpdateMeetingSettingsRequestBody struct {
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string `form:"organizers,omitempty" json:"organizers,omitempty" xml:"organizers,omitempty"`
 }
 
 // CreateMeetingRegistrantRequestBody is the type of the "Meeting Service"
@@ -164,7 +175,7 @@ type UpdateMeetingRegistrantRequestBody struct {
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
 	// Resources found
-	Meetings []*MeetingResponseBody `form:"meetings" json:"meetings" xml:"meetings"`
+	Meetings []*MeetingFullResponseBody `form:"meetings" json:"meetings" xml:"meetings"`
 }
 
 // CreateMeetingResponseBody is the type of the "Meeting Service" service
@@ -234,15 +245,22 @@ type CreateMeetingResponseBody struct {
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string `form:"organizers,omitempty" json:"organizers,omitempty" xml:"organizers,omitempty"`
 }
 
-// GetMeetingResponseBody is the type of the "Meeting Service" service
-// "get-meeting" endpoint HTTP response body.
-type GetMeetingResponseBody MeetingResponseBody
+// GetMeetingBaseResponseBody is the type of the "Meeting Service" service
+// "get-meeting-base" endpoint HTTP response body.
+type GetMeetingBaseResponseBody MeetingBaseResponseBody
 
-// UpdateMeetingResponseBody is the type of the "Meeting Service" service
-// "update-meeting" endpoint HTTP response body.
-type UpdateMeetingResponseBody struct {
+// GetMeetingSettingsResponseBody is the type of the "Meeting Service" service
+// "get-meeting-settings" endpoint HTTP response body.
+type GetMeetingSettingsResponseBody MeetingSettingsResponseBody
+
+// UpdateMeetingBaseResponseBody is the type of the "Meeting Service" service
+// "update-meeting-base" endpoint HTTP response body.
+type UpdateMeetingBaseResponseBody struct {
 	// The UID of the meeting
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the LF project
@@ -303,6 +321,20 @@ type UpdateMeetingResponseBody struct {
 	RegistrantResponseAcceptedCount *int `form:"registrant_response_accepted_count,omitempty" json:"registrant_response_accepted_count,omitempty" xml:"registrant_response_accepted_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*OccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// UpdateMeetingSettingsResponseBody is the type of the "Meeting Service"
+// service "update-meeting-settings" endpoint HTTP response body.
+type UpdateMeetingSettingsResponseBody struct {
+	// The UID of the meeting
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string `form:"organizers,omitempty" json:"organizers,omitempty" xml:"organizers,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -468,79 +500,150 @@ type CreateMeetingServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// GetMeetingInternalServerErrorResponseBody is the type of the "Meeting
-// Service" service "get-meeting" endpoint HTTP response body for the
+// GetMeetingBaseInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "get-meeting-base" endpoint HTTP response body for the
 // "InternalServerError" error.
-type GetMeetingInternalServerErrorResponseBody struct {
+type GetMeetingBaseInternalServerErrorResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// GetMeetingNotFoundResponseBody is the type of the "Meeting Service" service
-// "get-meeting" endpoint HTTP response body for the "NotFound" error.
-type GetMeetingNotFoundResponseBody struct {
+// GetMeetingBaseNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-meeting-base" endpoint HTTP response body for the "NotFound"
+// error.
+type GetMeetingBaseNotFoundResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// GetMeetingServiceUnavailableResponseBody is the type of the "Meeting
-// Service" service "get-meeting" endpoint HTTP response body for the
+// GetMeetingBaseServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-meeting-base" endpoint HTTP response body for the
 // "ServiceUnavailable" error.
-type GetMeetingServiceUnavailableResponseBody struct {
+type GetMeetingBaseServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// UpdateMeetingBadRequestResponseBody is the type of the "Meeting Service"
-// service "update-meeting" endpoint HTTP response body for the "BadRequest"
+// GetMeetingSettingsInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-meeting-settings" endpoint HTTP response body
+// for the "InternalServerError" error.
+type GetMeetingSettingsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingSettingsNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-meeting-settings" endpoint HTTP response body for the
+// "NotFound" error.
+type GetMeetingSettingsNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingSettingsServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-meeting-settings" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetMeetingSettingsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateMeetingBaseBadRequestResponseBody is the type of the "Meeting Service"
+// service "update-meeting-base" endpoint HTTP response body for the
+// "BadRequest" error.
+type UpdateMeetingBaseBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateMeetingBaseConflictResponseBody is the type of the "Meeting Service"
+// service "update-meeting-base" endpoint HTTP response body for the "Conflict"
 // error.
-type UpdateMeetingBadRequestResponseBody struct {
+type UpdateMeetingBaseConflictResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// UpdateMeetingConflictResponseBody is the type of the "Meeting Service"
-// service "update-meeting" endpoint HTTP response body for the "Conflict"
-// error.
-type UpdateMeetingConflictResponseBody struct {
-	// HTTP status code
-	Code string `form:"code" json:"code" xml:"code"`
-	// Error message
-	Message string `form:"message" json:"message" xml:"message"`
-}
-
-// UpdateMeetingInternalServerErrorResponseBody is the type of the "Meeting
-// Service" service "update-meeting" endpoint HTTP response body for the
+// UpdateMeetingBaseInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "update-meeting-base" endpoint HTTP response body for the
 // "InternalServerError" error.
-type UpdateMeetingInternalServerErrorResponseBody struct {
+type UpdateMeetingBaseInternalServerErrorResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// UpdateMeetingNotFoundResponseBody is the type of the "Meeting Service"
-// service "update-meeting" endpoint HTTP response body for the "NotFound"
+// UpdateMeetingBaseNotFoundResponseBody is the type of the "Meeting Service"
+// service "update-meeting-base" endpoint HTTP response body for the "NotFound"
 // error.
-type UpdateMeetingNotFoundResponseBody struct {
+type UpdateMeetingBaseNotFoundResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// UpdateMeetingServiceUnavailableResponseBody is the type of the "Meeting
-// Service" service "update-meeting" endpoint HTTP response body for the
+// UpdateMeetingBaseServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "update-meeting-base" endpoint HTTP response body for the
 // "ServiceUnavailable" error.
-type UpdateMeetingServiceUnavailableResponseBody struct {
+type UpdateMeetingBaseServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateMeetingSettingsBadRequestResponseBody is the type of the "Meeting
+// Service" service "update-meeting-settings" endpoint HTTP response body for
+// the "BadRequest" error.
+type UpdateMeetingSettingsBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateMeetingSettingsInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "update-meeting-settings" endpoint HTTP response
+// body for the "InternalServerError" error.
+type UpdateMeetingSettingsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateMeetingSettingsNotFoundResponseBody is the type of the "Meeting
+// Service" service "update-meeting-settings" endpoint HTTP response body for
+// the "NotFound" error.
+type UpdateMeetingSettingsNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateMeetingSettingsServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "update-meeting-settings" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type UpdateMeetingSettingsServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
@@ -797,8 +900,8 @@ type ReadyzServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
-// MeetingResponseBody is used to define fields on response body types.
-type MeetingResponseBody struct {
+// MeetingFullResponseBody is used to define fields on response body types.
+type MeetingFullResponseBody struct {
 	// The UID of the meeting
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the LF project
@@ -863,6 +966,9 @@ type MeetingResponseBody struct {
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string `form:"organizers,omitempty" json:"organizers,omitempty" xml:"organizers,omitempty"`
 }
 
 // RecurrenceResponseBody is used to define fields on response body types.
@@ -966,6 +1072,87 @@ type OccurrenceResponseBody struct {
 	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
 	// Occurrence status from platform
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
+// MeetingBaseResponseBody is used to define fields on response body types.
+type MeetingBaseResponseBody struct {
+	// The UID of the meeting
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// The UID of the LF project
+	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
+	// The start time of the meeting in RFC3339 format
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
+	// The duration of the meeting in minutes
+	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The title of the meeting
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// The description of the meeting
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The committees associated with the meeting
+	Committees []*CommitteeResponseBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
+	// The platform name of where the meeting is hosted
+	Platform *string `form:"platform,omitempty" json:"platform,omitempty" xml:"platform,omitempty"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes,omitempty" json:"early_join_time_minutes,omitempty" xml:"early_join_time_minutes,omitempty"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// The number of registrants that have an email delivery error with their
+	// invite. The delivery errors are counted as the last invite that was sent to
+	// the registrant, so if a registrant previously had a delivery error but not
+	// in their most recent invite received, then it does not count towards this
+	// field value.
+	EmailDeliveryErrorCount *int `form:"email_delivery_error_count,omitempty" json:"email_delivery_error_count,omitempty" xml:"email_delivery_error_count,omitempty"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// For zoom platform meetings: the configuration for the meeting
+	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+	// The number of registrants for the meeting
+	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
+	// The number of registrants that have declined the meeting invitation
+	RegistrantResponseDeclinedCount *int `form:"registrant_response_declined_count,omitempty" json:"registrant_response_declined_count,omitempty" xml:"registrant_response_declined_count,omitempty"`
+	// The number of registrants that have accepted the meeting invitation
+	RegistrantResponseAcceptedCount *int `form:"registrant_response_accepted_count,omitempty" json:"registrant_response_accepted_count,omitempty" xml:"registrant_response_accepted_count,omitempty"`
+	// Array of meeting occurrences (read-only from platform API)
+	Occurrences []*OccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// MeetingSettingsResponseBody is used to define fields on response body types.
+type MeetingSettingsResponseBody struct {
+	// The UID of the meeting
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string `form:"organizers,omitempty" json:"organizers,omitempty" xml:"organizers,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
 // RegistrantResponseBody is used to define fields on response body types.
@@ -1088,19 +1275,19 @@ type ZoomConfigPostRequestBody struct {
 func NewGetMeetingsResponseBody(res *meetingservice.GetMeetingsResult) *GetMeetingsResponseBody {
 	body := &GetMeetingsResponseBody{}
 	if res.Meetings != nil {
-		body.Meetings = make([]*MeetingResponseBody, len(res.Meetings))
+		body.Meetings = make([]*MeetingFullResponseBody, len(res.Meetings))
 		for i, val := range res.Meetings {
-			body.Meetings[i] = marshalMeetingserviceMeetingToMeetingResponseBody(val)
+			body.Meetings[i] = marshalMeetingserviceMeetingFullToMeetingFullResponseBody(val)
 		}
 	} else {
-		body.Meetings = []*MeetingResponseBody{}
+		body.Meetings = []*MeetingFullResponseBody{}
 	}
 	return body
 }
 
 // NewCreateMeetingResponseBody builds the HTTP response body from the result
 // of the "create-meeting" endpoint of the "Meeting Service" service.
-func NewCreateMeetingResponseBody(res *meetingservice.Meeting) *CreateMeetingResponseBody {
+func NewCreateMeetingResponseBody(res *meetingservice.MeetingFull) *CreateMeetingResponseBody {
 	body := &CreateMeetingResponseBody{
 		UID:                             res.UID,
 		ProjectUID:                      res.ProjectUID,
@@ -1144,13 +1331,19 @@ func NewCreateMeetingResponseBody(res *meetingservice.Meeting) *CreateMeetingRes
 			body.Occurrences[i] = marshalMeetingserviceOccurrenceToOccurrenceResponseBody(val)
 		}
 	}
+	if res.Organizers != nil {
+		body.Organizers = make([]string, len(res.Organizers))
+		for i, val := range res.Organizers {
+			body.Organizers[i] = val
+		}
+	}
 	return body
 }
 
-// NewGetMeetingResponseBody builds the HTTP response body from the result of
-// the "get-meeting" endpoint of the "Meeting Service" service.
-func NewGetMeetingResponseBody(res *meetingservice.GetMeetingResult) *GetMeetingResponseBody {
-	body := &GetMeetingResponseBody{
+// NewGetMeetingBaseResponseBody builds the HTTP response body from the result
+// of the "get-meeting-base" endpoint of the "Meeting Service" service.
+func NewGetMeetingBaseResponseBody(res *meetingservice.GetMeetingBaseResult) *GetMeetingBaseResponseBody {
+	body := &GetMeetingBaseResponseBody{
 		UID:                             res.Meeting.UID,
 		ProjectUID:                      res.Meeting.ProjectUID,
 		StartTime:                       res.Meeting.StartTime,
@@ -1196,10 +1389,29 @@ func NewGetMeetingResponseBody(res *meetingservice.GetMeetingResult) *GetMeeting
 	return body
 }
 
-// NewUpdateMeetingResponseBody builds the HTTP response body from the result
-// of the "update-meeting" endpoint of the "Meeting Service" service.
-func NewUpdateMeetingResponseBody(res *meetingservice.Meeting) *UpdateMeetingResponseBody {
-	body := &UpdateMeetingResponseBody{
+// NewGetMeetingSettingsResponseBody builds the HTTP response body from the
+// result of the "get-meeting-settings" endpoint of the "Meeting Service"
+// service.
+func NewGetMeetingSettingsResponseBody(res *meetingservice.GetMeetingSettingsResult) *GetMeetingSettingsResponseBody {
+	body := &GetMeetingSettingsResponseBody{
+		UID:       res.MeetingSettings.UID,
+		CreatedAt: res.MeetingSettings.CreatedAt,
+		UpdatedAt: res.MeetingSettings.UpdatedAt,
+	}
+	if res.MeetingSettings.Organizers != nil {
+		body.Organizers = make([]string, len(res.MeetingSettings.Organizers))
+		for i, val := range res.MeetingSettings.Organizers {
+			body.Organizers[i] = val
+		}
+	}
+	return body
+}
+
+// NewUpdateMeetingBaseResponseBody builds the HTTP response body from the
+// result of the "update-meeting-base" endpoint of the "Meeting Service"
+// service.
+func NewUpdateMeetingBaseResponseBody(res *meetingservice.MeetingBase) *UpdateMeetingBaseResponseBody {
+	body := &UpdateMeetingBaseResponseBody{
 		UID:                             res.UID,
 		ProjectUID:                      res.ProjectUID,
 		StartTime:                       res.StartTime,
@@ -1240,6 +1452,24 @@ func NewUpdateMeetingResponseBody(res *meetingservice.Meeting) *UpdateMeetingRes
 		body.Occurrences = make([]*OccurrenceResponseBody, len(res.Occurrences))
 		for i, val := range res.Occurrences {
 			body.Occurrences[i] = marshalMeetingserviceOccurrenceToOccurrenceResponseBody(val)
+		}
+	}
+	return body
+}
+
+// NewUpdateMeetingSettingsResponseBody builds the HTTP response body from the
+// result of the "update-meeting-settings" endpoint of the "Meeting Service"
+// service.
+func NewUpdateMeetingSettingsResponseBody(res *meetingservice.MeetingSettings) *UpdateMeetingSettingsResponseBody {
+	body := &UpdateMeetingSettingsResponseBody{
+		UID:       res.UID,
+		CreatedAt: res.CreatedAt,
+		UpdatedAt: res.UpdatedAt,
+	}
+	if res.Organizers != nil {
+		body.Organizers = make([]string, len(res.Organizers))
+		for i, val := range res.Organizers {
+			body.Organizers[i] = val
 		}
 	}
 	return body
@@ -1407,84 +1637,164 @@ func NewCreateMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceU
 	return body
 }
 
-// NewGetMeetingInternalServerErrorResponseBody builds the HTTP response body
-// from the result of the "get-meeting" endpoint of the "Meeting Service"
-// service.
-func NewGetMeetingInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetMeetingInternalServerErrorResponseBody {
-	body := &GetMeetingInternalServerErrorResponseBody{
-		Code:    res.Code,
-		Message: res.Message,
-	}
-	return body
-}
-
-// NewGetMeetingNotFoundResponseBody builds the HTTP response body from the
-// result of the "get-meeting" endpoint of the "Meeting Service" service.
-func NewGetMeetingNotFoundResponseBody(res *meetingservice.NotFoundError) *GetMeetingNotFoundResponseBody {
-	body := &GetMeetingNotFoundResponseBody{
-		Code:    res.Code,
-		Message: res.Message,
-	}
-	return body
-}
-
-// NewGetMeetingServiceUnavailableResponseBody builds the HTTP response body
-// from the result of the "get-meeting" endpoint of the "Meeting Service"
-// service.
-func NewGetMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetMeetingServiceUnavailableResponseBody {
-	body := &GetMeetingServiceUnavailableResponseBody{
-		Code:    res.Code,
-		Message: res.Message,
-	}
-	return body
-}
-
-// NewUpdateMeetingBadRequestResponseBody builds the HTTP response body from
-// the result of the "update-meeting" endpoint of the "Meeting Service" service.
-func NewUpdateMeetingBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdateMeetingBadRequestResponseBody {
-	body := &UpdateMeetingBadRequestResponseBody{
-		Code:    res.Code,
-		Message: res.Message,
-	}
-	return body
-}
-
-// NewUpdateMeetingConflictResponseBody builds the HTTP response body from the
-// result of the "update-meeting" endpoint of the "Meeting Service" service.
-func NewUpdateMeetingConflictResponseBody(res *meetingservice.ConflictError) *UpdateMeetingConflictResponseBody {
-	body := &UpdateMeetingConflictResponseBody{
-		Code:    res.Code,
-		Message: res.Message,
-	}
-	return body
-}
-
-// NewUpdateMeetingInternalServerErrorResponseBody builds the HTTP response
-// body from the result of the "update-meeting" endpoint of the "Meeting
+// NewGetMeetingBaseInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "get-meeting-base" endpoint of the "Meeting
 // Service" service.
-func NewUpdateMeetingInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdateMeetingInternalServerErrorResponseBody {
-	body := &UpdateMeetingInternalServerErrorResponseBody{
+func NewGetMeetingBaseInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetMeetingBaseInternalServerErrorResponseBody {
+	body := &GetMeetingBaseInternalServerErrorResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}
 	return body
 }
 
-// NewUpdateMeetingNotFoundResponseBody builds the HTTP response body from the
-// result of the "update-meeting" endpoint of the "Meeting Service" service.
-func NewUpdateMeetingNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdateMeetingNotFoundResponseBody {
-	body := &UpdateMeetingNotFoundResponseBody{
+// NewGetMeetingBaseNotFoundResponseBody builds the HTTP response body from the
+// result of the "get-meeting-base" endpoint of the "Meeting Service" service.
+func NewGetMeetingBaseNotFoundResponseBody(res *meetingservice.NotFoundError) *GetMeetingBaseNotFoundResponseBody {
+	body := &GetMeetingBaseNotFoundResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}
 	return body
 }
 
-// NewUpdateMeetingServiceUnavailableResponseBody builds the HTTP response body
-// from the result of the "update-meeting" endpoint of the "Meeting Service"
+// NewGetMeetingBaseServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "get-meeting-base" endpoint of the "Meeting
+// Service" service.
+func NewGetMeetingBaseServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetMeetingBaseServiceUnavailableResponseBody {
+	body := &GetMeetingBaseServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingSettingsInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-meeting-settings" endpoint of the
+// "Meeting Service" service.
+func NewGetMeetingSettingsInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetMeetingSettingsInternalServerErrorResponseBody {
+	body := &GetMeetingSettingsInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingSettingsNotFoundResponseBody builds the HTTP response body from
+// the result of the "get-meeting-settings" endpoint of the "Meeting Service"
 // service.
-func NewUpdateMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdateMeetingServiceUnavailableResponseBody {
-	body := &UpdateMeetingServiceUnavailableResponseBody{
+func NewGetMeetingSettingsNotFoundResponseBody(res *meetingservice.NotFoundError) *GetMeetingSettingsNotFoundResponseBody {
+	body := &GetMeetingSettingsNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingSettingsServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "get-meeting-settings" endpoint of the "Meeting
+// Service" service.
+func NewGetMeetingSettingsServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetMeetingSettingsServiceUnavailableResponseBody {
+	body := &GetMeetingSettingsServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingBaseBadRequestResponseBody builds the HTTP response body
+// from the result of the "update-meeting-base" endpoint of the "Meeting
+// Service" service.
+func NewUpdateMeetingBaseBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdateMeetingBaseBadRequestResponseBody {
+	body := &UpdateMeetingBaseBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingBaseConflictResponseBody builds the HTTP response body from
+// the result of the "update-meeting-base" endpoint of the "Meeting Service"
+// service.
+func NewUpdateMeetingBaseConflictResponseBody(res *meetingservice.ConflictError) *UpdateMeetingBaseConflictResponseBody {
+	body := &UpdateMeetingBaseConflictResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingBaseInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "update-meeting-base" endpoint of the "Meeting
+// Service" service.
+func NewUpdateMeetingBaseInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdateMeetingBaseInternalServerErrorResponseBody {
+	body := &UpdateMeetingBaseInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingBaseNotFoundResponseBody builds the HTTP response body from
+// the result of the "update-meeting-base" endpoint of the "Meeting Service"
+// service.
+func NewUpdateMeetingBaseNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdateMeetingBaseNotFoundResponseBody {
+	body := &UpdateMeetingBaseNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingBaseServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "update-meeting-base" endpoint of the "Meeting
+// Service" service.
+func NewUpdateMeetingBaseServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdateMeetingBaseServiceUnavailableResponseBody {
+	body := &UpdateMeetingBaseServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingSettingsBadRequestResponseBody builds the HTTP response body
+// from the result of the "update-meeting-settings" endpoint of the "Meeting
+// Service" service.
+func NewUpdateMeetingSettingsBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdateMeetingSettingsBadRequestResponseBody {
+	body := &UpdateMeetingSettingsBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingSettingsInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "update-meeting-settings" endpoint of
+// the "Meeting Service" service.
+func NewUpdateMeetingSettingsInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdateMeetingSettingsInternalServerErrorResponseBody {
+	body := &UpdateMeetingSettingsInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingSettingsNotFoundResponseBody builds the HTTP response body
+// from the result of the "update-meeting-settings" endpoint of the "Meeting
+// Service" service.
+func NewUpdateMeetingSettingsNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdateMeetingSettingsNotFoundResponseBody {
+	body := &UpdateMeetingSettingsNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateMeetingSettingsServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "update-meeting-settings" endpoint of
+// the "Meeting Service" service.
+func NewUpdateMeetingSettingsServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdateMeetingSettingsServiceUnavailableResponseBody {
+	body := &UpdateMeetingSettingsServiceUnavailableResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}
@@ -1803,6 +2113,12 @@ func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, be
 			v.Committees[i] = unmarshalCommitteeRequestBodyToMeetingserviceCommittee(val)
 		}
 	}
+	if body.Organizers != nil {
+		v.Organizers = make([]string, len(body.Organizers))
+		for i, val := range body.Organizers {
+			v.Organizers[i] = val
+		}
+	}
 	if body.ZoomConfig != nil {
 		v.ZoomConfig = unmarshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
 	}
@@ -1812,10 +2128,10 @@ func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, be
 	return v
 }
 
-// NewGetMeetingPayload builds a Meeting Service service get-meeting endpoint
-// payload.
-func NewGetMeetingPayload(uid string, version *string, bearerToken *string) *meetingservice.GetMeetingPayload {
-	v := &meetingservice.GetMeetingPayload{}
+// NewGetMeetingBasePayload builds a Meeting Service service get-meeting-base
+// endpoint payload.
+func NewGetMeetingBasePayload(uid string, version *string, bearerToken *string) *meetingservice.GetMeetingBasePayload {
+	v := &meetingservice.GetMeetingBasePayload{}
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
@@ -1823,10 +2139,21 @@ func NewGetMeetingPayload(uid string, version *string, bearerToken *string) *mee
 	return v
 }
 
-// NewUpdateMeetingPayload builds a Meeting Service service update-meeting
-// endpoint payload.
-func NewUpdateMeetingPayload(body *UpdateMeetingRequestBody, uid string, version *string, bearerToken *string, etag *string) *meetingservice.UpdateMeetingPayload {
-	v := &meetingservice.UpdateMeetingPayload{
+// NewGetMeetingSettingsPayload builds a Meeting Service service
+// get-meeting-settings endpoint payload.
+func NewGetMeetingSettingsPayload(uid string, version *string, bearerToken *string) *meetingservice.GetMeetingSettingsPayload {
+	v := &meetingservice.GetMeetingSettingsPayload{}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewUpdateMeetingBasePayload builds a Meeting Service service
+// update-meeting-base endpoint payload.
+func NewUpdateMeetingBasePayload(body *UpdateMeetingBaseRequestBody, uid string, version *string, bearerToken *string, etag *string) *meetingservice.UpdateMeetingBasePayload {
+	v := &meetingservice.UpdateMeetingBasePayload{
 		ProjectUID:           *body.ProjectUID,
 		StartTime:            *body.StartTime,
 		Duration:             *body.Duration,
@@ -1857,6 +2184,24 @@ func NewUpdateMeetingPayload(body *UpdateMeetingRequestBody, uid string, version
 		v.ZoomConfig = unmarshalZoomConfigPostRequestBodyToMeetingserviceZoomConfigPost(body.ZoomConfig)
 	}
 	v.UID = uid
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.Etag = etag
+
+	return v
+}
+
+// NewUpdateMeetingSettingsPayload builds a Meeting Service service
+// update-meeting-settings endpoint payload.
+func NewUpdateMeetingSettingsPayload(body *UpdateMeetingSettingsRequestBody, uid string, version *string, bearerToken *string, etag *string) *meetingservice.UpdateMeetingSettingsPayload {
+	v := &meetingservice.UpdateMeetingSettingsPayload{}
+	if body.Organizers != nil {
+		v.Organizers = make([]string, len(body.Organizers))
+		for i, val := range body.Organizers {
+			v.Organizers[i] = val
+		}
+	}
+	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
 	v.Etag = etag
@@ -2038,9 +2383,9 @@ func ValidateCreateMeetingRequestBody(body *CreateMeetingRequestBody) (err error
 	return
 }
 
-// ValidateUpdateMeetingRequestBody runs the validations defined on
-// Update-MeetingRequestBody
-func ValidateUpdateMeetingRequestBody(body *UpdateMeetingRequestBody) (err error) {
+// ValidateUpdateMeetingBaseRequestBody runs the validations defined on
+// Update-Meeting-BaseRequestBody
+func ValidateUpdateMeetingBaseRequestBody(body *UpdateMeetingBaseRequestBody) (err error) {
 	if body.ProjectUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("project_uid", "body"))
 	}
