@@ -1940,7 +1940,7 @@ func unmarshalRegistrantResponseBodyToMeetingserviceRegistrant(v *RegistrantResp
 		OrgIsMember:        v.OrgIsMember,
 		OrgIsProjectMember: v.OrgIsProjectMember,
 		AvatarURL:          v.AvatarURL,
-		UserID:             v.UserID,
+		Username:           v.Username,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
 	}

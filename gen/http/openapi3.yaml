@@ -568,7 +568,7 @@ paths:
                             last_name: Doe
                             occurrence_id: "1640995200"
                             org_name: Occaecati molestias facilis non aut.
-                            user_id: Aut explicabo.
+                            username: Aut explicabo.
             responses:
                 "201":
                     description: Created response.
@@ -591,7 +591,7 @@ paths:
                                 org_name: Similique aut adipisci excepturi.
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
-                                user_id: Amet quidem.
+                                username: Amet quidem.
                 "400":
                     description: 'BadRequest: Bad request'
                     content:
@@ -796,7 +796,7 @@ paths:
                                 org_name: Nihil et magni.
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
-                                user_id: Expedita corrupti.
+                                username: Expedita corrupti.
                 "404":
                     description: 'NotFound: Meeting or registrant not found'
                     content:
@@ -888,7 +888,7 @@ paths:
                             last_name: Doe
                             occurrence_id: "1640995200"
                             org_name: Facilis possimus.
-                            user_id: Perferendis neque ut sint.
+                            username: Perferendis neque ut sint.
             responses:
                 "200":
                     description: OK response.
@@ -911,7 +911,7 @@ paths:
                                 org_name: Officiis qui quia perferendis.
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
-                                user_id: Ducimus labore.
+                                username: Ducimus labore.
                 "400":
                     description: 'BadRequest: Bad request'
                     content:
@@ -1541,7 +1541,7 @@ paths:
                                       org_name: Nihil et magni.
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
-                                      user_id: Expedita corrupti.
+                                      username: Expedita corrupti.
                                     - avatar_url: https://example.com/avatar.jpg
                                       created_at: "2021-01-01T00:00:00Z"
                                       email: user@example.com
@@ -1556,7 +1556,7 @@ paths:
                                       org_name: Nihil et magni.
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
-                                      user_id: Expedita corrupti.
+                                      username: Expedita corrupti.
                 "404":
                     description: 'NotFound: Meeting not found'
                     content:
@@ -1914,7 +1914,7 @@ components:
                     type: string
                     description: User's organization
                     example: Omnis fugiat repudiandae et nihil repellat.
-                user_id:
+                username:
                     type: string
                     description: User's LF ID
                     example: Officiis enim veritatis est.
@@ -1927,7 +1927,7 @@ components:
                 last_name: Doe
                 occurrence_id: "1640995200"
                 org_name: Magni eaque aut distinctio.
-                user_id: Expedita voluptatem ut minus vel qui animi.
+                username: Expedita voluptatem ut minus vel qui animi.
             required:
                 - email
                 - first_name
@@ -1974,7 +1974,7 @@ components:
                     type: string
                     description: User's organization
                     example: Officiis expedita in.
-                user_id:
+                username:
                     type: string
                     description: User's LF ID
                     example: Minima eos inventore quisquam quo voluptatibus.
@@ -1988,7 +1988,7 @@ components:
                 last_name: Doe
                 occurrence_id: "1640995200"
                 org_name: Eos tempora.
-                user_id: Dolor repudiandae sint tenetur.
+                username: Dolor repudiandae sint tenetur.
             required:
                 - meeting_uid
                 - email
@@ -2017,7 +2017,7 @@ components:
                           org_name: Nihil et magni.
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
-                          user_id: Expedita corrupti.
+                          username: Expedita corrupti.
                         - avatar_url: https://example.com/avatar.jpg
                           created_at: "2021-01-01T00:00:00Z"
                           email: user@example.com
@@ -2032,7 +2032,7 @@ components:
                           org_name: Nihil et magni.
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
-                          user_id: Expedita corrupti.
+                          username: Expedita corrupti.
             example:
                 registrants:
                     - avatar_url: https://example.com/avatar.jpg
@@ -2049,7 +2049,7 @@ components:
                       org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Expedita corrupti.
+                      username: Expedita corrupti.
                     - avatar_url: https://example.com/avatar.jpg
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
@@ -2064,7 +2064,7 @@ components:
                       org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Expedita corrupti.
+                      username: Expedita corrupti.
             required:
                 - registrants
         GetMeetingsResponseBody:
@@ -3154,7 +3154,7 @@ components:
                     description: The date and time the resource was last updated
                     example: "2021-01-01T00:00:00Z"
                     format: date-time
-                user_id:
+                username:
                     type: string
                     description: User's LF ID
                     example: Cum iusto velit.
@@ -3174,7 +3174,7 @@ components:
                 org_name: Ut quisquam debitis sint.
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "2021-01-01T00:00:00Z"
-                user_id: Sint laboriosam.
+                username: Sint laboriosam.
             required:
                 - uid
                 - meeting_uid
@@ -3429,7 +3429,7 @@ components:
                     type: string
                     description: User's organization
                     example: Voluptatem dolorum alias sunt.
-                user_id:
+                username:
                     type: string
                     description: User's LF ID
                     example: Quasi porro neque natus perferendis placeat qui.
@@ -3443,7 +3443,7 @@ components:
                 last_name: Doe
                 occurrence_id: "1640995200"
                 org_name: Maiores eos ea omnis.
-                user_id: Velit enim.
+                username: Velit enim.
             required:
                 - meeting_uid
                 - email

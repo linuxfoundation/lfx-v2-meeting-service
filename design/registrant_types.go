@@ -18,7 +18,7 @@ var CreateRegistrantPayload = Type("CreateRegistrantPayload", func() {
 	RegistrantOrgNameAttribute()
 	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
-	RegistrantUserIDAttribute()
+	RegistrantUsernameAttribute()
 	Required("meeting_uid", "email", "first_name", "last_name")
 })
 
@@ -33,7 +33,7 @@ var UpdateRegistrantPayload = Type("UpdateRegistrantPayload", func() {
 	RegistrantOrgNameAttribute()
 	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
-	RegistrantUserIDAttribute()
+	RegistrantUsernameAttribute()
 	Required("meeting_uid", "email", "first_name", "last_name")
 })
 
@@ -52,7 +52,7 @@ var Registrant = Type("Registrant", func() {
 	RegistrantOrgIsMemberAttribute()
 	RegistrantOrgIsProjectMemberAttribute()
 	RegistrantAvatarURLAttribute()
-	RegistrantUserIDAttribute()
+	RegistrantUsernameAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
 	Required("uid", "meeting_uid", "email", "first_name", "last_name")
@@ -150,7 +150,7 @@ func RegistrantAvatarURLAttribute() {
 	})
 }
 
-// RegistrantUserIDAttribute is the DSL attribute for registrant user ID.
-func RegistrantUserIDAttribute() {
-	Attribute("user_id", String, "User's LF ID")
+// RegistrantUsernameAttribute is the DSL attribute for registrant username (LFID).
+func RegistrantUsernameAttribute() {
+	Attribute("username", String, "User's LF ID")
 }

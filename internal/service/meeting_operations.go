@@ -97,8 +97,18 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 	})
 
 	g.Go(func() error {
+		// For the message we only need the committee UIDs.
+		committees := make([]string, len(meetingDB.Committees))
+		for i, committee := range meetingDB.Committees {
+			committees[i] = committee.UID
+		}
+
 		return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
-			UID: meetingDB.UID,
+			UID:        meetingDB.UID,
+			Public:     meetingDB.Visibility == "public",
+			ProjectUID: meetingDB.ProjectUID,
+			Organizers: []string{}, // TODO: Add organizers to the meeting model
+			Committees: committees,
 		})
 	})
 
@@ -250,8 +260,18 @@ func (s *MeetingsService) UpdateMeeting(ctx context.Context, payload *meetingsvc
 	})
 
 	g.Go(func() error {
+		// For the message we only need the committee UIDs.
+		committees := make([]string, len(meetingDB.Committees))
+		for i, committee := range meetingDB.Committees {
+			committees[i] = committee.UID
+		}
+
 		return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
-			UID: meetingDB.UID,
+			UID:        meetingDB.UID,
+			Public:     meetingDB.Visibility == "public",
+			ProjectUID: meetingDB.ProjectUID,
+			Organizers: []string{}, // TODO: Add organizers to the meeting model
+			Committees: committees,
 		})
 	})
 

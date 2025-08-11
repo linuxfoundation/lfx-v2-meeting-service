@@ -21,7 +21,7 @@ type Registrant struct {
 	OrgIsMember        bool       `json:"org_is_member"`
 	OrgIsProjectMember bool       `json:"org_is_project_member"`
 	AvatarURL          string     `json:"avatar_url,omitempty"`
-	UserID             string     `json:"user_id,omitempty"`
+	Username           string     `json:"username,omitempty"`
 	CreatedAt          *time.Time `json:"created_at,omitempty"`
 	UpdatedAt          *time.Time `json:"updated_at,omitempty"`
 }

@@ -1591,7 +1591,7 @@ func marshalMeetingserviceRegistrantToRegistrantResponseBody(v *meetingservice.R
 		OrgIsMember:        v.OrgIsMember,
 		OrgIsProjectMember: v.OrgIsProjectMember,
 		AvatarURL:          v.AvatarURL,
-		UserID:             v.UserID,
+		Username:           v.Username,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
 	}

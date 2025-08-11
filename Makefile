@@ -12,7 +12,7 @@ GOA_VERSION=v3
 
 # Docker variables
 DOCKER_IMAGE=linuxfoundation/lfx-v2-meeting-service
-DOCKER_TAG=latest
+DOCKER_TAG=0.4.0
 
 # Helm variables
 HELM_CHART_PATH=./charts/lfx-v2-meeting-service

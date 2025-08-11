@@ -27,4 +27,6 @@ type MessageBuilder interface {
 	SendDeleteIndexMeeting(ctx context.Context, data string) error
 	SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error
 	SendDeleteAllAccessMeeting(ctx context.Context, data string) error
+	SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
+	SendRemoveMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
 }

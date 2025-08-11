@@ -133,7 +133,7 @@ type CreateMeetingRegistrantRequestBody struct {
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 }
 
 // UpdateMeetingRegistrantRequestBody is the type of the "Meeting Service"
@@ -157,7 +157,7 @@ type UpdateMeetingRegistrantRequestBody struct {
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 }
 
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
@@ -348,7 +348,7 @@ type CreateMeetingRegistrantResponseBody struct {
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -391,7 +391,7 @@ type UpdateMeetingRegistrantResponseBody struct {
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -1076,7 +1076,7 @@ type RegistrantResponseBody struct {
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -1168,7 +1168,7 @@ func NewCreateMeetingRegistrantRequestBody(p *meetingservice.CreateMeetingRegist
 		OrgName:      p.OrgName,
 		OccurrenceID: p.OccurrenceID,
 		AvatarURL:    p.AvatarURL,
-		UserID:       p.UserID,
+		Username:     p.Username,
 	}
 	return body
 }
@@ -1186,7 +1186,7 @@ func NewUpdateMeetingRegistrantRequestBody(p *meetingservice.UpdateMeetingRegist
 		OrgName:      p.OrgName,
 		OccurrenceID: p.OccurrenceID,
 		AvatarURL:    p.AvatarURL,
-		UserID:       p.UserID,
+		Username:     p.Username,
 	}
 	return body
 }
@@ -1630,7 +1630,7 @@ func NewCreateMeetingRegistrantRegistrantCreated(body *CreateMeetingRegistrantRe
 		OrgIsMember:        body.OrgIsMember,
 		OrgIsProjectMember: body.OrgIsProjectMember,
 		AvatarURL:          body.AvatarURL,
-		UserID:             body.UserID,
+		Username:           body.Username,
 		CreatedAt:          body.CreatedAt,
 		UpdatedAt:          body.UpdatedAt,
 	}
@@ -1709,7 +1709,7 @@ func NewGetMeetingRegistrantResultOK(body *GetMeetingRegistrantResponseBody, eta
 		OrgIsMember:        body.OrgIsMember,
 		OrgIsProjectMember: body.OrgIsProjectMember,
 		AvatarURL:          body.AvatarURL,
-		UserID:             body.UserID,
+		Username:           body.Username,
 		CreatedAt:          body.CreatedAt,
 		UpdatedAt:          body.UpdatedAt,
 	}
@@ -1770,7 +1770,7 @@ func NewUpdateMeetingRegistrantRegistrantOK(body *UpdateMeetingRegistrantRespons
 		OrgIsMember:        body.OrgIsMember,
 		OrgIsProjectMember: body.OrgIsProjectMember,
 		AvatarURL:          body.AvatarURL,
-		UserID:             body.UserID,
+		Username:           body.Username,
 		CreatedAt:          body.CreatedAt,
 		UpdatedAt:          body.UpdatedAt,
 	}

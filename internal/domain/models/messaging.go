@@ -16,6 +16,14 @@ const (
 	// DeleteAllAccessMeetingSubject is the subject for the meeting access control deletion.
 	// The subject is of the form: lfx.delete_all_access.meeting
 	DeleteAllAccessMeetingSubject = "lfx.delete_all_access.meeting"
+
+	// PutRegistrantMeetingSubject is the subject for the meeting registrant access control updates.
+	// The subject is of the form: lfx.put_registrant.meeting
+	PutRegistrantMeetingSubject = "lfx.put_registrant.meeting"
+
+	// RemoveRegistrantMeetingSubject is the subject for the meeting registrant access control deletion.
+	// The subject is of the form: lfx.remove_registrant.meeting
+	RemoveRegistrantMeetingSubject = "lfx.remove_registrant.meeting"
 )
 
 // NATS wildcard subjects that the meeting service handles messages about.
@@ -57,9 +65,18 @@ type MeetingIndexerMessage struct {
 // MeetingAccessMessage is the schema for the data in the message sent to the fga-sync service.
 // These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
 type MeetingAccessMessage struct {
-	UID       string   `json:"uid"`
-	Public    bool     `json:"public"`
-	ParentUID string   `json:"parent_uid"`
-	Writers   []string `json:"writers"`
-	Auditors  []string `json:"auditors"`
+	UID        string   `json:"uid"`
+	Public     bool     `json:"public"`
+	ProjectUID string   `json:"project_uid"`
+	Organizers []string `json:"organizers"`
+	Committees []string `json:"committees"`
+}
+
+// MeetingRegistrantAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
+type MeetingRegistrantAccessMessage struct {
+	UID        string `json:"uid"`
+	MeetingUID string `json:"meeting_uid"`
+	Username   string `json:"username"`
+	Host       bool   `json:"host"`
 }

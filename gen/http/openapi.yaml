@@ -1278,7 +1278,7 @@ definitions:
                 type: string
                 description: User's organization
                 example: Enim doloremque.
-            user_id:
+            username:
                 type: string
                 description: User's LF ID
                 example: Et et aut.
@@ -1291,7 +1291,7 @@ definitions:
             last_name: Doe
             occurrence_id: "1640995200"
             org_name: Doloremque et.
-            user_id: Vel voluptates consequatur numquam.
+            username: Vel voluptates consequatur numquam.
         required:
             - email
             - first_name
@@ -1493,7 +1493,7 @@ definitions:
                       org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Expedita corrupti.
+                      username: Expedita corrupti.
                     - avatar_url: https://example.com/avatar.jpg
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
@@ -1508,7 +1508,7 @@ definitions:
                       org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Expedita corrupti.
+                      username: Expedita corrupti.
                     - avatar_url: https://example.com/avatar.jpg
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
@@ -1523,7 +1523,7 @@ definitions:
                       org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Expedita corrupti.
+                      username: Expedita corrupti.
                     - avatar_url: https://example.com/avatar.jpg
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
@@ -1538,7 +1538,7 @@ definitions:
                       org_name: Nihil et magni.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      user_id: Expedita corrupti.
+                      username: Expedita corrupti.
         example:
             registrants:
                 - avatar_url: https://example.com/avatar.jpg
@@ -1555,7 +1555,7 @@ definitions:
                   org_name: Nihil et magni.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
-                  user_id: Expedita corrupti.
+                  username: Expedita corrupti.
                 - avatar_url: https://example.com/avatar.jpg
                   created_at: "2021-01-01T00:00:00Z"
                   email: user@example.com
@@ -1570,7 +1570,7 @@ definitions:
                   org_name: Nihil et magni.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
-                  user_id: Expedita corrupti.
+                  username: Expedita corrupti.
                 - avatar_url: https://example.com/avatar.jpg
                   created_at: "2021-01-01T00:00:00Z"
                   email: user@example.com
@@ -1585,7 +1585,7 @@ definitions:
                   org_name: Nihil et magni.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
-                  user_id: Expedita corrupti.
+                  username: Expedita corrupti.
                 - avatar_url: https://example.com/avatar.jpg
                   created_at: "2021-01-01T00:00:00Z"
                   email: user@example.com
@@ -1600,7 +1600,7 @@ definitions:
                   org_name: Nihil et magni.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
-                  user_id: Expedita corrupti.
+                  username: Expedita corrupti.
         required:
             - registrants
     MeetingServiceGetMeetingResponseBody:
@@ -2275,7 +2275,7 @@ definitions:
                 type: string
                 description: User's organization
                 example: Et unde molestiae est et.
-            user_id:
+            username:
                 type: string
                 description: User's LF ID
                 example: Vel qui placeat repudiandae voluptas quo ut.
@@ -2288,7 +2288,7 @@ definitions:
             last_name: Doe
             occurrence_id: "1640995200"
             org_name: Quasi praesentium perferendis facilis dignissimos fuga.
-            user_id: Qui architecto.
+            username: Qui architecto.
         required:
             - email
             - first_name
@@ -2705,7 +2705,7 @@ definitions:
                 description: The date and time the resource was last updated
                 example: "2021-01-01T00:00:00Z"
                 format: date-time
-            user_id:
+            username:
                 type: string
                 description: User's LF ID
                 example: Eaque ipsa consequatur natus modi est laboriosam.
@@ -2725,7 +2725,7 @@ definitions:
             org_name: Soluta aut nesciunt quaerat et ut molestias.
             uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             updated_at: "2021-01-01T00:00:00Z"
-            user_id: Quasi dolor facilis exercitationem rem.
+            username: Quasi dolor facilis exercitationem rem.
         required:
             - uid
             - meeting_uid

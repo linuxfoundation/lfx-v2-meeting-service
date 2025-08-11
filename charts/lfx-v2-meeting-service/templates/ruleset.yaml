@@ -207,7 +207,7 @@ spec:
         methods:
           - PUT
         routes:
-          - path: /meetings/:id/registrants
+          - path: /meetings/:id/registrants/:registrant_id
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator

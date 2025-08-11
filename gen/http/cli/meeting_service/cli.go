@@ -500,7 +500,7 @@ Example:
       "last_name": "Doe",
       "occurrence_id": "1640995200",
       "org_name": "Occaecati molestias facilis non aut.",
-      "user_id": "Aut explicabo."
+      "username": "Aut explicabo."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -540,7 +540,7 @@ Example:
       "last_name": "Doe",
       "occurrence_id": "1640995200",
       "org_name": "Facilis possimus.",
-      "user_id": "Perferendis neque ut sint."
+      "username": "Perferendis neque ut sint."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
 `, os.Args[0])
 }

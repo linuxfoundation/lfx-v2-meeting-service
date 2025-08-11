@@ -169,7 +169,7 @@ type CreateMeetingRegistrantPayload struct {
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
-	UserID *string
+	Username *string
 }
 
 // DeleteMeetingPayload is the payload type of the Meeting Service service
@@ -477,7 +477,7 @@ type Registrant struct {
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
-	UserID *string
+	Username *string
 	// The date and time the resource was created
 	CreatedAt *string
 	// The date and time the resource was last updated
@@ -579,7 +579,7 @@ type UpdateMeetingRegistrantPayload struct {
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
-	UserID *string
+	Username *string
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and

@@ -96,6 +96,17 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "created registrant", "registrant", registrant)
 
+	// Send a message about the new registrant to the fga-sync service
+	err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
+		UID:        registrantDB.UID,
+		Username:   registrantDB.Username,
+		MeetingUID: registrantDB.MeetingUID,
+		Host:       registrantDB.Host,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending message about new registrant", logging.ErrKey, err)
+	}
+
 	return registrant, nil
 }
 
@@ -324,6 +335,17 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "updated registrant", "registrant", registrant)
 
+	// Send a message about the updated registrant to the fga-sync service
+	err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
+		UID:        registrantDB.UID,
+		Username:   registrantDB.Username,
+		MeetingUID: registrantDB.MeetingUID,
+		Host:       registrantDB.Host,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending message about updated registrant", logging.ErrKey, err)
+	}
+
 	return registrant, nil
 }
 
@@ -383,6 +405,17 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 		return domain.ErrMeetingNotFound
 	}
 
+	// Check that the registrant exists, but also get the registrant data for the access deletion message
+	registrantDB, err := s.RegistrantRepository.Get(ctx, registrantUID)
+	if err != nil {
+		if errors.Is(err, domain.ErrRegistrantNotFound) {
+			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
+			return domain.ErrRegistrantNotFound
+		}
+		slog.ErrorContext(ctx, "error getting registrant from store", logging.ErrKey, err)
+		return domain.ErrInternal
+	}
+
 	// Delete the registrant with revision check
 	err = s.RegistrantRepository.Delete(ctx, registrantUID, revision)
 	if err != nil {
@@ -399,6 +432,17 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	}
 
 	slog.DebugContext(ctx, "deleted registrant")
+
+	// Send a message about the deleted registrant to the fga-sync service
+	err = s.MessageBuilder.SendRemoveMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
+		UID:        registrantDB.UID,
+		Username:   registrantDB.Username,
+		MeetingUID: registrantDB.MeetingUID,
+		Host:       registrantDB.Host,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending message about deleted registrant", logging.ErrKey, err)
+	}
 
 	return nil
 }

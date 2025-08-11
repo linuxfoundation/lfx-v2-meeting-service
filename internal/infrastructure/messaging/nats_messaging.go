@@ -134,3 +134,25 @@ func (m *MessageBuilder) SendUpdateAccessMeeting(ctx context.Context, data model
 func (m *MessageBuilder) SendDeleteAllAccessMeeting(ctx context.Context, data string) error {
 	return m.sendMessage(ctx, models.DeleteAllAccessMeetingSubject, []byte(data))
 }
+
+// SendPutMeetingRegistrantAccess sends a message about a new registrant being added to a meeting.
+func (m *MessageBuilder) SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.PutRegistrantMeetingSubject, dataBytes)
+}
+
+// SendRemoveMeetingRegistrantAccess sends a message about a registrant being removed from a meeting.
+func (m *MessageBuilder) SendRemoveMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.RemoveRegistrantMeetingSubject, dataBytes)
+}

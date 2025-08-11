@@ -269,11 +269,11 @@ func TestMessageBuilder_SendUpdateAccessMeeting(t *testing.T) {
 
 	ctx := context.Background()
 	accessMsg := models.MeetingAccessMessage{
-		UID:       "access-meeting-uid",
-		Public:    true,
-		ParentUID: "parent-123",
-		Writers:   []string{"writer1", "writer2"},
-		Auditors:  []string{"auditor1"},
+		UID:        "access-meeting-uid",
+		Public:     true,
+		ProjectUID: "project-123",
+		Organizers: []string{"organizer1", "organizer2"},
+		Committees: []string{"committee1", "committee2"},
 	}
 
 	err := builder.SendUpdateAccessMeeting(ctx, accessMsg)
