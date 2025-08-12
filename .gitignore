@@ -90,6 +90,7 @@ Thumbs.db
 # Local development
 docker-compose.override.yml
 docker-compose.local.yml
+values.local.yaml
 *.pid
 
 # NATS related

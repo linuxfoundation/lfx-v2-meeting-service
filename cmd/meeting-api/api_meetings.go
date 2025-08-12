@@ -66,8 +66,17 @@ func (s *MeetingsAPI) GetMeetingBase(ctx context.Context, payload *meetingsvc.Ge
 	}, nil
 }
 
+// GetMeetingSettings gets settings for a specific meeting
 func (s *MeetingsAPI) GetMeetingSettings(ctx context.Context, payload *meetingsvc.GetMeetingSettingsPayload) (*meetingsvc.GetMeetingSettingsResult, error) {
-	return nil, nil
+	settings, etag, err := s.service.GetMeetingSettings(ctx, payload)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return &meetingsvc.GetMeetingSettingsResult{
+		MeetingSettings: settings,
+		Etag:            &etag,
+	}, nil
 }
 
 // UpdateMeetingBase updates a meeting's base information.

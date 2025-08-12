@@ -169,6 +169,42 @@ func (s *MeetingsService) GetMeetingBase(ctx context.Context, payload *meetingsv
 	return meeting, revisionStr, nil
 }
 
+// GetMeetingSettings fetches settings for a specific meeting by ID
+func (s *MeetingsService) GetMeetingSettings(ctx context.Context, payload *meetingsvc.GetMeetingSettingsPayload) (*meetingsvc.MeetingSettings, string, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		return nil, "", domain.ErrServiceUnavailable
+	}
+
+	if payload == nil || payload.UID == nil {
+		slog.WarnContext(ctx, "meeting UID is required")
+		return nil, "", domain.ErrValidationFailed
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
+
+	// Get meeting settings with revision from store
+	settingsDB, revision, err := s.MeetingRepository.GetSettingsWithRevision(ctx, *payload.UID)
+	if err != nil {
+		if errors.Is(err, domain.ErrMeetingNotFound) {
+			slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, err)
+			return nil, "", domain.ErrMeetingNotFound
+		}
+		slog.ErrorContext(ctx, "error getting meeting settings from store", logging.ErrKey, err)
+		return nil, "", domain.ErrInternal
+	}
+
+	settings := models.ToMeetingSettingsServiceModel(settingsDB)
+
+	// Store the revision in context for the custom encoder to use
+	revisionStr := strconv.FormatUint(revision, 10)
+	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)
+
+	slog.DebugContext(ctx, "returning meeting settings", "settings", settings, "revision", revision)
+
+	return settings, revisionStr, nil
+}
+
 func (s *MeetingsService) validateUpdateMeetingPayload(ctx context.Context, payload *meetingsvc.UpdateMeetingBasePayload) error {
 	if payload == nil {
 		return domain.ErrValidationFailed

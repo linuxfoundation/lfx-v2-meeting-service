@@ -549,3 +549,56 @@ func fromDBOccurrence(o *Occurrence) *meetingservice.Occurrence {
 
 	return occ
 }
+
+// ToMeetingSettingsServiceModel converts a domain MeetingSettings to service model
+func ToMeetingSettingsServiceModel(settings *MeetingSettings) *meetingservice.MeetingSettings {
+	if settings == nil {
+		return nil
+	}
+
+	result := &meetingservice.MeetingSettings{
+		UID:        utils.StringPtr(settings.UID),
+		Organizers: settings.Organizers,
+	}
+
+	if settings.CreatedAt != nil {
+		result.CreatedAt = utils.StringPtr(settings.CreatedAt.Format(time.RFC3339))
+	}
+	if settings.UpdatedAt != nil {
+		result.UpdatedAt = utils.StringPtr(settings.UpdatedAt.Format(time.RFC3339))
+	}
+
+	return result
+}
+
+// FromMeetingSettingsServiceModel converts a service MeetingSettings to domain model
+func FromMeetingSettingsServiceModel(settings *meetingservice.MeetingSettings) *MeetingSettings {
+	if settings == nil {
+		return nil
+	}
+
+	result := &MeetingSettings{
+		UID:        utils.StringValue(settings.UID),
+		Organizers: settings.Organizers,
+	}
+
+	if settings.CreatedAt != nil {
+		createdAt, err := time.Parse(time.RFC3339, *settings.CreatedAt)
+		if err == nil {
+			result.CreatedAt = &createdAt
+		} else {
+			slog.Warn("failed to parse created_at", logging.ErrKey, err)
+		}
+	}
+
+	if settings.UpdatedAt != nil {
+		updatedAt, err := time.Parse(time.RFC3339, *settings.UpdatedAt)
+		if err == nil {
+			result.UpdatedAt = &updatedAt
+		} else {
+			slog.Warn("failed to parse updated_at", logging.ErrKey, err)
+		}
+	}
+
+	return result
+}

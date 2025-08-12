@@ -265,3 +265,168 @@ func TestConversionWithComplexStructures(t *testing.T) {
 	// would need specific conversion logic implemented in the actual conversion functions
 	// This test serves as a placeholder for when that functionality is added
 }
+
+func TestToMeetingSettingsServiceModel(t *testing.T) {
+	now := time.Now()
+
+	// Test with nil input
+	result := ToMeetingSettingsServiceModel(nil)
+	if result != nil {
+		t.Error("expected nil result for nil input")
+	}
+
+	// Test with valid MeetingSettings
+	settings := &MeetingSettings{
+		UID:        "meeting-123",
+		Organizers: []string{"org1", "org2", "org3"},
+		CreatedAt:  &now,
+		UpdatedAt:  &now,
+	}
+
+	result = ToMeetingSettingsServiceModel(settings)
+	if result == nil {
+		t.Fatal("expected non-nil result for valid input")
+	}
+
+	// Check UID
+	if result.UID == nil || *result.UID != settings.UID {
+		t.Errorf("UID mismatch: expected %q, got %v", settings.UID, result.UID)
+	}
+
+	// Check Organizers
+	if len(result.Organizers) != len(settings.Organizers) {
+		t.Errorf("Organizers length mismatch: expected %d, got %d", len(settings.Organizers), len(result.Organizers))
+	}
+	for i, org := range settings.Organizers {
+		if i < len(result.Organizers) && result.Organizers[i] != org {
+			t.Errorf("Organizer[%d] mismatch: expected %q, got %q", i, org, result.Organizers[i])
+		}
+	}
+
+	// Check CreatedAt
+	if result.CreatedAt == nil {
+		t.Error("expected CreatedAt to be set")
+	} else {
+		parsedTime, err := time.Parse(time.RFC3339, *result.CreatedAt)
+		if err != nil {
+			t.Errorf("failed to parse CreatedAt: %v", err)
+		} else if parsedTime.Unix() != now.Unix() {
+			t.Errorf("CreatedAt mismatch: expected %v, got %v", now, parsedTime)
+		}
+	}
+
+	// Check UpdatedAt
+	if result.UpdatedAt == nil {
+		t.Error("expected UpdatedAt to be set")
+	} else {
+		parsedTime, err := time.Parse(time.RFC3339, *result.UpdatedAt)
+		if err != nil {
+			t.Errorf("failed to parse UpdatedAt: %v", err)
+		} else if parsedTime.Unix() != now.Unix() {
+			t.Errorf("UpdatedAt mismatch: expected %v, got %v", now, parsedTime)
+		}
+	}
+}
+
+func TestFromMeetingSettingsServiceModel(t *testing.T) {
+	now := time.Now()
+	nowStr := now.Format(time.RFC3339)
+
+	// Test with nil input
+	result := FromMeetingSettingsServiceModel(nil)
+	if result != nil {
+		t.Error("expected nil result for nil input")
+	}
+
+	// Test with valid service model
+	serviceSettings := &meetingservice.MeetingSettings{
+		UID:        utils.StringPtr("meeting-456"),
+		Organizers: []string{"user1", "user2"},
+		CreatedAt:  &nowStr,
+		UpdatedAt:  &nowStr,
+	}
+
+	result = FromMeetingSettingsServiceModel(serviceSettings)
+	if result == nil {
+		t.Fatal("expected non-nil result for valid input")
+	}
+
+	// Check UID
+	if result.UID != *serviceSettings.UID {
+		t.Errorf("UID mismatch: expected %q, got %q", *serviceSettings.UID, result.UID)
+	}
+
+	// Check Organizers
+	if len(result.Organizers) != len(serviceSettings.Organizers) {
+		t.Errorf("Organizers length mismatch: expected %d, got %d", len(serviceSettings.Organizers), len(result.Organizers))
+	}
+	for i, org := range serviceSettings.Organizers {
+		if i < len(result.Organizers) && result.Organizers[i] != org {
+			t.Errorf("Organizer[%d] mismatch: expected %q, got %q", i, org, result.Organizers[i])
+		}
+	}
+
+	// Check CreatedAt
+	if result.CreatedAt == nil {
+		t.Error("expected CreatedAt to be set")
+	} else if result.CreatedAt.Unix() != now.Unix() {
+		t.Errorf("CreatedAt mismatch: expected %v, got %v", now, *result.CreatedAt)
+	}
+
+	// Check UpdatedAt
+	if result.UpdatedAt == nil {
+		t.Error("expected UpdatedAt to be set")
+	} else if result.UpdatedAt.Unix() != now.Unix() {
+		t.Errorf("UpdatedAt mismatch: expected %v, got %v", now, *result.UpdatedAt)
+	}
+}
+
+func TestMeetingSettingsConversionRoundTrip(t *testing.T) {
+	now := time.Now()
+
+	// Original domain model
+	originalSettings := &MeetingSettings{
+		UID:        "test-meeting-789",
+		Organizers: []string{"admin", "moderator", "host"},
+		CreatedAt:  &now,
+		UpdatedAt:  &now,
+	}
+
+	// Convert to service model and back
+	serviceModel := ToMeetingSettingsServiceModel(originalSettings)
+	if serviceModel == nil {
+		t.Fatal("failed to convert to service model")
+	}
+
+	backToDomain := FromMeetingSettingsServiceModel(serviceModel)
+	if backToDomain == nil {
+		t.Fatal("failed to convert back to domain model")
+	}
+
+	// Verify all fields match
+	if backToDomain.UID != originalSettings.UID {
+		t.Errorf("Round-trip UID mismatch: expected %q, got %q", originalSettings.UID, backToDomain.UID)
+	}
+
+	if len(backToDomain.Organizers) != len(originalSettings.Organizers) {
+		t.Errorf("Round-trip Organizers length mismatch: expected %d, got %d",
+			len(originalSettings.Organizers), len(backToDomain.Organizers))
+	}
+
+	for i, org := range originalSettings.Organizers {
+		if i < len(backToDomain.Organizers) && backToDomain.Organizers[i] != org {
+			t.Errorf("Round-trip Organizer[%d] mismatch: expected %q, got %q", i, org, backToDomain.Organizers[i])
+		}
+	}
+
+	// Note: Time comparison allows for small differences due to formatting precision
+	if backToDomain.CreatedAt == nil || backToDomain.CreatedAt.Unix() != originalSettings.CreatedAt.Unix() {
+		t.Errorf("Round-trip CreatedAt mismatch: expected %v, got %v",
+			originalSettings.CreatedAt, backToDomain.CreatedAt)
+	}
+
+	if backToDomain.UpdatedAt == nil || backToDomain.UpdatedAt.Unix() != originalSettings.UpdatedAt.Unix() {
+		t.Errorf("Round-trip UpdatedAt mismatch: expected %v, got %v",
+			originalSettings.UpdatedAt, backToDomain.UpdatedAt)
+	}
+}
