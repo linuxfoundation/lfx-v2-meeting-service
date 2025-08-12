@@ -336,6 +336,119 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 	return meetingResp, nil
 }
 
+// UpdateMeetingSettings updates a meeting's settings
+func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *meetingsvc.UpdateMeetingSettingsPayload) (*meetingsvc.MeetingSettings, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		return nil, domain.ErrServiceUnavailable
+	}
+
+	if payload == nil || payload.UID == nil {
+		slog.WarnContext(ctx, "meeting UID is required")
+		return nil, domain.ErrValidationFailed
+	}
+
+	var revision uint64
+	var err error
+	if !s.Config.SkipEtagValidation {
+		if payload.Etag == nil {
+			slog.WarnContext(ctx, "ETag header is missing")
+			return nil, domain.ErrValidationFailed
+		}
+		revision, err = strconv.ParseUint(*payload.Etag, 10, 64)
+		if err != nil {
+			slog.ErrorContext(ctx, "error parsing ETag", logging.ErrKey, err)
+			return nil, domain.ErrValidationFailed
+		}
+	} else {
+		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
+		_, revision, err = s.MeetingRepository.GetSettingsWithRevision(ctx, *payload.UID)
+		if err != nil {
+			if errors.Is(err, domain.ErrMeetingNotFound) {
+				slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, err)
+				return nil, domain.ErrMeetingNotFound
+			}
+			slog.ErrorContext(ctx, "error getting meeting settings from store", logging.ErrKey, err)
+			return nil, domain.ErrInternal
+		}
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
+
+	// Check if the meeting settings exist and use some of the existing data for the update.
+	existingSettingsDB, err := s.MeetingRepository.GetSettings(ctx, *payload.UID)
+	if err != nil {
+		if errors.Is(err, domain.ErrMeetingNotFound) {
+			slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, err)
+			return nil, domain.ErrMeetingNotFound
+		}
+		slog.ErrorContext(ctx, "error checking if meeting settings exist", logging.ErrKey, err)
+		return nil, domain.ErrInternal
+	}
+
+	// Update the settings with new data
+	now := time.Now().UTC()
+	updatedSettingsDB := &models.MeetingSettings{
+		UID:        *payload.UID,
+		Organizers: payload.Organizers,
+		CreatedAt:  existingSettingsDB.CreatedAt,
+		UpdatedAt:  &now,
+	}
+
+	// Update the meeting settings in the repository
+	err = s.MeetingRepository.UpdateSettings(ctx, updatedSettingsDB, revision)
+	if err != nil {
+		if errors.Is(err, domain.ErrRevisionMismatch) {
+			slog.WarnContext(ctx, "etag header is invalid", logging.ErrKey, err)
+			return nil, domain.ErrRevisionMismatch
+		}
+		if errors.Is(err, domain.ErrInternal) {
+			slog.ErrorContext(ctx, "error updating meeting settings in store", logging.ErrKey, err)
+			return nil, domain.ErrInternal
+		}
+		return nil, domain.ErrInternal
+	}
+
+	g := new(errgroup.Group)
+	g.Go(func() error {
+		return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *updatedSettingsDB)
+	})
+
+	g.Go(func() error {
+		// Get the meeting base data to send access update message
+		meetingDB, err := s.MeetingRepository.GetBase(ctx, *payload.UID)
+		if err != nil {
+			return err
+		}
+
+		// For the message we only need the committee UIDs.
+		committees := make([]string, len(meetingDB.Committees))
+		for i, committee := range meetingDB.Committees {
+			committees[i] = committee.UID
+		}
+
+		return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+			UID:        meetingDB.UID,
+			Public:     meetingDB.Visibility == "public",
+			ProjectUID: meetingDB.ProjectUID,
+			Organizers: updatedSettingsDB.Organizers,
+			Committees: committees,
+		})
+	})
+
+	if err := g.Wait(); err != nil {
+		// Return the first error from the goroutines.
+		return nil, domain.ErrInternal
+	}
+
+	slog.DebugContext(ctx, "returning updated meeting settings", "settings", updatedSettingsDB)
+
+	settingsResp := models.ToMeetingSettingsServiceModel(updatedSettingsDB)
+
+	return settingsResp, nil
+}
+
 // Delete a meeting.
 func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc.DeleteMeetingPayload) error {
 	if !s.ServiceReady() {

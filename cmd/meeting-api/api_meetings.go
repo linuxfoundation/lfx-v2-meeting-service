@@ -89,7 +89,11 @@ func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc
 }
 
 func (s *MeetingsAPI) UpdateMeetingSettings(ctx context.Context, payload *meetingsvc.UpdateMeetingSettingsPayload) (*meetingsvc.MeetingSettings, error) {
-	return nil, nil
+	updatedSettings, err := s.service.UpdateMeetingSettings(ctx, payload)
+	if err != nil {
+		return nil, handleError(err)
+	}
+	return updatedSettings, nil
 }
 
 // DeleteMeeting deletes a meeting.

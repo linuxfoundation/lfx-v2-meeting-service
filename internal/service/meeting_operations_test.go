@@ -425,3 +425,204 @@ func TestMeetingsService_GetMeetingSettings(t *testing.T) {
 		})
 	}
 }
+
+func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
+	tests := []struct {
+		name        string
+		payload     *meetingsvc.UpdateMeetingSettingsPayload
+		setupMocks  func(*domain.MockMeetingRepository, *domain.MockMessageBuilder)
+		wantErr     bool
+		expectedErr error
+		validate    func(*testing.T, *meetingsvc.MeetingSettings)
+	}{
+		{
+			name: "successful update meeting settings",
+			payload: &meetingsvc.UpdateMeetingSettingsPayload{
+				UID:        utils.StringPtr("meeting-123"),
+				Etag:       utils.StringPtr("1"),
+				Organizers: []string{"org3", "org4"},
+			},
+			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
+				now := time.Now()
+				existingSettings := &models.MeetingSettings{
+					UID:        "meeting-123",
+					Organizers: []string{"org1", "org2"},
+					CreatedAt:  &now,
+					UpdatedAt:  &now,
+				}
+
+				mockRepo.On("GetSettings", mock.Anything, "meeting-123").Return(existingSettings, nil)
+				mockRepo.On("UpdateSettings", mock.Anything, mock.MatchedBy(func(settings *models.MeetingSettings) bool {
+					return settings.UID == "meeting-123" &&
+						len(settings.Organizers) == 2 &&
+						settings.Organizers[0] == "org3" &&
+						settings.Organizers[1] == "org4" &&
+						settings.CreatedAt.Equal(now)
+				}), uint64(1)).Return(nil)
+
+				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionUpdated, mock.Anything).Return(nil)
+
+				mockRepo.On("GetBase", mock.Anything, "meeting-123").Return(&models.MeetingBase{
+					UID:        "meeting-123",
+					Title:      "Test Meeting",
+					ProjectUID: "project-123",
+					Visibility: "public",
+					Committees: []models.Committee{{UID: "committee-123"}},
+				}, nil)
+
+				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.MatchedBy(func(msg models.MeetingAccessMessage) bool {
+					return msg.UID == "meeting-123" &&
+						msg.ProjectUID == "project-123" &&
+						msg.Public == true &&
+						len(msg.Organizers) == 2 &&
+						msg.Organizers[0] == "org3" &&
+						msg.Organizers[1] == "org4"
+				})).Return(nil)
+			},
+			wantErr: false,
+			validate: func(t *testing.T, result *meetingsvc.MeetingSettings) {
+				assert.NotNil(t, result)
+				assert.Equal(t, "meeting-123", *result.UID)
+				assert.Len(t, result.Organizers, 2)
+				assert.Equal(t, "org3", result.Organizers[0])
+				assert.Equal(t, "org4", result.Organizers[1])
+			},
+		},
+		{
+			name: "meeting settings not found",
+			payload: &meetingsvc.UpdateMeetingSettingsPayload{
+				UID:        utils.StringPtr("nonexistent-meeting"),
+				Etag:       utils.StringPtr("1"),
+				Organizers: []string{"org1"},
+			},
+			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
+				mockRepo.On("GetSettings", mock.Anything, "nonexistent-meeting").Return(nil, domain.ErrMeetingNotFound)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrMeetingNotFound,
+		},
+		{
+			name:        "nil payload",
+			payload:     nil,
+			setupMocks:  func(*domain.MockMeetingRepository, *domain.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrValidationFailed,
+		},
+		{
+			name: "service not ready",
+			payload: &meetingsvc.UpdateMeetingSettingsPayload{
+				UID:        utils.StringPtr("meeting-123"),
+				Organizers: []string{"org1"},
+			},
+			setupMocks:  func(*domain.MockMeetingRepository, *domain.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrServiceUnavailable,
+		},
+		{
+			name: "nil UID",
+			payload: &meetingsvc.UpdateMeetingSettingsPayload{
+				UID:        nil,
+				Etag:       utils.StringPtr("1"),
+				Organizers: []string{"org1"},
+			},
+			setupMocks:  func(*domain.MockMeetingRepository, *domain.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrValidationFailed,
+		},
+		{
+			name: "missing etag header",
+			payload: &meetingsvc.UpdateMeetingSettingsPayload{
+				UID:        utils.StringPtr("meeting-123"),
+				Etag:       nil,
+				Organizers: []string{"org1"},
+			},
+			setupMocks:  func(*domain.MockMeetingRepository, *domain.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrValidationFailed,
+		},
+		{
+			name: "skip etag validation mode",
+			payload: &meetingsvc.UpdateMeetingSettingsPayload{
+				UID:        utils.StringPtr("meeting-789"),
+				Etag:       nil,
+				Organizers: []string{"org5", "org6"},
+			},
+			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
+				now := time.Now()
+				existingSettings := &models.MeetingSettings{
+					UID:        "meeting-789",
+					Organizers: []string{"old-org"},
+					CreatedAt:  &now,
+					UpdatedAt:  &now,
+				}
+
+				// This call happens when ETag validation is skipped
+				mockRepo.On("GetSettingsWithRevision", mock.Anything, "meeting-789").Return(existingSettings, uint64(456), nil)
+				// This call happens to get the existing settings for the update
+				mockRepo.On("GetSettings", mock.Anything, "meeting-789").Return(existingSettings, nil)
+
+				mockRepo.On("UpdateSettings", mock.Anything, mock.MatchedBy(func(settings *models.MeetingSettings) bool {
+					return settings.UID == "meeting-789" &&
+						len(settings.Organizers) == 2 &&
+						settings.Organizers[0] == "org5" &&
+						settings.Organizers[1] == "org6"
+				}), uint64(456)).Return(nil)
+
+				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionUpdated, mock.Anything).Return(nil)
+
+				mockRepo.On("GetBase", mock.Anything, "meeting-789").Return(&models.MeetingBase{
+					UID:        "meeting-789",
+					ProjectUID: "project-789",
+					Visibility: "public",
+					Committees: []models.Committee{},
+				}, nil)
+
+				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.Anything).Return(nil)
+			},
+			wantErr: false,
+			validate: func(t *testing.T, result *meetingsvc.MeetingSettings) {
+				assert.NotNil(t, result)
+				assert.Equal(t, "meeting-789", *result.UID)
+				assert.Len(t, result.Organizers, 2)
+				assert.Equal(t, "org5", result.Organizers[0])
+				assert.Equal(t, "org6", result.Organizers[1])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service, mockRepo, mockBuilder, mockAuth := setupServiceForTesting()
+
+			if tt.name == "service not ready" {
+				service.MeetingRepository = nil
+			}
+
+			if tt.name == "skip etag validation mode" {
+				service.Config.SkipEtagValidation = true
+			}
+
+			tt.setupMocks(mockRepo, mockBuilder)
+
+			result, err := service.UpdateMeetingSettings(context.Background(), tt.payload)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.Equal(t, tt.expectedErr, err)
+				}
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, result)
+				if tt.validate != nil {
+					tt.validate(t, result)
+				}
+			}
+
+			mockRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
+			mockAuth.AssertExpectations(t)
+		})
+	}
+}
