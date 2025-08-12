@@ -22,7 +22,7 @@ type MeetingRepository interface {
 	GetBaseWithRevision(ctx context.Context, meetingUID string) (*models.MeetingBase, uint64, error)
 	UpdateBase(ctx context.Context, meeting *models.MeetingBase, revision uint64) error
 
-	// Project settings operations
+	// Meeting settings operations
 	GetSettings(ctx context.Context, meetingUID string) (*models.MeetingSettings, error)
 	GetSettingsWithRevision(ctx context.Context, meetingUID string) (*models.MeetingSettings, uint64, error)
 	UpdateSettings(ctx context.Context, meetingSettings *models.MeetingSettings, revision uint64) error

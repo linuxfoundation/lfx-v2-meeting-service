@@ -35,6 +35,7 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 				FirstName:  "John",
 				LastName:   "Doe",
 				Host:       utils.BoolPtr(false),
+				Username:   utils.StringPtr("user-123"),
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
 				// Meeting exists check
@@ -375,6 +376,7 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 				FirstName:  "John",
 				LastName:   "Doe",
 				Etag:       utils.StringPtr("1"),
+				Username:   utils.StringPtr("updated-user"),
 			},
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
 				now := time.Now()
@@ -384,6 +386,7 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 					Email:      "old@example.com",
 					FirstName:  "John",
 					LastName:   "Doe",
+					Username:   "original-user",
 					CreatedAt:  &now,
 					UpdatedAt:  &now,
 				}
@@ -508,6 +511,7 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 					Email:      "test@example.com",
 					FirstName:  "Test",
 					LastName:   "User",
+					Username:   "test-user",
 					CreatedAt:  &now,
 					UpdatedAt:  &now,
 				}, nil)

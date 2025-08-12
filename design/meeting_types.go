@@ -103,7 +103,7 @@ func MeetingBaseAttributes() {
 	UpdatedAtAttribute()
 }
 
-// ProjectSettings is the DSL type for a project settings.
+// ProjectSettings is the DSL type for a meeting settings.
 var MeetingSettings = Type("MeetingSettings", func() {
 	Description("A representation of LF Meeting settings.")
 	MeetingSettingsAttributes()

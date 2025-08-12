@@ -41,7 +41,7 @@ func TestNatsMeetingRepository_Create(t *testing.T) {
 		UpdatedAt: &now,
 	}
 	settings := &models.MeetingSettings{
-		UID:        "test-meeting-settings-123",
+		UID:        "test-meeting-123",
 		Organizers: []string{"test-organizer-123"},
 		CreatedAt:  &now,
 		UpdatedAt:  &now,
@@ -69,6 +69,29 @@ func TestNatsMeetingRepository_Create(t *testing.T) {
 	if storedMeeting.Title != meeting.Title {
 		t.Errorf("expected Title %s, got %s", meeting.Title, storedMeeting.Title)
 	}
+
+	// Verify the meeting settings were stored
+	storedSettingsData, exists := meetingSettings.data[meeting.UID]
+	if !exists {
+		t.Error("expected meeting settings to be stored")
+	}
+
+	var storedSettings models.MeetingSettings
+	if err := json.Unmarshal(storedSettingsData, &storedSettings); err != nil {
+		t.Errorf("failed to unmarshal stored meeting settings: %v", err)
+	}
+
+	if storedSettings.UID != settings.UID {
+		t.Errorf("expected UID %s, got %s", settings.UID, storedSettings.UID)
+	}
+	if len(storedSettings.Organizers) != len(settings.Organizers) {
+		t.Errorf("expected %d organizers, got %d", len(settings.Organizers), len(storedSettings.Organizers))
+	}
+	for i, organizer := range storedSettings.Organizers {
+		if organizer != settings.Organizers[i] {
+			t.Errorf("expected organizer %q, got %q", settings.Organizers[i], organizer)
+		}
+	}
 }
 
 func TestNatsMeetingRepository_Create_Error(t *testing.T) {
@@ -85,7 +108,7 @@ func TestNatsMeetingRepository_Create_Error(t *testing.T) {
 	}
 
 	settings := &models.MeetingSettings{
-		UID:        "test-meeting-settings-123",
+		UID:        "test-meeting-123",
 		Organizers: []string{"test-organizer-123"},
 		CreatedAt:  &now,
 		UpdatedAt:  &now,

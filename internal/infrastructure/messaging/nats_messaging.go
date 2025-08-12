@@ -91,7 +91,11 @@ func (m *MessageBuilder) sendIndexerMessage(ctx context.Context, subject string,
 		return err
 	}
 
-	slog.DebugContext(ctx, "constructed indexer message", "subject", subject, "message", string(messageBytes))
+	slog.DebugContext(ctx, "constructed indexer message",
+		"subject", subject,
+		"action", action,
+		"tags_count", len(tags),
+	)
 
 	return m.sendMessage(ctx, subject, messageBytes)
 }
@@ -129,7 +133,7 @@ func (m *MessageBuilder) SendIndexMeetingSettings(ctx context.Context, action mo
 
 	tags := m.setIndexerTags(data.UID)
 
-	return m.sendIndexerMessage(ctx, models.IndexMeetingSubject, action, dataBytes, tags)
+	return m.sendIndexerMessage(ctx, models.IndexMeetingSettingsSubject, action, dataBytes, tags)
 }
 
 // SendDeleteIndexMeetingSettings sends the message to the NATS server for the meeting settings indexing.

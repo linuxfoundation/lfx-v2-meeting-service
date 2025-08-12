@@ -32,10 +32,21 @@ func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*meetingsvc.Meetin
 		return nil, err
 	}
 
+	// Build lookup for settings by UID to avoid index coupling
+	settingsByUID := make(map[string]*models.MeetingSettings, len(meetingSettings))
+	for _, s := range meetingSettings {
+		if s != nil {
+			settingsByUID[s.UID] = s
+		}
+	}
+
 	meetings := make([]*meetingsvc.MeetingFull, len(meetingsBase))
 	for i, meeting := range meetingsBase {
-		// Settings are now matched by UID in the repository layer, so we can safely use the index
-		meetings[i] = models.ToMeetingFullServiceModel(meeting, meetingSettings[i])
+		var s *models.MeetingSettings
+		if meeting != nil {
+			s = settingsByUID[meeting.UID]
+		}
+		meetings[i] = models.ToMeetingFullServiceModel(meeting, s)
 	}
 
 	slog.DebugContext(ctx, "returning meetings", "meetings", meetings)
@@ -309,6 +320,14 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 	})
 
 	g.Go(func() error {
+		// Get the meeting settings to retrieve organizers
+		settingsDB, err := s.MeetingRepository.GetSettings(ctx, meetingDB.UID)
+		if err != nil {
+			// If we can't get settings, use empty organizers array rather than failing
+			slog.WarnContext(ctx, "could not retrieve meeting settings for access message", logging.ErrKey, err)
+			settingsDB = &models.MeetingSettings{Organizers: []string{}}
+		}
+
 		// For the message we only need the committee UIDs.
 		committees := make([]string, len(meetingDB.Committees))
 		for i, committee := range meetingDB.Committees {
@@ -319,7 +338,7 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 			UID:        meetingDB.UID,
 			Public:     meetingDB.Visibility == "public",
 			ProjectUID: meetingDB.ProjectUID,
-			Organizers: []string{}, // TODO: Add organizers to the meeting model
+			Organizers: settingsDB.Organizers,
 			Committees: committees,
 		})
 	})
@@ -419,7 +438,10 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 		// Get the meeting base data to send access update message
 		meetingDB, err := s.MeetingRepository.GetBase(ctx, *payload.UID)
 		if err != nil {
-			return err
+			// Don't fail the message if we can't get the meeting base data
+			// since the settings were already updated.
+			slog.WarnContext(ctx, "could not retrieve meeting base data for access message", logging.ErrKey, err)
+			return nil
 		}
 
 		// For the message we only need the committee UIDs.
@@ -510,6 +532,10 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		return s.MessageBuilder.SendDeleteIndexMeeting(ctx, *payload.UID)
+	})
+
+	g.Go(func() error {
+		return s.MessageBuilder.SendDeleteIndexMeetingSettings(ctx, *payload.UID)
 	})
 
 	g.Go(func() error {

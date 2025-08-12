@@ -39,9 +39,6 @@ func NewNatsMeetingRepository(meetings INatsKeyValue, meetingSettings INatsKeyVa
 }
 
 func (s *NatsMeetingRepository) getBase(ctx context.Context, meetingUID string) (jetstream.KeyValueEntry, error) {
-	if s.Meetings == nil {
-		return nil, domain.ErrServiceUnavailable
-	}
 	return s.Meetings.Get(ctx, meetingUID)
 }
 
@@ -50,7 +47,7 @@ func (s *NatsMeetingRepository) getBaseUnmarshal(ctx context.Context, entry jets
 	err := json.Unmarshal(entry.Value(), &meeting)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshaling meeting", logging.ErrKey, err)
-		return nil, domain.ErrUnmarshal
+		return nil, err
 	}
 
 	return &meeting, nil
@@ -72,21 +69,18 @@ func (s *NatsMeetingRepository) GetBaseWithRevision(ctx context.Context, meeting
 			return nil, 0, domain.ErrMeetingNotFound
 		}
 		slog.ErrorContext(ctx, "error getting meeting from NATS KV", logging.ErrKey, err)
-		return nil, 0, err
+		return nil, 0, domain.ErrInternal
 	}
 
 	meeting, err := s.getBaseUnmarshal(ctx, entry)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, domain.ErrUnmarshal
 	}
 
 	return meeting, entry.Revision(), nil
 }
 
 func (s *NatsMeetingRepository) getSettings(ctx context.Context, meetingUID string) (jetstream.KeyValueEntry, error) {
-	if s.MeetingSettings == nil {
-		return nil, domain.ErrServiceUnavailable
-	}
 	return s.MeetingSettings.Get(ctx, meetingUID)
 }
 
@@ -95,7 +89,7 @@ func (s *NatsMeetingRepository) getSettingsUnmarshal(ctx context.Context, entry 
 	err := json.Unmarshal(entry.Value(), &meeting)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshaling meeting settings", logging.ErrKey, err)
-		return nil, domain.ErrUnmarshal
+		return nil, err
 	}
 
 	return &meeting, nil
@@ -117,12 +111,12 @@ func (s *NatsMeetingRepository) GetSettingsWithRevision(ctx context.Context, mee
 			return nil, 0, domain.ErrMeetingNotFound
 		}
 		slog.ErrorContext(ctx, "error getting meeting settings from NATS KV", logging.ErrKey, err)
-		return nil, 0, err
+		return nil, 0, domain.ErrInternal
 	}
 
 	meeting, err := s.getSettingsUnmarshal(ctx, entry)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, domain.ErrUnmarshal
 	}
 
 	return meeting, entry.Revision(), nil
@@ -134,7 +128,7 @@ func (s *NatsMeetingRepository) Exists(ctx context.Context, meetingUID string) (
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return false, nil
 		}
-		return false, err
+		return false, domain.ErrInternal
 	}
 	return true, nil
 }
@@ -172,6 +166,10 @@ func (s *NatsMeetingRepository) ListAllBase(ctx context.Context) ([]*models.Meet
 
 // ListAllSettings lists all meeting settings data from the NATS KV stores.
 func (s *NatsMeetingRepository) ListAllSettings(ctx context.Context) ([]*models.MeetingSettings, error) {
+	if s.MeetingSettings == nil {
+		return nil, domain.ErrServiceUnavailable
+	}
+
 	keysLister, err := s.MeetingSettings.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing meeting settings keys from NATS KV store", logging.ErrKey, err)
@@ -230,20 +228,16 @@ func (s *NatsMeetingRepository) ListAll(ctx context.Context) ([]*models.MeetingB
 }
 
 func (s *NatsMeetingRepository) putBase(ctx context.Context, meetingBase *models.MeetingBase) (uint64, error) {
-	if s.Meetings == nil {
-		return 0, domain.ErrServiceUnavailable
-	}
-
 	jsonData, err := json.Marshal(meetingBase)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling meeting", logging.ErrKey, err)
-		return 0, domain.ErrInternal
+		return 0, err
 	}
 
 	revision, err := s.Meetings.Put(ctx, meetingBase.UID, jsonData)
 	if err != nil {
 		slog.ErrorContext(ctx, "error putting meeting into NATS KV store", logging.ErrKey, err)
-		return 0, domain.ErrInternal
+		return 0, err
 	}
 
 	return revision, nil
@@ -268,36 +262,28 @@ func (s *NatsMeetingRepository) putSettings(ctx context.Context, meetingSettings
 func (s *NatsMeetingRepository) Create(ctx context.Context, meetingBase *models.MeetingBase, meetingSettings *models.MeetingSettings) error {
 	_, err := s.putBase(ctx, meetingBase)
 	if err != nil {
-		return err
+		return domain.ErrInternal
 	}
 
 	_, err = s.putSettings(ctx, meetingSettings)
 	if err != nil {
-		return err
+		return domain.ErrInternal
 	}
 
 	return nil
 }
 
 func (s *NatsMeetingRepository) updateBase(ctx context.Context, meetingBase *models.MeetingBase, revision uint64) error {
-	if s.Meetings == nil {
-		return domain.ErrServiceUnavailable
-	}
-
 	jsonData, err := json.Marshal(meetingBase)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling meeting", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 
 	_, err = s.Meetings.Update(ctx, meetingBase.UID, jsonData, revision)
 	if err != nil {
-		if strings.Contains(err.Error(), "wrong last sequence") {
-			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
-		}
 		slog.ErrorContext(ctx, "error updating meeting in NATS KV store", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 
 	return nil
@@ -306,7 +292,11 @@ func (s *NatsMeetingRepository) updateBase(ctx context.Context, meetingBase *mod
 func (s *NatsMeetingRepository) UpdateBase(ctx context.Context, meetingBase *models.MeetingBase, revision uint64) error {
 	err := s.updateBase(ctx, meetingBase, revision)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "wrong last sequence") {
+			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
+			return domain.ErrRevisionMismatch
+		}
+		return domain.ErrInternal
 	}
 
 	return nil
@@ -316,7 +306,7 @@ func (s *NatsMeetingRepository) updateSettings(ctx context.Context, meetingSetti
 	jsonData, err := json.Marshal(meetingSettings)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling meeting settings", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 
 	_, err = s.MeetingSettings.Update(ctx, meetingSettings.UID, jsonData, revision)
@@ -376,7 +366,7 @@ func (s *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, r
 	err = s.deleteSettings(ctx, meetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error deleting meeting settings from NATS KV store", logging.ErrKey, err)
-		return err
+		return domain.ErrInternal
 	}
 
 	return nil
