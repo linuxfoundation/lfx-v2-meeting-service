@@ -48,6 +48,8 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 				mockRegistrantRepo.On("Create", mock.Anything, mock.MatchedBy(func(r *models.Registrant) bool {
 					return r.Email == "user@example.com" && r.FirstName == "John" && r.LastName == "Doe" && r.MeetingUID == "meeting-1"
 				})).Return(nil)
+				// Send indexing message for new registrant
+				mockBuilder.On("SendIndexMeetingRegistrant", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
 				// Send message for registrant access
 				mockBuilder.On("SendPutMeetingRegistrantAccess", mock.Anything, mock.Anything).Return(nil)
 			},
@@ -396,6 +398,8 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 				mockRegistrantRepo.On("Update", mock.Anything, mock.MatchedBy(func(r *models.Registrant) bool {
 					return r.Email == "updated@example.com" && r.UID == "registrant-1"
 				}), uint64(1)).Return(nil)
+				// Send indexing message for updated registrant
+				mockBuilder.On("SendIndexMeetingRegistrant", mock.Anything, models.ActionUpdated, mock.Anything).Return(nil)
 				// Send message for registrant access
 				mockBuilder.On("SendPutMeetingRegistrantAccess", mock.Anything, mock.Anything).Return(nil)
 			},
@@ -516,6 +520,8 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 					UpdatedAt:  &now,
 				}, nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(1)).Return(nil)
+				// Mock delete indexing message
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil)
 				// Mock message sending
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.Anything).Return(nil)
 			},

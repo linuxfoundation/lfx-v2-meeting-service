@@ -96,6 +96,12 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "created registrant", "registrant", registrant)
 
+	// Send indexing message for the new registrant
+	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionCreated, *registrantDB)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending indexing message for new registrant", logging.ErrKey, err)
+	}
+
 	// Send a message about the new registrant to the fga-sync service
 	if registrantDB.Username != "" {
 		err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
@@ -340,6 +346,12 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "updated registrant", "registrant", registrant)
 
+	// Send indexing message for the updated registrant
+	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrantDB)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending indexing message for updated registrant", logging.ErrKey, err)
+	}
+
 	if registrantDB.Username != "" {
 		// Send a message about the updated registrant to the fga-sync service
 		err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
@@ -442,6 +454,12 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	}
 
 	slog.DebugContext(ctx, "deleted registrant")
+
+	// Send indexing delete message for the registrant
+	err = s.MessageBuilder.SendDeleteIndexMeetingRegistrant(ctx, registrantDB.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending delete indexing message for registrant", logging.ErrKey, err)
+	}
 
 	if registrantDB.Username != "" {
 		// Send a message about the deleted registrant to the fga-sync service

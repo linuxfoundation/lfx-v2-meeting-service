@@ -87,7 +87,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:settings:get"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:get"
       match:
         methods:
           - GET
@@ -145,7 +145,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:settings:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:update"
       match:
         methods:
           - PUT
@@ -201,7 +201,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:create"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:create"
       match:
         methods:
           - POST
@@ -232,7 +232,7 @@ spec:
     # TODO: remove this rule once we remove the list meeting registrants endpoint.
     # It is not meant to be used by applications, it should only be used
     # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:list"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:list"
       match:
         methods:
           - GET
@@ -260,7 +260,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:update"
       match:
         methods:
           - PUT
@@ -288,7 +288,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:get"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:get"
       match:
         methods:
           - GET
@@ -316,7 +316,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:delete"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:delete"
       match:
         methods:
           - DELETE

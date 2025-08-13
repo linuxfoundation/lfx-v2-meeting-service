@@ -141,6 +141,24 @@ func (m *MessageBuilder) SendDeleteIndexMeetingSettings(ctx context.Context, dat
 	return m.sendIndexerMessage(ctx, models.IndexMeetingSettingsSubject, models.ActionDeleted, []byte(data), nil)
 }
 
+// SendIndexMeeting sends the message to the NATS server for the meeting indexing.
+func (m *MessageBuilder) SendIndexMeetingRegistrant(ctx context.Context, action models.MessageAction, data models.Registrant) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.UID, data.MeetingUID, data.FirstName, data.LastName, data.Email, data.Username)
+
+	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexMeetingRegistrant sends the message to the NATS server for the meeting registrant indexing.
+func (m *MessageBuilder) SendDeleteIndexMeetingRegistrant(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, models.ActionDeleted, []byte(data), nil)
+}
+
 // SendUpdateAccessMeeting sends the message to the NATS server for the access control updates.
 func (m *MessageBuilder) SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error {
 	dataBytes, err := json.Marshal(data)

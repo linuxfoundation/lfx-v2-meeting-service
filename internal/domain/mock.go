@@ -106,6 +106,16 @@ func (m *MockMessageBuilder) SendDeleteIndexMeetingSettings(ctx context.Context,
 	return args.Error(0)
 }
 
+func (m *MockMessageBuilder) SendIndexMeetingRegistrant(ctx context.Context, action models.MessageAction, data models.Registrant) error {
+	args := m.Called(ctx, action, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendDeleteIndexMeetingRegistrant(ctx context.Context, data string) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
 func (m *MockMessageBuilder) SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error {
 	args := m.Called(ctx, data)
 	return args.Error(0)

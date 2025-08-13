@@ -25,8 +25,10 @@ type MessageHandler interface {
 type MessageBuilder interface {
 	SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.MeetingBase) error
 	SendIndexMeetingSettings(ctx context.Context, action models.MessageAction, data models.MeetingSettings) error
+	SendIndexMeetingRegistrant(ctx context.Context, action models.MessageAction, data models.Registrant) error
 	SendDeleteIndexMeeting(ctx context.Context, data string) error
 	SendDeleteIndexMeetingSettings(ctx context.Context, data string) error
+	SendDeleteIndexMeetingRegistrant(ctx context.Context, data string) error
 	SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error
 	SendDeleteAllAccessMeeting(ctx context.Context, data string) error
 	SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
