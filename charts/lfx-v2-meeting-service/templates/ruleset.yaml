@@ -87,12 +87,70 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /meetings/:id/settings
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              # TODO: should this be auditor relation on the project object? If so,
+              # how do we get the project_uid from the request body?
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
     - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:update"
       match:
         methods:
           - PUT
         routes:
           - path: /meetings/:id
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:update"
+      match:
+        methods:
+          - PUT
+        routes:
+          - path: /meetings/:id/settings
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -143,7 +201,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:create"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:create"
       match:
         methods:
           - POST
@@ -174,7 +232,7 @@ spec:
     # TODO: remove this rule once we remove the list meeting registrants endpoint.
     # It is not meant to be used by applications, it should only be used
     # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:list"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:list"
       match:
         methods:
           - GET
@@ -202,12 +260,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:update"
       match:
         methods:
           - PUT
         routes:
-          - path: /meetings/:id/registrants
+          - path: /meetings/:id/registrants/:registrant_id
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -230,7 +288,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:get"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:get"
       match:
         methods:
           - GET
@@ -258,7 +316,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:registrants:delete"
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:delete"
       match:
         methods:
           - DELETE

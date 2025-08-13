@@ -79,7 +79,7 @@ func (s *MeetingsService) handleMeetingGetAttribute(ctx context.Context, msg dom
 		return nil, err
 	}
 
-	meeting, err := s.MeetingRepository.Get(ctx, meetingUID)
+	meeting, err := s.MeetingRepository.GetBase(ctx, meetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting meeting from NATS KV", logging.ErrKey, err)
 		return nil, err

@@ -46,7 +46,7 @@ func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMe
 }
 
 // CreateMeeting creates a new meeting.
-func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.Meeting, error) {
+func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.MeetingFull, error) {
 	meeting, err := s.service.CreateMeeting(ctx, payload)
 	if err != nil {
 		return nil, handleError(err)
@@ -54,25 +54,46 @@ func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.Cre
 	return meeting, nil
 }
 
-// GetMeeting gets a single meeting's base information.
-func (s *MeetingsAPI) GetMeeting(ctx context.Context, payload *meetingsvc.GetMeetingPayload) (*meetingsvc.GetMeetingResult, error) {
-	meeting, revision, err := s.service.GetOneMeeting(ctx, payload)
+// GetMeetingBase gets a single meeting's base information.
+func (s *MeetingsAPI) GetMeetingBase(ctx context.Context, payload *meetingsvc.GetMeetingBasePayload) (*meetingsvc.GetMeetingBaseResult, error) {
+	meeting, revision, err := s.service.GetMeetingBase(ctx, payload)
 	if err != nil {
 		return nil, handleError(err)
 	}
-	return &meetingsvc.GetMeetingResult{
+	return &meetingsvc.GetMeetingBaseResult{
 		Meeting: meeting,
 		Etag:    &revision,
 	}, nil
 }
 
-// UpdateMeeting updates a meeting's base information.
-func (s *MeetingsAPI) UpdateMeeting(ctx context.Context, payload *meetingsvc.UpdateMeetingPayload) (*meetingsvc.Meeting, error) {
-	updatedMeeting, err := s.service.UpdateMeeting(ctx, payload)
+// GetMeetingSettings gets settings for a specific meeting
+func (s *MeetingsAPI) GetMeetingSettings(ctx context.Context, payload *meetingsvc.GetMeetingSettingsPayload) (*meetingsvc.GetMeetingSettingsResult, error) {
+	settings, etag, err := s.service.GetMeetingSettings(ctx, payload)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return &meetingsvc.GetMeetingSettingsResult{
+		MeetingSettings: settings,
+		Etag:            &etag,
+	}, nil
+}
+
+// UpdateMeetingBase updates a meeting's base information.
+func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc.UpdateMeetingBasePayload) (*meetingsvc.MeetingBase, error) {
+	updatedMeeting, err := s.service.UpdateMeetingBase(ctx, payload)
 	if err != nil {
 		return nil, handleError(err)
 	}
 	return updatedMeeting, nil
+}
+
+func (s *MeetingsAPI) UpdateMeetingSettings(ctx context.Context, payload *meetingsvc.UpdateMeetingSettingsPayload) (*meetingsvc.MeetingSettings, error) {
+	updatedSettings, err := s.service.UpdateMeetingSettings(ctx, payload)
+	if err != nil {
+		return nil, handleError(err)
+	}
+	return updatedSettings, nil
 }
 
 // DeleteMeeting deletes a meeting.

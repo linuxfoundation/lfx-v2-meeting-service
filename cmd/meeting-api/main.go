@@ -298,13 +298,19 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*store.NatsMee
 		return nil, nil, err
 	}
 
+	meetingSettingsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetingSettings)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNameMeetingSettings)
+		return nil, nil, err
+	}
+
 	meetingRegistrantsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetingRegistrants)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNameMeetingRegistrants)
 		return nil, nil, err
 	}
 
-	meetingRepo := store.NewNatsMeetingRepository(meetingsKV)
+	meetingRepo := store.NewNatsMeetingRepository(meetingsKV, meetingSettingsKV)
 	registrantRepo := store.NewNatsRegistrantRepository(meetingRegistrantsKV)
 
 	return meetingRepo, registrantRepo, nil

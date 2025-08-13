@@ -26,6 +26,9 @@ vendor/
 # Goa generated files (keep gen/ in version control but ignore temporary files)
 *.gen.tmp
 
+# Linter reports
+megalinter-reports/
+
 # IDE and editor files
 .vscode/
 .idea/
@@ -90,6 +93,7 @@ Thumbs.db
 # Local development
 docker-compose.override.yml
 docker-compose.local.yml
+values.local.yaml
 *.pid
 
 # NATS related

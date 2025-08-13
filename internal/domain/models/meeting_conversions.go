@@ -12,13 +12,91 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
-// ToMeetingDBModel converts a Goa Meeting type to the domain Meeting model for database storage
-func ToMeetingDBModel(goaMeeting *meetingservice.Meeting) *Meeting {
+func ToMeetingFullServiceModel(meetingBase *MeetingBase, meetingSettings *MeetingSettings) *meetingservice.MeetingFull {
+	if meetingBase == nil {
+		return nil
+	}
+
+	meetingFull := &meetingservice.MeetingFull{
+		UID:         utils.StringPtr(meetingBase.UID),
+		ProjectUID:  utils.StringPtr(meetingBase.ProjectUID),
+		StartTime:   utils.StringPtr(meetingBase.StartTime.Format(time.RFC3339)),
+		Duration:    utils.IntPtr(meetingBase.Duration),
+		Timezone:    utils.StringPtr(meetingBase.Timezone),
+		Recurrence:  fromDBRecurrence(meetingBase.Recurrence),
+		Title:       utils.StringPtr(meetingBase.Title),
+		Description: utils.StringPtr(meetingBase.Description),
+	}
+
+	// Only set string fields if they're not empty
+	if meetingBase.Platform != "" {
+		meetingFull.Platform = utils.StringPtr(meetingBase.Platform)
+	}
+	if meetingBase.MeetingType != "" {
+		meetingFull.MeetingType = utils.StringPtr(meetingBase.MeetingType)
+	}
+	if meetingBase.Visibility != "" {
+		meetingFull.Visibility = utils.StringPtr(meetingBase.Visibility)
+	}
+	if meetingBase.ArtifactVisibility != "" {
+		meetingFull.ArtifactVisibility = utils.StringPtr(meetingBase.ArtifactVisibility)
+	}
+	if meetingBase.PublicLink != "" {
+		meetingFull.PublicLink = utils.StringPtr(meetingBase.PublicLink)
+	}
+	if meetingBase.EmailDeliveryErrorCount != 0 {
+		meetingFull.EmailDeliveryErrorCount = utils.IntPtr(meetingBase.EmailDeliveryErrorCount)
+	}
+	if meetingBase.RecordingEnabled {
+		meetingFull.RecordingEnabled = utils.BoolPtr(meetingBase.RecordingEnabled)
+	}
+	if meetingBase.TranscriptEnabled {
+		meetingFull.TranscriptEnabled = utils.BoolPtr(meetingBase.TranscriptEnabled)
+	}
+	if meetingBase.YoutubeUploadEnabled {
+		meetingFull.YoutubeUploadEnabled = utils.BoolPtr(meetingBase.YoutubeUploadEnabled)
+	}
+	if meetingBase.ZoomConfig != nil {
+		meetingFull.ZoomConfig = fromDBZoomConfig(meetingBase.ZoomConfig)
+	}
+	if meetingBase.RegistrantCount != 0 {
+		meetingFull.RegistrantCount = utils.IntPtr(meetingBase.RegistrantCount)
+	}
+	if meetingBase.RegistrantResponseDeclinedCount != 0 {
+		meetingFull.RegistrantResponseDeclinedCount = utils.IntPtr(meetingBase.RegistrantResponseDeclinedCount)
+	}
+	if meetingBase.RegistrantResponseAcceptedCount != 0 {
+		meetingFull.RegistrantResponseAcceptedCount = utils.IntPtr(meetingBase.RegistrantResponseAcceptedCount)
+	}
+	if len(meetingBase.Occurrences) > 0 {
+		meetingFull.Occurrences = make([]*meetingservice.Occurrence, 0, len(meetingBase.Occurrences))
+		for _, o := range meetingBase.Occurrences {
+			meetingFull.Occurrences = append(meetingFull.Occurrences, fromDBOccurrence(&o))
+		}
+	}
+
+	// Convert timestamps
+	if meetingBase.CreatedAt != nil {
+		meetingFull.CreatedAt = utils.StringPtr(meetingBase.CreatedAt.Format(time.RFC3339))
+	}
+	if meetingBase.UpdatedAt != nil {
+		meetingFull.UpdatedAt = utils.StringPtr(meetingBase.UpdatedAt.Format(time.RFC3339))
+	}
+
+	if meetingSettings != nil {
+		meetingFull.Organizers = meetingSettings.Organizers
+	}
+
+	return meetingFull
+}
+
+// ToMeetingBaseDBModel converts a Goa MeetingBase type to the domain Meeting model for database storage
+func ToMeetingBaseDBModel(goaMeeting *meetingservice.MeetingBase) *MeetingBase {
 	if goaMeeting == nil {
 		return nil
 	}
 
-	meeting := &Meeting{
+	meeting := &MeetingBase{
 		UID:                             utils.StringValue(goaMeeting.UID),
 		ProjectUID:                      utils.StringValue(goaMeeting.ProjectUID),
 		Title:                           utils.StringValue(goaMeeting.Title),
@@ -115,13 +193,13 @@ func ToMeetingDBModel(goaMeeting *meetingservice.Meeting) *Meeting {
 	return meeting
 }
 
-// FromMeetingDBModel converts a domain Meeting model to a Goa Meeting type for API responses
-func FromMeetingDBModel(meeting *Meeting) *meetingservice.Meeting {
+// FromMeetingBaseDBModel converts a domain Meeting model to a Goa Meeting type for API responses
+func FromMeetingBaseDBModel(meeting *MeetingBase) *meetingservice.MeetingBase {
 	if meeting == nil {
 		return nil
 	}
 
-	goaMeeting := &meetingservice.Meeting{
+	goaMeeting := &meetingservice.MeetingBase{
 		UID:                             utils.StringPtr(meeting.UID),
 		ProjectUID:                      utils.StringPtr(meeting.ProjectUID),
 		StartTime:                       utils.StringPtr(meeting.StartTime.Format(time.RFC3339)),
@@ -183,7 +261,7 @@ func FromMeetingDBModel(meeting *Meeting) *meetingservice.Meeting {
 }
 
 // ToMeetingDBModelFromCreatePayload converts a Goa CreateMeetingPayload to a domain Meeting model
-func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayload) *Meeting {
+func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayload) *MeetingBase {
 	if payload == nil {
 		return nil
 	}
@@ -197,7 +275,7 @@ func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayl
 	}
 
 	now := time.Now().UTC()
-	meeting := &Meeting{
+	meeting := &MeetingBase{
 		ProjectUID:           payload.ProjectUID,
 		StartTime:            startTime,
 		Duration:             payload.Duration,
@@ -224,7 +302,7 @@ func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayl
 	return meeting
 }
 
-func ToMeetingDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingPayload, existingMeeting *Meeting) *Meeting {
+func ToMeetingBaseDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingBasePayload, existingMeeting *MeetingBase) *MeetingBase {
 	if payload == nil || existingMeeting == nil {
 		return nil
 	}
@@ -238,7 +316,7 @@ func ToMeetingDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingPayl
 	}
 
 	now := time.Now().UTC()
-	meeting := &Meeting{
+	meeting := &MeetingBase{
 		UID:                  existingMeeting.UID,
 		ProjectUID:           payload.ProjectUID,
 		StartTime:            startTime,
@@ -470,4 +548,57 @@ func fromDBOccurrence(o *Occurrence) *meetingservice.Occurrence {
 	}
 
 	return occ
+}
+
+// ToMeetingSettingsServiceModel converts a domain MeetingSettings to service model
+func ToMeetingSettingsServiceModel(settings *MeetingSettings) *meetingservice.MeetingSettings {
+	if settings == nil {
+		return nil
+	}
+
+	result := &meetingservice.MeetingSettings{
+		UID:        utils.StringPtr(settings.UID),
+		Organizers: settings.Organizers,
+	}
+
+	if settings.CreatedAt != nil {
+		result.CreatedAt = utils.StringPtr(settings.CreatedAt.Format(time.RFC3339))
+	}
+	if settings.UpdatedAt != nil {
+		result.UpdatedAt = utils.StringPtr(settings.UpdatedAt.Format(time.RFC3339))
+	}
+
+	return result
+}
+
+// FromMeetingSettingsServiceModel converts a service MeetingSettings to domain model
+func FromMeetingSettingsServiceModel(settings *meetingservice.MeetingSettings) *MeetingSettings {
+	if settings == nil {
+		return nil
+	}
+
+	result := &MeetingSettings{
+		UID:        utils.StringValue(settings.UID),
+		Organizers: settings.Organizers,
+	}
+
+	if settings.CreatedAt != nil {
+		createdAt, err := time.Parse(time.RFC3339, *settings.CreatedAt)
+		if err == nil {
+			result.CreatedAt = &createdAt
+		} else {
+			slog.Warn("failed to parse created_at", logging.ErrKey, err)
+		}
+	}
+
+	if settings.UpdatedAt != nil {
+		updatedAt, err := time.Parse(time.RFC3339, *settings.UpdatedAt)
+		if err == nil {
+			result.UpdatedAt = &updatedAt
+		} else {
+			slog.Warn("failed to parse updated_at", logging.ErrKey, err)
+		}
+	}
+
+	return result
 }

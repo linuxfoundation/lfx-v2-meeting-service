@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting|update-meeting|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|readyz|livez)
 `
 }
 
@@ -53,17 +53,29 @@ func ParseEndpoint(
 		meetingServiceCreateMeetingVersionFlag     = meetingServiceCreateMeetingFlags.String("version", "", "")
 		meetingServiceCreateMeetingBearerTokenFlag = meetingServiceCreateMeetingFlags.String("bearer-token", "", "")
 
-		meetingServiceGetMeetingFlags           = flag.NewFlagSet("get-meeting", flag.ExitOnError)
-		meetingServiceGetMeetingUIDFlag         = meetingServiceGetMeetingFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceGetMeetingVersionFlag     = meetingServiceGetMeetingFlags.String("version", "", "")
-		meetingServiceGetMeetingBearerTokenFlag = meetingServiceGetMeetingFlags.String("bearer-token", "", "")
+		meetingServiceGetMeetingBaseFlags           = flag.NewFlagSet("get-meeting-base", flag.ExitOnError)
+		meetingServiceGetMeetingBaseUIDFlag         = meetingServiceGetMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceGetMeetingBaseVersionFlag     = meetingServiceGetMeetingBaseFlags.String("version", "", "")
+		meetingServiceGetMeetingBaseBearerTokenFlag = meetingServiceGetMeetingBaseFlags.String("bearer-token", "", "")
 
-		meetingServiceUpdateMeetingFlags           = flag.NewFlagSet("update-meeting", flag.ExitOnError)
-		meetingServiceUpdateMeetingBodyFlag        = meetingServiceUpdateMeetingFlags.String("body", "REQUIRED", "")
-		meetingServiceUpdateMeetingUIDFlag         = meetingServiceUpdateMeetingFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceUpdateMeetingVersionFlag     = meetingServiceUpdateMeetingFlags.String("version", "", "")
-		meetingServiceUpdateMeetingBearerTokenFlag = meetingServiceUpdateMeetingFlags.String("bearer-token", "", "")
-		meetingServiceUpdateMeetingEtagFlag        = meetingServiceUpdateMeetingFlags.String("etag", "", "")
+		meetingServiceGetMeetingSettingsFlags           = flag.NewFlagSet("get-meeting-settings", flag.ExitOnError)
+		meetingServiceGetMeetingSettingsUIDFlag         = meetingServiceGetMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceGetMeetingSettingsVersionFlag     = meetingServiceGetMeetingSettingsFlags.String("version", "", "")
+		meetingServiceGetMeetingSettingsBearerTokenFlag = meetingServiceGetMeetingSettingsFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateMeetingBaseFlags           = flag.NewFlagSet("update-meeting-base", flag.ExitOnError)
+		meetingServiceUpdateMeetingBaseBodyFlag        = meetingServiceUpdateMeetingBaseFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateMeetingBaseUIDFlag         = meetingServiceUpdateMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceUpdateMeetingBaseVersionFlag     = meetingServiceUpdateMeetingBaseFlags.String("version", "", "")
+		meetingServiceUpdateMeetingBaseBearerTokenFlag = meetingServiceUpdateMeetingBaseFlags.String("bearer-token", "", "")
+		meetingServiceUpdateMeetingBaseEtagFlag        = meetingServiceUpdateMeetingBaseFlags.String("etag", "", "")
+
+		meetingServiceUpdateMeetingSettingsFlags           = flag.NewFlagSet("update-meeting-settings", flag.ExitOnError)
+		meetingServiceUpdateMeetingSettingsBodyFlag        = meetingServiceUpdateMeetingSettingsFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateMeetingSettingsUIDFlag         = meetingServiceUpdateMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceUpdateMeetingSettingsVersionFlag     = meetingServiceUpdateMeetingSettingsFlags.String("version", "", "")
+		meetingServiceUpdateMeetingSettingsBearerTokenFlag = meetingServiceUpdateMeetingSettingsFlags.String("bearer-token", "", "")
+		meetingServiceUpdateMeetingSettingsEtagFlag        = meetingServiceUpdateMeetingSettingsFlags.String("etag", "", "")
 
 		meetingServiceDeleteMeetingFlags           = flag.NewFlagSet("delete-meeting", flag.ExitOnError)
 		meetingServiceDeleteMeetingUIDFlag         = meetingServiceDeleteMeetingFlags.String("uid", "REQUIRED", "The UID of the meeting")
@@ -110,8 +122,10 @@ func ParseEndpoint(
 	meetingServiceFlags.Usage = meetingServiceUsage
 	meetingServiceGetMeetingsFlags.Usage = meetingServiceGetMeetingsUsage
 	meetingServiceCreateMeetingFlags.Usage = meetingServiceCreateMeetingUsage
-	meetingServiceGetMeetingFlags.Usage = meetingServiceGetMeetingUsage
-	meetingServiceUpdateMeetingFlags.Usage = meetingServiceUpdateMeetingUsage
+	meetingServiceGetMeetingBaseFlags.Usage = meetingServiceGetMeetingBaseUsage
+	meetingServiceGetMeetingSettingsFlags.Usage = meetingServiceGetMeetingSettingsUsage
+	meetingServiceUpdateMeetingBaseFlags.Usage = meetingServiceUpdateMeetingBaseUsage
+	meetingServiceUpdateMeetingSettingsFlags.Usage = meetingServiceUpdateMeetingSettingsUsage
 	meetingServiceDeleteMeetingFlags.Usage = meetingServiceDeleteMeetingUsage
 	meetingServiceGetMeetingRegistrantsFlags.Usage = meetingServiceGetMeetingRegistrantsUsage
 	meetingServiceCreateMeetingRegistrantFlags.Usage = meetingServiceCreateMeetingRegistrantUsage
@@ -161,11 +175,17 @@ func ParseEndpoint(
 			case "create-meeting":
 				epf = meetingServiceCreateMeetingFlags
 
-			case "get-meeting":
-				epf = meetingServiceGetMeetingFlags
+			case "get-meeting-base":
+				epf = meetingServiceGetMeetingBaseFlags
 
-			case "update-meeting":
-				epf = meetingServiceUpdateMeetingFlags
+			case "get-meeting-settings":
+				epf = meetingServiceGetMeetingSettingsFlags
+
+			case "update-meeting-base":
+				epf = meetingServiceUpdateMeetingBaseFlags
+
+			case "update-meeting-settings":
+				epf = meetingServiceUpdateMeetingSettingsFlags
 
 			case "delete-meeting":
 				epf = meetingServiceDeleteMeetingFlags
@@ -222,12 +242,18 @@ func ParseEndpoint(
 			case "create-meeting":
 				endpoint = c.CreateMeeting()
 				data, err = meetingservicec.BuildCreateMeetingPayload(*meetingServiceCreateMeetingBodyFlag, *meetingServiceCreateMeetingVersionFlag, *meetingServiceCreateMeetingBearerTokenFlag)
-			case "get-meeting":
-				endpoint = c.GetMeeting()
-				data, err = meetingservicec.BuildGetMeetingPayload(*meetingServiceGetMeetingUIDFlag, *meetingServiceGetMeetingVersionFlag, *meetingServiceGetMeetingBearerTokenFlag)
-			case "update-meeting":
-				endpoint = c.UpdateMeeting()
-				data, err = meetingservicec.BuildUpdateMeetingPayload(*meetingServiceUpdateMeetingBodyFlag, *meetingServiceUpdateMeetingUIDFlag, *meetingServiceUpdateMeetingVersionFlag, *meetingServiceUpdateMeetingBearerTokenFlag, *meetingServiceUpdateMeetingEtagFlag)
+			case "get-meeting-base":
+				endpoint = c.GetMeetingBase()
+				data, err = meetingservicec.BuildGetMeetingBasePayload(*meetingServiceGetMeetingBaseUIDFlag, *meetingServiceGetMeetingBaseVersionFlag, *meetingServiceGetMeetingBaseBearerTokenFlag)
+			case "get-meeting-settings":
+				endpoint = c.GetMeetingSettings()
+				data, err = meetingservicec.BuildGetMeetingSettingsPayload(*meetingServiceGetMeetingSettingsUIDFlag, *meetingServiceGetMeetingSettingsVersionFlag, *meetingServiceGetMeetingSettingsBearerTokenFlag)
+			case "update-meeting-base":
+				endpoint = c.UpdateMeetingBase()
+				data, err = meetingservicec.BuildUpdateMeetingBasePayload(*meetingServiceUpdateMeetingBaseBodyFlag, *meetingServiceUpdateMeetingBaseUIDFlag, *meetingServiceUpdateMeetingBaseVersionFlag, *meetingServiceUpdateMeetingBaseBearerTokenFlag, *meetingServiceUpdateMeetingBaseEtagFlag)
+			case "update-meeting-settings":
+				endpoint = c.UpdateMeetingSettings()
+				data, err = meetingservicec.BuildUpdateMeetingSettingsPayload(*meetingServiceUpdateMeetingSettingsBodyFlag, *meetingServiceUpdateMeetingSettingsUIDFlag, *meetingServiceUpdateMeetingSettingsVersionFlag, *meetingServiceUpdateMeetingSettingsBearerTokenFlag, *meetingServiceUpdateMeetingSettingsEtagFlag)
 			case "delete-meeting":
 				endpoint = c.DeleteMeeting()
 				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingEtagFlag)
@@ -271,8 +297,10 @@ COMMAND:
     get-meetings: Get all meetings.
     create-meeting: Create a new meeting for a project. An actual meeting in the specific platform will be created by
 			this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.
-    get-meeting: Get a meeting by ID
-    update-meeting: Update an existing meeting.
+    get-meeting-base: Get a meeting by ID
+    get-meeting-settings: Get a single meeting's settings.
+    update-meeting-base: Update an existing meeting base.
+    update-meeting-settings: Update an existing meeting's settings.
     delete-meeting: Delete an existing meeting.
     get-meeting-registrants: Get all registrants for a meeting
     create-meeting-registrant: Create a new registrant for a meeting
@@ -309,60 +337,71 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "meeting_hosts",
+      "artifact_visibility": "meeting_participants",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Mollitia est quo tempore quia.",
-               "Natus sapiente sit tempore totam est numquam.",
-               "Distinctio temporibus."
+               "Repellendus ut.",
+               "Explicabo dolorum."
             ],
-            "uid": "Autem qui."
+            "uid": "Porro repellat iure esse."
          },
          {
             "allowed_voting_statuses": [
-               "Mollitia est quo tempore quia.",
-               "Natus sapiente sit tempore totam est numquam.",
-               "Distinctio temporibus."
+               "Repellendus ut.",
+               "Explicabo dolorum."
             ],
-            "uid": "Autem qui."
+            "uid": "Porro repellat iure esse."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Repellendus ut.",
+               "Explicabo dolorum."
+            ],
+            "uid": "Porro repellat iure esse."
          }
       ],
-      "description": "Iure dolorem nobis et nihil quia.",
-      "duration": 0,
-      "early_join_time_minutes": 12,
-      "meeting_type": "Other",
+      "description": "Et aut excepturi a animi.",
+      "duration": 535,
+      "early_join_time_minutes": 26,
+      "meeting_type": "Board",
+      "organizers": [
+         "Modi et voluptatem enim ad.",
+         "Quod eos.",
+         "Et magni quasi placeat et expedita.",
+         "Impedit enim ratione."
+      ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Et ea distinctio dolorum.",
+      "public_link": "Assumenda molestias veritatis eos et quod ea.",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1973-06-01T02:12:35Z",
-         "end_times": 7993769279223694559,
-         "monthly_day": 11,
-         "monthly_week": 1,
-         "monthly_week_day": 5,
-         "repeat_interval": 4028306957488540937,
-         "type": 2,
+         "end_date_time": "2014-01-06T09:24:02Z",
+         "end_times": 1989923452977874675,
+         "monthly_day": 19,
+         "monthly_week": 4,
+         "monthly_week_day": 6,
+         "repeat_interval": 6470627151182217547,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Ut et ut culpa optio nam.",
-      "title": "A veniam similique fugit et occaecati dolorem.",
+      "timezone": "Ab beatae omnis.",
+      "title": "Cupiditate quasi aspernatur accusantium.",
       "transcript_enabled": true,
       "visibility": "public",
-      "youtube_upload_enabled": true,
+      "youtube_upload_enabled": false,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": false
+         "ai_summary_require_approval": true
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
-func meetingServiceGetMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meeting -uid STRING -version STRING -bearer-token STRING
+func meetingServiceGetMeetingBaseUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meeting-base -uid STRING -version STRING -bearer-token STRING
 
 Get a meeting by ID
     -uid STRING: The UID of the meeting
@@ -370,14 +409,27 @@ Get a meeting by ID
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-meeting-base --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
-func meetingServiceUpdateMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting -body JSON -uid STRING -version STRING -bearer-token STRING -etag STRING
+func meetingServiceGetMeetingSettingsUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meeting-settings -uid STRING -version STRING -bearer-token STRING
 
-Update an existing meeting.
+Get a single meeting's settings.
+    -uid STRING: The UID of the meeting
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-meeting-settings --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceUpdateMeetingBaseUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-base -body JSON -uid STRING -version STRING -bearer-token STRING -etag STRING
+
+Update an existing meeting base.
     -body JSON: 
     -uid STRING: The UID of the meeting
     -version STRING: 
@@ -385,71 +437,80 @@ Update an existing meeting.
     -etag STRING: 
 
 Example:
-    %[1]s meeting-service update-meeting --body '{
-      "artifact_visibility": "public",
+    %[1]s meeting-service update-meeting-base --body '{
+      "artifact_visibility": "meeting_participants",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Mollitia est quo tempore quia.",
-               "Natus sapiente sit tempore totam est numquam.",
-               "Distinctio temporibus."
+               "Repellendus ut.",
+               "Explicabo dolorum."
             ],
-            "uid": "Autem qui."
+            "uid": "Porro repellat iure esse."
          },
          {
             "allowed_voting_statuses": [
-               "Mollitia est quo tempore quia.",
-               "Natus sapiente sit tempore totam est numquam.",
-               "Distinctio temporibus."
+               "Repellendus ut.",
+               "Explicabo dolorum."
             ],
-            "uid": "Autem qui."
+            "uid": "Porro repellat iure esse."
          },
          {
             "allowed_voting_statuses": [
-               "Mollitia est quo tempore quia.",
-               "Natus sapiente sit tempore totam est numquam.",
-               "Distinctio temporibus."
+               "Repellendus ut.",
+               "Explicabo dolorum."
             ],
-            "uid": "Autem qui."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Mollitia est quo tempore quia.",
-               "Natus sapiente sit tempore totam est numquam.",
-               "Distinctio temporibus."
-            ],
-            "uid": "Autem qui."
+            "uid": "Porro repellat iure esse."
          }
       ],
-      "description": "Consequatur aut enim veritatis expedita voluptatibus aut.",
-      "duration": 107,
-      "early_join_time_minutes": 53,
-      "meeting_type": "Maintainers",
+      "description": "Non autem.",
+      "duration": 155,
+      "early_join_time_minutes": 39,
+      "meeting_type": "None",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Aut excepturi a animi recusandae possimus.",
-      "recording_enabled": false,
+      "public_link": "Et qui id sed delectus quod sunt.",
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1973-06-01T02:12:35Z",
-         "end_times": 7993769279223694559,
-         "monthly_day": 11,
-         "monthly_week": 1,
-         "monthly_week_day": 5,
-         "repeat_interval": 4028306957488540937,
-         "type": 2,
+         "end_date_time": "2014-01-06T09:24:02Z",
+         "end_times": 1989923452977874675,
+         "monthly_day": 19,
+         "monthly_week": 4,
+         "monthly_week_day": 6,
+         "repeat_interval": 6470627151182217547,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Sunt qui aut quia temporibus fugiat.",
-      "title": "Soluta at perferendis aliquid incidunt provident accusamus.",
+      "timezone": "Voluptatem officia fugit.",
+      "title": "Voluptatibus nobis.",
       "transcript_enabled": false,
       "visibility": "private",
       "youtube_upload_enabled": false,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": false
+         "ai_summary_require_approval": true
       }
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
+`, os.Args[0])
+}
+
+func meetingServiceUpdateMeetingSettingsUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-settings -body JSON -uid STRING -version STRING -bearer-token STRING -etag STRING
+
+Update an existing meeting's settings.
+    -body JSON: 
+    -uid STRING: The UID of the meeting
+    -version STRING: 
+    -bearer-token STRING: 
+    -etag STRING: 
+
+Example:
+    %[1]s meeting-service update-meeting-settings --body '{
+      "organizers": [
+         "Tenetur vitae vel possimus et consequuntur.",
+         "Ut aliquam sunt possimus unde quia."
+      ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
 `, os.Args[0])
 }
@@ -495,12 +556,12 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": true,
+      "host": false,
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Occaecati molestias facilis non aut.",
-      "user_id": "Aut explicabo."
+      "org_name": "Nesciunt officiis vel suscipit ipsum.",
+      "username": "Officia nihil voluptatem sunt."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -539,8 +600,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Facilis possimus.",
-      "user_id": "Perferendis neque ut sint."
+      "org_name": "Repudiandae laborum quibusdam ut ut earum assumenda.",
+      "username": "Aut veniam."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
 `, os.Args[0])
 }

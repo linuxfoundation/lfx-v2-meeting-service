@@ -19,7 +19,7 @@ import (
 
 func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) error {
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.Get(ctx, payload.MeetingUID)
+	_, err := s.MeetingRepository.GetBase(ctx, payload.MeetingUID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -96,6 +96,28 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "created registrant", "registrant", registrant)
 
+	// Send indexing message for the new registrant
+	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionCreated, *registrantDB)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending indexing message for new registrant", logging.ErrKey, err)
+	}
+
+	// Send a message about the new registrant to the fga-sync service
+	if registrantDB.Username != "" {
+		err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
+			UID:        registrantDB.UID,
+			Username:   registrantDB.Username,
+			MeetingUID: registrantDB.MeetingUID,
+			Host:       registrantDB.Host,
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "error sending message about new registrant", logging.ErrKey, err)
+		}
+	} else {
+		// This can happen when the registrant is not an LF user but rather a guest user.
+		slog.DebugContext(ctx, "no username for registrant, skipping access message")
+	}
+
 	return registrant, nil
 }
 
@@ -115,7 +137,7 @@ func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *me
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
 
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.Get(ctx, meetingUID)
+	_, err := s.MeetingRepository.GetBase(ctx, meetingUID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -324,6 +346,28 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "updated registrant", "registrant", registrant)
 
+	// Send indexing message for the updated registrant
+	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrantDB)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending indexing message for updated registrant", logging.ErrKey, err)
+	}
+
+	if registrantDB.Username != "" {
+		// Send a message about the updated registrant to the fga-sync service
+		err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
+			UID:        registrantDB.UID,
+			Username:   registrantDB.Username,
+			MeetingUID: registrantDB.MeetingUID,
+			Host:       registrantDB.Host,
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "error sending message about updated registrant", logging.ErrKey, err)
+		}
+	} else {
+		// This can happen when the registrant is not an LF user but rather a guest user.
+		slog.DebugContext(ctx, "no username for registrant, skipping access message")
+	}
+
 	return registrant, nil
 }
 
@@ -383,6 +427,17 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 		return domain.ErrMeetingNotFound
 	}
 
+	// Check that the registrant exists, but also get the registrant data for the access deletion message
+	registrantDB, err := s.RegistrantRepository.Get(ctx, registrantUID)
+	if err != nil {
+		if errors.Is(err, domain.ErrRegistrantNotFound) {
+			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
+			return domain.ErrRegistrantNotFound
+		}
+		slog.ErrorContext(ctx, "error getting registrant from store", logging.ErrKey, err)
+		return domain.ErrInternal
+	}
+
 	// Delete the registrant with revision check
 	err = s.RegistrantRepository.Delete(ctx, registrantUID, revision)
 	if err != nil {
@@ -399,6 +454,28 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	}
 
 	slog.DebugContext(ctx, "deleted registrant")
+
+	// Send indexing delete message for the registrant
+	err = s.MessageBuilder.SendDeleteIndexMeetingRegistrant(ctx, registrantDB.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending delete indexing message for registrant", logging.ErrKey, err)
+	}
+
+	if registrantDB.Username != "" {
+		// Send a message about the deleted registrant to the fga-sync service
+		err = s.MessageBuilder.SendRemoveMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
+			UID:        registrantDB.UID,
+			Username:   registrantDB.Username,
+			MeetingUID: registrantDB.MeetingUID,
+			Host:       registrantDB.Host,
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "error sending message about deleted registrant", logging.ErrKey, err)
+		}
+	} else {
+		// This can happen when the registrant is not an LF user but rather a guest user.
+		slog.DebugContext(ctx, "no username for registrant, skipping access message")
+	}
 
 	return nil
 }

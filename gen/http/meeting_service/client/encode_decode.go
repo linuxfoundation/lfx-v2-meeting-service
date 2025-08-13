@@ -234,7 +234,7 @@ func DecodeCreateMeetingResponse(decoder func(*http.Response) goahttp.Decoder, r
 			if err != nil {
 				return nil, goahttp.ErrValidationError("Meeting Service", "create-meeting", err)
 			}
-			res := NewCreateMeetingMeetingCreated(&body)
+			res := NewCreateMeetingMeetingFullCreated(&body)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
@@ -299,25 +299,26 @@ func DecodeCreateMeetingResponse(decoder func(*http.Response) goahttp.Decoder, r
 	}
 }
 
-// BuildGetMeetingRequest instantiates a HTTP request object with method and
-// path set to call the "Meeting Service" service "get-meeting" endpoint
-func (c *Client) BuildGetMeetingRequest(ctx context.Context, v any) (*http.Request, error) {
+// BuildGetMeetingBaseRequest instantiates a HTTP request object with method
+// and path set to call the "Meeting Service" service "get-meeting-base"
+// endpoint
+func (c *Client) BuildGetMeetingBaseRequest(ctx context.Context, v any) (*http.Request, error) {
 	var (
 		uid string
 	)
 	{
-		p, ok := v.(*meetingservice.GetMeetingPayload)
+		p, ok := v.(*meetingservice.GetMeetingBasePayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("Meeting Service", "get-meeting", "*meetingservice.GetMeetingPayload", v)
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-meeting-base", "*meetingservice.GetMeetingBasePayload", v)
 		}
 		if p.UID != nil {
 			uid = *p.UID
 		}
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetMeetingMeetingServicePath(uid)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetMeetingBaseMeetingServicePath(uid)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-meeting", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-meeting-base", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -326,13 +327,13 @@ func (c *Client) BuildGetMeetingRequest(ctx context.Context, v any) (*http.Reque
 	return req, nil
 }
 
-// EncodeGetMeetingRequest returns an encoder for requests sent to the Meeting
-// Service get-meeting server.
-func EncodeGetMeetingRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+// EncodeGetMeetingBaseRequest returns an encoder for requests sent to the
+// Meeting Service get-meeting-base server.
+func EncodeGetMeetingBaseRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*meetingservice.GetMeetingPayload)
+		p, ok := v.(*meetingservice.GetMeetingBasePayload)
 		if !ok {
-			return goahttp.ErrInvalidType("Meeting Service", "get-meeting", "*meetingservice.GetMeetingPayload", v)
+			return goahttp.ErrInvalidType("Meeting Service", "get-meeting-base", "*meetingservice.GetMeetingBasePayload", v)
 		}
 		if p.BearerToken != nil {
 			head := *p.BearerToken
@@ -351,15 +352,15 @@ func EncodeGetMeetingRequest(encoder func(*http.Request) goahttp.Encoder) func(*
 	}
 }
 
-// DecodeGetMeetingResponse returns a decoder for responses returned by the
-// Meeting Service get-meeting endpoint. restoreBody controls whether the
+// DecodeGetMeetingBaseResponse returns a decoder for responses returned by the
+// Meeting Service get-meeting-base endpoint. restoreBody controls whether the
 // response body should be restored after having been read.
-// DecodeGetMeetingResponse may return the following errors:
+// DecodeGetMeetingBaseResponse may return the following errors:
 //   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
 //   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
 //   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
 //   - error: internal error
-func DecodeGetMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+func DecodeGetMeetingBaseResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
 			b, err := io.ReadAll(resp.Body)
@@ -376,16 +377,16 @@ func DecodeGetMeetingResponse(decoder func(*http.Response) goahttp.Decoder, rest
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body GetMeetingResponseBody
+				body GetMeetingBaseResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-base", err)
 			}
-			err = ValidateGetMeetingResponseBody(&body)
+			err = ValidateGetMeetingBaseResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-base", err)
 			}
 			var (
 				etag *string
@@ -394,74 +395,77 @@ func DecodeGetMeetingResponse(decoder func(*http.Response) goahttp.Decoder, rest
 			if etagRaw != "" {
 				etag = &etagRaw
 			}
-			res := NewGetMeetingResultOK(&body, etag)
+			res := NewGetMeetingBaseResultOK(&body, etag)
 			return res, nil
 		case http.StatusInternalServerError:
 			var (
-				body GetMeetingInternalServerErrorResponseBody
+				body GetMeetingBaseInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-base", err)
 			}
-			err = ValidateGetMeetingInternalServerErrorResponseBody(&body)
+			err = ValidateGetMeetingBaseInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-base", err)
 			}
-			return nil, NewGetMeetingInternalServerError(&body)
+			return nil, NewGetMeetingBaseInternalServerError(&body)
 		case http.StatusNotFound:
 			var (
-				body GetMeetingNotFoundResponseBody
+				body GetMeetingBaseNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-base", err)
 			}
-			err = ValidateGetMeetingNotFoundResponseBody(&body)
+			err = ValidateGetMeetingBaseNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-base", err)
 			}
-			return nil, NewGetMeetingNotFound(&body)
+			return nil, NewGetMeetingBaseNotFound(&body)
 		case http.StatusServiceUnavailable:
 			var (
-				body GetMeetingServiceUnavailableResponseBody
+				body GetMeetingBaseServiceUnavailableResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-base", err)
 			}
-			err = ValidateGetMeetingServiceUnavailableResponseBody(&body)
+			err = ValidateGetMeetingBaseServiceUnavailableResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-base", err)
 			}
-			return nil, NewGetMeetingServiceUnavailable(&body)
+			return nil, NewGetMeetingBaseServiceUnavailable(&body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-meeting", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-meeting-base", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// BuildUpdateMeetingRequest instantiates a HTTP request object with method and
-// path set to call the "Meeting Service" service "update-meeting" endpoint
-func (c *Client) BuildUpdateMeetingRequest(ctx context.Context, v any) (*http.Request, error) {
+// BuildGetMeetingSettingsRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "get-meeting-settings" endpoint
+func (c *Client) BuildGetMeetingSettingsRequest(ctx context.Context, v any) (*http.Request, error) {
 	var (
 		uid string
 	)
 	{
-		p, ok := v.(*meetingservice.UpdateMeetingPayload)
+		p, ok := v.(*meetingservice.GetMeetingSettingsPayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("Meeting Service", "update-meeting", "*meetingservice.UpdateMeetingPayload", v)
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-meeting-settings", "*meetingservice.GetMeetingSettingsPayload", v)
 		}
-		uid = p.UID
+		if p.UID != nil {
+			uid = *p.UID
+		}
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateMeetingMeetingServicePath(uid)}
-	req, err := http.NewRequest("PUT", u.String(), nil)
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetMeetingSettingsMeetingServicePath(uid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-meeting", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-meeting-settings", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -470,13 +474,158 @@ func (c *Client) BuildUpdateMeetingRequest(ctx context.Context, v any) (*http.Re
 	return req, nil
 }
 
-// EncodeUpdateMeetingRequest returns an encoder for requests sent to the
-// Meeting Service update-meeting server.
-func EncodeUpdateMeetingRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+// EncodeGetMeetingSettingsRequest returns an encoder for requests sent to the
+// Meeting Service get-meeting-settings server.
+func EncodeGetMeetingSettingsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*meetingservice.UpdateMeetingPayload)
+		p, ok := v.(*meetingservice.GetMeetingSettingsPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("Meeting Service", "update-meeting", "*meetingservice.UpdateMeetingPayload", v)
+			return goahttp.ErrInvalidType("Meeting Service", "get-meeting-settings", "*meetingservice.GetMeetingSettingsPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetMeetingSettingsResponse returns a decoder for responses returned by
+// the Meeting Service get-meeting-settings endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeGetMeetingSettingsResponse may return the following errors:
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetMeetingSettingsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetMeetingSettingsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-settings", err)
+			}
+			err = ValidateGetMeetingSettingsResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-settings", err)
+			}
+			var (
+				etag *string
+			)
+			etagRaw := resp.Header.Get("Etag")
+			if etagRaw != "" {
+				etag = &etagRaw
+			}
+			res := NewGetMeetingSettingsResultOK(&body, etag)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetMeetingSettingsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-settings", err)
+			}
+			err = ValidateGetMeetingSettingsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-settings", err)
+			}
+			return nil, NewGetMeetingSettingsInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetMeetingSettingsNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-settings", err)
+			}
+			err = ValidateGetMeetingSettingsNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-settings", err)
+			}
+			return nil, NewGetMeetingSettingsNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetMeetingSettingsServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-settings", err)
+			}
+			err = ValidateGetMeetingSettingsServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-settings", err)
+			}
+			return nil, NewGetMeetingSettingsServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-meeting-settings", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildUpdateMeetingBaseRequest instantiates a HTTP request object with method
+// and path set to call the "Meeting Service" service "update-meeting-base"
+// endpoint
+func (c *Client) BuildUpdateMeetingBaseRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdateMeetingBasePayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-meeting-base", "*meetingservice.UpdateMeetingBasePayload", v)
+		}
+		uid = p.UID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateMeetingBaseMeetingServicePath(uid)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-meeting-base", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdateMeetingBaseRequest returns an encoder for requests sent to the
+// Meeting Service update-meeting-base server.
+func EncodeUpdateMeetingBaseRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdateMeetingBasePayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-meeting-base", "*meetingservice.UpdateMeetingBasePayload", v)
 		}
 		if p.BearerToken != nil {
 			head := *p.BearerToken
@@ -495,25 +644,25 @@ func EncodeUpdateMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 			values.Add("v", *p.Version)
 		}
 		req.URL.RawQuery = values.Encode()
-		body := NewUpdateMeetingRequestBody(p)
+		body := NewUpdateMeetingBaseRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("Meeting Service", "update-meeting", err)
+			return goahttp.ErrEncodingError("Meeting Service", "update-meeting-base", err)
 		}
 		return nil
 	}
 }
 
-// DecodeUpdateMeetingResponse returns a decoder for responses returned by the
-// Meeting Service update-meeting endpoint. restoreBody controls whether the
-// response body should be restored after having been read.
-// DecodeUpdateMeetingResponse may return the following errors:
+// DecodeUpdateMeetingBaseResponse returns a decoder for responses returned by
+// the Meeting Service update-meeting-base endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeUpdateMeetingBaseResponse may return the following errors:
 //   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
 //   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
 //   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
 //   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
 //   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
 //   - error: internal error
-func DecodeUpdateMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+func DecodeUpdateMeetingBaseResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
 			b, err := io.ReadAll(resp.Body)
@@ -530,92 +679,255 @@ func DecodeUpdateMeetingResponse(decoder func(*http.Response) goahttp.Decoder, r
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body UpdateMeetingResponseBody
+				body UpdateMeetingBaseResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-base", err)
 			}
-			err = ValidateUpdateMeetingResponseBody(&body)
+			err = ValidateUpdateMeetingBaseResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-base", err)
 			}
-			res := NewUpdateMeetingMeetingOK(&body)
+			res := NewUpdateMeetingBaseMeetingBaseOK(&body)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
-				body UpdateMeetingBadRequestResponseBody
+				body UpdateMeetingBaseBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-base", err)
 			}
-			err = ValidateUpdateMeetingBadRequestResponseBody(&body)
+			err = ValidateUpdateMeetingBaseBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-base", err)
 			}
-			return nil, NewUpdateMeetingBadRequest(&body)
+			return nil, NewUpdateMeetingBaseBadRequest(&body)
 		case http.StatusConflict:
 			var (
-				body UpdateMeetingConflictResponseBody
+				body UpdateMeetingBaseConflictResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-base", err)
 			}
-			err = ValidateUpdateMeetingConflictResponseBody(&body)
+			err = ValidateUpdateMeetingBaseConflictResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-base", err)
 			}
-			return nil, NewUpdateMeetingConflict(&body)
+			return nil, NewUpdateMeetingBaseConflict(&body)
 		case http.StatusInternalServerError:
 			var (
-				body UpdateMeetingInternalServerErrorResponseBody
+				body UpdateMeetingBaseInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-base", err)
 			}
-			err = ValidateUpdateMeetingInternalServerErrorResponseBody(&body)
+			err = ValidateUpdateMeetingBaseInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-base", err)
 			}
-			return nil, NewUpdateMeetingInternalServerError(&body)
+			return nil, NewUpdateMeetingBaseInternalServerError(&body)
 		case http.StatusNotFound:
 			var (
-				body UpdateMeetingNotFoundResponseBody
+				body UpdateMeetingBaseNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-base", err)
 			}
-			err = ValidateUpdateMeetingNotFoundResponseBody(&body)
+			err = ValidateUpdateMeetingBaseNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-base", err)
 			}
-			return nil, NewUpdateMeetingNotFound(&body)
+			return nil, NewUpdateMeetingBaseNotFound(&body)
 		case http.StatusServiceUnavailable:
 			var (
-				body UpdateMeetingServiceUnavailableResponseBody
+				body UpdateMeetingBaseServiceUnavailableResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-base", err)
 			}
-			err = ValidateUpdateMeetingServiceUnavailableResponseBody(&body)
+			err = ValidateUpdateMeetingBaseServiceUnavailableResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting", err)
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-base", err)
 			}
-			return nil, NewUpdateMeetingServiceUnavailable(&body)
+			return nil, NewUpdateMeetingBaseServiceUnavailable(&body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-meeting", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-meeting-base", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildUpdateMeetingSettingsRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "update-meeting-settings" endpoint
+func (c *Client) BuildUpdateMeetingSettingsRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdateMeetingSettingsPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-meeting-settings", "*meetingservice.UpdateMeetingSettingsPayload", v)
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateMeetingSettingsMeetingServicePath(uid)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-meeting-settings", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdateMeetingSettingsRequest returns an encoder for requests sent to
+// the Meeting Service update-meeting-settings server.
+func EncodeUpdateMeetingSettingsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdateMeetingSettingsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-meeting-settings", "*meetingservice.UpdateMeetingSettingsPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		if p.Etag != nil {
+			head := *p.Etag
+			req.Header.Set("ETag", head)
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewUpdateMeetingSettingsRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-meeting-settings", err)
+		}
+		return nil
+	}
+}
+
+// DecodeUpdateMeetingSettingsResponse returns a decoder for responses returned
+// by the Meeting Service update-meeting-settings endpoint. restoreBody
+// controls whether the response body should be restored after having been read.
+// DecodeUpdateMeetingSettingsResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeUpdateMeetingSettingsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body UpdateMeetingSettingsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-settings", err)
+			}
+			err = ValidateUpdateMeetingSettingsResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-settings", err)
+			}
+			res := NewUpdateMeetingSettingsMeetingSettingsOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdateMeetingSettingsBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-settings", err)
+			}
+			err = ValidateUpdateMeetingSettingsBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-settings", err)
+			}
+			return nil, NewUpdateMeetingSettingsBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdateMeetingSettingsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-settings", err)
+			}
+			err = ValidateUpdateMeetingSettingsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-settings", err)
+			}
+			return nil, NewUpdateMeetingSettingsInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body UpdateMeetingSettingsNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-settings", err)
+			}
+			err = ValidateUpdateMeetingSettingsNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-settings", err)
+			}
+			return nil, NewUpdateMeetingSettingsNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body UpdateMeetingSettingsServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-meeting-settings", err)
+			}
+			err = ValidateUpdateMeetingSettingsServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-meeting-settings", err)
+			}
+			return nil, NewUpdateMeetingSettingsServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-meeting-settings", resp.StatusCode, string(body))
 		}
 	}
 }
@@ -1685,10 +1997,11 @@ func DecodeLivezResponse(decoder func(*http.Response) goahttp.Decoder, restoreBo
 	}
 }
 
-// unmarshalMeetingResponseBodyToMeetingserviceMeeting builds a value of type
-// *meetingservice.Meeting from a value of type *MeetingResponseBody.
-func unmarshalMeetingResponseBodyToMeetingserviceMeeting(v *MeetingResponseBody) *meetingservice.Meeting {
-	res := &meetingservice.Meeting{
+// unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull builds a value
+// of type *meetingservice.MeetingFull from a value of type
+// *MeetingFullResponseBody.
+func unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull(v *MeetingFullResponseBody) *meetingservice.MeetingFull {
+	res := &meetingservice.MeetingFull{
 		UID:                             v.UID,
 		ProjectUID:                      v.ProjectUID,
 		StartTime:                       v.StartTime,
@@ -1729,6 +2042,12 @@ func unmarshalMeetingResponseBodyToMeetingserviceMeeting(v *MeetingResponseBody)
 		res.Occurrences = make([]*meetingservice.Occurrence, len(v.Occurrences))
 		for i, val := range v.Occurrences {
 			res.Occurrences[i] = unmarshalOccurrenceResponseBodyToMeetingserviceOccurrence(val)
+		}
+	}
+	if v.Organizers != nil {
+		res.Organizers = make([]string, len(v.Organizers))
+		for i, val := range v.Organizers {
+			res.Organizers[i] = val
 		}
 	}
 
@@ -1940,7 +2259,7 @@ func unmarshalRegistrantResponseBodyToMeetingserviceRegistrant(v *RegistrantResp
 		OrgIsMember:        v.OrgIsMember,
 		OrgIsProjectMember: v.OrgIsProjectMember,
 		AvatarURL:          v.AvatarURL,
-		UserID:             v.UserID,
+		Username:           v.Username,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
 	}

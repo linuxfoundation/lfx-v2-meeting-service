@@ -12,18 +12,18 @@ import (
 
 // mockMeetingRepository implements the MeetingRepository interface for testing
 type mockMeetingRepository struct {
-	meetings  map[string]*models.Meeting
+	meetings  map[string]*models.MeetingBase
 	revisions map[string]uint64
 }
 
 func newMockMeetingRepository() *mockMeetingRepository {
 	return &mockMeetingRepository{
-		meetings:  make(map[string]*models.Meeting),
+		meetings:  make(map[string]*models.MeetingBase),
 		revisions: make(map[string]uint64),
 	}
 }
 
-func (m *mockMeetingRepository) Create(ctx context.Context, meeting *models.Meeting) error {
+func (m *mockMeetingRepository) Create(ctx context.Context, meeting *models.MeetingBase) error {
 	m.meetings[meeting.UID] = meeting
 	m.revisions[meeting.UID] = 1
 	return nil
@@ -43,7 +43,7 @@ func (m *mockMeetingRepository) Delete(ctx context.Context, meetingUID string, r
 	return nil
 }
 
-func (m *mockMeetingRepository) Get(ctx context.Context, meetingUID string) (*models.Meeting, error) {
+func (m *mockMeetingRepository) GetBase(ctx context.Context, meetingUID string) (*models.MeetingBase, error) {
 	meeting, exists := m.meetings[meetingUID]
 	if !exists {
 		return nil, ErrMeetingNotFound
@@ -51,7 +51,7 @@ func (m *mockMeetingRepository) Get(ctx context.Context, meetingUID string) (*mo
 	return meeting, nil
 }
 
-func (m *mockMeetingRepository) GetWithRevision(ctx context.Context, meetingUID string) (*models.Meeting, uint64, error) {
+func (m *mockMeetingRepository) GetBaseWithRevision(ctx context.Context, meetingUID string) (*models.MeetingBase, uint64, error) {
 	meeting, exists := m.meetings[meetingUID]
 	if !exists {
 		return nil, 0, ErrMeetingNotFound
@@ -60,7 +60,7 @@ func (m *mockMeetingRepository) GetWithRevision(ctx context.Context, meetingUID 
 	return meeting, revision, nil
 }
 
-func (m *mockMeetingRepository) Update(ctx context.Context, meeting *models.Meeting, revision uint64) error {
+func (m *mockMeetingRepository) UpdateBase(ctx context.Context, meeting *models.MeetingBase, revision uint64) error {
 	if m.revisions[meeting.UID] != revision {
 		return ErrRevisionMismatch
 	}
@@ -69,8 +69,8 @@ func (m *mockMeetingRepository) Update(ctx context.Context, meeting *models.Meet
 	return nil
 }
 
-func (m *mockMeetingRepository) ListAll(ctx context.Context) ([]*models.Meeting, error) {
-	meetings := make([]*models.Meeting, 0, len(m.meetings))
+func (m *mockMeetingRepository) ListAll(ctx context.Context) ([]*models.MeetingBase, error) {
+	meetings := make([]*models.MeetingBase, 0, len(m.meetings))
 	for _, meeting := range m.meetings {
 		meetings = append(meetings, meeting)
 	}
@@ -81,7 +81,7 @@ func TestMeetingRepository_Create(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
 
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:   "test-uid",
 		Title: "Test Meeting",
 	}
@@ -100,17 +100,17 @@ func TestMeetingRepository_Create(t *testing.T) {
 	}
 }
 
-func TestMeetingRepository_GetMeeting(t *testing.T) {
+func TestMeetingRepository_GetBase(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
 
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:   "test-uid",
 		Title: "Test Meeting",
 	}
 
 	// Test getting non-existent meeting
-	_, err := repo.Get(ctx, "non-existent")
+	_, err := repo.GetBase(ctx, "non-existent")
 	if err != ErrMeetingNotFound {
 		t.Errorf("expected ErrMeetingNotFound, got %v", err)
 	}
@@ -121,7 +121,7 @@ func TestMeetingRepository_GetMeeting(t *testing.T) {
 		t.Errorf("expected no error creating meeting, got %v", err)
 	}
 
-	retrieved, err := repo.Get(ctx, "test-uid")
+	retrieved, err := repo.GetBase(ctx, "test-uid")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -130,11 +130,11 @@ func TestMeetingRepository_GetMeeting(t *testing.T) {
 	}
 }
 
-func TestMeetingRepository_GetWithRevision(t *testing.T) {
+func TestMeetingRepository_GetBaseWithRevision(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
 
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:   "test-uid",
 		Title: "Test Meeting",
 	}
@@ -145,7 +145,7 @@ func TestMeetingRepository_GetWithRevision(t *testing.T) {
 		t.Errorf("expected no error creating meeting, got %v", err)
 	}
 
-	retrieved, revision, err := repo.GetWithRevision(ctx, "test-uid")
+	retrieved, revision, err := repo.GetBaseWithRevision(ctx, "test-uid")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -157,11 +157,11 @@ func TestMeetingRepository_GetWithRevision(t *testing.T) {
 	}
 }
 
-func TestMeetingRepository_UpdateMeeting(t *testing.T) {
+func TestMeetingRepository_UpdateBase(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
 
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:   "test-uid",
 		Title: "Test Meeting",
 	}
@@ -174,19 +174,19 @@ func TestMeetingRepository_UpdateMeeting(t *testing.T) {
 
 	// Update with wrong revision should fail
 	meeting.Title = "Updated Meeting"
-	err = repo.Update(ctx, meeting, 999)
+	err = repo.UpdateBase(ctx, meeting, 999)
 	if err != ErrRevisionMismatch {
 		t.Errorf("expected ErrRevisionMismatch, got %v", err)
 	}
 
 	// Update with correct revision should succeed
-	err = repo.Update(ctx, meeting, 1)
+	err = repo.UpdateBase(ctx, meeting, 1)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
 
 	// Verify update
-	updated, revision, err := repo.GetWithRevision(ctx, "test-uid")
+	updated, revision, err := repo.GetBaseWithRevision(ctx, "test-uid")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -198,11 +198,11 @@ func TestMeetingRepository_UpdateMeeting(t *testing.T) {
 	}
 }
 
-func TestMeetingRepository_DeleteMeeting(t *testing.T) {
+func TestMeetingRepository_Delete(t *testing.T) {
 	ctx := context.Background()
 	repo := newMockMeetingRepository()
 
-	meeting := &models.Meeting{
+	meeting := &models.MeetingBase{
 		UID:   "test-uid",
 		Title: "Test Meeting",
 	}
@@ -249,8 +249,8 @@ func TestMeetingRepository_ListAll(t *testing.T) {
 	}
 
 	// Add meetings
-	meeting1 := &models.Meeting{UID: "uid1", Title: "Meeting 1"}
-	meeting2 := &models.Meeting{UID: "uid2", Title: "Meeting 2"}
+	meeting1 := &models.MeetingBase{UID: "uid1", Title: "Meeting 1"}
+	meeting2 := &models.MeetingBase{UID: "uid2", Title: "Meeting 2"}
 
 	err = repo.Create(ctx, meeting1)
 	if err != nil {

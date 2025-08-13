@@ -18,8 +18,10 @@ import (
 type Endpoints struct {
 	GetMeetings             goa.Endpoint
 	CreateMeeting           goa.Endpoint
-	GetMeeting              goa.Endpoint
-	UpdateMeeting           goa.Endpoint
+	GetMeetingBase          goa.Endpoint
+	GetMeetingSettings      goa.Endpoint
+	UpdateMeetingBase       goa.Endpoint
+	UpdateMeetingSettings   goa.Endpoint
 	DeleteMeeting           goa.Endpoint
 	GetMeetingRegistrants   goa.Endpoint
 	CreateMeetingRegistrant goa.Endpoint
@@ -38,8 +40,10 @@ func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
 		GetMeetings:             NewGetMeetingsEndpoint(s, a.JWTAuth),
 		CreateMeeting:           NewCreateMeetingEndpoint(s, a.JWTAuth),
-		GetMeeting:              NewGetMeetingEndpoint(s, a.JWTAuth),
-		UpdateMeeting:           NewUpdateMeetingEndpoint(s, a.JWTAuth),
+		GetMeetingBase:          NewGetMeetingBaseEndpoint(s, a.JWTAuth),
+		GetMeetingSettings:      NewGetMeetingSettingsEndpoint(s, a.JWTAuth),
+		UpdateMeetingBase:       NewUpdateMeetingBaseEndpoint(s, a.JWTAuth),
+		UpdateMeetingSettings:   NewUpdateMeetingSettingsEndpoint(s, a.JWTAuth),
 		DeleteMeeting:           NewDeleteMeetingEndpoint(s, a.JWTAuth),
 		GetMeetingRegistrants:   NewGetMeetingRegistrantsEndpoint(s, a.JWTAuth),
 		CreateMeetingRegistrant: NewCreateMeetingRegistrantEndpoint(s, a.JWTAuth),
@@ -56,8 +60,10 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetMeetings = m(e.GetMeetings)
 	e.CreateMeeting = m(e.CreateMeeting)
-	e.GetMeeting = m(e.GetMeeting)
-	e.UpdateMeeting = m(e.UpdateMeeting)
+	e.GetMeetingBase = m(e.GetMeetingBase)
+	e.GetMeetingSettings = m(e.GetMeetingSettings)
+	e.UpdateMeetingBase = m(e.UpdateMeetingBase)
+	e.UpdateMeetingSettings = m(e.UpdateMeetingSettings)
 	e.DeleteMeeting = m(e.DeleteMeeting)
 	e.GetMeetingRegistrants = m(e.GetMeetingRegistrants)
 	e.CreateMeetingRegistrant = m(e.CreateMeetingRegistrant)
@@ -114,11 +120,11 @@ func NewCreateMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.End
 	}
 }
 
-// NewGetMeetingEndpoint returns an endpoint function that calls the method
-// "get-meeting" of service "Meeting Service".
-func NewGetMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+// NewGetMeetingBaseEndpoint returns an endpoint function that calls the method
+// "get-meeting-base" of service "Meeting Service".
+func NewGetMeetingBaseEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*GetMeetingPayload)
+		p := req.(*GetMeetingBasePayload)
 		var err error
 		sc := security.JWTScheme{
 			Name:           "jwt",
@@ -133,15 +139,15 @@ func NewGetMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoi
 		if err != nil {
 			return nil, err
 		}
-		return s.GetMeeting(ctx, p)
+		return s.GetMeetingBase(ctx, p)
 	}
 }
 
-// NewUpdateMeetingEndpoint returns an endpoint function that calls the method
-// "update-meeting" of service "Meeting Service".
-func NewUpdateMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+// NewGetMeetingSettingsEndpoint returns an endpoint function that calls the
+// method "get-meeting-settings" of service "Meeting Service".
+func NewGetMeetingSettingsEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*UpdateMeetingPayload)
+		p := req.(*GetMeetingSettingsPayload)
 		var err error
 		sc := security.JWTScheme{
 			Name:           "jwt",
@@ -156,7 +162,53 @@ func NewUpdateMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.End
 		if err != nil {
 			return nil, err
 		}
-		return s.UpdateMeeting(ctx, p)
+		return s.GetMeetingSettings(ctx, p)
+	}
+}
+
+// NewUpdateMeetingBaseEndpoint returns an endpoint function that calls the
+// method "update-meeting-base" of service "Meeting Service".
+func NewUpdateMeetingBaseEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdateMeetingBasePayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.UpdateMeetingBase(ctx, p)
+	}
+}
+
+// NewUpdateMeetingSettingsEndpoint returns an endpoint function that calls the
+// method "update-meeting-settings" of service "Meeting Service".
+func NewUpdateMeetingSettingsEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdateMeetingSettingsPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.UpdateMeetingSettings(ctx, p)
 	}
 }
 

@@ -29,7 +29,7 @@ func ToRegistrantDBModel(goaRegistrant *meetingservice.Registrant) *Registrant {
 		OrgIsMember:        utils.BoolValue(goaRegistrant.OrgIsMember),
 		OrgIsProjectMember: utils.BoolValue(goaRegistrant.OrgIsProjectMember),
 		AvatarURL:          utils.StringValue(goaRegistrant.AvatarURL),
-		UserID:             utils.StringValue(goaRegistrant.UserID),
+		Username:           utils.StringValue(goaRegistrant.Username),
 	}
 
 	// Convert timestamps
@@ -70,8 +70,8 @@ func FromRegistrantDBModel(domainRegistrant *Registrant) *meetingservice.Registr
 	if domainRegistrant.AvatarURL != "" {
 		registrant.AvatarURL = utils.StringPtr(domainRegistrant.AvatarURL)
 	}
-	if domainRegistrant.UserID != "" {
-		registrant.UserID = utils.StringPtr(domainRegistrant.UserID)
+	if domainRegistrant.Username != "" {
+		registrant.Username = utils.StringPtr(domainRegistrant.Username)
 	}
 	if domainRegistrant.JobTitle != "" {
 		registrant.JobTitle = utils.StringPtr(domainRegistrant.JobTitle)
@@ -112,7 +112,7 @@ func ToRegistrantDBModelFromCreatePayload(payload *meetingservice.CreateMeetingR
 		OccurrenceID: utils.StringValue(payload.OccurrenceID),
 		OrgName:      utils.StringValue(payload.OrgName),
 		AvatarURL:    utils.StringValue(payload.AvatarURL),
-		UserID:       utils.StringValue(payload.UserID),
+		Username:     utils.StringValue(payload.Username),
 		CreatedAt:    &now,
 		UpdatedAt:    &now,
 	}
@@ -142,7 +142,7 @@ func ToRegistrantDBModelFromUpdatePayload(payload *meetingservice.UpdateMeetingR
 		OccurrenceID: utils.StringValue(payload.OccurrenceID),
 		OrgName:      utils.StringValue(payload.OrgName),
 		AvatarURL:    utils.StringValue(payload.AvatarURL),
-		UserID:       utils.StringValue(payload.UserID),
+		Username:     utils.StringValue(payload.Username),
 		CreatedAt:    existingRegistrant.CreatedAt,
 		UpdatedAt:    &now,
 	}

@@ -124,7 +124,7 @@ func TestMessageBuilder_SendIndexMeeting(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	meeting := models.Meeting{
+	meeting := models.MeetingBase{
 		UID:         "test-meeting-uid",
 		Title:       "Test Meeting",
 		ProjectUID:  "project-123",
@@ -172,7 +172,7 @@ func TestMessageBuilder_SendIndexMeeting_WithContext(t *testing.T) {
 	ctx = context.WithValue(ctx, constants.AuthorizationContextID, "Bearer token123")
 	ctx = context.WithValue(ctx, constants.PrincipalContextID, "user123")
 
-	meeting := models.Meeting{
+	meeting := models.MeetingBase{
 		UID:   "test-meeting-uid",
 		Title: "Test Meeting",
 	}
@@ -269,11 +269,11 @@ func TestMessageBuilder_SendUpdateAccessMeeting(t *testing.T) {
 
 	ctx := context.Background()
 	accessMsg := models.MeetingAccessMessage{
-		UID:       "access-meeting-uid",
-		Public:    true,
-		ParentUID: "parent-123",
-		Writers:   []string{"writer1", "writer2"},
-		Auditors:  []string{"auditor1"},
+		UID:        "access-meeting-uid",
+		Public:     true,
+		ProjectUID: "project-123",
+		Organizers: []string{"organizer1", "organizer2"},
+		Committees: []string{"committee1", "committee2"},
 	}
 
 	err := builder.SendUpdateAccessMeeting(ctx, accessMsg)
@@ -304,6 +304,25 @@ func TestMessageBuilder_SendUpdateAccessMeeting(t *testing.T) {
 	}
 	if receivedMsg.Public != accessMsg.Public {
 		t.Errorf("expected Public %t, got %t", accessMsg.Public, receivedMsg.Public)
+	}
+	if receivedMsg.ProjectUID != accessMsg.ProjectUID {
+		t.Errorf("expected ProjectUID %q, got %q", accessMsg.ProjectUID, receivedMsg.ProjectUID)
+	}
+	if len(receivedMsg.Organizers) != len(accessMsg.Organizers) {
+		t.Errorf("expected %d organizers, got %d", len(accessMsg.Organizers), len(receivedMsg.Organizers))
+	}
+	for i, organizer := range receivedMsg.Organizers {
+		if organizer != accessMsg.Organizers[i] {
+			t.Errorf("expected organizer %q, got %q", accessMsg.Organizers[i], organizer)
+		}
+	}
+	if len(receivedMsg.Committees) != len(accessMsg.Committees) {
+		t.Errorf("expected %d committees, got %d", len(accessMsg.Committees), len(receivedMsg.Committees))
+	}
+	for i, committee := range receivedMsg.Committees {
+		if committee != accessMsg.Committees[i] {
+			t.Errorf("expected committee %q, got %q", accessMsg.Committees[i], committee)
+		}
 	}
 }
 
@@ -350,7 +369,7 @@ func TestMessageBuilder_PublishErrors(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	meeting := models.Meeting{UID: "test-uid", Title: "Test"}
+	meeting := models.MeetingBase{UID: "test-uid", Title: "Test"}
 
 	// Test SendIndexMeeting error
 	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
@@ -375,5 +394,226 @@ func TestMessageBuilder_PublishErrors(t *testing.T) {
 	err = builder.SendDeleteAllAccessMeeting(ctx, "test-uid")
 	if err == nil {
 		t.Error("expected error from SendDeleteAllAccessMeeting but got none")
+	}
+
+	// Test SendIndexMeetingSettings error
+	settings := models.MeetingSettings{UID: "test-uid", Organizers: []string{"org1"}}
+	err = builder.SendIndexMeetingSettings(ctx, models.ActionCreated, settings)
+	if err == nil {
+		t.Error("expected error from SendIndexMeetingSettings but got none")
+	}
+
+	// Test SendDeleteIndexMeetingSettings error
+	err = builder.SendDeleteIndexMeetingSettings(ctx, "test-uid")
+	if err == nil {
+		t.Error("expected error from SendDeleteIndexMeetingSettings but got none")
+	}
+
+	// Test SendPutMeetingRegistrantAccess error
+	registrantMsg := models.MeetingRegistrantAccessMessage{MeetingUID: "meeting-uid", UID: "registrant-uid"}
+	err = builder.SendPutMeetingRegistrantAccess(ctx, registrantMsg)
+	if err == nil {
+		t.Error("expected error from SendPutMeetingRegistrantAccess but got none")
+	}
+
+	// Test SendRemoveMeetingRegistrantAccess error
+	err = builder.SendRemoveMeetingRegistrantAccess(ctx, registrantMsg)
+	if err == nil {
+		t.Error("expected error from SendRemoveMeetingRegistrantAccess but got none")
+	}
+}
+
+func TestMessageBuilder_SendIndexMeetingSettings(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	settings := models.MeetingSettings{
+		UID:        "test-settings-uid",
+		Organizers: []string{"organizer1", "organizer2"},
+	}
+
+	err := builder.SendIndexMeetingSettings(ctx, models.ActionCreated, settings)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	if msg.subject != models.IndexMeetingSettingsSubject {
+		t.Errorf("expected subject %q, got %q", models.IndexMeetingSettingsSubject, msg.subject)
+	}
+
+	// Parse the message to verify structure
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	if indexerMsg.Action != models.ActionCreated {
+		t.Errorf("expected action %q, got %q", models.ActionCreated, indexerMsg.Action)
+	}
+}
+
+func TestMessageBuilder_SendDeleteIndexMeetingSettings(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	settingsUID := "delete-settings-uid"
+
+	err := builder.SendDeleteIndexMeetingSettings(ctx, settingsUID)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	if msg.subject != models.IndexMeetingSettingsSubject {
+		t.Errorf("expected subject %q, got %q", models.IndexMeetingSettingsSubject, msg.subject)
+	}
+
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	if indexerMsg.Action != models.ActionDeleted {
+		t.Errorf("expected action %q, got %q", models.ActionDeleted, indexerMsg.Action)
+	}
+
+	// Check that data contains the settings UID
+	if dataStr, ok := indexerMsg.Data.(string); ok {
+		if dataStr != settingsUID {
+			t.Errorf("expected data %q, got %q", settingsUID, dataStr)
+		}
+	} else {
+		t.Errorf("expected data to be string, got %T", indexerMsg.Data)
+	}
+}
+
+func TestMessageBuilder_SendPutMeetingRegistrantAccess(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	registrantMsg := models.MeetingRegistrantAccessMessage{
+		MeetingUID: "meeting-uid-123",
+		UID:        "registrant-uid-456",
+		Username:   "john.doe",
+		Host:       false,
+	}
+
+	err := builder.SendPutMeetingRegistrantAccess(ctx, registrantMsg)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	if msg.subject != models.PutRegistrantMeetingSubject {
+		t.Errorf("expected subject %q, got %q", models.PutRegistrantMeetingSubject, msg.subject)
+	}
+
+	// Parse and verify the registrant message
+	var receivedMsg models.MeetingRegistrantAccessMessage
+	err = json.Unmarshal(msg.data, &receivedMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal registrant message: %v", err)
+		return
+	}
+
+	if receivedMsg.MeetingUID != registrantMsg.MeetingUID {
+		t.Errorf("expected MeetingUID %q, got %q", registrantMsg.MeetingUID, receivedMsg.MeetingUID)
+	}
+	if receivedMsg.UID != registrantMsg.UID {
+		t.Errorf("expected UID %q, got %q", registrantMsg.UID, receivedMsg.UID)
+	}
+	if receivedMsg.Username != registrantMsg.Username {
+		t.Errorf("expected Username %q, got %q", registrantMsg.Username, receivedMsg.Username)
+	}
+	if receivedMsg.Host != registrantMsg.Host {
+		t.Errorf("expected Host %t, got %t", registrantMsg.Host, receivedMsg.Host)
+	}
+}
+
+func TestMessageBuilder_SendRemoveMeetingRegistrantAccess(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	registrantMsg := models.MeetingRegistrantAccessMessage{
+		MeetingUID: "meeting-uid-789",
+		UID:        "registrant-uid-012",
+		Username:   "jane.smith",
+		Host:       true,
+	}
+
+	err := builder.SendRemoveMeetingRegistrantAccess(ctx, registrantMsg)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	if msg.subject != models.RemoveRegistrantMeetingSubject {
+		t.Errorf("expected subject %q, got %q", models.RemoveRegistrantMeetingSubject, msg.subject)
+	}
+
+	// Parse and verify the registrant message
+	var receivedMsg models.MeetingRegistrantAccessMessage
+	err = json.Unmarshal(msg.data, &receivedMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal registrant message: %v", err)
+		return
+	}
+
+	if receivedMsg.MeetingUID != registrantMsg.MeetingUID {
+		t.Errorf("expected MeetingUID %q, got %q", registrantMsg.MeetingUID, receivedMsg.MeetingUID)
+	}
+	if receivedMsg.UID != registrantMsg.UID {
+		t.Errorf("expected UID %q, got %q", registrantMsg.UID, receivedMsg.UID)
+	}
+	if receivedMsg.Username != registrantMsg.Username {
+		t.Errorf("expected Username %q, got %q", registrantMsg.Username, receivedMsg.Username)
+	}
+	if receivedMsg.Host != registrantMsg.Host {
+		t.Errorf("expected Host %t, got %t", registrantMsg.Host, receivedMsg.Host)
 	}
 }

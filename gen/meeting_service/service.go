@@ -21,11 +21,15 @@ type Service interface {
 	// platform will be created by
 	// this endpoint. The meeting's occurrences and registrants are managed by this
 	// service rather than the third-party platform.
-	CreateMeeting(context.Context, *CreateMeetingPayload) (res *Meeting, err error)
+	CreateMeeting(context.Context, *CreateMeetingPayload) (res *MeetingFull, err error)
 	// Get a meeting by ID
-	GetMeeting(context.Context, *GetMeetingPayload) (res *GetMeetingResult, err error)
-	// Update an existing meeting.
-	UpdateMeeting(context.Context, *UpdateMeetingPayload) (res *Meeting, err error)
+	GetMeetingBase(context.Context, *GetMeetingBasePayload) (res *GetMeetingBaseResult, err error)
+	// Get a single meeting's settings.
+	GetMeetingSettings(context.Context, *GetMeetingSettingsPayload) (res *GetMeetingSettingsResult, err error)
+	// Update an existing meeting base.
+	UpdateMeetingBase(context.Context, *UpdateMeetingBasePayload) (res *MeetingBase, err error)
+	// Update an existing meeting's settings.
+	UpdateMeetingSettings(context.Context, *UpdateMeetingSettingsPayload) (res *MeetingSettings, err error)
 	// Delete an existing meeting.
 	DeleteMeeting(context.Context, *DeleteMeetingPayload) (err error)
 	// Get all registrants for a meeting
@@ -64,7 +68,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [12]string{"get-meetings", "create-meeting", "get-meeting", "update-meeting", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "readyz", "livez"}
+var MethodNames = [14]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -138,6 +142,9 @@ type CreateMeetingPayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigPost
 }
@@ -169,7 +176,7 @@ type CreateMeetingRegistrantPayload struct {
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
-	UserID *string
+	Username *string
 }
 
 // DeleteMeetingPayload is the payload type of the Meeting Service service
@@ -200,15 +207,23 @@ type DeleteMeetingRegistrantPayload struct {
 	UID *string
 }
 
-// GetMeetingPayload is the payload type of the Meeting Service service
-// get-meeting method.
-type GetMeetingPayload struct {
+// GetMeetingBasePayload is the payload type of the Meeting Service service
+// get-meeting-base method.
+type GetMeetingBasePayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
 	// The UID of the meeting
 	UID *string
+}
+
+// GetMeetingBaseResult is the result type of the Meeting Service service
+// get-meeting-base method.
+type GetMeetingBaseResult struct {
+	Meeting *MeetingBase
+	// ETag header value
+	Etag *string
 }
 
 // GetMeetingRegistrantPayload is the payload type of the Meeting Service
@@ -252,10 +267,21 @@ type GetMeetingRegistrantsResult struct {
 	CacheControl *string
 }
 
-// GetMeetingResult is the result type of the Meeting Service service
-// get-meeting method.
-type GetMeetingResult struct {
-	Meeting *Meeting
+// GetMeetingSettingsPayload is the payload type of the Meeting Service service
+// get-meeting-settings method.
+type GetMeetingSettingsPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting
+	UID *string
+}
+
+// GetMeetingSettingsResult is the result type of the Meeting Service service
+// get-meeting-settings method.
+type GetMeetingSettingsResult struct {
+	MeetingSettings *MeetingSettings
 	// ETag header value
 	Etag *string
 }
@@ -273,7 +299,7 @@ type GetMeetingsPayload struct {
 // get-meetings method.
 type GetMeetingsResult struct {
 	// Resources found
-	Meetings []*Meeting
+	Meetings []*MeetingFull
 	// Cache control header
 	CacheControl *string
 }
@@ -285,9 +311,9 @@ type InternalServerError struct {
 	Message string
 }
 
-// Meeting is the result type of the Meeting Service service create-meeting
-// method.
-type Meeting struct {
+// MeetingBase is the result type of the Meeting Service service
+// update-meeting-base method.
+type MeetingBase struct {
 	// The UID of the meeting
 	UID *string
 	// The UID of the LF project
@@ -348,6 +374,92 @@ type Meeting struct {
 	RegistrantResponseAcceptedCount *int
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*Occurrence
+	// The date and time the resource was created
+	CreatedAt *string
+	// The date and time the resource was last updated
+	UpdatedAt *string
+}
+
+// MeetingFull is the result type of the Meeting Service service create-meeting
+// method.
+type MeetingFull struct {
+	// The UID of the meeting
+	UID *string
+	// The UID of the LF project
+	ProjectUID *string
+	// The start time of the meeting in RFC3339 format
+	StartTime *string
+	// The duration of the meeting in minutes
+	Duration *int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
+	// The title of the meeting
+	Title *string
+	// The description of the meeting
+	Description *string
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The platform name of where the meeting is hosted
+	Platform *string
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string
+	// The visibility of the meeting's existence to other users
+	Visibility *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	PublicLink *string
+	// The number of registrants that have an email delivery error with their
+	// invite. The delivery errors are counted as the last invite that was sent to
+	// the registrant, so if a registrant previously had a delivery error but not
+	// in their most recent invite received, then it does not count towards this
+	// field value.
+	EmailDeliveryErrorCount *int
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// For zoom platform meetings: the configuration for the meeting
+	ZoomConfig *ZoomConfigFull
+	// The number of registrants for the meeting
+	RegistrantCount *int
+	// The number of registrants that have declined the meeting invitation
+	RegistrantResponseDeclinedCount *int
+	// The number of registrants that have accepted the meeting invitation
+	RegistrantResponseAcceptedCount *int
+	// Array of meeting occurrences (read-only from platform API)
+	Occurrences []*Occurrence
+	// The date and time the resource was created
+	CreatedAt *string
+	// The date and time the resource was last updated
+	UpdatedAt *string
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string
+}
+
+// MeetingSettings is the result type of the Meeting Service service
+// update-meeting-settings method.
+type MeetingSettings struct {
+	// The UID of the meeting
+	UID *string
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string
 	// The date and time the resource was created
 	CreatedAt *string
 	// The date and time the resource was last updated
@@ -477,7 +589,7 @@ type Registrant struct {
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
-	UserID *string
+	Username *string
 	// The date and time the resource was created
 	CreatedAt *string
 	// The date and time the resource was last updated
@@ -491,9 +603,9 @@ type ServiceUnavailableError struct {
 	Message string
 }
 
-// UpdateMeetingPayload is the payload type of the Meeting Service service
-// update-meeting method.
-type UpdateMeetingPayload struct {
+// UpdateMeetingBasePayload is the payload type of the Meeting Service service
+// update-meeting-base method.
+type UpdateMeetingBasePayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// ETag header value
@@ -579,7 +691,23 @@ type UpdateMeetingRegistrantPayload struct {
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
-	UserID *string
+	Username *string
+}
+
+// UpdateMeetingSettingsPayload is the payload type of the Meeting Service
+// service update-meeting-settings method.
+type UpdateMeetingSettingsPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// ETag header value
+	Etag *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting
+	UID *string
+	// The organizers of the meeting. This is a list of LFIDs of the meeting
+	// organizers.
+	Organizers []string
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and

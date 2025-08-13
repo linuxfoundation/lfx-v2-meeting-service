@@ -21,14 +21,24 @@ func CreateMeetingMeetingServicePath() string {
 	return "/meetings"
 }
 
-// GetMeetingMeetingServicePath returns the URL path to the Meeting Service service get-meeting HTTP endpoint.
-func GetMeetingMeetingServicePath(uid string) string {
+// GetMeetingBaseMeetingServicePath returns the URL path to the Meeting Service service get-meeting-base HTTP endpoint.
+func GetMeetingBaseMeetingServicePath(uid string) string {
 	return fmt.Sprintf("/meetings/%v", uid)
 }
 
-// UpdateMeetingMeetingServicePath returns the URL path to the Meeting Service service update-meeting HTTP endpoint.
-func UpdateMeetingMeetingServicePath(uid string) string {
+// GetMeetingSettingsMeetingServicePath returns the URL path to the Meeting Service service get-meeting-settings HTTP endpoint.
+func GetMeetingSettingsMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/meetings/%v/settings", uid)
+}
+
+// UpdateMeetingBaseMeetingServicePath returns the URL path to the Meeting Service service update-meeting-base HTTP endpoint.
+func UpdateMeetingBaseMeetingServicePath(uid string) string {
 	return fmt.Sprintf("/meetings/%v", uid)
+}
+
+// UpdateMeetingSettingsMeetingServicePath returns the URL path to the Meeting Service service update-meeting-settings HTTP endpoint.
+func UpdateMeetingSettingsMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/meetings/%v/settings", uid)
 }
 
 // DeleteMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-meeting HTTP endpoint.

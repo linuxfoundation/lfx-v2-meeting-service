@@ -18,6 +18,7 @@ DOCKER_TAG=latest
 HELM_CHART_PATH=./charts/lfx-v2-meeting-service
 HELM_RELEASE_NAME=lfx-v2-meeting-service
 HELM_NAMESPACE=lfx
+HELM_VALUES_FILE=./charts/lfx-v2-meeting-service/values.local.yaml
 
 # Build variables
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
@@ -29,7 +30,7 @@ LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X 
 TEST_FLAGS=-v -race -cover
 TEST_TIMEOUT=5m
 
-.PHONY: all help deps apigen build run debug test test-verbose test-coverage clean lint fmt check verify docker helm-install helm-uninstall
+.PHONY: all help deps apigen build run debug test test-verbose test-coverage clean lint fmt check verify docker-build helm-install helm-install-local helm-templates helm-templates-local helm-uninstall
 
 # Default target
 all: clean deps apigen fmt lint test build
@@ -53,6 +54,9 @@ help:
 	@echo "  verify         - Verify API generation is up to date"
 	@echo "  docker-build   - Build Docker image"
 	@echo "  helm-install   - Install Helm chart"
+	@echo "  helm-install-local - Install Helm chart with local values file"
+	@echo "  helm-templates   - Print templates for Helm chart"
+	@echo "  helm-templates-local - Print templates for Helm chart with local values file"
 	@echo "  helm-uninstall - Uninstall Helm chart"
 
 # Install dependencies
@@ -162,10 +166,22 @@ helm-install:
 	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE)
 	@echo "==> Helm chart installed: $(HELM_RELEASE_NAME)"
 
+# Install Helm chart with local values file
+helm-install-local:
+	@echo "==> Installing Helm chart with local values file..."
+	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --values $(HELM_VALUES_FILE)
+	@echo "==> Helm chart installed: $(HELM_RELEASE_NAME)"
+
 # Print templates for Helm chart
 helm-templates:
 	@echo "==> Printing templates for Helm chart..."
 	helm template $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE)
+	@echo "==> Templates printed for Helm chart: $(HELM_RELEASE_NAME)"
+
+# Print templates for Helm chart with local values file
+helm-templates-local:
+	@echo "==> Printing templates for Helm chart with local values file..."
+	helm template $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --values $(HELM_VALUES_FILE)
 	@echo "==> Templates printed for Helm chart: $(HELM_RELEASE_NAME)"
 
 # Uninstall Helm chart

@@ -25,13 +25,21 @@ type Client struct {
 	// create-meeting endpoint.
 	CreateMeetingDoer goahttp.Doer
 
-	// GetMeeting Doer is the HTTP client used to make requests to the get-meeting
-	// endpoint.
-	GetMeetingDoer goahttp.Doer
+	// GetMeetingBase Doer is the HTTP client used to make requests to the
+	// get-meeting-base endpoint.
+	GetMeetingBaseDoer goahttp.Doer
 
-	// UpdateMeeting Doer is the HTTP client used to make requests to the
-	// update-meeting endpoint.
-	UpdateMeetingDoer goahttp.Doer
+	// GetMeetingSettings Doer is the HTTP client used to make requests to the
+	// get-meeting-settings endpoint.
+	GetMeetingSettingsDoer goahttp.Doer
+
+	// UpdateMeetingBase Doer is the HTTP client used to make requests to the
+	// update-meeting-base endpoint.
+	UpdateMeetingBaseDoer goahttp.Doer
+
+	// UpdateMeetingSettings Doer is the HTTP client used to make requests to the
+	// update-meeting-settings endpoint.
+	UpdateMeetingSettingsDoer goahttp.Doer
 
 	// DeleteMeeting Doer is the HTTP client used to make requests to the
 	// delete-meeting endpoint.
@@ -86,8 +94,10 @@ func NewClient(
 	return &Client{
 		GetMeetingsDoer:             doer,
 		CreateMeetingDoer:           doer,
-		GetMeetingDoer:              doer,
-		UpdateMeetingDoer:           doer,
+		GetMeetingBaseDoer:          doer,
+		GetMeetingSettingsDoer:      doer,
+		UpdateMeetingBaseDoer:       doer,
+		UpdateMeetingSettingsDoer:   doer,
 		DeleteMeetingDoer:           doer,
 		GetMeetingRegistrantsDoer:   doer,
 		CreateMeetingRegistrantDoer: doer,
@@ -152,15 +162,15 @@ func (c *Client) CreateMeeting() goa.Endpoint {
 	}
 }
 
-// GetMeeting returns an endpoint that makes HTTP requests to the Meeting
-// Service service get-meeting server.
-func (c *Client) GetMeeting() goa.Endpoint {
+// GetMeetingBase returns an endpoint that makes HTTP requests to the Meeting
+// Service service get-meeting-base server.
+func (c *Client) GetMeetingBase() goa.Endpoint {
 	var (
-		encodeRequest  = EncodeGetMeetingRequest(c.encoder)
-		decodeResponse = DecodeGetMeetingResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeGetMeetingBaseRequest(c.encoder)
+		decodeResponse = DecodeGetMeetingBaseResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v any) (any, error) {
-		req, err := c.BuildGetMeetingRequest(ctx, v)
+		req, err := c.BuildGetMeetingBaseRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -168,23 +178,23 @@ func (c *Client) GetMeeting() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.GetMeetingDoer.Do(req)
+		resp, err := c.GetMeetingBaseDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting", err)
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-base", err)
 		}
 		return decodeResponse(resp)
 	}
 }
 
-// UpdateMeeting returns an endpoint that makes HTTP requests to the Meeting
-// Service service update-meeting server.
-func (c *Client) UpdateMeeting() goa.Endpoint {
+// GetMeetingSettings returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-meeting-settings server.
+func (c *Client) GetMeetingSettings() goa.Endpoint {
 	var (
-		encodeRequest  = EncodeUpdateMeetingRequest(c.encoder)
-		decodeResponse = DecodeUpdateMeetingResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeGetMeetingSettingsRequest(c.encoder)
+		decodeResponse = DecodeGetMeetingSettingsResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v any) (any, error) {
-		req, err := c.BuildUpdateMeetingRequest(ctx, v)
+		req, err := c.BuildGetMeetingSettingsRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -192,9 +202,57 @@ func (c *Client) UpdateMeeting() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.UpdateMeetingDoer.Do(req)
+		resp, err := c.GetMeetingSettingsDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("Meeting Service", "update-meeting", err)
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-settings", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateMeetingBase returns an endpoint that makes HTTP requests to the
+// Meeting Service service update-meeting-base server.
+func (c *Client) UpdateMeetingBase() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateMeetingBaseRequest(c.encoder)
+		decodeResponse = DecodeUpdateMeetingBaseResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateMeetingBaseRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateMeetingBaseDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-meeting-base", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateMeetingSettings returns an endpoint that makes HTTP requests to the
+// Meeting Service service update-meeting-settings server.
+func (c *Client) UpdateMeetingSettings() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateMeetingSettingsRequest(c.encoder)
+		decodeResponse = DecodeUpdateMeetingSettingsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateMeetingSettingsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateMeetingSettingsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-meeting-settings", err)
 		}
 		return decodeResponse(resp)
 	}

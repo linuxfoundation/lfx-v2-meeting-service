@@ -91,7 +91,11 @@ func (m *MessageBuilder) sendIndexerMessage(ctx context.Context, subject string,
 		return err
 	}
 
-	slog.DebugContext(ctx, "constructed indexer message", "subject", subject, "message", string(messageBytes))
+	slog.DebugContext(ctx, "constructed indexer message",
+		"subject", subject,
+		"action", action,
+		"tags_count", len(tags),
+	)
 
 	return m.sendMessage(ctx, subject, messageBytes)
 }
@@ -102,7 +106,7 @@ func (m *MessageBuilder) setIndexerTags(tags ...string) []string {
 }
 
 // SendIndexMeeting sends the message to the NATS server for the meeting indexing.
-func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.Meeting) error {
+func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.MeetingBase) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
@@ -119,6 +123,42 @@ func (m *MessageBuilder) SendDeleteIndexMeeting(ctx context.Context, data string
 	return m.sendIndexerMessage(ctx, models.IndexMeetingSubject, models.ActionDeleted, []byte(data), nil)
 }
 
+// SendIndexMeetingSettings sends the message to the NATS server for the meeting settings indexing.
+func (m *MessageBuilder) SendIndexMeetingSettings(ctx context.Context, action models.MessageAction, data models.MeetingSettings) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.UID)
+
+	return m.sendIndexerMessage(ctx, models.IndexMeetingSettingsSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexMeetingSettings sends the message to the NATS server for the meeting settings indexing.
+func (m *MessageBuilder) SendDeleteIndexMeetingSettings(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexMeetingSettingsSubject, models.ActionDeleted, []byte(data), nil)
+}
+
+// SendIndexMeeting sends the message to the NATS server for the meeting indexing.
+func (m *MessageBuilder) SendIndexMeetingRegistrant(ctx context.Context, action models.MessageAction, data models.Registrant) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.UID, data.MeetingUID, data.FirstName, data.LastName, data.Email, data.Username)
+
+	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexMeetingRegistrant sends the message to the NATS server for the meeting registrant indexing.
+func (m *MessageBuilder) SendDeleteIndexMeetingRegistrant(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, models.ActionDeleted, []byte(data), nil)
+}
+
 // SendUpdateAccessMeeting sends the message to the NATS server for the access control updates.
 func (m *MessageBuilder) SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error {
 	dataBytes, err := json.Marshal(data)
@@ -133,4 +173,26 @@ func (m *MessageBuilder) SendUpdateAccessMeeting(ctx context.Context, data model
 // SendDeleteAllAccessMeeting sends the message to the NATS server for the access control deletion.
 func (m *MessageBuilder) SendDeleteAllAccessMeeting(ctx context.Context, data string) error {
 	return m.sendMessage(ctx, models.DeleteAllAccessMeetingSubject, []byte(data))
+}
+
+// SendPutMeetingRegistrantAccess sends a message about a new registrant being added to a meeting.
+func (m *MessageBuilder) SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.PutRegistrantMeetingSubject, dataBytes)
+}
+
+// SendRemoveMeetingRegistrantAccess sends a message about a registrant being removed from a meeting.
+func (m *MessageBuilder) SendRemoveMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.RemoveRegistrantMeetingSubject, dataBytes)
 }
