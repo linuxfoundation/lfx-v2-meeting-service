@@ -225,3 +225,40 @@ func (m *MockRegistrantRepository) ListByEmail(ctx context.Context, email string
 func NewMockRegistrantRepository(t interface{ Cleanup(func()) }) *MockRegistrantRepository {
 	return &MockRegistrantRepository{}
 }
+
+// MockPlatformProvider implements PlatformProvider for testing
+type MockPlatformProvider struct {
+	mock.Mock
+}
+
+func (m *MockPlatformProvider) CreateMeeting(ctx context.Context, meeting *models.MeetingBase) (string, string, error) {
+	args := m.Called(ctx, meeting)
+	return args.String(0), args.String(1), args.Error(2)
+}
+
+func (m *MockPlatformProvider) UpdateMeeting(ctx context.Context, platformMeetingID string, meeting *models.MeetingBase) error {
+	args := m.Called(ctx, platformMeetingID, meeting)
+	return args.Error(0)
+}
+
+func (m *MockPlatformProvider) DeleteMeeting(ctx context.Context, platformMeetingID string) error {
+	args := m.Called(ctx, platformMeetingID)
+	return args.Error(0)
+}
+
+// MockPlatformRegistry implements PlatformRegistry for testing
+type MockPlatformRegistry struct {
+	mock.Mock
+}
+
+func (m *MockPlatformRegistry) GetProvider(platform string) (PlatformProvider, error) {
+	args := m.Called(platform)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(PlatformProvider), args.Error(1)
+}
+
+func (m *MockPlatformRegistry) RegisterProvider(platform string, provider PlatformProvider) {
+	m.Called(platform, provider)
+}

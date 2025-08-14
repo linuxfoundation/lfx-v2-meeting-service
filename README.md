@@ -35,7 +35,15 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
    make apigen
    ```
 
-3. **Run the Service**
+3. **Configure Environment (Optional)**
+
+   ```bash
+   # Copy the example environment file and configure it
+   cp .env.example .env
+   # Edit .env with your local settings
+   ```
+
+4. **Run the Service**
 
    ```bash
    # Run with default settings
@@ -356,6 +364,16 @@ The service can be configured via environment variables:
 | `JWT_AUDIENCE` | JWT token audience | `http://lfx-api.k8s.orb.local` |
 | `SKIP_ETAG_VALIDATION` | Skip ETag validation (dev only) | `false` |
 | `JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL` | Mock principal for local dev (dev only) | `""` |
+
+### Zoom Integration Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ZOOM_ACCOUNT_ID` | Zoom OAuth Server-to-Server Account ID | `""` |
+| `ZOOM_CLIENT_ID` | Zoom OAuth App Client ID | `""` |
+| `ZOOM_CLIENT_SECRET` | Zoom OAuth App Client Secret | `""` |
+
+When all three Zoom variables are configured, the service will automatically integrate with Zoom API for meetings where `platform="Zoom"`.
 
 ### Development Environment Variables
 

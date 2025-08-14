@@ -430,3 +430,92 @@ func TestMeetingSettingsConversionRoundTrip(t *testing.T) {
 			originalSettings.UpdatedAt, backToDomain.UpdatedAt)
 	}
 }
+
+func TestMergeZoomConfig(t *testing.T) {
+	tests := []struct {
+		name     string
+		existing *ZoomConfig
+		payload  *meetingservice.ZoomConfigPost
+		expected *ZoomConfig
+	}{
+		{
+			name:     "both nil",
+			existing: nil,
+			payload:  nil,
+			expected: nil,
+		},
+		{
+			name:     "existing nil, payload provided",
+			existing: nil,
+			payload: &meetingservice.ZoomConfigPost{
+				AiCompanionEnabled:       utils.BoolPtr(true),
+				AiSummaryRequireApproval: utils.BoolPtr(false),
+			},
+			expected: &ZoomConfig{
+				MeetingID:                "",
+				AICompanionEnabled:       true,
+				AISummaryRequireApproval: false,
+			},
+		},
+		{
+			name: "existing provided, payload nil",
+			existing: &ZoomConfig{
+				MeetingID:                "12345",
+				AICompanionEnabled:       true,
+				AISummaryRequireApproval: false,
+			},
+			payload: nil,
+			expected: &ZoomConfig{
+				MeetingID:                "12345",
+				AICompanionEnabled:       true,
+				AISummaryRequireApproval: false,
+			},
+		},
+		{
+			name: "merge existing with payload - preserve MeetingID",
+			existing: &ZoomConfig{
+				MeetingID:                "zoom-meeting-123",
+				AICompanionEnabled:       false,
+				AISummaryRequireApproval: true,
+			},
+			payload: &meetingservice.ZoomConfigPost{
+				AiCompanionEnabled:       utils.BoolPtr(true),
+				AiSummaryRequireApproval: utils.BoolPtr(false),
+			},
+			expected: &ZoomConfig{
+				MeetingID:                "zoom-meeting-123", // Should be preserved
+				AICompanionEnabled:       true,               // Should be updated
+				AISummaryRequireApproval: false,              // Should be updated
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := mergeZoomConfig(tt.existing, tt.payload)
+
+			if tt.expected == nil {
+				if result != nil {
+					t.Errorf("expected nil result, got %+v", result)
+				}
+				return
+			}
+
+			if result == nil {
+				t.Fatalf("expected non-nil result, got nil")
+			}
+
+			if result.MeetingID != tt.expected.MeetingID {
+				t.Errorf("MeetingID mismatch: expected %q, got %q", tt.expected.MeetingID, result.MeetingID)
+			}
+
+			if result.AICompanionEnabled != tt.expected.AICompanionEnabled {
+				t.Errorf("AICompanionEnabled mismatch: expected %v, got %v", tt.expected.AICompanionEnabled, result.AICompanionEnabled)
+			}
+
+			if result.AISummaryRequireApproval != tt.expected.AISummaryRequireApproval {
+				t.Errorf("AISummaryRequireApproval mismatch: expected %v, got %v", tt.expected.AISummaryRequireApproval, result.AISummaryRequireApproval)
+			}
+		})
+	}
+}

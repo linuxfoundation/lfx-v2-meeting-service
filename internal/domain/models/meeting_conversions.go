@@ -336,7 +336,7 @@ func ToMeetingBaseDBModelFromUpdatePayload(payload *meetingservice.UpdateMeeting
 		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
-		ZoomConfig:           toDBZoomConfigFromPost(payload.ZoomConfig),
+		ZoomConfig:           mergeZoomConfig(existingMeeting.ZoomConfig, payload.ZoomConfig),
 		CreatedAt:            existingMeeting.CreatedAt,
 		UpdatedAt:            &now,
 	}
@@ -355,6 +355,32 @@ func toDBZoomConfigFromPost(z *meetingservice.ZoomConfigPost) *ZoomConfig {
 		MeetingID:                "", // TODO: replace with actual zoom meeting ID once we have zoom integration
 		AICompanionEnabled:       utils.BoolValue(z.AiCompanionEnabled),
 		AISummaryRequireApproval: utils.BoolValue(z.AiSummaryRequireApproval),
+	}
+}
+
+// mergeZoomConfig merges the existing ZoomConfig with updates from the payload,
+// preserving the MeetingID from the existing config
+func mergeZoomConfig(existing *ZoomConfig, payload *meetingservice.ZoomConfigPost) *ZoomConfig {
+	// If there's no existing config and no payload, return nil
+	if existing == nil && payload == nil {
+		return nil
+	}
+
+	// If there's no existing config but there's a payload, create new config
+	if existing == nil {
+		return toDBZoomConfigFromPost(payload)
+	}
+
+	// If there's existing config but no payload, preserve existing config
+	if payload == nil {
+		return existing
+	}
+
+	// Merge existing config with payload updates, preserving MeetingID
+	return &ZoomConfig{
+		MeetingID:                existing.MeetingID, // Preserve existing MeetingID
+		AICompanionEnabled:       utils.BoolValue(payload.AiCompanionEnabled),
+		AISummaryRequireApproval: utils.BoolValue(payload.AiSummaryRequireApproval),
 	}
 }
 

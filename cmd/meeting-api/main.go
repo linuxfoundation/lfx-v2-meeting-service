@@ -26,7 +26,9 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/platform"
 	store "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/store"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/middleware"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
@@ -64,6 +66,10 @@ func main() {
 	service := service.NewMeetingsService(jwtAuth, service.ServiceConfig{
 		SkipEtagValidation: env.SkipEtagValidation,
 	})
+
+	// Initialize platform registry and Zoom integration
+	setupPlatformProviders(env, service)
+
 	svc := NewMeetingsAPI(service)
 
 	gracefulCloseWG := sync.WaitGroup{}
@@ -122,11 +128,33 @@ func parseFlags(defaultPort string) flags {
 	}
 }
 
+// zoomEnvironment holds Zoom-specific configuration
+type zoomEnvironment struct {
+	AccountID    string
+	ClientID     string
+	ClientSecret string
+}
+
+// IsConfigured returns true if all required Zoom credentials are provided
+func (z zoomEnvironment) IsConfigured() bool {
+	return z.AccountID != "" && z.ClientID != "" && z.ClientSecret != ""
+}
+
+// ToZoomConfig converts the environment to a zoom.Config
+func (z zoomEnvironment) ToZoomConfig() zoom.Config {
+	return zoom.Config{
+		AccountID:    z.AccountID,
+		ClientID:     z.ClientID,
+		ClientSecret: z.ClientSecret,
+	}
+}
+
 // environment are the environment variables for the meeting service.
 type environment struct {
 	NatsURL            string
 	Port               string
 	SkipEtagValidation bool
+	Zoom               zoomEnvironment
 }
 
 func parseEnv() environment {
@@ -143,10 +171,19 @@ func parseEnv() environment {
 	if skipEtagValidationStr == "true" {
 		skipEtagValidation = true
 	}
+
+	// Parse Zoom configuration from environment
+	zoom := zoomEnvironment{
+		AccountID:    os.Getenv("ZOOM_ACCOUNT_ID"),
+		ClientID:     os.Getenv("ZOOM_CLIENT_ID"),
+		ClientSecret: os.Getenv("ZOOM_CLIENT_SECRET"),
+	}
+
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,
 		SkipEtagValidation: skipEtagValidation,
+		Zoom:               zoom,
 	}
 }
 
@@ -282,6 +319,30 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 	}
 
 	return natsConn, nil
+}
+
+// setupPlatformProviders initializes the platform registry and configures platform providers
+func setupPlatformProviders(env environment, svc *service.MeetingsService) {
+	// Create platform registry
+	platformRegistry := platform.NewRegistry()
+
+	// Configure Zoom integration if credentials are provided
+	if env.Zoom.IsConfigured() {
+		zoomClient := zoom.NewClient(env.Zoom.ToZoomConfig())
+		platformRegistry.RegisterProvider(models.PlatformZoom, zoomClient)
+
+		slog.Info("Zoom integration configured",
+			"account_id", env.Zoom.AccountID,
+			"client_id", env.Zoom.ClientID)
+	} else {
+		slog.Warn("Zoom integration not configured - missing required environment variables",
+			"has_account_id", env.Zoom.AccountID != "",
+			"has_client_id", env.Zoom.ClientID != "",
+			"has_client_secret", env.Zoom.ClientSecret != "")
+	}
+
+	// Set the platform registry in the service
+	svc.PlatformRegistry = platformRegistry
 }
 
 // getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.

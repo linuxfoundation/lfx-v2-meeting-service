@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+// Platform constants for meeting platforms
+const (
+	PlatformZoom = "Zoom"
+)
+
 // MeetingBase is the key-value store representation of a meeting base.
 type MeetingBase struct {
 	UID                             string       `json:"uid"`
