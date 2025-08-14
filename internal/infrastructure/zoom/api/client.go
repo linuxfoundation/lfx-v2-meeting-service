@@ -1,7 +1,7 @@
 // Copyright The Linux Foundation and each contributor to LFX.
 // SPDX-License-Identifier: MIT
 
-package zoom
+package api
 
 import (
 	"bytes"
@@ -30,11 +30,9 @@ const (
 
 // Client represents a Zoom API client
 type Client struct {
-	httpClient     *http.Client
-	config         Config
-	oauthConfig    *clientcredentials.Config
-	cachedUser     *ZoomUser
-	userCacheValid bool
+	httpClient  *http.Client
+	config      Config
+	oauthConfig *clientcredentials.Config
 }
 
 // Config holds the configuration for the Zoom client

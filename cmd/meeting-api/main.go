@@ -29,6 +29,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/platform"
 	store "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/store"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/api"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/middleware"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
@@ -140,9 +141,9 @@ func (z zoomEnvironment) IsConfigured() bool {
 	return z.AccountID != "" && z.ClientID != "" && z.ClientSecret != ""
 }
 
-// ToZoomConfig converts the environment to a zoom.Config
-func (z zoomEnvironment) ToZoomConfig() zoom.Config {
-	return zoom.Config{
+// ToZoomConfig converts the environment to an api.Config
+func (z zoomEnvironment) ToZoomConfig() api.Config {
+	return api.Config{
 		AccountID:    z.AccountID,
 		ClientID:     z.ClientID,
 		ClientSecret: z.ClientSecret,
@@ -328,8 +329,9 @@ func setupPlatformProviders(env environment, svc *service.MeetingsService) {
 
 	// Configure Zoom integration if credentials are provided
 	if env.Zoom.IsConfigured() {
-		zoomClient := zoom.NewClient(env.Zoom.ToZoomConfig())
-		platformRegistry.RegisterProvider(models.PlatformZoom, zoomClient)
+		zoomClient := api.NewClient(env.Zoom.ToZoomConfig())
+		zoomProvider := zoom.NewZoomProvider(zoomClient)
+		platformRegistry.RegisterProvider(models.PlatformZoom, zoomProvider)
 
 		slog.Info("Zoom integration configured",
 			"account_id", env.Zoom.AccountID,

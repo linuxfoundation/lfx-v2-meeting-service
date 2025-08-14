@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/api"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -34,25 +35,7 @@ func (m *MockClient) DeleteMeeting(ctx context.Context, meetingID string) error 
 }
 
 // GetUsers mocks the GetUsers method
-func (m *MockClient) GetUsers(ctx context.Context) ([]ZoomUser, error) {
+func (m *MockClient) GetUsers(ctx context.Context) ([]api.ZoomUser, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]ZoomUser), args.Error(1)
-}
-
-// GetFirstAvailableUser mocks the GetFirstAvailableUser method
-func (m *MockClient) GetFirstAvailableUser(ctx context.Context) (*ZoomUser, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*ZoomUser), args.Error(1)
-}
-
-// GetCachedUser mocks the GetCachedUser method
-func (m *MockClient) GetCachedUser(ctx context.Context) (*ZoomUser, error) {
-	args := m.Called(ctx)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*ZoomUser), args.Error(1)
+	return args.Get(0).([]api.ZoomUser), args.Error(1)
 }
