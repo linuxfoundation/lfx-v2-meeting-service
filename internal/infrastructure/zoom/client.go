@@ -24,6 +24,8 @@ const (
 	BaseURL = "https://api.zoom.us/v2"
 	// AuthURL is the OAuth token endpoint
 	AuthURL = "https://zoom.us/oauth/token"
+	// DefaultClientTimeout is the default HTTP client timeout for Zoom API requests
+	DefaultClientTimeout = 30 * time.Second
 )
 
 // Client represents a Zoom API client
@@ -44,15 +46,21 @@ type Config struct {
 	BaseURL string
 	// Optional: override auth URL for testing
 	AuthURL string
+	// Optional: override timeout for HTTP requests
+	Timeout time.Duration
 }
 
 // NewClient creates a new Zoom API client
 func NewClient(config Config) *Client {
+	// Set defaults if not provided
 	if config.BaseURL == "" {
 		config.BaseURL = BaseURL
 	}
 	if config.AuthURL == "" {
 		config.AuthURL = AuthURL
+	}
+	if config.Timeout == 0 {
+		config.Timeout = DefaultClientTimeout
 	}
 
 	// Set up OAuth2 client credentials config for Zoom
@@ -70,7 +78,7 @@ func NewClient(config Config) *Client {
 
 	return &Client{
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: config.Timeout,
 		},
 		config:      config,
 		oauthConfig: oauthConfig,
@@ -83,7 +91,7 @@ func (c *Client) getAuthenticatedClient(ctx context.Context) *http.Client {
 }
 
 // doRequest performs an authenticated HTTP request to the Zoom API
-func (c *Client) doRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
+func (c *Client) doRequest(ctx context.Context, method, path string, body any) (*http.Response, error) {
 	startTime := time.Now()
 
 	var bodyReader io.Reader
