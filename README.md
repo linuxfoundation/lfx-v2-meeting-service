@@ -223,6 +223,53 @@ When modifying the API:
    make test
    ```
 
+#### Zoom Integration Development
+
+The Zoom integration follows a layered architecture pattern:
+
+**Adding New Zoom API Endpoints:**
+
+1. **Add API Methods** in `internal/infrastructure/zoom/api/`:
+   - Add new methods to appropriate API client interfaces
+   - Implement the methods with proper error handling
+   - Add corresponding mock implementations for testing
+
+2. **Update Provider Layer** in `internal/infrastructure/zoom/provider.go`:
+   - Add business logic methods that orchestrate API calls
+   - Handle Zoom-specific data transformations
+   - Implement domain interfaces
+
+3. **Add Tests**:
+
+   ```bash
+   # Test the new API methods
+   go test ./internal/infrastructure/zoom/api/...
+   
+   # Test the provider integration
+   go test ./internal/infrastructure/zoom/...
+   ```
+
+**Zoom Package Structure:**
+
+```text
+internal/infrastructure/zoom/
+├── api/                    # Low-level Zoom API clients
+│   ├── client.go          # HTTP client and auth
+│   ├── meetings.go        # Meetings API endpoints
+│   ├── users.go           # Users API endpoints
+│   └── mocks/             # Mock implementations
+├── provider.go            # Business logic layer
+└── provider_test.go       # Integration tests
+```
+
+**Environment Variables:**
+
+- `ZOOM_ACCOUNT_ID`: OAuth Server-to-Server Account ID
+- `ZOOM_CLIENT_ID`: OAuth App Client ID  
+- `ZOOM_CLIENT_SECRET`: OAuth App Client Secret
+
+For local development, copy `.env.example` to `.env` and fill in your Zoom credentials from 1Password.
+
 ### Available Make Targets
 
 | Target | Description |
@@ -315,6 +362,13 @@ make helm-install
 helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --namespace lfx \
   --values custom-values.yaml
+
+# Install with Zoom integration
+helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
+  --namespace lfx \
+  --set zoom.accountId="your-zoom-account-id" \
+  --set zoom.clientId="your-zoom-client-id" \
+  --set zoom.clientSecret="your-zoom-client-secret"
 
 # View templates
 make helm-templates
