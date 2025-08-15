@@ -49,10 +49,6 @@ type CreateMeetingRequestBody struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
 	// Whether transcription is enabled for the meeting
@@ -101,10 +97,6 @@ type UpdateMeetingBaseRequestBody struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
 	// Whether transcription is enabled for the meeting
@@ -218,6 +210,10 @@ type CreateMeetingResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
@@ -295,6 +291,10 @@ type UpdateMeetingBaseResponseBody struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
@@ -939,6 +939,10 @@ type MeetingFullResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
@@ -1044,6 +1048,10 @@ type CommitteeResponseBody struct {
 type ZoomConfigFullResponseBody struct {
 	// The ID of the created meeting in Zoom
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// The zoom-defined passcode for the meeting. Required if joining via dial-in,
+	// or by clicking 'join meeting' in the zoom client & putting in the meeting id
+	// and passcode.
+	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// For zoom platform meetings: whether Zoom AI companion is enabled
 	AiCompanionEnabled *bool `form:"ai_companion_enabled,omitempty" json:"ai_companion_enabled,omitempty" xml:"ai_companion_enabled,omitempty"`
 	// For zoom platform meetings: whether AI summary approval is required
@@ -1110,6 +1118,10 @@ type MeetingBaseResponseBody struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
@@ -1302,6 +1314,7 @@ func NewCreateMeetingResponseBody(res *meetingservice.MeetingFull) *CreateMeetin
 		Visibility:                      res.Visibility,
 		Restricted:                      res.Restricted,
 		ArtifactVisibility:              res.ArtifactVisibility,
+		JoinURL:                         res.JoinURL,
 		PublicLink:                      res.PublicLink,
 		EmailDeliveryErrorCount:         res.EmailDeliveryErrorCount,
 		RecordingEnabled:                res.RecordingEnabled,
@@ -1357,6 +1370,7 @@ func NewGetMeetingBaseResponseBody(res *meetingservice.GetMeetingBaseResult) *Ge
 		Visibility:                      res.Meeting.Visibility,
 		Restricted:                      res.Meeting.Restricted,
 		ArtifactVisibility:              res.Meeting.ArtifactVisibility,
+		JoinURL:                         res.Meeting.JoinURL,
 		PublicLink:                      res.Meeting.PublicLink,
 		EmailDeliveryErrorCount:         res.Meeting.EmailDeliveryErrorCount,
 		RecordingEnabled:                res.Meeting.RecordingEnabled,
@@ -1425,6 +1439,7 @@ func NewUpdateMeetingBaseResponseBody(res *meetingservice.MeetingBase) *UpdateMe
 		Visibility:                      res.Visibility,
 		Restricted:                      res.Restricted,
 		ArtifactVisibility:              res.ArtifactVisibility,
+		JoinURL:                         res.JoinURL,
 		PublicLink:                      res.PublicLink,
 		EmailDeliveryErrorCount:         res.EmailDeliveryErrorCount,
 		RecordingEnabled:                res.RecordingEnabled,
@@ -2099,7 +2114,6 @@ func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, be
 		Visibility:           body.Visibility,
 		Restricted:           body.Restricted,
 		ArtifactVisibility:   body.ArtifactVisibility,
-		PublicLink:           body.PublicLink,
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
@@ -2166,7 +2180,6 @@ func NewUpdateMeetingBasePayload(body *UpdateMeetingBaseRequestBody, uid string,
 		Visibility:           body.Visibility,
 		Restricted:           body.Restricted,
 		ArtifactVisibility:   body.ArtifactVisibility,
-		PublicLink:           body.PublicLink,
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,

@@ -9,17 +9,30 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 )
 
+// CreateMeetingResult contains the results from creating a meeting on an external platform
+type CreateMeetingResult struct {
+	PlatformMeetingID string
+	JoinURL           string
+	Passcode          string
+}
+
 // PlatformProvider defines the interface for external meeting platform integrations
 type PlatformProvider interface {
 	// CreateMeeting creates a meeting on the external platform
-	// Returns the platform-specific meeting ID and join URL
-	CreateMeeting(ctx context.Context, meeting *models.MeetingBase) (platformMeetingID string, joinURL string, err error)
+	// Returns comprehensive meeting creation results
+	CreateMeeting(ctx context.Context, meeting *models.MeetingBase) (*CreateMeetingResult, error)
 
 	// UpdateMeeting updates an existing meeting on the external platform
 	UpdateMeeting(ctx context.Context, platformMeetingID string, meeting *models.MeetingBase) error
 
 	// DeleteMeeting deletes a meeting from the external platform
 	DeleteMeeting(ctx context.Context, platformMeetingID string) error
+
+	// StorePlatformData stores platform-specific data in the meeting model after creation
+	StorePlatformData(meeting *models.MeetingBase, result *CreateMeetingResult)
+
+	// GetPlatformMeetingID retrieves the platform meeting ID from the meeting model
+	GetPlatformMeetingID(meeting *models.MeetingBase) string
 }
 
 // PlatformRegistry manages platform providers

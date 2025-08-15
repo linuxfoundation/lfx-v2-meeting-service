@@ -24,7 +24,6 @@ var CreateMeetingPayload = Type("CreateMeetingPayload", func() {
 	VisibilityAttribute()
 	RestrictedAttribute()
 	ArtifactVisibilityAttribute()
-	PublicLinkAttribute()
 	RecordingEnabledAttribute()
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
@@ -51,7 +50,6 @@ var UpdateMeetingPayload = Type("UpdateMeetingPayload", func() {
 	VisibilityAttribute()
 	RestrictedAttribute()
 	ArtifactVisibilityAttribute()
-	PublicLinkAttribute()
 	RecordingEnabledAttribute()
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
@@ -89,6 +87,7 @@ func MeetingBaseAttributes() {
 	VisibilityAttribute()
 	RestrictedAttribute()
 	ArtifactVisibilityAttribute()
+	JoinURLAttribute()
 	PublicLinkAttribute()
 	EmailDeliveryErrorCountAttribute()
 	RecordingEnabledAttribute()
@@ -305,9 +304,20 @@ func ArtifactVisibilityAttribute() {
 	})
 }
 
-// PublicLinkAttribute is the DSL attribute for public link.
+// PublicLinkAttribute is the DSL attribute for public link. It is a read-only attribute.
+func JoinURLAttribute() {
+	Attribute("join_url", String, func() {
+		Description("The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')")
+		Format(FormatURI)
+	})
+}
+
+// PublicLinkAttribute is the DSL attribute for public link. It is a read-only attribute.
 func PublicLinkAttribute() {
-	Attribute("public_link", String, "The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')")
+	Attribute("public_link", String, func() {
+		Description("The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')")
+		Format(FormatURI)
+	})
 }
 
 // PasswordAttribute is the DSL attribute for password.
@@ -418,7 +428,8 @@ var ZoomConfigPost = Type("ZoomConfigPost", func() {
 // ZoomConfigFull represents the meeting attributes specific to Zoom platform that are either writable or read-only.
 var ZoomConfigFull = Type("ZoomConfigFull", func() {
 	Description("Meeting attributes specific to Zoom platform that contain both writable and read-only attributes")
-	ZoomMeetingIDAttribute() // Read-only attribute
+	ZoomMeetingIDAttribute()       // Read-only attribute
+	ZoomMeetingPasscodeAttribute() // Read-only attribute
 	ZoomAICompanionEnabledAttribute()
 	ZoomAISummaryRequireApprovalAttribute() // This relates to approvals in the LFX system about Zoom meeting AI summaries.
 })

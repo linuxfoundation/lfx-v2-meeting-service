@@ -64,22 +64,23 @@ type RecurrenceSettings struct {
 
 // MeetingSettings represents Zoom meeting settings
 type MeetingSettings struct {
-	HostVideo             bool   `json:"host_video"`
-	ParticipantVideo      bool   `json:"participant_video"`
-	JoinBeforeHost        bool   `json:"join_before_host"`
-	MuteUponEntry         bool   `json:"mute_upon_entry"`
-	Watermark             bool   `json:"watermark"`
-	UsePMI                bool   `json:"use_pmi"`
-	ApprovalType          int    `json:"approval_type"`
-	RegistrationType      int    `json:"registration_type,omitempty"`
-	Audio                 string `json:"audio"`
-	AutoRecording         string `json:"auto_recording"`
-	WaitingRoom           bool   `json:"waiting_room"`
-	MeetingAuthentication bool   `json:"meeting_authentication"`
-	JoinBeforeHostMinutes int    `json:"jbh_time,omitempty"`
-	// AI Companion settings
-	MeetingSummary      bool `json:"meeting_summary,omitempty"`
-	MeetingQueryEnabled bool `json:"meeting_query_enabled,omitempty"`
+	HostVideo                     bool   `json:"host_video"`
+	ParticipantVideo              bool   `json:"participant_video"`
+	JoinBeforeHost                bool   `json:"join_before_host"`
+	MuteUponEntry                 bool   `json:"mute_upon_entry"`
+	Watermark                     bool   `json:"watermark"`
+	UsePMI                        bool   `json:"use_pmi"`
+	ApprovalType                  int    `json:"approval_type"`
+	RegistrationType              int    `json:"registration_type,omitempty"`
+	RegistrantsConfirmation       bool   `json:"registrants_confirmation,omitempty"`
+	RegistrantsEmailNotification  bool   `json:"registrants_email_notification,omitempty"`
+	Audio                         string `json:"audio"`
+	AutoRecording                 string `json:"auto_recording"`
+	WaitingRoom                   bool   `json:"waiting_room"`
+	MeetingAuthentication         bool   `json:"meeting_authentication"`
+	JoinBeforeHostMinutes         int    `json:"jbh_time,omitempty"`
+	AutoStartAICompanionQuestions bool   `json:"auto_start_ai_companion_questions,omitempty"`
+	AutoStartMeetingSummary       bool   `json:"auto_start_meeting_summary,omitempty"`
 }
 
 // CreateMeetingResponse represents the response from creating a Zoom meeting

@@ -109,7 +109,11 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 
 	req.Header.Set("Content-Type", "application/json")
 
-	slog.DebugContext(ctx, "making Zoom API request", "method", method, "path", path)
+	slog.DebugContext(ctx, "making Zoom API request",
+		"method", method,
+		"path", path,
+		"body", body,
+	)
 
 	// Use OAuth2 authenticated client which automatically handles token management
 	authenticatedClient := c.getAuthenticatedClient(ctx)
@@ -135,7 +139,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 		"duration", duration.String())
 
 	// Log error responses with additional details
-	if resp.StatusCode >= 400 {
+	if resp.StatusCode >= http.StatusBadRequest {
 		body, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(body))

@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -18,15 +17,15 @@ import (
 // ZoomProvider implements the PlatformProvider interface for Zoom
 // It contains business logic and orchestrates API calls through the Client
 type ZoomProvider struct {
-	client         *api.Client
-	cachedUser     *api.ZoomUser
-	userCacheValid bool
+	client      *api.Client
+	cachedUsers map[string]*api.ZoomUser // map[userID]*ZoomUser
 }
 
 // NewZoomProvider creates a new ZoomProvider with the given client
 func NewZoomProvider(client *api.Client) *ZoomProvider {
 	return &ZoomProvider{
-		client: client,
+		client:      client,
+		cachedUsers: make(map[string]*api.ZoomUser),
 	}
 }
 
@@ -34,14 +33,14 @@ func NewZoomProvider(client *api.Client) *ZoomProvider {
 var _ domain.PlatformProvider = (*ZoomProvider)(nil)
 
 // CreateMeeting creates a new meeting in Zoom using business logic
-func (p *ZoomProvider) CreateMeeting(ctx context.Context, meeting *models.MeetingBase) (string, string, error) {
+func (p *ZoomProvider) CreateMeeting(ctx context.Context, meeting *models.MeetingBase) (*domain.CreateMeetingResult, error) {
 	ctx = logging.AppendCtx(ctx, slog.String("zoom_operation", "create_meeting"))
 
 	// Get the first available user to schedule the meeting for
 	user, err := p.getCachedUser(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get Zoom user for meeting creation", logging.ErrKey, err)
-		return "", "", fmt.Errorf("failed to get Zoom user: %w", err)
+		return nil, fmt.Errorf("failed to get Zoom user: %w", err)
 	}
 
 	// Build the API request using business logic
@@ -51,16 +50,21 @@ func (p *ZoomProvider) CreateMeeting(ctx context.Context, meeting *models.Meetin
 	resp, err := p.client.CreateMeeting(ctx, user.ID, req)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create Zoom meeting", logging.ErrKey, err)
-		return "", "", err
+		return nil, err
 	}
 
-	meetingID := fmt.Sprintf("%d", resp.ID)
-	slog.InfoContext(ctx, "successfully created Zoom meeting",
-		"meeting_id", meetingID,
-		"topic", resp.Topic,
-		"join_url", resp.JoinURL)
+	result := &domain.CreateMeetingResult{
+		PlatformMeetingID: fmt.Sprintf("%d", resp.ID),
+		JoinURL:           resp.JoinURL,
+		Passcode:          resp.Password,
+	}
 
-	return meetingID, resp.JoinURL, nil
+	slog.InfoContext(ctx, "successfully created Zoom meeting",
+		"meeting_id", result.PlatformMeetingID,
+		"topic", resp.Topic,
+		"join_url", result.JoinURL)
+
+	return result, nil
 }
 
 // UpdateMeeting updates an existing meeting in Zoom using business logic
@@ -96,50 +100,45 @@ func (p *ZoomProvider) DeleteMeeting(ctx context.Context, meetingID string) erro
 	return nil
 }
 
+// StorePlatformData stores Zoom-specific data in the meeting model after creation
+func (p *ZoomProvider) StorePlatformData(meeting *models.MeetingBase, result *domain.CreateMeetingResult) {
+	if meeting.ZoomConfig == nil {
+		meeting.ZoomConfig = &models.ZoomConfig{}
+	}
+	meeting.ZoomConfig.MeetingID = result.PlatformMeetingID
+	meeting.ZoomConfig.Passcode = result.Passcode
+	meeting.JoinURL = result.JoinURL
+}
+
+// GetPlatformMeetingID retrieves the Zoom meeting ID from the meeting model
+func (p *ZoomProvider) GetPlatformMeetingID(meeting *models.MeetingBase) string {
+	if meeting.ZoomConfig != nil {
+		return meeting.ZoomConfig.MeetingID
+	}
+	return ""
+}
+
 // buildCreateMeetingRequest builds a Zoom API request from our domain model
 func (p *ZoomProvider) buildCreateMeetingRequest(meeting *models.MeetingBase) *api.CreateMeetingRequest {
 	req := &api.CreateMeetingRequest{
+		Type:     api.MeetingTypeRecurringNoFixedTime,
 		Topic:    meeting.Title,
 		Timezone: meeting.Timezone,
 		Duration: meeting.Duration,
 		Agenda:   meeting.Description,
 	}
 
-	// Set meeting type based on recurrence
-	if meeting.Recurrence != nil {
-		req.Type = api.MeetingTypeRecurringFixedTime
-		req.Recurrence = p.convertRecurrence(meeting.Recurrence)
-	} else {
-		req.Type = api.MeetingTypeScheduled
-		req.StartTime = meeting.StartTime.Format(time.RFC3339)
-	}
-
-	// Configure settings
-	req.Settings = &api.MeetingSettings{
-		HostVideo:        true,
-		ParticipantVideo: false,
-		JoinBeforeHost:   meeting.EarlyJoinTimeMinutes > 0,
-		MuteUponEntry:    false,
-		WaitingRoom:      meeting.Restricted,
-		Audio:            "both",
-		AutoRecording:    "none",
-		ApprovalType:     0, // No registration approval required
-	}
-
-	// Set join before host time if specified
-	if meeting.EarlyJoinTimeMinutes > 0 {
-		req.Settings.JoinBeforeHostMinutes = meeting.EarlyJoinTimeMinutes
-	}
+	req.Settings = new(api.MeetingSettings)
 
 	// Enable recording if requested
 	if meeting.RecordingEnabled {
 		req.Settings.AutoRecording = "cloud"
 	}
 
-	// Configure AI Companion settings if Zoom config is provided
-	if meeting.ZoomConfig != nil {
-		req.Settings.MeetingSummary = meeting.ZoomConfig.AICompanionEnabled
-		req.Settings.MeetingQueryEnabled = meeting.ZoomConfig.AICompanionEnabled
+	// Enable AI Companion settings if AI companion is enabled on meeting zoom config
+	if meeting.ZoomConfig != nil && meeting.ZoomConfig.AICompanionEnabled {
+		req.Settings.AutoStartAICompanionQuestions = true
+		req.Settings.AutoStartMeetingSummary = true
 	}
 
 	return req
@@ -148,96 +147,47 @@ func (p *ZoomProvider) buildCreateMeetingRequest(meeting *models.MeetingBase) *a
 // buildUpdateMeetingRequest builds a Zoom API update request from our domain model
 func (p *ZoomProvider) buildUpdateMeetingRequest(meeting *models.MeetingBase) *api.UpdateMeetingRequest {
 	req := &api.UpdateMeetingRequest{
+		Type:     api.MeetingTypeRecurringNoFixedTime,
 		Topic:    meeting.Title,
 		Timezone: meeting.Timezone,
 		Duration: meeting.Duration,
 		Agenda:   meeting.Description,
 	}
 
-	// Set meeting type based on recurrence
-	if meeting.Recurrence != nil {
-		req.Type = api.MeetingTypeRecurringFixedTime
-		req.Recurrence = p.convertRecurrence(meeting.Recurrence)
-	} else {
-		req.Type = api.MeetingTypeScheduled
-		req.StartTime = meeting.StartTime.Format(time.RFC3339)
-	}
-
-	// Configure settings
-	req.Settings = &api.MeetingSettings{
-		HostVideo:        true,
-		ParticipantVideo: false,
-		JoinBeforeHost:   meeting.EarlyJoinTimeMinutes > 0,
-		MuteUponEntry:    false,
-		WaitingRoom:      meeting.Restricted,
-		Audio:            "both",
-		AutoRecording:    "none",
-	}
-
-	// Set join before host time if specified
-	if meeting.EarlyJoinTimeMinutes > 0 {
-		req.Settings.JoinBeforeHostMinutes = meeting.EarlyJoinTimeMinutes
-	}
+	req.Settings = new(api.MeetingSettings)
 
 	// Enable recording if requested
 	if meeting.RecordingEnabled {
 		req.Settings.AutoRecording = "cloud"
 	}
 
-	// Configure AI Companion settings if Zoom config is provided
-	if meeting.ZoomConfig != nil {
-		req.Settings.MeetingSummary = meeting.ZoomConfig.AICompanionEnabled
-		req.Settings.MeetingQueryEnabled = meeting.ZoomConfig.AICompanionEnabled
+	// Enable AI Companion settings if requested
+	if meeting.ZoomConfig != nil && meeting.ZoomConfig.AICompanionEnabled {
+		req.Settings.AutoStartAICompanionQuestions = true
+		req.Settings.AutoStartMeetingSummary = true
 	}
 
 	return req
 }
 
-// convertRecurrence converts our domain recurrence model to Zoom's format
-func (p *ZoomProvider) convertRecurrence(rec *models.Recurrence) *api.RecurrenceSettings {
-	if rec == nil {
-		return nil
-	}
-
-	zoomRec := &api.RecurrenceSettings{
-		Type:           rec.Type,
-		RepeatInterval: rec.RepeatInterval,
-		WeeklyDays:     rec.WeeklyDays,
-		MonthlyDay:     rec.MonthlyDay,
-		MonthlyWeek:    rec.MonthlyWeek,
-		MonthlyWeekDay: rec.MonthlyWeekDay,
-		EndTimes:       rec.EndTimes,
-	}
-
-	if rec.EndDateTime != nil {
-		zoomRec.EndDateTime = rec.EndDateTime.Format(time.RFC3339)
-	}
-
-	return zoomRec
-}
-
-// getCachedUser gets the cached user or fetches the first available user if not cached
+// getCachedUser gets the cached users or fetches them if not cached, then returns the first available user
 func (p *ZoomProvider) getCachedUser(ctx context.Context) (*api.ZoomUser, error) {
-	if p.userCacheValid && p.cachedUser != nil {
-		slog.DebugContext(ctx, "using cached Zoom user", "user_id", p.cachedUser.ID)
-		return p.cachedUser, nil
+	// If we have valid cached users, find the first available one from cache
+	if len(p.cachedUsers) > 0 {
+		user := p.getFirstAvailableUserFromCache()
+		if user != nil {
+			slog.DebugContext(ctx, "using cached Zoom user", "user_id", user.ID)
+			return user, nil
+		}
 	}
 
-	user, err := p.getFirstAvailableUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Cache the user for future use
-	p.cachedUser = user
-	p.userCacheValid = true
-
-	return user, nil
+	// Fetch and cache all users, then return the first available one
+	return p.fetchAndCacheUsers(ctx)
 }
 
-// getFirstAvailableUser gets the first active licensed user from the account
-func (p *ZoomProvider) getFirstAvailableUser(ctx context.Context) (*api.ZoomUser, error) {
-	ctx = logging.AppendCtx(ctx, slog.String("zoom_operation", "get_first_available_user"))
+// fetchAndCacheUsers fetches all users from Zoom API, caches them, and returns the first available user
+func (p *ZoomProvider) fetchAndCacheUsers(ctx context.Context) (*api.ZoomUser, error) {
+	ctx = logging.AppendCtx(ctx, slog.String("zoom_operation", "fetch_and_cache_users"))
 
 	users, err := p.client.GetUsers(ctx)
 	if err != nil {
@@ -248,28 +198,45 @@ func (p *ZoomProvider) getFirstAvailableUser(ctx context.Context) (*api.ZoomUser
 		return nil, fmt.Errorf("no users found in Zoom account")
 	}
 
+	// Cache all users by their ID
+	p.cachedUsers = make(map[string]*api.ZoomUser)
+	for i := range users {
+		user := &users[i] // Important: take address of slice element
+		p.cachedUsers[user.ID] = user
+	}
+
+	slog.InfoContext(ctx, "cached Zoom users", "user_count", len(p.cachedUsers))
+
+	// Return the first available user from the newly cached users
+	user := p.getFirstAvailableUserFromCache()
+	if user == nil {
+		return nil, fmt.Errorf("no active users found in Zoom account")
+	}
+
+	slog.InfoContext(ctx, "selected Zoom user for meeting creation",
+		"user_id", user.ID,
+		"email", user.Email,
+		"name", fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		"type", user.Type)
+
+	return user, nil
+}
+
+// getFirstAvailableUserFromCache finds the first active licensed user from cached users
+func (p *ZoomProvider) getFirstAvailableUserFromCache() *api.ZoomUser {
 	// Find first active licensed user (type 2 = licensed)
-	for _, user := range users {
+	for _, user := range p.cachedUsers {
 		if user.Status == api.UserStatusActive && user.Type == api.UserTypeLicensed {
-			slog.InfoContext(ctx, "selected Zoom user for meeting creation",
-				"user_id", user.ID,
-				"email", user.Email,
-				"name", fmt.Sprintf("%s %s", user.FirstName, user.LastName))
-			return &user, nil
+			return user
 		}
 	}
 
 	// If no licensed users, fall back to any active user
-	for _, user := range users {
+	for _, user := range p.cachedUsers {
 		if user.Status == api.UserStatusActive {
-			slog.InfoContext(ctx, "selected Zoom user for meeting creation (fallback)",
-				"user_id", user.ID,
-				"email", user.Email,
-				"name", fmt.Sprintf("%s %s", user.FirstName, user.LastName),
-				"type", user.Type)
-			return &user, nil
+			return user
 		}
 	}
 
-	return nil, fmt.Errorf("no active users found in Zoom account")
+	return nil
 }

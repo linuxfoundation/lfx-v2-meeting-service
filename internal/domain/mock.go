@@ -231,9 +231,13 @@ type MockPlatformProvider struct {
 	mock.Mock
 }
 
-func (m *MockPlatformProvider) CreateMeeting(ctx context.Context, meeting *models.MeetingBase) (string, string, error) {
+func (m *MockPlatformProvider) CreateMeeting(ctx context.Context, meeting *models.MeetingBase) (*CreateMeetingResult, error) {
 	args := m.Called(ctx, meeting)
-	return args.String(0), args.String(1), args.Error(2)
+	result := args.Get(0)
+	if result == nil {
+		return nil, args.Error(1)
+	}
+	return result.(*CreateMeetingResult), args.Error(1)
 }
 
 func (m *MockPlatformProvider) UpdateMeeting(ctx context.Context, platformMeetingID string, meeting *models.MeetingBase) error {
@@ -244,6 +248,15 @@ func (m *MockPlatformProvider) UpdateMeeting(ctx context.Context, platformMeetin
 func (m *MockPlatformProvider) DeleteMeeting(ctx context.Context, platformMeetingID string) error {
 	args := m.Called(ctx, platformMeetingID)
 	return args.Error(0)
+}
+
+func (m *MockPlatformProvider) StorePlatformData(meeting *models.MeetingBase, result *CreateMeetingResult) {
+	m.Called(meeting, result)
+}
+
+func (m *MockPlatformProvider) GetPlatformMeetingID(meeting *models.MeetingBase) string {
+	args := m.Called(meeting)
+	return args.String(0)
 }
 
 // MockPlatformRegistry implements PlatformRegistry for testing

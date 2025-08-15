@@ -30,6 +30,7 @@ type MeetingBase struct {
 	Restricted                      bool         `json:"restricted"`
 	ArtifactVisibility              string       `json:"artifact_visibility,omitempty"`
 	PublicLink                      string       `json:"public_link,omitempty"`
+	JoinURL                         string       `json:"join_url,omitempty"`
 	EmailDeliveryErrorCount         int          `json:"email_delivery_error_count,omitempty"`
 	RecordingEnabled                bool         `json:"recording_enabled"`
 	TranscriptEnabled               bool         `json:"transcript_enabled"`
@@ -86,6 +87,7 @@ type Occurrence struct {
 // ZoomConfig represents Zoom-specific configuration for a meeting
 type ZoomConfig struct {
 	MeetingID                string `json:"meeting_id,omitempty"`
+	Passcode                 string `json:"passcode,omitempty"`
 	AICompanionEnabled       bool   `json:"ai_companion_enabled"`
 	AISummaryRequireApproval bool   `json:"ai_summary_require_approval"`
 }

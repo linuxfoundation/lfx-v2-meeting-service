@@ -106,39 +106,45 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 	}
 
 	// Create meeting on external platform if configured
-	if meetingDB.Platform == models.PlatformZoom {
-		provider, err := s.PlatformRegistry.GetProvider(models.PlatformZoom)
+	if meetingDB.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to get Zoom provider", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "failed to get platform provider",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
 			return nil, domain.ErrInternal
 		}
 
-		meetingID, joinURL, err := provider.CreateMeeting(ctx, meetingDB)
+		result, err := provider.CreateMeeting(ctx, meetingDB)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to create Zoom meeting", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "failed to create platform meeting",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
 			return nil, domain.ErrInternal
 		}
 
-		// Store Zoom meeting ID and join URL
-		if meetingDB.ZoomConfig == nil {
-			meetingDB.ZoomConfig = &models.ZoomConfig{}
-		}
-		meetingDB.ZoomConfig.MeetingID = meetingID
-		meetingDB.PublicLink = joinURL
+		// Store platform-specific data using the provider
+		provider.StorePlatformData(meetingDB, result)
 
-		slog.InfoContext(ctx, "created Zoom meeting", "zoom_meeting_id", meetingID)
+		slog.InfoContext(ctx, "created platform meeting",
+			"platform", meetingDB.Platform,
+			"platform_meeting_id", result.PlatformMeetingID,
+			"join_url", result.JoinURL)
 	}
 
 	// Create the meeting in the repository
 	err := s.MeetingRepository.Create(ctx, meetingDB, meetingSettingsDB)
 	if err != nil {
-		// If repository creation fails and we created a Zoom meeting, attempt to clean it up
-		if meetingDB.Platform == models.PlatformZoom && meetingDB.ZoomConfig != nil && meetingDB.ZoomConfig.MeetingID != "" {
-			if provider, provErr := s.PlatformRegistry.GetProvider(models.PlatformZoom); provErr == nil {
-				if delErr := provider.DeleteMeeting(ctx, meetingDB.ZoomConfig.MeetingID); delErr != nil {
-					slog.ErrorContext(ctx, "failed to cleanup Zoom meeting after repository error",
-						"zoom_meeting_id", meetingDB.ZoomConfig.MeetingID,
-						logging.ErrKey, delErr)
+		// If repository creation fails and we created a platform meeting, attempt to clean it up
+		if meetingDB.Platform != "" {
+			if provider, provErr := s.PlatformRegistry.GetProvider(meetingDB.Platform); provErr == nil {
+				if platformMeetingID := provider.GetPlatformMeetingID(meetingDB); platformMeetingID != "" {
+					if delErr := provider.DeleteMeeting(ctx, platformMeetingID); delErr != nil {
+						slog.ErrorContext(ctx, "failed to cleanup platform meeting after repository error",
+							"platform", meetingDB.Platform,
+							"platform_meeting_id", platformMeetingID,
+							logging.ErrKey, delErr)
+					}
 				}
 			}
 		}
@@ -335,25 +341,34 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 	}
 
 	// Update meeting on external platform if configured
-	slog.DebugContext(ctx, "checking if meeting is on Zoom",
-		"meeting_platform", meetingDB.Platform,
-		"zoom_meeting_id", meetingDB.ZoomConfig.MeetingID,
-	)
-	if meetingDB.Platform == models.PlatformZoom && meetingDB.ZoomConfig != nil && meetingDB.ZoomConfig.MeetingID != "" {
-		provider, err := s.PlatformRegistry.GetProvider(models.PlatformZoom)
+	if meetingDB.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to get Zoom provider", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "failed to get platform provider",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
 			return nil, domain.ErrInternal
 		}
 
-		if err := provider.UpdateMeeting(ctx, meetingDB.ZoomConfig.MeetingID, meetingDB); err != nil {
-			slog.ErrorContext(ctx, "failed to update Zoom meeting",
-				"zoom_meeting_id", meetingDB.ZoomConfig.MeetingID,
-				logging.ErrKey, err)
-			// Continue with local update even if Zoom update fails
-			// This ensures data consistency - local is source of truth
-		} else {
-			slog.InfoContext(ctx, "updated Zoom meeting", "zoom_meeting_id", meetingDB.ZoomConfig.MeetingID)
+		platformMeetingID := provider.GetPlatformMeetingID(meetingDB)
+		slog.DebugContext(ctx, "checking if meeting has platform ID",
+			"platform", meetingDB.Platform,
+			"platform_meeting_id", platformMeetingID,
+		)
+
+		if platformMeetingID != "" {
+			if err := provider.UpdateMeeting(ctx, platformMeetingID, meetingDB); err != nil {
+				slog.ErrorContext(ctx, "failed to update platform meeting",
+					"platform", meetingDB.Platform,
+					"platform_meeting_id", platformMeetingID,
+					logging.ErrKey, err)
+				// Continue with local update even if platform update fails
+				// This ensures data consistency - local is source of truth
+			} else {
+				slog.InfoContext(ctx, "updated platform meeting",
+					"platform", meetingDB.Platform,
+					"platform_meeting_id", platformMeetingID)
+			}
 		}
 	}
 
@@ -599,19 +614,27 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 
 	// Delete meeting from external platform if configured
 	// We do this after successfully deleting from repository to ensure consistency
-	if meetingDB.Platform == models.PlatformZoom && meetingDB.ZoomConfig != nil && meetingDB.ZoomConfig.MeetingID != "" {
-		provider, err := s.PlatformRegistry.GetProvider(models.PlatformZoom)
+	if meetingDB.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to get Zoom provider for deletion", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "failed to get platform provider for deletion",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
 			// Continue anyway - meeting is already deleted from our system
 		} else {
-			if err := provider.DeleteMeeting(ctx, meetingDB.ZoomConfig.MeetingID); err != nil {
-				slog.ErrorContext(ctx, "failed to delete Zoom meeting",
-					"zoom_meeting_id", meetingDB.ZoomConfig.MeetingID,
-					logging.ErrKey, err)
-				// Continue anyway - meeting is already deleted from our system
-			} else {
-				slog.InfoContext(ctx, "deleted Zoom meeting", "zoom_meeting_id", meetingDB.ZoomConfig.MeetingID)
+			platformMeetingID := provider.GetPlatformMeetingID(meetingDB)
+			if platformMeetingID != "" {
+				if err := provider.DeleteMeeting(ctx, platformMeetingID); err != nil {
+					slog.ErrorContext(ctx, "failed to delete platform meeting",
+						"platform", meetingDB.Platform,
+						"platform_meeting_id", platformMeetingID,
+						logging.ErrKey, err)
+					// Continue anyway - meeting is already deleted from our system
+				} else {
+					slog.InfoContext(ctx, "deleted platform meeting",
+						"platform", meetingDB.Platform,
+						"platform_meeting_id", platformMeetingID)
+				}
 			}
 		}
 	}
