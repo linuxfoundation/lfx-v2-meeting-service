@@ -72,7 +72,7 @@ test-results/
 bin/
 build/
 dist/
-meeting-api
+/meeting-api
 
 # OS generated files
 .DS_Store

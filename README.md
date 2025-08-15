@@ -414,8 +414,8 @@ The service can be configured via environment variables:
 | `NATS_URL` | NATS server URL | `nats://lfx-platform-nats.lfx.svc.cluster.local:4222` |
 | `LOG_LEVEL` | Log level (debug, info, warn, error) | `info` |
 | `LOG_ADD_SOURCE` | Add source location to logs | `true` |
-| `JWKS_URL` | JWKS URL for JWT verification | `http://lfx-platform-heimdall.lfx.svc.cluster.local:4456/.well-known/jwks` |
-| `JWT_AUDIENCE` | JWT token audience | `http://lfx-api.k8s.orb.local` |
+| `JWKS_URL` | JWKS URL for JWT verification | `http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks` |
+| `JWT_AUDIENCE` | JWT token audience | `lfx-v2-meeting-service` |
 | `SKIP_ETAG_VALIDATION` | Skip ETag validation (dev only) | `false` |
 | `JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL` | Mock principal for local dev (dev only) | `""` |
 

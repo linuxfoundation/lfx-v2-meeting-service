@@ -4,6 +4,7 @@
 package api
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -161,7 +162,7 @@ func TestParseErrorResponse(t *testing.T) {
 					t.Errorf("expected error %q, got %q", tt.expectedError, errMsg)
 				}
 			} else if tt.expectedSubstr != "" {
-				if errMsg != tt.expectedSubstr {
+				if !strings.Contains(errMsg, tt.expectedSubstr) {
 					t.Errorf("expected error to contain %q, got %q", tt.expectedSubstr, errMsg)
 				}
 			}

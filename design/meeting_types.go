@@ -304,7 +304,7 @@ func ArtifactVisibilityAttribute() {
 	})
 }
 
-// PublicLinkAttribute is the DSL attribute for public link. It is a read-only attribute.
+// JoinURLAttribute is the DSL attribute for public link. It is a read-only attribute.
 func JoinURLAttribute() {
 	Attribute("join_url", String, func() {
 		Description("The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')")

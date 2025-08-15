@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -19,6 +20,7 @@ import (
 type ZoomProvider struct {
 	client      api.ClientAPI
 	cachedUsers map[string]*api.ZoomUser // map[userID]*ZoomUser
+	usersMu     sync.RWMutex             // protects cachedUsers map
 }
 
 // NewZoomProvider creates a new ZoomProvider with the given client
@@ -61,8 +63,7 @@ func (p *ZoomProvider) CreateMeeting(ctx context.Context, meeting *models.Meetin
 
 	slog.InfoContext(ctx, "successfully created Zoom meeting",
 		"meeting_id", result.PlatformMeetingID,
-		"topic", resp.Topic,
-		"join_url", result.JoinURL)
+		"topic", resp.Topic)
 
 	return result, nil
 }
@@ -172,8 +173,13 @@ func (p *ZoomProvider) buildUpdateMeetingRequest(meeting *models.MeetingBase) *a
 
 // getCachedUser gets the cached users or fetches them if not cached, then returns the first available user
 func (p *ZoomProvider) getCachedUser(ctx context.Context) (*api.ZoomUser, error) {
+	// Check if we have cached users using read lock
+	p.usersMu.RLock()
+	hasCachedUsers := len(p.cachedUsers) > 0
+	p.usersMu.RUnlock()
+
 	// If we have valid cached users, find the first available one from cache
-	if len(p.cachedUsers) > 0 {
+	if hasCachedUsers {
 		user := p.getFirstAvailableUserFromCache()
 		if user != nil {
 			slog.DebugContext(ctx, "using cached Zoom user", "user_id", user.ID)
@@ -198,14 +204,17 @@ func (p *ZoomProvider) fetchAndCacheUsers(ctx context.Context) (*api.ZoomUser, e
 		return nil, fmt.Errorf("no users found in Zoom account")
 	}
 
-	// Cache all users by their ID
+	// Cache all users by their ID with write lock
+	p.usersMu.Lock()
 	p.cachedUsers = make(map[string]*api.ZoomUser)
 	for i := range users {
 		user := &users[i] // Important: take address of slice element
 		p.cachedUsers[user.ID] = user
 	}
+	userCount := len(p.cachedUsers)
+	p.usersMu.Unlock()
 
-	slog.InfoContext(ctx, "cached Zoom users", "user_count", len(p.cachedUsers))
+	slog.InfoContext(ctx, "cached Zoom users", "user_count", userCount)
 
 	// Return the first available user from the newly cached users
 	user := p.getFirstAvailableUserFromCache()
@@ -224,6 +233,9 @@ func (p *ZoomProvider) fetchAndCacheUsers(ctx context.Context) (*api.ZoomUser, e
 
 // getFirstAvailableUserFromCache finds the first active licensed user from cached users
 func (p *ZoomProvider) getFirstAvailableUserFromCache() *api.ZoomUser {
+	p.usersMu.RLock()
+	defer p.usersMu.RUnlock()
+
 	// Find first active licensed user (type 2 = licensed)
 	for _, user := range p.cachedUsers {
 		if user.Status == api.UserStatusActive && user.Type == api.UserTypeLicensed {

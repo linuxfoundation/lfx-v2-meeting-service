@@ -128,8 +128,7 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 
 		slog.InfoContext(ctx, "created platform meeting",
 			"platform", meetingDB.Platform,
-			"platform_meeting_id", result.PlatformMeetingID,
-			"join_url", result.JoinURL)
+			"platform_meeting_id", result.PlatformMeetingID)
 	}
 
 	// Create the meeting in the repository

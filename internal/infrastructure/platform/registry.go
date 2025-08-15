@@ -30,7 +30,7 @@ func (r *Registry) GetProvider(platform string) (domain.PlatformProvider, error)
 
 	provider, exists := r.providers[platform]
 	if !exists {
-		return nil, fmt.Errorf("no provider registered for platform: %s", platform)
+		return nil, fmt.Errorf("%w: %s", domain.ErrPlatformProviderNotFound, platform)
 	}
 
 	return provider, nil

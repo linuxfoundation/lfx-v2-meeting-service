@@ -30,7 +30,7 @@ func TestToMeetingBaseDBModel(t *testing.T) {
 		Title:                           utils.StringPtr("Test Meeting"),
 		Description:                     utils.StringPtr("Test Description"),
 		Timezone:                        utils.StringPtr("UTC"),
-		Platform:                        utils.StringPtr("zoom"),
+		Platform:                        utils.StringPtr("Zoom"),
 		Duration:                        utils.IntPtr(60),
 		StartTime:                       &startTimeStr,
 		EarlyJoinTimeMinutes:            utils.IntPtr(15),
@@ -68,8 +68,8 @@ func TestToMeetingBaseDBModel(t *testing.T) {
 	if meeting.Duration != 60 {
 		t.Errorf("expected Duration 60, got %d", meeting.Duration)
 	}
-	if meeting.Platform != "zoom" {
-		t.Errorf("expected Platform 'zoom', got %q", meeting.Platform)
+	if meeting.Platform != "Zoom" {
+		t.Errorf("expected Platform 'Zoom', got %q", meeting.Platform)
 	}
 
 	// Test time conversion
@@ -101,7 +101,7 @@ func TestFromMeetingBaseDBModel(t *testing.T) {
 		Title:                           "Test Meeting",
 		Description:                     "Test Description",
 		Timezone:                        "UTC",
-		Platform:                        "zoom",
+		Platform:                        "Zoom",
 		Duration:                        60,
 		StartTime:                       now,
 		EarlyJoinTimeMinutes:            15,
@@ -170,7 +170,7 @@ func TestConversionRoundTrip(t *testing.T) {
 		Title:             "Round Trip Test",
 		Description:       "Testing round trip conversion",
 		Timezone:          "America/New_York",
-		Platform:          "zoom",
+		Platform:          "Zoom",
 		Duration:          90,
 		StartTime:         now,
 		RecordingEnabled:  true,

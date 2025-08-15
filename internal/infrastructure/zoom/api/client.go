@@ -97,7 +97,14 @@ func NewClient(config Config) *Client {
 
 // getAuthenticatedClient returns an HTTP client that automatically handles OAuth2 authentication
 func (c *Client) getAuthenticatedClient(ctx context.Context) *http.Client {
-	return c.oauthConfig.Client(ctx)
+	ts := c.oauthConfig.TokenSource(ctx)
+	return &http.Client{
+		Timeout: c.config.Timeout,
+		Transport: &oauth2.Transport{
+			Base:   http.DefaultTransport,
+			Source: ts,
+		},
+	}
 }
 
 // doRequest performs an authenticated HTTP request to the Zoom API
