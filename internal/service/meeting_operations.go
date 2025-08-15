@@ -105,9 +105,48 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 		UpdatedAt:  &now,
 	}
 
+	// Create meeting on external platform if configured
+	if meetingDB.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to get platform provider",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
+			return nil, domain.ErrInternal
+		}
+
+		result, err := provider.CreateMeeting(ctx, meetingDB)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to create platform meeting",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
+			return nil, domain.ErrInternal
+		}
+
+		// Store platform-specific data using the provider
+		provider.StorePlatformData(meetingDB, result)
+
+		slog.InfoContext(ctx, "created platform meeting",
+			"platform", meetingDB.Platform,
+			"platform_meeting_id", result.PlatformMeetingID)
+	}
+
 	// Create the meeting in the repository
 	err := s.MeetingRepository.Create(ctx, meetingDB, meetingSettingsDB)
 	if err != nil {
+		// If repository creation fails and we created a platform meeting, attempt to clean it up
+		if meetingDB.Platform != "" {
+			if provider, provErr := s.PlatformRegistry.GetProvider(meetingDB.Platform); provErr == nil {
+				if platformMeetingID := provider.GetPlatformMeetingID(meetingDB); platformMeetingID != "" {
+					if delErr := provider.DeleteMeeting(ctx, platformMeetingID); delErr != nil {
+						slog.ErrorContext(ctx, "failed to cleanup platform meeting after repository error",
+							"platform", meetingDB.Platform,
+							"platform_meeting_id", platformMeetingID,
+							logging.ErrKey, delErr)
+					}
+				}
+			}
+		}
 		return nil, domain.ErrInternal
 	}
 
@@ -298,6 +337,38 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 		// This should never happen since we validate the payload above.
 		// Therefore we can return an internal error.
 		return nil, domain.ErrInternal
+	}
+
+	// Update meeting on external platform if configured
+	if meetingDB.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to get platform provider",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
+			return nil, domain.ErrInternal
+		}
+
+		platformMeetingID := provider.GetPlatformMeetingID(meetingDB)
+		slog.DebugContext(ctx, "checking if meeting has platform ID",
+			"platform", meetingDB.Platform,
+			"platform_meeting_id", platformMeetingID,
+		)
+
+		if platformMeetingID != "" {
+			if err := provider.UpdateMeeting(ctx, platformMeetingID, meetingDB); err != nil {
+				slog.ErrorContext(ctx, "failed to update platform meeting",
+					"platform", meetingDB.Platform,
+					"platform_meeting_id", platformMeetingID,
+					logging.ErrKey, err)
+				// Continue with local update even if platform update fails
+				// This ensures data consistency - local is source of truth
+			} else {
+				slog.InfoContext(ctx, "updated platform meeting",
+					"platform", meetingDB.Platform,
+					"platform_meeting_id", platformMeetingID)
+			}
+		}
 	}
 
 	// Update the meeting in the repository
@@ -511,7 +582,18 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
-	// Delete the meeting using the store
+	// Get the meeting to check if it has a Zoom meeting ID
+	meetingDB, err := s.MeetingRepository.GetBase(ctx, *payload.UID)
+	if err != nil {
+		if errors.Is(err, domain.ErrMeetingNotFound) {
+			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
+			return domain.ErrMeetingNotFound
+		}
+		slog.ErrorContext(ctx, "error getting meeting from store", logging.ErrKey, err)
+		return domain.ErrInternal
+	}
+
+	// Delete the meeting using the store first
 	err = s.MeetingRepository.Delete(ctx, *payload.UID, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
@@ -527,6 +609,33 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 			return domain.ErrInternal
 		}
 		return domain.ErrInternal
+	}
+
+	// Delete meeting from external platform if configured
+	// We do this after successfully deleting from repository to ensure consistency
+	if meetingDB.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to get platform provider for deletion",
+				"platform", meetingDB.Platform,
+				logging.ErrKey, err)
+			// Continue anyway - meeting is already deleted from our system
+		} else {
+			platformMeetingID := provider.GetPlatformMeetingID(meetingDB)
+			if platformMeetingID != "" {
+				if err := provider.DeleteMeeting(ctx, platformMeetingID); err != nil {
+					slog.ErrorContext(ctx, "failed to delete platform meeting",
+						"platform", meetingDB.Platform,
+						"platform_meeting_id", platformMeetingID,
+						logging.ErrKey, err)
+					// Continue anyway - meeting is already deleted from our system
+				} else {
+					slog.InfoContext(ctx, "deleted platform meeting",
+						"platform", meetingDB.Platform,
+						"platform_meeting_id", platformMeetingID)
+				}
+			}
+		}
 	}
 
 	g := new(errgroup.Group)

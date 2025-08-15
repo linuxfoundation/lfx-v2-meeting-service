@@ -21,7 +21,7 @@ func TestMeeting_JSONSerialization(t *testing.T) {
 		Timezone:                        "UTC",
 		Title:                           "Test Meeting",
 		Description:                     "Test Description",
-		Platform:                        "zoom",
+		Platform:                        "Zoom",
 		EarlyJoinTimeMinutes:            15,
 		MeetingType:                     "standard",
 		Visibility:                      "public",
@@ -205,7 +205,7 @@ func TestMeeting_WithComplexStructures(t *testing.T) {
 		Timezone:    "America/New_York",
 		Title:       "Complex Meeting",
 		Description: "Meeting with all structures",
-		Platform:    "zoom",
+		Platform:    "Zoom",
 		Recurrence: &Recurrence{
 			Type:           2,
 			RepeatInterval: 1,

@@ -35,7 +35,15 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
    make apigen
    ```
 
-3. **Run the Service**
+3. **Configure Environment (Optional)**
+
+   ```bash
+   # Copy the example environment file and configure it
+   cp .env.example .env
+   # Edit .env with your local settings
+   ```
+
+4. **Run the Service**
 
    ```bash
    # Run with default settings
@@ -215,6 +223,53 @@ When modifying the API:
    make test
    ```
 
+#### Zoom Integration Development
+
+The Zoom integration follows a layered architecture pattern:
+
+**Adding New Zoom API Endpoints:**
+
+1. **Add API Methods** in `internal/infrastructure/zoom/api/`:
+   - Add new methods to appropriate API client interfaces
+   - Implement the methods with proper error handling
+   - Add corresponding mock implementations for testing
+
+2. **Update Provider Layer** in `internal/infrastructure/zoom/provider.go`:
+   - Add business logic methods that orchestrate API calls
+   - Handle Zoom-specific data transformations
+   - Implement domain interfaces
+
+3. **Add Tests**:
+
+   ```bash
+   # Test the new API methods
+   go test ./internal/infrastructure/zoom/api/...
+   
+   # Test the provider integration
+   go test ./internal/infrastructure/zoom/...
+   ```
+
+**Zoom Package Structure:**
+
+```text
+internal/infrastructure/zoom/
+├── api/                    # Low-level Zoom API clients
+│   ├── client.go          # HTTP client and auth
+│   ├── meetings.go        # Meetings API endpoints
+│   ├── users.go           # Users API endpoints
+│   └── mocks/             # Mock implementations
+├── provider.go            # Business logic layer
+└── provider_test.go       # Integration tests
+```
+
+**Environment Variables:**
+
+- `ZOOM_ACCOUNT_ID`: OAuth Server-to-Server Account ID
+- `ZOOM_CLIENT_ID`: OAuth App Client ID  
+- `ZOOM_CLIENT_SECRET`: OAuth App Client Secret
+
+For local development, copy `.env.example` to `.env` and fill in your Zoom credentials from 1Password.
+
 ### Available Make Targets
 
 | Target | Description |
@@ -308,6 +363,13 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --namespace lfx \
   --values custom-values.yaml
 
+# Install with Zoom integration
+helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
+  --namespace lfx \
+  --set zoom.accountId="your-zoom-account-id" \
+  --set zoom.clientId="your-zoom-client-id" \
+  --set zoom.clientSecret="your-zoom-client-secret"
+
 # View templates
 make helm-templates
 ```
@@ -352,10 +414,20 @@ The service can be configured via environment variables:
 | `NATS_URL` | NATS server URL | `nats://lfx-platform-nats.lfx.svc.cluster.local:4222` |
 | `LOG_LEVEL` | Log level (debug, info, warn, error) | `info` |
 | `LOG_ADD_SOURCE` | Add source location to logs | `true` |
-| `JWKS_URL` | JWKS URL for JWT verification | `http://lfx-platform-heimdall.lfx.svc.cluster.local:4456/.well-known/jwks` |
-| `JWT_AUDIENCE` | JWT token audience | `http://lfx-api.k8s.orb.local` |
+| `JWKS_URL` | JWKS URL for JWT verification | `http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks` |
+| `JWT_AUDIENCE` | JWT token audience | `lfx-v2-meeting-service` |
 | `SKIP_ETAG_VALIDATION` | Skip ETag validation (dev only) | `false` |
 | `JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL` | Mock principal for local dev (dev only) | `""` |
+
+### Zoom Integration Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ZOOM_ACCOUNT_ID` | Zoom OAuth Server-to-Server Account ID | `""` |
+| `ZOOM_CLIENT_ID` | Zoom OAuth App Client ID | `""` |
+| `ZOOM_CLIENT_SECRET` | Zoom OAuth App Client Secret | `""` |
+
+When all three Zoom variables are configured, the service will automatically integrate with Zoom API for meetings where `platform="Zoom"`.
 
 ### Development Environment Variables
 

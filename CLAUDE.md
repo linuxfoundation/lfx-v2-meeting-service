@@ -53,14 +53,16 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 **Infrastructure Layer** (`internal/infrastructure/`)
 - NATS integration for messaging (`messaging/`) and key-value storage (`store/`)
 - JWT authentication (`auth/`)
-- Two NATS KV buckets: "meetings" and "meeting-registrants"
+- Zoom integration (`zoom/`) for meeting platform services
+- Three NATS KV buckets: "meetings", "meeting-settings", and "meeting-registrants"
 
 **Middleware** (`internal/middleware/`)
 - Request logging, authorization, and request ID handling
 
 ### Data Storage
+
 - Uses NATS JetStream KV stores for persistence
-- Two main buckets: meetings and meeting-registrants
+- Three main buckets: meetings, meeting-settings, and meeting-registrants
 - NATS messaging for event publishing (indexer integration)
 
 ### Meeting Types and Platforms
@@ -76,9 +78,11 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 - Use `make verify` to ensure generated code is current before commits
 
 ### Testing Strategy
+
 - Unit tests for all domain models and business logic
-- Mock interfaces provided for external dependencies
+- Mock interfaces provided for external dependencies (including Zoom API clients)
 - Test files follow `*_test.go` naming convention
+- External service integrations use mock implementations in `/mocks/` subdirectories
 
 ### Error Handling
 - Uses domain-specific error types in `internal/domain/errors.go`
@@ -91,7 +95,20 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 - Authorization middleware handles token validation
 
 ### Dependencies
+
 - Built with Go 1.24+
 - Primary framework: Goa v3 for API generation
 - NATS for messaging and storage
 - Standard testing with testify
+
+## Environment Variables
+
+### Zoom Integration
+
+For Zoom meeting platform support, configure these environment variables:
+
+- `ZOOM_ACCOUNT_ID`: OAuth Server-to-Server Account ID
+- `ZOOM_CLIENT_ID`: OAuth App Client ID  
+- `ZOOM_CLIENT_SECRET`: OAuth App Client Secret
+
+**Note**: Get these values from 1Password (search for "LFX Zoom Integration"). Required only when creating meetings with `platform="Zoom"`.

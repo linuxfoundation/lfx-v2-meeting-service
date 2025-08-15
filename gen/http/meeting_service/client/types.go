@@ -49,10 +49,6 @@ type CreateMeetingRequestBody struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
 	// Whether transcription is enabled for the meeting
@@ -101,10 +97,6 @@ type UpdateMeetingBaseRequestBody struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
 	// Whether transcription is enabled for the meeting
@@ -218,6 +210,10 @@ type CreateMeetingResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
@@ -295,6 +291,10 @@ type UpdateMeetingBaseResponseBody struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
@@ -939,6 +939,10 @@ type MeetingFullResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
@@ -1044,6 +1048,10 @@ type CommitteeResponseBody struct {
 type ZoomConfigFullResponseBody struct {
 	// The ID of the created meeting in Zoom
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// The zoom-defined passcode for the meeting. Required if joining via dial-in,
+	// or by clicking 'join meeting' in the zoom client & putting in the meeting id
+	// and passcode.
+	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// For zoom platform meetings: whether Zoom AI companion is enabled
 	AiCompanionEnabled *bool `form:"ai_companion_enabled,omitempty" json:"ai_companion_enabled,omitempty" xml:"ai_companion_enabled,omitempty"`
 	// For zoom platform meetings: whether AI summary approval is required
@@ -1190,6 +1198,10 @@ type MeetingBaseResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
@@ -1286,7 +1298,6 @@ func NewCreateMeetingRequestBody(p *meetingservice.CreateMeetingPayload) *Create
 		Visibility:           p.Visibility,
 		Restricted:           p.Restricted,
 		ArtifactVisibility:   p.ArtifactVisibility,
-		PublicLink:           p.PublicLink,
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
@@ -1329,7 +1340,6 @@ func NewUpdateMeetingBaseRequestBody(p *meetingservice.UpdateMeetingBasePayload)
 		Visibility:           p.Visibility,
 		Restricted:           p.Restricted,
 		ArtifactVisibility:   p.ArtifactVisibility,
-		PublicLink:           p.PublicLink,
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
@@ -1462,6 +1472,7 @@ func NewCreateMeetingMeetingFullCreated(body *CreateMeetingResponseBody) *meetin
 		Visibility:                      body.Visibility,
 		Restricted:                      body.Restricted,
 		ArtifactVisibility:              body.ArtifactVisibility,
+		JoinURL:                         body.JoinURL,
 		PublicLink:                      body.PublicLink,
 		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
 		RecordingEnabled:                body.RecordingEnabled,
@@ -1562,6 +1573,7 @@ func NewGetMeetingBaseResultOK(body *GetMeetingBaseResponseBody, etag *string) *
 		Visibility:                      body.Visibility,
 		Restricted:                      body.Restricted,
 		ArtifactVisibility:              body.ArtifactVisibility,
+		JoinURL:                         body.JoinURL,
 		PublicLink:                      body.PublicLink,
 		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
 		RecordingEnabled:                body.RecordingEnabled,
@@ -1704,6 +1716,7 @@ func NewUpdateMeetingBaseMeetingBaseOK(body *UpdateMeetingBaseResponseBody) *mee
 		Visibility:                      body.Visibility,
 		Restricted:                      body.Restricted,
 		ArtifactVisibility:              body.ArtifactVisibility,
+		JoinURL:                         body.JoinURL,
 		PublicLink:                      body.PublicLink,
 		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
 		RecordingEnabled:                body.RecordingEnabled,
@@ -2299,6 +2312,12 @@ func ValidateCreateMeetingResponseBody(body *CreateMeetingResponseBody) (err err
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
+	}
+	if body.PublicLink != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
 			err = goa.MergeErrors(err, err2)
@@ -2383,6 +2402,12 @@ func ValidateGetMeetingBaseResponseBody(body *GetMeetingBaseResponseBody) (err e
 		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
+	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
+	}
+	if body.PublicLink != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
@@ -2483,6 +2508,12 @@ func ValidateUpdateMeetingBaseResponseBody(body *UpdateMeetingBaseResponseBody) 
 		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
+	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
+	}
+	if body.PublicLink != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
@@ -3362,6 +3393,12 @@ func ValidateMeetingFullResponseBody(body *MeetingFullResponseBody) (err error) 
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
+	}
+	if body.PublicLink != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
 			err = goa.MergeErrors(err, err2)
@@ -3452,6 +3489,19 @@ func ValidateZoomConfigFullResponseBody(body *ZoomConfigFullResponseBody) (err e
 	if body.MeetingID != nil {
 		if utf8.RuneCountInString(*body.MeetingID) > 11 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.meeting_id", *body.MeetingID, utf8.RuneCountInString(*body.MeetingID), 11, false))
+		}
+	}
+	if body.Passcode != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.passcode", *body.Passcode, "^\\d{6,10}$"))
+	}
+	if body.Passcode != nil {
+		if utf8.RuneCountInString(*body.Passcode) < 6 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.passcode", *body.Passcode, utf8.RuneCountInString(*body.Passcode), 6, true))
+		}
+	}
+	if body.Passcode != nil {
+		if utf8.RuneCountInString(*body.Passcode) > 10 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.passcode", *body.Passcode, utf8.RuneCountInString(*body.Passcode), 10, false))
 		}
 	}
 	return
@@ -3583,6 +3633,12 @@ func ValidateMeetingBaseResponseBody(body *MeetingBaseResponseBody) (err error) 
 		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
+	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
+	}
+	if body.PublicLink != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {

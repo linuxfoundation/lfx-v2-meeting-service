@@ -37,6 +37,12 @@ spec:
               value: {{ .Values.app.skipEtagValidation | quote }}
             - name: JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL
               value: {{ .Values.app.jwtAuthDisabledMockLocalPrincipal }}
+            - name: ZOOM_ACCOUNT_ID
+              value: {{ .Values.zoom.accountId }}
+            - name: ZOOM_CLIENT_ID
+              value: {{ .Values.zoom.clientId }}
+            - name: ZOOM_CLIENT_SECRET
+              value: {{ .Values.zoom.clientSecret }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: web

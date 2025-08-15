@@ -23,4 +23,6 @@ var (
 	ErrRegistrantNotFound = errors.New("registrant not found")
 	// ErrRegistrantAlreadyExists is returned when a registrant already exists.
 	ErrRegistrantAlreadyExists = errors.New("registrant already exists")
+	// ErrPlatformProviderNotFound is returned when a platform provider is not found.
+	ErrPlatformProviderNotFound = errors.New("platform provider not found")
 )

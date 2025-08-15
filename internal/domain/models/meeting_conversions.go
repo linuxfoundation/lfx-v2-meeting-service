@@ -44,6 +44,9 @@ func ToMeetingFullServiceModel(meetingBase *MeetingBase, meetingSettings *Meetin
 	if meetingBase.PublicLink != "" {
 		meetingFull.PublicLink = utils.StringPtr(meetingBase.PublicLink)
 	}
+	if meetingBase.JoinURL != "" {
+		meetingFull.JoinURL = utils.StringPtr(meetingBase.JoinURL)
+	}
 	if meetingBase.EmailDeliveryErrorCount != 0 {
 		meetingFull.EmailDeliveryErrorCount = utils.IntPtr(meetingBase.EmailDeliveryErrorCount)
 	}
@@ -213,6 +216,7 @@ func FromMeetingBaseDBModel(meeting *MeetingBase) *meetingservice.MeetingBase {
 		Visibility:                      utils.StringPtr(meeting.Visibility),
 		Restricted:                      utils.BoolPtr(meeting.Restricted),
 		ArtifactVisibility:              utils.StringPtr(meeting.ArtifactVisibility),
+		JoinURL:                         utils.StringPtr(meeting.JoinURL),
 		PublicLink:                      utils.StringPtr(meeting.PublicLink),
 		EmailDeliveryErrorCount:         utils.IntPtr(meeting.EmailDeliveryErrorCount),
 		RecordingEnabled:                utils.BoolPtr(meeting.RecordingEnabled),
@@ -290,7 +294,6 @@ func ToMeetingDBModelFromCreatePayload(payload *meetingservice.CreateMeetingPayl
 		Visibility:           utils.StringValue(payload.Visibility),
 		Restricted:           utils.BoolValue(payload.Restricted),
 		ArtifactVisibility:   utils.StringValue(payload.ArtifactVisibility),
-		PublicLink:           utils.StringValue(payload.PublicLink),
 		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
@@ -332,11 +335,12 @@ func ToMeetingBaseDBModelFromUpdatePayload(payload *meetingservice.UpdateMeeting
 		Visibility:           utils.StringValue(payload.Visibility),
 		Restricted:           utils.BoolValue(payload.Restricted),
 		ArtifactVisibility:   utils.StringValue(payload.ArtifactVisibility),
-		PublicLink:           utils.StringValue(payload.PublicLink),
+		PublicLink:           existingMeeting.PublicLink, // Preserve platform-generated URL
+		JoinURL:              existingMeeting.JoinURL,    // Preserve platform-generated URL
 		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
-		ZoomConfig:           toDBZoomConfigFromPost(payload.ZoomConfig),
+		ZoomConfig:           mergeZoomConfig(existingMeeting.ZoomConfig, payload.ZoomConfig),
 		CreatedAt:            existingMeeting.CreatedAt,
 		UpdatedAt:            &now,
 	}
@@ -355,6 +359,33 @@ func toDBZoomConfigFromPost(z *meetingservice.ZoomConfigPost) *ZoomConfig {
 		MeetingID:                "", // TODO: replace with actual zoom meeting ID once we have zoom integration
 		AICompanionEnabled:       utils.BoolValue(z.AiCompanionEnabled),
 		AISummaryRequireApproval: utils.BoolValue(z.AiSummaryRequireApproval),
+	}
+}
+
+// mergeZoomConfig merges the existing ZoomConfig with updates from the payload,
+// preserving the MeetingID from the existing config
+func mergeZoomConfig(existing *ZoomConfig, payload *meetingservice.ZoomConfigPost) *ZoomConfig {
+	// If there's no existing config and no payload, return nil
+	if existing == nil && payload == nil {
+		return nil
+	}
+
+	// If there's no existing config but there's a payload, create new config
+	if existing == nil {
+		return toDBZoomConfigFromPost(payload)
+	}
+
+	// If there's existing config but no payload, preserve existing config
+	if payload == nil {
+		return existing
+	}
+
+	// Merge existing config with payload updates, preserving MeetingID
+	return &ZoomConfig{
+		MeetingID:                existing.MeetingID, // Preserve existing MeetingID
+		Passcode:                 existing.Passcode,  // Preserve existing Passcode
+		AICompanionEnabled:       utils.BoolValue(payload.AiCompanionEnabled),
+		AISummaryRequireApproval: utils.BoolValue(payload.AiSummaryRequireApproval),
 	}
 }
 
@@ -472,6 +503,9 @@ func fromDBZoomConfig(z *ZoomConfig) *meetingservice.ZoomConfigFull {
 
 	if z.MeetingID != "" {
 		zc.MeetingID = utils.StringPtr(z.MeetingID)
+	}
+	if z.Passcode != "" {
+		zc.Passcode = utils.StringPtr(z.Passcode)
 	}
 
 	return zc
