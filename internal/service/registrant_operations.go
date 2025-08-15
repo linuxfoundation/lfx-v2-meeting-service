@@ -393,12 +393,12 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	var err error
 	if !s.Config.SkipEtagValidation {
 		if payload.IfMatch == nil {
-			slog.WarnContext(ctx, "ETag header is missing")
+			slog.WarnContext(ctx, "If-Match header is missing")
 			return domain.ErrValidationFailed
 		}
 		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
 		if err != nil {
-			slog.ErrorContext(ctx, "error parsing ETag", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
 			return domain.ErrValidationFailed
 		}
 	} else {

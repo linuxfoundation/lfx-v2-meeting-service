@@ -530,7 +530,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			expectedErr: domain.ErrValidationFailed,
 		},
 		{
-			name: "missing etag header",
+			name: "missing If-Match header",
 			payload: &meetingsvc.UpdateMeetingSettingsPayload{
 				UID:        utils.StringPtr("meeting-123"),
 				IfMatch:    nil,

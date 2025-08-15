@@ -304,7 +304,7 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 	err = s.MeetingRepository.UpdateBase(ctx, meetingDB, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "etag header is invalid", logging.ErrKey, err)
+			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
 			return nil, domain.ErrRevisionMismatch
 		}
 		if errors.Is(err, domain.ErrInternal) {
@@ -419,7 +419,7 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 	err = s.MeetingRepository.UpdateSettings(ctx, updatedSettingsDB, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "etag header is invalid", logging.ErrKey, err)
+			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
 			return nil, domain.ErrRevisionMismatch
 		}
 		if errors.Is(err, domain.ErrInternal) {
@@ -487,12 +487,12 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 	var err error
 	if !s.Config.SkipEtagValidation {
 		if payload.IfMatch == nil {
-			slog.WarnContext(ctx, "ETag header is missing")
+			slog.WarnContext(ctx, "If-Match header is missing")
 			return domain.ErrValidationFailed
 		}
 		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
 		if err != nil {
-			slog.ErrorContext(ctx, "error parsing ETag", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
 			return domain.ErrValidationFailed
 		}
 	} else {
@@ -515,7 +515,7 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 	err = s.MeetingRepository.Delete(ctx, *payload.UID, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "etag header is invalid", logging.ErrKey, err)
+			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
 			return domain.ErrRevisionMismatch
 		}
 		if errors.Is(err, domain.ErrMeetingNotFound) {
