@@ -19,6 +19,15 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+// ClientAPI defines the interface for Zoom API operations
+// This allows for easy mocking and testing of the Zoom client
+type ClientAPI interface {
+	CreateMeeting(ctx context.Context, userID string, request *CreateMeetingRequest) (*CreateMeetingResponse, error)
+	UpdateMeeting(ctx context.Context, meetingID string, request *UpdateMeetingRequest) error
+	DeleteMeeting(ctx context.Context, meetingID string) error
+	GetUsers(ctx context.Context) ([]ZoomUser, error)
+}
+
 const (
 	// BaseURL is the base URL for Zoom API
 	BaseURL = "https://api.zoom.us/v2"
@@ -47,6 +56,9 @@ type Config struct {
 	// Optional: override timeout for HTTP requests
 	Timeout time.Duration
 }
+
+// Ensure that Client implements ClientAPI
+var _ ClientAPI = (*Client)(nil)
 
 // NewClient creates a new Zoom API client
 func NewClient(config Config) *Client {

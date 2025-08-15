@@ -17,12 +17,12 @@ import (
 // ZoomProvider implements the PlatformProvider interface for Zoom
 // It contains business logic and orchestrates API calls through the Client
 type ZoomProvider struct {
-	client      *api.Client
+	client      api.ClientAPI
 	cachedUsers map[string]*api.ZoomUser // map[userID]*ZoomUser
 }
 
 // NewZoomProvider creates a new ZoomProvider with the given client
-func NewZoomProvider(client *api.Client) *ZoomProvider {
+func NewZoomProvider(client api.ClientAPI) *ZoomProvider {
 	return &ZoomProvider{
 		client:      client,
 		cachedUsers: make(map[string]*api.ZoomUser),
@@ -40,7 +40,7 @@ func (p *ZoomProvider) CreateMeeting(ctx context.Context, meeting *models.Meetin
 	user, err := p.getCachedUser(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get Zoom user for meeting creation", logging.ErrKey, err)
-		return nil, fmt.Errorf("failed to get Zoom user: %w", err)
+		return nil, fmt.Errorf("failed to get Zoom user for meeting %s: %w", meeting.UID, err)
 	}
 
 	// Build the API request using business logic
@@ -50,7 +50,7 @@ func (p *ZoomProvider) CreateMeeting(ctx context.Context, meeting *models.Meetin
 	resp, err := p.client.CreateMeeting(ctx, user.ID, req)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create Zoom meeting", logging.ErrKey, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create Zoom meeting %s for user %s: %w", meeting.UID, user.Email, err)
 	}
 
 	result := &domain.CreateMeetingResult{
@@ -78,7 +78,7 @@ func (p *ZoomProvider) UpdateMeeting(ctx context.Context, meetingID string, meet
 	// Update meeting using pure API call
 	if err := p.client.UpdateMeeting(ctx, meetingID, req); err != nil {
 		slog.ErrorContext(ctx, "failed to update Zoom meeting", logging.ErrKey, err)
-		return err
+		return fmt.Errorf("failed to update Zoom meeting %s (platform ID: %s): %w", meeting.UID, meetingID, err)
 	}
 
 	slog.InfoContext(ctx, "successfully updated Zoom meeting")
@@ -93,7 +93,7 @@ func (p *ZoomProvider) DeleteMeeting(ctx context.Context, meetingID string) erro
 	// Delete meeting using pure API call
 	if err := p.client.DeleteMeeting(ctx, meetingID); err != nil {
 		slog.ErrorContext(ctx, "failed to delete Zoom meeting", logging.ErrKey, err)
-		return err
+		return fmt.Errorf("failed to delete Zoom meeting (platform ID: %s): %w", meetingID, err)
 	}
 
 	slog.InfoContext(ctx, "successfully deleted Zoom meeting")
