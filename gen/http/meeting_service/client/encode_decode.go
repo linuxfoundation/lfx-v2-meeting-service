@@ -635,9 +635,9 @@ func EncodeUpdateMeetingBaseRequest(encoder func(*http.Request) goahttp.Encoder)
 				req.Header.Set("Authorization", head)
 			}
 		}
-		if p.Etag != nil {
-			head := *p.Etag
-			req.Header.Set("ETag", head)
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -813,9 +813,9 @@ func EncodeUpdateMeetingSettingsRequest(encoder func(*http.Request) goahttp.Enco
 				req.Header.Set("Authorization", head)
 			}
 		}
-		if p.Etag != nil {
-			head := *p.Etag
-			req.Header.Set("ETag", head)
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -975,9 +975,9 @@ func EncodeDeleteMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 				req.Header.Set("Authorization", head)
 			}
 		}
-		if p.Etag != nil {
-			head := *p.Etag
-			req.Header.Set("ETag", head)
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -1594,9 +1594,9 @@ func EncodeUpdateMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 				req.Header.Set("Authorization", head)
 			}
 		}
-		if p.Etag != nil {
-			head := *p.Etag
-			req.Header.Set("ETag", head)
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -1777,9 +1777,9 @@ func EncodeDeleteMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 				req.Header.Set("Authorization", head)
 			}
 		}
-		if p.Etag != nil {
-			head := *p.Etag
-			req.Header.Set("ETag", head)
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {

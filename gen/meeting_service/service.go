@@ -184,8 +184,8 @@ type CreateMeetingRegistrantPayload struct {
 type DeleteMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// ETag header value
-	Etag *string
+	// If-Match header value for conditional requests
+	IfMatch *string
 	// Version of the API
 	Version *string
 	// The UID of the meeting
@@ -197,8 +197,8 @@ type DeleteMeetingPayload struct {
 type DeleteMeetingRegistrantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// ETag header value
-	Etag *string
+	// If-Match header value for conditional requests
+	IfMatch *string
 	// Version of the API
 	Version *string
 	// The UID of the meeting
@@ -608,8 +608,8 @@ type ServiceUnavailableError struct {
 type UpdateMeetingBasePayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// ETag header value
-	Etag *string
+	// If-Match header value for conditional requests
+	IfMatch *string
 	// Version of the API
 	Version *string
 	// The UID of the meeting
@@ -665,8 +665,8 @@ type UpdateMeetingBasePayload struct {
 type UpdateMeetingRegistrantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// ETag header value
-	Etag *string
+	// If-Match header value for conditional requests
+	IfMatch *string
 	// Version of the API
 	Version *string
 	// The UID of the meeting
@@ -699,8 +699,8 @@ type UpdateMeetingRegistrantPayload struct {
 type UpdateMeetingSettingsPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// ETag header value
-	Etag *string
+	// If-Match header value for conditional requests
+	IfMatch *string
 	// Version of the API
 	Version *string
 	// The UID of the meeting

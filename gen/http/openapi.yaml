@@ -343,9 +343,9 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
-                - name: ETag
+                - name: If-Match
                   in: header
-                  description: ETag header value
+                  description: If-Match header value for conditional requests
                   required: false
                   type: string
                 - name: Update-Meeting-RegistrantRequestBody
@@ -438,9 +438,9 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
-                - name: ETag
+                - name: If-Match
                   in: header
-                  description: ETag header value
+                  description: If-Match header value for conditional requests
                   required: false
                   type: string
             responses:
@@ -563,9 +563,9 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
-                - name: ETag
+                - name: If-Match
                   in: header
-                  description: ETag header value
+                  description: If-Match header value for conditional requests
                   required: false
                   type: string
                 - name: Update-Meeting-BaseRequestBody
@@ -649,9 +649,9 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
-                - name: ETag
+                - name: If-Match
                   in: header
-                  description: ETag header value
+                  description: If-Match header value for conditional requests
                   required: false
                   type: string
             responses:
@@ -836,9 +836,9 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
-                - name: ETag
+                - name: If-Match
                   in: header
-                  description: ETag header value
+                  description: If-Match header value for conditional requests
                   required: false
                   type: string
                 - name: Update-Meeting-SettingsRequestBody
