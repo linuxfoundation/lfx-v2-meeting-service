@@ -95,3 +95,18 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 - Primary framework: Goa v3 for API generation
 - NATS for messaging and storage
 - Standard testing with testify
+
+## HTTP Header Conventions
+
+### ETag and Conditional Requests
+
+This service follows proper HTTP conditional request semantics:
+
+- **GET responses**: Include `ETag` header with current resource version
+- **PUT/DELETE requests**: Include `If-Match` header for optimistic concurrency control
+
+**Example flow:**
+1. Client makes GET request: `GET /meetings/{id}`
+2. Server responds with: `ETag: "123"` header  
+3. Client makes update request: `PUT /meetings/{id}` with `If-Match: "123"` header
+4. Server validates the If-Match value against current resource version

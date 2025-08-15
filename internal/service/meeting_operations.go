@@ -249,13 +249,13 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 	var revision uint64
 	var err error
 	if !s.Config.SkipEtagValidation {
-		if payload.Etag == nil {
-			slog.WarnContext(ctx, "ETag header is missing")
+		if payload.IfMatch == nil {
+			slog.WarnContext(ctx, "If-Match header is missing")
 			return nil, domain.ErrValidationFailed
 		}
-		revision, err = strconv.ParseUint(*payload.Etag, 10, 64)
+		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
 		if err != nil {
-			slog.ErrorContext(ctx, "error parsing ETag", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
 			return nil, domain.ErrValidationFailed
 		}
 	} else {
@@ -370,13 +370,13 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 	var revision uint64
 	var err error
 	if !s.Config.SkipEtagValidation {
-		if payload.Etag == nil {
-			slog.WarnContext(ctx, "ETag header is missing")
+		if payload.IfMatch == nil {
+			slog.WarnContext(ctx, "If-Match header is missing")
 			return nil, domain.ErrValidationFailed
 		}
-		revision, err = strconv.ParseUint(*payload.Etag, 10, 64)
+		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
 		if err != nil {
-			slog.ErrorContext(ctx, "error parsing ETag", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
 			return nil, domain.ErrValidationFailed
 		}
 	} else {
@@ -486,11 +486,11 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 	var revision uint64
 	var err error
 	if !s.Config.SkipEtagValidation {
-		if payload.Etag == nil {
+		if payload.IfMatch == nil {
 			slog.WarnContext(ctx, "ETag header is missing")
 			return domain.ErrValidationFailed
 		}
-		revision, err = strconv.ParseUint(*payload.Etag, 10, 64)
+		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
 		if err != nil {
 			slog.ErrorContext(ctx, "error parsing ETag", logging.ErrKey, err)
 			return domain.ErrValidationFailed
