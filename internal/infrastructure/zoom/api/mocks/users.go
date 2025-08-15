@@ -30,7 +30,7 @@ func (m *MockUsersAPI) GetUsers(ctx context.Context) ([]api.ZoomUser, error) {
 			Status:    api.UserStatusActive,
 		},
 		{
-			ID:        "user2", 
+			ID:        "user2",
 			Email:     "user2@example.com",
 			FirstName: "Jane",
 			LastName:  "Smith",
@@ -39,7 +39,7 @@ func (m *MockUsersAPI) GetUsers(ctx context.Context) ([]api.ZoomUser, error) {
 		},
 		{
 			ID:        "user3",
-			Email:     "user3@example.com", 
+			Email:     "user3@example.com",
 			FirstName: "Bob",
 			LastName:  "Johnson",
 			Type:      api.UserTypeLicensed,

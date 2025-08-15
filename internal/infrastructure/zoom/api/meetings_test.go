@@ -13,13 +13,13 @@ import (
 
 func TestClient_CreateMeeting(t *testing.T) {
 	tests := []struct {
-		name           string
-		userID         string
-		request        *CreateMeetingRequest
-		mockResponse   string
-		mockStatus     int
-		expectedError  bool
-		expectedID     int64
+		name            string
+		userID          string
+		request         *CreateMeetingRequest
+		mockResponse    string
+		mockStatus      int
+		expectedError   bool
+		expectedID      int64
 		expectedJoinURL string
 	}{
 		{

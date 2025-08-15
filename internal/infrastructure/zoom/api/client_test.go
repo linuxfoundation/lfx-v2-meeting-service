@@ -10,8 +10,8 @@ import (
 
 func TestNewClient(t *testing.T) {
 	tests := []struct {
-		name           string
-		config         Config
+		name            string
+		config          Config
 		expectedBaseURL string
 		expectedAuthURL string
 		expectedTimeout time.Duration

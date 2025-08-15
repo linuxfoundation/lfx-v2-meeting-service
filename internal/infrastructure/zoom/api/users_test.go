@@ -14,12 +14,12 @@ import (
 
 func TestClient_GetUsers(t *testing.T) {
 	tests := []struct {
-		name           string
-		mockResponse   string
-		mockStatus     int
-		expectedError  bool
-		expectedCount  int
-		expectedFirst  *ZoomUser
+		name          string
+		mockResponse  string
+		mockStatus    int
+		expectedError bool
+		expectedCount int
+		expectedFirst *ZoomUser
 	}{
 		{
 			name: "successful get users",
