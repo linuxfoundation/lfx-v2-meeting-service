@@ -439,7 +439,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			name: "successful update meeting settings",
 			payload: &meetingsvc.UpdateMeetingSettingsPayload{
 				UID:        utils.StringPtr("meeting-123"),
-				Etag:       utils.StringPtr("1"),
+				IfMatch:    utils.StringPtr("1"),
 				Organizers: []string{"org3", "org4"},
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
@@ -492,7 +492,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			name: "meeting settings not found",
 			payload: &meetingsvc.UpdateMeetingSettingsPayload{
 				UID:        utils.StringPtr("nonexistent-meeting"),
-				Etag:       utils.StringPtr("1"),
+				IfMatch:    utils.StringPtr("1"),
 				Organizers: []string{"org1"},
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {
@@ -522,7 +522,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			name: "nil UID",
 			payload: &meetingsvc.UpdateMeetingSettingsPayload{
 				UID:        nil,
-				Etag:       utils.StringPtr("1"),
+				IfMatch:    utils.StringPtr("1"),
 				Organizers: []string{"org1"},
 			},
 			setupMocks:  func(*domain.MockMeetingRepository, *domain.MockMessageBuilder) {},
@@ -530,10 +530,10 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			expectedErr: domain.ErrValidationFailed,
 		},
 		{
-			name: "missing etag header",
+			name: "missing If-Match header",
 			payload: &meetingsvc.UpdateMeetingSettingsPayload{
 				UID:        utils.StringPtr("meeting-123"),
-				Etag:       nil,
+				IfMatch:    nil,
 				Organizers: []string{"org1"},
 			},
 			setupMocks:  func(*domain.MockMeetingRepository, *domain.MockMessageBuilder) {},
@@ -544,7 +544,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			name: "skip etag validation mode",
 			payload: &meetingsvc.UpdateMeetingSettingsPayload{
 				UID:        utils.StringPtr("meeting-789"),
-				Etag:       nil,
+				IfMatch:    nil,
 				Organizers: []string{"org5", "org6"},
 			},
 			setupMocks: func(mockRepo *domain.MockMeetingRepository, mockBuilder *domain.MockMessageBuilder) {

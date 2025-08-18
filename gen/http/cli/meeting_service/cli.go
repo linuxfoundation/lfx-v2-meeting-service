@@ -68,20 +68,20 @@ func ParseEndpoint(
 		meetingServiceUpdateMeetingBaseUIDFlag         = meetingServiceUpdateMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceUpdateMeetingBaseVersionFlag     = meetingServiceUpdateMeetingBaseFlags.String("version", "", "")
 		meetingServiceUpdateMeetingBaseBearerTokenFlag = meetingServiceUpdateMeetingBaseFlags.String("bearer-token", "", "")
-		meetingServiceUpdateMeetingBaseEtagFlag        = meetingServiceUpdateMeetingBaseFlags.String("etag", "", "")
+		meetingServiceUpdateMeetingBaseIfMatchFlag     = meetingServiceUpdateMeetingBaseFlags.String("if-match", "", "")
 
 		meetingServiceUpdateMeetingSettingsFlags           = flag.NewFlagSet("update-meeting-settings", flag.ExitOnError)
 		meetingServiceUpdateMeetingSettingsBodyFlag        = meetingServiceUpdateMeetingSettingsFlags.String("body", "REQUIRED", "")
 		meetingServiceUpdateMeetingSettingsUIDFlag         = meetingServiceUpdateMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceUpdateMeetingSettingsVersionFlag     = meetingServiceUpdateMeetingSettingsFlags.String("version", "", "")
 		meetingServiceUpdateMeetingSettingsBearerTokenFlag = meetingServiceUpdateMeetingSettingsFlags.String("bearer-token", "", "")
-		meetingServiceUpdateMeetingSettingsEtagFlag        = meetingServiceUpdateMeetingSettingsFlags.String("etag", "", "")
+		meetingServiceUpdateMeetingSettingsIfMatchFlag     = meetingServiceUpdateMeetingSettingsFlags.String("if-match", "", "")
 
 		meetingServiceDeleteMeetingFlags           = flag.NewFlagSet("delete-meeting", flag.ExitOnError)
 		meetingServiceDeleteMeetingUIDFlag         = meetingServiceDeleteMeetingFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceDeleteMeetingVersionFlag     = meetingServiceDeleteMeetingFlags.String("version", "", "")
 		meetingServiceDeleteMeetingBearerTokenFlag = meetingServiceDeleteMeetingFlags.String("bearer-token", "", "")
-		meetingServiceDeleteMeetingEtagFlag        = meetingServiceDeleteMeetingFlags.String("etag", "", "")
+		meetingServiceDeleteMeetingIfMatchFlag     = meetingServiceDeleteMeetingFlags.String("if-match", "", "")
 
 		meetingServiceGetMeetingRegistrantsFlags           = flag.NewFlagSet("get-meeting-registrants", flag.ExitOnError)
 		meetingServiceGetMeetingRegistrantsUIDFlag         = meetingServiceGetMeetingRegistrantsFlags.String("uid", "REQUIRED", "The UID of the meeting")
@@ -106,14 +106,14 @@ func ParseEndpoint(
 		meetingServiceUpdateMeetingRegistrantUIDFlag         = meetingServiceUpdateMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
 		meetingServiceUpdateMeetingRegistrantVersionFlag     = meetingServiceUpdateMeetingRegistrantFlags.String("version", "", "")
 		meetingServiceUpdateMeetingRegistrantBearerTokenFlag = meetingServiceUpdateMeetingRegistrantFlags.String("bearer-token", "", "")
-		meetingServiceUpdateMeetingRegistrantEtagFlag        = meetingServiceUpdateMeetingRegistrantFlags.String("etag", "", "")
+		meetingServiceUpdateMeetingRegistrantIfMatchFlag     = meetingServiceUpdateMeetingRegistrantFlags.String("if-match", "", "")
 
 		meetingServiceDeleteMeetingRegistrantFlags           = flag.NewFlagSet("delete-meeting-registrant", flag.ExitOnError)
 		meetingServiceDeleteMeetingRegistrantMeetingUIDFlag  = meetingServiceDeleteMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceDeleteMeetingRegistrantUIDFlag         = meetingServiceDeleteMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
 		meetingServiceDeleteMeetingRegistrantVersionFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("version", "", "")
 		meetingServiceDeleteMeetingRegistrantBearerTokenFlag = meetingServiceDeleteMeetingRegistrantFlags.String("bearer-token", "", "")
-		meetingServiceDeleteMeetingRegistrantEtagFlag        = meetingServiceDeleteMeetingRegistrantFlags.String("etag", "", "")
+		meetingServiceDeleteMeetingRegistrantIfMatchFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("if-match", "", "")
 
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
@@ -250,13 +250,13 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingSettingsPayload(*meetingServiceGetMeetingSettingsUIDFlag, *meetingServiceGetMeetingSettingsVersionFlag, *meetingServiceGetMeetingSettingsBearerTokenFlag)
 			case "update-meeting-base":
 				endpoint = c.UpdateMeetingBase()
-				data, err = meetingservicec.BuildUpdateMeetingBasePayload(*meetingServiceUpdateMeetingBaseBodyFlag, *meetingServiceUpdateMeetingBaseUIDFlag, *meetingServiceUpdateMeetingBaseVersionFlag, *meetingServiceUpdateMeetingBaseBearerTokenFlag, *meetingServiceUpdateMeetingBaseEtagFlag)
+				data, err = meetingservicec.BuildUpdateMeetingBasePayload(*meetingServiceUpdateMeetingBaseBodyFlag, *meetingServiceUpdateMeetingBaseUIDFlag, *meetingServiceUpdateMeetingBaseVersionFlag, *meetingServiceUpdateMeetingBaseBearerTokenFlag, *meetingServiceUpdateMeetingBaseIfMatchFlag)
 			case "update-meeting-settings":
 				endpoint = c.UpdateMeetingSettings()
-				data, err = meetingservicec.BuildUpdateMeetingSettingsPayload(*meetingServiceUpdateMeetingSettingsBodyFlag, *meetingServiceUpdateMeetingSettingsUIDFlag, *meetingServiceUpdateMeetingSettingsVersionFlag, *meetingServiceUpdateMeetingSettingsBearerTokenFlag, *meetingServiceUpdateMeetingSettingsEtagFlag)
+				data, err = meetingservicec.BuildUpdateMeetingSettingsPayload(*meetingServiceUpdateMeetingSettingsBodyFlag, *meetingServiceUpdateMeetingSettingsUIDFlag, *meetingServiceUpdateMeetingSettingsVersionFlag, *meetingServiceUpdateMeetingSettingsBearerTokenFlag, *meetingServiceUpdateMeetingSettingsIfMatchFlag)
 			case "delete-meeting":
 				endpoint = c.DeleteMeeting()
-				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingEtagFlag)
+				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingIfMatchFlag)
 			case "get-meeting-registrants":
 				endpoint = c.GetMeetingRegistrants()
 				data, err = meetingservicec.BuildGetMeetingRegistrantsPayload(*meetingServiceGetMeetingRegistrantsUIDFlag, *meetingServiceGetMeetingRegistrantsVersionFlag, *meetingServiceGetMeetingRegistrantsBearerTokenFlag)
@@ -268,10 +268,10 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingRegistrantPayload(*meetingServiceGetMeetingRegistrantMeetingUIDFlag, *meetingServiceGetMeetingRegistrantUIDFlag, *meetingServiceGetMeetingRegistrantVersionFlag, *meetingServiceGetMeetingRegistrantBearerTokenFlag)
 			case "update-meeting-registrant":
 				endpoint = c.UpdateMeetingRegistrant()
-				data, err = meetingservicec.BuildUpdateMeetingRegistrantPayload(*meetingServiceUpdateMeetingRegistrantBodyFlag, *meetingServiceUpdateMeetingRegistrantMeetingUIDFlag, *meetingServiceUpdateMeetingRegistrantUIDFlag, *meetingServiceUpdateMeetingRegistrantVersionFlag, *meetingServiceUpdateMeetingRegistrantBearerTokenFlag, *meetingServiceUpdateMeetingRegistrantEtagFlag)
+				data, err = meetingservicec.BuildUpdateMeetingRegistrantPayload(*meetingServiceUpdateMeetingRegistrantBodyFlag, *meetingServiceUpdateMeetingRegistrantMeetingUIDFlag, *meetingServiceUpdateMeetingRegistrantUIDFlag, *meetingServiceUpdateMeetingRegistrantVersionFlag, *meetingServiceUpdateMeetingRegistrantBearerTokenFlag, *meetingServiceUpdateMeetingRegistrantIfMatchFlag)
 			case "delete-meeting-registrant":
 				endpoint = c.DeleteMeetingRegistrant()
-				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantEtagFlag)
+				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantIfMatchFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -419,14 +419,14 @@ Example:
 }
 
 func meetingServiceUpdateMeetingBaseUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-base -body JSON -uid STRING -version STRING -bearer-token STRING -etag STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-base -body JSON -uid STRING -version STRING -bearer-token STRING -if-match STRING
 
 Update an existing meeting base.
     -body JSON: 
     -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
-    -etag STRING: 
+    -if-match STRING: 
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
@@ -493,19 +493,19 @@ Example:
          "ai_companion_enabled": true,
          "ai_summary_require_approval": false
       }
-   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceUpdateMeetingSettingsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-settings -body JSON -uid STRING -version STRING -bearer-token STRING -etag STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-settings -body JSON -uid STRING -version STRING -bearer-token STRING -if-match STRING
 
 Update an existing meeting's settings.
     -body JSON: 
     -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
-    -etag STRING: 
+    -if-match STRING: 
 
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
@@ -514,21 +514,21 @@ Example:
          "Impedit autem.",
          "Est consequatur qui tenetur."
       ]
-   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceDeleteMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting -uid STRING -version STRING -bearer-token STRING -etag STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting -uid STRING -version STRING -bearer-token STRING -if-match STRING
 
 Delete an existing meeting.
     -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
-    -etag STRING: 
+    -if-match STRING: 
 
 Example:
-    %[1]s meeting-service delete-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
+    %[1]s meeting-service delete-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
 
@@ -584,7 +584,7 @@ Example:
 }
 
 func meetingServiceUpdateMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-registrant -body JSON -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -etag STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-registrant -body JSON -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -if-match STRING
 
 Update an existing registrant for a meeting
     -body JSON: 
@@ -592,7 +592,7 @@ Update an existing registrant for a meeting
     -uid STRING: The UID of the registrant
     -version STRING: 
     -bearer-token STRING: 
-    -etag STRING: 
+    -if-match STRING: 
 
 Example:
     %[1]s meeting-service update-meeting-registrant --body '{
@@ -605,22 +605,22 @@ Example:
       "occurrence_id": "1640995200",
       "org_name": "Eligendi temporibus occaecati ut delectus repudiandae.",
       "username": "Explicabo minima."
-   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceDeleteMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-registrant -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -etag STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-registrant -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -if-match STRING
 
 Delete a registrant from a meeting
     -meeting-uid STRING: The UID of the meeting
     -uid STRING: The UID of the registrant
     -version STRING: 
     -bearer-token STRING: 
-    -etag STRING: 
+    -if-match STRING: 
 
 Example:
-    %[1]s meeting-service delete-meeting-registrant --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --etag "123"
+    %[1]s meeting-service delete-meeting-registrant --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
 

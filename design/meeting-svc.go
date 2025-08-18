@@ -186,7 +186,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
-			EtagAttribute()
+			IfMatchAttribute()
 			VersionAttribute()
 			// Meeting fields from UpdateMeetingPayload
 			MeetingUIDAttribute()
@@ -226,7 +226,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
-			Header("etag:ETag")
+			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
@@ -243,7 +243,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
-			EtagAttribute()
+			IfMatchAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
 			MeetingOrganizersAttribute()
@@ -263,7 +263,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
-			Header("etag:ETag")
+			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
@@ -280,7 +280,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
-			EtagAttribute()
+			IfMatchAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
 		})
@@ -297,7 +297,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
-			Header("etag:ETag")
+			Header("if_match:If-Match")
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
 			Response("BadRequest", StatusBadRequest)
@@ -428,7 +428,7 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			Extend(UpdateRegistrantPayload)
 			BearerTokenAttribute()
-			EtagAttribute()
+			IfMatchAttribute()
 			VersionAttribute()
 			RegistrantMeetingUIDAttribute()
 			RegistrantUIDAttribute()
@@ -450,7 +450,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
-			Header("etag:ETag")
+			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
@@ -468,7 +468,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
-			EtagAttribute()
+			IfMatchAttribute()
 			VersionAttribute()
 			RegistrantMeetingUIDAttribute()
 			RegistrantUIDAttribute()
@@ -487,7 +487,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
-			Header("etag:ETag")
+			Header("if_match:If-Match")
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
 			Response("BadRequest", StatusBadRequest)

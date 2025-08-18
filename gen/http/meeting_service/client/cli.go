@@ -246,7 +246,7 @@ func BuildGetMeetingSettingsPayload(meetingServiceGetMeetingSettingsUID string, 
 
 // BuildUpdateMeetingBasePayload builds the payload for the Meeting Service
 // update-meeting-base endpoint from CLI flags.
-func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, meetingServiceUpdateMeetingBaseUID string, meetingServiceUpdateMeetingBaseVersion string, meetingServiceUpdateMeetingBaseBearerToken string, meetingServiceUpdateMeetingBaseEtag string) (*meetingservice.UpdateMeetingBasePayload, error) {
+func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, meetingServiceUpdateMeetingBaseUID string, meetingServiceUpdateMeetingBaseVersion string, meetingServiceUpdateMeetingBaseBearerToken string, meetingServiceUpdateMeetingBaseIfMatch string) (*meetingservice.UpdateMeetingBasePayload, error) {
 	var err error
 	var body UpdateMeetingBaseRequestBody
 	{
@@ -334,10 +334,10 @@ func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, m
 			bearerToken = &meetingServiceUpdateMeetingBaseBearerToken
 		}
 	}
-	var etag *string
+	var ifMatch *string
 	{
-		if meetingServiceUpdateMeetingBaseEtag != "" {
-			etag = &meetingServiceUpdateMeetingBaseEtag
+		if meetingServiceUpdateMeetingBaseIfMatch != "" {
+			ifMatch = &meetingServiceUpdateMeetingBaseIfMatch
 		}
 	}
 	v := &meetingservice.UpdateMeetingBasePayload{
@@ -372,14 +372,14 @@ func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, m
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
-	v.Etag = etag
+	v.IfMatch = ifMatch
 
 	return v, nil
 }
 
 // BuildUpdateMeetingSettingsPayload builds the payload for the Meeting Service
 // update-meeting-settings endpoint from CLI flags.
-func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody string, meetingServiceUpdateMeetingSettingsUID string, meetingServiceUpdateMeetingSettingsVersion string, meetingServiceUpdateMeetingSettingsBearerToken string, meetingServiceUpdateMeetingSettingsEtag string) (*meetingservice.UpdateMeetingSettingsPayload, error) {
+func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody string, meetingServiceUpdateMeetingSettingsUID string, meetingServiceUpdateMeetingSettingsVersion string, meetingServiceUpdateMeetingSettingsBearerToken string, meetingServiceUpdateMeetingSettingsIfMatch string) (*meetingservice.UpdateMeetingSettingsPayload, error) {
 	var err error
 	var body UpdateMeetingSettingsRequestBody
 	{
@@ -414,10 +414,10 @@ func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody s
 			bearerToken = &meetingServiceUpdateMeetingSettingsBearerToken
 		}
 	}
-	var etag *string
+	var ifMatch *string
 	{
-		if meetingServiceUpdateMeetingSettingsEtag != "" {
-			etag = &meetingServiceUpdateMeetingSettingsEtag
+		if meetingServiceUpdateMeetingSettingsIfMatch != "" {
+			ifMatch = &meetingServiceUpdateMeetingSettingsIfMatch
 		}
 	}
 	v := &meetingservice.UpdateMeetingSettingsPayload{}
@@ -430,14 +430,14 @@ func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody s
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
-	v.Etag = etag
+	v.IfMatch = ifMatch
 
 	return v, nil
 }
 
 // BuildDeleteMeetingPayload builds the payload for the Meeting Service
 // delete-meeting endpoint from CLI flags.
-func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingServiceDeleteMeetingVersion string, meetingServiceDeleteMeetingBearerToken string, meetingServiceDeleteMeetingEtag string) (*meetingservice.DeleteMeetingPayload, error) {
+func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingServiceDeleteMeetingVersion string, meetingServiceDeleteMeetingBearerToken string, meetingServiceDeleteMeetingIfMatch string) (*meetingservice.DeleteMeetingPayload, error) {
 	var err error
 	var uid string
 	{
@@ -465,17 +465,17 @@ func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingSer
 			bearerToken = &meetingServiceDeleteMeetingBearerToken
 		}
 	}
-	var etag *string
+	var ifMatch *string
 	{
-		if meetingServiceDeleteMeetingEtag != "" {
-			etag = &meetingServiceDeleteMeetingEtag
+		if meetingServiceDeleteMeetingIfMatch != "" {
+			ifMatch = &meetingServiceDeleteMeetingIfMatch
 		}
 	}
 	v := &meetingservice.DeleteMeetingPayload{}
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
-	v.Etag = etag
+	v.IfMatch = ifMatch
 
 	return v, nil
 }
@@ -644,7 +644,7 @@ func BuildGetMeetingRegistrantPayload(meetingServiceGetMeetingRegistrantMeetingU
 
 // BuildUpdateMeetingRegistrantPayload builds the payload for the Meeting
 // Service update-meeting-registrant endpoint from CLI flags.
-func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBody string, meetingServiceUpdateMeetingRegistrantMeetingUID string, meetingServiceUpdateMeetingRegistrantUID string, meetingServiceUpdateMeetingRegistrantVersion string, meetingServiceUpdateMeetingRegistrantBearerToken string, meetingServiceUpdateMeetingRegistrantEtag string) (*meetingservice.UpdateMeetingRegistrantPayload, error) {
+func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBody string, meetingServiceUpdateMeetingRegistrantMeetingUID string, meetingServiceUpdateMeetingRegistrantUID string, meetingServiceUpdateMeetingRegistrantVersion string, meetingServiceUpdateMeetingRegistrantBearerToken string, meetingServiceUpdateMeetingRegistrantIfMatch string) (*meetingservice.UpdateMeetingRegistrantPayload, error) {
 	var err error
 	var body UpdateMeetingRegistrantRequestBody
 	{
@@ -709,10 +709,10 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 			bearerToken = &meetingServiceUpdateMeetingRegistrantBearerToken
 		}
 	}
-	var etag *string
+	var ifMatch *string
 	{
-		if meetingServiceUpdateMeetingRegistrantEtag != "" {
-			etag = &meetingServiceUpdateMeetingRegistrantEtag
+		if meetingServiceUpdateMeetingRegistrantIfMatch != "" {
+			ifMatch = &meetingServiceUpdateMeetingRegistrantIfMatch
 		}
 	}
 	v := &meetingservice.UpdateMeetingRegistrantPayload{
@@ -730,14 +730,14 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
-	v.Etag = etag
+	v.IfMatch = ifMatch
 
 	return v, nil
 }
 
 // BuildDeleteMeetingRegistrantPayload builds the payload for the Meeting
 // Service delete-meeting-registrant endpoint from CLI flags.
-func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMeetingUID string, meetingServiceDeleteMeetingRegistrantUID string, meetingServiceDeleteMeetingRegistrantVersion string, meetingServiceDeleteMeetingRegistrantBearerToken string, meetingServiceDeleteMeetingRegistrantEtag string) (*meetingservice.DeleteMeetingRegistrantPayload, error) {
+func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMeetingUID string, meetingServiceDeleteMeetingRegistrantUID string, meetingServiceDeleteMeetingRegistrantVersion string, meetingServiceDeleteMeetingRegistrantBearerToken string, meetingServiceDeleteMeetingRegistrantIfMatch string) (*meetingservice.DeleteMeetingRegistrantPayload, error) {
 	var err error
 	var meetingUID string
 	{
@@ -773,10 +773,10 @@ func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMe
 			bearerToken = &meetingServiceDeleteMeetingRegistrantBearerToken
 		}
 	}
-	var etag *string
+	var ifMatch *string
 	{
-		if meetingServiceDeleteMeetingRegistrantEtag != "" {
-			etag = &meetingServiceDeleteMeetingRegistrantEtag
+		if meetingServiceDeleteMeetingRegistrantIfMatch != "" {
+			ifMatch = &meetingServiceDeleteMeetingRegistrantIfMatch
 		}
 	}
 	v := &meetingservice.DeleteMeetingRegistrantPayload{}
@@ -784,7 +784,7 @@ func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMe
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
-	v.Etag = etag
+	v.IfMatch = ifMatch
 
 	return v, nil
 }
