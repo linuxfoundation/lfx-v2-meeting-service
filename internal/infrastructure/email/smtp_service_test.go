@@ -26,6 +26,8 @@ func TestNewSMTPService(t *testing.T) {
 	assert.Equal(t, config, service.config)
 	assert.NotNil(t, service.templates.invitationHTML)
 	assert.NotNil(t, service.templates.invitationText)
+	assert.NotNil(t, service.templates.cancellationHTML)
+	assert.NotNil(t, service.templates.cancellationText)
 }
 
 func TestSMTPService_RenderTemplates(t *testing.T) {
@@ -182,6 +184,90 @@ func TestFormatDuration(t *testing.T) {
 	}
 }
 
+func TestSMTPService_RenderCancellationTemplates(t *testing.T) {
+	config := SMTPConfig{
+		Host: "localhost",
+		Port: 1025,
+		From: "test@example.com",
+	}
+
+	service, err := NewSMTPService(config)
+	require.NoError(t, err)
+
+	cancellation := domain.EmailCancellation{
+		RecipientEmail: "user@example.com",
+		RecipientName:  "John Doe",
+		MeetingTitle:   "Test Meeting Cancelled",
+		StartTime:      time.Date(2024, 1, 15, 14, 30, 0, 0, time.UTC),
+		Duration:       60,
+		Timezone:       "UTC",
+		Description:    "This meeting has been cancelled",
+		ProjectName:    "Test Project",
+		Reason:         "Meeting no longer needed",
+	}
+
+	t.Run("HTML cancellation template rendering", func(t *testing.T) {
+		htmlContent, err := service.renderCancellationHTMLTemplate(cancellation)
+		require.NoError(t, err)
+		assert.Contains(t, htmlContent, "Test Meeting Cancelled")
+		assert.Contains(t, htmlContent, "John Doe")
+		assert.Contains(t, htmlContent, "Meeting Cancellation Notice")
+		assert.Contains(t, htmlContent, "This meeting has been cancelled")
+		assert.Contains(t, htmlContent, "Test Project")
+		assert.Contains(t, htmlContent, "Meeting no longer needed")
+		assert.Contains(t, htmlContent, "cancelled")
+	})
+
+	t.Run("Text cancellation template rendering", func(t *testing.T) {
+		textContent, err := service.renderCancellationTextTemplate(cancellation)
+		require.NoError(t, err)
+		assert.Contains(t, textContent, "Test Meeting Cancelled")
+		assert.Contains(t, textContent, "John Doe")
+		assert.Contains(t, textContent, "Meeting Cancellation Notice")
+		assert.Contains(t, textContent, "This meeting has been cancelled")
+		assert.Contains(t, textContent, "Test Project")
+		assert.Contains(t, textContent, "Meeting no longer needed")
+		assert.Contains(t, textContent, "CANCELLED")
+	})
+}
+
+func TestSMTPService_BuildCancellationMessage(t *testing.T) {
+	config := SMTPConfig{
+		Host: "localhost",
+		Port: 1025,
+		From: "noreply@example.com",
+	}
+
+	service, err := NewSMTPService(config)
+	require.NoError(t, err)
+
+	cancellation := domain.EmailCancellation{
+		RecipientEmail: "user@example.com",
+		RecipientName:  "John Doe",
+		MeetingTitle:   "Test Meeting Cancelled",
+		StartTime:      time.Date(2024, 1, 15, 14, 30, 0, 0, time.UTC),
+		Duration:       60,
+		Timezone:       "UTC",
+		Description:    "This meeting has been cancelled",
+		Reason:         "Meeting no longer needed",
+	}
+
+	htmlContent := "<h1>Test Cancellation HTML</h1>"
+	textContent := "Test Cancellation Text"
+
+	message := service.buildCancellationMessage(cancellation, htmlContent, textContent)
+
+	assert.Contains(t, message, "From: noreply@example.com")
+	assert.Contains(t, message, "To: user@example.com")
+	assert.Contains(t, message, "Subject: Meeting Cancellation: Test Meeting Cancelled")
+	assert.Contains(t, message, "MIME-Version: 1.0")
+	assert.Contains(t, message, "Content-Type: multipart/alternative")
+	assert.Contains(t, message, "Content-Type: text/plain")
+	assert.Contains(t, message, "Content-Type: text/html")
+	assert.Contains(t, message, htmlContent)
+	assert.Contains(t, message, textContent)
+}
+
 func TestNoOpService(t *testing.T) {
 	service := NewNoOpService()
 	assert.NotNil(t, service)
@@ -191,6 +277,18 @@ func TestNoOpService(t *testing.T) {
 		MeetingTitle:   "Test Meeting",
 	}
 
-	err := service.SendRegistrantInvitation(context.Background(), invitation)
-	assert.NoError(t, err)
+	cancellation := domain.EmailCancellation{
+		RecipientEmail: "user@example.com",
+		MeetingTitle:   "Test Meeting Cancelled",
+	}
+
+	t.Run("SendRegistrantInvitation", func(t *testing.T) {
+		err := service.SendRegistrantInvitation(context.Background(), invitation)
+		assert.NoError(t, err)
+	})
+
+	t.Run("SendRegistrantCancellation", func(t *testing.T) {
+		err := service.SendRegistrantCancellation(context.Background(), cancellation)
+		assert.NoError(t, err)
+	})
 }

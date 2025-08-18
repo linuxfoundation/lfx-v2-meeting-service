@@ -529,6 +529,15 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil)
 				// Mock message sending
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.Anything).Return(nil)
+				// Mock GetBase for cancellation email (called in goroutine)
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-1").Return(&models.MeetingBase{
+					UID:         "meeting-1",
+					Title:       "Test Meeting",
+					StartTime:   now,
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
 			},
 			wantErr: false,
 		},

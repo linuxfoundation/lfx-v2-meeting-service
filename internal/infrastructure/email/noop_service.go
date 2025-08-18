@@ -27,3 +27,12 @@ func (s *NoOpService) SendRegistrantInvitation(ctx context.Context, invitation d
 	slog.DebugContext(ctx, "email service disabled, skipping invitation email")
 	return nil
 }
+
+// SendRegistrantCancellation logs the cancellation but doesn't send an email
+func (s *NoOpService) SendRegistrantCancellation(ctx context.Context, cancellation domain.EmailCancellation) error {
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", cancellation.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", cancellation.MeetingTitle))
+
+	slog.DebugContext(ctx, "email service disabled, skipping cancellation email")
+	return nil
+}
