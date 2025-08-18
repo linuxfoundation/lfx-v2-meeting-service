@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Features
+
+### Email Notifications
+The service now supports sending invitation emails when registrants are added to meetings:
+- **Email Service**: SMTP-based email service with HTML and plain text templates
+- **Local Development**: Uses Mailpit (localhost:1025) to capture emails without sending real emails
+- **Templates**: Professional email templates with meeting details and join links
+- **Configuration**: Configurable via environment variables and Helm chart values
+- **Graceful Handling**: Email failures don't prevent registrant creation
+
 ## Development Commands
 
 ### Core Development Workflow

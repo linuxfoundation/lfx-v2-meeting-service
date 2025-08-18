@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Invitation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 2px solid #0068c8;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #0068c8;
+            font-size: 24px;
+            margin: 0;
+        }
+        .meeting-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0068c8;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            margin: 10px 0;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            width: 100px;
+        }
+        .description {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #fafafa;
+            border-radius: 4px;
+        }
+        .join-button {
+            display: inline-block;
+            background-color: #0068c8;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .join-button:hover {
+            background-color: #0056a8;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Meeting Invitation</h1>
+        </div>
+        
+        <p>Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},</p>
+        
+        <p>You have been invited to the following meeting{{if .ProjectName}} for <strong>{{.ProjectName}}</strong>{{end}}:</p>
+        
+        <div class="meeting-details">
+            <div class="detail-row">
+                <span class="detail-label">Meeting:</span>
+                <strong>{{.MeetingTitle}}</strong>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Date & Time:</span>
+                {{formatTime .StartTime .Timezone}}
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Duration:</span>
+                {{formatDuration .Duration}}
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Time Zone:</span>
+                {{.Timezone}}
+            </div>
+        </div>
+        
+        {{if .Description}}
+        <div class="description">
+            <strong>Description:</strong><br>
+            {{.Description}}
+        </div>
+        {{end}}
+        
+        {{if .JoinLink}}
+        <div style="text-align: center;">
+            <a href="{{.JoinLink}}" class="join-button">Join Meeting</a>
+        </div>
+        
+        <p><small>Or copy and paste this link into your browser:</small><br>
+        <a href="{{.JoinLink}}">{{.JoinLink}}</a></p>
+        {{else}}
+        <p><em>Meeting link will be provided closer to the meeting time.</em></p>
+        {{end}}
+        
+        <div class="footer">
+            <p>This is an automated email from the Linux Foundation Meeting Service.<br>
+            Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

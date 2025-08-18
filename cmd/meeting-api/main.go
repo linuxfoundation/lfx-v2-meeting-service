@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -25,6 +26,7 @@ import (
 	genquerysvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/email"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
 	store "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/store"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -69,6 +71,13 @@ func main() {
 	gracefulCloseWG := sync.WaitGroup{}
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)
+
+	// Initialize email service (independent of NATS)
+	err = setupEmailService(env, svc)
+	if err != nil {
+		slog.With(errKey, err).Error("error setting up email service")
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -127,6 +136,12 @@ type environment struct {
 	NatsURL            string
 	Port               string
 	SkipEtagValidation bool
+	EmailEnabled       bool
+	SMTPHost           string
+	SMTPPort           int
+	SMTPFrom           string
+	SMTPUsername       string
+	SMTPPassword       string
 }
 
 func parseEnv() environment {
@@ -143,10 +158,42 @@ func parseEnv() environment {
 	if skipEtagValidationStr == "true" {
 		skipEtagValidation = true
 	}
+
+	// Email configuration
+	emailEnabled := true
+	emailEnabledStr := os.Getenv("EMAIL_ENABLED")
+	if emailEnabledStr == "false" {
+		emailEnabled = false
+	}
+
+	smtpHost := os.Getenv("SMTP_HOST")
+	if smtpHost == "" {
+		smtpHost = "localhost"
+	}
+
+	smtpPort := 1025 // Default for Mailpit
+	smtpPortStr := os.Getenv("SMTP_PORT")
+	if smtpPortStr != "" {
+		if port, err := strconv.Atoi(smtpPortStr); err == nil {
+			smtpPort = port
+		}
+	}
+
+	smtpFrom := os.Getenv("SMTP_FROM")
+	if smtpFrom == "" {
+		smtpFrom = "noreply@lfx.linuxfoundation.org"
+	}
+
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,
 		SkipEtagValidation: skipEtagValidation,
+		EmailEnabled:       emailEnabled,
+		SMTPHost:           smtpHost,
+		SMTPPort:           smtpPort,
+		SMTPFrom:           smtpFrom,
+		SMTPUsername:       os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:       os.Getenv("SMTP_PASSWORD"),
 	}
 }
 
@@ -332,6 +379,30 @@ func createNatsSubcriptions(ctx context.Context, svc *MeetingsAPI, natsConn *nat
 		return err
 	}
 
+	return nil
+}
+
+// setupEmailService initializes the email service based on configuration
+func setupEmailService(env environment, svc *MeetingsAPI) error {
+	if env.EmailEnabled {
+		emailConfig := email.SMTPConfig{
+			Host:     env.SMTPHost,
+			Port:     env.SMTPPort,
+			From:     env.SMTPFrom,
+			Username: env.SMTPUsername,
+			Password: env.SMTPPassword,
+		}
+		emailService, err := email.NewSMTPService(emailConfig)
+		if err != nil {
+			slog.With(errKey, err).Error("error creating email service")
+			return err
+		}
+		svc.service.EmailService = emailService
+		slog.With("smtp_host", env.SMTPHost, "smtp_port", env.SMTPPort).Info("email service enabled")
+	} else {
+		svc.service.EmailService = email.NewNoOpService()
+		slog.Info("email service disabled")
+	}
 	return nil
 }
 

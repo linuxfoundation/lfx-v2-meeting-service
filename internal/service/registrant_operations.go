@@ -6,6 +6,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
 
@@ -117,6 +118,18 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 		// This can happen when the registrant is not an LF user but rather a guest user.
 		slog.DebugContext(ctx, "no username for registrant, skipping access message")
 	}
+
+	// Send invitation email to the registrant
+	go func() {
+		// Use a background context to avoid cancellation affecting email sending
+		emailCtx := logging.AppendCtx(context.Background(), slog.String("registrant_uid", registrantDB.UID))
+		emailCtx = logging.AppendCtx(emailCtx, slog.String("meeting_uid", registrantDB.MeetingUID))
+
+		err := s.sendRegistrantInvitationEmail(emailCtx, registrantDB)
+		if err != nil {
+			slog.ErrorContext(emailCtx, "failed to send invitation email", logging.ErrKey, err)
+		}
+	}()
 
 	return registrant, nil
 }
@@ -478,4 +491,42 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	}
 
 	return nil
+}
+
+// sendRegistrantInvitationEmail sends an invitation email to a newly created registrant
+func (s *MeetingsService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
+	// Get meeting details for the email
+	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
+	if err != nil {
+		return fmt.Errorf("failed to get meeting details: %w", err)
+	}
+
+	// Format recipient name
+	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
+	if recipientName == " " {
+		recipientName = "" // If both names are empty, use empty string
+	}
+
+	// Construct join link if available
+	joinLink := meetingDB.PublicLink
+	if joinLink == "" && meetingDB.ZoomConfig != nil && meetingDB.ZoomConfig.MeetingID != "" {
+		// Construct Zoom link if meeting ID is available
+		joinLink = fmt.Sprintf("https://zoom.us/j/%s", meetingDB.ZoomConfig.MeetingID)
+	}
+
+	// Create email invitation
+	invitation := domain.EmailInvitation{
+		RecipientEmail: registrant.Email,
+		RecipientName:  recipientName,
+		MeetingTitle:   meetingDB.Title,
+		StartTime:      meetingDB.StartTime,
+		Duration:       meetingDB.Duration,
+		Timezone:       meetingDB.Timezone,
+		Description:    meetingDB.Description,
+		JoinLink:       joinLink,
+		ProjectName:    "", // TODO: Add project name once project service integration is available
+	}
+
+	// Send the email
+	return s.EmailService.SendRegistrantInvitation(ctx, invitation)
 }

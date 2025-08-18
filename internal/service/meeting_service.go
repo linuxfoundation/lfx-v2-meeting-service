@@ -13,6 +13,7 @@ type MeetingsService struct {
 	MeetingRepository    domain.MeetingRepository
 	RegistrantRepository domain.RegistrantRepository
 	MessageBuilder       domain.MessageBuilder
+	EmailService         domain.EmailService
 	Auth                 auth.IJWTAuth
 	Config               ServiceConfig
 }

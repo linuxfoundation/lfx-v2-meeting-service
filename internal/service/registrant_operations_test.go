@@ -11,6 +11,7 @@ import (
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/email"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -121,6 +122,7 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				EmailService:         email.NewNoOpService(),
 				Config:               ServiceConfig{},
 			}
 
@@ -233,6 +235,7 @@ func TestMeetingsService_GetMeetingRegistrants(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				EmailService:         email.NewNoOpService(),
 				Config:               ServiceConfig{},
 			}
 
@@ -330,6 +333,7 @@ func TestMeetingsService_GetMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				EmailService:         email.NewNoOpService(),
 				Config:               ServiceConfig{},
 			}
 
@@ -464,6 +468,7 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				EmailService:         email.NewNoOpService(),
 				Config:               ServiceConfig{},
 			}
 
@@ -579,6 +584,7 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				EmailService:         email.NewNoOpService(),
 				Config:               ServiceConfig{},
 			}
 

@@ -37,6 +37,18 @@ spec:
               value: {{ .Values.app.skipEtagValidation | quote }}
             - name: JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL
               value: {{ .Values.app.jwtAuthDisabledMockLocalPrincipal }}
+            - name: EMAIL_ENABLED
+              value: {{ .Values.email.enabled | quote }}
+            - name: SMTP_HOST
+              value: {{ .Values.email.smtp.host }}
+            - name: SMTP_PORT
+              value: {{ .Values.email.smtp.port | quote }}
+            - name: SMTP_FROM
+              value: {{ .Values.email.smtp.from }}
+            - name: SMTP_USERNAME
+              value: {{ .Values.email.smtp.username }}
+            - name: SMTP_PASSWORD
+              value: {{ .Values.email.smtp.password }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: web
