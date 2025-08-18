@@ -21,6 +21,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	goahttp "goa.design/goa/v3/http"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
 	genhttp "github.com/linuxfoundation/lfx-v2-meeting-service/gen/http/meeting_service/server"
 	genquerysvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -64,6 +65,11 @@ func main() {
 	service := service.NewMeetingsService(jwtAuth, service.ServiceConfig{
 		SkipEtagValidation: env.SkipEtagValidation,
 	})
+
+	// Initialize platform providers
+	platformConfigs := platforms.NewPlatformConfigsFromEnv()
+	platforms.Initialize(platformConfigs, service)
+
 	svc := NewMeetingsAPI(service)
 
 	gracefulCloseWG := sync.WaitGroup{}
@@ -143,6 +149,7 @@ func parseEnv() environment {
 	if skipEtagValidationStr == "true" {
 		skipEtagValidation = true
 	}
+
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,

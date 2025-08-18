@@ -121,6 +121,7 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				PlatformRegistry:     &domain.MockPlatformRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -233,6 +234,7 @@ func TestMeetingsService_GetMeetingRegistrants(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				PlatformRegistry:     &domain.MockPlatformRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -330,6 +332,7 @@ func TestMeetingsService_GetMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				PlatformRegistry:     &domain.MockPlatformRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -464,6 +467,7 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				PlatformRegistry:     &domain.MockPlatformRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -579,6 +583,7 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 				MeetingRepository:    mockMeetingRepo,
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
+				PlatformRegistry:     &domain.MockPlatformRegistry{},
 				Config:               ServiceConfig{},
 			}
 
