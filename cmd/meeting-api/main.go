@@ -14,6 +14,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 )
@@ -35,6 +36,11 @@ func main() {
 	service := service.NewMeetingsService(jwtAuth, service.ServiceConfig{
 		SkipEtagValidation: env.SkipEtagValidation,
 	})
+
+	// Initialize platform providers
+	platformConfigs := platforms.NewPlatformConfigsFromEnv()
+	platforms.Initialize(platformConfigs, service)
+
 	svc := NewMeetingsAPI(service)
 
 	gracefulCloseWG := sync.WaitGroup{}

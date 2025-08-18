@@ -144,3 +144,12 @@ email:
     username: ""
     # password is the SMTP password (optional for authenticated SMTP)
     password: ""
+
+# zoom is the configuration for Zoom integration
+zoom:
+  # accountId is the Zoom OAuth Server-to-Server Account ID
+  accountId: ""
+  # clientId is the Zoom OAuth App Client ID
+  clientId: ""
+  # clientSecret is the Zoom OAuth App Client Secret
+  clientSecret: ""

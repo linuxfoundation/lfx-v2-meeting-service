@@ -337,64 +337,56 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "meeting_participants",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Repellendus ut.",
-               "Explicabo dolorum."
+               "Veniam occaecati sed vitae non aut totam.",
+               "Laborum earum praesentium.",
+               "Velit recusandae voluptatem in ut."
             ],
-            "uid": "Porro repellat iure esse."
+            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
          },
          {
             "allowed_voting_statuses": [
-               "Repellendus ut.",
-               "Explicabo dolorum."
+               "Veniam occaecati sed vitae non aut totam.",
+               "Laborum earum praesentium.",
+               "Velit recusandae voluptatem in ut."
             ],
-            "uid": "Porro repellat iure esse."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Repellendus ut.",
-               "Explicabo dolorum."
-            ],
-            "uid": "Porro repellat iure esse."
+            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
          }
       ],
-      "description": "Et aut excepturi a animi.",
-      "duration": 535,
-      "early_join_time_minutes": 26,
+      "description": "Alias quasi eum non ipsum minima fuga.",
+      "duration": 590,
+      "early_join_time_minutes": 16,
       "meeting_type": "Board",
       "organizers": [
-         "Modi et voluptatem enim ad.",
-         "Quod eos.",
-         "Et magni quasi placeat et expedita.",
-         "Impedit enim ratione."
+         "A iure vero ipsa possimus sint.",
+         "Consequatur quod vero ipsa esse."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Assumenda molestias veritatis eos et quod ea.",
-      "recording_enabled": false,
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "2014-01-06T09:24:02Z",
-         "end_times": 1989923452977874675,
-         "monthly_day": 19,
-         "monthly_week": 4,
+         "end_date_time": "1977-09-25T01:54:22Z",
+         "end_times": 3400756039590933957,
+         "monthly_day": 16,
+         "monthly_week": 1,
          "monthly_week_day": 6,
-         "repeat_interval": 6470627151182217547,
-         "type": 1,
+         "repeat_interval": 7055716465626542352,
+         "type": 2,
          "weekly_days": "1,3,5"
       },
       "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Ab beatae omnis.",
-      "title": "Cupiditate quasi aspernatur accusantium.",
-      "transcript_enabled": true,
+      "timezone": "Delectus totam ullam quia iusto sed atque.",
+      "title": "Distinctio similique.",
+      "transcript_enabled": false,
       "visibility": "public",
-      "youtube_upload_enabled": false,
+      "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": true
+         "ai_summary_require_approval": false
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -438,58 +430,68 @@ Update an existing meeting base.
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
-      "artifact_visibility": "meeting_participants",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Repellendus ut.",
-               "Explicabo dolorum."
+               "Veniam occaecati sed vitae non aut totam.",
+               "Laborum earum praesentium.",
+               "Velit recusandae voluptatem in ut."
             ],
-            "uid": "Porro repellat iure esse."
+            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
          },
          {
             "allowed_voting_statuses": [
-               "Repellendus ut.",
-               "Explicabo dolorum."
+               "Veniam occaecati sed vitae non aut totam.",
+               "Laborum earum praesentium.",
+               "Velit recusandae voluptatem in ut."
             ],
-            "uid": "Porro repellat iure esse."
+            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
          },
          {
             "allowed_voting_statuses": [
-               "Repellendus ut.",
-               "Explicabo dolorum."
+               "Veniam occaecati sed vitae non aut totam.",
+               "Laborum earum praesentium.",
+               "Velit recusandae voluptatem in ut."
             ],
-            "uid": "Porro repellat iure esse."
+            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Veniam occaecati sed vitae non aut totam.",
+               "Laborum earum praesentium.",
+               "Velit recusandae voluptatem in ut."
+            ],
+            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
          }
       ],
-      "description": "Non autem.",
-      "duration": 155,
-      "early_join_time_minutes": 39,
+      "description": "Et vero.",
+      "duration": 273,
+      "early_join_time_minutes": 32,
       "meeting_type": "None",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "Et qui id sed delectus quod sunt.",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "2014-01-06T09:24:02Z",
-         "end_times": 1989923452977874675,
-         "monthly_day": 19,
-         "monthly_week": 4,
+         "end_date_time": "1977-09-25T01:54:22Z",
+         "end_times": 3400756039590933957,
+         "monthly_day": 16,
+         "monthly_week": 1,
          "monthly_week_day": 6,
-         "repeat_interval": 6470627151182217547,
-         "type": 1,
+         "repeat_interval": 7055716465626542352,
+         "type": 2,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Voluptatem officia fugit.",
-      "title": "Voluptatibus nobis.",
+      "timezone": "Mollitia nemo est aut dolores.",
+      "title": "Officia provident perspiciatis nihil.",
       "transcript_enabled": false,
       "visibility": "private",
-      "youtube_upload_enabled": false,
+      "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": true
+         "ai_summary_require_approval": false
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -508,8 +510,9 @@ Update an existing meeting's settings.
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
       "organizers": [
-         "Tenetur vitae vel possimus et consequuntur.",
-         "Ut aliquam sunt possimus unde quia."
+         "Esse occaecati rem recusandae architecto vero.",
+         "Impedit autem.",
+         "Est consequatur qui tenetur."
       ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -556,12 +559,12 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": false,
+      "host": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Nesciunt officiis vel suscipit ipsum.",
-      "username": "Officia nihil voluptatem sunt."
+      "org_name": "Ducimus itaque quaerat voluptatibus magni.",
+      "username": "Temporibus rerum quidem voluptatem est nobis optio."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -600,8 +603,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Repudiandae laborum quibusdam ut ut earum assumenda.",
-      "username": "Aut veniam."
+      "org_name": "Eligendi temporibus occaecati ut delectus repudiandae.",
+      "username": "Explicabo minima."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }

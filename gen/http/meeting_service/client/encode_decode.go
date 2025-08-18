@@ -2015,6 +2015,7 @@ func unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull(v *MeetingFullR
 		Visibility:                      v.Visibility,
 		Restricted:                      v.Restricted,
 		ArtifactVisibility:              v.ArtifactVisibility,
+		JoinURL:                         v.JoinURL,
 		PublicLink:                      v.PublicLink,
 		EmailDeliveryErrorCount:         v.EmailDeliveryErrorCount,
 		RecordingEnabled:                v.RecordingEnabled,
@@ -2100,6 +2101,7 @@ func unmarshalZoomConfigFullResponseBodyToMeetingserviceZoomConfigFull(v *ZoomCo
 	}
 	res := &meetingservice.ZoomConfigFull{
 		MeetingID:                v.MeetingID,
+		Passcode:                 v.Passcode,
 		AiCompanionEnabled:       v.AiCompanionEnabled,
 		AiSummaryRequireApproval: v.AiSummaryRequireApproval,
 	}

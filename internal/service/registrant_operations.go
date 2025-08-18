@@ -58,7 +58,7 @@ func createRegistrantContext(registrantUID, meetingUID string) context.Context {
 // CreateMeetingRegistrant creates a new registrant for a meeting
 func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -162,7 +162,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 // GetMeetingRegistrants gets all registrants for a meeting
 func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantsPayload) (*meetingsvc.GetMeetingRegistrantsResult, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -214,7 +214,7 @@ func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *me
 // GetMeetingRegistrant gets a specific registrant by UID
 func (s *MeetingsService) GetMeetingRegistrant(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantPayload) (*meetingsvc.GetMeetingRegistrantResult, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -302,7 +302,7 @@ func (s *MeetingsService) validateUpdateMeetingRegistrantPayload(ctx context.Con
 // UpdateMeetingRegistrant updates an existing registrant
 func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *meetingsvc.UpdateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -430,7 +430,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 // DeleteMeetingRegistrant deletes a registrant from a meeting
 func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *meetingsvc.DeleteMeetingRegistrantPayload) error {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
 	}
 

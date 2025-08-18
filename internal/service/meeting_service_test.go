@@ -51,6 +51,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					MeetingRepository:    &domain.MockMeetingRepository{},
 					RegistrantRepository: &domain.MockRegistrantRepository{},
 					MessageBuilder:       &domain.MockMessageBuilder{},
+					PlatformRegistry:     &domain.MockPlatformRegistry{},
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -60,9 +61,11 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service not ready - missing repository",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository: nil,
-					MessageBuilder:    &domain.MockMessageBuilder{},
-					Auth:              &auth.MockJWTAuth{},
+					MeetingRepository:    nil,
+					RegistrantRepository: &domain.MockRegistrantRepository{},
+					MessageBuilder:       &domain.MockMessageBuilder{},
+					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -71,9 +74,11 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service not ready - missing message builder",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository: &domain.MockMeetingRepository{},
-					MessageBuilder:    nil,
-					Auth:              &auth.MockJWTAuth{},
+					MeetingRepository:    &domain.MockMeetingRepository{},
+					RegistrantRepository: &domain.MockRegistrantRepository{},
+					MessageBuilder:       nil,
+					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -85,6 +90,20 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					MeetingRepository:    &domain.MockMeetingRepository{},
 					RegistrantRepository: nil,
 					MessageBuilder:       &domain.MockMessageBuilder{},
+					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					Auth:                 &auth.MockJWTAuth{},
+				}
+			},
+			expectedReady: false,
+		},
+		{
+			name: "service not ready - missing platform registry",
+			setupService: func() *MeetingsService {
+				return &MeetingsService{
+					MeetingRepository:    &domain.MockMeetingRepository{},
+					RegistrantRepository: &domain.MockRegistrantRepository{},
+					MessageBuilder:       &domain.MockMessageBuilder{},
+					PlatformRegistry:     nil,
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -97,6 +116,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					MeetingRepository:    nil,
 					RegistrantRepository: nil,
 					MessageBuilder:       nil,
+					PlatformRegistry:     nil,
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -109,6 +129,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					MeetingRepository:    &domain.MockMeetingRepository{},
 					RegistrantRepository: &domain.MockRegistrantRepository{},
 					MessageBuilder:       &domain.MockMessageBuilder{},
+					PlatformRegistry:     &domain.MockPlatformRegistry{},
 					Auth:                 nil,
 				}
 			},
@@ -162,6 +183,7 @@ func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, 
 	service.MeetingRepository = mockRepo
 	service.RegistrantRepository = &domain.MockRegistrantRepository{}
 	service.MessageBuilder = mockBuilder
+	service.PlatformRegistry = &domain.MockPlatformRegistry{}
 
 	return service, mockRepo, mockBuilder, mockAuth
 }

@@ -1666,6 +1666,7 @@ func marshalMeetingserviceMeetingFullToMeetingFullResponseBody(v *meetingservice
 		Visibility:                      v.Visibility,
 		Restricted:                      v.Restricted,
 		ArtifactVisibility:              v.ArtifactVisibility,
+		JoinURL:                         v.JoinURL,
 		PublicLink:                      v.PublicLink,
 		EmailDeliveryErrorCount:         v.EmailDeliveryErrorCount,
 		RecordingEnabled:                v.RecordingEnabled,
@@ -1755,6 +1756,7 @@ func marshalMeetingserviceZoomConfigFullToZoomConfigFullResponseBody(v *meetings
 	}
 	res := &ZoomConfigFullResponseBody{
 		MeetingID:                v.MeetingID,
+		Passcode:                 v.Passcode,
 		AiCompanionEnabled:       v.AiCompanionEnabled,
 		AiSummaryRequireApproval: v.AiSummaryRequireApproval,
 	}

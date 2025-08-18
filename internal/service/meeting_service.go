@@ -14,6 +14,7 @@ type MeetingsService struct {
 	RegistrantRepository domain.RegistrantRepository
 	MessageBuilder       domain.MessageBuilder
 	EmailService         domain.EmailService
+	PlatformRegistry     domain.PlatformRegistry
 	Auth                 auth.IJWTAuth
 	Config               ServiceConfig
 }
@@ -28,7 +29,7 @@ func NewMeetingsService(auth auth.IJWTAuth, config ServiceConfig) *MeetingsServi
 
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingsService) ServiceReady() bool {
-	return s.MeetingRepository != nil && s.RegistrantRepository != nil && s.MessageBuilder != nil
+	return s.MeetingRepository != nil && s.RegistrantRepository != nil && s.MessageBuilder != nil && s.PlatformRegistry != nil
 }
 
 // ServiceConfig is the configuration for the MeetingsService.

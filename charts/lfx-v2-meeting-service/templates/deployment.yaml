@@ -49,6 +49,12 @@ spec:
               value: {{ .Values.email.smtp.username }}
             - name: SMTP_PASSWORD
               value: {{ .Values.email.smtp.password }}
+            - name: ZOOM_ACCOUNT_ID
+              value: {{ .Values.zoom.accountId }}
+            - name: ZOOM_CLIENT_ID
+              value: {{ .Values.zoom.clientId }}
+            - name: ZOOM_CLIENT_SECRET
+              value: {{ .Values.zoom.clientSecret }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: web

@@ -132,10 +132,6 @@ type CreateMeetingPayload struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool
 	// Whether transcription is enabled for the meeting
@@ -351,6 +347,10 @@ type MeetingBase struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
@@ -417,6 +417,10 @@ type MeetingFull struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
@@ -646,10 +650,6 @@ type UpdateMeetingBasePayload struct {
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool
 	// Whether transcription is enabled for the meeting
@@ -715,6 +715,10 @@ type UpdateMeetingSettingsPayload struct {
 type ZoomConfigFull struct {
 	// The ID of the created meeting in Zoom
 	MeetingID *string
+	// The zoom-defined passcode for the meeting. Required if joining via dial-in,
+	// or by clicking 'join meeting' in the zoom client & putting in the meeting id
+	// and passcode.
+	Passcode *string
 	// For zoom platform meetings: whether Zoom AI companion is enabled
 	AiCompanionEnabled *bool
 	// For zoom platform meetings: whether AI summary approval is required

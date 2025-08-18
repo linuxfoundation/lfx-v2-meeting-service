@@ -82,6 +82,24 @@ func TestMessagingSubjects(t *testing.T) {
 	}
 }
 
+func TestPlatformConstants(t *testing.T) {
+	tests := []struct {
+		name     string
+		constant string
+		expected string
+	}{
+		{"PlatformZoom", PlatformZoom, "Zoom"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.constant != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, tt.constant)
+			}
+		})
+	}
+}
+
 func TestMeetingIndexerMessage_JSONSerialization(t *testing.T) {
 	message := MeetingIndexerMessage{
 		Action: ActionCreated,
