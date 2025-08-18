@@ -137,16 +137,21 @@ fmt:
 .PHONY: license-check
 license-check:
 	@echo "==> Checking license headers (basic validation)..."
-	@missing_files=$$(find . -name "*.go" \
+	@missing_files=$$(find . \( -name "*.go" -o -name "*.html" -o -name "*.txt" \) \
 		-not -path "./gen/*" \
 		-not -path "./vendor/*" \
+		-not -path "./megalinter-reports/*" \
 		-exec sh -c 'head -10 "$$1" | grep -q "Copyright The Linux Foundation and each contributor to LFX" && head -10 "$$1" | grep -q "SPDX-License-Identifier: MIT" || echo "$$1"' _ {} \;); \
 	if [ -n "$$missing_files" ]; then \
 		echo "Files missing required license headers:"; \
 		echo "$$missing_files"; \
 		echo "Required headers:"; \
-		echo "  # Copyright The Linux Foundation and each contributor to LFX."; \
-		echo "  # SPDX-License-Identifier: MIT"; \
+		echo "  Go files:   // Copyright The Linux Foundation and each contributor to LFX."; \
+		echo "             // SPDX-License-Identifier: MIT"; \
+		echo "  HTML files: <!-- Copyright The Linux Foundation and each contributor to LFX. -->"; \
+		echo "             <!-- SPDX-License-Identifier: MIT -->"; \
+		echo "  TXT files:  # Copyright The Linux Foundation and each contributor to LFX."; \
+		echo "             # SPDX-License-Identifier: MIT"; \
 		echo "Note: Full license validation runs in CI"; \
 		exit 1; \
 	fi
