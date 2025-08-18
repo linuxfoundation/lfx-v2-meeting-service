@@ -133,6 +133,25 @@ fmt:
 	@go fmt ./...
 	@gofmt -s -w $(GO_FILES)
 
+# Check license headers (basic validation - full check runs in CI)
+.PHONY: license-check
+license-check:
+	@echo "==> Checking license headers (basic validation)..."
+	@missing_files=$$(find . -name "*.go" \
+		-not -path "./gen/*" \
+		-not -path "./vendor/*" \
+		-exec sh -c 'head -10 "$$1" | grep -q "Copyright The Linux Foundation and each contributor to LFX" && head -10 "$$1" | grep -q "SPDX-License-Identifier: MIT" || echo "$$1"' _ {} \;); \
+	if [ -n "$$missing_files" ]; then \
+		echo "Files missing required license headers:"; \
+		echo "$$missing_files"; \
+		echo "Required headers:"; \
+		echo "  # Copyright The Linux Foundation and each contributor to LFX."; \
+		echo "  # SPDX-License-Identifier: MIT"; \
+		echo "Note: Full license validation runs in CI"; \
+		exit 1; \
+	fi
+	@echo "==> Basic license header check passed"
+
 # Check formatting and linting without modifying files
 check:
 	@echo "==> Checking code format..."
@@ -143,6 +162,7 @@ check:
 	fi
 	@echo "==> Code format check passed"
 	@$(MAKE) lint
+	@$(MAKE) license-check
 
 # Verify that generated code is up to date
 verify: apigen
