@@ -5,16 +5,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Features
 
 ### Email Notifications
-The service now supports sending invitation emails when registrants are added to meetings:
+
+The service supports sending invitation and cancellation emails for meeting registrants:
+
 - **Email Service**: SMTP-based email service with HTML and plain text templates
 - **Local Development**: Uses Mailpit (localhost:1025) to capture emails without sending real emails
-- **Templates**: Professional email templates with meeting details and join links
+- **Templates**: Professional email templates with descriptive names:
+  - `meeting_invitation.html/txt` - Meeting invitation emails
+  - `meeting_invitation_cancellation.html/txt` - Registration cancellation emails
 - **Configuration**: Configurable via environment variables and Helm chart values
-- **Graceful Handling**: Email failures don't prevent registrant creation
+- **Graceful Handling**: Email failures don't prevent registrant operations
 
 ## Development Commands
 
 ### Core Development Workflow
+
 - `make all` - Complete build pipeline: clean, deps, apigen, fmt, lint, test, build
 - `make deps` - Install dependencies including goa CLI and golangci-lint
 - `make apigen` - Generate API code from Goa design files (required after design changes)
@@ -23,17 +28,20 @@ The service now supports sending invitation emails when registrants are added to
 - `make debug` - Run the service with debug logging enabled
 
 ### Testing
+
 - `make test` - Run unit tests with race detection and coverage
 - `make test-verbose` - Run tests with verbose output
 - `make test-coverage` - Generate HTML coverage report in coverage/coverage.html
 
 ### Code Quality
+
 - `make lint` - Run golangci-lint (automatically installed via deps)
 - `make fmt` - Format Go code using gofmt
 - `make check` - Verify formatting and linting without modifying files
 - `make verify` - Ensure generated code is up to date
 
 ### Docker & Deployment
+
 - `make docker-build` - Build Docker image
 - `make helm-install` - Install Helm chart to lfx namespace
 - `make helm-templates` - Print Helm templates
@@ -46,34 +54,41 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 ### Key Architectural Components
 
 **API Layer (Goa-generated)**
+
 - Design specifications in `design/` directory define API contracts
 - Generated code in `gen/` directory (HTTP handlers, client, OpenAPI specs)
 - Main API types: meetings and registrants with full CRUD operations
 
 **Domain Layer** (`internal/domain/`)
+
 - Core business models in `models/` (Meeting, Registrant, Committee, Recurrence)
 - Domain interfaces for repository and messaging abstractions
 - Business logic isolated from infrastructure concerns
 
 **Service Layer** (`internal/service/`)
+
 - Business operations and handlers
 - Orchestrates between domain models and infrastructure
 - Implements Goa service interfaces
 
 **Infrastructure Layer** (`internal/infrastructure/`)
+
 - NATS integration for messaging (`messaging/`) and key-value storage (`store/`)
 - JWT authentication (`auth/`)
 - Two NATS KV buckets: "meetings" and "meeting-registrants"
 
 **Middleware** (`internal/middleware/`)
+
 - Request logging, authorization, and request ID handling
 
 ### Data Storage
+
 - Uses NATS JetStream KV stores for persistence
 - Two main buckets: meetings and meeting-registrants
 - NATS messaging for event publishing (indexer integration)
 
 ### Meeting Types and Platforms
+
 - Supports multiple meeting platforms (primary: Zoom)
 - Meeting types include recurring meetings with complex recurrence patterns
 - Platform-specific configurations (ZoomConfig for Zoom meetings)
@@ -81,26 +96,31 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 ## Development Guidelines
 
 ### Code Generation
+
 - Always run `make apigen` after modifying files in `design/` directory
 - The `gen/` directory contains generated code - do not edit manually
 - Use `make verify` to ensure generated code is current before commits
 
 ### Testing Strategy
+
 - Unit tests for all domain models and business logic
 - Mock interfaces provided for external dependencies
 - Test files follow `*_test.go` naming convention
 
 ### Error Handling
+
 - Uses domain-specific error types in `internal/domain/errors.go`
 - Standard HTTP error responses defined in Goa design
 - Structured logging with slog throughout the application
 
 ### Authentication & Authorization
+
 - JWT-based authentication via Heimdall
 - Bearer token required for all API endpoints except health checks
 - Authorization middleware handles token validation
 
 ### Dependencies
+
 - Built with Go 1.24+
 - Primary framework: Goa v3 for API generation
 - NATS for messaging and storage
@@ -116,6 +136,7 @@ This service follows proper HTTP conditional request semantics:
 - **PUT/DELETE requests**: Include `If-Match` header for optimistic concurrency control
 
 **Example flow:**
+
 1. Client makes GET request: `GET /meetings/{id}`
 2. Server responds with: `ETag: "123"` header  
 3. Client makes update request: `PUT /meetings/{id}` with `If-Match: "123"` header

@@ -47,43 +47,43 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 		config: config,
 	}
 
-	// Load invitation HTML template
-	invitationHTMLTemplate, err := template.New("invitation.html").Funcs(template.FuncMap{
+	// Load meeting invitation HTML template
+	invitationHTMLTemplate, err := template.New("meeting_invitation.html").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
-	}).ParseFS(templateFS, "templates/invitation.html")
+	}).ParseFS(templateFS, "templates/meeting_invitation.html")
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse invitation HTML template: %w", err)
+		return nil, fmt.Errorf("failed to parse meeting invitation HTML template: %w", err)
 	}
 	service.templates.invitationHTML = invitationHTMLTemplate
 
-	// Load invitation text template
-	invitationTextTemplate, err := template.New("invitation.txt").Funcs(template.FuncMap{
+	// Load meeting invitation text template
+	invitationTextTemplate, err := template.New("meeting_invitation.txt").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
-	}).ParseFS(templateFS, "templates/invitation.txt")
+	}).ParseFS(templateFS, "templates/meeting_invitation.txt")
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse invitation text template: %w", err)
+		return nil, fmt.Errorf("failed to parse meeting invitation text template: %w", err)
 	}
 	service.templates.invitationText = invitationTextTemplate
 
-	// Load cancellation HTML template
-	cancellationHTMLTemplate, err := template.New("cancellation.html").Funcs(template.FuncMap{
+	// Load meeting invitation cancellation HTML template
+	cancellationHTMLTemplate, err := template.New("meeting_invitation_cancellation.html").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
-	}).ParseFS(templateFS, "templates/cancellation.html")
+	}).ParseFS(templateFS, "templates/meeting_invitation_cancellation.html")
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse cancellation HTML template: %w", err)
+		return nil, fmt.Errorf("failed to parse meeting invitation cancellation HTML template: %w", err)
 	}
 	service.templates.cancellationHTML = cancellationHTMLTemplate
 
-	// Load cancellation text template
-	cancellationTextTemplate, err := template.New("cancellation.txt").Funcs(template.FuncMap{
+	// Load meeting invitation cancellation text template
+	cancellationTextTemplate, err := template.New("meeting_invitation_cancellation.txt").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
-	}).ParseFS(templateFS, "templates/cancellation.txt")
+	}).ParseFS(templateFS, "templates/meeting_invitation_cancellation.txt")
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse cancellation text template: %w", err)
+		return nil, fmt.Errorf("failed to parse meeting invitation cancellation text template: %w", err)
 	}
 	service.templates.cancellationText = cancellationTextTemplate
 
