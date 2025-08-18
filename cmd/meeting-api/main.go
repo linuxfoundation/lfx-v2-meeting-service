@@ -136,12 +136,17 @@ type environment struct {
 	NatsURL            string
 	Port               string
 	SkipEtagValidation bool
-	EmailEnabled       bool
-	SMTPHost           string
-	SMTPPort           int
-	SMTPFrom           string
-	SMTPUsername       string
-	SMTPPassword       string
+	EmailConfig        emailConfig
+}
+
+// emailConfig holds all email-related configuration
+type emailConfig struct {
+	Enabled      bool
+	SMTPHost     string
+	SMTPPort     int
+	SMTPFrom     string
+	SMTPUsername string
+	SMTPPassword string
 }
 
 func parseEnv() environment {
@@ -159,41 +164,47 @@ func parseEnv() environment {
 		skipEtagValidation = true
 	}
 
-	// Email configuration
-	emailEnabled := true
-	emailEnabledStr := os.Getenv("EMAIL_ENABLED")
-	if emailEnabledStr == "false" {
-		emailEnabled = false
-	}
-
-	smtpHost := os.Getenv("SMTP_HOST")
-	if smtpHost == "" {
-		smtpHost = "localhost"
-	}
-
-	smtpPort := 1025 // Default for Mailpit
-	smtpPortStr := os.Getenv("SMTP_PORT")
-	if smtpPortStr != "" {
-		if port, err := strconv.Atoi(smtpPortStr); err == nil {
-			smtpPort = port
-		}
-	}
-
-	smtpFrom := os.Getenv("SMTP_FROM")
-	if smtpFrom == "" {
-		smtpFrom = "noreply@lfx.linuxfoundation.org"
-	}
-
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,
 		SkipEtagValidation: skipEtagValidation,
-		EmailEnabled:       emailEnabled,
-		SMTPHost:           smtpHost,
-		SMTPPort:           smtpPort,
-		SMTPFrom:           smtpFrom,
-		SMTPUsername:       os.Getenv("SMTP_USERNAME"),
-		SMTPPassword:       os.Getenv("SMTP_PASSWORD"),
+		EmailConfig:        parseEmailConfig(),
+	}
+}
+
+// parseEmailConfig parses all email-related environment variables
+func parseEmailConfig() emailConfig {
+	enabled := true
+	enabledStr := os.Getenv("EMAIL_ENABLED")
+	if enabledStr == "false" {
+		enabled = false
+	}
+
+	host := os.Getenv("SMTP_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
+	port := 1025 // Default for Mailpit
+	portStr := os.Getenv("SMTP_PORT")
+	if portStr != "" {
+		if p, err := strconv.Atoi(portStr); err == nil {
+			port = p
+		}
+	}
+
+	from := os.Getenv("SMTP_FROM")
+	if from == "" {
+		from = "noreply@lfx.linuxfoundation.org"
+	}
+
+	return emailConfig{
+		Enabled:      enabled,
+		SMTPHost:     host,
+		SMTPPort:     port,
+		SMTPFrom:     from,
+		SMTPUsername: os.Getenv("SMTP_USERNAME"),
+		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
 	}
 }
 
@@ -384,21 +395,21 @@ func createNatsSubcriptions(ctx context.Context, svc *MeetingsAPI, natsConn *nat
 
 // setupEmailService initializes the email service based on configuration
 func setupEmailService(env environment, svc *MeetingsAPI) error {
-	if env.EmailEnabled {
-		emailConfig := email.SMTPConfig{
-			Host:     env.SMTPHost,
-			Port:     env.SMTPPort,
-			From:     env.SMTPFrom,
-			Username: env.SMTPUsername,
-			Password: env.SMTPPassword,
+	if env.EmailConfig.Enabled {
+		smtpConfig := email.SMTPConfig{
+			Host:     env.EmailConfig.SMTPHost,
+			Port:     env.EmailConfig.SMTPPort,
+			From:     env.EmailConfig.SMTPFrom,
+			Username: env.EmailConfig.SMTPUsername,
+			Password: env.EmailConfig.SMTPPassword,
 		}
-		emailService, err := email.NewSMTPService(emailConfig)
+		emailService, err := email.NewSMTPService(smtpConfig)
 		if err != nil {
 			slog.With(errKey, err).Error("error creating email service")
 			return err
 		}
 		svc.service.EmailService = emailService
-		slog.With("smtp_host", env.SMTPHost, "smtp_port", env.SMTPPort).Info("email service enabled")
+		slog.With("smtp_host", env.EmailConfig.SMTPHost, "smtp_port", env.EmailConfig.SMTPPort).Info("email service enabled")
 	} else {
 		svc.service.EmailService = email.NewNoOpService()
 		slog.Info("email service disabled")
