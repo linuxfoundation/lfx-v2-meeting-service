@@ -101,7 +101,11 @@ func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID
 
 		registrant, err := s.Get(ctx, registrantUID)
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			if errors.Is(err, domain.ErrRegistrantNotFound) {
+				slog.WarnContext(ctx, "stale index entry found, registrant no longer exists", "registrantUID", registrantUID)
+			} else {
+				slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			}
 			continue
 		}
 
@@ -149,7 +153,11 @@ func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string
 
 		registrant, err := s.Get(ctx, registrantUID)
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			if errors.Is(err, domain.ErrRegistrantNotFound) {
+				slog.WarnContext(ctx, "stale index entry found, registrant no longer exists", "registrantUID", registrantUID)
+			} else {
+				slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			}
 			continue
 		}
 
@@ -373,7 +381,12 @@ func (s *NatsRegistrantRepository) Update(ctx context.Context, registrant *model
 func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant *models.Registrant) error {
 	// Delete meeting index
 	meetingIndexKey := s.formIndexKey("meeting", registrant.MeetingUID, registrant.UID)
-	err := s.MeetingRegistrants.Delete(ctx, meetingIndexKey)
+	encodedMeetingIndexKey, err := encodeKey(meetingIndexKey)
+	if err != nil {
+		slog.ErrorContext(ctx, "error encoding meeting index key for deletion", logging.ErrKey, err, "key", meetingIndexKey)
+		return domain.ErrInternal
+	}
+	err = s.MeetingRegistrants.Delete(ctx, encodedMeetingIndexKey)
 	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
 		slog.ErrorContext(ctx, "error deleting meeting index", logging.ErrKey, err)
 		return domain.ErrInternal
@@ -381,7 +394,12 @@ func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant
 
 	// Delete email index
 	emailIndexKey := s.formIndexKey("email", registrant.Email, registrant.UID)
-	err = s.MeetingRegistrants.Delete(ctx, emailIndexKey)
+	encodedEmailIndexKey, err := encodeKey(emailIndexKey)
+	if err != nil {
+		slog.ErrorContext(ctx, "error encoding email index key for deletion", logging.ErrKey, err, "key", emailIndexKey)
+		return domain.ErrInternal
+	}
+	err = s.MeetingRegistrants.Delete(ctx, encodedEmailIndexKey)
 	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
 		slog.ErrorContext(ctx, "error deleting email index", logging.ErrKey, err)
 		return domain.ErrInternal
