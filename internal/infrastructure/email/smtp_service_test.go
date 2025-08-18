@@ -24,10 +24,10 @@ func TestNewSMTPService(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, service)
 	assert.Equal(t, config, service.config)
-	assert.NotNil(t, service.templates.invitationHTML)
-	assert.NotNil(t, service.templates.invitationText)
-	assert.NotNil(t, service.templates.cancellationHTML)
-	assert.NotNil(t, service.templates.cancellationText)
+	assert.NotNil(t, service.templates.Meeting.Invitation.HTML)
+	assert.NotNil(t, service.templates.Meeting.Invitation.Text)
+	assert.NotNil(t, service.templates.Meeting.Cancellation.HTML)
+	assert.NotNil(t, service.templates.Meeting.Cancellation.Text)
 }
 
 func TestSMTPService_RenderTemplates(t *testing.T) {

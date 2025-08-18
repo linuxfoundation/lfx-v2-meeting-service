@@ -30,15 +30,27 @@ type SMTPConfig struct {
 	Password string // Optional for authenticated SMTP
 }
 
+// TemplateSet holds HTML and text versions of a template
+type TemplateSet struct {
+	HTML *template.Template
+	Text *template.Template
+}
+
+// MeetingTemplates holds all meeting-related templates
+type MeetingTemplates struct {
+	Invitation   TemplateSet
+	Cancellation TemplateSet
+}
+
+// Templates holds all template categories
+type Templates struct {
+	Meeting MeetingTemplates
+}
+
 // SMTPService implements the EmailService interface using SMTP
 type SMTPService struct {
 	config    SMTPConfig
-	templates struct {
-		invitationHTML   *template.Template
-		invitationText   *template.Template
-		cancellationHTML *template.Template
-		cancellationText *template.Template
-	}
+	templates Templates
 }
 
 // NewSMTPService creates a new SMTP email service
@@ -47,45 +59,52 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 		config: config,
 	}
 
-	// Load meeting invitation HTML template
-	invitationHTMLTemplate, err := template.New("meeting_invitation.html").Funcs(template.FuncMap{
+	// Load meeting invitation templates
+	invitationHTML, err := template.New("meeting_invitation.html").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
 	}).ParseFS(templateFS, "templates/meeting_invitation.html")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse meeting invitation HTML template: %w", err)
 	}
-	service.templates.invitationHTML = invitationHTMLTemplate
 
-	// Load meeting invitation text template
-	invitationTextTemplate, err := template.New("meeting_invitation.txt").Funcs(template.FuncMap{
+	invitationText, err := template.New("meeting_invitation.txt").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
 	}).ParseFS(templateFS, "templates/meeting_invitation.txt")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse meeting invitation text template: %w", err)
 	}
-	service.templates.invitationText = invitationTextTemplate
 
-	// Load meeting invitation cancellation HTML template
-	cancellationHTMLTemplate, err := template.New("meeting_invitation_cancellation.html").Funcs(template.FuncMap{
+	// Load meeting cancellation templates
+	cancellationHTML, err := template.New("meeting_invitation_cancellation.html").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
 	}).ParseFS(templateFS, "templates/meeting_invitation_cancellation.html")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse meeting invitation cancellation HTML template: %w", err)
 	}
-	service.templates.cancellationHTML = cancellationHTMLTemplate
 
-	// Load meeting invitation cancellation text template
-	cancellationTextTemplate, err := template.New("meeting_invitation_cancellation.txt").Funcs(template.FuncMap{
+	cancellationText, err := template.New("meeting_invitation_cancellation.txt").Funcs(template.FuncMap{
 		"formatTime":     formatTime,
 		"formatDuration": formatDuration,
 	}).ParseFS(templateFS, "templates/meeting_invitation_cancellation.txt")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse meeting invitation cancellation text template: %w", err)
 	}
-	service.templates.cancellationText = cancellationTextTemplate
+
+	service.templates = Templates{
+		Meeting: MeetingTemplates{
+			Invitation: TemplateSet{
+				HTML: invitationHTML,
+				Text: invitationText,
+			},
+			Cancellation: TemplateSet{
+				HTML: cancellationHTML,
+				Text: cancellationText,
+			},
+		},
+	}
 
 	return service, nil
 }
@@ -132,7 +151,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 // renderHTMLTemplate renders the HTML email template
 func (s *SMTPService) renderHTMLTemplate(invitation domain.EmailInvitation) (string, error) {
 	var buf bytes.Buffer
-	err := s.templates.invitationHTML.Execute(&buf, invitation)
+	err := s.templates.Meeting.Invitation.HTML.Execute(&buf, invitation)
 	if err != nil {
 		return "", err
 	}
@@ -142,7 +161,7 @@ func (s *SMTPService) renderHTMLTemplate(invitation domain.EmailInvitation) (str
 // renderTextTemplate renders the plain text email template
 func (s *SMTPService) renderTextTemplate(invitation domain.EmailInvitation) (string, error) {
 	var buf bytes.Buffer
-	err := s.templates.invitationText.Execute(&buf, invitation)
+	err := s.templates.Meeting.Invitation.Text.Execute(&buf, invitation)
 	if err != nil {
 		return "", err
 	}
@@ -225,7 +244,7 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 // renderCancellationHTMLTemplate renders the HTML cancellation email template
 func (s *SMTPService) renderCancellationHTMLTemplate(cancellation domain.EmailCancellation) (string, error) {
 	var buf bytes.Buffer
-	err := s.templates.cancellationHTML.Execute(&buf, cancellation)
+	err := s.templates.Meeting.Cancellation.HTML.Execute(&buf, cancellation)
 	if err != nil {
 		return "", err
 	}
@@ -235,7 +254,7 @@ func (s *SMTPService) renderCancellationHTMLTemplate(cancellation domain.EmailCa
 // renderCancellationTextTemplate renders the plain text cancellation email template
 func (s *SMTPService) renderCancellationTextTemplate(cancellation domain.EmailCancellation) (string, error) {
 	var buf bytes.Buffer
-	err := s.templates.cancellationText.Execute(&buf, cancellation)
+	err := s.templates.Meeting.Cancellation.Text.Execute(&buf, cancellation)
 	if err != nil {
 		return "", err
 	}
