@@ -17,7 +17,7 @@ type Registry struct {
 }
 
 // NewRegistry creates a new platform registry
-func NewRegistry() *Registry {
+func NewRegistry() domain.PlatformRegistry {
 	return &Registry{
 		providers: make(map[string]domain.PlatformProvider),
 	}
