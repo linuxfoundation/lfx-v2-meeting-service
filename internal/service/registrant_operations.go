@@ -50,7 +50,7 @@ func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Con
 // CreateMeetingRegistrant creates a new registrant for a meeting
 func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -99,7 +99,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 	// Send indexing message for the new registrant
 	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionCreated, *registrantDB)
 	if err != nil {
-		slog.ErrorContext(ctx, "error sending indexing message for new registrant", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "error sending indexing message for new registrant", logging.ErrKey, err, logging.PriorityCritical())
 	}
 
 	// Send a message about the new registrant to the fga-sync service
@@ -111,7 +111,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 			Host:       registrantDB.Host,
 		})
 		if err != nil {
-			slog.ErrorContext(ctx, "error sending message about new registrant", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error sending message about new registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.
@@ -124,7 +124,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 // GetMeetingRegistrants gets all registrants for a meeting
 func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantsPayload) (*meetingsvc.GetMeetingRegistrantsResult, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -176,7 +176,7 @@ func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *me
 // GetMeetingRegistrant gets a specific registrant by UID
 func (s *MeetingsService) GetMeetingRegistrant(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantPayload) (*meetingsvc.GetMeetingRegistrantResult, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -264,7 +264,7 @@ func (s *MeetingsService) validateUpdateMeetingRegistrantPayload(ctx context.Con
 // UpdateMeetingRegistrant updates an existing registrant
 func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *meetingsvc.UpdateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -349,7 +349,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 	// Send indexing message for the updated registrant
 	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrantDB)
 	if err != nil {
-		slog.ErrorContext(ctx, "error sending indexing message for updated registrant", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "error sending indexing message for updated registrant", logging.ErrKey, err, logging.PriorityCritical())
 	}
 
 	if registrantDB.Username != "" {
@@ -361,7 +361,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 			Host:       registrantDB.Host,
 		})
 		if err != nil {
-			slog.ErrorContext(ctx, "error sending message about updated registrant", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error sending message about updated registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.
@@ -374,7 +374,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 // DeleteMeetingRegistrant deletes a registrant from a meeting
 func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *meetingsvc.DeleteMeetingRegistrantPayload) error {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
 	}
 
@@ -458,7 +458,7 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	// Send indexing delete message for the registrant
 	err = s.MessageBuilder.SendDeleteIndexMeetingRegistrant(ctx, registrantDB.UID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error sending delete indexing message for registrant", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
 	}
 
 	if registrantDB.Username != "" {
@@ -470,7 +470,7 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 			Host:       registrantDB.Host,
 		})
 		if err != nil {
-			slog.ErrorContext(ctx, "error sending message about deleted registrant", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error sending message about deleted registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.

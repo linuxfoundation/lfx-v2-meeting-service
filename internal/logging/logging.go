@@ -28,6 +28,10 @@ const (
 	warn  = "warn"
 	err   = "error"
 	info  = "info"
+
+	// Log field for critical errors.
+	// TODO: we will want logs with this field set to alert the team to take action.
+	priorityCritical = "critical"
 )
 
 type contextHandler struct {
@@ -97,4 +101,16 @@ func InitStructureLogConfig() slog.Handler {
 	)
 
 	return h
+}
+
+// Priority creates a slog.Attr for error priority classification
+func Priority(level string) slog.Attr {
+	return slog.String("priority", level)
+}
+
+// PriorityCritical creates a slog.Attr for critical errors
+// this is used to identify critical errors in the logs
+// the ones that should be escalated to the team
+func PriorityCritical() slog.Attr {
+	return Priority(priorityCritical)
 }

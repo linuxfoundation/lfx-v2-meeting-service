@@ -22,7 +22,7 @@ import (
 // GetMeetings fetches all meetings
 func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*meetingsvc.MeetingFull, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -75,7 +75,7 @@ func (s *MeetingsService) validateCreateMeetingPayload(ctx context.Context, payl
 // CreateMeeting creates a new meeting
 func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.MeetingFull, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -142,7 +142,8 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 						slog.ErrorContext(ctx, "failed to cleanup platform meeting after repository error",
 							"platform", meetingDB.Platform,
 							"platform_meeting_id", platformMeetingID,
-							logging.ErrKey, delErr)
+							logging.ErrKey, delErr,
+							logging.PriorityCritical())
 					}
 				}
 			}
@@ -186,7 +187,7 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 
 func (s *MeetingsService) GetMeetingBase(ctx context.Context, payload *meetingsvc.GetMeetingBasePayload) (*meetingsvc.MeetingBase, string, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, "", domain.ErrServiceUnavailable
 	}
 
@@ -222,7 +223,7 @@ func (s *MeetingsService) GetMeetingBase(ctx context.Context, payload *meetingsv
 // GetMeetingSettings fetches settings for a specific meeting by ID
 func (s *MeetingsService) GetMeetingSettings(ctx context.Context, payload *meetingsvc.GetMeetingSettingsPayload) (*meetingsvc.MeetingSettings, string, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, "", domain.ErrServiceUnavailable
 	}
 
@@ -276,7 +277,7 @@ func (s *MeetingsService) validateUpdateMeetingPayload(ctx context.Context, payl
 // Update a meeting's base information.
 func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetingsvc.UpdateMeetingBasePayload) (*meetingsvc.MeetingBase, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -429,7 +430,7 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 // UpdateMeetingSettings updates a meeting's settings
 func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *meetingsvc.UpdateMeetingSettingsPayload) (*meetingsvc.MeetingSettings, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -545,7 +546,7 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 // Delete a meeting.
 func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc.DeleteMeetingPayload) error {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized")
+		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
 	}
 

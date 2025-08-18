@@ -188,7 +188,7 @@ func TestShouldRetry(t *testing.T) {
 			expected:   true,
 		},
 		{
-			name:       "502 bad gateway should retry", 
+			name:       "502 bad gateway should retry",
 			statusCode: 502,
 			err:        nil,
 			expected:   true,
@@ -241,7 +241,7 @@ func TestShouldRetry(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := shouldRetry(tt.statusCode, tt.err)
 			if result != tt.expected {
-				t.Errorf("shouldRetry(%d, %v) = %v, expected %v", 
+				t.Errorf("shouldRetry(%d, %v) = %v, expected %v",
 					tt.statusCode, tt.err, result, tt.expected)
 			}
 		})
@@ -251,7 +251,7 @@ func TestShouldRetry(t *testing.T) {
 func TestCalculateBackoff(t *testing.T) {
 	client := NewClient(Config{
 		AccountID:         "test",
-		ClientID:          "test", 
+		ClientID:          "test",
 		ClientSecret:      "test",
 		InitialBackoff:    100 * time.Millisecond,
 		MaxBackoff:        5 * time.Second,
@@ -259,26 +259,26 @@ func TestCalculateBackoff(t *testing.T) {
 	})
 
 	tests := []struct {
-		name           string
-		attempt        int
+		name            string
+		attempt         int
 		expectedMinimum time.Duration
 		expectedMaximum time.Duration
 	}{
 		{
-			name:           "attempt 0 should return initial backoff",
-			attempt:        0,
+			name:            "attempt 0 should return initial backoff",
+			attempt:         0,
 			expectedMinimum: 75 * time.Millisecond,  // 25% jitter tolerance
 			expectedMaximum: 125 * time.Millisecond, // 25% jitter tolerance
 		},
 		{
-			name:           "attempt 1 should double",
-			attempt:        1,
+			name:            "attempt 1 should double",
+			attempt:         1,
 			expectedMinimum: 100 * time.Millisecond, // At least initial backoff
 			expectedMaximum: 250 * time.Millisecond, // 200ms + 25% jitter
 		},
 		{
-			name:           "attempt 2 should be 4x initial",
-			attempt:        2,
+			name:            "attempt 2 should be 4x initial",
+			attempt:         2,
 			expectedMinimum: 100 * time.Millisecond, // At least initial backoff
 			expectedMaximum: 500 * time.Millisecond, // 400ms + 25% jitter
 		},
@@ -287,14 +287,14 @@ func TestCalculateBackoff(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			backoff := client.calculateBackoff(tt.attempt)
-			
+
 			if backoff < tt.expectedMinimum {
-				t.Errorf("calculateBackoff(%d) = %v, expected >= %v", 
+				t.Errorf("calculateBackoff(%d) = %v, expected >= %v",
 					tt.attempt, backoff, tt.expectedMinimum)
 			}
-			
+
 			if backoff > tt.expectedMaximum {
-				t.Errorf("calculateBackoff(%d) = %v, expected <= %v", 
+				t.Errorf("calculateBackoff(%d) = %v, expected <= %v",
 					tt.attempt, backoff, tt.expectedMaximum)
 			}
 		})
@@ -302,9 +302,9 @@ func TestCalculateBackoff(t *testing.T) {
 
 	// Test max backoff is respected
 	t.Run("max backoff is respected", func(t *testing.T) {
-		backoff := client.calculateBackoff(10) // Very high attempt
+		backoff := client.calculateBackoff(10)          // Very high attempt
 		if backoff > client.config.MaxBackoff*125/100 { // Allow 25% jitter
-			t.Errorf("calculateBackoff(10) = %v, expected <= %v (with jitter)", 
+			t.Errorf("calculateBackoff(10) = %v, expected <= %v (with jitter)",
 				backoff, client.config.MaxBackoff*125/100)
 		}
 	})
@@ -320,7 +320,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 				_, _ = w.Write([]byte(`{"access_token": "test_token", "token_type": "Bearer"}`))
 				return
 			}
-			
+
 			// Mock API endpoint with retry behavior
 			attemptCount++
 			if attemptCount <= 2 {
@@ -338,7 +338,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 			ClientID:          "test",
 			ClientSecret:      "test",
 			BaseURL:           server.URL,
-			AuthURL:           server.URL + "/token", 
+			AuthURL:           server.URL + "/token",
 			MaxRetries:        3,
 			InitialBackoff:    10 * time.Millisecond,
 			MaxBackoff:        100 * time.Millisecond,
@@ -346,19 +346,19 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 		})
 
 		resp, err := client.doRequest(context.Background(), "GET", "/test", nil)
-		
+
 		if err != nil {
 			t.Fatalf("expected success after retries, got error: %v", err)
 		}
-		
+
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("expected status 200, got %d", resp.StatusCode)
 		}
-		
+
 		if attemptCount != 3 {
 			t.Errorf("expected 3 attempts, got %d", attemptCount)
 		}
-		
+
 		_ = resp.Body.Close()
 	})
 
@@ -371,7 +371,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 				_, _ = w.Write([]byte(`{"access_token": "test_token", "token_type": "Bearer"}`))
 				return
 			}
-			
+
 			// Mock API endpoint with rate limiting
 			attemptCount++
 			if attemptCount == 1 {
@@ -386,7 +386,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 
 		client := NewClient(Config{
 			AccountID:         "test",
-			ClientID:          "test", 
+			ClientID:          "test",
 			ClientSecret:      "test",
 			BaseURL:           server.URL,
 			AuthURL:           server.URL + "/token",
@@ -397,19 +397,19 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 		})
 
 		resp, err := client.doRequest(context.Background(), "GET", "/test", nil)
-		
+
 		if err != nil {
 			t.Fatalf("expected success after retry, got error: %v", err)
 		}
-		
+
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("expected status 200, got %d", resp.StatusCode)
 		}
-		
+
 		if attemptCount != 2 {
 			t.Errorf("expected 2 attempts, got %d", attemptCount)
 		}
-		
+
 		_ = resp.Body.Close()
 	})
 
@@ -422,7 +422,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 				_, _ = w.Write([]byte(`{"access_token": "test_token", "token_type": "Bearer"}`))
 				return
 			}
-			
+
 			// Mock API endpoint with 4xx error
 			attemptCount++
 			w.WriteHeader(http.StatusUnauthorized)
@@ -433,7 +433,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 		client := NewClient(Config{
 			AccountID:         "test",
 			ClientID:          "test",
-			ClientSecret:      "test", 
+			ClientSecret:      "test",
 			BaseURL:           server.URL,
 			AuthURL:           server.URL + "/token",
 			MaxRetries:        3,
@@ -443,19 +443,19 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 		})
 
 		resp, err := client.doRequest(context.Background(), "GET", "/test", nil)
-		
+
 		if err != nil {
 			t.Fatalf("expected response with 401 status, got error: %v", err)
 		}
-		
+
 		if resp.StatusCode != http.StatusUnauthorized {
 			t.Errorf("expected status 401, got %d", resp.StatusCode)
 		}
-		
+
 		if attemptCount != 1 {
 			t.Errorf("expected 1 attempt (no retries), got %d", attemptCount)
 		}
-		
+
 		_ = resp.Body.Close()
 	})
 
@@ -468,7 +468,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 				_, _ = w.Write([]byte(`{"access_token": "test_token", "token_type": "Bearer"}`))
 				return
 			}
-			
+
 			// Mock API endpoint that always fails
 			attemptCount++
 			w.WriteHeader(http.StatusInternalServerError)
@@ -489,20 +489,20 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 		})
 
 		resp, err := client.doRequest(context.Background(), "GET", "/test", nil)
-		
+
 		if err != nil {
 			t.Fatalf("expected response with 500 status, got error: %v", err)
 		}
-		
+
 		if resp.StatusCode != http.StatusInternalServerError {
 			t.Errorf("expected status 500, got %d", resp.StatusCode)
 		}
-		
+
 		// Should try initial + 2 retries = 3 total attempts
 		if attemptCount != 3 {
 			t.Errorf("expected 3 attempts (1 + 2 retries), got %d", attemptCount)
 		}
-		
+
 		_ = resp.Body.Close()
 	})
 
@@ -515,7 +515,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 				_, _ = w.Write([]byte(`{"access_token": "test_token", "token_type": "Bearer"}`))
 				return
 			}
-			
+
 			// Mock API endpoint that always fails
 			attemptCount++
 			w.WriteHeader(http.StatusInternalServerError)
@@ -528,7 +528,7 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 			ClientID:          "test",
 			ClientSecret:      "test",
 			BaseURL:           server.URL,
-			AuthURL:           server.URL + "/token", 
+			AuthURL:           server.URL + "/token",
 			MaxRetries:        5,
 			InitialBackoff:    50 * time.Millisecond,
 			MaxBackoff:        1 * time.Second,
@@ -541,20 +541,20 @@ func TestDoRequest_RetryBehavior(t *testing.T) {
 		start := time.Now()
 		_, err := client.doRequest(ctx, "GET", "/test", nil)
 		elapsed := time.Since(start)
-		
+
 		if err == nil {
 			t.Fatal("expected context cancellation error")
 		}
-		
+
 		if !errors.Is(err, context.DeadlineExceeded) {
 			t.Errorf("expected context.DeadlineExceeded, got: %v", err)
 		}
-		
+
 		// Should have been cancelled before completing all retries
 		if attemptCount > 3 {
 			t.Errorf("expected fewer attempts due to context cancellation, got %d", attemptCount)
 		}
-		
+
 		// Should have been cancelled reasonably quickly (within context timeout + small buffer)
 		if elapsed > 150*time.Millisecond {
 			t.Errorf("expected quick cancellation, took %v", elapsed)

@@ -63,10 +63,10 @@ type Config struct {
 	// Optional: override timeout for HTTP requests
 	Timeout time.Duration
 	// Optional: retry configuration
-	MaxRetries         int
-	InitialBackoff     time.Duration
-	MaxBackoff         time.Duration
-	BackoffMultiplier  float64
+	MaxRetries        int
+	InitialBackoff    time.Duration
+	MaxBackoff        time.Duration
+	BackoffMultiplier float64
 }
 
 // Ensure that Client implements ClientAPI
@@ -169,7 +169,7 @@ func (c *Client) calculateBackoff(attempt int) time.Duration {
 
 	// Calculate exponential backoff
 	backoff := float64(c.config.InitialBackoff) * math.Pow(c.config.BackoffMultiplier, float64(attempt))
-	
+
 	// Cap at max backoff
 	if time.Duration(backoff) > c.config.MaxBackoff {
 		backoff = float64(c.config.MaxBackoff)
@@ -191,7 +191,7 @@ func (c *Client) calculateBackoff(attempt int) time.Duration {
 func (c *Client) doRequest(ctx context.Context, method, path string, body any) (*http.Response, error) {
 	var jsonBody []byte
 	var err error
-	
+
 	// Marshal request body once to avoid re-marshalling on retries
 	if body != nil {
 		jsonBody, err = json.Marshal(body)
@@ -239,7 +239,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 		// Use OAuth2 authenticated client which automatically handles token management
 		authenticatedClient := c.getAuthenticatedClient(ctx)
 		resp, err := authenticatedClient.Do(req)
-		
+
 		duration := time.Since(startTime)
 
 		// If request succeeded, log and return
@@ -337,7 +337,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 					"duration", duration.String(),
 					"attempts", attempt+1,
 					"max_retries", c.config.MaxRetries,
-					logging.ErrKey, err)
+					logging.ErrKey, err,
+					logging.PriorityCritical())
 			} else {
 				slog.ErrorContext(ctx, "Zoom API request failed after all retries",
 					"method", method,
@@ -345,7 +346,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 					"status", statusCode,
 					"duration", duration.String(),
 					"attempts", attempt+1,
-					"max_retries", c.config.MaxRetries)
+					"max_retries", c.config.MaxRetries,
+					logging.PriorityCritical())
 			}
 		}
 	}
@@ -369,7 +371,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 			"status", lastResp.StatusCode,
 			"body", string(body),
 			"attempts", c.config.MaxRetries+1,
-			logging.ErrKey, fmt.Errorf("status: %d", lastResp.StatusCode))
+			logging.ErrKey, fmt.Errorf("status: %d", lastResp.StatusCode),
+			logging.PriorityCritical())
 	}
 
 	return lastResp, nil

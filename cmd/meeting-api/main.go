@@ -21,9 +21,9 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	goahttp "goa.design/goa/v3/http"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
 	genhttp "github.com/linuxfoundation/lfx-v2-meeting-service/gen/http/meeting_service/server"
 	genquerysvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
@@ -290,7 +290,6 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 
 	return natsConn, nil
 }
-
 
 // getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.
 func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*store.NatsMeetingRepository, *store.NatsRegistrantRepository, error) {
