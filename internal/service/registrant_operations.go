@@ -50,8 +50,8 @@ func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Con
 }
 
 // createRegistrantContext creates a background context with registrant and meeting UID attributes for async operations
-func createRegistrantContext(registrantUID, meetingUID string) context.Context {
-	bgCtx := logging.AppendCtx(context.Background(), slog.String("registrant_uid", registrantUID))
+func createRegistrantContext(ctx context.Context, registrantUID, meetingUID string) context.Context {
+	bgCtx := logging.AppendCtx(ctx, slog.String("registrant_uid", registrantUID))
 	return logging.AppendCtx(bgCtx, slog.String("meeting_uid", meetingUID))
 }
 
@@ -111,7 +111,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		msgCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 		err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *registrantDB)
 		if err != nil {
@@ -124,7 +124,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			msgCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        registrantDB.UID,
@@ -145,7 +145,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		emailCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 		err := s.sendRegistrantInvitationEmail(emailCtx, registrantDB)
 		if err != nil {
@@ -391,7 +391,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		msgCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 		err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *registrantDB)
 		if err != nil {
@@ -404,7 +404,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			msgCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        registrantDB.UID,
@@ -518,7 +518,7 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		msgCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrantDB.UID)
 		if err != nil {
@@ -531,7 +531,7 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			msgCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 			err := s.MessageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        registrantDB.UID,
@@ -552,7 +552,7 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		emailCtx := createRegistrantContext(registrantDB.UID, registrantDB.MeetingUID)
+		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 		err := s.sendRegistrantCancellationEmail(emailCtx, registrantDB)
 		if err != nil {

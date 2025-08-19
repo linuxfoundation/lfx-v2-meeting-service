@@ -78,6 +78,9 @@ func formatTime(t time.Time, timezone string) string {
 // formatDuration formats duration in minutes to a human-readable string
 func formatDuration(minutes int) string {
 	if minutes < 60 {
+		if minutes == 1 {
+			return "1 minute"
+		}
 		return fmt.Sprintf("%d minutes", minutes)
 	}
 
@@ -91,8 +94,13 @@ func formatDuration(minutes int) string {
 		return fmt.Sprintf("%d hours", hours)
 	}
 
+	hourLabel := "hours"
 	if hours == 1 {
-		return fmt.Sprintf("1 hour %d minutes", remainingMinutes)
+		hourLabel = "hour"
 	}
-	return fmt.Sprintf("%d hours %d minutes", hours, remainingMinutes)
+	minuteLabel := "minutes"
+	if remainingMinutes == 1 {
+		minuteLabel = "minute"
+	}
+	return fmt.Sprintf("%d %s %d %s", hours, hourLabel, remainingMinutes, minuteLabel)
 }

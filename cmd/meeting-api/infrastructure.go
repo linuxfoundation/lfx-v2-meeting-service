@@ -94,9 +94,12 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 			// Otherwise, this handler means that max reconnect attempts have been
 			// exhausted.
 			slog.With("nats_url", env.NatsURL).Error("NATS max-reconnects exhausted; connection closed")
-			// Send a synthetic interrupt and give any graceful-shutdown tasks 5
-			// seconds to clean up.
-			done <- os.Interrupt
+			// Send a synthetic interrupt without blocking and give any graceful-shutdown tasks 5 seconds to clean up.
+			select {
+			case done <- os.Interrupt:
+			default:
+				slog.Warn("shutdown signal channel is not ready; skipping synthetic interrupt")
+			}
 			time.Sleep(5 * time.Second)
 			// Exit with an error instead of decrementing the wait group.
 			os.Exit(1)
