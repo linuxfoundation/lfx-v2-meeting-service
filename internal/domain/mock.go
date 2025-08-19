@@ -136,6 +136,11 @@ func (m *MockMessageBuilder) SendRemoveMeetingRegistrantAccess(ctx context.Conte
 	return args.Error(0)
 }
 
+func (m *MockMessageBuilder) SendMeetingDeleted(ctx context.Context, data models.MeetingDeletedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
 // MockMessage implements Message for testing
 type MockMessage struct {
 	mock.Mock

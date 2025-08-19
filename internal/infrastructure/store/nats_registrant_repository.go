@@ -83,20 +83,17 @@ func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID
 		if err != nil {
 			continue
 		}
-		slog.Debug("registrant bucket: decoded index key", "key", decodedKey)
+
 		// To be able to extract the registrant UID from the index key,
 		// we need to split the key into its four parts.
 		parts := strings.Split(decodedKey, "/")
-		slog.Debug("registrant bucket: decoded index key parts", "parts", parts)
 		if len(parts) != 5 {
 			// It is not an index key if it doesn't have 5 parts.
 			continue
 		}
 		if !strings.HasPrefix(decodedKey, indexKey) {
-			slog.Debug("registrant bucket: index key does not match", "indexKey", indexKey, "decodedKey", decodedKey)
 			continue
 		}
-		slog.Debug("registrant bucket: determined registrant UID", "registrantUID", parts[4])
 		registrantUID := parts[4]
 
 		registrant, err := s.Get(ctx, registrantUID)
@@ -131,11 +128,10 @@ func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string
 		if err != nil {
 			continue
 		}
-		slog.Debug("registrant bucket: decoded index key", "key", decodedKey)
+
 		// To be able to extract the registrant UID from the index key,
 		// we need to split the key into its four parts.
 		parts := strings.Split(decodedKey, "/")
-		slog.Debug("registrant bucket: decoded index key parts", "parts", parts)
 		if len(parts) != 5 {
 			// It is not an index key if it doesn't have 5 parts.
 			continue
@@ -232,9 +228,14 @@ func (s *NatsRegistrantRepository) createIndices(ctx context.Context, registrant
 		return err
 	}
 
-	err = s.putIndexEmail(ctx, registrant.UID, registrant.Email)
-	if err != nil {
-		return err
+	// Only create email index if email is not empty
+	if registrant.Email != "" {
+		err = s.putIndexEmail(ctx, registrant.UID, registrant.Email)
+		if err != nil {
+			return err
+		}
+	} else {
+		slog.DebugContext(ctx, "skipping email index creation for registrant with empty email", "registrant_uid", registrant.UID)
 	}
 
 	return nil
@@ -373,18 +374,42 @@ func (s *NatsRegistrantRepository) Update(ctx context.Context, registrant *model
 func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant *models.Registrant) error {
 	// Delete meeting index
 	meetingIndexKey := s.formIndexKey("meeting", registrant.MeetingUID, registrant.UID)
-	err := s.MeetingRegistrants.Delete(ctx, meetingIndexKey)
-	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
-		slog.ErrorContext(ctx, "error deleting meeting index", logging.ErrKey, err)
+	encodedMeetingIndexKey, err := encodeKey(meetingIndexKey)
+	if err != nil {
+		slog.ErrorContext(ctx, "error encoding meeting index key", logging.ErrKey, err, "raw_key", meetingIndexKey)
 		return domain.ErrInternal
 	}
 
-	// Delete email index
-	emailIndexKey := s.formIndexKey("email", registrant.Email, registrant.UID)
-	err = s.MeetingRegistrants.Delete(ctx, emailIndexKey)
+	err = s.MeetingRegistrants.Delete(ctx, encodedMeetingIndexKey)
 	if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
-		slog.ErrorContext(ctx, "error deleting email index", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "error deleting meeting index",
+			logging.ErrKey, err,
+			"raw_key", meetingIndexKey,
+			"encoded_key", encodedMeetingIndexKey,
+		)
 		return domain.ErrInternal
+	}
+
+	// Only delete email index if email is not empty
+	if registrant.Email != "" {
+		emailIndexKey := s.formIndexKey("email", registrant.Email, registrant.UID)
+		encodedEmailIndexKey, err := encodeKey(emailIndexKey)
+		if err != nil {
+			slog.ErrorContext(ctx, "error encoding email index key", logging.ErrKey, err, "raw_key", emailIndexKey)
+			return domain.ErrInternal
+		}
+
+		err = s.MeetingRegistrants.Delete(ctx, encodedEmailIndexKey)
+		if err != nil && !errors.Is(err, jetstream.ErrKeyNotFound) {
+			slog.ErrorContext(ctx, "error deleting email index",
+				logging.ErrKey, err,
+				"raw_key", emailIndexKey,
+				"encoded_key", encodedEmailIndexKey,
+			)
+			return domain.ErrInternal
+		}
+	} else {
+		slog.DebugContext(ctx, "skipping email index deletion for registrant with empty email", "registrant_uid", registrant.UID)
 	}
 
 	return nil

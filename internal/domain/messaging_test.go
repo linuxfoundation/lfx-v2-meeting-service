@@ -15,6 +15,7 @@ type mockMessage struct {
 	subject   string
 	data      []byte
 	responded bool
+	hasReply  bool
 }
 
 func (m *mockMessage) Subject() string {
@@ -28,6 +29,10 @@ func (m *mockMessage) Data() []byte {
 func (m *mockMessage) Respond(data []byte) error {
 	m.responded = true
 	return nil
+}
+
+func (m *mockMessage) HasReply() bool {
+	return m.hasReply
 }
 
 // mockMessageHandler implements the MessageHandler interface for testing
@@ -92,7 +97,7 @@ func TestMessage_Interface(t *testing.T) {
 
 func TestMessageHandler_Interface(t *testing.T) {
 	handler := &mockMessageHandler{}
-	msg := &mockMessage{subject: "test", data: []byte("data")}
+	msg := &mockMessage{subject: "test", data: []byte("data"), hasReply: true}
 
 	handler.HandleMessage(context.Background(), msg)
 
