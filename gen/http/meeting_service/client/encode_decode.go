@@ -1880,6 +1880,132 @@ func DecodeDeleteMeetingRegistrantResponse(decoder func(*http.Response) goahttp.
 	}
 }
 
+// BuildZoomWebhookRequest instantiates a HTTP request object with method and
+// path set to call the "Meeting Service" service "zoom-webhook" endpoint
+func (c *Client) BuildZoomWebhookRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ZoomWebhookMeetingServicePath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "zoom-webhook", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeZoomWebhookRequest returns an encoder for requests sent to the Meeting
+// Service zoom-webhook server.
+func EncodeZoomWebhookRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.ZoomWebhookPayload2)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "zoom-webhook", "*meetingservice.ZoomWebhookPayload2", v)
+		}
+		if p.ZoomSignature != nil {
+			head := *p.ZoomSignature
+			req.Header.Set("x-zm-signature", head)
+		}
+		if p.ZoomTimestamp != nil {
+			head := *p.ZoomTimestamp
+			req.Header.Set("x-zm-request-timestamp", head)
+		}
+		body := NewZoomWebhookRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "zoom-webhook", err)
+		}
+		return nil
+	}
+}
+
+// DecodeZoomWebhookResponse returns a decoder for responses returned by the
+// Meeting Service zoom-webhook endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeZoomWebhookResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeZoomWebhookResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body ZoomWebhookResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "zoom-webhook", err)
+			}
+			err = ValidateZoomWebhookResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "zoom-webhook", err)
+			}
+			res := NewZoomWebhookResponseOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body ZoomWebhookBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "zoom-webhook", err)
+			}
+			err = ValidateZoomWebhookBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "zoom-webhook", err)
+			}
+			return nil, NewZoomWebhookBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body ZoomWebhookInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "zoom-webhook", err)
+			}
+			err = ValidateZoomWebhookInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "zoom-webhook", err)
+			}
+			return nil, NewZoomWebhookInternalServerError(&body)
+		case http.StatusUnauthorized:
+			var (
+				body ZoomWebhookUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "zoom-webhook", err)
+			}
+			err = ValidateZoomWebhookUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "zoom-webhook", err)
+			}
+			return nil, NewZoomWebhookUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "zoom-webhook", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildReadyzRequest instantiates a HTTP request object with method and path
 // set to call the "Meeting Service" service "readyz" endpoint
 func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -2264,6 +2390,32 @@ func unmarshalRegistrantResponseBodyToMeetingserviceRegistrant(v *RegistrantResp
 		Username:           v.Username,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
+	}
+
+	return res
+}
+
+// marshalMeetingserviceZoomWebhookPayloadToZoomWebhookPayloadRequestBody
+// builds a value of type *ZoomWebhookPayloadRequestBody from a value of type
+// *meetingservice.ZoomWebhookPayload.
+func marshalMeetingserviceZoomWebhookPayloadToZoomWebhookPayloadRequestBody(v *meetingservice.ZoomWebhookPayload) *ZoomWebhookPayloadRequestBody {
+	res := &ZoomWebhookPayloadRequestBody{
+		Event:   v.Event,
+		EventTs: v.EventTs,
+		Payload: v.Payload,
+	}
+
+	return res
+}
+
+// marshalZoomWebhookPayloadRequestBodyToMeetingserviceZoomWebhookPayload
+// builds a value of type *meetingservice.ZoomWebhookPayload from a value of
+// type *ZoomWebhookPayloadRequestBody.
+func marshalZoomWebhookPayloadRequestBodyToMeetingserviceZoomWebhookPayload(v *ZoomWebhookPayloadRequestBody) *meetingservice.ZoomWebhookPayload {
+	res := &meetingservice.ZoomWebhookPayload{
+		Event:   v.Event,
+		EventTs: v.EventTs,
+		Payload: v.Payload,
 	}
 
 	return res

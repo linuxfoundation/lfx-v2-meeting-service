@@ -27,12 +27,13 @@ type Client struct {
 	GetMeetingRegistrantEndpoint    goa.Endpoint
 	UpdateMeetingRegistrantEndpoint goa.Endpoint
 	DeleteMeetingRegistrantEndpoint goa.Endpoint
+	ZoomWebhookEndpoint             goa.Endpoint
 	ReadyzEndpoint                  goa.Endpoint
 	LivezEndpoint                   goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:             getMeetings,
 		CreateMeetingEndpoint:           createMeeting,
@@ -46,6 +47,7 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, u
 		GetMeetingRegistrantEndpoint:    getMeetingRegistrant,
 		UpdateMeetingRegistrantEndpoint: updateMeetingRegistrant,
 		DeleteMeetingRegistrantEndpoint: deleteMeetingRegistrant,
+		ZoomWebhookEndpoint:             zoomWebhook,
 		ReadyzEndpoint:                  readyz,
 		LivezEndpoint:                   livez,
 	}
@@ -243,6 +245,22 @@ func (c *Client) UpdateMeetingRegistrant(ctx context.Context, p *UpdateMeetingRe
 func (c *Client) DeleteMeetingRegistrant(ctx context.Context, p *DeleteMeetingRegistrantPayload) (err error) {
 	_, err = c.DeleteMeetingRegistrantEndpoint(ctx, p)
 	return
+}
+
+// ZoomWebhook calls the "zoom-webhook" endpoint of the "Meeting Service"
+// service.
+// ZoomWebhook may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Invalid webhook payload or signature
+//   - "Unauthorized" (type *UnauthorizedError): Invalid webhook signature
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - error: internal error
+func (c *Client) ZoomWebhook(ctx context.Context, p *ZoomWebhookPayload2) (res *ZoomWebhookResponse, err error) {
+	var ires any
+	ires, err = c.ZoomWebhookEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ZoomWebhookResponse), nil
 }
 
 // Readyz calls the "readyz" endpoint of the "Meeting Service" service.

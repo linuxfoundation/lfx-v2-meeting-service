@@ -5,6 +5,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -22,9 +24,9 @@ type MeetingsAPI struct {
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
-func NewMeetingsAPI(service *service.MeetingsService) *MeetingsAPI {
+func NewMeetingsAPI(svc *service.MeetingsService) *MeetingsAPI {
 	return &MeetingsAPI{
-		service: service,
+		service: svc,
 	}
 }
 
@@ -91,4 +93,74 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 	}
 	// Return a new context containing the principal as a value.
 	return context.WithValue(ctx, constants.PrincipalContextID, principal), nil
+}
+
+// ZoomWebhook handles Zoom webhook events for meeting lifecycle, participants, and recordings.
+func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+	logger := slog.With("component", "meetings_api", "method", "ZoomWebhook")
+
+	if !s.service.ServiceReady() {
+		logger.ErrorContext(ctx, "Service not ready")
+		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+	}
+
+	// Get the Zoom webhook handler from the service's webhook registry
+	handler, err := s.service.WebhookRegistry.GetHandler("zoom")
+	if err != nil {
+		logger.ErrorContext(ctx, "Failed to get Zoom webhook handler", "error", err)
+		return nil, createResponse(http.StatusInternalServerError, domain.ErrServiceUnavailable)
+	}
+
+	// Validate webhook signature if provided
+	if payload.ZoomSignature != nil && payload.ZoomTimestamp != nil {
+		// Marshal the body to get the raw bytes for signature validation
+		bodyBytes, err := json.Marshal(payload.Body)
+		if err != nil {
+			logger.ErrorContext(ctx, "Failed to marshal webhook body for validation", "error", err)
+			return nil, createResponse(http.StatusBadRequest, err)
+		}
+
+		if err := handler.ValidateSignature(bodyBytes, *payload.ZoomSignature, *payload.ZoomTimestamp); err != nil {
+			logger.WarnContext(ctx, "Webhook signature validation failed", "error", err)
+			return nil, &meetingsvc.UnauthorizedError{
+				Code:    "401",
+				Message: "Invalid webhook signature",
+			}
+		}
+
+		logger.DebugContext(ctx, "Webhook signature validation passed")
+	}
+
+	// Validate event type and payload
+	if payload.Body == nil || payload.Body.Event == "" {
+		logger.WarnContext(ctx, "Webhook payload missing event field")
+		return nil, createResponse(http.StatusBadRequest, fmt.Errorf("invalid webhook payload: missing event field"))
+	}
+
+	eventType := payload.Body.Event
+	logger.InfoContext(ctx, "Processing Zoom webhook event", "event_type", eventType)
+
+	// Handle the event using the domain interface
+	if err := handler.HandleEvent(ctx, eventType, payload.Body.Payload); err != nil {
+		logger.ErrorContext(ctx, "Failed to process webhook event", "error", err, "event_type", eventType)
+
+		// Check error type to return appropriate HTTP status
+		if err.Error() == "unsupported event type" {
+			return nil, createResponse(http.StatusBadRequest, err)
+		}
+
+		return nil, createResponse(http.StatusInternalServerError, err)
+	}
+
+	logger.DebugContext(ctx, "Zoom webhook event processed successfully", "event_type", eventType)
+
+	return &meetingsvc.ZoomWebhookResponse{
+		Status:  "success",
+		Message: stringPtr(fmt.Sprintf("Event %s processed successfully", eventType)),
+	}, nil
+}
+
+// stringPtr returns a pointer to the given string
+func stringPtr(s string) *string {
+	return &s
 }

@@ -496,6 +496,40 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("zoom-webhook", func() {
+		Description("Handle Zoom webhook events for meeting lifecycle, participants, and recordings.")
+
+		// No authentication required for webhooks - validation is done via signature
+		NoSecurity()
+
+		Payload(func() {
+			Attribute("body", ZoomWebhookPayload, "Zoom webhook event payload")
+			Attribute("zoom_signature", String, "Zoom webhook signature for verification", func() {
+				Description("HMAC-SHA256 signature of the request body")
+			})
+			Attribute("zoom_timestamp", String, "Zoom timestamp header for replay protection", func() {
+				Description("Timestamp when the webhook was sent")
+			})
+			Required("body")
+		})
+
+		Result(ZoomWebhookResponse)
+
+		Error("BadRequest", BadRequestError, "Invalid webhook payload or signature")
+		Error("Unauthorized", UnauthorizedError, "Invalid webhook signature")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+
+		HTTP(func() {
+			POST("/webhooks/zoom")
+			Header("zoom_signature:x-zm-signature")
+			Header("zoom_timestamp:x-zm-request-timestamp")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("InternalServerError", StatusInternalServerError)
+		})
+	})
+
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
 		Result(Bytes, func() {

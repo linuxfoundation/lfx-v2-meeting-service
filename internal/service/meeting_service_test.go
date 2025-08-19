@@ -52,6 +52,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					RegistrantRepository: &domain.MockRegistrantRepository{},
 					MessageBuilder:       &domain.MockMessageBuilder{},
 					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					WebhookRegistry:      &domain.MockWebhookRegistry{},
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -65,6 +66,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					RegistrantRepository: &domain.MockRegistrantRepository{},
 					MessageBuilder:       &domain.MockMessageBuilder{},
 					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					WebhookRegistry:      &domain.MockWebhookRegistry{},
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -78,6 +80,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					RegistrantRepository: &domain.MockRegistrantRepository{},
 					MessageBuilder:       nil,
 					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					WebhookRegistry:      &domain.MockWebhookRegistry{},
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -91,6 +94,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					RegistrantRepository: nil,
 					MessageBuilder:       &domain.MockMessageBuilder{},
 					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					WebhookRegistry:      &domain.MockWebhookRegistry{},
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -104,6 +108,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					RegistrantRepository: &domain.MockRegistrantRepository{},
 					MessageBuilder:       &domain.MockMessageBuilder{},
 					PlatformRegistry:     nil,
+					WebhookRegistry:      &domain.MockWebhookRegistry{},
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -117,6 +122,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					RegistrantRepository: nil,
 					MessageBuilder:       nil,
 					PlatformRegistry:     nil,
+					WebhookRegistry:      nil,
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
@@ -130,6 +136,7 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					RegistrantRepository: &domain.MockRegistrantRepository{},
 					MessageBuilder:       &domain.MockMessageBuilder{},
 					PlatformRegistry:     &domain.MockPlatformRegistry{},
+					WebhookRegistry:      &domain.MockWebhookRegistry{},
 					Auth:                 nil,
 				}
 			},
@@ -184,6 +191,7 @@ func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, 
 	service.RegistrantRepository = &domain.MockRegistrantRepository{}
 	service.MessageBuilder = mockBuilder
 	service.PlatformRegistry = &domain.MockPlatformRegistry{}
+	service.WebhookRegistry = &domain.MockWebhookRegistry{}
 
 	return service, mockRepo, mockBuilder, mockAuth
 }

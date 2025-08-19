@@ -28,6 +28,7 @@ type Endpoints struct {
 	GetMeetingRegistrant    goa.Endpoint
 	UpdateMeetingRegistrant goa.Endpoint
 	DeleteMeetingRegistrant goa.Endpoint
+	ZoomWebhook             goa.Endpoint
 	Readyz                  goa.Endpoint
 	Livez                   goa.Endpoint
 }
@@ -50,6 +51,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetMeetingRegistrant:    NewGetMeetingRegistrantEndpoint(s, a.JWTAuth),
 		UpdateMeetingRegistrant: NewUpdateMeetingRegistrantEndpoint(s, a.JWTAuth),
 		DeleteMeetingRegistrant: NewDeleteMeetingRegistrantEndpoint(s, a.JWTAuth),
+		ZoomWebhook:             NewZoomWebhookEndpoint(s),
 		Readyz:                  NewReadyzEndpoint(s),
 		Livez:                   NewLivezEndpoint(s),
 	}
@@ -70,6 +72,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetMeetingRegistrant = m(e.GetMeetingRegistrant)
 	e.UpdateMeetingRegistrant = m(e.UpdateMeetingRegistrant)
 	e.DeleteMeetingRegistrant = m(e.DeleteMeetingRegistrant)
+	e.ZoomWebhook = m(e.ZoomWebhook)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
 }
@@ -347,6 +350,15 @@ func NewDeleteMeetingRegistrantEndpoint(s Service, authJWTFn security.AuthJWTFun
 			return nil, err
 		}
 		return nil, s.DeleteMeetingRegistrant(ctx, p)
+	}
+}
+
+// NewZoomWebhookEndpoint returns an endpoint function that calls the method
+// "zoom-webhook" of service "Meeting Service".
+func NewZoomWebhookEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*ZoomWebhookPayload2)
+		return s.ZoomWebhook(ctx, p)
 	}
 }
 

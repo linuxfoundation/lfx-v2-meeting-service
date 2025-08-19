@@ -9,6 +9,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/webhook"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/api"
 )
@@ -43,21 +44,33 @@ func (z ZoomConfig) ToAPIConfig() api.Config {
 	}
 }
 
-// SetupZoom configures Zoom integration and registers it with the platform registry
-func SetupZoom(registry domain.PlatformRegistry, config ZoomConfig) {
-	if !config.IsConfigured() {
-		slog.Warn("Zoom integration not configured - missing required environment variables",
+// SetupZoom configures Zoom platform integration and webhook handler, registering both with their respective registries
+func SetupZoom(platformRegistry domain.PlatformRegistry, webhookRegistry domain.WebhookRegistry, config ZoomConfig) {
+	// Setup Zoom platform provider
+	if config.IsConfigured() {
+		zoomClient := api.NewClient(config.ToAPIConfig())
+		zoomProvider := zoom.NewZoomProvider(zoomClient)
+		platformRegistry.RegisterProvider(models.PlatformZoom, zoomProvider)
+
+		slog.Info("Zoom platform integration configured",
+			"account_id", config.AccountID,
+			"client_id", config.ClientID)
+	} else {
+		slog.Warn("Zoom platform integration not configured - missing required environment variables",
 			"has_account_id", config.AccountID != "",
 			"has_client_id", config.ClientID != "",
 			"has_client_secret", config.ClientSecret != "")
-		return
 	}
 
-	zoomClient := api.NewClient(config.ToAPIConfig())
-	zoomProvider := zoom.NewZoomProvider(zoomClient)
-	registry.RegisterProvider(models.PlatformZoom, zoomProvider)
+	// Setup Zoom webhook handler
+	secretToken := os.Getenv("ZOOM_WEBHOOK_SECRET_TOKEN")
+	if secretToken != "" {
+		zoomWebhookHandler := webhook.NewZoomWebhookHandler()
+		webhookRegistry.RegisterHandler("zoom", zoomWebhookHandler)
 
-	slog.Info("Zoom integration configured",
-		"account_id", config.AccountID,
-		"client_id", config.ClientID)
+		slog.Info("Zoom webhook integration configured",
+			"supported_events", zoomWebhookHandler.SupportedEvents())
+	} else {
+		slog.Warn("Zoom webhook integration not configured - missing ZOOM_WEBHOOK_SECRET_TOKEN")
+	}
 }
