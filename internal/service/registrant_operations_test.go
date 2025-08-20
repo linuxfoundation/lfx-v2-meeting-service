@@ -622,3 +622,163 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 		})
 	}
 }
+
+func TestMeetingsService_deleteRegistrantWithCleanup(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now()
+
+	tests := []struct {
+		name              string
+		registrant        *models.Registrant
+		revision          uint64
+		skipRevisionCheck bool
+		setupMocks        func(*domain.MockMeetingRepository, *domain.MockRegistrantRepository, *domain.MockMessageBuilder, *domain.MockEmailService)
+		wantErr           bool
+		expectedErr       error
+	}{
+		{
+			name: "successful cleanup with revision check",
+			registrant: &models.Registrant{
+				UID:        "registrant-1",
+				MeetingUID: "meeting-1",
+				Email:      "user@example.com",
+				Username:   "user123",
+				Host:       false,
+				CreatedAt:  &now,
+				UpdatedAt:  &now,
+			},
+			revision:          5,
+			skipRevisionCheck: false,
+			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder, mockEmailService *domain.MockEmailService) {
+				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(5)).Return(nil)
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil)
+				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
+					return msg.UID == "registrant-1" && msg.Username == "user123" && msg.MeetingUID == "meeting-1" && msg.Host == false
+				})).Return(nil)
+				// Email mocks for successful deletion
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-1").Return(&models.MeetingBase{
+					UID:         "meeting-1",
+					Title:       "Test Meeting",
+					StartTime:   time.Now(),
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
+				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "successful cleanup skipping revision check",
+			registrant: &models.Registrant{
+				UID:        "registrant-2",
+				MeetingUID: "meeting-2",
+				Email:      "user2@example.com",
+				Username:   "user456",
+				Host:       true,
+				CreatedAt:  &now,
+				UpdatedAt:  &now,
+			},
+			revision:          10,
+			skipRevisionCheck: true,
+			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder, mockEmailService *domain.MockEmailService) {
+				// When skipping revision check, it uses revision 0
+				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(nil)
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-2").Return(nil)
+				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
+					return msg.UID == "registrant-2" && msg.Username == "user456" && msg.MeetingUID == "meeting-2" && msg.Host == true
+				})).Return(nil)
+				// Email mocks for successful deletion
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-2").Return(&models.MeetingBase{
+					UID:         "meeting-2",
+					Title:       "Test Meeting",
+					StartTime:   time.Now(),
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
+				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "registrant without username (guest user)",
+			registrant: &models.Registrant{
+				UID:        "guest-registrant",
+				MeetingUID: "meeting-3",
+				Email:      "guest@example.com",
+				Username:   "", // No username - guest user
+				Host:       false,
+				CreatedAt:  &now,
+				UpdatedAt:  &now,
+			},
+			revision:          1,
+			skipRevisionCheck: false,
+			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder, mockEmailService *domain.MockEmailService) {
+				mockRegistrantRepo.On("Delete", mock.Anything, "guest-registrant", uint64(1)).Return(nil)
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "guest-registrant").Return(nil)
+				// No access message expected for guest users
+				// Email mocks for successful deletion
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-3").Return(&models.MeetingBase{
+					UID:         "meeting-3",
+					Title:       "Test Meeting",
+					StartTime:   time.Now(),
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
+				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "registrant already deleted with skip revision check (should not error)",
+			registrant: &models.Registrant{
+				UID:        "already-deleted",
+				MeetingUID: "meeting-4",
+				Email:      "deleted@example.com",
+				Username:   "deleteduser",
+				Host:       false,
+				CreatedAt:  &now,
+				UpdatedAt:  &now,
+			},
+			revision:          0,
+			skipRevisionCheck: true,
+			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder, mockEmailService *domain.MockEmailService) {
+				// Registrant already deleted
+				mockRegistrantRepo.On("Delete", mock.Anything, "already-deleted", uint64(0)).Return(domain.ErrRegistrantNotFound)
+				// No email mocks needed - function returns early when skipRevisionCheck=true and ErrRegistrantNotFound
+			},
+			wantErr: false, // Should not error when skipRevisionCheck is true
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service, mockMeetingRepo, mockBuilder, _ := setupServiceForTesting()
+			mockRegistrantRepo := &domain.MockRegistrantRepository{}
+			service.RegistrantRepository = mockRegistrantRepo
+
+			// Get the email service mock
+			mockEmailService := service.EmailService.(*domain.MockEmailService)
+
+			tt.setupMocks(mockMeetingRepo, mockRegistrantRepo, mockBuilder, mockEmailService)
+
+			err := service.deleteRegistrantWithCleanup(ctx, tt.registrant, tt.revision, tt.skipRevisionCheck)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.ErrorIs(t, err, tt.expectedErr)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+
+			mockMeetingRepo.AssertExpectations(t)
+			mockRegistrantRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
+			mockEmailService.AssertExpectations(t)
+		})
+	}
+}

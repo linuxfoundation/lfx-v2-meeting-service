@@ -136,6 +136,11 @@ func (m *MockMessageBuilder) SendRemoveMeetingRegistrantAccess(ctx context.Conte
 	return args.Error(0)
 }
 
+func (m *MockMessageBuilder) SendMeetingDeleted(ctx context.Context, data models.MeetingDeletedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
 // MockMessage implements Message for testing
 type MockMessage struct {
 	mock.Mock
@@ -274,4 +279,19 @@ func (m *MockPlatformRegistry) GetProvider(platform string) (PlatformProvider, e
 
 func (m *MockPlatformRegistry) RegisterProvider(platform string, provider PlatformProvider) {
 	m.Called(platform, provider)
+}
+
+// MockEmailService implements EmailService for testing
+type MockEmailService struct {
+	mock.Mock
+}
+
+func (m *MockEmailService) SendRegistrantInvitation(ctx context.Context, invitation EmailInvitation) error {
+	args := m.Called(ctx, invitation)
+	return args.Error(0)
+}
+
+func (m *MockEmailService) SendRegistrantCancellation(ctx context.Context, cancellation EmailCancellation) error {
+	args := m.Called(ctx, cancellation)
+	return args.Error(0)
 }

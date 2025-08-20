@@ -46,6 +46,10 @@ const (
 	// MeetingGetTitleSubject is the subject for the meeting get title.
 	// The subject is of the form: lfx.meetings-api.get_title
 	MeetingGetTitleSubject = "lfx.meetings-api.get_title"
+
+	// MeetingDeletedSubject is the subject for meeting deletion events.
+	// The subject is of the form: lfx.meetings-api.meeting_deleted
+	MeetingDeletedSubject = "lfx.meetings-api.meeting_deleted"
 )
 
 // MessageAction is a type for the action of a meeting message.
@@ -87,4 +91,10 @@ type MeetingRegistrantAccessMessage struct {
 	MeetingUID string `json:"meeting_uid"`
 	Username   string `json:"username"`
 	Host       bool   `json:"host"`
+}
+
+// MeetingDeletedMessage is the schema for the message sent when a meeting is deleted.
+// This message is used internally to trigger cleanup of all associated registrants.
+type MeetingDeletedMessage struct {
+	MeetingUID string `json:"meeting_uid"`
 }

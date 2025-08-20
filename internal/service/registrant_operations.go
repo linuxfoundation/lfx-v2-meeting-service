@@ -427,6 +427,95 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 	return registrant, nil
 }
 
+// deleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
+// It can optionally skip revision checking when skipRevisionCheck is true (useful for bulk cleanup operations).
+func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
+	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantDB.UID))
+
+	// Delete the registrant from the database
+	var err error
+	if skipRevisionCheck {
+		// Use revision 0 to skip revision checking for bulk cleanup operations
+		err = s.RegistrantRepository.Delete(ctx, registrantDB.UID, 0)
+	} else {
+		err = s.RegistrantRepository.Delete(ctx, registrantDB.UID, revision)
+	}
+
+	if err != nil {
+		if errors.Is(err, domain.ErrRevisionMismatch) && !skipRevisionCheck {
+			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
+			return domain.ErrRevisionMismatch
+		}
+		if errors.Is(err, domain.ErrRegistrantNotFound) {
+			// If skipping revision check, this is expected during cleanup
+			if skipRevisionCheck {
+				slog.DebugContext(ctx, "registrant already deleted, skipping")
+				return nil
+			}
+			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
+			return domain.ErrRegistrantNotFound
+		}
+		slog.ErrorContext(ctx, "error deleting registrant", logging.ErrKey, err)
+		return domain.ErrInternal
+	}
+
+	slog.DebugContext(ctx, "deleted registrant")
+
+	// Send cleanup messages and cancellation email asynchronously
+	var wg sync.WaitGroup
+
+	// Send indexing delete message for the registrant
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+
+		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrantDB.UID)
+		if err != nil {
+			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
+		}
+	}()
+
+	// Send access removal message if the registrant has a username
+	if registrantDB.Username != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+
+			err := s.MessageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+				UID:        registrantDB.UID,
+				Username:   registrantDB.Username,
+				MeetingUID: registrantDB.MeetingUID,
+				Host:       registrantDB.Host,
+			})
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending message about deleted registrant", logging.ErrKey, err, logging.PriorityCritical())
+			}
+		}()
+	} else {
+		// This can happen when the registrant is not an LF user but rather a guest user.
+		slog.DebugContext(ctx, "no username for registrant, skipping access message")
+	}
+
+	// Send cancellation email to the registrant
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+
+		err := s.sendRegistrantCancellationEmail(emailCtx, registrantDB)
+		if err != nil {
+			slog.ErrorContext(emailCtx, "failed to send cancellation email", logging.ErrKey, err)
+		}
+	}()
+
+	// Wait for all async operations to complete before returning
+	wg.Wait()
+
+	return nil
+}
+
 // DeleteMeetingRegistrant deletes a registrant from a meeting
 func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *meetingsvc.DeleteMeetingRegistrantPayload) error {
 	if !s.ServiceReady() {
@@ -494,76 +583,8 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 		return domain.ErrInternal
 	}
 
-	// Delete the registrant with revision check
-	err = s.RegistrantRepository.Delete(ctx, registrantUID, revision)
-	if err != nil {
-		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
-		}
-		if errors.Is(err, domain.ErrRegistrantNotFound) {
-			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
-			return domain.ErrRegistrantNotFound
-		}
-		slog.ErrorContext(ctx, "error deleting registrant", logging.ErrKey, err)
-		return domain.ErrInternal
-	}
-
-	slog.DebugContext(ctx, "deleted registrant")
-
-	// Send NATS messages and cancellation email asynchronously
-	var wg sync.WaitGroup
-
-	// Send indexing delete message for the registrant
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-
-		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrantDB.UID)
-		if err != nil {
-			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err)
-		}
-	}()
-
-	if registrantDB.Username != "" {
-		// Send a message about the deleted registrant to the fga-sync service
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-
-			err := s.MessageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
-				UID:        registrantDB.UID,
-				Username:   registrantDB.Username,
-				MeetingUID: registrantDB.MeetingUID,
-				Host:       registrantDB.Host,
-			})
-			if err != nil {
-				slog.ErrorContext(msgCtx, "error sending message about deleted registrant", logging.ErrKey, err)
-			}
-		}()
-	} else {
-		// This can happen when the registrant is not an LF user but rather a guest user.
-		slog.DebugContext(ctx, "no username for registrant, skipping access message")
-	}
-
-	// Send cancellation email to the registrant
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-
-		err := s.sendRegistrantCancellationEmail(emailCtx, registrantDB)
-		if err != nil {
-			slog.ErrorContext(emailCtx, "failed to send cancellation email", logging.ErrKey, err)
-		}
-	}()
-
-	// Wait for all async operations to complete before returning
-	wg.Wait()
-
-	return nil
+	// Use the helper to delete the registrant with cleanup
+	return s.deleteRegistrantWithCleanup(ctx, registrantDB, revision, false)
 }
 
 // sendRegistrantInvitationEmail sends an invitation email to a newly created registrant

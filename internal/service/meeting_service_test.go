@@ -178,20 +178,23 @@ func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, 
 	mockRepo := &domain.MockMeetingRepository{}
 	mockBuilder := &domain.MockMessageBuilder{}
 	mockAuth := &auth.MockJWTAuth{}
+	mockEmailService := &domain.MockEmailService{}
 
 	service := NewMeetingsService(mockAuth, ServiceConfig{})
 	service.MeetingRepository = mockRepo
 	service.RegistrantRepository = &domain.MockRegistrantRepository{}
 	service.MessageBuilder = mockBuilder
 	service.PlatformRegistry = &domain.MockPlatformRegistry{}
+	service.EmailService = mockEmailService
 
 	return service, mockRepo, mockBuilder, mockAuth
 }
 
 // Mock message for testing
 type mockMessage struct {
-	subject string
-	data    []byte
+	subject  string
+	data     []byte
+	hasReply bool
 	mock.Mock
 }
 
@@ -208,9 +211,23 @@ func (m *mockMessage) Respond(data []byte) error {
 	return args.Error(0)
 }
 
+func (m *mockMessage) HasReply() bool {
+	return m.hasReply
+}
+
 func newMockMessage(subject string, data []byte) *mockMessage {
 	return &mockMessage{
 		subject: subject,
 		data:    data,
+		// Default to true for backward compatibility with existing tests
+		hasReply: true,
+	}
+}
+
+func newMockMessageNoReply(subject string, data []byte) *mockMessage {
+	return &mockMessage{
+		subject:  subject,
+		data:     data,
+		hasReply: false,
 	}
 }
