@@ -791,21 +791,19 @@ func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMe
 
 // BuildZoomWebhookPayload builds the payload for the Meeting Service
 // zoom-webhook endpoint from CLI flags.
-func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServiceZoomWebhookZoomSignature string, meetingServiceZoomWebhookZoomTimestamp string) (*meetingservice.ZoomWebhookPayload2, error) {
+func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServiceZoomWebhookZoomSignature string, meetingServiceZoomWebhookZoomTimestamp string) (*meetingservice.ZoomWebhookPayload, error) {
 	var err error
 	var body ZoomWebhookRequestBody
 	{
 		err = json.Unmarshal([]byte(meetingServiceZoomWebhookBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"body\": {\n         \"event\": \"meeting.started\",\n         \"event_ts\": 1609459200000,\n         \"payload\": \"Minima eos inventore quisquam quo voluptatibus.\"\n      }\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"event\": \"meeting.started\",\n      \"event_ts\": 1609459200000,\n      \"payload\": \"Minima eos inventore quisquam quo voluptatibus.\"\n   }'")
 		}
-		if body.Body == nil {
-			err = goa.MergeErrors(err, goa.MissingFieldError("body", "body"))
+		if body.Payload == nil {
+			err = goa.MergeErrors(err, goa.MissingFieldError("payload", "body"))
 		}
-		if body.Body != nil {
-			if err2 := ValidateZoomWebhookPayloadRequestBody(body.Body); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
+		if !(body.Event == "meeting.started" || body.Event == "meeting.ended" || body.Event == "meeting.deleted" || body.Event == "meeting.participant_joined" || body.Event == "meeting.participant_left" || body.Event == "recording.completed" || body.Event == "recording.transcript_completed" || body.Event == "meeting.summary_completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.event", body.Event, []any{"meeting.started", "meeting.ended", "meeting.deleted", "meeting.participant_joined", "meeting.participant_left", "recording.completed", "recording.transcript_completed", "meeting.summary_completed"}))
 		}
 		if err != nil {
 			return nil, err
@@ -823,9 +821,10 @@ func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServic
 			zoomTimestamp = &meetingServiceZoomWebhookZoomTimestamp
 		}
 	}
-	v := &meetingservice.ZoomWebhookPayload2{}
-	if body.Body != nil {
-		v.Body = marshalZoomWebhookPayloadRequestBodyToMeetingserviceZoomWebhookPayload(body.Body)
+	v := &meetingservice.ZoomWebhookPayload{
+		Event:   body.Event,
+		EventTs: body.EventTs,
+		Payload: body.Payload,
 	}
 	v.ZoomSignature = zoomSignature
 	v.ZoomTimestamp = zoomTimestamp

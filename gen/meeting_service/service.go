@@ -44,7 +44,7 @@ type Service interface {
 	DeleteMeetingRegistrant(context.Context, *DeleteMeetingRegistrantPayload) (err error)
 	// Handle Zoom webhook events for meeting lifecycle, participants, and
 	// recordings.
-	ZoomWebhook(context.Context, *ZoomWebhookPayload2) (res *ZoomWebhookResponse, err error)
+	ZoomWebhook(context.Context, *ZoomWebhookPayload) (res *ZoomWebhookResponse, err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -743,7 +743,8 @@ type ZoomConfigPost struct {
 	AiSummaryRequireApproval *bool
 }
 
-// Zoom webhook event payload
+// ZoomWebhookPayload is the payload type of the Meeting Service service
+// zoom-webhook method.
 type ZoomWebhookPayload struct {
 	// The type of event
 	Event string
@@ -751,13 +752,6 @@ type ZoomWebhookPayload struct {
 	EventTs int64
 	// Contains meeting, participant, or recording data depending on event type
 	Payload any
-}
-
-// ZoomWebhookPayload2 is the payload type of the Meeting Service service
-// zoom-webhook method.
-type ZoomWebhookPayload2 struct {
-	// Zoom webhook event payload
-	Body *ZoomWebhookPayload
 	// HMAC-SHA256 signature of the request body
 	ZoomSignature *string
 	// Timestamp when the webhook was sent

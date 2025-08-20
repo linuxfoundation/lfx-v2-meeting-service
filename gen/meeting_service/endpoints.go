@@ -357,7 +357,7 @@ func NewDeleteMeetingRegistrantEndpoint(s Service, authJWTFn security.AuthJWTFun
 // "zoom-webhook" of service "Meeting Service".
 func NewZoomWebhookEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*ZoomWebhookPayload2)
+		p := req.(*ZoomWebhookPayload)
 		return s.ZoomWebhook(ctx, p)
 	}
 }

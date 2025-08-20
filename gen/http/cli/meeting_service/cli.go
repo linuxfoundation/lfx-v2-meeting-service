@@ -656,11 +656,9 @@ Handle Zoom webhook events for meeting lifecycle, participants, and recordings.
 
 Example:
     %[1]s meeting-service zoom-webhook --body '{
-      "body": {
-         "event": "meeting.started",
-         "event_ts": 1609459200000,
-         "payload": "Minima eos inventore quisquam quo voluptatibus."
-      }
+      "event": "meeting.started",
+      "event_ts": 1609459200000,
+      "payload": "Minima eos inventore quisquam quo voluptatibus."
    }' --zoom-signature "Ducimus eos tempora quis dolor repudiandae." --zoom-timestamp "Tenetur eligendi ut voluptatem."
 `, os.Args[0])
 }

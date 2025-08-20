@@ -254,7 +254,7 @@ func (c *Client) DeleteMeetingRegistrant(ctx context.Context, p *DeleteMeetingRe
 //   - "Unauthorized" (type *UnauthorizedError): Invalid webhook signature
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - error: internal error
-func (c *Client) ZoomWebhook(ctx context.Context, p *ZoomWebhookPayload2) (res *ZoomWebhookResponse, err error) {
+func (c *Client) ZoomWebhook(ctx context.Context, p *ZoomWebhookPayload) (res *ZoomWebhookResponse, err error) {
 	var ires any
 	ires, err = c.ZoomWebhookEndpoint(ctx, p)
 	if err != nil {

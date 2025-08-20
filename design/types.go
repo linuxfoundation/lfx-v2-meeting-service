@@ -141,6 +141,12 @@ var ZoomWebhookPayload = Type("ZoomWebhookPayload", func() {
 	Attribute("payload", Any, "Event-specific payload data", func() {
 		Description("Contains meeting, participant, or recording data depending on event type")
 	})
+	Attribute("zoom_signature", String, "Zoom webhook signature for verification", func() {
+		Description("HMAC-SHA256 signature of the request body")
+	})
+	Attribute("zoom_timestamp", String, "Zoom timestamp header for replay protection", func() {
+		Description("Timestamp when the webhook was sent")
+	})
 	Required("event", "event_ts", "payload")
 })
 

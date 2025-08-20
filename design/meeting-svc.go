@@ -502,16 +502,7 @@ var _ = Service("Meeting Service", func() {
 		// No authentication required for webhooks - validation is done via signature
 		NoSecurity()
 
-		Payload(func() {
-			Attribute("body", ZoomWebhookPayload, "Zoom webhook event payload")
-			Attribute("zoom_signature", String, "Zoom webhook signature for verification", func() {
-				Description("HMAC-SHA256 signature of the request body")
-			})
-			Attribute("zoom_timestamp", String, "Zoom timestamp header for replay protection", func() {
-				Description("Timestamp when the webhook was sent")
-			})
-			Required("body")
-		})
+		Payload(ZoomWebhookPayload)
 
 		Result(ZoomWebhookResponse)
 

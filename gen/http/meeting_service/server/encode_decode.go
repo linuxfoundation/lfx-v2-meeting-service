@@ -1641,7 +1641,7 @@ func DecodeZoomWebhookRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 		if zoomTimestampRaw != "" {
 			zoomTimestamp = &zoomTimestampRaw
 		}
-		payload := NewZoomWebhookPayload2(&body, zoomSignature, zoomTimestamp)
+		payload := NewZoomWebhookPayload(&body, zoomSignature, zoomTimestamp)
 
 		return payload, nil
 	}
@@ -1968,19 +1968,6 @@ func marshalMeetingserviceRegistrantToRegistrantResponseBody(v *meetingservice.R
 		Username:           v.Username,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
-	}
-
-	return res
-}
-
-// unmarshalZoomWebhookPayloadRequestBodyToMeetingserviceZoomWebhookPayload
-// builds a value of type *meetingservice.ZoomWebhookPayload from a value of
-// type *ZoomWebhookPayloadRequestBody.
-func unmarshalZoomWebhookPayloadRequestBodyToMeetingserviceZoomWebhookPayload(v *ZoomWebhookPayloadRequestBody) *meetingservice.ZoomWebhookPayload {
-	res := &meetingservice.ZoomWebhookPayload{
-		Event:   *v.Event,
-		EventTs: *v.EventTs,
-		Payload: v.Payload,
 	}
 
 	return res

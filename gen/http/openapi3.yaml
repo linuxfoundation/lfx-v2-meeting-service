@@ -2149,8 +2149,8 @@ paths:
                   schema:
                     type: string
                     description: HMAC-SHA256 signature of the request body
-                    example: Possimus omnis nesciunt.
-                  example: Quia at itaque.
+                    example: Incidunt similique inventore nobis suscipit ut reprehenderit.
+                  example: Aut consequuntur amet distinctio.
                 - name: x-zm-request-timestamp
                   in: header
                   description: Timestamp when the webhook was sent
@@ -2158,19 +2158,18 @@ paths:
                   schema:
                     type: string
                     description: Timestamp when the webhook was sent
-                    example: Et aspernatur cumque fugit minus ut.
-                  example: Eveniet eos.
+                    example: Veritatis laudantium quas nulla quibusdam.
+                  example: Explicabo voluptatum numquam fuga illum aut.
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/ZoomWebhookRequestBody'
+                            $ref: '#/components/schemas/ZoomWebhookPayload2'
                         example:
-                            body:
-                                event: meeting.started
-                                event_ts: 1609459200000
-                                payload: Minima eos inventore quisquam quo voluptatibus.
+                            event: meeting.started
+                            event_ts: 1609459200000
+                            payload: Minima eos inventore quisquam quo voluptatibus.
             responses:
                 "200":
                     description: OK response.
@@ -2491,21 +2490,21 @@ components:
                 org_name:
                     type: string
                     description: User's organization
-                    example: Aliquam et.
+                    example: Fugit minus ut ducimus eveniet.
                 username:
                     type: string
                     description: User's LF ID
-                    example: Assumenda sunt deleniti placeat quos.
+                    example: Occaecati rem laboriosam.
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
                 first_name: John
-                host: true
+                host: false
                 job_title: Software Engineer
                 last_name: Doe
                 occurrence_id: "1640995200"
-                org_name: Vero ipsum necessitatibus mollitia commodi qui quo.
-                username: Dolor dolor dolore et sit consequatur voluptas.
+                org_name: Quia aliquam et provident.
+                username: Asperiores voluptas sed et et.
             required:
                 - email
                 - first_name
@@ -2626,8 +2625,53 @@ components:
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
                           username: Ut repudiandae.
+                        - avatar_url: https://example.com/avatar.jpg
+                          created_at: "2021-01-01T00:00:00Z"
+                          email: user@example.com
+                          first_name: John
+                          host: true
+                          job_title: Software Engineer
+                          last_name: Doe
+                          meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          occurrence_id: "1640995200"
+                          org_is_member: false
+                          org_is_project_member: false
+                          org_name: Aut dicta quod.
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          updated_at: "2021-01-01T00:00:00Z"
+                          username: Ut repudiandae.
             example:
                 registrants:
+                    - avatar_url: https://example.com/avatar.jpg
+                      created_at: "2021-01-01T00:00:00Z"
+                      email: user@example.com
+                      first_name: John
+                      host: true
+                      job_title: Software Engineer
+                      last_name: Doe
+                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      occurrence_id: "1640995200"
+                      org_is_member: false
+                      org_is_project_member: false
+                      org_name: Aut dicta quod.
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      updated_at: "2021-01-01T00:00:00Z"
+                      username: Ut repudiandae.
+                    - avatar_url: https://example.com/avatar.jpg
+                      created_at: "2021-01-01T00:00:00Z"
+                      email: user@example.com
+                      first_name: John
+                      host: true
+                      job_title: Software Engineer
+                      last_name: Doe
+                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      occurrence_id: "1640995200"
+                      org_is_member: false
+                      org_is_project_member: false
+                      org_name: Aut dicta quod.
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      updated_at: "2021-01-01T00:00:00Z"
+                      username: Ut repudiandae.
                     - avatar_url: https://example.com/avatar.jpg
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
@@ -3005,8 +3049,232 @@ components:
                             ai_summary_require_approval: false
                             meeting_id: "1234567890"
                             passcode: "147258"
+                        - artifact_visibility: meeting_hosts
+                          committees:
+                            - allowed_voting_statuses:
+                                - Labore similique aut adipisci excepturi.
+                                - Pariatur aut amet quidem.
+                                - Corporis facilis possimus dolorem perferendis neque ut.
+                              uid: Facilis non aut incidunt aut.
+                            - allowed_voting_statuses:
+                                - Labore similique aut adipisci excepturi.
+                                - Pariatur aut amet quidem.
+                                - Corporis facilis possimus dolorem perferendis neque ut.
+                              uid: Facilis non aut incidunt aut.
+                            - allowed_voting_statuses:
+                                - Labore similique aut adipisci excepturi.
+                                - Pariatur aut amet quidem.
+                                - Corporis facilis possimus dolorem perferendis neque ut.
+                              uid: Facilis non aut incidunt aut.
+                          created_at: "2021-01-01T00:00:00Z"
+                          description: Impedit enim ratione.
+                          duration: 501
+                          early_join_time_minutes: 50
+                          email_delivery_error_count: 6471997546119576917
+                          join_url: http://corwin.com/jacklyn
+                          meeting_type: Other
+                          occurrences:
+                            - description: Quibusdam recusandae eos quidem qui aut delectus.
+                              duration: 5336547802757278909
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1997-04-21T18:32:51Z"
+                                end_times: 4705698655391728293
+                                monthly_day: 14
+                                monthly_week: -1
+                                monthly_week_day: 2
+                                repeat_interval: 3735307870055662684
+                                type: 1
+                                weekly_days: 1,3,5
+                              registrant_count: 4998167148381198293
+                              response_count_no: 4621673597496388875
+                              response_count_yes: 4300849443592003549
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Voluptas qui.
+                            - description: Quibusdam recusandae eos quidem qui aut delectus.
+                              duration: 5336547802757278909
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1997-04-21T18:32:51Z"
+                                end_times: 4705698655391728293
+                                monthly_day: 14
+                                monthly_week: -1
+                                monthly_week_day: 2
+                                repeat_interval: 3735307870055662684
+                                type: 1
+                                weekly_days: 1,3,5
+                              registrant_count: 4998167148381198293
+                              response_count_no: 4621673597496388875
+                              response_count_yes: 4300849443592003549
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Voluptas qui.
+                            - description: Quibusdam recusandae eos quidem qui aut delectus.
+                              duration: 5336547802757278909
+                              occurrence_id: "1640995200"
+                              recurrence:
+                                end_date_time: "1997-04-21T18:32:51Z"
+                                end_times: 4705698655391728293
+                                monthly_day: 14
+                                monthly_week: -1
+                                monthly_week_day: 2
+                                repeat_interval: 3735307870055662684
+                                type: 1
+                                weekly_days: 1,3,5
+                              registrant_count: 4998167148381198293
+                              response_count_no: 4621673597496388875
+                              response_count_yes: 4300849443592003549
+                              start_time: "2021-01-01T10:00:00Z"
+                              status: cancelled
+                              title: Voluptas qui.
+                          organizers:
+                            - Dolor qui voluptate sed omnis maiores.
+                            - Dolores voluptatum tenetur.
+                          platform: Zoom
+                          project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          public_link: http://boyle.org/reese
+                          recording_enabled: true
+                          recurrence:
+                            end_date_time: "1997-04-21T18:32:51Z"
+                            end_times: 4705698655391728293
+                            monthly_day: 14
+                            monthly_week: -1
+                            monthly_week_day: 2
+                            repeat_interval: 3735307870055662684
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 1480069193987556670
+                          registrant_response_accepted_count: 443170181127730032
+                          registrant_response_declined_count: 5261808731854375255
+                          restricted: false
+                          start_time: "2021-01-01T00:00:00Z"
+                          timezone: Fugiat dolorem soluta at perferendis aliquid.
+                          title: Et magni quasi placeat et expedita.
+                          transcript_enabled: true
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          updated_at: "2021-01-01T00:00:00Z"
+                          visibility: private
+                          youtube_upload_enabled: false
+                          zoom_config:
+                            ai_companion_enabled: true
+                            ai_summary_require_approval: false
+                            meeting_id: "1234567890"
+                            passcode: "147258"
             example:
                 meetings:
+                    - artifact_visibility: meeting_hosts
+                      committees:
+                        - allowed_voting_statuses:
+                            - Labore similique aut adipisci excepturi.
+                            - Pariatur aut amet quidem.
+                            - Corporis facilis possimus dolorem perferendis neque ut.
+                          uid: Facilis non aut incidunt aut.
+                        - allowed_voting_statuses:
+                            - Labore similique aut adipisci excepturi.
+                            - Pariatur aut amet quidem.
+                            - Corporis facilis possimus dolorem perferendis neque ut.
+                          uid: Facilis non aut incidunt aut.
+                        - allowed_voting_statuses:
+                            - Labore similique aut adipisci excepturi.
+                            - Pariatur aut amet quidem.
+                            - Corporis facilis possimus dolorem perferendis neque ut.
+                          uid: Facilis non aut incidunt aut.
+                      created_at: "2021-01-01T00:00:00Z"
+                      description: Impedit enim ratione.
+                      duration: 501
+                      early_join_time_minutes: 50
+                      email_delivery_error_count: 6471997546119576917
+                      join_url: http://corwin.com/jacklyn
+                      meeting_type: Other
+                      occurrences:
+                        - description: Quibusdam recusandae eos quidem qui aut delectus.
+                          duration: 5336547802757278909
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1997-04-21T18:32:51Z"
+                            end_times: 4705698655391728293
+                            monthly_day: 14
+                            monthly_week: -1
+                            monthly_week_day: 2
+                            repeat_interval: 3735307870055662684
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 4998167148381198293
+                          response_count_no: 4621673597496388875
+                          response_count_yes: 4300849443592003549
+                          start_time: "2021-01-01T10:00:00Z"
+                          status: cancelled
+                          title: Voluptas qui.
+                        - description: Quibusdam recusandae eos quidem qui aut delectus.
+                          duration: 5336547802757278909
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1997-04-21T18:32:51Z"
+                            end_times: 4705698655391728293
+                            monthly_day: 14
+                            monthly_week: -1
+                            monthly_week_day: 2
+                            repeat_interval: 3735307870055662684
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 4998167148381198293
+                          response_count_no: 4621673597496388875
+                          response_count_yes: 4300849443592003549
+                          start_time: "2021-01-01T10:00:00Z"
+                          status: cancelled
+                          title: Voluptas qui.
+                        - description: Quibusdam recusandae eos quidem qui aut delectus.
+                          duration: 5336547802757278909
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1997-04-21T18:32:51Z"
+                            end_times: 4705698655391728293
+                            monthly_day: 14
+                            monthly_week: -1
+                            monthly_week_day: 2
+                            repeat_interval: 3735307870055662684
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 4998167148381198293
+                          response_count_no: 4621673597496388875
+                          response_count_yes: 4300849443592003549
+                          start_time: "2021-01-01T10:00:00Z"
+                          status: cancelled
+                          title: Voluptas qui.
+                      organizers:
+                        - Dolor qui voluptate sed omnis maiores.
+                        - Dolores voluptatum tenetur.
+                      platform: Zoom
+                      project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      public_link: http://boyle.org/reese
+                      recording_enabled: true
+                      recurrence:
+                        end_date_time: "1997-04-21T18:32:51Z"
+                        end_times: 4705698655391728293
+                        monthly_day: 14
+                        monthly_week: -1
+                        monthly_week_day: 2
+                        repeat_interval: 3735307870055662684
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1480069193987556670
+                      registrant_response_accepted_count: 443170181127730032
+                      registrant_response_declined_count: 5261808731854375255
+                      restricted: false
+                      start_time: "2021-01-01T00:00:00Z"
+                      timezone: Fugiat dolorem soluta at perferendis aliquid.
+                      title: Et magni quasi placeat et expedita.
+                      transcript_enabled: true
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      updated_at: "2021-01-01T00:00:00Z"
+                      visibility: private
+                      youtube_upload_enabled: false
+                      zoom_config:
+                        ai_companion_enabled: true
+                        ai_summary_require_approval: false
+                        meeting_id: "1234567890"
+                        passcode: "147258"
                     - artifact_visibility: meeting_hosts
                       committees:
                         - allowed_voting_statuses:
@@ -4406,7 +4674,7 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: public
+                    example: meeting_participants
                     enum:
                         - meeting_hosts
                         - meeting_participants
@@ -4444,25 +4712,25 @@ components:
                 description:
                     type: string
                     description: The description of the meeting
-                    example: Sit sapiente architecto eos magni amet quas.
+                    example: Ex et provident ducimus illo quia vel.
                 duration:
                     type: integer
                     description: The duration of the meeting in minutes
-                    example: 555
+                    example: 306
                     format: int64
                     minimum: 0
                     maximum: 600
                 early_join_time_minutes:
                     type: integer
                     description: The number of minutes that users are allowed to join the meeting early without being kicked out
-                    example: 16
+                    example: 37
                     format: int64
                     minimum: 10
                     maximum: 60
                 meeting_type:
                     type: string
                     description: The type of meeting. This is usually dependent on the committee(s) associated with the meeting
-                    example: None
+                    example: Legal
                     enum:
                         - Board
                         - Maintainers
@@ -4485,13 +4753,13 @@ components:
                 recording_enabled:
                     type: boolean
                     description: Whether recording is enabled for the meeting
-                    example: false
+                    example: true
                 recurrence:
                     $ref: '#/components/schemas/Recurrence'
                 restricted:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
-                    example: true
+                    example: false
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -4500,11 +4768,11 @@ components:
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
-                    example: Est facilis unde enim delectus pariatur.
+                    example: Asperiores tempore voluptates consequatur qui error.
                 title:
                     type: string
                     description: The title of the meeting
-                    example: Reiciendis aut dolorem ipsam quia.
+                    example: Laborum voluptatem suscipit placeat perferendis explicabo.
                 transcript_enabled:
                     type: boolean
                     description: Whether transcription is enabled for the meeting
@@ -4512,18 +4780,18 @@ components:
                 visibility:
                     type: string
                     description: The visibility of the meeting's existence to other users
-                    example: private
+                    example: public
                     enum:
                         - public
                         - private
                 youtube_upload_enabled:
                     type: boolean
                     description: Whether automatic youtube uploading is enabled for the meeting
-                    example: false
+                    example: true
                 zoom_config:
                     $ref: '#/components/schemas/ZoomConfigPost'
             example:
-                artifact_visibility: meeting_hosts
+                artifact_visibility: public
                 committees:
                     - allowed_voting_statuses:
                         - Dolore et similique ut.
@@ -4543,19 +4811,13 @@ components:
                         - Iure vero ipsa possimus sint et.
                         - Quod vero.
                       uid: Recusandae voluptatem.
-                    - allowed_voting_statuses:
-                        - Dolore et similique ut.
-                        - Sunt qui modi non et cupiditate.
-                        - Iure vero ipsa possimus sint et.
-                        - Quod vero.
-                      uid: Recusandae voluptatem.
-                description: Vel et harum architecto quae eos.
-                duration: 63
-                early_join_time_minutes: 42
-                meeting_type: None
+                description: Debitis aliquid.
+                duration: 195
+                early_join_time_minutes: 25
+                meeting_type: Marketing
                 platform: Zoom
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                recording_enabled: true
+                recording_enabled: false
                 recurrence:
                     end_date_time: "2011-07-03T06:12:48Z"
                     end_times: 659936626783690641
@@ -4567,11 +4829,11 @@ components:
                     weekly_days: 1,3,5
                 restricted: false
                 start_time: "2021-01-01T00:00:00Z"
-                timezone: Voluptatem suscipit placeat perferendis explicabo maiores ex.
-                title: Provident ducimus illo.
+                timezone: Eius voluptatem non iusto.
+                title: Accusamus quis reprehenderit itaque corporis.
                 transcript_enabled: true
                 visibility: public
-                youtube_upload_enabled: false
+                youtube_upload_enabled: true
                 zoom_config:
                     ai_companion_enabled: false
                     ai_summary_require_approval: false
@@ -4761,17 +5023,19 @@ components:
                     type: array
                     items:
                         type: string
-                        example: Alias accusamus.
+                        example: Itaque deleniti quia ex.
                     description: The organizers of the meeting. This is a list of LFIDs of the meeting organizers.
                     example:
-                        - Itaque corporis deserunt debitis aliquid delectus.
-                        - Minus harum quia aut.
-                        - Ratione non.
-                        - Quas itaque deleniti quia.
+                        - Exercitationem ea ut quo ut non sunt.
+                        - Et veniam ut eos.
+                        - Aliquam et.
+                        - Assumenda sunt deleniti placeat quos.
             example:
                 organizers:
-                    - Fuga exercitationem ea ut quo ut.
-                    - Sunt quos et.
+                    - Vero ipsum necessitatibus mollitia commodi qui quo.
+                    - Dolor dolor dolore et sit consequatur voluptas.
+                    - Possimus omnis nesciunt.
+                    - Quia at itaque.
         UpdateRegistrantPayload:
             type: object
             properties:
@@ -4904,27 +5168,57 @@ components:
                 payload:
                     description: Contains meeting, participant, or recording data depending on event type
                     example: Corrupti consequatur quidem.
+                zoom_signature:
+                    type: string
+                    description: HMAC-SHA256 signature of the request body
+                    example: Eos iure tenetur qui dignissimos.
+                zoom_timestamp:
+                    type: string
+                    description: Timestamp when the webhook was sent
+                    example: Et nulla consequatur est facilis unde.
             description: Zoom webhook event payload
             example:
                 event: meeting.started
                 event_ts: 1609459200000
-                payload: Eos iure tenetur qui dignissimos.
+                payload: Delectus pariatur architecto reiciendis.
+                zoom_signature: Dolorem ipsam quia dolor.
+                zoom_timestamp: Sapiente architecto eos magni amet quas.
             required:
                 - event
                 - event_ts
                 - payload
-        ZoomWebhookRequestBody:
+        ZoomWebhookPayload2:
             type: object
             properties:
-                body:
-                    $ref: '#/components/schemas/ZoomWebhookPayload'
+                event:
+                    type: string
+                    description: The type of event
+                    example: meeting.started
+                    enum:
+                        - meeting.started
+                        - meeting.ended
+                        - meeting.deleted
+                        - meeting.participant_joined
+                        - meeting.participant_left
+                        - recording.completed
+                        - recording.transcript_completed
+                        - meeting.summary_completed
+                event_ts:
+                    type: integer
+                    description: Event timestamp in milliseconds
+                    example: 1609459200000
+                    format: int64
+                payload:
+                    description: Contains meeting, participant, or recording data depending on event type
+                    example: Quas sit.
             example:
-                body:
-                    event: meeting.started
-                    event_ts: 1609459200000
-                    payload: Minima eos inventore quisquam quo voluptatibus.
+                event: meeting.started
+                event_ts: 1609459200000
+                payload: Blanditiis error nisi ipsa omnis.
             required:
-                - body
+                - event
+                - event_ts
+                - payload
         ZoomWebhookResponse:
             type: object
             properties:

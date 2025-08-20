@@ -942,9 +942,11 @@ paths:
                   in: body
                   required: true
                   schema:
-                    $ref: '#/definitions/MeetingServiceZoomWebhookRequestBody'
+                    $ref: '#/definitions/ZoomWebhookPayload'
                     required:
-                        - body
+                        - event
+                        - event_ts
+                        - payload
             responses:
                 "200":
                     description: OK response.
@@ -3055,19 +3057,6 @@ definitions:
                 - Qui aut delectus.
                 - Explicabo laboriosam accusamus quia provident nam fugiat.
                 - In error qui ea voluptas animi.
-    MeetingServiceZoomWebhookRequestBody:
-        title: MeetingServiceZoomWebhookRequestBody
-        type: object
-        properties:
-            body:
-                $ref: '#/definitions/ZoomWebhookPayload'
-        example:
-            body:
-                event: meeting.started
-                event_ts: 1609459200000
-                payload: Minima eos inventore quisquam quo voluptatibus.
-        required:
-            - body
     MeetingSettings:
         title: MeetingSettings
         type: object
@@ -3480,7 +3469,6 @@ definitions:
             payload:
                 description: Contains meeting, participant, or recording data depending on event type
                 example: Quas provident pariatur beatae.
-        description: Zoom webhook event payload
         example:
             event: meeting.started
             event_ts: 1609459200000

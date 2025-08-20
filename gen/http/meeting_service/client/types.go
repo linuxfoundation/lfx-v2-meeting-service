@@ -166,8 +166,12 @@ type UpdateMeetingRegistrantRequestBody struct {
 // ZoomWebhookRequestBody is the type of the "Meeting Service" service
 // "zoom-webhook" endpoint HTTP request body.
 type ZoomWebhookRequestBody struct {
-	// Zoom webhook event payload
-	Body *ZoomWebhookPayloadRequestBody `form:"body" json:"body" xml:"body"`
+	// The type of event
+	Event string `form:"event" json:"event" xml:"event"`
+	// Event timestamp in milliseconds
+	EventTs int64 `form:"event_ts" json:"event_ts" xml:"event_ts"`
+	// Contains meeting, participant, or recording data depending on event type
+	Payload any `form:"payload" json:"payload" xml:"payload"`
 }
 
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
@@ -1328,16 +1332,6 @@ type RegistrantResponseBody struct {
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
-// ZoomWebhookPayloadRequestBody is used to define fields on request body types.
-type ZoomWebhookPayloadRequestBody struct {
-	// The type of event
-	Event string `form:"event" json:"event" xml:"event"`
-	// Event timestamp in milliseconds
-	EventTs int64 `form:"event_ts" json:"event_ts" xml:"event_ts"`
-	// Contains meeting, participant, or recording data depending on event type
-	Payload any `form:"payload" json:"payload" xml:"payload"`
-}
-
 // NewCreateMeetingRequestBody builds the HTTP request body from the payload of
 // the "create-meeting" endpoint of the "Meeting Service" service.
 func NewCreateMeetingRequestBody(p *meetingservice.CreateMeetingPayload) *CreateMeetingRequestBody {
@@ -1467,10 +1461,11 @@ func NewUpdateMeetingRegistrantRequestBody(p *meetingservice.UpdateMeetingRegist
 
 // NewZoomWebhookRequestBody builds the HTTP request body from the payload of
 // the "zoom-webhook" endpoint of the "Meeting Service" service.
-func NewZoomWebhookRequestBody(p *meetingservice.ZoomWebhookPayload2) *ZoomWebhookRequestBody {
-	body := &ZoomWebhookRequestBody{}
-	if p.Body != nil {
-		body.Body = marshalMeetingserviceZoomWebhookPayloadToZoomWebhookPayloadRequestBody(p.Body)
+func NewZoomWebhookRequestBody(p *meetingservice.ZoomWebhookPayload) *ZoomWebhookRequestBody {
+	body := &ZoomWebhookRequestBody{
+		Event:   p.Event,
+		EventTs: p.EventTs,
+		Payload: p.Payload,
 	}
 	return body
 }
@@ -3889,18 +3884,6 @@ func ValidateRegistrantResponseBody(body *RegistrantResponseBody) (err error) {
 	}
 	if body.UpdatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
-	}
-	return
-}
-
-// ValidateZoomWebhookPayloadRequestBody runs the validations defined on
-// ZoomWebhookPayloadRequestBody
-func ValidateZoomWebhookPayloadRequestBody(body *ZoomWebhookPayloadRequestBody) (err error) {
-	if body.Payload == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("payload", "body"))
-	}
-	if !(body.Event == "meeting.started" || body.Event == "meeting.ended" || body.Event == "meeting.deleted" || body.Event == "meeting.participant_joined" || body.Event == "meeting.participant_left" || body.Event == "recording.completed" || body.Event == "recording.transcript_completed" || body.Event == "meeting.summary_completed") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.event", body.Event, []any{"meeting.started", "meeting.ended", "meeting.deleted", "meeting.participant_joined", "meeting.participant_left", "recording.completed", "recording.transcript_completed", "meeting.summary_completed"}))
 	}
 	return
 }

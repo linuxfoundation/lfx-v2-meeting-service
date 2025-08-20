@@ -16,17 +16,19 @@ import (
 
 // ZoomConfig holds Zoom-specific configuration
 type ZoomConfig struct {
-	AccountID    string
-	ClientID     string
-	ClientSecret string
+	AccountID          string
+	ClientID           string
+	ClientSecret       string
+	WebhookSecretToken string
 }
 
 // NewZoomConfigFromEnv creates a ZoomConfig from environment variables
 func NewZoomConfigFromEnv() ZoomConfig {
 	return ZoomConfig{
-		AccountID:    os.Getenv("ZOOM_ACCOUNT_ID"),
-		ClientID:     os.Getenv("ZOOM_CLIENT_ID"),
-		ClientSecret: os.Getenv("ZOOM_CLIENT_SECRET"),
+		AccountID:          os.Getenv("ZOOM_ACCOUNT_ID"),
+		ClientID:           os.Getenv("ZOOM_CLIENT_ID"),
+		ClientSecret:       os.Getenv("ZOOM_CLIENT_SECRET"),
+		WebhookSecretToken: os.Getenv("ZOOM_WEBHOOK_SECRET_TOKEN"),
 	}
 }
 
@@ -63,9 +65,8 @@ func SetupZoom(platformRegistry domain.PlatformRegistry, webhookRegistry domain.
 	}
 
 	// Setup Zoom webhook handler
-	secretToken := os.Getenv("ZOOM_WEBHOOK_SECRET_TOKEN")
-	if secretToken != "" {
-		zoomWebhookHandler := webhook.NewZoomWebhookHandler()
+	if config.WebhookSecretToken != "" {
+		zoomWebhookHandler := webhook.NewZoomWebhookHandler(config.WebhookSecretToken)
 		webhookRegistry.RegisterHandler("zoom", zoomWebhookHandler)
 
 		slog.Info("Zoom webhook integration configured",

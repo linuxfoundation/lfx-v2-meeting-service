@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"os"
 
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -20,8 +19,7 @@ type ZoomWebhookHandler struct {
 }
 
 // NewZoomWebhookHandler creates a new Zoom webhook handler
-func NewZoomWebhookHandler() *ZoomWebhookHandler {
-	secretToken := os.Getenv("ZOOM_WEBHOOK_SECRET_TOKEN")
+func NewZoomWebhookHandler(secretToken string) *ZoomWebhookHandler {
 	validator := NewZoomWebhookValidator(secretToken)
 
 	return &ZoomWebhookHandler{
@@ -30,13 +28,13 @@ func NewZoomWebhookHandler() *ZoomWebhookHandler {
 }
 
 // HandleWebhookEvent processes incoming Zoom webhook events (legacy method for API compatibility)
-func (h *ZoomWebhookHandler) HandleWebhookEvent(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) HandleWebhookEvent(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "zoom_webhook_handler")
 
 	// Validate webhook signature if signature and timestamp are provided
 	if payload.ZoomSignature != nil && payload.ZoomTimestamp != nil {
 		// Marshal the body to get the raw bytes for signature validation
-		bodyBytes, err := json.Marshal(payload.Body)
+		bodyBytes, err := json.Marshal(payload.Payload)
 		if err != nil {
 			logger.ErrorContext(ctx, "Failed to marshal webhook body for validation", logging.ErrKey, err)
 			return nil, fmt.Errorf("invalid webhook payload: %w", err)
@@ -51,19 +49,19 @@ func (h *ZoomWebhookHandler) HandleWebhookEvent(ctx context.Context, payload *me
 	}
 
 	// Validate event type
-	if payload.Body == nil || payload.Body.Event == "" {
+	if payload.Payload == nil || payload.Event == "" {
 		logger.WarnContext(ctx, "Webhook payload missing event field")
 		return nil, fmt.Errorf("invalid webhook payload: missing event field")
 	}
 
-	eventType := payload.Body.Event
+	eventType := payload.Event
 	if !h.validator.IsValidEvent(eventType) {
 		logger.WarnContext(ctx, "Unsupported webhook event type", "event_type", eventType)
 		return nil, fmt.Errorf("unsupported event type: %s", eventType)
 	}
 
 	// Use the domain interface method
-	if err := h.HandleEvent(ctx, eventType, payload.Body.Payload); err != nil {
+	if err := h.HandleEvent(ctx, eventType, payload.Payload); err != nil {
 		logger.ErrorContext(ctx, "Failed to process webhook event", logging.ErrKey, err)
 		return nil, err
 	}
@@ -76,12 +74,12 @@ func (h *ZoomWebhookHandler) HandleWebhookEvent(ctx context.Context, payload *me
 
 // handleMeetingStarted processes meeting.started events
 // TODO: This method is a placeholder for future implementation
-func (h *ZoomWebhookHandler) handleMeetingStarted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleMeetingStarted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.started")
 
 	// Extract meeting information from payload
 	// The payload.Body.Payload contains the actual event data
-	logger.InfoContext(ctx, "Meeting started", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Meeting started", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement meeting started logic:
 	// - Update meeting status to "in-progress"
@@ -97,10 +95,10 @@ func (h *ZoomWebhookHandler) handleMeetingStarted(ctx context.Context, payload *
 }
 
 // handleMeetingEnded processes meeting.ended events
-func (h *ZoomWebhookHandler) handleMeetingEnded(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleMeetingEnded(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.ended")
 
-	logger.InfoContext(ctx, "Meeting ended", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Meeting ended", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement meeting ended logic:
 	// - Update meeting status to "completed"
@@ -116,10 +114,10 @@ func (h *ZoomWebhookHandler) handleMeetingEnded(ctx context.Context, payload *me
 }
 
 // handleMeetingDeleted processes meeting.deleted events
-func (h *ZoomWebhookHandler) handleMeetingDeleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleMeetingDeleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.deleted")
 
-	logger.InfoContext(ctx, "Meeting deleted", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Meeting deleted", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement meeting deleted logic:
 	// - Update meeting status to "cancelled" or remove meeting
@@ -135,10 +133,10 @@ func (h *ZoomWebhookHandler) handleMeetingDeleted(ctx context.Context, payload *
 }
 
 // handleParticipantJoined processes meeting.participant_joined events
-func (h *ZoomWebhookHandler) handleParticipantJoined(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleParticipantJoined(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.participant_joined")
 
-	logger.InfoContext(ctx, "Participant joined", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Participant joined", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement participant joined logic:
 	// - Track participant attendance
@@ -154,10 +152,10 @@ func (h *ZoomWebhookHandler) handleParticipantJoined(ctx context.Context, payloa
 }
 
 // handleParticipantLeft processes meeting.participant_left events
-func (h *ZoomWebhookHandler) handleParticipantLeft(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleParticipantLeft(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.participant_left")
 
-	logger.InfoContext(ctx, "Participant left", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Participant left", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement participant left logic:
 	// - Update participant attendance duration
@@ -173,10 +171,10 @@ func (h *ZoomWebhookHandler) handleParticipantLeft(ctx context.Context, payload 
 }
 
 // handleRecordingCompleted processes recording.completed events
-func (h *ZoomWebhookHandler) handleRecordingCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleRecordingCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "recording.completed")
 
-	logger.InfoContext(ctx, "Recording completed", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Recording completed", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement recording completed logic:
 	// - Download/process recording files
@@ -193,10 +191,10 @@ func (h *ZoomWebhookHandler) handleRecordingCompleted(ctx context.Context, paylo
 }
 
 // handleTranscriptCompleted processes recording.transcript_completed events
-func (h *ZoomWebhookHandler) handleTranscriptCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleTranscriptCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "recording.transcript_completed")
 
-	logger.InfoContext(ctx, "Transcript completed", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Transcript completed", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement transcript completed logic:
 	// - Download/process transcript files
@@ -213,10 +211,10 @@ func (h *ZoomWebhookHandler) handleTranscriptCompleted(ctx context.Context, payl
 }
 
 // handleSummaryCompleted processes meeting.summary_completed events
-func (h *ZoomWebhookHandler) handleSummaryCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload2) (*meetingsvc.ZoomWebhookResponse, error) {
+func (h *ZoomWebhookHandler) handleSummaryCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.summary_completed")
 
-	logger.InfoContext(ctx, "Summary completed", "event_timestamp", payload.Body.EventTs)
+	logger.InfoContext(ctx, "Summary completed", "event_timestamp", payload.EventTs)
 
 	// TODO: Implement summary completed logic:
 	// - Download/process AI-generated meeting summary

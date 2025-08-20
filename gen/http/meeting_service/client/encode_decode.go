@@ -1899,9 +1899,9 @@ func (c *Client) BuildZoomWebhookRequest(ctx context.Context, v any) (*http.Requ
 // Service zoom-webhook server.
 func EncodeZoomWebhookRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*meetingservice.ZoomWebhookPayload2)
+		p, ok := v.(*meetingservice.ZoomWebhookPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("Meeting Service", "zoom-webhook", "*meetingservice.ZoomWebhookPayload2", v)
+			return goahttp.ErrInvalidType("Meeting Service", "zoom-webhook", "*meetingservice.ZoomWebhookPayload", v)
 		}
 		if p.ZoomSignature != nil {
 			head := *p.ZoomSignature
@@ -2390,32 +2390,6 @@ func unmarshalRegistrantResponseBodyToMeetingserviceRegistrant(v *RegistrantResp
 		Username:           v.Username,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
-	}
-
-	return res
-}
-
-// marshalMeetingserviceZoomWebhookPayloadToZoomWebhookPayloadRequestBody
-// builds a value of type *ZoomWebhookPayloadRequestBody from a value of type
-// *meetingservice.ZoomWebhookPayload.
-func marshalMeetingserviceZoomWebhookPayloadToZoomWebhookPayloadRequestBody(v *meetingservice.ZoomWebhookPayload) *ZoomWebhookPayloadRequestBody {
-	res := &ZoomWebhookPayloadRequestBody{
-		Event:   v.Event,
-		EventTs: v.EventTs,
-		Payload: v.Payload,
-	}
-
-	return res
-}
-
-// marshalZoomWebhookPayloadRequestBodyToMeetingserviceZoomWebhookPayload
-// builds a value of type *meetingservice.ZoomWebhookPayload from a value of
-// type *ZoomWebhookPayloadRequestBody.
-func marshalZoomWebhookPayloadRequestBodyToMeetingserviceZoomWebhookPayload(v *ZoomWebhookPayloadRequestBody) *meetingservice.ZoomWebhookPayload {
-	res := &meetingservice.ZoomWebhookPayload{
-		Event:   v.Event,
-		EventTs: v.EventTs,
-		Payload: v.Payload,
 	}
 
 	return res

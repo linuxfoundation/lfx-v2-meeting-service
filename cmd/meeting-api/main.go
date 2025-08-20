@@ -195,6 +195,7 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 	// Add HTTP middleware
 	// Note: Order matters - RequestIDMiddleware should come first in the chain,
 	// so it should be the last middleware added to the handler since it is executed in reverse order.
+	handler = middleware.WebhookBodyCaptureMiddleware()(handler)
 	handler = middleware.RequestLoggerMiddleware()(handler)
 	handler = middleware.RequestIDMiddleware()(handler)
 	handler = middleware.AuthorizationMiddleware()(handler)
