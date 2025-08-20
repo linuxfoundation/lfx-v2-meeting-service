@@ -36,6 +36,7 @@ type INatsMsg interface {
 	Respond(data []byte) error
 	Data() []byte
 	Subject() string
+	HasReply() bool
 }
 
 // NatsMsg is a wrapper around [nats.Msg] that implements [INatsMsg].
@@ -58,13 +59,19 @@ func (m *NatsMsg) Subject() string {
 	return m.Msg.Subject
 }
 
+// HasReply implements [INatsMsg.HasReply].
+func (m *NatsMsg) HasReply() bool {
+	return m.Reply != ""
+}
+
 // Ensure NatsMsg implements domain.Message interface
 var _ domain.Message = (*NatsMsg)(nil)
 
 type MockNatsMsg struct {
 	mock.Mock
-	data    []byte
-	subject string
+	data     []byte
+	subject  string
+	hasReply bool
 }
 
 func (m *MockNatsMsg) Respond(data []byte) error {
@@ -78,6 +85,10 @@ func (m *MockNatsMsg) Data() []byte {
 
 func (m *MockNatsMsg) Subject() string {
 	return m.subject
+}
+
+func (m *MockNatsMsg) HasReply() bool {
+	return m.hasReply
 }
 
 // MockKeyValue is a mock implementation of the [INatsKeyValue] interface.
