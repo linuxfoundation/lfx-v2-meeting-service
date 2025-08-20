@@ -8,7 +8,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strings"
 )
 
 // WebhookBodyContextKey is the context key for storing raw webhook body
@@ -19,26 +18,26 @@ type WebhookBodyContextKey struct{}
 func WebhookBodyCaptureMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Only capture body for webhook endpoints
-			if strings.HasPrefix(r.URL.Path, "/webhooks/") {
+			// Only capture body for Zoom webhook endpoint
+			if r.URL.Path == "/webhooks/zoom" {
 				// Read the body
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
 					http.Error(w, "Failed to read request body", http.StatusBadRequest)
 					return
 				}
-				
+
 				// Close the original body
-				r.Body.Close()
-				
+				_ = r.Body.Close()
+
 				// Create a new reader with the same data for the next handler
 				r.Body = io.NopCloser(bytes.NewReader(body))
-				
+
 				// Store the raw body in context
 				ctx := context.WithValue(r.Context(), WebhookBodyContextKey{}, body)
 				r = r.WithContext(ctx)
 			}
-			
+
 			next.ServeHTTP(w, r)
 		})
 	}

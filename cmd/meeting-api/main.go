@@ -326,18 +326,32 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*store.NatsMee
 
 // createNatsSubcriptions creates the NATS subscriptions for the meeting service.
 func createNatsSubcriptions(ctx context.Context, svc *MeetingsAPI, natsConn *nats.Conn) error {
-	slog.InfoContext(ctx, "subscribing to NATS subjects", "nats_url", natsConn.ConnectedUrl(), "servers", natsConn.Servers(), "subjects", []string{models.MeetingGetTitleSubject})
+	subjects := []string{
+		models.MeetingGetTitleSubject,
+		models.ZoomWebhookMeetingStartedSubject,
+		models.ZoomWebhookMeetingEndedSubject,
+		models.ZoomWebhookMeetingDeletedSubject,
+		models.ZoomWebhookMeetingParticipantJoinedSubject,
+		models.ZoomWebhookMeetingParticipantLeftSubject,
+		models.ZoomWebhookRecordingCompletedSubject,
+		models.ZoomWebhookRecordingTranscriptCompletedSubject,
+		models.ZoomWebhookMeetingSummaryCompletedSubject,
+	}
+
+	slog.InfoContext(ctx, "subscribing to NATS subjects", "nats_url", natsConn.ConnectedUrl(), "servers", natsConn.Servers(), "subjects", subjects)
 	queueName := models.MeetingsAPIQueue
 
-	// Get meeting name subscription
-	meetingGetNameSubject := models.MeetingGetTitleSubject
-	_, err := natsConn.QueueSubscribe(meetingGetNameSubject, queueName, func(msg *nats.Msg) {
-		natsMsg := &messaging.NatsMsg{Msg: msg}
-		svc.service.HandleMessage(ctx, natsMsg)
-	})
-	if err != nil {
-		slog.ErrorContext(ctx, "error creating NATS queue subscription", errKey, err)
-		return err
+	// Subscribe to all subjects using the same handler pattern
+	for _, subject := range subjects {
+		_, err := natsConn.QueueSubscribe(subject, queueName, func(msg *nats.Msg) {
+			natsMsg := &messaging.NatsMsg{Msg: msg}
+			svc.service.HandleMessage(ctx, natsMsg)
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "error creating NATS queue subscription", errKey, err, "subject", subject)
+			return err
+		}
+		slog.DebugContext(ctx, "subscribed to NATS subject", "subject", subject)
 	}
 
 	return nil

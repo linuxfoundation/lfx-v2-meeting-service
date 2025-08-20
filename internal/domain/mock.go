@@ -136,6 +136,11 @@ func (m *MockMessageBuilder) SendRemoveMeetingRegistrantAccess(ctx context.Conte
 	return args.Error(0)
 }
 
+func (m *MockMessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject string, message models.ZoomWebhookEventMessage) error {
+	args := m.Called(ctx, subject, message)
+	return args.Error(0)
+}
+
 // MockMessage implements Message for testing
 type MockMessage struct {
 	mock.Mock

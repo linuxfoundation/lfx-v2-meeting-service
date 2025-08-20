@@ -25,7 +25,15 @@ func (s *MeetingsService) HandleMessage(ctx context.Context, msg domain.Message)
 	var err error
 
 	handlers := map[string]func(ctx context.Context, msg domain.Message) ([]byte, error){
-		models.MeetingGetTitleSubject: s.HandleMeetingGetTitle,
+		models.MeetingGetTitleSubject:                         s.HandleMeetingGetTitle,
+		models.ZoomWebhookMeetingStartedSubject:               s.HandleZoomMeetingStarted,
+		models.ZoomWebhookMeetingEndedSubject:                 s.HandleZoomMeetingEnded,
+		models.ZoomWebhookMeetingDeletedSubject:               s.HandleZoomMeetingDeleted,
+		models.ZoomWebhookMeetingParticipantJoinedSubject:     s.HandleZoomParticipantJoined,
+		models.ZoomWebhookMeetingParticipantLeftSubject:       s.HandleZoomParticipantLeft,
+		models.ZoomWebhookRecordingCompletedSubject:           s.HandleZoomRecordingCompleted,
+		models.ZoomWebhookRecordingTranscriptCompletedSubject: s.HandleZoomTranscriptCompleted,
+		models.ZoomWebhookMeetingSummaryCompletedSubject:      s.HandleZoomSummaryCompleted,
 	}
 
 	handler, ok := handlers[subject]
