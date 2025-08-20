@@ -48,3 +48,41 @@ type RegistrantRepository interface {
 	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.Registrant, error)
 	ListByEmail(ctx context.Context, email string) ([]*models.Registrant, error)
 }
+
+// PastMeetingRepository defines the interface for past meeting storage operations.
+// This interface can be implemented by different storage backends (NATS, PostgreSQL, etc.)
+type PastMeetingRepository interface {
+	// PastMeeting full operations
+	Create(ctx context.Context, pastMeeting *models.PastMeeting) error
+	Exists(ctx context.Context, pastMeetingUID string) (bool, error)
+	Delete(ctx context.Context, pastMeetingUID string, revision uint64) error
+
+	// PastMeeting base operations
+	Get(ctx context.Context, pastMeetingUID string) (*models.PastMeeting, error)
+	GetWithRevision(ctx context.Context, pastMeetingUID string) (*models.PastMeeting, uint64, error)
+	Update(ctx context.Context, pastMeeting *models.PastMeeting, revision uint64) error
+
+	// Bulk operations
+	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.PastMeeting, error)
+	GetByMeetingAndOccurrence(ctx context.Context, meetingUID, occurrenceID string) (*models.PastMeeting, error)
+	GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error)
+}
+
+// PastMeetingParticipantRepository defines the interface for past meeting participant storage operations.
+// This interface can be implemented by different storage backends (NATS, PostgreSQL, etc.)
+type PastMeetingParticipantRepository interface {
+	// PastMeetingParticipant full operations
+	Create(ctx context.Context, participant *models.PastMeetingParticipant) error
+	Exists(ctx context.Context, participantUID string) (bool, error)
+	Delete(ctx context.Context, participantUID string, revision uint64) error
+
+	// PastMeetingParticipant base operations
+	Get(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, error)
+	GetWithRevision(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, uint64, error)
+	Update(ctx context.Context, participant *models.PastMeetingParticipant, revision uint64) error
+
+	// Bulk operations
+	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error)
+	ListByEmail(ctx context.Context, email string) ([]*models.PastMeetingParticipant, error)
+	GetByPastMeetingAndEmail(ctx context.Context, pastMeetingUID, email string) (*models.PastMeetingParticipant, error)
+}

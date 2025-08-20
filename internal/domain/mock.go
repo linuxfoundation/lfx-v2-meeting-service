@@ -317,3 +317,133 @@ func (m *MockWebhookRegistry) GetHandler(platform string) (WebhookHandler, error
 func (m *MockWebhookRegistry) RegisterHandler(platform string, handler WebhookHandler) {
 	m.Called(platform, handler)
 }
+
+// MockPastMeetingRepository implements PastMeetingRepository for testing
+type MockPastMeetingRepository struct {
+	mock.Mock
+}
+
+func (m *MockPastMeetingRepository) Create(ctx context.Context, pastMeeting *models.PastMeeting) error {
+	args := m.Called(ctx, pastMeeting)
+	return args.Error(0)
+}
+
+func (m *MockPastMeetingRepository) Exists(ctx context.Context, pastMeetingUID string) (bool, error) {
+	args := m.Called(ctx, pastMeetingUID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockPastMeetingRepository) Delete(ctx context.Context, pastMeetingUID string, revision uint64) error {
+	args := m.Called(ctx, pastMeetingUID, revision)
+	return args.Error(0)
+}
+
+func (m *MockPastMeetingRepository) Get(ctx context.Context, pastMeetingUID string) (*models.PastMeeting, error) {
+	args := m.Called(ctx, pastMeetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.PastMeeting), args.Error(1)
+}
+
+func (m *MockPastMeetingRepository) GetWithRevision(ctx context.Context, pastMeetingUID string) (*models.PastMeeting, uint64, error) {
+	args := m.Called(ctx, pastMeetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(uint64), args.Error(2)
+	}
+	return args.Get(0).(*models.PastMeeting), args.Get(1).(uint64), args.Error(2)
+}
+
+func (m *MockPastMeetingRepository) Update(ctx context.Context, pastMeeting *models.PastMeeting, revision uint64) error {
+	args := m.Called(ctx, pastMeeting, revision)
+	return args.Error(0)
+}
+
+func (m *MockPastMeetingRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.PastMeeting, error) {
+	args := m.Called(ctx, meetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.PastMeeting), args.Error(1)
+}
+
+func (m *MockPastMeetingRepository) GetByMeetingAndOccurrence(ctx context.Context, meetingUID, occurrenceID string) (*models.PastMeeting, error) {
+	args := m.Called(ctx, meetingUID, occurrenceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.PastMeeting), args.Error(1)
+}
+
+func (m *MockPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error) {
+	args := m.Called(ctx, platform, platformMeetingID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.PastMeeting), args.Error(1)
+}
+
+// MockPastMeetingParticipantRepository implements PastMeetingParticipantRepository for testing
+type MockPastMeetingParticipantRepository struct {
+	mock.Mock
+}
+
+func (m *MockPastMeetingParticipantRepository) Create(ctx context.Context, participant *models.PastMeetingParticipant) error {
+	args := m.Called(ctx, participant)
+	return args.Error(0)
+}
+
+func (m *MockPastMeetingParticipantRepository) Exists(ctx context.Context, participantUID string) (bool, error) {
+	args := m.Called(ctx, participantUID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockPastMeetingParticipantRepository) Delete(ctx context.Context, participantUID string, revision uint64) error {
+	args := m.Called(ctx, participantUID, revision)
+	return args.Error(0)
+}
+
+func (m *MockPastMeetingParticipantRepository) Get(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, error) {
+	args := m.Called(ctx, participantUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.PastMeetingParticipant), args.Error(1)
+}
+
+func (m *MockPastMeetingParticipantRepository) GetWithRevision(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, uint64, error) {
+	args := m.Called(ctx, participantUID)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(uint64), args.Error(2)
+	}
+	return args.Get(0).(*models.PastMeetingParticipant), args.Get(1).(uint64), args.Error(2)
+}
+
+func (m *MockPastMeetingParticipantRepository) Update(ctx context.Context, participant *models.PastMeetingParticipant, revision uint64) error {
+	args := m.Called(ctx, participant, revision)
+	return args.Error(0)
+}
+
+func (m *MockPastMeetingParticipantRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
+	args := m.Called(ctx, pastMeetingUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.PastMeetingParticipant), args.Error(1)
+}
+
+func (m *MockPastMeetingParticipantRepository) ListByEmail(ctx context.Context, email string) ([]*models.PastMeetingParticipant, error) {
+	args := m.Called(ctx, email)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.PastMeetingParticipant), args.Error(1)
+}
+
+func (m *MockPastMeetingParticipantRepository) GetByPastMeetingAndEmail(ctx context.Context, pastMeetingUID, email string) (*models.PastMeetingParticipant, error) {
+	args := m.Called(ctx, pastMeetingUID, email)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.PastMeetingParticipant), args.Error(1)
+}

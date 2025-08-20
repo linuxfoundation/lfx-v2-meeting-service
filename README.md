@@ -66,7 +66,9 @@ The service is built using a clean architecture pattern with the following layer
 
 - **Meeting Management**: Complete CRUD operations with platform integration (Zoom support)
 - **Registrant Management**: Registration handling with email uniqueness validation
-- **NATS JetStream Storage**: Scalable and resilient data persistence
+- **Historical Tracking**: Past meeting records with session tracking and participant attendance
+- **Webhook Integration**: Platform event processing for real-time meeting state updates
+- **NATS JetStream Storage**: Scalable and resilient data persistence across 5 KV buckets
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **OpenAPI Documentation**: Auto-generated API specifications
 - **Comprehensive Testing**: Full unit test coverage with mocks

@@ -25,4 +25,8 @@ var (
 	ErrRegistrantAlreadyExists = errors.New("registrant already exists")
 	// ErrPlatformProviderNotFound is returned when a platform provider is not found.
 	ErrPlatformProviderNotFound = errors.New("platform provider not found")
+	// ErrMarshal is returned when a marshal error occurs.
+	ErrMarshal = errors.New("marshal error")
+	// ErrConcurrentUpdate is returned when a concurrent update occurs.
+	ErrConcurrentUpdate = errors.New("concurrent update error")
 )

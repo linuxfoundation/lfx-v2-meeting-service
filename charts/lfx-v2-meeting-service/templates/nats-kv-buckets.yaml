@@ -57,3 +57,41 @@ spec:
   maxBytes: {{ .Values.nats.kv_bucket_meeting_registrants.maxBytes }}
   compression: {{ .Values.nats.kv_bucket_meeting_registrants.compression }}
 {{- end }}
+---
+{{- if .Values.nats.kv_bucket_past_meetings.creation }}
+apiVersion: jetstream.nats.io/v1beta2
+kind: KeyValue
+metadata:
+  name: {{ .Values.nats.kv_bucket_past_meetings.name }}
+  namespace: lfx
+  {{- if .Values.nats.kv_bucket_past_meetings.keep }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  {{- end }}
+spec:
+  bucket: {{ .Values.nats.kv_bucket_past_meetings.name }}
+  history: {{ .Values.nats.kv_bucket_past_meetings.history }}
+  storage: {{ .Values.nats.kv_bucket_past_meetings.storage }}
+  maxValueSize: {{ .Values.nats.kv_bucket_past_meetings.maxValueSize }}
+  maxBytes: {{ .Values.nats.kv_bucket_past_meetings.maxBytes }}
+  compression: {{ .Values.nats.kv_bucket_past_meetings.compression }}
+{{- end }}
+---
+{{- if .Values.nats.kv_bucket_past_meeting_participants.creation }}
+apiVersion: jetstream.nats.io/v1beta2
+kind: KeyValue
+metadata:
+  name: {{ .Values.nats.kv_bucket_past_meeting_participants.name }}
+  namespace: lfx
+  {{- if .Values.nats.kv_bucket_past_meeting_participants.keep }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  {{- end }}
+spec:
+  bucket: {{ .Values.nats.kv_bucket_past_meeting_participants.name }}
+  history: {{ .Values.nats.kv_bucket_past_meeting_participants.history }}
+  storage: {{ .Values.nats.kv_bucket_past_meeting_participants.storage }}
+  maxValueSize: {{ .Values.nats.kv_bucket_past_meeting_participants.maxValueSize }}
+  maxBytes: {{ .Values.nats.kv_bucket_past_meeting_participants.maxBytes }}
+  compression: {{ .Values.nats.kv_bucket_past_meeting_participants.compression }}
+{{- end }}

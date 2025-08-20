@@ -62,7 +62,8 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 - NATS integration for messaging (`messaging/`) and key-value storage (`store/`)
 - JWT authentication (`auth/`)
 - Zoom integration (`zoom/`) for meeting platform services
-- Three NATS KV buckets: "meetings", "meeting-settings", and "meeting-registrants"
+- Webhook handling (`webhook/`) for platform event processing
+- Five NATS KV buckets: "meetings", "meeting-settings", "meeting-registrants", "past-meetings", and "past-meeting-participants"
 
 **Middleware** (`internal/middleware/`)
 
@@ -71,7 +72,12 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 ### Data Storage
 
 - Uses NATS JetStream KV stores for persistence
-- Three main buckets: meetings, meeting-settings, and meeting-registrants
+- Five main buckets:
+  - `meetings`: Core meeting information
+  - `meeting-settings`: Meeting configuration and organizers
+  - `meeting-registrants`: Meeting registration data
+  - `past-meetings`: Historical meeting occurrences with session tracking
+  - `past-meeting-participants`: Historical participant data with attendance tracking
 - NATS messaging for event publishing (indexer integration)
 
 ### Meeting Types and Platforms

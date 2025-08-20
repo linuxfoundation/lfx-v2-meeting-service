@@ -272,12 +272,14 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 	}
 
 	// Get the key-value stores for the service.
-	meetingRepo, registrantRepo, err := getKeyValueStores(ctx, natsConn)
+	repos, err := getKeyValueStores(ctx, natsConn)
 	if err != nil {
 		return natsConn, err
 	}
-	svc.service.MeetingRepository = meetingRepo
-	svc.service.RegistrantRepository = registrantRepo
+	svc.service.MeetingRepository = repos.Meeting
+	svc.service.RegistrantRepository = repos.Registrant
+	svc.service.PastMeetingRepository = repos.PastMeeting
+	svc.service.PastMeetingParticipantRepository = repos.PastMeetingParticipant
 
 	svc.service.MessageBuilder = &messaging.MessageBuilder{
 		NatsConn: natsConn,
@@ -293,35 +295,59 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 }
 
 // getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.
-func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*store.NatsMeetingRepository, *store.NatsRegistrantRepository, error) {
+// Repositories holds all the repository instances for the service
+type Repositories struct {
+	Meeting                *store.NatsMeetingRepository
+	Registrant             *store.NatsRegistrantRepository
+	PastMeeting            *store.NatsPastMeetingRepository
+	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
+}
+
+func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories, error) {
 	js, err := jetstream.New(natsConn)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating NATS JetStream client", "nats_url", natsConn.ConnectedUrl(), errKey, err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	meetingsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetings)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNameMeetings)
-		return nil, nil, err
+		return nil, err
 	}
 
 	meetingSettingsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetingSettings)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNameMeetingSettings)
-		return nil, nil, err
+		return nil, err
 	}
 
 	meetingRegistrantsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetingRegistrants)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNameMeetingRegistrants)
-		return nil, nil, err
+		return nil, err
 	}
 
-	meetingRepo := store.NewNatsMeetingRepository(meetingsKV, meetingSettingsKV)
-	registrantRepo := store.NewNatsRegistrantRepository(meetingRegistrantsKV)
+	pastMeetingsKV, err := js.KeyValue(ctx, store.KVStoreNamePastMeetings)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNamePastMeetings)
+		return nil, err
+	}
 
-	return meetingRepo, registrantRepo, nil
+	pastMeetingParticipantsKV, err := js.KeyValue(ctx, store.KVStoreNamePastMeetingParticipants)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), errKey, err, "store", store.KVStoreNamePastMeetingParticipants)
+		return nil, err
+	}
+
+	repos := &Repositories{
+		Meeting:                store.NewNatsMeetingRepository(meetingsKV, meetingSettingsKV),
+		Registrant:             store.NewNatsRegistrantRepository(meetingRegistrantsKV),
+		PastMeeting:            store.NewNatsPastMeetingRepository(pastMeetingsKV),
+		PastMeetingParticipant: store.NewNatsPastMeetingParticipantRepository(pastMeetingParticipantsKV),
+	}
+
+	return repos, nil
 }
 
 // createNatsSubcriptions creates the NATS subscriptions for the meeting service.
