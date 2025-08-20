@@ -9,9 +9,9 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/webhook"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/api"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/webhook"
 )
 
 // ZoomConfig holds Zoom-specific configuration
