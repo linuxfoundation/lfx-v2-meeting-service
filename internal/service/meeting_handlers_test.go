@@ -212,7 +212,6 @@ func TestMeetingsService_MessageHandling_ErrorCases(t *testing.T) {
 					MessageBuilder:       &domain.MockMessageBuilder{},
 					Auth:                 &auth.MockJWTAuth{},
 					PlatformRegistry:     &domain.MockPlatformRegistry{},
-					WebhookRegistry:      &domain.MockWebhookRegistry{},
 				}
 			},
 			subject:     models.MeetingGetTitleSubject,

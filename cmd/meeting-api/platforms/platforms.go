@@ -8,7 +8,6 @@ package platforms
 
 import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/platform"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/webhook"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 )
 
@@ -29,17 +28,10 @@ func Initialize(configs PlatformConfigs, svc *service.MeetingsService) {
 	// Create platform registry
 	platformRegistry := platform.NewRegistry()
 
-	// Create webhook registry
-	webhookRegistry := webhook.NewRegistry()
+	// Setup Zoom platform and get its webhook validator
+	zoomWebhookValidator := SetupZoom(platformRegistry, configs.Zoom)
 
-	// Setup individual platforms (includes their webhooks)
-	SetupZoom(platformRegistry, webhookRegistry, configs.Zoom)
-
-	// Future platforms would be set up here
-	// SetupTeams(platformRegistry, webhookRegistry, configs.Teams)
-	// SetupGoogleMeet(platformRegistry, webhookRegistry, configs.GoogleMeet)
-
-	// Set the registries in the service
+	// Set the platform registry and Zoom webhook validator in the service
 	svc.PlatformRegistry = platformRegistry
-	svc.WebhookRegistry = webhookRegistry
+	svc.ZoomWebhookValidator = zoomWebhookValidator
 }

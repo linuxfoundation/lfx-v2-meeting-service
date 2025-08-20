@@ -59,13 +59,18 @@ func (s *MeetingsService) HandleMessage(ctx context.Context, msg domain.Message)
 		}
 		return
 	}
-	err = msg.Respond(response)
-	if err != nil {
-		slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
-		return
-	}
 
-	slog.DebugContext(ctx, "responded to NATS message", "response", response)
+	// Only reply if handler returned non-nil response (webhook handlers return nil, nil)
+	if response != nil {
+		err = msg.Respond(response)
+		if err != nil {
+			slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+			return
+		}
+		slog.DebugContext(ctx, "responded to NATS message", "response", response)
+	} else {
+		slog.DebugContext(ctx, "no response needed for this message type")
+	}
 }
 
 func (s *MeetingsService) handleMeetingGetAttribute(ctx context.Context, msg domain.Message, subject, getAttribute string) ([]byte, error) {

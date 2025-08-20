@@ -16,7 +16,7 @@ type MeetingsService struct {
 	PastMeetingParticipantRepository domain.PastMeetingParticipantRepository
 	MessageBuilder                   domain.MessageBuilder
 	PlatformRegistry                 domain.PlatformRegistry
-	WebhookRegistry                  domain.WebhookRegistry
+	ZoomWebhookValidator             domain.WebhookValidator // Zoom-specific webhook validator
 	Auth                             auth.IJWTAuth
 	Config                           ServiceConfig
 }
@@ -35,8 +35,7 @@ func (s *MeetingsService) ServiceReady() bool {
 	coreReady := s.MeetingRepository != nil &&
 		s.RegistrantRepository != nil &&
 		s.MessageBuilder != nil &&
-		s.PlatformRegistry != nil &&
-		s.WebhookRegistry != nil
+		s.PlatformRegistry != nil
 
 	// New repositories are optional for now to maintain test compatibility
 	// TODO: Make these required once all webhook functionality is implemented

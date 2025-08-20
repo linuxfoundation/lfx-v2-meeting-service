@@ -122,7 +122,6 @@ func TestMeetingsService_CreateMeetingRegistrant(t *testing.T) {
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
 				PlatformRegistry:     &domain.MockPlatformRegistry{},
-				WebhookRegistry:      &domain.MockWebhookRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -236,7 +235,6 @@ func TestMeetingsService_GetMeetingRegistrants(t *testing.T) {
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
 				PlatformRegistry:     &domain.MockPlatformRegistry{},
-				WebhookRegistry:      &domain.MockWebhookRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -335,7 +333,6 @@ func TestMeetingsService_GetMeetingRegistrant(t *testing.T) {
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
 				PlatformRegistry:     &domain.MockPlatformRegistry{},
-				WebhookRegistry:      &domain.MockWebhookRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -471,7 +468,6 @@ func TestMeetingsService_UpdateMeetingRegistrant(t *testing.T) {
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
 				PlatformRegistry:     &domain.MockPlatformRegistry{},
-				WebhookRegistry:      &domain.MockWebhookRegistry{},
 				Config:               ServiceConfig{},
 			}
 
@@ -588,7 +584,6 @@ func TestMeetingsService_DeleteMeetingRegistrant(t *testing.T) {
 				RegistrantRepository: mockRegistrantRepo,
 				MessageBuilder:       mockBuilder,
 				PlatformRegistry:     &domain.MockPlatformRegistry{},
-				WebhookRegistry:      &domain.MockWebhookRegistry{},
 				Config:               ServiceConfig{},
 			}
 

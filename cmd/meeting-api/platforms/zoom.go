@@ -34,7 +34,7 @@ func NewZoomConfigFromEnv() ZoomConfig {
 
 // IsConfigured returns true if all required Zoom credentials are provided
 func (z ZoomConfig) IsConfigured() bool {
-	return z.AccountID != "" && z.ClientID != "" && z.ClientSecret != ""
+	return z.AccountID != "" && z.ClientID != "" && z.ClientSecret != "" && z.WebhookSecretToken != ""
 }
 
 // ToAPIConfig converts the ZoomConfig to an api.Config
@@ -46,8 +46,8 @@ func (z ZoomConfig) ToAPIConfig() api.Config {
 	}
 }
 
-// SetupZoom configures Zoom platform integration and webhook handler, registering both with their respective registries
-func SetupZoom(platformRegistry domain.PlatformRegistry, webhookRegistry domain.WebhookRegistry, config ZoomConfig) {
+// SetupZoom configures Zoom platform integration and returns the webhook validator if configured
+func SetupZoom(platformRegistry domain.PlatformRegistry, config ZoomConfig) domain.WebhookValidator {
 	// Setup Zoom platform provider
 	if config.IsConfigured() {
 		zoomClient := api.NewClient(config.ToAPIConfig())
@@ -64,14 +64,13 @@ func SetupZoom(platformRegistry domain.PlatformRegistry, webhookRegistry domain.
 			"has_client_secret", config.ClientSecret != "")
 	}
 
-	// Setup Zoom webhook handler
+	// Setup Zoom webhook validator if webhook secret is configured
 	if config.WebhookSecretToken != "" {
-		zoomWebhookHandler := webhook.NewZoomWebhookHandler(config.WebhookSecretToken)
-		webhookRegistry.RegisterHandler("zoom", zoomWebhookHandler)
-
-		slog.Info("Zoom webhook integration configured",
-			"supported_events", zoomWebhookHandler.SupportedEvents())
-	} else {
-		slog.Warn("Zoom webhook integration not configured - missing ZOOM_WEBHOOK_SECRET_TOKEN")
+		validator := webhook.NewZoomWebhookValidator(config.WebhookSecretToken)
+		slog.Info("Zoom webhook validation configured")
+		return validator
 	}
+
+	slog.Warn("Zoom webhook validation not configured - missing ZOOM_WEBHOOK_SECRET_TOKEN")
+	return nil
 }

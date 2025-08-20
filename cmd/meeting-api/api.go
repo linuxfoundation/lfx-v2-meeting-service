@@ -107,15 +107,14 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
 	}
 
-	// Get the Zoom webhook handler from the service's webhook registry for signature validation
-	handler, err := s.service.WebhookRegistry.GetHandler("zoom")
-	if err != nil {
-		logger.ErrorContext(ctx, "Failed to get Zoom webhook handler", "error", err)
-		return nil, createResponse(http.StatusInternalServerError, domain.ErrServiceUnavailable)
-	}
-
-	// Validate webhook signature if provided
+	// Validate Zoom webhook signature if provided
 	if payload.ZoomSignature != nil && payload.ZoomTimestamp != nil {
+		// Check if Zoom webhook validator is configured
+		if s.service.ZoomWebhookValidator == nil {
+			logger.ErrorContext(ctx, "Zoom webhook validator not configured")
+			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("zoom webhook validation not configured"))
+		}
+
 		// Get the raw request body from context for signature validation
 		bodyBytes, ok := middleware.GetRawBodyFromContext(ctx)
 		if !ok {
@@ -123,15 +122,15 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("raw body not captured"))
 		}
 
-		if err := handler.ValidateSignature(bodyBytes, *payload.ZoomSignature, *payload.ZoomTimestamp); err != nil {
-			logger.WarnContext(ctx, "Webhook signature validation failed", "error", err)
+		if err := s.service.ZoomWebhookValidator.ValidateSignature(bodyBytes, *payload.ZoomSignature, *payload.ZoomTimestamp); err != nil {
+			logger.WarnContext(ctx, "Zoom webhook signature validation failed", "error", err)
 			return nil, &meetingsvc.UnauthorizedError{
 				Code:    "401",
 				Message: "Invalid webhook signature",
 			}
 		}
 
-		logger.DebugContext(ctx, "Webhook signature validation passed")
+		logger.DebugContext(ctx, "Zoom webhook signature validation passed")
 	}
 
 	// Validate event type and payload
@@ -141,7 +140,6 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 	}
 
 	eventType := payload.Event
-	logger.InfoContext(ctx, "Forwarding Zoom webhook event to NATS", "event_type", eventType)
 
 	// Map event type to NATS subject
 	subject := getZoomWebhookSubject(eventType)

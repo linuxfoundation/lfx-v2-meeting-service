@@ -431,6 +431,68 @@ The service can be configured via environment variables:
 
 When all three Zoom variables are configured, the service will automatically integrate with Zoom API for meetings where `platform="Zoom"`.
 
+### Zoom Webhook Development
+
+For webhook development, add this additional environment variable:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ZOOM_WEBHOOK_SECRET_TOKEN` | Webhook secret token for signature validation | `""` |
+
+#### Local Webhook Testing with ngrok
+
+To test Zoom webhooks locally, you'll need to expose your local service to receive webhook events from Zoom:
+
+1. **Install ngrok**: Download from [ngrok.com](https://ngrok.com/) or use package manager:
+
+   ```bash
+   brew install ngrok  # macOS
+   # or download from https://ngrok.com/download
+   ```
+
+2. **Start your local service**:
+
+   ```bash
+   make run  # Starts service on localhost:8080
+   ```
+
+3. **Expose your service with ngrok** (in a separate terminal):
+
+   ```bash
+   ngrok http 8080
+   ```
+
+   This creates a public URL like `https://abc123.ngrok.io` that forwards to your local service.
+
+4. **Configure Zoom webhook URL**: In your Zoom App settings, set webhook endpoint to:
+
+   ```text
+   https://abc123.ngrok.io/zoom/webhook
+   ```
+
+5. **Set webhook secret**: Copy the webhook secret from Zoom App settings to your environment:
+
+   ```bash
+   export ZOOM_WEBHOOK_SECRET_TOKEN="your_webhook_secret_here"
+   ```
+
+**Supported Zoom Webhook Events:**
+
+- `meeting.started` - Meeting begins
+- `meeting.ended` - Meeting concludes  
+- `meeting.deleted` - Meeting is deleted
+- `meeting.participant_joined` - Participant joins
+- `meeting.participant_left` - Participant leaves
+- `recording.completed` - Recording is ready
+- `recording.transcript_completed` - Transcript is ready
+- `meeting.summary_completed` - AI summary is ready
+
+**Webhook Processing Flow:**
+
+1. HTTP webhook endpoint validates Zoom signature
+2. Event published to NATS for async processing  
+3. Service handlers process business logic (no reply expected)
+
 ### Development Environment Variables
 
 For local development, you may want to override these settings:

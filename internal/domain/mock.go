@@ -281,43 +281,6 @@ func (m *MockPlatformRegistry) RegisterProvider(platform string, provider Platfo
 	m.Called(platform, provider)
 }
 
-// MockWebhookHandler implements WebhookHandler for testing
-type MockWebhookHandler struct {
-	mock.Mock
-}
-
-func (m *MockWebhookHandler) HandleEvent(ctx context.Context, eventType string, payload interface{}) error {
-	args := m.Called(ctx, eventType, payload)
-	return args.Error(0)
-}
-
-func (m *MockWebhookHandler) ValidateSignature(body []byte, signature, timestamp string) error {
-	args := m.Called(body, signature, timestamp)
-	return args.Error(0)
-}
-
-func (m *MockWebhookHandler) SupportedEvents() []string {
-	args := m.Called()
-	return args.Get(0).([]string)
-}
-
-// MockWebhookRegistry implements WebhookRegistry for testing
-type MockWebhookRegistry struct {
-	mock.Mock
-}
-
-func (m *MockWebhookRegistry) GetHandler(platform string) (WebhookHandler, error) {
-	args := m.Called(platform)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(WebhookHandler), args.Error(1)
-}
-
-func (m *MockWebhookRegistry) RegisterHandler(platform string, handler WebhookHandler) {
-	m.Called(platform, handler)
-}
-
 // MockPastMeetingRepository implements PastMeetingRepository for testing
 type MockPastMeetingRepository struct {
 	mock.Mock

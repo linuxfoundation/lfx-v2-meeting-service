@@ -54,7 +54,6 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
 					MessageBuilder:                   &domain.MockMessageBuilder{},
 					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					WebhookRegistry:                  &domain.MockWebhookRegistry{},
 					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
@@ -70,7 +69,6 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
 					MessageBuilder:                   &domain.MockMessageBuilder{},
 					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					WebhookRegistry:                  &domain.MockWebhookRegistry{},
 					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
@@ -86,7 +84,6 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
 					MessageBuilder:                   nil,
 					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					WebhookRegistry:                  &domain.MockWebhookRegistry{},
 					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
@@ -102,7 +99,6 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
 					MessageBuilder:                   &domain.MockMessageBuilder{},
 					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					WebhookRegistry:                  &domain.MockWebhookRegistry{},
 					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
@@ -118,7 +114,6 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
 					MessageBuilder:                   &domain.MockMessageBuilder{},
 					PlatformRegistry:                 nil,
-					WebhookRegistry:                  &domain.MockWebhookRegistry{},
 					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
@@ -134,7 +129,6 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					PastMeetingParticipantRepository: nil,
 					MessageBuilder:                   nil,
 					PlatformRegistry:                 nil,
-					WebhookRegistry:                  nil,
 					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
@@ -150,7 +144,6 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
 					MessageBuilder:                   &domain.MockMessageBuilder{},
 					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					WebhookRegistry:                  &domain.MockWebhookRegistry{},
 					Auth:                             nil,
 				}
 			},
@@ -213,7 +206,6 @@ func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, 
 	service.PastMeetingParticipantRepository = &domain.MockPastMeetingParticipantRepository{}
 	service.MessageBuilder = mockBuilder
 	service.PlatformRegistry = &domain.MockPlatformRegistry{}
-	service.WebhookRegistry = &domain.MockWebhookRegistry{}
 
 	return service, mockRepo, mockBuilder, mockAuth
 }
