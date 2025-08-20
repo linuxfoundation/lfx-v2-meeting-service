@@ -153,9 +153,6 @@ func (s *NatsPastMeetingRepository) Update(ctx context.Context, pastMeeting *mod
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return domain.ErrMeetingNotFound
 		}
-		if errors.Is(err, jetstream.ErrKeyExists) {
-			return domain.ErrConcurrentUpdate
-		}
 		slog.ErrorContext(ctx, "error updating past meeting in NATS KV", logging.ErrKey, err)
 		return domain.ErrInternal
 	}
@@ -172,9 +169,6 @@ func (s *NatsPastMeetingRepository) Delete(ctx context.Context, pastMeetingUID s
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return domain.ErrMeetingNotFound
-		}
-		if errors.Is(err, jetstream.ErrKeyExists) {
-			return domain.ErrConcurrentUpdate
 		}
 		slog.ErrorContext(ctx, "error deleting past meeting from NATS KV", logging.ErrKey, err)
 		return domain.ErrInternal

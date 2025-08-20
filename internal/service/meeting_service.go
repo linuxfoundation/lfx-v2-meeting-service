@@ -31,15 +31,10 @@ func NewMeetingsService(auth auth.IJWTAuth, config ServiceConfig) *MeetingsServi
 
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingsService) ServiceReady() bool {
-	// Core dependencies that are required for all functionality
-	coreReady := s.MeetingRepository != nil &&
+	return s.MeetingRepository != nil &&
 		s.RegistrantRepository != nil &&
 		s.MessageBuilder != nil &&
 		s.PlatformRegistry != nil
-
-	// New repositories are optional for now to maintain test compatibility
-	// TODO: Make these required once all webhook functionality is implemented
-	return coreReady
 }
 
 // ServiceConfig is the configuration for the MeetingsService.

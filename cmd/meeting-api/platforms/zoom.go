@@ -34,7 +34,7 @@ func NewZoomConfigFromEnv() ZoomConfig {
 
 // IsConfigured returns true if all required Zoom credentials are provided
 func (z ZoomConfig) IsConfigured() bool {
-	return z.AccountID != "" && z.ClientID != "" && z.ClientSecret != "" && z.WebhookSecretToken != ""
+	return z.AccountID != "" && z.ClientID != "" && z.ClientSecret != ""
 }
 
 // ToAPIConfig converts the ZoomConfig to an api.Config

@@ -47,7 +47,7 @@ func (v *ZoomWebhookValidator) ValidateSignature(body []byte, signature, timesta
 
 	// Compare signatures using constant-time comparison
 	if signature != expectedSignature {
-		slog.Error("invalid webhook signature", "provided_signature", signature, "expected_signature", expectedSignature)
+		slog.Error("invalid webhook signature")
 		return fmt.Errorf("invalid webhook signature")
 	}
 

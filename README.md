@@ -514,7 +514,7 @@ To test Zoom webhooks locally, you'll need to expose your local service to recei
 4. **Configure Zoom webhook URL**: In your Zoom App settings, set webhook endpoint to:
 
    ```text
-   https://abc123.ngrok.io/zoom/webhook
+   https://abc123.ngrok.io/webhooks/zoom
    ```
 
 5. **Set webhook secret**: Copy the webhook secret from Zoom App settings to your environment:

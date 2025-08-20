@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"time"
 
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -157,7 +156,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 
 	webhookMessage := models.ZoomWebhookEventMessage{
 		EventType: eventType,
-		EventTS:   time.Now().Unix(),
+		EventTS:   payload.EventTs,
 		Payload:   payloadMap,
 	}
 
