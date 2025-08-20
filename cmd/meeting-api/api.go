@@ -16,6 +16,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/middleware"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"goa.design/goa/v3/security"
 )
 
@@ -170,7 +171,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 
 	return &meetingsvc.ZoomWebhookResponse{
 		Status:  "success",
-		Message: stringPtr(fmt.Sprintf("Event %s queued for processing", eventType)),
+		Message: utils.StringPtr(fmt.Sprintf("Event %s queued for processing", eventType)),
 	}, nil
 }
 
@@ -188,9 +189,4 @@ func getZoomWebhookSubject(eventType string) string {
 	}
 
 	return eventSubjectMap[eventType]
-}
-
-// stringPtr returns a pointer to the given string
-func stringPtr(s string) *string {
-	return &s
 }
