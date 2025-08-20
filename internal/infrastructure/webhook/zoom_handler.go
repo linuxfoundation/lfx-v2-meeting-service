@@ -74,6 +74,8 @@ func (h *ZoomWebhookHandler) HandleWebhookEvent(ctx context.Context, payload *me
 
 // handleMeetingStarted processes meeting.started events
 // TODO: This method is a placeholder for future implementation
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleMeetingStarted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.started")
 
@@ -95,6 +97,8 @@ func (h *ZoomWebhookHandler) handleMeetingStarted(ctx context.Context, payload *
 }
 
 // handleMeetingEnded processes meeting.ended events
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleMeetingEnded(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.ended")
 
@@ -114,6 +118,8 @@ func (h *ZoomWebhookHandler) handleMeetingEnded(ctx context.Context, payload *me
 }
 
 // handleMeetingDeleted processes meeting.deleted events
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleMeetingDeleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.deleted")
 
@@ -133,6 +139,8 @@ func (h *ZoomWebhookHandler) handleMeetingDeleted(ctx context.Context, payload *
 }
 
 // handleParticipantJoined processes meeting.participant_joined events
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleParticipantJoined(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.participant_joined")
 
@@ -152,6 +160,8 @@ func (h *ZoomWebhookHandler) handleParticipantJoined(ctx context.Context, payloa
 }
 
 // handleParticipantLeft processes meeting.participant_left events
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleParticipantLeft(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.participant_left")
 
@@ -171,6 +181,8 @@ func (h *ZoomWebhookHandler) handleParticipantLeft(ctx context.Context, payload 
 }
 
 // handleRecordingCompleted processes recording.completed events
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleRecordingCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "recording.completed")
 
@@ -191,6 +203,8 @@ func (h *ZoomWebhookHandler) handleRecordingCompleted(ctx context.Context, paylo
 }
 
 // handleTranscriptCompleted processes recording.transcript_completed events
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleTranscriptCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "recording.transcript_completed")
 
@@ -211,6 +225,8 @@ func (h *ZoomWebhookHandler) handleTranscriptCompleted(ctx context.Context, payl
 }
 
 // handleSummaryCompleted processes meeting.summary_completed events
+//
+//nolint:unused // Placeholder for future webhook handler implementation
 func (h *ZoomWebhookHandler) handleSummaryCompleted(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "webhook_handler", "event", "meeting.summary_completed")
 
