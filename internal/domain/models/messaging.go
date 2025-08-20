@@ -47,6 +47,10 @@ const (
 	// The subject is of the form: lfx.meetings-api.get_title
 	MeetingGetTitleSubject = "lfx.meetings-api.get_title"
 
+	// MeetingDeletedSubject is the subject for meeting deletion events.
+	// The subject is of the form: lfx.meetings-api.meeting_deleted
+	MeetingDeletedSubject = "lfx.meetings-api.meeting_deleted"
+
 	// Zoom webhook event subjects - mirrors the actual Zoom webhook event names
 	ZoomWebhookMeetingStartedSubject               = "lfx.webhook.zoom.meeting.started"
 	ZoomWebhookMeetingEndedSubject                 = "lfx.webhook.zoom.meeting.ended"
@@ -97,6 +101,12 @@ type MeetingRegistrantAccessMessage struct {
 	MeetingUID string `json:"meeting_uid"`
 	Username   string `json:"username"`
 	Host       bool   `json:"host"`
+}
+
+// MeetingDeletedMessage is the schema for the message sent when a meeting is deleted.
+// This message is used internally to trigger cleanup of all associated registrants.
+type MeetingDeletedMessage struct {
+	MeetingUID string `json:"meeting_uid"`
 }
 
 // ZoomWebhookEventMessage is the schema for Zoom webhook events sent via NATS for async processing.

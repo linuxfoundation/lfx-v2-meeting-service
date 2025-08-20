@@ -69,6 +69,7 @@ The service is built using a clean architecture pattern with the following layer
 - **Historical Tracking**: Past meeting records with session tracking and participant attendance
 - **Webhook Integration**: Platform event processing for real-time meeting state updates
 - **NATS JetStream Storage**: Scalable and resilient data persistence across 5 KV buckets
+- **NATS Messaging**: Event-driven communication with other services
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **OpenAPI Documentation**: Auto-generated API specifications
 - **Comprehensive Testing**: Full unit test coverage with mocks
@@ -385,6 +386,52 @@ make docker-build
 # Run with Docker
 docker run -p 8080:8080 linuxfoundation/lfx-v2-meeting-service:latest
 ```
+
+## 📡 NATS Messaging
+
+The service uses NATS for event-driven communication with other LFX platform services.
+
+### Published Subjects
+
+The service publishes messages to the following NATS subjects:
+
+| Subject | Purpose | Message Schema |
+|---------|---------|----------------|
+| `lfx.index.meeting` | Meeting indexing events | `MeetingIndexerMessage` |
+| `lfx.index.meeting_settings` | Meeting settings indexing events | `MeetingIndexerMessage` |
+| `lfx.index.meeting_registrant` | Registrant indexing events | `MeetingIndexerMessage` |
+| `lfx.update_access.meeting` | Meeting access control updates | `MeetingAccessMessage` |
+| `lfx.delete_all_access.meeting` | Meeting access control deletion | `MeetingAccessMessage` |
+| `lfx.put_registrant.meeting` | Registrant access control updates | `MeetingRegistrantAccessMessage` |
+| `lfx.remove_registrant.meeting` | Registrant access control deletion | `MeetingRegistrantAccessMessage` |
+| `lfx.meetings-api.meeting_deleted` | Meeting deletion events (internal) | `MeetingDeletedMessage` |
+
+### Handled Subjects
+
+The service handles incoming messages on these subjects:
+
+| Subject | Purpose | Handler |
+|---------|---------|---------|
+| `lfx.meetings-api.get_title` | Meeting title requests | `HandleMeetingGetTitle` |
+| `lfx.meetings-api.meeting_deleted` | Meeting deletion cleanup | `HandleMeetingDeleted` |
+
+### Message Schemas
+
+All message schemas are defined in `internal/domain/models/messaging.go`. Key schemas include:
+
+- **MeetingIndexerMessage**: For search indexing operations
+- **MeetingAccessMessage**: For meeting-level access control
+- **MeetingRegistrantAccessMessage**: For registrant-level access control  
+- **MeetingDeletedMessage**: For internal cleanup when meetings are deleted
+
+### Event Flow
+
+When meetings or registrants are modified, the service automatically:
+
+1. **Updates NATS KV storage** for persistence
+2. **Publishes indexing messages** for search services
+3. **Publishes access control messages** for permission services
+4. **Handles cleanup messages** for cascading deletions
 
 ## 📖 API Documentation
 

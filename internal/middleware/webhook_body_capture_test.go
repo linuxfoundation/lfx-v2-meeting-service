@@ -112,10 +112,8 @@ func TestGetRawBodyFromContext(t *testing.T) {
 			expectedFound: true,
 		},
 		{
-			name: "returns false when body not in context",
-			setupContext: func() context.Context {
-				return context.Background()
-			},
+			name:          "returns false when body not in context",
+			setupContext:  context.Background,
 			expectedBody:  nil,
 			expectedFound: false,
 		},

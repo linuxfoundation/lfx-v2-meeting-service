@@ -197,6 +197,17 @@ func (m *MessageBuilder) SendRemoveMeetingRegistrantAccess(ctx context.Context, 
 	return m.sendMessage(ctx, models.RemoveRegistrantMeetingSubject, dataBytes)
 }
 
+// SendMeetingDeleted sends a message about a meeting being deleted to trigger registrant cleanup.
+func (m *MessageBuilder) SendMeetingDeleted(ctx context.Context, data models.MeetingDeletedMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.MeetingDeletedSubject, dataBytes)
+}
+
 // PublishZoomWebhookEvent publishes a Zoom webhook event to NATS for async processing.
 func (m *MessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject string, message models.ZoomWebhookEventMessage) error {
 	messageBytes, err := json.Marshal(message)

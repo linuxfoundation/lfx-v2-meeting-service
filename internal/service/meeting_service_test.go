@@ -212,8 +212,9 @@ func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, 
 
 // Mock message for testing
 type mockMessage struct {
-	subject string
-	data    []byte
+	subject  string
+	data     []byte
+	hasReply bool
 	mock.Mock
 }
 
@@ -230,9 +231,23 @@ func (m *mockMessage) Respond(data []byte) error {
 	return args.Error(0)
 }
 
+func (m *mockMessage) HasReply() bool {
+	return m.hasReply
+}
+
 func newMockMessage(subject string, data []byte) *mockMessage {
 	return &mockMessage{
 		subject: subject,
 		data:    data,
+		// Default to true for backward compatibility with existing tests
+		hasReply: true,
+	}
+}
+
+func newMockMessageNoReply(subject string, data []byte) *mockMessage {
+	return &mockMessage{
+		subject:  subject,
+		data:     data,
+		hasReply: false,
 	}
 }

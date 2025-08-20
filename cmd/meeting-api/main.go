@@ -353,7 +353,11 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 // createNatsSubcriptions creates the NATS subscriptions for the meeting service.
 func createNatsSubcriptions(ctx context.Context, svc *MeetingsAPI, natsConn *nats.Conn) error {
 	subjects := []string{
+		// Get meeting title subscription
 		models.MeetingGetTitleSubject,
+		// Meeting deletion cleanup subscription
+		models.MeetingDeletedSubject,
+		// Zoom webhook event subscriptions
 		models.ZoomWebhookMeetingStartedSubject,
 		models.ZoomWebhookMeetingEndedSubject,
 		models.ZoomWebhookMeetingDeletedSubject,
