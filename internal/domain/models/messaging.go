@@ -110,6 +110,7 @@ type MeetingDeletedMessage struct {
 }
 
 // ZoomWebhookEventMessage is the schema for Zoom webhook events sent via NATS for async processing.
+// This maintains backward compatibility while new handlers can use the typed payload structs.
 type ZoomWebhookEventMessage struct {
 	EventType string                 `json:"event_type"`
 	EventTS   int64                  `json:"event_ts"`

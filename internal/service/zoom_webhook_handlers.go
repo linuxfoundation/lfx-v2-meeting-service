@@ -8,10 +8,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
 // parseZoomWebhookEvent is a helper to parse webhook event messages
@@ -170,19 +174,44 @@ func (s *MeetingsService) HandleZoomSummaryCompleted(ctx context.Context, msg do
 
 // handleMeetingStartedEvent processes meeting.started events
 func (s *MeetingsService) handleMeetingStartedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+	slog.InfoContext(ctx, "processing meeting started event")
+
 	// Convert to typed payload
 	payload, err := event.ToMeetingStartedPayload()
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to convert to typed meeting started payload", "error", err)
-		return fmt.Errorf("failed to parse meeting started payload: %w", err)
+		slog.ErrorContext(ctx, "failed to parse meeting started payload", logging.ErrKey, err)
+		return fmt.Errorf("invalid meeting.started payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing meeting started event",
-		"zoom_meeting_uuid", payload.Object.UUID,
-		"zoom_meeting_id", payload.Object.ID,
-		"topic", payload.Object.Topic,
-		"start_time", payload.Object.StartTime,
+	meetingObj := payload.Object
+
+	slog.InfoContext(ctx, "meeting started",
+		"zoom_meeting_id", meetingObj.ID,
+		"zoom_meeting_uuid", meetingObj.UUID,
+		"topic", meetingObj.Topic,
+		"start_time", meetingObj.StartTime,
+		"host_id", meetingObj.HostID,
 	)
+
+	// Find the meeting by Zoom meeting ID
+	meeting, err := s.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to find meeting by Zoom ID", logging.ErrKey, err)
+		return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
+	}
+
+	// Create the past meeting record
+	pastMeeting, err := s.createPastMeetingRecord(ctx, meeting, meetingObj.UUID, meetingObj.StartTime, meetingObj.Timezone)
+	if err != nil {
+		return fmt.Errorf("failed to create past meeting record: %w", err)
+	}
+
+	// Create participant records for all registrants
+	err = s.createPastMeetingParticipants(ctx, pastMeeting, meeting)
+	if err != nil {
+		// Log the error but don't fail the entire webhook processing
+		slog.ErrorContext(ctx, "failed to create past meeting participants", logging.ErrKey, err)
+	}
 
 	return nil
 }
@@ -325,6 +354,161 @@ func (s *MeetingsService) handleSummaryCompletedEvent(ctx context.Context, event
 		"end_time", payload.Object.EndTime,
 		"duration", payload.Object.Duration,
 	)
+
+	return nil
+}
+
+// createPastMeetingRecord creates a historical record for a meeting that has started
+func (s *MeetingsService) createPastMeetingRecord(ctx context.Context, meeting *models.MeetingBase, zoomUUID string, actualStartTime time.Time, timezone string) (*models.PastMeeting, error) {
+	slog.InfoContext(ctx, "creating past meeting record",
+		"meeting_uid", meeting.UID,
+		"zoom_uuid", zoomUUID,
+		"actual_start_time", actualStartTime,
+		"timezone", timezone,
+	)
+
+	// Get platform meeting ID from Zoom config
+	platformMeetingID := ""
+	if meeting.ZoomConfig != nil {
+		platformMeetingID = meeting.ZoomConfig.MeetingID
+	}
+
+	// Calculate scheduled end time based on duration
+	scheduledEndTime := meeting.StartTime.Add(time.Duration(meeting.Duration) * time.Minute)
+
+	// Create PastMeeting record with current meeting attributes and actual webhook data
+	pastMeeting := &models.PastMeeting{
+		UID:                  uuid.New().String(),
+		MeetingUID:           meeting.UID,
+		OccurrenceID:         "", // TODO: set occurrence ID once we have occurrences figured out
+		ProjectUID:           meeting.ProjectUID,
+		ScheduledStartTime:   meeting.StartTime, // Scheduled time from our meeting
+		ScheduledEndTime:     scheduledEndTime,
+		Duration:             meeting.Duration,
+		Timezone:             timezone, // Use timezone from webhook payload
+		Recurrence:           meeting.Recurrence,
+		Title:                meeting.Title,
+		Description:          meeting.Description,
+		Committees:           meeting.Committees,
+		Platform:             meeting.Platform,
+		PlatformMeetingID:    platformMeetingID,
+		EarlyJoinTimeMinutes: meeting.EarlyJoinTimeMinutes,
+		MeetingType:          meeting.MeetingType,
+		Visibility:           meeting.Visibility,
+		Restricted:           meeting.Restricted,
+		ArtifactVisibility:   meeting.ArtifactVisibility,
+		PublicLink:           meeting.PublicLink,
+		RecordingEnabled:     meeting.RecordingEnabled,
+		TranscriptEnabled:    meeting.TranscriptEnabled,
+		YoutubeUploadEnabled: meeting.YoutubeUploadEnabled,
+		ZoomConfig:           meeting.ZoomConfig,
+		Sessions: []models.Session{
+			{
+				UID:       zoomUUID,
+				StartTime: actualStartTime, // Use actual start time from webhook
+				// EndTime will be set when the meeting ends
+			},
+		},
+	}
+
+	// Create the PastMeeting record
+	err := s.PastMeetingRepository.Create(ctx, pastMeeting)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create past meeting record", logging.ErrKey, err)
+		return nil, fmt.Errorf("failed to create past meeting record: %w", err)
+	}
+
+	slog.InfoContext(ctx, "successfully created past meeting record",
+		"past_meeting_uid", pastMeeting.UID,
+		"meeting_uid", meeting.UID,
+	)
+
+	return pastMeeting, nil
+}
+
+// createPastMeetingParticipants creates participant records for all registrants of a meeting
+func (s *MeetingsService) createPastMeetingParticipants(ctx context.Context, pastMeeting *models.PastMeeting, meeting *models.MeetingBase) error {
+	slog.InfoContext(ctx, "creating past meeting participant records",
+		"past_meeting_uid", pastMeeting.UID,
+		"meeting_uid", meeting.UID,
+	)
+
+	// Get all registrants for this meeting
+	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, meeting.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get registrants for meeting", logging.ErrKey, err)
+		return fmt.Errorf("failed to get registrants: %w", err)
+	}
+
+	// Track successful and failed creations with thread-safe counters
+	var successCount, failedCount int
+	var mu sync.Mutex
+	var failedEmails []string
+
+	jobs := []func() error{}
+
+	// Create PastMeetingParticipant records for all registrants
+	for _, registrant := range registrants {
+		// Capture registrant in closure
+		r := registrant
+		jobs = append(jobs, func() error {
+			participant := &models.PastMeetingParticipant{
+				UID:            uuid.New().String(),
+				PastMeetingUID: pastMeeting.UID,
+				MeetingUID:     meeting.UID,
+				Email:          r.Email,
+				FirstName:      r.FirstName,
+				LastName:       r.LastName,
+				IsInvited:      true,
+				IsAttended:     false, // Will be set to true when they join
+				// Sessions will be updated when participants join/leave
+			}
+
+			err := s.PastMeetingParticipantRepository.Create(ctx, participant)
+
+			// Use mutex to protect shared counters
+			mu.Lock()
+			defer mu.Unlock()
+
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to create past meeting participant record",
+					logging.ErrKey, err,
+					"past_meeting_uid", pastMeeting.UID,
+					"meeting_uid", meeting.UID,
+					"email", r.Email,
+				)
+				failedCount++
+				failedEmails = append(failedEmails, r.Email)
+				// Continue creating other participants even if one fails
+			} else {
+				successCount++
+			}
+			return nil
+		})
+	}
+
+	errWorkerPool := concurrent.NewWorkerPool(10).Run(ctx, jobs...)
+	if errWorkerPool != nil {
+		slog.ErrorContext(ctx, "failed to create some past meeting participant records",
+			logging.ErrKey, errWorkerPool,
+			"meeting_uid", meeting.UID,
+			"past_meeting_uid", pastMeeting.UID,
+		)
+	}
+
+	slog.InfoContext(ctx, "completed creating past meeting participant records",
+		"past_meeting_uid", pastMeeting.UID,
+		"meeting_uid", meeting.UID,
+		"total_registrants", len(registrants),
+		"successful", successCount,
+		"failed", failedCount,
+		"failed_emails", failedEmails,
+	)
+
+	// Return error if all creations failed
+	if failedCount > 0 && successCount == 0 {
+		return fmt.Errorf("failed to create any participant records")
+	}
 
 	return nil
 }

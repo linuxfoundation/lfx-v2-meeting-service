@@ -81,6 +81,14 @@ func (m *MockMeetingRepository) Delete(ctx context.Context, meetingUID string, r
 	return args.Error(0)
 }
 
+func (m *MockMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeetingID string) (*models.MeetingBase, error) {
+	args := m.Called(ctx, zoomMeetingID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.MeetingBase), args.Error(1)
+}
+
 // MockMessageBuilder implements MessageBuilder for testing
 type MockMessageBuilder struct {
 	mock.Mock

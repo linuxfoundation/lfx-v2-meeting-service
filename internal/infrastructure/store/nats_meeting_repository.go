@@ -371,3 +371,25 @@ func (s *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, r
 
 	return nil
 }
+
+// GetByZoomMeetingID retrieves a meeting by its Zoom meeting ID
+func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeetingID string) (*models.MeetingBase, error) {
+	if s.Meetings == nil {
+		return nil, domain.ErrServiceUnavailable
+	}
+
+	// List all meetings
+	meetings, _, err := s.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the meeting with matching Zoom ID
+	for _, meeting := range meetings {
+		if meeting.Platform == "Zoom" && meeting.ZoomConfig != nil && meeting.ZoomConfig.MeetingID == zoomMeetingID {
+			return meeting, nil
+		}
+	}
+
+	return nil, domain.ErrMeetingNotFound
+}
