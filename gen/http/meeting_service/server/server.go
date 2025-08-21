@@ -32,6 +32,7 @@ type Server struct {
 	GetMeetingRegistrant    http.Handler
 	UpdateMeetingRegistrant http.Handler
 	DeleteMeetingRegistrant http.Handler
+	ZoomWebhook             http.Handler
 	Readyz                  http.Handler
 	Livez                   http.Handler
 	GenHTTPOpenapi3JSON     http.Handler
@@ -81,6 +82,7 @@ func New(
 			{"GetMeetingRegistrant", "GET", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"UpdateMeetingRegistrant", "PUT", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"DeleteMeetingRegistrant", "DELETE", "/meetings/{meeting_uid}/registrants/{uid}"},
+			{"ZoomWebhook", "POST", "/webhooks/zoom"},
 			{"Readyz", "GET", "/readyz"},
 			{"Livez", "GET", "/livez"},
 			{"Serve gen/http/openapi3.json", "GET", "/openapi.json"},
@@ -97,6 +99,7 @@ func New(
 		GetMeetingRegistrant:    NewGetMeetingRegistrantHandler(e.GetMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
 		UpdateMeetingRegistrant: NewUpdateMeetingRegistrantHandler(e.UpdateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
 		DeleteMeetingRegistrant: NewDeleteMeetingRegistrantHandler(e.DeleteMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
+		ZoomWebhook:             NewZoomWebhookHandler(e.ZoomWebhook, mux, decoder, encoder, errhandler, formatter),
 		Readyz:                  NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
 		Livez:                   NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
 		GenHTTPOpenapi3JSON:     http.FileServer(fileSystemGenHTTPOpenapi3JSON),
@@ -120,6 +123,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.GetMeetingRegistrant = m(s.GetMeetingRegistrant)
 	s.UpdateMeetingRegistrant = m(s.UpdateMeetingRegistrant)
 	s.DeleteMeetingRegistrant = m(s.DeleteMeetingRegistrant)
+	s.ZoomWebhook = m(s.ZoomWebhook)
 	s.Readyz = m(s.Readyz)
 	s.Livez = m(s.Livez)
 }
@@ -141,6 +145,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetMeetingRegistrantHandler(mux, h.GetMeetingRegistrant)
 	MountUpdateMeetingRegistrantHandler(mux, h.UpdateMeetingRegistrant)
 	MountDeleteMeetingRegistrantHandler(mux, h.DeleteMeetingRegistrant)
+	MountZoomWebhookHandler(mux, h.ZoomWebhook)
 	MountReadyzHandler(mux, h.Readyz)
 	MountLivezHandler(mux, h.Livez)
 	MountGenHTTPOpenapi3JSON(mux, h.GenHTTPOpenapi3JSON)
@@ -750,6 +755,57 @@ func NewDeleteMeetingRegistrantHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "delete-meeting-registrant")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountZoomWebhookHandler configures the mux to serve the "Meeting Service"
+// service "zoom-webhook" endpoint.
+func MountZoomWebhookHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/webhooks/zoom", f)
+}
+
+// NewZoomWebhookHandler creates a HTTP handler which loads the HTTP request
+// and calls the "Meeting Service" service "zoom-webhook" endpoint.
+func NewZoomWebhookHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeZoomWebhookRequest(mux, decoder)
+		encodeResponse = EncodeZoomWebhookResponse(encoder)
+		encodeError    = EncodeZoomWebhookError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "zoom-webhook")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

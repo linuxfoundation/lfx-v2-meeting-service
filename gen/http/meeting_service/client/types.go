@@ -163,6 +163,17 @@ type UpdateMeetingRegistrantRequestBody struct {
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 }
 
+// ZoomWebhookRequestBody is the type of the "Meeting Service" service
+// "zoom-webhook" endpoint HTTP request body.
+type ZoomWebhookRequestBody struct {
+	// The type of event
+	Event string `form:"event" json:"event" xml:"event"`
+	// Event timestamp in milliseconds
+	EventTs int64 `form:"event_ts" json:"event_ts" xml:"event_ts"`
+	// Contains meeting, participant, or recording data depending on event type
+	Payload any `form:"payload" json:"payload" xml:"payload"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -428,6 +439,15 @@ type UpdateMeetingRegistrantResponseBody struct {
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// ZoomWebhookResponseBody is the type of the "Meeting Service" service
+// "zoom-webhook" endpoint HTTP response body.
+type ZoomWebhookResponseBody struct {
+	// Processing status
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// Optional message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
@@ -884,6 +904,36 @@ type DeleteMeetingRegistrantNotFoundResponseBody struct {
 // "Meeting Service" service "delete-meeting-registrant" endpoint HTTP response
 // body for the "ServiceUnavailable" error.
 type DeleteMeetingRegistrantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ZoomWebhookBadRequestResponseBody is the type of the "Meeting Service"
+// service "zoom-webhook" endpoint HTTP response body for the "BadRequest"
+// error.
+type ZoomWebhookBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ZoomWebhookInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "zoom-webhook" endpoint HTTP response body for the
+// "InternalServerError" error.
+type ZoomWebhookInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ZoomWebhookUnauthorizedResponseBody is the type of the "Meeting Service"
+// service "zoom-webhook" endpoint HTTP response body for the "Unauthorized"
+// error.
+type ZoomWebhookUnauthorizedResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -1405,6 +1455,17 @@ func NewUpdateMeetingRegistrantRequestBody(p *meetingservice.UpdateMeetingRegist
 		OccurrenceID: p.OccurrenceID,
 		AvatarURL:    p.AvatarURL,
 		Username:     p.Username,
+	}
+	return body
+}
+
+// NewZoomWebhookRequestBody builds the HTTP request body from the payload of
+// the "zoom-webhook" endpoint of the "Meeting Service" service.
+func NewZoomWebhookRequestBody(p *meetingservice.ZoomWebhookPayload) *ZoomWebhookRequestBody {
+	body := &ZoomWebhookRequestBody{
+		Event:   p.Event,
+		EventTs: p.EventTs,
+		Payload: p.Payload,
 	}
 	return body
 }
@@ -2221,6 +2282,50 @@ func NewDeleteMeetingRegistrantServiceUnavailable(body *DeleteMeetingRegistrantS
 	return v
 }
 
+// NewZoomWebhookResponseOK builds a "Meeting Service" service "zoom-webhook"
+// endpoint result from a HTTP "OK" response.
+func NewZoomWebhookResponseOK(body *ZoomWebhookResponseBody) *meetingservice.ZoomWebhookResponse {
+	v := &meetingservice.ZoomWebhookResponse{
+		Status:  *body.Status,
+		Message: body.Message,
+	}
+
+	return v
+}
+
+// NewZoomWebhookBadRequest builds a Meeting Service service zoom-webhook
+// endpoint BadRequest error.
+func NewZoomWebhookBadRequest(body *ZoomWebhookBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewZoomWebhookInternalServerError builds a Meeting Service service
+// zoom-webhook endpoint InternalServerError error.
+func NewZoomWebhookInternalServerError(body *ZoomWebhookInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewZoomWebhookUnauthorized builds a Meeting Service service zoom-webhook
+// endpoint Unauthorized error.
+func NewZoomWebhookUnauthorized(body *ZoomWebhookUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewReadyzServiceUnavailable builds a Meeting Service service readyz endpoint
 // ServiceUnavailable error.
 func NewReadyzServiceUnavailable(body *ReadyzServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
@@ -2749,6 +2854,15 @@ func ValidateUpdateMeetingRegistrantResponseBody(body *UpdateMeetingRegistrantRe
 	}
 	if body.UpdatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateZoomWebhookResponseBody runs the validations defined on
+// Zoom-WebhookResponseBody
+func ValidateZoomWebhookResponseBody(body *ZoomWebhookResponseBody) (err error) {
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	return
 }
@@ -3308,6 +3422,42 @@ func ValidateDeleteMeetingRegistrantNotFoundResponseBody(body *DeleteMeetingRegi
 // validations defined on
 // delete-meeting-registrant_ServiceUnavailable_response_body
 func ValidateDeleteMeetingRegistrantServiceUnavailableResponseBody(body *DeleteMeetingRegistrantServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateZoomWebhookBadRequestResponseBody runs the validations defined on
+// zoom-webhook_BadRequest_response_body
+func ValidateZoomWebhookBadRequestResponseBody(body *ZoomWebhookBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateZoomWebhookInternalServerErrorResponseBody runs the validations
+// defined on zoom-webhook_InternalServerError_response_body
+func ValidateZoomWebhookInternalServerErrorResponseBody(body *ZoomWebhookInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateZoomWebhookUnauthorizedResponseBody runs the validations defined on
+// zoom-webhook_Unauthorized_response_body
+func ValidateZoomWebhookUnauthorizedResponseBody(body *ZoomWebhookUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

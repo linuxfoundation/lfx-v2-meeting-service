@@ -10,13 +10,16 @@ import (
 
 // MeetingsService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingsService struct {
-	MeetingRepository    domain.MeetingRepository
-	RegistrantRepository domain.RegistrantRepository
-	MessageBuilder       domain.MessageBuilder
-	EmailService         domain.EmailService
-	PlatformRegistry     domain.PlatformRegistry
-	Auth                 auth.IJWTAuth
-	Config               ServiceConfig
+	MeetingRepository                domain.MeetingRepository
+	RegistrantRepository             domain.RegistrantRepository
+	PastMeetingRepository            domain.PastMeetingRepository
+	PastMeetingParticipantRepository domain.PastMeetingParticipantRepository
+	EmailService                     domain.EmailService
+	MessageBuilder                   domain.MessageBuilder
+	PlatformRegistry                 domain.PlatformRegistry
+	ZoomWebhookValidator             domain.WebhookValidator // Zoom-specific webhook validator
+	Auth                             auth.IJWTAuth
+	Config                           ServiceConfig
 }
 
 // NewMeetingsService creates a new MeetingsService.
@@ -29,7 +32,10 @@ func NewMeetingsService(auth auth.IJWTAuth, config ServiceConfig) *MeetingsServi
 
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingsService) ServiceReady() bool {
-	return s.MeetingRepository != nil && s.RegistrantRepository != nil && s.MessageBuilder != nil && s.PlatformRegistry != nil
+	return s.MeetingRepository != nil &&
+		s.RegistrantRepository != nil &&
+		s.MessageBuilder != nil &&
+		s.PlatformRegistry != nil
 }
 
 // ServiceConfig is the configuration for the MeetingsService.

@@ -57,8 +57,9 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 	var handler http.Handler = mux
 
 	// Add HTTP middleware
-	// Note: Order matters - Authorization middleware should come first in the chain,
+	// Note: Order matters - RequestIDMiddleware should come first in the chain,
 	// so it should be the last middleware added to the handler since it is executed in reverse order.
+	handler = middleware.WebhookBodyCaptureMiddleware()(handler)
 	handler = middleware.RequestLoggerMiddleware()(handler)
 	handler = middleware.RequestIDMiddleware()(handler)
 	handler = middleware.AuthorizationMiddleware()(handler)

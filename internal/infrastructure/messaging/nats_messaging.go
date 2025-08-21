@@ -207,3 +207,20 @@ func (m *MessageBuilder) SendMeetingDeleted(ctx context.Context, data models.Mee
 
 	return m.sendMessage(ctx, models.MeetingDeletedSubject, dataBytes)
 }
+
+// PublishZoomWebhookEvent publishes a Zoom webhook event to NATS for async processing.
+func (m *MessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject string, message models.ZoomWebhookEventMessage) error {
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling Zoom webhook event into JSON", logging.ErrKey, err, "subject", subject)
+		return err
+	}
+
+	slog.DebugContext(ctx, "publishing Zoom webhook event to NATS",
+		"subject", subject,
+		"event_type", message.EventType,
+		"event_ts", message.EventTS,
+	)
+
+	return m.sendMessage(ctx, subject, messageBytes)
+}

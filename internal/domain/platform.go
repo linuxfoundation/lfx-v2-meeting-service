@@ -43,3 +43,9 @@ type PlatformRegistry interface {
 	// RegisterProvider registers a platform provider
 	RegisterProvider(platform string, provider PlatformProvider)
 }
+
+// WebhookValidator defines the interface for validating webhook signatures
+type WebhookValidator interface {
+	// ValidateSignature validates the webhook signature to ensure authenticity
+	ValidateSignature(body []byte, signature, timestamp string) error
+}

@@ -1593,6 +1593,115 @@ func EncodeDeleteMeetingRegistrantError(encoder func(context.Context, http.Respo
 	}
 }
 
+// EncodeZoomWebhookResponse returns an encoder for responses returned by the
+// Meeting Service zoom-webhook endpoint.
+func EncodeZoomWebhookResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*meetingservice.ZoomWebhookResponse)
+		enc := encoder(ctx, w)
+		body := NewZoomWebhookResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeZoomWebhookRequest returns a decoder for requests sent to the Meeting
+// Service zoom-webhook endpoint.
+func DecodeZoomWebhookRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			body ZoomWebhookRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return nil, gerr
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateZoomWebhookRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			zoomSignature *string
+			zoomTimestamp *string
+		)
+		zoomSignatureRaw := r.Header.Get("x-zm-signature")
+		if zoomSignatureRaw != "" {
+			zoomSignature = &zoomSignatureRaw
+		}
+		zoomTimestampRaw := r.Header.Get("x-zm-request-timestamp")
+		if zoomTimestampRaw != "" {
+			zoomTimestamp = &zoomTimestampRaw
+		}
+		payload := NewZoomWebhookPayload(&body, zoomSignature, zoomTimestamp)
+
+		return payload, nil
+	}
+}
+
+// EncodeZoomWebhookError returns an encoder for errors returned by the
+// zoom-webhook Meeting Service endpoint.
+func EncodeZoomWebhookError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewZoomWebhookBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewZoomWebhookInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "Unauthorized":
+			var res *meetingservice.UnauthorizedError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewZoomWebhookUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeReadyzResponse returns an encoder for responses returned by the
 // Meeting Service readyz endpoint.
 func EncodeReadyzResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {

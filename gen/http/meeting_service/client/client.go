@@ -65,6 +65,10 @@ type Client struct {
 	// delete-meeting-registrant endpoint.
 	DeleteMeetingRegistrantDoer goahttp.Doer
 
+	// ZoomWebhook Doer is the HTTP client used to make requests to the
+	// zoom-webhook endpoint.
+	ZoomWebhookDoer goahttp.Doer
+
 	// Readyz Doer is the HTTP client used to make requests to the readyz endpoint.
 	ReadyzDoer goahttp.Doer
 
@@ -104,6 +108,7 @@ func NewClient(
 		GetMeetingRegistrantDoer:    doer,
 		UpdateMeetingRegistrantDoer: doer,
 		DeleteMeetingRegistrantDoer: doer,
+		ZoomWebhookDoer:             doer,
 		ReadyzDoer:                  doer,
 		LivezDoer:                   doer,
 		RestoreResponseBody:         restoreBody,
@@ -397,6 +402,30 @@ func (c *Client) DeleteMeetingRegistrant() goa.Endpoint {
 		resp, err := c.DeleteMeetingRegistrantDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-meeting-registrant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// ZoomWebhook returns an endpoint that makes HTTP requests to the Meeting
+// Service service zoom-webhook server.
+func (c *Client) ZoomWebhook() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeZoomWebhookRequest(c.encoder)
+		decodeResponse = DecodeZoomWebhookResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildZoomWebhookRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.ZoomWebhookDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "zoom-webhook", err)
 		}
 		return decodeResponse(resp)
 	}
