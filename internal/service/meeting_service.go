@@ -14,6 +14,7 @@ type MeetingsService struct {
 	RegistrantRepository             domain.RegistrantRepository
 	PastMeetingRepository            domain.PastMeetingRepository
 	PastMeetingParticipantRepository domain.PastMeetingParticipantRepository
+	EmailService                     domain.EmailService
 	MessageBuilder                   domain.MessageBuilder
 	PlatformRegistry                 domain.PlatformRegistry
 	ZoomWebhookValidator             domain.WebhookValidator // Zoom-specific webhook validator

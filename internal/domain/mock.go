@@ -415,3 +415,18 @@ func (m *MockPastMeetingParticipantRepository) GetByPastMeetingAndEmail(ctx cont
 	}
 	return args.Get(0).(*models.PastMeetingParticipant), args.Error(1)
 }
+
+// MockEmailService implements EmailService for testing
+type MockEmailService struct {
+	mock.Mock
+}
+
+func (m *MockEmailService) SendRegistrantInvitation(ctx context.Context, invitation EmailInvitation) error {
+	args := m.Called(ctx, invitation)
+	return args.Error(0)
+}
+
+func (m *MockEmailService) SendRegistrantCancellation(ctx context.Context, cancellation EmailCancellation) error {
+	args := m.Called(ctx, cancellation)
+	return args.Error(0)
+}

@@ -1,0 +1,30 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+
+Meeting Cancellation Notice
+============================
+
+Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},
+
+*** YOUR REGISTRATION FOR THE FOLLOWING MEETING HAS BEEN CANCELLED ***
+
+The meeting{{if .ProjectName}} for {{.ProjectName}}{{end}} that was cancelled:
+
+Meeting Details:
+----------------
+Meeting: {{.MeetingTitle}}
+Date & Time: {{formatTime .StartTime .Timezone}}
+Duration: {{formatDuration .Duration}}
+Time Zone: {{.Timezone}}
+
+{{if .Description}}Meeting Description:
+{{.Description}}
+
+{{end}}{{if .Reason}}Cancellation Reason:
+{{.Reason}}
+
+{{end}}We apologize for any inconvenience this may cause. If you have any questions, please contact the meeting organizer.
+
+---
+This is an automated email from the Linux Foundation Meeting Service.
+Please do not reply to this email.

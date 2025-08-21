@@ -98,7 +98,11 @@ func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID
 
 		registrant, err := s.Get(ctx, registrantUID)
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			if errors.Is(err, domain.ErrRegistrantNotFound) {
+				slog.WarnContext(ctx, "stale index entry found, registrant no longer exists", "registrantUID", registrantUID)
+			} else {
+				slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			}
 			continue
 		}
 
@@ -145,7 +149,11 @@ func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string
 
 		registrant, err := s.Get(ctx, registrantUID)
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			if errors.Is(err, domain.ErrRegistrantNotFound) {
+				slog.WarnContext(ctx, "stale index entry found, registrant no longer exists", "registrantUID", registrantUID)
+			} else {
+				slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
+			}
 			continue
 		}
 

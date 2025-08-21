@@ -49,6 +49,7 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 			subject:     models.MeetingDeletedSubject,
 			messageData: []byte(`{"meeting_uid":"meeting-to-delete"}`),
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				now := time.Now()
 				// Setup registrants for deletion
 				registrants := []*models.Registrant{
 					{
@@ -65,6 +66,15 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
 					return msg.UID == "registrant-1"
 				})).Return(nil)
+				// Mock GetBase for cancellation email (called in goroutine)
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-to-delete").Return(&models.MeetingBase{
+					UID:         "meeting-to-delete",
+					Title:       "Test Meeting",
+					StartTime:   now,
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
 			},
 		},
 		{
@@ -99,6 +109,14 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 			}
 
 			tt.setupMocks(mockMeetingRepo, mockRegistrantRepo, mockBuilder)
+
+			// Add email service mocks if needed for meeting deletion
+			if tt.subject == models.MeetingDeletedSubject {
+				if mockEmailService, ok := service.EmailService.(*domain.MockEmailService); ok {
+					// Add flexible email mock that accepts any cancellation email
+					mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
+				}
+			}
 
 			// Create mock message - meeting deletion messages don't expect replies
 			var mockMsg *mockMessage
@@ -337,6 +355,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 			name:        "successful cleanup with multiple registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-123"}`),
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				now := time.Now()
 				// Setup registrants to be cleaned up
 				registrants := []*models.Registrant{
 					{
@@ -376,6 +395,16 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 						})).Return(nil)
 					}
 				}
+
+				// Mock GetBase for cancellation emails (called in goroutines)
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-123").Return(&models.MeetingBase{
+					UID:         "meeting-123",
+					Title:       "Test Meeting",
+					StartTime:   now,
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
 			},
 			expectedErr: false,
 			validate: func(t *testing.T, response []byte) {
@@ -397,6 +426,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 			name:        "partial failure in registrant cleanup",
 			messageData: []byte(`{"meeting_uid":"meeting-456"}`),
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				now := time.Now()
 				registrants := []*models.Registrant{
 					{
 						UID:        "registrant-1",
@@ -425,6 +455,16 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 
 				// Second registrant fails
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(domain.ErrInternal)
+
+				// Mock GetBase for cancellation emails (called in goroutines) - first successful registrant will call this
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-456").Return(&models.MeetingBase{
+					UID:         "meeting-456",
+					Title:       "Test Meeting",
+					StartTime:   now,
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
 			},
 			expectedErr: true,
 		},
@@ -507,6 +547,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 			name:        "concurrent processing of many registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-concurrent"}`),
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				now := time.Now()
 				// Create many registrants to test concurrent processing
 				const numRegistrants = 50
 				registrants := make([]*models.Registrant, numRegistrants)
@@ -530,6 +571,16 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 						return msg.UID == reg.UID && msg.Username == reg.Username && msg.MeetingUID == reg.MeetingUID && msg.Host == reg.Host
 					})).Return(nil)
 				}
+
+				// Mock GetBase for cancellation emails (called in goroutines for all registrants)
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-concurrent").Return(&models.MeetingBase{
+					UID:         "meeting-concurrent",
+					Title:       "Test Meeting",
+					StartTime:   now,
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
 			},
 			expectedErr: false,
 			validate: func(t *testing.T, response []byte) {
@@ -540,6 +591,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 			name:        "end-to-end message handling integration",
 			messageData: []byte(`{"meeting_uid":"integration-test-meeting"}`),
 			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+				now := time.Now()
 				// Test the full message handling flow
 				registrants := []*models.Registrant{
 					{
@@ -560,6 +612,15 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 						msg.MeetingUID == "integration-test-meeting" &&
 						msg.Host == true
 				})).Return(nil)
+				// Mock GetBase for cancellation email (called in goroutine)
+				mockMeetingRepo.On("GetBase", mock.Anything, "integration-test-meeting").Return(&models.MeetingBase{
+					UID:         "integration-test-meeting",
+					Title:       "Test Meeting",
+					StartTime:   now,
+					Duration:    60,
+					Timezone:    "UTC",
+					Description: "Test meeting description",
+				}, nil)
 			},
 			expectedErr: false,
 			validate: func(t *testing.T, response []byte) {
@@ -588,6 +649,12 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 			}
 
 			tt.setupMocks(mockMeetingRepo, mockRegistrantRepo, mockBuilder)
+
+			// Add email service mocks for meeting deletion tests
+			if mockEmailService, ok := service.EmailService.(*domain.MockEmailService); ok {
+				// Add flexible email mock that accepts any cancellation email
+				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
+			}
 
 			mockMsg := newMockMessage(models.MeetingDeletedSubject, tt.messageData)
 
@@ -619,6 +686,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		mockRegistrantRepo := &domain.MockRegistrantRepository{}
 		service.RegistrantRepository = mockRegistrantRepo
 
+		now := time.Now()
 		// Test the full message handling flow
 		registrants := []*models.Registrant{
 			{
@@ -639,6 +707,20 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 				msg.MeetingUID == "integration-test-meeting" &&
 				msg.Host == true
 		})).Return(nil)
+		// Mock GetBase for cancellation email (called in goroutine)
+		mockMeetingRepo.On("GetBase", mock.Anything, "integration-test-meeting").Return(&models.MeetingBase{
+			UID:         "integration-test-meeting",
+			Title:       "Test Meeting",
+			StartTime:   now,
+			Duration:    60,
+			Timezone:    "UTC",
+			Description: "Test meeting description",
+		}, nil)
+
+		// Add email service mock for cancellation email
+		if mockEmailService, ok := service.EmailService.(*domain.MockEmailService); ok {
+			mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
+		}
 
 		messageData := []byte(`{"meeting_uid":"integration-test-meeting"}`)
 		mockMsg := newMockMessage(models.MeetingDeletedSubject, messageData)
