@@ -128,6 +128,23 @@ heimdall:
   # jwksUrl is the JWKS URL for JWT verification
   jwksUrl: http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks
 
+# email is the configuration for email notifications
+email:
+  # enabled is a boolean to determine if email notifications should be sent
+  enabled: true
+  # smtp is the SMTP server configuration
+  smtp:
+    # host is the SMTP server hostname
+    host: lfx-platform-mailpit-smtp.lfx.svc.cluster.local
+    # port is the SMTP server port
+    port: 25
+    # from is the sender email address
+    from: noreply@lfx.linuxfoundation.org
+    # username is the SMTP username (optional for authenticated SMTP)
+    username: ""
+    # password is the SMTP password (optional for authenticated SMTP)
+    password: ""
+
 # zoom is the configuration for Zoom integration
 zoom:
   # accountId is the Zoom OAuth Server-to-Server Account ID

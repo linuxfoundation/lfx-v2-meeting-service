@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Features
+
+### Email Notifications
+
+The service supports sending invitation and cancellation emails for meeting registrants:
+
+- **Email Service**: SMTP-based email service with HTML and plain text templates
+- **Local Development**: Uses Mailpit (localhost:1025) to capture emails without sending real emails
+- **Templates**: Professional email templates with descriptive names:
+  - `meeting_invitation.html/txt` - Meeting invitation emails
+  - `meeting_invitation_cancellation.html/txt` - Registration cancellation emails
+- **Configuration**: Configurable via environment variables and Helm chart values
+- **Graceful Handling**: Email failures don't prevent registrant operations
+
 ## Development Commands
 
 ### Core Development Workflow

@@ -178,12 +178,14 @@ func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, 
 	mockRepo := &domain.MockMeetingRepository{}
 	mockBuilder := &domain.MockMessageBuilder{}
 	mockAuth := &auth.MockJWTAuth{}
+	mockEmailService := &domain.MockEmailService{}
 
 	service := NewMeetingsService(mockAuth, ServiceConfig{})
 	service.MeetingRepository = mockRepo
 	service.RegistrantRepository = &domain.MockRegistrantRepository{}
 	service.MessageBuilder = mockBuilder
 	service.PlatformRegistry = &domain.MockPlatformRegistry{}
+	service.EmailService = mockEmailService
 
 	return service, mockRepo, mockBuilder, mockAuth
 }
