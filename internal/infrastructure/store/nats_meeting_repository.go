@@ -379,7 +379,7 @@ func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeet
 	}
 
 	// List all meetings
-	meetings, _, err := s.ListAll(ctx)
+	meetings, err := s.ListAllBase(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -143,7 +144,7 @@ func TestParseZoomWebhookEvent(t *testing.T) {
 			require.NoError(t, err)
 
 			// Create a mock message
-			mockMsg := &testMessage{data: msgData}
+			mockMsg := mocks.NewMockMessage(msgData, "")
 
 			// Parse the event
 			event, err := service.parseZoomWebhookEvent(ctx, mockMsg)
@@ -335,24 +336,3 @@ func TestParseNameFromUserName(t *testing.T) {
 	}
 }
 
-// testMessage is a simple mock implementation for testing
-type testMessage struct {
-	data    []byte
-	subject string
-}
-
-func (m *testMessage) Subject() string {
-	return m.subject
-}
-
-func (m *testMessage) Data() []byte {
-	return m.data
-}
-
-func (m *testMessage) Respond(data []byte) error {
-	return nil
-}
-
-func (m *testMessage) HasReply() bool {
-	return false
-}

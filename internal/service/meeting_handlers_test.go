@@ -120,7 +120,7 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 			}
 
 			// Create mock message - meeting deletion messages don't expect replies
-			var mockMsg *mockMessage
+			var mockMsg *mocks.MockMessage
 			if tt.subject == models.MeetingDeletedSubject {
 				mockMsg = newMockMessageNoReply(tt.subject, tt.messageData)
 			} else {

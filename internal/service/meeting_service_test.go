@@ -10,7 +10,6 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestNewMeetingsService(t *testing.T) {
@@ -213,44 +212,10 @@ func setupServiceForTesting() (*MeetingsService, *mocks.MockMeetingRepository, *
 	return service, mockRepo, mockBuilder, mockAuth
 }
 
-// Mock message for testing
-type mockMessage struct {
-	subject  string
-	data     []byte
-	hasReply bool
-	mock.Mock
+func newMockMessage(subject string, data []byte) *mocks.MockMessage {
+	return mocks.NewMockMessageWithReply(data, subject, true)
 }
 
-func (m *mockMessage) Subject() string {
-	return m.subject
-}
-
-func (m *mockMessage) Data() []byte {
-	return m.data
-}
-
-func (m *mockMessage) Respond(data []byte) error {
-	args := m.Called(data)
-	return args.Error(0)
-}
-
-func (m *mockMessage) HasReply() bool {
-	return m.hasReply
-}
-
-func newMockMessage(subject string, data []byte) *mockMessage {
-	return &mockMessage{
-		subject: subject,
-		data:    data,
-		// Default to true for backward compatibility with existing tests
-		hasReply: true,
-	}
-}
-
-func newMockMessageNoReply(subject string, data []byte) *mockMessage {
-	return &mockMessage{
-		subject:  subject,
-		data:     data,
-		hasReply: false,
-	}
+func newMockMessageNoReply(subject string, data []byte) *mocks.MockMessage {
+	return mocks.NewMockMessageWithReply(data, subject, false)
 }
