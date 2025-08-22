@@ -335,4 +335,3 @@ func TestParseNameFromUserName(t *testing.T) {
 		})
 	}
 }
-

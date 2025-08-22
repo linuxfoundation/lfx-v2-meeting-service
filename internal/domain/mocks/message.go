@@ -22,7 +22,7 @@ func (m *MockMessage) Subject() string {
 		return m.subject
 	}
 	// Check if there are specific expectations for Subject
-	for _, call := range m.Mock.ExpectedCalls {
+	for _, call := range m.ExpectedCalls {
 		if call.Method == "Subject" {
 			args := m.Called()
 			return args.String(0)
@@ -38,7 +38,7 @@ func (m *MockMessage) Data() []byte {
 		return m.data
 	}
 	// Check if there are specific expectations for Data
-	for _, call := range m.Mock.ExpectedCalls {
+	for _, call := range m.ExpectedCalls {
 		if call.Method == "Data" {
 			args := m.Called()
 			return args.Get(0).([]byte)
@@ -50,7 +50,7 @@ func (m *MockMessage) Data() []byte {
 
 func (m *MockMessage) HasReply() bool {
 	// Check if there are specific expectations for HasReply
-	for _, call := range m.Mock.ExpectedCalls {
+	for _, call := range m.ExpectedCalls {
 		if call.Method == "HasReply" {
 			args := m.Called()
 			return args.Bool(0)
@@ -63,7 +63,7 @@ func (m *MockMessage) HasReply() bool {
 func (m *MockMessage) Respond(data []byte) error {
 	m.responded = true
 	// Check if there are specific expectations for Respond
-	for _, call := range m.Mock.ExpectedCalls {
+	for _, call := range m.ExpectedCalls {
 		if call.Method == "Respond" {
 			args := m.Called(data)
 			return args.Error(0)
