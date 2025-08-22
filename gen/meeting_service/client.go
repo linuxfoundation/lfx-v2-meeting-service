@@ -28,12 +28,16 @@ type Client struct {
 	UpdateMeetingRegistrantEndpoint goa.Endpoint
 	DeleteMeetingRegistrantEndpoint goa.Endpoint
 	ZoomWebhookEndpoint             goa.Endpoint
+	GetPastMeetingsEndpoint         goa.Endpoint
+	CreatePastMeetingEndpoint       goa.Endpoint
+	GetPastMeetingEndpoint          goa.Endpoint
+	DeletePastMeetingEndpoint       goa.Endpoint
 	ReadyzEndpoint                  goa.Endpoint
 	LivezEndpoint                   goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:             getMeetings,
 		CreateMeetingEndpoint:           createMeeting,
@@ -48,6 +52,10 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, u
 		UpdateMeetingRegistrantEndpoint: updateMeetingRegistrant,
 		DeleteMeetingRegistrantEndpoint: deleteMeetingRegistrant,
 		ZoomWebhookEndpoint:             zoomWebhook,
+		GetPastMeetingsEndpoint:         getPastMeetings,
+		CreatePastMeetingEndpoint:       createPastMeeting,
+		GetPastMeetingEndpoint:          getPastMeeting,
+		DeletePastMeetingEndpoint:       deletePastMeeting,
 		ReadyzEndpoint:                  readyz,
 		LivezEndpoint:                   livez,
 	}
@@ -261,6 +269,68 @@ func (c *Client) ZoomWebhook(ctx context.Context, p *ZoomWebhookPayload) (res *Z
 		return
 	}
 	return ires.(*ZoomWebhookResponse), nil
+}
+
+// GetPastMeetings calls the "get-past-meetings" endpoint of the "Meeting
+// Service" service.
+// GetPastMeetings may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetPastMeetings(ctx context.Context, p *GetPastMeetingsPayload) (res *GetPastMeetingsResult, err error) {
+	var ires any
+	ires, err = c.GetPastMeetingsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*GetPastMeetingsResult), nil
+}
+
+// CreatePastMeeting calls the "create-past-meeting" endpoint of the "Meeting
+// Service" service.
+// CreatePastMeeting may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Conflict" (type *ConflictError): Past meeting already exists
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreatePastMeeting(ctx context.Context, p *CreatePastMeetingPayload) (res *PastMeeting, err error) {
+	var ires any
+	ires, err = c.CreatePastMeetingEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*PastMeeting), nil
+}
+
+// GetPastMeeting calls the "get-past-meeting" endpoint of the "Meeting
+// Service" service.
+// GetPastMeeting may return the following errors:
+//   - "NotFound" (type *NotFoundError): Past meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetPastMeeting(ctx context.Context, p *GetPastMeetingPayload) (res *GetPastMeetingResult, err error) {
+	var ires any
+	ires, err = c.GetPastMeetingEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*GetPastMeetingResult), nil
+}
+
+// DeletePastMeeting calls the "delete-past-meeting" endpoint of the "Meeting
+// Service" service.
+// DeletePastMeeting may return the following errors:
+//   - "NotFound" (type *NotFoundError): Past meeting not found
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeletePastMeeting(ctx context.Context, p *DeletePastMeetingPayload) (err error) {
+	_, err = c.DeletePastMeetingEndpoint(ctx, p)
+	return
 }
 
 // Readyz calls the "readyz" endpoint of the "Meeting Service" service.

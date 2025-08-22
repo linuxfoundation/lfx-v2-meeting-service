@@ -69,6 +69,22 @@ type Client struct {
 	// zoom-webhook endpoint.
 	ZoomWebhookDoer goahttp.Doer
 
+	// GetPastMeetings Doer is the HTTP client used to make requests to the
+	// get-past-meetings endpoint.
+	GetPastMeetingsDoer goahttp.Doer
+
+	// CreatePastMeeting Doer is the HTTP client used to make requests to the
+	// create-past-meeting endpoint.
+	CreatePastMeetingDoer goahttp.Doer
+
+	// GetPastMeeting Doer is the HTTP client used to make requests to the
+	// get-past-meeting endpoint.
+	GetPastMeetingDoer goahttp.Doer
+
+	// DeletePastMeeting Doer is the HTTP client used to make requests to the
+	// delete-past-meeting endpoint.
+	DeletePastMeetingDoer goahttp.Doer
+
 	// Readyz Doer is the HTTP client used to make requests to the readyz endpoint.
 	ReadyzDoer goahttp.Doer
 
@@ -109,6 +125,10 @@ func NewClient(
 		UpdateMeetingRegistrantDoer: doer,
 		DeleteMeetingRegistrantDoer: doer,
 		ZoomWebhookDoer:             doer,
+		GetPastMeetingsDoer:         doer,
+		CreatePastMeetingDoer:       doer,
+		GetPastMeetingDoer:          doer,
+		DeletePastMeetingDoer:       doer,
 		ReadyzDoer:                  doer,
 		LivezDoer:                   doer,
 		RestoreResponseBody:         restoreBody,
@@ -426,6 +446,102 @@ func (c *Client) ZoomWebhook() goa.Endpoint {
 		resp, err := c.ZoomWebhookDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "zoom-webhook", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetPastMeetings returns an endpoint that makes HTTP requests to the Meeting
+// Service service get-past-meetings server.
+func (c *Client) GetPastMeetings() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetPastMeetingsRequest(c.encoder)
+		decodeResponse = DecodeGetPastMeetingsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetPastMeetingsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetPastMeetingsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-past-meetings", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreatePastMeeting returns an endpoint that makes HTTP requests to the
+// Meeting Service service create-past-meeting server.
+func (c *Client) CreatePastMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreatePastMeetingRequest(c.encoder)
+		decodeResponse = DecodeCreatePastMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreatePastMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreatePastMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-past-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetPastMeeting returns an endpoint that makes HTTP requests to the Meeting
+// Service service get-past-meeting server.
+func (c *Client) GetPastMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetPastMeetingRequest(c.encoder)
+		decodeResponse = DecodeGetPastMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetPastMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetPastMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-past-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeletePastMeeting returns an endpoint that makes HTTP requests to the
+// Meeting Service service delete-past-meeting server.
+func (c *Client) DeletePastMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeletePastMeetingRequest(c.encoder)
+		decodeResponse = DecodeDeletePastMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeletePastMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeletePastMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-past-meeting", err)
 		}
 		return decodeResponse(resp)
 	}

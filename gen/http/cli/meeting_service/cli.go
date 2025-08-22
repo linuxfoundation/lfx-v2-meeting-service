@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|readyz|livez)
 `
 }
 
@@ -120,6 +120,26 @@ func ParseEndpoint(
 		meetingServiceZoomWebhookZoomSignatureFlag = meetingServiceZoomWebhookFlags.String("zoom-signature", "", "")
 		meetingServiceZoomWebhookZoomTimestampFlag = meetingServiceZoomWebhookFlags.String("zoom-timestamp", "", "")
 
+		meetingServiceGetPastMeetingsFlags           = flag.NewFlagSet("get-past-meetings", flag.ExitOnError)
+		meetingServiceGetPastMeetingsVersionFlag     = meetingServiceGetPastMeetingsFlags.String("version", "", "")
+		meetingServiceGetPastMeetingsBearerTokenFlag = meetingServiceGetPastMeetingsFlags.String("bearer-token", "", "")
+
+		meetingServiceCreatePastMeetingFlags           = flag.NewFlagSet("create-past-meeting", flag.ExitOnError)
+		meetingServiceCreatePastMeetingBodyFlag        = meetingServiceCreatePastMeetingFlags.String("body", "REQUIRED", "")
+		meetingServiceCreatePastMeetingVersionFlag     = meetingServiceCreatePastMeetingFlags.String("version", "", "")
+		meetingServiceCreatePastMeetingBearerTokenFlag = meetingServiceCreatePastMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceGetPastMeetingFlags           = flag.NewFlagSet("get-past-meeting", flag.ExitOnError)
+		meetingServiceGetPastMeetingUIDFlag         = meetingServiceGetPastMeetingFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
+		meetingServiceGetPastMeetingVersionFlag     = meetingServiceGetPastMeetingFlags.String("version", "", "")
+		meetingServiceGetPastMeetingBearerTokenFlag = meetingServiceGetPastMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceDeletePastMeetingFlags           = flag.NewFlagSet("delete-past-meeting", flag.ExitOnError)
+		meetingServiceDeletePastMeetingUIDFlag         = meetingServiceDeletePastMeetingFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
+		meetingServiceDeletePastMeetingVersionFlag     = meetingServiceDeletePastMeetingFlags.String("version", "", "")
+		meetingServiceDeletePastMeetingBearerTokenFlag = meetingServiceDeletePastMeetingFlags.String("bearer-token", "", "")
+		meetingServiceDeletePastMeetingIfMatchFlag     = meetingServiceDeletePastMeetingFlags.String("if-match", "", "")
+
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
@@ -138,6 +158,10 @@ func ParseEndpoint(
 	meetingServiceUpdateMeetingRegistrantFlags.Usage = meetingServiceUpdateMeetingRegistrantUsage
 	meetingServiceDeleteMeetingRegistrantFlags.Usage = meetingServiceDeleteMeetingRegistrantUsage
 	meetingServiceZoomWebhookFlags.Usage = meetingServiceZoomWebhookUsage
+	meetingServiceGetPastMeetingsFlags.Usage = meetingServiceGetPastMeetingsUsage
+	meetingServiceCreatePastMeetingFlags.Usage = meetingServiceCreatePastMeetingUsage
+	meetingServiceGetPastMeetingFlags.Usage = meetingServiceGetPastMeetingUsage
+	meetingServiceDeletePastMeetingFlags.Usage = meetingServiceDeletePastMeetingUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -214,6 +238,18 @@ func ParseEndpoint(
 			case "zoom-webhook":
 				epf = meetingServiceZoomWebhookFlags
 
+			case "get-past-meetings":
+				epf = meetingServiceGetPastMeetingsFlags
+
+			case "create-past-meeting":
+				epf = meetingServiceCreatePastMeetingFlags
+
+			case "get-past-meeting":
+				epf = meetingServiceGetPastMeetingFlags
+
+			case "delete-past-meeting":
+				epf = meetingServiceDeletePastMeetingFlags
+
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
@@ -284,6 +320,18 @@ func ParseEndpoint(
 			case "zoom-webhook":
 				endpoint = c.ZoomWebhook()
 				data, err = meetingservicec.BuildZoomWebhookPayload(*meetingServiceZoomWebhookBodyFlag, *meetingServiceZoomWebhookZoomSignatureFlag, *meetingServiceZoomWebhookZoomTimestampFlag)
+			case "get-past-meetings":
+				endpoint = c.GetPastMeetings()
+				data, err = meetingservicec.BuildGetPastMeetingsPayload(*meetingServiceGetPastMeetingsVersionFlag, *meetingServiceGetPastMeetingsBearerTokenFlag)
+			case "create-past-meeting":
+				endpoint = c.CreatePastMeeting()
+				data, err = meetingservicec.BuildCreatePastMeetingPayload(*meetingServiceCreatePastMeetingBodyFlag, *meetingServiceCreatePastMeetingVersionFlag, *meetingServiceCreatePastMeetingBearerTokenFlag)
+			case "get-past-meeting":
+				endpoint = c.GetPastMeeting()
+				data, err = meetingservicec.BuildGetPastMeetingPayload(*meetingServiceGetPastMeetingUIDFlag, *meetingServiceGetPastMeetingVersionFlag, *meetingServiceGetPastMeetingBearerTokenFlag)
+			case "delete-past-meeting":
+				endpoint = c.DeletePastMeeting()
+				data, err = meetingservicec.BuildDeletePastMeetingPayload(*meetingServiceDeletePastMeetingUIDFlag, *meetingServiceDeletePastMeetingVersionFlag, *meetingServiceDeletePastMeetingBearerTokenFlag, *meetingServiceDeletePastMeetingIfMatchFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -320,6 +368,10 @@ COMMAND:
     update-meeting-registrant: Update an existing registrant for a meeting
     delete-meeting-registrant: Delete a registrant from a meeting
     zoom-webhook: Handle Zoom webhook events for meeting lifecycle, participants, and recordings.
+    get-past-meetings: Get all past meetings.
+    create-past-meeting: Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.
+    get-past-meeting: Get a past meeting by ID
+    delete-past-meeting: Delete an existing past meeting.
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -354,71 +406,70 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Dolore et similique ut.",
-               "Sunt qui modi non et cupiditate.",
-               "Iure vero ipsa possimus sint et.",
-               "Quod vero."
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
             ],
-            "uid": "Recusandae voluptatem."
+            "uid": "Eligendi dolorem maxime nulla quam."
          },
          {
             "allowed_voting_statuses": [
-               "Dolore et similique ut.",
-               "Sunt qui modi non et cupiditate.",
-               "Iure vero ipsa possimus sint et.",
-               "Quod vero."
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
             ],
-            "uid": "Recusandae voluptatem."
+            "uid": "Eligendi dolorem maxime nulla quam."
          },
          {
             "allowed_voting_statuses": [
-               "Dolore et similique ut.",
-               "Sunt qui modi non et cupiditate.",
-               "Iure vero ipsa possimus sint et.",
-               "Quod vero."
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
             ],
-            "uid": "Recusandae voluptatem."
+            "uid": "Eligendi dolorem maxime nulla quam."
          },
          {
             "allowed_voting_statuses": [
-               "Dolore et similique ut.",
-               "Sunt qui modi non et cupiditate.",
-               "Iure vero ipsa possimus sint et.",
-               "Quod vero."
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
             ],
-            "uid": "Recusandae voluptatem."
+            "uid": "Eligendi dolorem maxime nulla quam."
          }
       ],
-      "description": "Totam dolorem laborum earum praesentium.",
-      "duration": 225,
-      "early_join_time_minutes": 35,
-      "meeting_type": "Board",
+      "description": "Doloremque iusto delectus beatae natus suscipit.",
+      "duration": 69,
+      "early_join_time_minutes": 23,
+      "meeting_type": "Legal",
       "organizers": [
-         "Nesciunt earum.",
-         "Unde quis voluptate est qui.",
-         "Nobis totam.",
-         "Enim aut consequatur ducimus tenetur."
+         "Numquam consectetur fugiat et unde molestiae.",
+         "Et tempore vel qui placeat.",
+         "Voluptas quo ut earum."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "2011-07-03T06:12:48Z",
-         "end_times": 659936626783690641,
-         "monthly_day": 28,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 5088681791056192937,
-         "type": 1,
+         "end_date_time": "2012-01-11T15:09:42Z",
+         "end_times": 2977772628734671047,
+         "monthly_day": 10,
+         "monthly_week": 2,
+         "monthly_week_day": 2,
+         "repeat_interval": 7347710012131854295,
+         "type": 2,
          "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Et consequuntur quaerat ut aliquam sunt possimus.",
-      "title": "Est aut veniam occaecati sed vitae non.",
-      "transcript_enabled": true,
+      "timezone": "Quia eum officia sit.",
+      "title": "Est impedit voluptas quia.",
+      "transcript_enabled": false,
       "visibility": "private",
-      "youtube_upload_enabled": false,
+      "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": false,
          "ai_summary_require_approval": false
@@ -469,46 +520,46 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Dolore et similique ut.",
-               "Sunt qui modi non et cupiditate.",
-               "Iure vero ipsa possimus sint et.",
-               "Quod vero."
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
             ],
-            "uid": "Recusandae voluptatem."
+            "uid": "Eligendi dolorem maxime nulla quam."
          },
          {
             "allowed_voting_statuses": [
-               "Dolore et similique ut.",
-               "Sunt qui modi non et cupiditate.",
-               "Iure vero ipsa possimus sint et.",
-               "Quod vero."
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
             ],
-            "uid": "Recusandae voluptatem."
+            "uid": "Eligendi dolorem maxime nulla quam."
          }
       ],
-      "description": "Natus doloribus et labore esse.",
-      "duration": 236,
-      "early_join_time_minutes": 25,
-      "meeting_type": "Board",
+      "description": "Occaecati ut delectus.",
+      "duration": 319,
+      "early_join_time_minutes": 43,
+      "meeting_type": "Other",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "2011-07-03T06:12:48Z",
-         "end_times": 659936626783690641,
-         "monthly_day": 28,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 5088681791056192937,
-         "type": 1,
+         "end_date_time": "2012-01-11T15:09:42Z",
+         "end_times": 2977772628734671047,
+         "monthly_day": 10,
+         "monthly_week": 2,
+         "monthly_week_day": 2,
+         "repeat_interval": 7347710012131854295,
+         "type": 2,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Vero est deleniti illo eveniet dolores.",
-      "title": "Vero consequuntur minus vitae dolores.",
+      "timezone": "Occaecati reprehenderit possimus unde aut dicta quod.",
+      "title": "Quasi non ut repudiandae quia et eligendi.",
       "transcript_enabled": true,
-      "visibility": "public",
+      "visibility": "private",
       "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": false,
@@ -531,10 +582,8 @@ Update an existing meeting's settings.
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
       "organizers": [
-         "Maxime soluta officiis in et reiciendis.",
-         "Quam non.",
-         "Aut velit fugiat.",
-         "Sed fuga itaque."
+         "Aliquam id est eligendi.",
+         "Molestiae eum nesciunt nobis."
       ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -585,8 +634,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Temporibus occaecati ut delectus repudiandae dolores.",
-      "username": "Minima est non tenetur aliquid est voluptas."
+      "org_name": "Facilis dolor.",
+      "username": "Repudiandae pariatur aut necessitatibus molestias et sunt."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -625,8 +674,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Qui nemo dolores ea.",
-      "username": "Tempore dolor ad sit voluptatem delectus qui."
+      "org_name": "Eum necessitatibus error voluptate et.",
+      "username": "Illo deleniti."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
@@ -658,8 +707,138 @@ Example:
     %[1]s meeting-service zoom-webhook --body '{
       "event": "meeting.started",
       "event_ts": 1609459200000,
-      "payload": "Minima eos inventore quisquam quo voluptatibus."
-   }' --zoom-signature "Ducimus eos tempora quis dolor repudiandae." --zoom-timestamp "Tenetur eligendi ut voluptatem."
+      "payload": "Voluptate qui ipsa."
+   }' --zoom-signature "Sint assumenda laboriosam fugit doloremque." --zoom-timestamp "Corrupti nemo iure perferendis voluptas ut."
+`, os.Args[0])
+}
+
+func meetingServiceGetPastMeetingsUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meetings -version STRING -bearer-token STRING
+
+Get all past meetings.
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-past-meetings --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceCreatePastMeetingUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting -body JSON -version STRING -bearer-token STRING
+
+Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.
+    -body JSON: 
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service create-past-meeting --body '{
+      "artifact_visibility": "public",
+      "committees": [
+         {
+            "allowed_voting_statuses": [
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
+            ],
+            "uid": "Eligendi dolorem maxime nulla quam."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
+            ],
+            "uid": "Eligendi dolorem maxime nulla quam."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Consequatur natus modi est laboriosam officia.",
+               "Soluta aut nesciunt quaerat et ut molestias.",
+               "Sit quia quasi dolor facilis exercitationem rem.",
+               "Dolorum sed aspernatur enim doloremque sunt."
+            ],
+            "uid": "Eligendi dolorem maxime nulla quam."
+         }
+      ],
+      "description": "Voluptas consequatur.",
+      "duration": 84,
+      "early_join_time_minutes": 52,
+      "meeting_type": "Board",
+      "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
+      "occurrence_id": "1640995200",
+      "platform": "Zoom",
+      "platform_meeting_id": "1234567890",
+      "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
+      "public_link": "http://maggio.name/estel",
+      "recording_enabled": false,
+      "recurrence": {
+         "end_date_time": "2012-01-11T15:09:42Z",
+         "end_times": 2977772628734671047,
+         "monthly_day": 10,
+         "monthly_week": 2,
+         "monthly_week_day": 2,
+         "repeat_interval": 7347710012131854295,
+         "type": 2,
+         "weekly_days": "1,3,5"
+      },
+      "restricted": false,
+      "scheduled_end_time": "2021-01-01T11:00:00Z",
+      "scheduled_start_time": "2021-01-01T10:00:00Z",
+      "sessions": [
+         {
+            "end_time": "2021-01-01T11:00:00Z",
+            "start_time": "2021-01-01T10:00:00Z",
+            "uid": "session-123"
+         },
+         {
+            "end_time": "2021-01-01T11:00:00Z",
+            "start_time": "2021-01-01T10:00:00Z",
+            "uid": "session-123"
+         }
+      ],
+      "timezone": "Soluta quaerat eius.",
+      "title": "Aut optio et soluta accusantium magni.",
+      "transcript_enabled": true,
+      "visibility": "private",
+      "youtube_upload_enabled": true,
+      "zoom_config": {
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": true,
+         "meeting_id": "1234567890",
+         "passcode": "147258"
+      }
+   }' --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceGetPastMeetingUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting -uid STRING -version STRING -bearer-token STRING
+
+Get a past meeting by ID
+    -uid STRING: The unique identifier of the past meeting
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-past-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceDeletePastMeetingUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting -uid STRING -version STRING -bearer-token STRING -if-match STRING
+
+Delete an existing past meeting.
+    -uid STRING: The unique identifier of the past meeting
+    -version STRING: 
+    -bearer-token STRING: 
+    -if-match STRING: 
+
+Example:
+    %[1]s meeting-service delete-past-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
 

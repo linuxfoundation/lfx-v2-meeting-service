@@ -76,6 +76,26 @@ func ZoomWebhookMeetingServicePath() string {
 	return "/webhooks/zoom"
 }
 
+// GetPastMeetingsMeetingServicePath returns the URL path to the Meeting Service service get-past-meetings HTTP endpoint.
+func GetPastMeetingsMeetingServicePath() string {
+	return "/past_meetings"
+}
+
+// CreatePastMeetingMeetingServicePath returns the URL path to the Meeting Service service create-past-meeting HTTP endpoint.
+func CreatePastMeetingMeetingServicePath() string {
+	return "/past_meetings"
+}
+
+// GetPastMeetingMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting HTTP endpoint.
+func GetPastMeetingMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/past_meetings/%v", uid)
+}
+
+// DeletePastMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-past-meeting HTTP endpoint.
+func DeletePastMeetingMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/past_meetings/%v", uid)
+}
+
 // ReadyzMeetingServicePath returns the URL path to the Meeting Service service readyz HTTP endpoint.
 func ReadyzMeetingServicePath() string {
 	return "/readyz"

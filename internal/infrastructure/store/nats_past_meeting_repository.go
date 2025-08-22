@@ -212,6 +212,39 @@ func (s *NatsPastMeetingRepository) ListByMeeting(ctx context.Context, meetingUI
 	return pastMeetings, nil
 }
 
+func (s *NatsPastMeetingRepository) ListAll(ctx context.Context) ([]*models.PastMeeting, error) {
+	if s.PastMeetings == nil {
+		return nil, domain.ErrServiceUnavailable
+	}
+
+	keysLister, err := s.PastMeetings.ListKeys(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "error listing past meeting keys from NATS KV store", logging.ErrKey, err)
+		return nil, domain.ErrInternal
+	}
+
+	var pastMeetings []*models.PastMeeting
+	for key := range keysLister.Keys() {
+		entry, err := s.get(ctx, key)
+		if err != nil {
+			if !errors.Is(err, jetstream.ErrKeyNotFound) {
+				slog.ErrorContext(ctx, "error getting past meeting from NATS KV store", logging.ErrKey, err, "key", key)
+			}
+			continue
+		}
+
+		pastMeeting, err := s.unmarshal(ctx, entry)
+		if err != nil {
+			slog.ErrorContext(ctx, "error unmarshaling past meeting", logging.ErrKey, err, "key", key)
+			continue
+		}
+
+		pastMeetings = append(pastMeetings, pastMeeting)
+	}
+
+	return pastMeetings, nil
+}
+
 func (s *NatsPastMeetingRepository) GetByMeetingAndOccurrence(ctx context.Context, meetingUID, occurrenceID string) (*models.PastMeeting, error) {
 	if s.PastMeetings == nil {
 		return nil, domain.ErrServiceUnavailable
