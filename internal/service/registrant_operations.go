@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
-	"sync"
 
 	"github.com/google/uuid"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
@@ -104,28 +104,32 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "created registrant", "registrant", registrant)
 
-	// Send NATS messages and invitation email asynchronously
-	var wg sync.WaitGroup
-
-	// Send indexing message for the new registrant
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-
-		err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *registrantDB)
-		if err != nil {
-			slog.ErrorContext(msgCtx, "error sending indexing message for new registrant", logging.ErrKey, err)
-		}
-	}()
-
-	// Send a message about the new registrant to the fga-sync service
-	if registrantDB.Username != "" {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	// Build list of NATS messages and email tasks
+	tasks := []func() error{
+		// Send indexing message for the new registrant
+		func() error {
 			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *registrantDB)
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending indexing message for new registrant", logging.ErrKey, err)
+			}
+			return nil // Don't fail on messaging errors
+		},
+		// Send invitation email to the registrant
+		func() error {
+			emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.sendRegistrantInvitationEmail(emailCtx, registrantDB)
+			if err != nil {
+				slog.ErrorContext(emailCtx, "failed to send invitation email", logging.ErrKey, err)
+			}
+			return nil // Don't fail on email errors
+		},
+	}
 
+	// Send a message about the new registrant to the fga-sync service if username exists
+	if registrantDB.Username != "" {
+		tasks = append(tasks, func() error {
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        registrantDB.UID,
 				Username:   registrantDB.Username,
@@ -135,26 +139,18 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about new registrant", logging.ErrKey, err)
 			}
-		}()
+			return nil // Don't fail on messaging errors
+		})
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.
 		slog.DebugContext(ctx, "no username for registrant, skipping access message")
 	}
 
-	// Send invitation email to the registrant
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-
-		err := s.sendRegistrantInvitationEmail(emailCtx, registrantDB)
-		if err != nil {
-			slog.ErrorContext(emailCtx, "failed to send invitation email", logging.ErrKey, err)
-		}
-	}()
-
-	// Wait for all async operations to complete before returning
-	wg.Wait()
+	// Use WorkerPool to execute tasks concurrently
+	pool := concurrent.NewWorkerPool(len(tasks))
+	if err := pool.Run(ctx, tasks...); err != nil {
+		slog.ErrorContext(ctx, "error executing post-creation tasks", logging.ErrKey, err)
+	}
 
 	return registrant, nil
 }
@@ -384,28 +380,23 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "updated registrant", "registrant", registrant)
 
-	// Send NATS messages asynchronously
-	var wg sync.WaitGroup
-
-	// Send indexing message for the updated registrant
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-
-		err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *registrantDB)
-		if err != nil {
-			slog.ErrorContext(msgCtx, "error sending indexing message for updated registrant", logging.ErrKey, err)
-		}
-	}()
-
-	if registrantDB.Username != "" {
-		// Send a message about the updated registrant to the fga-sync service
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	// Build list of NATS messages tasks
+	tasks := []func() error{
+		// Send indexing message for the updated registrant
+		func() error {
 			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *registrantDB)
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending indexing message for updated registrant", logging.ErrKey, err)
+			}
+			return nil // Don't fail on messaging errors
+		},
+	}
 
+	// Send a message about the updated registrant to the fga-sync service if username exists
+	if registrantDB.Username != "" {
+		tasks = append(tasks, func() error {
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        registrantDB.UID,
 				Username:   registrantDB.Username,
@@ -415,14 +406,18 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about updated registrant", logging.ErrKey, err)
 			}
-		}()
+			return nil // Don't fail on messaging errors
+		})
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.
 		slog.DebugContext(ctx, "no username for registrant, skipping access message")
 	}
 
-	// Wait for all async operations to complete before returning
-	wg.Wait()
+	// Use WorkerPool to execute tasks concurrently
+	pool := concurrent.NewWorkerPool(len(tasks))
+	if err := pool.Run(ctx, tasks...); err != nil {
+		slog.ErrorContext(ctx, "error executing post-update tasks", logging.ErrKey, err)
+	}
 
 	return registrant, nil
 }
@@ -461,26 +456,23 @@ func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, regis
 
 	slog.DebugContext(ctx, "deleted registrant")
 
-	// Send cleanup messages and cancellation email asynchronously
-	var wg sync.WaitGroup
+	// Send cleanup messages and cancellation email asynchronously using WorkerPool
+	var functions []func() error
 
 	// Send indexing delete message for the registrant
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	functions = append(functions, func() error {
 		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrantDB.UID)
 		if err != nil {
 			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
-	}()
+		return nil // Don't propagate messaging errors as they shouldn't fail the operation
+	})
 
 	// Send access removal message if the registrant has a username
 	if registrantDB.Username != "" {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		functions = append(functions, func() error {
 			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 			err := s.MessageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
@@ -492,26 +484,31 @@ func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, regis
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about deleted registrant", logging.ErrKey, err, logging.PriorityCritical())
 			}
-		}()
+			return nil // Don't propagate messaging errors as they shouldn't fail the operation
+		})
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.
 		slog.DebugContext(ctx, "no username for registrant, skipping access message")
 	}
 
 	// Send cancellation email to the registrant
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	functions = append(functions, func() error {
 		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
 
 		err := s.sendRegistrantCancellationEmail(emailCtx, registrantDB)
 		if err != nil {
 			slog.ErrorContext(emailCtx, "failed to send cancellation email", logging.ErrKey, err)
 		}
-	}()
+		return nil // Don't propagate email errors as they shouldn't fail the operation
+	})
 
-	// Wait for all async operations to complete before returning
-	wg.Wait()
+	// Execute all functions concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(3) // Use 3 workers for the async operations
+	err = pool.Run(ctx, functions...)
+	if err != nil {
+		// Log the error but don't fail the operation since messaging/email errors are non-critical
+		slog.WarnContext(ctx, "some async operations failed during registrant cleanup", logging.ErrKey, err)
+	}
 
 	return nil
 }

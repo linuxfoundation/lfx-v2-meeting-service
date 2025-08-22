@@ -445,13 +445,13 @@ func (s *MeetingsService) createPastMeetingParticipants(ctx context.Context, pas
 	var mu sync.Mutex
 	var failedEmails []string
 
-	jobs := []func() error{}
+	tasks := []func() error{}
 
 	// Create PastMeetingParticipant records for all registrants
 	for _, registrant := range registrants {
 		// Capture registrant in closure
 		r := registrant
-		jobs = append(jobs, func() error {
+		tasks = append(tasks, func() error {
 			participant := &models.PastMeetingParticipant{
 				UID:            uuid.New().String(),
 				PastMeetingUID: pastMeeting.UID,
@@ -487,7 +487,7 @@ func (s *MeetingsService) createPastMeetingParticipants(ctx context.Context, pas
 		})
 	}
 
-	errWorkerPool := concurrent.NewWorkerPool(10).Run(ctx, jobs...)
+	errWorkerPool := concurrent.NewWorkerPool(10).Run(ctx, tasks...)
 	if errWorkerPool != nil {
 		slog.ErrorContext(ctx, "failed to create some past meeting participant records",
 			logging.ErrKey, errWorkerPool,

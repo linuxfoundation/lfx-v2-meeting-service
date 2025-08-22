@@ -15,8 +15,8 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
-	"golang.org/x/sync/errgroup"
 )
 
 // GetMeetings fetches all meetings
@@ -151,32 +151,35 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 		return nil, domain.ErrInternal
 	}
 
-	g := new(errgroup.Group)
-	g.Go(func() error {
-		return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionCreated, *meetingDB)
-	})
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(3) // 3 messages to send
 
-	g.Go(func() error {
-		return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionCreated, *meetingSettingsDB)
-	})
+	messages := []func() error{
+		func() error {
+			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionCreated, *meetingDB)
+		},
+		func() error {
+			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionCreated, *meetingSettingsDB)
+		},
+		func() error {
+			// For the message we only need the committee UIDs.
+			committees := make([]string, len(meetingDB.Committees))
+			for i, committee := range meetingDB.Committees {
+				committees[i] = committee.UID
+			}
 
-	g.Go(func() error {
-		// For the message we only need the committee UIDs.
-		committees := make([]string, len(meetingDB.Committees))
-		for i, committee := range meetingDB.Committees {
-			committees[i] = committee.UID
-		}
+			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+				UID:        meetingDB.UID,
+				Public:     meetingDB.Visibility == "public",
+				ProjectUID: meetingDB.ProjectUID,
+				Organizers: meetingSettingsDB.Organizers,
+				Committees: committees,
+			})
+		},
+	}
 
-		return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
-			UID:        meetingDB.UID,
-			Public:     meetingDB.Visibility == "public",
-			ProjectUID: meetingDB.ProjectUID,
-			Organizers: meetingSettingsDB.Organizers,
-			Committees: committees,
-		})
-	})
-
-	if err := g.Wait(); err != nil {
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages for created meeting", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
 
@@ -386,37 +389,40 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 		return nil, domain.ErrInternal
 	}
 
-	g := new(errgroup.Group)
-	g.Go(func() error {
-		return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *meetingDB)
-	})
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 
-	g.Go(func() error {
-		// Get the meeting settings to retrieve organizers
-		settingsDB, err := s.MeetingRepository.GetSettings(ctx, meetingDB.UID)
-		if err != nil {
-			// If we can't get settings, use empty organizers array rather than failing
-			slog.WarnContext(ctx, "could not retrieve meeting settings for access message", logging.ErrKey, err)
-			settingsDB = &models.MeetingSettings{Organizers: []string{}}
-		}
+	messages := []func() error{
+		func() error {
+			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *meetingDB)
+		},
+		func() error {
+			// Get the meeting settings to retrieve organizers
+			settingsDB, err := s.MeetingRepository.GetSettings(ctx, meetingDB.UID)
+			if err != nil {
+				// If we can't get settings, use empty organizers array rather than failing
+				slog.WarnContext(ctx, "could not retrieve meeting settings for access message", logging.ErrKey, err)
+				settingsDB = &models.MeetingSettings{Organizers: []string{}}
+			}
 
-		// For the message we only need the committee UIDs.
-		committees := make([]string, len(meetingDB.Committees))
-		for i, committee := range meetingDB.Committees {
-			committees[i] = committee.UID
-		}
+			// For the message we only need the committee UIDs.
+			committees := make([]string, len(meetingDB.Committees))
+			for i, committee := range meetingDB.Committees {
+				committees[i] = committee.UID
+			}
 
-		return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
-			UID:        meetingDB.UID,
-			Public:     meetingDB.Visibility == "public",
-			ProjectUID: meetingDB.ProjectUID,
-			Organizers: settingsDB.Organizers,
-			Committees: committees,
-		})
-	})
+			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+				UID:        meetingDB.UID,
+				Public:     meetingDB.Visibility == "public",
+				ProjectUID: meetingDB.ProjectUID,
+				Organizers: settingsDB.Organizers,
+				Committees: committees,
+			})
+		},
+	}
 
-	if err := g.Wait(); err != nil {
-		// Return the first error from the goroutines.
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages for updated meeting", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
 
@@ -501,38 +507,41 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 		return nil, domain.ErrInternal
 	}
 
-	g := new(errgroup.Group)
-	g.Go(func() error {
-		return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *updatedSettingsDB)
-	})
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 
-	g.Go(func() error {
-		// Get the meeting base data to send access update message
-		meetingDB, err := s.MeetingRepository.GetBase(ctx, *payload.UID)
-		if err != nil {
-			// Don't fail the message if we can't get the meeting base data
-			// since the settings were already updated.
-			slog.WarnContext(ctx, "could not retrieve meeting base data for access message", logging.ErrKey, err)
-			return nil
-		}
+	messages := []func() error{
+		func() error {
+			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *updatedSettingsDB)
+		},
+		func() error {
+			// Get the meeting base data to send access update message
+			meetingDB, err := s.MeetingRepository.GetBase(ctx, *payload.UID)
+			if err != nil {
+				// Don't fail the message if we can't get the meeting base data
+				// since the settings were already updated.
+				slog.WarnContext(ctx, "could not retrieve meeting base data for access message", logging.ErrKey, err)
+				return nil
+			}
 
-		// For the message we only need the committee UIDs.
-		committees := make([]string, len(meetingDB.Committees))
-		for i, committee := range meetingDB.Committees {
-			committees[i] = committee.UID
-		}
+			// For the message we only need the committee UIDs.
+			committees := make([]string, len(meetingDB.Committees))
+			for i, committee := range meetingDB.Committees {
+				committees[i] = committee.UID
+			}
 
-		return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
-			UID:        meetingDB.UID,
-			Public:     meetingDB.Visibility == "public",
-			ProjectUID: meetingDB.ProjectUID,
-			Organizers: updatedSettingsDB.Organizers,
-			Committees: committees,
-		})
-	})
+			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+				UID:        meetingDB.UID,
+				Public:     meetingDB.Visibility == "public",
+				ProjectUID: meetingDB.ProjectUID,
+				Organizers: updatedSettingsDB.Organizers,
+				Committees: committees,
+			})
+		},
+	}
 
-	if err := g.Wait(); err != nil {
-		// Return the first error from the goroutines.
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages for updated meeting settings", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
 
@@ -648,21 +657,23 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 		// Don't return error - this is for internal processing but main deletion already succeeded
 	}
 
-	g := new(errgroup.Group)
-	g.Go(func() error {
-		return s.MessageBuilder.SendDeleteIndexMeeting(ctx, *payload.UID)
-	})
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(3) // 3 messages to send
 
-	g.Go(func() error {
-		return s.MessageBuilder.SendDeleteIndexMeetingSettings(ctx, *payload.UID)
-	})
+	messages := []func() error{
+		func() error {
+			return s.MessageBuilder.SendDeleteIndexMeeting(ctx, *payload.UID)
+		},
+		func() error {
+			return s.MessageBuilder.SendDeleteIndexMeetingSettings(ctx, *payload.UID)
+		},
+		func() error {
+			return s.MessageBuilder.SendDeleteAllAccessMeeting(ctx, *payload.UID)
+		},
+	}
 
-	g.Go(func() error {
-		return s.MessageBuilder.SendDeleteAllAccessMeeting(ctx, *payload.UID)
-	})
-
-	if err := g.Wait(); err != nil {
-		// Return the first error from the goroutines.
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS deletion messages", logging.ErrKey, err)
 		return domain.ErrInternal
 	}
 
