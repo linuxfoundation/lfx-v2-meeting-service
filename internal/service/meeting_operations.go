@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -20,7 +19,7 @@ import (
 )
 
 // GetMeetings fetches all meetings
-func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*meetingsvc.MeetingFull, error) {
+func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
@@ -40,13 +39,16 @@ func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*meetingsvc.Meetin
 		}
 	}
 
-	meetings := make([]*meetingsvc.MeetingFull, len(meetingsBase))
+	meetings := make([]*models.MeetingFull, len(meetingsBase))
 	for i, meeting := range meetingsBase {
 		var s *models.MeetingSettings
 		if meeting != nil {
 			s = settingsByUID[meeting.UID]
 		}
-		meetings[i] = models.ToMeetingFullServiceModel(meeting, s)
+		meetings[i] = &models.MeetingFull{
+			Base:     meeting,
+			Settings: s,
+		}
 	}
 
 	slog.DebugContext(ctx, "returning meetings", "meetings", meetings)
@@ -54,18 +56,13 @@ func (s *MeetingsService) GetMeetings(ctx context.Context) ([]*meetingsvc.Meetin
 	return meetings, nil
 }
 
-func (s *MeetingsService) validateCreateMeetingPayload(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) error {
+func (s *MeetingsService) validateCreateMeetingPayload(ctx context.Context, payload *models.MeetingFull) error {
 	if payload == nil {
 		return domain.ErrValidationFailed
 	}
 
-	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
-	if err != nil {
-		return domain.ErrValidationFailed
-	}
-
-	if startTime.Before(time.Now().UTC()) {
-		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", payload.StartTime)
+	if payload.Base.StartTime.Before(time.Now().UTC()) {
+		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", payload.Base.StartTime)
 		return domain.ErrValidationFailed
 	}
 
@@ -73,74 +70,60 @@ func (s *MeetingsService) validateCreateMeetingPayload(ctx context.Context, payl
 }
 
 // CreateMeeting creates a new meeting
-func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.MeetingFull, error) {
+func (s *MeetingsService) CreateMeeting(ctx context.Context, reqMeeting *models.MeetingFull) (*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
-	if err := s.validateCreateMeetingPayload(ctx, payload); err != nil {
+	if err := s.validateCreateMeetingPayload(ctx, reqMeeting); err != nil {
 		return nil, err
 	}
 
 	// TODO: Check if project exists - integrate with project service
 	// TODO: Check if committees exist once the committee service is implemented.
 
-	// Convert payload to DB model
-	meetingDB := models.ToMeetingDBModelFromCreatePayload(payload)
-	if meetingDB == nil {
-		// This should never happen since we validate the payload above.
-		// Therefore we can return an internal error.
-		return nil, domain.ErrInternal
-	}
-
 	// Generate UID for the meeting
-	meetingDB.UID = uuid.New().String()
-
-	now := time.Now().UTC()
-	meetingSettingsDB := &models.MeetingSettings{
-		UID:        meetingDB.UID,
-		Organizers: payload.Organizers,
-		CreatedAt:  &now,
-		UpdatedAt:  &now,
-	}
+	reqMeeting.Base.UID = uuid.New().String()
+	reqMeeting.Settings.UID = reqMeeting.Base.UID
 
 	// Create meeting on external platform if configured
-	if meetingDB.Platform != "" {
-		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
+	if reqMeeting.Base.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(reqMeeting.Base.Platform)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to get platform provider",
-				"platform", meetingDB.Platform,
+				"platform", reqMeeting.Base.Platform,
 				logging.ErrKey, err)
 			return nil, domain.ErrInternal
 		}
 
-		result, err := provider.CreateMeeting(ctx, meetingDB)
+		result, err := provider.CreateMeeting(ctx, reqMeeting.Base)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to create platform meeting",
-				"platform", meetingDB.Platform,
+				"platform", reqMeeting.Base.Platform,
 				logging.ErrKey, err)
 			return nil, domain.ErrInternal
 		}
 
 		// Store platform-specific data using the provider
-		provider.StorePlatformData(meetingDB, result)
+		provider.StorePlatformData(reqMeeting.Base, result)
 
 		slog.InfoContext(ctx, "created platform meeting",
-			"platform", meetingDB.Platform,
+			"platform", reqMeeting.Base.Platform,
 			"platform_meeting_id", result.PlatformMeetingID)
 	}
 
 	// Create the meeting in the repository
-	err := s.MeetingRepository.Create(ctx, meetingDB, meetingSettingsDB)
+	// TODO: handle rollbacks better
+	err := s.MeetingRepository.Create(ctx, reqMeeting.Base, reqMeeting.Settings)
 	if err != nil {
 		// If repository creation fails and we created a platform meeting, attempt to clean it up
-		if meetingDB.Platform != "" {
-			if provider, provErr := s.PlatformRegistry.GetProvider(meetingDB.Platform); provErr == nil {
-				if platformMeetingID := provider.GetPlatformMeetingID(meetingDB); platformMeetingID != "" {
+		if reqMeeting.Base.Platform != "" {
+			if provider, provErr := s.PlatformRegistry.GetProvider(reqMeeting.Base.Platform); provErr == nil {
+				if platformMeetingID := provider.GetPlatformMeetingID(reqMeeting.Base); platformMeetingID != "" {
 					if delErr := provider.DeleteMeeting(ctx, platformMeetingID); delErr != nil {
 						slog.ErrorContext(ctx, "failed to cleanup platform meeting after repository error",
-							"platform", meetingDB.Platform,
+							"platform", reqMeeting.Base.Platform,
 							"platform_meeting_id", platformMeetingID,
 							logging.ErrKey, delErr,
 							logging.PriorityCritical())
@@ -156,23 +139,23 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionCreated, *meetingDB)
+			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionCreated, *reqMeeting.Base)
 		},
 		func() error {
-			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionCreated, *meetingSettingsDB)
+			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionCreated, *reqMeeting.Settings)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
-			committees := make([]string, len(meetingDB.Committees))
-			for i, committee := range meetingDB.Committees {
+			committees := make([]string, len(reqMeeting.Base.Committees))
+			for i, committee := range reqMeeting.Base.Committees {
 				committees[i] = committee.UID
 			}
 
 			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
-				UID:        meetingDB.UID,
-				Public:     meetingDB.Visibility == "public",
-				ProjectUID: meetingDB.ProjectUID,
-				Organizers: meetingSettingsDB.Organizers,
+				UID:        reqMeeting.Base.UID,
+				Public:     reqMeeting.Base.Visibility == "public",
+				ProjectUID: reqMeeting.Base.ProjectUID,
+				Organizers: reqMeeting.Settings.Organizers,
 				Committees: committees,
 			})
 		},
@@ -183,26 +166,21 @@ func (s *MeetingsService) CreateMeeting(ctx context.Context, payload *meetingsvc
 		return nil, domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "returning created meeting", "meeting_uid", meetingDB.UID)
+	slog.DebugContext(ctx, "returning created meeting", "meeting_uid", reqMeeting.Base.UID)
 
-	return models.ToMeetingFullServiceModel(meetingDB, meetingSettingsDB), nil
+	return reqMeeting, nil
 }
 
-func (s *MeetingsService) GetMeetingBase(ctx context.Context, payload *meetingsvc.GetMeetingBasePayload) (*meetingsvc.MeetingBase, string, error) {
+func (s *MeetingsService) GetMeetingBase(ctx context.Context, uid string) (*models.MeetingBase, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, "", domain.ErrServiceUnavailable
 	}
 
-	if payload == nil || payload.UID == nil {
-		slog.WarnContext(ctx, "meeting UID is required")
-		return nil, "", domain.ErrValidationFailed
-	}
-
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
 	// Get meeting with revision from store
-	meetingDB, revision, err := s.MeetingRepository.GetBaseWithRevision(ctx, *payload.UID)
+	meetingDB, revision, err := s.MeetingRepository.GetBaseWithRevision(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -212,33 +190,26 @@ func (s *MeetingsService) GetMeetingBase(ctx context.Context, payload *meetingsv
 		return nil, "", domain.ErrInternal
 	}
 
-	meeting := models.FromMeetingBaseDBModel(meetingDB)
-
 	// Store the revision in context for the custom encoder to use
 	revisionStr := strconv.FormatUint(revision, 10)
 	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)
 
-	slog.DebugContext(ctx, "returning meeting", "meeting", meeting, "revision", revision)
+	slog.DebugContext(ctx, "returning meeting", "meeting", meetingDB, "revision", revision)
 
-	return meeting, revisionStr, nil
+	return meetingDB, revisionStr, nil
 }
 
 // GetMeetingSettings fetches settings for a specific meeting by ID
-func (s *MeetingsService) GetMeetingSettings(ctx context.Context, payload *meetingsvc.GetMeetingSettingsPayload) (*meetingsvc.MeetingSettings, string, error) {
+func (s *MeetingsService) GetMeetingSettings(ctx context.Context, uid string) (*models.MeetingSettings, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, "", domain.ErrServiceUnavailable
 	}
 
-	if payload == nil || payload.UID == nil {
-		slog.WarnContext(ctx, "meeting UID is required")
-		return nil, "", domain.ErrValidationFailed
-	}
-
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
 	// Get meeting settings with revision from store
-	settingsDB, revision, err := s.MeetingRepository.GetSettingsWithRevision(ctx, *payload.UID)
+	settingsDB, revision, err := s.MeetingRepository.GetSettingsWithRevision(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, err)
@@ -248,29 +219,22 @@ func (s *MeetingsService) GetMeetingSettings(ctx context.Context, payload *meeti
 		return nil, "", domain.ErrInternal
 	}
 
-	settings := models.ToMeetingSettingsServiceModel(settingsDB)
-
 	// Store the revision in context for the custom encoder to use
 	revisionStr := strconv.FormatUint(revision, 10)
 	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)
 
-	slog.DebugContext(ctx, "returning meeting settings", "settings", settings, "revision", revision)
+	slog.DebugContext(ctx, "returning meeting settings", "settings", settingsDB, "revision", revision)
 
-	return settings, revisionStr, nil
+	return settingsDB, revisionStr, nil
 }
 
-func (s *MeetingsService) validateUpdateMeetingPayload(ctx context.Context, payload *meetingsvc.UpdateMeetingBasePayload) error {
-	if payload == nil {
+func (s *MeetingsService) validateUpdateMeetingRequest(ctx context.Context, req *models.MeetingBase) error {
+	if req == nil {
 		return domain.ErrValidationFailed
 	}
 
-	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
-	if err != nil {
-		return domain.ErrValidationFailed
-	}
-
-	if startTime.Before(time.Now().UTC()) {
-		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", payload.StartTime)
+	if req.StartTime.Before(time.Now().UTC()) {
+		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", req.StartTime)
 		return domain.ErrValidationFailed
 	}
 
@@ -278,32 +242,21 @@ func (s *MeetingsService) validateUpdateMeetingPayload(ctx context.Context, payl
 }
 
 // Update a meeting's base information.
-func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetingsvc.UpdateMeetingBasePayload) (*meetingsvc.MeetingBase, error) {
+func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, reqMeeting *models.MeetingBase, revision uint64) (*models.MeetingBase, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
-	if payload == nil || payload.UID == "" {
+	if reqMeeting == nil || reqMeeting.UID == "" {
 		slog.WarnContext(ctx, "meeting UID is required")
 		return nil, domain.ErrValidationFailed
 	}
 
-	var revision uint64
 	var err error
-	if !s.Config.SkipEtagValidation {
-		if payload.IfMatch == nil {
-			slog.WarnContext(ctx, "If-Match header is missing")
-			return nil, domain.ErrValidationFailed
-		}
-		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
-		if err != nil {
-			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
-			return nil, domain.ErrValidationFailed
-		}
-	} else {
+	if s.Config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetBaseWithRevision(ctx, payload.UID)
+		_, revision, err = s.MeetingRepository.GetBaseWithRevision(ctx, reqMeeting.UID)
 		if err != nil {
 			if errors.Is(err, domain.ErrMeetingNotFound) {
 				slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -314,11 +267,11 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 		}
 	}
 
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", payload.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", reqMeeting.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the meeting exists and use some of the existing meeting data for the update.
-	existingMeetingDB, err := s.MeetingRepository.GetBase(ctx, payload.UID)
+	existingMeetingDB, err := s.MeetingRepository.GetBase(ctx, reqMeeting.UID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -328,55 +281,49 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 		return nil, domain.ErrInternal
 	}
 
-	if err := s.validateUpdateMeetingPayload(ctx, payload); err != nil {
+	if err := s.validateUpdateMeetingRequest(ctx, reqMeeting); err != nil {
 		return nil, err
 	}
+
+	reqMeeting = models.MergeUpdateMeetingRequest(reqMeeting, existingMeetingDB)
 
 	// TODO: Check if project exists - integrate with project service
 	// TODO: Check if committees exist once the committee service is implemented.
 
-	// Convert payload to DB model
-	meetingDB := models.ToMeetingBaseDBModelFromUpdatePayload(payload, existingMeetingDB)
-	if meetingDB == nil {
-		// This should never happen since we validate the payload above.
-		// Therefore we can return an internal error.
-		return nil, domain.ErrInternal
-	}
-
 	// Update meeting on external platform if configured
-	if meetingDB.Platform != "" {
-		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
+	if reqMeeting.Platform != "" {
+		provider, err := s.PlatformRegistry.GetProvider(reqMeeting.Platform)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to get platform provider",
-				"platform", meetingDB.Platform,
+				"platform", reqMeeting.Platform,
 				logging.ErrKey, err)
 			return nil, domain.ErrInternal
 		}
 
-		platformMeetingID := provider.GetPlatformMeetingID(meetingDB)
+		platformMeetingID := provider.GetPlatformMeetingID(reqMeeting)
 		slog.DebugContext(ctx, "checking if meeting has platform ID",
-			"platform", meetingDB.Platform,
+			"platform", reqMeeting.Platform,
 			"platform_meeting_id", platformMeetingID,
 		)
 
 		if platformMeetingID != "" {
-			if err := provider.UpdateMeeting(ctx, platformMeetingID, meetingDB); err != nil {
+			if err := provider.UpdateMeeting(ctx, platformMeetingID, reqMeeting); err != nil {
 				slog.ErrorContext(ctx, "failed to update platform meeting",
-					"platform", meetingDB.Platform,
+					"platform", reqMeeting.Platform,
 					"platform_meeting_id", platformMeetingID,
 					logging.ErrKey, err)
 				// Continue with local update even if platform update fails
 				// This ensures data consistency - local is source of truth
 			} else {
 				slog.InfoContext(ctx, "updated platform meeting",
-					"platform", meetingDB.Platform,
+					"platform", reqMeeting.Platform,
 					"platform_meeting_id", platformMeetingID)
 			}
 		}
 	}
 
 	// Update the meeting in the repository
-	err = s.MeetingRepository.UpdateBase(ctx, meetingDB, revision)
+	err = s.MeetingRepository.UpdateBase(ctx, reqMeeting, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
 			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
@@ -394,11 +341,11 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *meetingDB)
+			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting)
 		},
 		func() error {
 			// Get the meeting settings to retrieve organizers
-			settingsDB, err := s.MeetingRepository.GetSettings(ctx, meetingDB.UID)
+			settingsDB, err := s.MeetingRepository.GetSettings(ctx, reqMeeting.UID)
 			if err != nil {
 				// If we can't get settings, use empty organizers array rather than failing
 				slog.WarnContext(ctx, "could not retrieve meeting settings for access message", logging.ErrKey, err)
@@ -406,15 +353,15 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 			}
 
 			// For the message we only need the committee UIDs.
-			committees := make([]string, len(meetingDB.Committees))
-			for i, committee := range meetingDB.Committees {
+			committees := make([]string, len(reqMeeting.Committees))
+			for i, committee := range reqMeeting.Committees {
 				committees[i] = committee.UID
 			}
 
 			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
-				UID:        meetingDB.UID,
-				Public:     meetingDB.Visibility == "public",
-				ProjectUID: meetingDB.ProjectUID,
+				UID:        reqMeeting.UID,
+				Public:     reqMeeting.Visibility == "public",
+				ProjectUID: reqMeeting.ProjectUID,
 				Organizers: settingsDB.Organizers,
 				Committees: committees,
 			})
@@ -426,40 +373,27 @@ func (s *MeetingsService) UpdateMeetingBase(ctx context.Context, payload *meetin
 		return nil, domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "returning updated meeting", "meeting", meetingDB)
+	slog.DebugContext(ctx, "returning updated meeting", "meeting", reqMeeting)
 
-	meetingResp := models.FromMeetingBaseDBModel(meetingDB)
-
-	return meetingResp, nil
+	return reqMeeting, nil
 }
 
 // UpdateMeetingSettings updates a meeting's settings
-func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *meetingsvc.UpdateMeetingSettingsPayload) (*meetingsvc.MeetingSettings, error) {
+func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, reqSettings *models.MeetingSettings, revision uint64) (*models.MeetingSettings, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
-	if payload == nil || payload.UID == nil {
+	if reqSettings == nil || reqSettings.UID == "" {
 		slog.WarnContext(ctx, "meeting UID is required")
 		return nil, domain.ErrValidationFailed
 	}
 
-	var revision uint64
 	var err error
-	if !s.Config.SkipEtagValidation {
-		if payload.IfMatch == nil {
-			slog.WarnContext(ctx, "If-Match header is missing")
-			return nil, domain.ErrValidationFailed
-		}
-		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
-		if err != nil {
-			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
-			return nil, domain.ErrValidationFailed
-		}
-	} else {
+	if s.Config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetSettingsWithRevision(ctx, *payload.UID)
+		_, revision, err = s.MeetingRepository.GetSettingsWithRevision(ctx, reqSettings.UID)
 		if err != nil {
 			if errors.Is(err, domain.ErrMeetingNotFound) {
 				slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, err)
@@ -470,11 +404,11 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 		}
 	}
 
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", reqSettings.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the meeting settings exist and use some of the existing data for the update.
-	existingSettingsDB, err := s.MeetingRepository.GetSettings(ctx, *payload.UID)
+	existingSettingsDB, err := s.MeetingRepository.GetSettings(ctx, reqSettings.UID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, err)
@@ -484,17 +418,10 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 		return nil, domain.ErrInternal
 	}
 
-	// Update the settings with new data
-	now := time.Now().UTC()
-	updatedSettingsDB := &models.MeetingSettings{
-		UID:        *payload.UID,
-		Organizers: payload.Organizers,
-		CreatedAt:  existingSettingsDB.CreatedAt,
-		UpdatedAt:  &now,
-	}
+	reqSettings = models.MergeUpdateMeetingSettingsRequest(reqSettings, existingSettingsDB)
 
 	// Update the meeting settings in the repository
-	err = s.MeetingRepository.UpdateSettings(ctx, updatedSettingsDB, revision)
+	err = s.MeetingRepository.UpdateSettings(ctx, reqSettings, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
 			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
@@ -512,11 +439,11 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *updatedSettingsDB)
+			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *reqSettings)
 		},
 		func() error {
 			// Get the meeting base data to send access update message
-			meetingDB, err := s.MeetingRepository.GetBase(ctx, *payload.UID)
+			meetingDB, err := s.MeetingRepository.GetBase(ctx, reqSettings.UID)
 			if err != nil {
 				// Don't fail the message if we can't get the meeting base data
 				// since the settings were already updated.
@@ -534,7 +461,7 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 				UID:        meetingDB.UID,
 				Public:     meetingDB.Visibility == "public",
 				ProjectUID: meetingDB.ProjectUID,
-				Organizers: updatedSettingsDB.Organizers,
+				Organizers: reqSettings.Organizers,
 				Committees: committees,
 			})
 		},
@@ -545,40 +472,22 @@ func (s *MeetingsService) UpdateMeetingSettings(ctx context.Context, payload *me
 		return nil, domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "returning updated meeting settings", "settings", updatedSettingsDB)
+	slog.DebugContext(ctx, "returning updated meeting settings", "settings", reqSettings)
 
-	settingsResp := models.ToMeetingSettingsServiceModel(updatedSettingsDB)
-
-	return settingsResp, nil
+	return reqSettings, nil
 }
 
 // Delete a meeting.
-func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc.DeleteMeetingPayload) error {
+func (s *MeetingsService) DeleteMeeting(ctx context.Context, uid string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
 	}
 
-	if payload == nil || payload.UID == nil {
-		slog.WarnContext(ctx, "meeting UID is required")
-		return domain.ErrValidationFailed
-	}
-
-	var revision uint64
 	var err error
-	if !s.Config.SkipEtagValidation {
-		if payload.IfMatch == nil {
-			slog.WarnContext(ctx, "If-Match header is missing")
-			return domain.ErrValidationFailed
-		}
-		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
-		if err != nil {
-			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
-			return domain.ErrValidationFailed
-		}
-	} else {
+	if s.Config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetBaseWithRevision(ctx, *payload.UID)
+		_, revision, err = s.MeetingRepository.GetBaseWithRevision(ctx, uid)
 		if err != nil {
 			if errors.Is(err, domain.ErrMeetingNotFound) {
 				slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -589,11 +498,11 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 		}
 	}
 
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", *payload.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Get the meeting to check if it has a Zoom meeting ID
-	meetingDB, err := s.MeetingRepository.GetBase(ctx, *payload.UID)
+	meetingDB, err := s.MeetingRepository.GetBase(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -604,7 +513,7 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 	}
 
 	// Delete the meeting using the store first
-	err = s.MeetingRepository.Delete(ctx, *payload.UID, revision)
+	err = s.MeetingRepository.Delete(ctx, uid, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
 			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
@@ -650,7 +559,7 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 
 	// Send meeting deletion message to trigger registrant cleanup
 	err = s.MessageBuilder.SendMeetingDeleted(ctx, models.MeetingDeletedMessage{
-		MeetingUID: *payload.UID,
+		MeetingUID: uid,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending meeting deleted message", logging.ErrKey, err, logging.PriorityCritical())
@@ -662,13 +571,13 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendDeleteIndexMeeting(ctx, *payload.UID)
+			return s.MessageBuilder.SendDeleteIndexMeeting(ctx, uid)
 		},
 		func() error {
-			return s.MessageBuilder.SendDeleteIndexMeetingSettings(ctx, *payload.UID)
+			return s.MessageBuilder.SendDeleteIndexMeetingSettings(ctx, uid)
 		},
 		func() error {
-			return s.MessageBuilder.SendDeleteAllAccessMeeting(ctx, *payload.UID)
+			return s.MessageBuilder.SendDeleteAllAccessMeeting(ctx, uid)
 		},
 	}
 
@@ -677,6 +586,6 @@ func (s *MeetingsService) DeleteMeeting(ctx context.Context, payload *meetingsvc
 		return domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "deleted meeting", "meeting_uid", *payload.UID)
+	slog.DebugContext(ctx, "deleted meeting", "meeting_uid", uid)
 	return nil
 }

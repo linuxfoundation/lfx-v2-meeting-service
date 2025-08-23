@@ -8,9 +8,9 @@ import (
 	"log/slog"
 	"strconv"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -19,22 +19,22 @@ import (
 func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.GetPastMeetingsPayload) (*meetingsvc.GetPastMeetingsResult, error) {
 	if !s.service.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, handleError(domain.ErrServiceUnavailable)
 	}
 
 	pastMeetings, err := s.service.GetPastMeetings(ctx)
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
-	var goaPastMeetings []*meetingsvc.PastMeeting
+	var pastMeetingsResp []*meetingsvc.PastMeeting
 	for _, pastMeeting := range pastMeetings {
-		goaPastMeetings = append(goaPastMeetings, models.ToPastMeetingServiceModel(pastMeeting))
+		pastMeetingsResp = append(pastMeetingsResp, service.ConvertDomainToPastMeetingResponse(pastMeeting))
 	}
 
 	result := &meetingsvc.GetPastMeetingsResult{
-		PastMeetings: goaPastMeetings,
-		CacheControl: utils.StringPtr("public, max-age=300"),
+		PastMeetings: pastMeetingsResp,
+		CacheControl: nil,
 	}
 
 	return result, nil
@@ -44,32 +44,32 @@ func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.G
 func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) (*meetingsvc.PastMeeting, error) {
 	if !s.service.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, handleError(domain.ErrServiceUnavailable)
 	}
 
 	pastMeeting, err := s.service.CreatePastMeeting(ctx, payload)
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
-	return models.ToPastMeetingServiceModel(pastMeeting), nil
+	return service.ConvertDomainToPastMeetingResponse(pastMeeting), nil
 }
 
 // GetPastMeeting implements the Goa service interface for getting a single past meeting
 func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.GetPastMeetingPayload) (*meetingsvc.GetPastMeetingResult, error) {
 	if !s.service.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, handleError(domain.ErrServiceUnavailable)
 	}
 
 	pastMeeting, revision, err := s.service.GetPastMeeting(ctx, *payload.UID)
 	if err != nil {
-		return nil, err
+		return nil, handleError(err)
 	}
 
 	result := &meetingsvc.GetPastMeetingResult{
-		PastMeeting: models.ToPastMeetingServiceModel(pastMeeting),
-		Etag:        utils.StringPtr(strconv.FormatUint(revision, 10)),
+		PastMeeting: service.ConvertDomainToPastMeetingResponse(pastMeeting),
+		Etag:        utils.StringPtr(revision),
 	}
 
 	return result, nil
@@ -79,15 +79,20 @@ func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.Ge
 func (s *MeetingsAPI) DeletePastMeeting(ctx context.Context, payload *meetingsvc.DeletePastMeetingPayload) error {
 	if !s.service.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return domain.ErrServiceUnavailable
+		return handleError(domain.ErrServiceUnavailable)
 	}
 
 	// Parse the revision from If-Match header
 	revision, err := strconv.ParseUint(*payload.IfMatch, 10, 64)
 	if err != nil {
 		slog.WarnContext(ctx, "invalid If-Match header", logging.ErrKey, err)
-		return domain.ErrValidationFailed
+		return handleError(domain.ErrValidationFailed)
 	}
 
-	return s.service.DeletePastMeeting(ctx, *payload.UID, revision)
+	err = s.service.DeletePastMeeting(ctx, *payload.UID, revision)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return nil
 }

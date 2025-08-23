@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -235,18 +236,18 @@ func (s *MeetingsService) GetPastMeetings(ctx context.Context) ([]*models.PastMe
 	return pastMeetings, nil
 }
 
-func (s *MeetingsService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, uint64, error) {
+func (s *MeetingsService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
 	pastMeeting, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, err)
-			return nil, 0, domain.ErrMeetingNotFound
+			return nil, "", domain.ErrMeetingNotFound
 		}
 		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
-		return nil, 0, domain.ErrInternal
+		return nil, "", domain.ErrInternal
 	}
 
-	return pastMeeting, revision, nil
+	return pastMeeting, strconv.FormatUint(revision, 10), nil
 }
 
 func (s *MeetingsService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {

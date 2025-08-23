@@ -65,6 +65,27 @@ func createResponse(code int, err error) error {
 	}
 }
 
+// handleError converts domain errors to HTTP errors.
+func handleError(err error) error {
+	switch err {
+	case domain.ErrServiceUnavailable:
+		return createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+	case domain.ErrValidationFailed:
+		return createResponse(http.StatusBadRequest, domain.ErrValidationFailed)
+	case domain.ErrRevisionMismatch:
+		return createResponse(http.StatusBadRequest, domain.ErrRevisionMismatch)
+	case domain.ErrRegistrantAlreadyExists:
+		return createResponse(http.StatusBadRequest, domain.ErrRegistrantAlreadyExists)
+	case domain.ErrMeetingNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
+	case domain.ErrRegistrantNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrRegistrantNotFound)
+	case domain.ErrInternal, domain.ErrUnmarshal:
+		return createResponse(http.StatusInternalServerError, domain.ErrInternal)
+	}
+	return err
+}
+
 // Readyz checks if the service is able to take inbound requests.
 func (s *MeetingsAPI) Readyz(_ context.Context) ([]byte, error) {
 	if !s.service.ServiceReady() {
