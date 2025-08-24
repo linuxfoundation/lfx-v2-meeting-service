@@ -13,7 +13,7 @@ import (
 
 // GetMeetings fetches all meetings
 func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMeetingsPayload) (*meetingsvc.GetMeetingsResult, error) {
-	meetings, err := s.service.GetMeetings(ctx)
+	meetings, err := s.meetingService.GetMeetings(ctx)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -34,7 +34,7 @@ func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMe
 func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.MeetingFull, error) {
 	createMeetingReq := service.ConvertCreateMeetingPayloadToDomain(payload)
 
-	meeting, err := s.service.CreateMeeting(ctx, createMeetingReq)
+	meeting, err := s.meetingService.CreateMeeting(ctx, createMeetingReq)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -47,7 +47,7 @@ func (s *MeetingsAPI) GetMeetingBase(ctx context.Context, payload *meetingsvc.Ge
 		return nil, domain.ErrValidationFailed
 	}
 
-	meeting, revision, err := s.service.GetMeetingBase(ctx, *payload.UID)
+	meeting, revision, err := s.meetingService.GetMeetingBase(ctx, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -64,7 +64,7 @@ func (s *MeetingsAPI) GetMeetingSettings(ctx context.Context, payload *meetingsv
 		return nil, domain.ErrValidationFailed
 	}
 
-	settings, etag, err := s.service.GetMeetingSettings(ctx, *payload.UID)
+	settings, etag, err := s.meetingService.GetMeetingSettings(ctx, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -88,7 +88,7 @@ func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc
 
 	updatedMeetingReq := service.ConvertMeetingUpdatePayloadToDomain(payload)
 
-	updatedMeeting, err := s.service.UpdateMeetingBase(ctx, updatedMeetingReq, etag)
+	updatedMeeting, err := s.meetingService.UpdateMeetingBase(ctx, updatedMeetingReq, etag)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -107,7 +107,7 @@ func (s *MeetingsAPI) UpdateMeetingSettings(ctx context.Context, payload *meetin
 	}
 
 	updateSettingsReq := service.ConvertUpdateSettingsPayloadToDomain(payload)
-	updatedSettings, err := s.service.UpdateMeetingSettings(ctx, updateSettingsReq, etag)
+	updatedSettings, err := s.meetingService.UpdateMeetingSettings(ctx, updateSettingsReq, etag)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -125,7 +125,7 @@ func (s *MeetingsAPI) DeleteMeeting(ctx context.Context, payload *meetingsvc.Del
 		return handleError(err)
 	}
 
-	err = s.service.DeleteMeeting(ctx, *payload.UID, etag)
+	err = s.meetingService.DeleteMeeting(ctx, *payload.UID, etag)
 	if err != nil {
 		return handleError(err)
 	}
@@ -138,7 +138,7 @@ func (s *MeetingsAPI) GetMeetingRegistrants(ctx context.Context, payload *meetin
 		return nil, domain.ErrValidationFailed
 	}
 
-	registrants, err := s.service.GetMeetingRegistrants(ctx, *payload.UID)
+	registrants, err := s.registrantService.GetMeetingRegistrants(ctx, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -158,7 +158,7 @@ func (s *MeetingsAPI) GetMeetingRegistrants(ctx context.Context, payload *meetin
 func (s *MeetingsAPI) CreateMeetingRegistrant(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
 	createRegistrantReq := service.ConvertCreateRegistrantPayloadToDomain(payload)
 
-	registrant, err := s.service.CreateMeetingRegistrant(ctx, createRegistrantReq)
+	registrant, err := s.registrantService.CreateMeetingRegistrant(ctx, createRegistrantReq)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -172,7 +172,7 @@ func (s *MeetingsAPI) GetMeetingRegistrant(ctx context.Context, payload *meeting
 		return nil, domain.ErrValidationFailed
 	}
 
-	registrant, etag, err := s.service.GetMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID)
+	registrant, etag, err := s.registrantService.GetMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -196,7 +196,7 @@ func (s *MeetingsAPI) UpdateMeetingRegistrant(ctx context.Context, payload *meet
 
 	updateRegistrantReq := service.ConvertUpdateRegistrantPayloadToDomain(payload)
 
-	registrant, err := s.service.UpdateMeetingRegistrant(ctx, updateRegistrantReq, etag)
+	registrant, err := s.registrantService.UpdateMeetingRegistrant(ctx, updateRegistrantReq, etag)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -215,7 +215,7 @@ func (s *MeetingsAPI) DeleteMeetingRegistrant(ctx context.Context, payload *meet
 		return handleError(err)
 	}
 
-	err = s.service.DeleteMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID, etag)
+	err = s.registrantService.DeleteMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID, etag)
 	if err != nil {
 		return handleError(err)
 	}

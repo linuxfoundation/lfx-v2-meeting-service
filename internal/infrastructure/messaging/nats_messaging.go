@@ -25,6 +25,13 @@ type MessageBuilder struct {
 	NatsConn INatsConn
 }
 
+// NewMessageBuilder creates a new MessageBuilder.
+func NewMessageBuilder(natsConn INatsConn) *MessageBuilder {
+	return &MessageBuilder{
+		NatsConn: natsConn,
+	}
+}
+
 // sendMessage sends the message to the NATS server.
 func (m *MessageBuilder) sendMessage(ctx context.Context, subject string, data []byte) error {
 	err := m.NatsConn.Publish(subject, data)

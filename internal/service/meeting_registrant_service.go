@@ -18,7 +18,40 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
-func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Context, reqRegistrant *models.Registrant) error {
+// MeetingRegistrantService implements the meetingsvc.Service interface and domain.MessageHandler
+type MeetingRegistrantService struct {
+	MeetingRepository    domain.MeetingRepository
+	RegistrantRepository domain.RegistrantRepository
+	EmailService         domain.EmailService
+	MessageBuilder       domain.MessageBuilder
+	Config               ServiceConfig
+}
+
+// NewMeetingRegistrantService creates a new MeetingRegistrantService.
+func NewMeetingRegistrantService(
+	meetingRepository domain.MeetingRepository,
+	registrantRepository domain.RegistrantRepository,
+	emailService domain.EmailService,
+	messageBuilder domain.MessageBuilder,
+	config ServiceConfig,
+) *MeetingRegistrantService {
+	return &MeetingRegistrantService{
+		Config:               config,
+		MeetingRepository:    meetingRepository,
+		RegistrantRepository: registrantRepository,
+		EmailService:         emailService,
+		MessageBuilder:       messageBuilder,
+	}
+}
+
+// ServiceReady checks if the service is ready for use.
+func (s *MeetingRegistrantService) ServiceReady() bool {
+	return s.MeetingRepository != nil &&
+		s.RegistrantRepository != nil &&
+		s.MessageBuilder != nil
+}
+
+func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant) error {
 	// Check if the meeting exists
 	_, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
 	if err != nil {
@@ -55,7 +88,7 @@ func createRegistrantContext(ctx context.Context, registrantUID, meetingUID stri
 }
 
 // CreateMeetingRegistrant creates a new registrant for a meeting
-func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant) (*models.Registrant, error) {
+func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant) (*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
@@ -69,7 +102,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, reqRegist
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", reqRegistrant.MeetingUID))
 
 	// Validate the payload
-	err := s.validateCreateMeetingRegistrantPayload(ctx, reqRegistrant)
+	err := s.validateCreateMeetingRegistrantRequest(ctx, reqRegistrant)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +177,7 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, reqRegist
 }
 
 // GetMeetingRegistrants gets all registrants for a meeting
-func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, uid string) ([]*models.Registrant, error) {
+func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, uid string) ([]*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
@@ -178,7 +211,7 @@ func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, uid string)
 }
 
 // GetMeetingRegistrant gets a specific registrant by UID
-func (s *MeetingsService) GetMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string) (*models.Registrant, string, error) {
+func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string) (*models.Registrant, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, "", domain.ErrServiceUnavailable
@@ -218,7 +251,7 @@ func (s *MeetingsService) GetMeetingRegistrant(ctx context.Context, meetingUID, 
 	return registrant, revisionStr, nil
 }
 
-func (s *MeetingsService) validateUpdateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant, existingRegistrant *models.Registrant) error {
+func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant, existingRegistrant *models.Registrant) error {
 	// Check that the meeting exists
 	exists, err := s.MeetingRepository.Exists(ctx, existingRegistrant.MeetingUID)
 	if err != nil {
@@ -251,7 +284,7 @@ func (s *MeetingsService) validateUpdateMeetingRegistrantRequest(ctx context.Con
 }
 
 // UpdateMeetingRegistrant updates an existing registrant
-func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, revision uint64) (*models.Registrant, error) {
+func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, revision uint64) (*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
@@ -352,7 +385,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, reqRegist
 
 // deleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
 // It can optionally skip revision checking when skipRevisionCheck is true (useful for bulk cleanup operations).
-func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
+func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantDB.UID))
 
 	// Delete the registrant from the database
@@ -442,7 +475,7 @@ func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, regis
 }
 
 // DeleteMeetingRegistrant deletes a registrant from a meeting
-func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string, revision uint64) error {
+func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
@@ -490,11 +523,11 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, meetingUI
 	}
 
 	// Use the helper to delete the registrant with cleanup
-	return s.deleteRegistrantWithCleanup(ctx, registrantDB, revision, false)
+	return s.DeleteRegistrantWithCleanup(ctx, registrantDB, revision, false)
 }
 
 // sendRegistrantInvitationEmail sends an invitation email to a newly created registrant
-func (s *MeetingsService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
+func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
 	// Get meeting details for the email
 	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {
@@ -532,7 +565,7 @@ func (s *MeetingsService) sendRegistrantInvitationEmail(ctx context.Context, reg
 }
 
 // sendRegistrantCancellationEmail sends a cancellation email to a deleted registrant
-func (s *MeetingsService) sendRegistrantCancellationEmail(ctx context.Context, registrant *models.Registrant) error {
+func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.Context, registrant *models.Registrant) error {
 	// Get meeting details for the email
 	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {

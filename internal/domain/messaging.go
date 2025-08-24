@@ -20,6 +20,7 @@ type Message interface {
 // MessageHandler defines how the service handles incoming messages
 type MessageHandler interface {
 	HandleMessage(ctx context.Context, msg Message)
+	HandlerReady() bool
 }
 
 // MessageBuilder is a interface for the message builder.

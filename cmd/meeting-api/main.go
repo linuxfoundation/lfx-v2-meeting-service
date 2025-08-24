@@ -15,6 +15,8 @@ import (
 	"syscall"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 )
@@ -32,36 +34,103 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Generated service initialization.
-	service := service.NewMeetingsService(jwtAuth, service.ServiceConfig{
-		SkipEtagValidation: env.SkipEtagValidation,
-	})
-
 	// Initialize platform providers
 	platformConfigs := platforms.NewPlatformConfigsFromEnv()
-	platforms.Initialize(platformConfigs, service)
-
-	svc := NewMeetingsAPI(service)
-
-	gracefulCloseWG := sync.WaitGroup{}
-
-	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)
+	platformConfigs.Zoom = platforms.SetupZoom(platformConfigs.Zoom)
+	platformRegistry := platforms.NewPlatformRegistry(platformConfigs)
 
 	// Initialize email service (independent of NATS)
-	err = setupEmailService(env, svc)
+	emailService, err := setupEmailService(env)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error setting up email service")
 		return
 	}
 
+	// Setup graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	gracefulCloseWG := sync.WaitGroup{}
 
-	natsConn, err := setupNATS(ctx, env, svc, &gracefulCloseWG, done)
+	// Setup NATS connection
+	natsConn, err := setupNATS(ctx, env, &gracefulCloseWG, done)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error setting up NATS")
+		return
+	}
+
+	// Get the key-value stores for the service.
+	repos, err := getKeyValueStores(ctx, natsConn)
+	if err != nil {
+		slog.With(logging.ErrKey, err).Error("error getting key-value stores")
+		return
+	}
+
+	// Initialize services
+	serviceConfig := service.ServiceConfig{
+		SkipEtagValidation: env.SkipEtagValidation,
+	}
+	messageBuilder := messaging.NewMessageBuilder(natsConn)
+	authService := service.NewAuthService(jwtAuth)
+	meetingService := service.NewMeetingService(
+		repos.Meeting,
+		messageBuilder,
+		platformRegistry,
+		serviceConfig,
+	)
+	registrantService := service.NewMeetingRegistrantService(
+		repos.Meeting,
+		repos.Registrant,
+		emailService,
+		messageBuilder,
+		serviceConfig,
+	)
+	pastMeetingService := service.NewPastMeetingService(
+		repos.Meeting,
+		repos.PastMeeting,
+		messageBuilder,
+		serviceConfig,
+	)
+	pastMeetingParticipantService := service.NewPastMeetingParticipantService(
+		repos.Meeting,
+		repos.PastMeeting,
+		repos.PastMeetingParticipant,
+		messageBuilder,
+		serviceConfig,
+	)
+
+	// Initialize handlers
+	meetingHandler := handlers.NewMeetingHandler(
+		meetingService,
+		registrantService,
+		pastMeetingService,
+		pastMeetingParticipantService,
+	)
+
+	zoomWebhookHandler := handlers.NewZoomWebhookHandler(
+		meetingService,
+		registrantService,
+		pastMeetingService,
+		pastMeetingParticipantService,
+		platformConfigs.Zoom.Validator,
+	)
+
+	svc := NewMeetingsAPI(
+		authService,
+		meetingService,
+		registrantService,
+		pastMeetingService,
+		zoomWebhookHandler,
+		meetingHandler,
+	)
+
+	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)
+
+	// Create NATS subscriptions for the service.
+	err = createNatsSubcriptions(ctx, svc, natsConn)
+	if err != nil {
+		slog.With(logging.ErrKey, err).Error("error creating NATS subscriptions")
 		return
 	}
 

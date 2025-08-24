@@ -17,7 +17,37 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
-func (s *MeetingsService) validateCreatePastMeetingPayload(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) error {
+// PastMeetingService implements the meetingsvc.Service interface and domain.MessageHandler
+type PastMeetingService struct {
+	MeetingRepository     domain.MeetingRepository
+	PastMeetingRepository domain.PastMeetingRepository
+	MessageBuilder        domain.MessageBuilder
+	Config                ServiceConfig
+}
+
+// NewPastMeetingService creates a new PastMeetingService.
+func NewPastMeetingService(
+	meetingRepository domain.MeetingRepository,
+	pastMeetingRepository domain.PastMeetingRepository,
+	messageBuilder domain.MessageBuilder,
+	config ServiceConfig,
+) *PastMeetingService {
+	return &PastMeetingService{
+		Config:                config,
+		MeetingRepository:     meetingRepository,
+		PastMeetingRepository: pastMeetingRepository,
+		MessageBuilder:        messageBuilder,
+	}
+}
+
+// ServiceReady checks if the service is ready for use.
+func (s *PastMeetingService) ServiceReady() bool {
+	return s.MeetingRepository != nil &&
+		s.PastMeetingRepository != nil &&
+		s.MessageBuilder != nil
+}
+
+func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) error {
 	// Validate that required fields are present
 	if payload.MeetingUID == "" {
 		return domain.ErrValidationFailed
@@ -57,7 +87,7 @@ func (s *MeetingsService) validateCreatePastMeetingPayload(ctx context.Context, 
 	return nil
 }
 
-func (s *MeetingsService) CreatePastMeeting(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) (*models.PastMeeting, error) {
+func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) (*models.PastMeeting, error) {
 	// Validate the payload
 	if err := s.validateCreatePastMeetingPayload(ctx, payload); err != nil {
 		return nil, err
@@ -226,7 +256,7 @@ func (s *MeetingsService) CreatePastMeeting(ctx context.Context, payload *meetin
 	return pastMeeting, nil
 }
 
-func (s *MeetingsService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
+func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
 	pastMeetings, err := s.PastMeetingRepository.ListAll(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing past meetings", logging.ErrKey, err)
@@ -236,7 +266,7 @@ func (s *MeetingsService) GetPastMeetings(ctx context.Context) ([]*models.PastMe
 	return pastMeetings, nil
 }
 
-func (s *MeetingsService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
+func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
 	pastMeeting, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
@@ -250,7 +280,7 @@ func (s *MeetingsService) GetPastMeeting(ctx context.Context, uid string) (*mode
 	return pastMeeting, strconv.FormatUint(revision, 10), nil
 }
 
-func (s *MeetingsService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {
+func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {
 	// Check if the past meeting exists
 	exists, err := s.PastMeetingRepository.Exists(ctx, uid)
 	if err != nil {

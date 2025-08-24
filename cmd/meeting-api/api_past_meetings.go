@@ -17,12 +17,12 @@ import (
 
 // GetPastMeetings implements the Goa service interface for listing past meetings
 func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.GetPastMeetingsPayload) (*meetingsvc.GetPastMeetingsResult, error) {
-	if !s.service.ServiceReady() {
+	if !s.pastMeetingService.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, handleError(domain.ErrServiceUnavailable)
 	}
 
-	pastMeetings, err := s.service.GetPastMeetings(ctx)
+	pastMeetings, err := s.pastMeetingService.GetPastMeetings(ctx)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -42,12 +42,12 @@ func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.G
 
 // CreatePastMeeting implements the Goa service interface for creating past meetings
 func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) (*meetingsvc.PastMeeting, error) {
-	if !s.service.ServiceReady() {
+	if !s.pastMeetingService.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, handleError(domain.ErrServiceUnavailable)
 	}
 
-	pastMeeting, err := s.service.CreatePastMeeting(ctx, payload)
+	pastMeeting, err := s.pastMeetingService.CreatePastMeeting(ctx, payload)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -57,12 +57,12 @@ func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc
 
 // GetPastMeeting implements the Goa service interface for getting a single past meeting
 func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.GetPastMeetingPayload) (*meetingsvc.GetPastMeetingResult, error) {
-	if !s.service.ServiceReady() {
+	if !s.pastMeetingService.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return nil, handleError(domain.ErrServiceUnavailable)
 	}
 
-	pastMeeting, revision, err := s.service.GetPastMeeting(ctx, *payload.UID)
+	pastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -77,7 +77,7 @@ func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.Ge
 
 // DeletePastMeeting implements the Goa service interface for deleting past meetings
 func (s *MeetingsAPI) DeletePastMeeting(ctx context.Context, payload *meetingsvc.DeletePastMeetingPayload) error {
-	if !s.service.ServiceReady() {
+	if !s.pastMeetingService.ServiceReady() {
 		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
 		return handleError(domain.ErrServiceUnavailable)
 	}
@@ -89,7 +89,7 @@ func (s *MeetingsAPI) DeletePastMeeting(ctx context.Context, payload *meetingsvc
 		return handleError(domain.ErrValidationFailed)
 	}
 
-	err = s.service.DeletePastMeeting(ctx, *payload.UID, revision)
+	err = s.pastMeetingService.DeletePastMeeting(ctx, *payload.UID, revision)
 	if err != nil {
 		return handleError(err)
 	}

@@ -14,6 +14,7 @@ import (
 	nats "github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/email"
@@ -40,7 +41,9 @@ func setupJWTAuth() (*auth.JWTAuth, error) {
 }
 
 // setupEmailService initializes the email service based on configuration
-func setupEmailService(env environment, svc *MeetingsAPI) error {
+func setupEmailService(env environment) (domain.EmailService, error) {
+	var emailService domain.EmailService
+	var err error
 	if env.EmailConfig.Enabled {
 		smtpConfig := email.SMTPConfig{
 			Host:     env.EmailConfig.SMTPHost,
@@ -49,22 +52,21 @@ func setupEmailService(env environment, svc *MeetingsAPI) error {
 			Username: env.EmailConfig.SMTPUsername,
 			Password: env.EmailConfig.SMTPPassword,
 		}
-		emailService, err := email.NewSMTPService(smtpConfig)
+		emailService, err = email.NewSMTPService(smtpConfig)
 		if err != nil {
 			slog.With(logging.ErrKey, err).Error("error creating email service")
-			return err
+			return nil, err
 		}
-		svc.service.EmailService = emailService
 		slog.With("smtp_host", env.EmailConfig.SMTPHost, "smtp_port", env.EmailConfig.SMTPPort).Info("email service enabled")
 	} else {
-		svc.service.EmailService = email.NewNoOpService()
+		emailService = email.NewNoOpService()
 		slog.Info("email service disabled")
 	}
-	return nil
+	return emailService, nil
 }
 
 // setupNATS configures NATS connection and related infrastructure
-func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGroup, done chan os.Signal) (*nats.Conn, error) {
+func setupNATS(ctx context.Context, env environment, gracefulCloseWG *sync.WaitGroup, done chan os.Signal) (*nats.Conn, error) {
 	// Create NATS connection.
 	gracefulCloseWG.Add(1)
 	var err error
@@ -108,26 +110,6 @@ func setupNATS(ctx context.Context, env environment, svc *MeetingsAPI, gracefulC
 	if err != nil {
 		slog.With("nats_url", env.NatsURL, logging.ErrKey, err).Error("error creating NATS client")
 		return nil, err
-	}
-
-	// Get the key-value stores for the service.
-	repos, err := getKeyValueStores(ctx, natsConn)
-	if err != nil {
-		return natsConn, err
-	}
-	svc.service.MeetingRepository = repos.Meeting
-	svc.service.RegistrantRepository = repos.Registrant
-	svc.service.PastMeetingRepository = repos.PastMeeting
-	svc.service.PastMeetingParticipantRepository = repos.PastMeetingParticipant
-
-	svc.service.MessageBuilder = &messaging.MessageBuilder{
-		NatsConn: natsConn,
-	}
-
-	// Create NATS subscriptions for the service.
-	err = createNatsSubcriptions(ctx, svc, natsConn)
-	if err != nil {
-		return natsConn, err
 	}
 
 	return natsConn, nil
@@ -190,30 +172,30 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 
 // createNatsSubcriptions creates the NATS subscriptions for the meeting service.
 func createNatsSubcriptions(ctx context.Context, svc *MeetingsAPI, natsConn *nats.Conn) error {
-	subjects := []string{
+	subjects := map[string]func(ctx context.Context, msg domain.Message){
 		// Get meeting title subscription
-		models.MeetingGetTitleSubject,
+		models.MeetingGetTitleSubject: svc.meetingHandler.HandleMessage,
 		// Meeting deletion cleanup subscription
-		models.MeetingDeletedSubject,
+		models.MeetingDeletedSubject: svc.meetingHandler.HandleMessage,
 		// Zoom webhook event subscriptions
-		models.ZoomWebhookMeetingStartedSubject,
-		models.ZoomWebhookMeetingEndedSubject,
-		models.ZoomWebhookMeetingDeletedSubject,
-		models.ZoomWebhookMeetingParticipantJoinedSubject,
-		models.ZoomWebhookMeetingParticipantLeftSubject,
-		models.ZoomWebhookRecordingCompletedSubject,
-		models.ZoomWebhookRecordingTranscriptCompletedSubject,
-		models.ZoomWebhookMeetingSummaryCompletedSubject,
+		models.ZoomWebhookMeetingStartedSubject:               svc.zoomWebhookHandler.HandleMessage,
+		models.ZoomWebhookMeetingEndedSubject:                 svc.zoomWebhookHandler.HandleMessage,
+		models.ZoomWebhookMeetingDeletedSubject:               svc.zoomWebhookHandler.HandleMessage,
+		models.ZoomWebhookMeetingParticipantJoinedSubject:     svc.zoomWebhookHandler.HandleMessage,
+		models.ZoomWebhookMeetingParticipantLeftSubject:       svc.zoomWebhookHandler.HandleMessage,
+		models.ZoomWebhookRecordingCompletedSubject:           svc.zoomWebhookHandler.HandleMessage,
+		models.ZoomWebhookRecordingTranscriptCompletedSubject: svc.zoomWebhookHandler.HandleMessage,
+		models.ZoomWebhookMeetingSummaryCompletedSubject:      svc.zoomWebhookHandler.HandleMessage,
 	}
 
 	slog.InfoContext(ctx, "subscribing to NATS subjects", "nats_url", natsConn.ConnectedUrl(), "servers", natsConn.Servers(), "subjects", subjects)
 	queueName := models.MeetingsAPIQueue
 
 	// Subscribe to all subjects using the same handler pattern
-	for _, subject := range subjects {
+	for subject, handler := range subjects {
 		_, err := natsConn.QueueSubscribe(subject, queueName, func(msg *nats.Msg) {
 			natsMsg := &messaging.NatsMsg{Msg: msg}
-			svc.service.HandleMessage(ctx, natsMsg)
+			handler(ctx, natsMsg)
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "error creating NATS queue subscription", logging.ErrKey, err, "subject", subject)

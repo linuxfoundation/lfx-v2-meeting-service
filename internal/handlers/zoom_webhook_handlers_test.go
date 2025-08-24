@@ -14,7 +14,7 @@
 // - meeting.participant_joined events (attendance tracking and session creation)
 // - meeting.participant_left events (session completion with leave time/reason)
 
-package service
+package handlers
 
 import (
 	"context"
