@@ -16,6 +16,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// setupServiceForTesting creates a MeetingService with all mock dependencies for testing
+func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {
+	mockRepo := new(mocks.MockMeetingRepository)
+	mockBuilder := new(mocks.MockMessageBuilder)
+	mockPlatformRegistry := new(mocks.MockPlatformRegistry)
+
+	config := ServiceConfig{
+		SkipEtagValidation: false,
+	}
+
+	service := &MeetingService{
+		MeetingRepository: mockRepo,
+		MessageBuilder:    mockBuilder,
+		PlatformRegistry:  mockPlatformRegistry,
+		Config:            config,
+	}
+
+	return service, mockRepo, mockBuilder
+}
+
 func TestMeetingsService_GetMeetings(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -104,7 +124,7 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder, mockAuth := setupServiceForTesting()
+			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.MeetingRepository = nil
@@ -127,7 +147,6 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 
 			mockRepo.AssertExpectations(t)
 			mockBuilder.AssertExpectations(t)
-			mockAuth.AssertExpectations(t)
 		})
 	}
 }
@@ -136,7 +155,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 	tests := []struct {
 		name        string
 		payload     *models.MeetingFull
-		setupMocks  func(*MeetingsService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder)
+		setupMocks  func(*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder)
 		wantErr     bool
 		expectedErr error
 		validate    func(*testing.T, *models.MeetingFull)
@@ -155,7 +174,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 					Organizers: []string{"org1"},
 				},
 			},
-			setupMocks: func(service *MeetingsService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Set up platform registry mock
 				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
 				mockProvider := &mocks.MockPlatformProvider{}
@@ -194,7 +213,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 					Organizers: []string{"org1"},
 				},
 			},
-			setupMocks: func(service *MeetingsService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Service will not be ready - no mocks needed
 			},
 			wantErr:     true,
@@ -214,7 +233,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 					Organizers: []string{"org1"},
 				},
 			},
-			setupMocks: func(service *MeetingsService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Set up platform registry mock for cleanup on error
 				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
 				mockProvider := &mocks.MockPlatformProvider{}
@@ -238,7 +257,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder, mockAuth := setupServiceForTesting()
+			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.MeetingRepository = nil
@@ -264,7 +283,6 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 
 			mockRepo.AssertExpectations(t)
 			mockBuilder.AssertExpectations(t)
-			mockAuth.AssertExpectations(t)
 			if tt.name != "service not ready" {
 				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
 				mockPlatformRegistry.AssertExpectations(t)
@@ -336,7 +354,7 @@ func TestMeetingsService_GetMeetingBase(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder, mockAuth := setupServiceForTesting()
+			service, mockRepo, mockBuilder := setupServiceForTesting()
 			tt.setupMocks(mockRepo, mockBuilder)
 
 			result, etag, err := service.GetMeetingBase(context.Background(), tt.uid)
@@ -358,7 +376,6 @@ func TestMeetingsService_GetMeetingBase(t *testing.T) {
 
 			mockRepo.AssertExpectations(t)
 			mockBuilder.AssertExpectations(t)
-			mockAuth.AssertExpectations(t)
 		})
 	}
 }
@@ -422,7 +439,7 @@ func TestMeetingsService_GetMeetingSettings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder, mockAuth := setupServiceForTesting()
+			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.MeetingRepository = nil
@@ -449,7 +466,6 @@ func TestMeetingsService_GetMeetingSettings(t *testing.T) {
 
 			mockRepo.AssertExpectations(t)
 			mockBuilder.AssertExpectations(t)
-			mockAuth.AssertExpectations(t)
 		})
 	}
 }
@@ -564,7 +580,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder, mockAuth := setupServiceForTesting()
+			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.MeetingRepository = nil
@@ -594,7 +610,6 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 
 			mockRepo.AssertExpectations(t)
 			mockBuilder.AssertExpectations(t)
-			mockAuth.AssertExpectations(t)
 		})
 	}
 }
