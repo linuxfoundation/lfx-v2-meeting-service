@@ -13,6 +13,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -160,22 +161,11 @@ func (s *MeetingsService) HandleMeetingDeleted(ctx context.Context, msg domain.M
 
 	slog.InfoContext(ctx, "cleaning up registrants for deleted meeting", "registrant_count", len(registrants))
 
-	// Process registrants concurrently using goroutines for better performance
-	// Use a channel to collect errors from concurrent operations
-	type registrantError struct {
-		registrantUID string
-		err           error
-	}
-
-	errorChan := make(chan registrantError, len(registrants))
-	semaphore := make(chan struct{}, 10) // Limit concurrency to 10 goroutines
-
-	// Launch goroutines for concurrent registrant deletion
+	// Process registrants concurrently using WorkerPool
+	var tasks []func() error
 	for _, registrant := range registrants {
-		go func(reg *models.Registrant) {
-			semaphore <- struct{}{}        // Acquire semaphore
-			defer func() { <-semaphore }() // Release semaphore
-
+		reg := registrant // capture loop variable
+		tasks = append(tasks, func() error {
 			// Use the shared helper with skipRevisionCheck=true for bulk cleanup
 			err := s.deleteRegistrantWithCleanup(ctx, reg, 0, true)
 			if err != nil {
@@ -183,34 +173,22 @@ func (s *MeetingsService) HandleMeetingDeleted(ctx context.Context, msg domain.M
 					"registrant_uid", reg.UID,
 					logging.ErrKey, err,
 					logging.PriorityCritical())
-				errorChan <- registrantError{registrantUID: reg.UID, err: err}
-			} else {
-				slog.DebugContext(ctx, "successfully cleaned up registrant", "registrant_uid", reg.UID)
-				errorChan <- registrantError{registrantUID: reg.UID, err: nil}
+				return err
 			}
-		}(registrant)
+			slog.DebugContext(ctx, "successfully cleaned up registrant", "registrant_uid", reg.UID)
+			return nil
+		})
 	}
 
-	// Collect results from all goroutines
-	var cleanupErrors []error
-	successCount := 0
-	for range len(registrants) {
-		result := <-errorChan
-		if result.err != nil {
-			cleanupErrors = append(cleanupErrors, result.err)
-		} else {
-			successCount++
-		}
-	}
-	close(errorChan)
-
-	if len(cleanupErrors) > 0 {
+	// Execute all cleanup operations concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(10) // Use 10 workers, same concurrency as before
+	err = pool.Run(ctx, tasks...)
+	if err != nil {
 		slog.ErrorContext(ctx, "some registrant cleanup operations failed",
 			"total_registrants", len(registrants),
-			"successful_count", successCount,
-			"failed_count", len(cleanupErrors),
+			logging.ErrKey, err,
 			logging.PriorityCritical())
-		return nil, fmt.Errorf("failed to clean up %d out of %d registrants", len(cleanupErrors), len(registrants))
+		return nil, fmt.Errorf("failed to clean up registrants: %w", err)
 	}
 
 	slog.InfoContext(ctx, "successfully cleaned up all registrants for deleted meeting", "registrant_count", len(registrants))

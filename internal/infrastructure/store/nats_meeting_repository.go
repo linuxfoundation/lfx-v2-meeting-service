@@ -9,6 +9,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -370,4 +371,36 @@ func (s *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, r
 	}
 
 	return nil
+}
+
+// GetByZoomMeetingID retrieves a meeting by its Zoom meeting ID
+func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeetingID string) (*models.MeetingBase, error) {
+	if s.Meetings == nil {
+		return nil, domain.ErrServiceUnavailable
+	}
+
+	start := time.Now()
+
+	// List all meetings
+	meetings, err := s.ListAllBase(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the meeting with matching Zoom ID
+	for _, meeting := range meetings {
+		if meeting.Platform == "Zoom" && meeting.ZoomConfig != nil && meeting.ZoomConfig.MeetingID == zoomMeetingID {
+			return meeting, nil
+		}
+	}
+
+	elapsed := time.Since(start)
+	slog.DebugContext(ctx, "fetched meetings by zoom meeting ID",
+		"elapsed_time_ms", elapsed.Milliseconds(),
+		"elapsed_time", elapsed.String(),
+		"zoom_meeting_id", zoomMeetingID,
+		"meetings_count", len(meetings),
+	)
+
+	return nil, domain.ErrMeetingNotFound
 }

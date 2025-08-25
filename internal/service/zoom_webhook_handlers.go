@@ -8,11 +8,36 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
+	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
+
+// ZoomPayloadForPastMeeting contains the essential Zoom webhook data for creating PastMeeting records
+type ZoomPayloadForPastMeeting struct {
+	UUID      string
+	StartTime time.Time
+	EndTime   *time.Time // nil for meeting.started, set for meeting.ended
+	Timezone  string
+}
+
+// ZoomPayloadForParticipant represents participant data from Zoom webhook events
+type ZoomPayloadForParticipant struct {
+	UserID            string
+	UserName          string
+	ID                string
+	JoinTime          time.Time
+	Email             string
+	ParticipantUserID string
+	LeaveTime         time.Time
+	LeaveReason       string
+}
 
 // parseZoomWebhookEvent is a helper to parse webhook event messages
 func (s *MeetingsService) parseZoomWebhookEvent(ctx context.Context, msg domain.Message) (*models.ZoomWebhookEventMessage, error) {
@@ -170,19 +195,57 @@ func (s *MeetingsService) HandleZoomSummaryCompleted(ctx context.Context, msg do
 
 // handleMeetingStartedEvent processes meeting.started events
 func (s *MeetingsService) handleMeetingStartedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+	slog.InfoContext(ctx, "processing meeting started event")
+
 	// Convert to typed payload
 	payload, err := event.ToMeetingStartedPayload()
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to convert to typed meeting started payload", "error", err)
-		return fmt.Errorf("failed to parse meeting started payload: %w", err)
+		slog.ErrorContext(ctx, "failed to parse meeting started payload", logging.ErrKey, err)
+		return fmt.Errorf("invalid meeting.started payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing meeting started event",
-		"zoom_meeting_uuid", payload.Object.UUID,
-		"zoom_meeting_id", payload.Object.ID,
-		"topic", payload.Object.Topic,
-		"start_time", payload.Object.StartTime,
+	meetingObj := payload.Object
+
+	slog.DebugContext(ctx, "meeting started",
+		"zoom_meeting_id", meetingObj.ID,
+		"zoom_meeting_uuid", meetingObj.UUID,
+		"topic", meetingObj.Topic,
+		"start_time", meetingObj.StartTime,
+		"host_id", meetingObj.HostID,
 	)
+
+	// Find the meeting by Zoom meeting ID
+	meeting, err := s.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to find meeting by Zoom ID", logging.ErrKey, err)
+		return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
+	}
+
+	// Create the past meeting record
+	zoomData := ZoomPayloadForPastMeeting{
+		UUID:      meetingObj.UUID,
+		StartTime: meetingObj.StartTime,
+		EndTime:   nil, // meeting.started events don't have end time
+		Timezone:  meetingObj.Timezone,
+	}
+	pastMeeting, err := s.createPastMeetingRecord(ctx, meeting, zoomData)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create past meeting record",
+			logging.ErrKey, err,
+			logging.PriorityCritical(),
+		)
+		return fmt.Errorf("failed to create past meeting record: %w", err)
+	}
+
+	// Create participant records for all registrants
+	err = s.createPastMeetingParticipants(ctx, pastMeeting, meeting)
+	if err != nil {
+		// Log the error but don't fail the entire webhook processing
+		slog.ErrorContext(ctx, "failed to create past meeting participants",
+			logging.ErrKey, err,
+			logging.PriorityCritical(),
+		)
+	}
 
 	return nil
 }
@@ -192,18 +255,79 @@ func (s *MeetingsService) handleMeetingEndedEvent(ctx context.Context, event mod
 	// Convert to typed payload
 	payload, err := event.ToMeetingEndedPayload()
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to convert to typed meeting ended payload", "error", err)
+		slog.ErrorContext(ctx, "failed to convert to typed meeting ended payload", logging.ErrKey, err)
 		return fmt.Errorf("failed to parse meeting ended payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing meeting ended event",
-		"zoom_meeting_uuid", payload.Object.UUID,
-		"zoom_meeting_id", payload.Object.ID,
-		"topic", payload.Object.Topic,
-		"start_time", payload.Object.StartTime,
-		"end_time", payload.Object.EndTime,
-		"duration", payload.Object.Duration,
+	meetingObj := payload.Object
+	slog.DebugContext(ctx, "processing meeting ended event",
+		"zoom_meeting_uuid", meetingObj.UUID,
+		"zoom_meeting_id", meetingObj.ID,
+		"topic", meetingObj.Topic,
+		"start_time", meetingObj.StartTime,
+		"end_time", meetingObj.EndTime,
+		"duration", meetingObj.Duration,
+		"timezone", meetingObj.Timezone,
 	)
+
+	// Try to find existing PastMeeting record by platform meeting ID
+	existingPastMeeting, err := s.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	if err != nil && err != domain.ErrMeetingNotFound {
+		slog.ErrorContext(ctx, "error searching for existing past meeting", logging.ErrKey, err)
+		return fmt.Errorf("failed to search for existing past meeting: %w", err)
+	}
+
+	if existingPastMeeting != nil {
+		// Primary flow: Update existing PastMeeting session with end time
+		err = s.updatePastMeetingSessionEndTime(ctx, existingPastMeeting, meetingObj.UUID, meetingObj.StartTime, meetingObj.EndTime)
+		if err != nil {
+			return fmt.Errorf("failed to update existing past meeting session: %w", err)
+		}
+	} else {
+		// Fallback flow: Create PastMeeting since meeting.started might have been missed
+		slog.WarnContext(ctx, "no existing past meeting found for ended event, creating as fallback",
+			"zoom_meeting_id", meetingObj.ID,
+			"zoom_meeting_uuid", meetingObj.UUID,
+		)
+
+		// Find the meeting by Zoom meeting ID first
+		meeting, err := s.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to find meeting by Zoom ID for fallback creation", logging.ErrKey, err)
+			return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
+		}
+
+		// Create PastMeeting with complete session (start and end times)
+		zoomData := ZoomPayloadForPastMeeting{
+			UUID:      meetingObj.UUID,
+			StartTime: meetingObj.StartTime,
+			EndTime:   &meetingObj.EndTime, // meeting.ended events have end time
+			Timezone:  meetingObj.Timezone,
+		}
+		pastMeeting, err := s.createPastMeetingRecordForEndedEvent(ctx, meeting, zoomData)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to create past meeting record for ended event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
+			return fmt.Errorf("failed to create past meeting record for ended event: %w", err)
+		}
+
+		// Create participant records for all registrants
+		err = s.createPastMeetingParticipants(ctx, pastMeeting, meeting)
+		if err != nil {
+			// Log the error but don't fail the entire webhook processing
+			slog.ErrorContext(ctx, "failed to create past meeting participants for ended event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
+		}
+
+		slog.InfoContext(ctx, "successfully created past meeting record from ended event",
+			"past_meeting_uid", pastMeeting.UID,
+			"meeting_uid", meeting.UID,
+		)
+	}
 
 	return nil
 }
@@ -217,7 +341,7 @@ func (s *MeetingsService) handleMeetingDeletedEvent(ctx context.Context, event m
 		return fmt.Errorf("failed to parse meeting deleted payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing meeting deleted event",
+	slog.DebugContext(ctx, "processing meeting deleted event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -231,18 +355,78 @@ func (s *MeetingsService) handleParticipantJoinedEvent(ctx context.Context, even
 	// Convert to typed payload
 	payload, err := event.ToParticipantJoinedPayload()
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to convert to typed participant joined payload", "error", err)
+		slog.ErrorContext(ctx, "failed to convert to typed participant joined payload", logging.ErrKey, err)
 		return fmt.Errorf("failed to parse participant joined payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing participant joined event",
-		"zoom_meeting_uuid", payload.Object.UUID,
-		"zoom_meeting_id", payload.Object.ID,
-		"participant_id", payload.Object.Participant.ID,
-		"participant_name", payload.Object.Participant.UserName,
-		"participant_email", payload.Object.Participant.Email,
-		"join_time", payload.Object.Participant.JoinTime,
+	meetingObj := payload.Object
+	participant := meetingObj.Participant
+
+	slog.DebugContext(ctx, "processing participant joined event",
+		"zoom_meeting_uuid", meetingObj.UUID,
+		"zoom_meeting_id", meetingObj.ID,
+		"participant_id", participant.ID,
+		"participant_name", participant.UserName,
+		"participant_email", participant.Email,
+		"join_time", participant.JoinTime,
 	)
+
+	// Find the PastMeeting record by platform meeting ID
+	pastMeeting, err := s.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	if err != nil {
+		if err == domain.ErrMeetingNotFound {
+			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
+				"zoom_meeting_id", meetingObj.ID,
+				"participant_email", participant.Email,
+			)
+			return nil // Don't fail the webhook processing
+		}
+		slog.ErrorContext(ctx, "error searching for past meeting", logging.ErrKey, err)
+		return fmt.Errorf("failed to search for past meeting: %w", err)
+	}
+
+	// Try to find existing PastMeetingParticipant record
+	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
+	if err != nil && err != domain.ErrRegistrantNotFound {
+		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
+		return fmt.Errorf("failed to search for existing participant: %w", err)
+	}
+
+	if existingParticipant != nil {
+		// Update existing participant to mark as attended and add new session
+		err = s.updateParticipantAttendance(ctx, existingParticipant, participant.ID, participant.JoinTime)
+		if err != nil {
+			return fmt.Errorf("failed to update participant attendance: %w", err)
+		}
+		slog.InfoContext(ctx, "updated existing participant attendance",
+			"participant_uid", existingParticipant.UID,
+			"email", participant.Email,
+			"session_uid", participant.ID,
+		)
+	} else {
+		// Create new participant record
+		zoomParticipant := ZoomPayloadForParticipant{
+			UserID:            participant.UserID,
+			UserName:          participant.UserName,
+			ID:                participant.ID,
+			JoinTime:          participant.JoinTime,
+			Email:             participant.Email,
+			ParticipantUserID: participant.ParticipantUserID,
+		}
+		newParticipant, err := s.createParticipantFromJoinedEvent(ctx, pastMeeting, zoomParticipant)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to create participant from joined event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
+			return fmt.Errorf("failed to create participant from joined event: %w", err)
+		}
+		slog.InfoContext(ctx, "created new participant from joined event",
+			"participant_uid", newParticipant.UID,
+			"email", participant.Email,
+			"is_invited", newParticipant.IsInvited,
+		)
+	}
 
 	return nil
 }
@@ -252,19 +436,89 @@ func (s *MeetingsService) handleParticipantLeftEvent(ctx context.Context, event 
 	// Convert to typed payload
 	payload, err := event.ToParticipantLeftPayload()
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to convert to typed participant left payload", "error", err)
+		slog.ErrorContext(ctx, "failed to convert to typed participant left payload", logging.ErrKey, err)
 		return fmt.Errorf("failed to parse participant left payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing participant left event",
-		"zoom_meeting_uuid", payload.Object.UUID,
-		"zoom_meeting_id", payload.Object.ID,
-		"participant_id", payload.Object.Participant.ID,
-		"participant_name", payload.Object.Participant.UserName,
-		"participant_email", payload.Object.Participant.Email,
-		"leave_time", payload.Object.Participant.LeaveTime,
-		"duration", payload.Object.Participant.Duration,
+	meetingObj := payload.Object
+	participant := meetingObj.Participant
+
+	slog.DebugContext(ctx, "processing participant left event",
+		"zoom_meeting_uuid", meetingObj.UUID,
+		"zoom_meeting_id", meetingObj.ID,
+		"participant_id", participant.ID,
+		"participant_name", participant.UserName,
+		"participant_email", participant.Email,
+		"leave_time", participant.LeaveTime,
+		"duration", participant.Duration,
 	)
+
+	// Find the PastMeeting record by platform meeting ID
+	pastMeeting, err := s.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	if err != nil {
+		if err == domain.ErrMeetingNotFound {
+			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
+				"zoom_meeting_id", meetingObj.ID,
+				"participant_email", participant.Email,
+			)
+			return nil // Don't fail the webhook processing
+		}
+		slog.ErrorContext(ctx, "error searching for past meeting", logging.ErrKey, err)
+		return fmt.Errorf("failed to search for past meeting: %w", err)
+	}
+
+	// Try to find existing PastMeetingParticipant record
+	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
+	if err != nil && err != domain.ErrRegistrantNotFound {
+		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
+		return fmt.Errorf("failed to search for existing participant: %w", err)
+	}
+
+	if existingParticipant != nil {
+		// Update existing participant's session with leave time
+		err = s.updateParticipantSessionLeaveTime(ctx, existingParticipant, participant.ID, participant.LeaveTime, participant.LeaveReason)
+		if err != nil {
+			return fmt.Errorf("failed to update participant session leave time: %w", err)
+		}
+		slog.InfoContext(ctx, "updated participant session leave time",
+			"participant_uid", existingParticipant.UID,
+			"email", participant.Email,
+			"session_uid", participant.ID,
+			"duration", participant.Duration,
+		)
+	} else {
+		// Create new participant record with completed session (they joined and left but we missed the joined event)
+		slog.WarnContext(ctx, "no existing participant found for left event, creating new record",
+			"participant_email", participant.Email,
+			"zoom_meeting_id", meetingObj.ID,
+		)
+
+		zoomParticipant := ZoomPayloadForParticipant{
+			UserID:            participant.UserID,
+			UserName:          participant.UserName,
+			ID:                participant.ID,
+			JoinTime:          participant.LeaveTime.Add(-time.Duration(participant.Duration) * time.Second), // Calculate join time from leave time and duration
+			Email:             participant.Email,
+			ParticipantUserID: participant.ParticipantUserID,
+			LeaveTime:         participant.LeaveTime,
+			LeaveReason:       participant.LeaveReason,
+		}
+
+		newParticipant, err := s.createParticipantFromLeftEvent(ctx, pastMeeting, zoomParticipant)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to create participant from left event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
+			return fmt.Errorf("failed to create participant from left event: %w", err)
+		}
+		slog.InfoContext(ctx, "created participant record from left event",
+			"participant_uid", newParticipant.UID,
+			"email", participant.Email,
+			"calculated_join_time", zoomParticipant.JoinTime,
+			"leave_time", participant.LeaveTime,
+		)
+	}
 
 	return nil
 }
@@ -278,7 +532,7 @@ func (s *MeetingsService) handleRecordingCompletedEvent(ctx context.Context, eve
 		return fmt.Errorf("failed to parse recording completed payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing recording completed event",
+	slog.DebugContext(ctx, "processing recording completed event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -298,7 +552,7 @@ func (s *MeetingsService) handleTranscriptCompletedEvent(ctx context.Context, ev
 		return fmt.Errorf("failed to parse transcript completed payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing transcript completed event",
+	slog.DebugContext(ctx, "processing transcript completed event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -317,7 +571,7 @@ func (s *MeetingsService) handleSummaryCompletedEvent(ctx context.Context, event
 		return fmt.Errorf("failed to parse summary completed payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing summary completed event",
+	slog.DebugContext(ctx, "processing summary completed event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -327,4 +581,549 @@ func (s *MeetingsService) handleSummaryCompletedEvent(ctx context.Context, event
 	)
 
 	return nil
+}
+
+// createPastMeetingRecord creates a historical record for a meeting that has started
+func (s *MeetingsService) createPastMeetingRecord(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
+	return s.createPastMeetingRecordWithSession(ctx, meeting, zoomData)
+}
+
+// createPastMeetingParticipants creates participant records for all registrants of a meeting
+func (s *MeetingsService) createPastMeetingParticipants(ctx context.Context, pastMeeting *models.PastMeeting, meeting *models.MeetingBase) error {
+	slog.DebugContext(ctx, "creating past meeting participant records",
+		"past_meeting_uid", pastMeeting.UID,
+		"meeting_uid", meeting.UID,
+	)
+
+	// Get all registrants for this meeting
+	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, meeting.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get registrants for meeting", logging.ErrKey, err)
+		return fmt.Errorf("failed to get registrants: %w", err)
+	}
+
+	// Track successful and failed creations with thread-safe counters
+	var successCount, failedCount int
+	var mu sync.Mutex
+	var failedEmails []string
+
+	tasks := []func() error{}
+
+	// Create PastMeetingParticipant records for all registrants
+	for _, registrant := range registrants {
+		// Capture registrant in closure
+		r := registrant
+		tasks = append(tasks, func() error {
+			participant := &models.PastMeetingParticipant{
+				UID:            uuid.New().String(),
+				PastMeetingUID: pastMeeting.UID,
+				MeetingUID:     meeting.UID,
+				Email:          r.Email,
+				FirstName:      r.FirstName,
+				LastName:       r.LastName,
+				IsInvited:      true,
+				IsAttended:     false, // Will be set to true when they join
+				// Sessions will be updated when participants join/leave
+			}
+
+			err := s.PastMeetingParticipantRepository.Create(ctx, participant)
+
+			// Use mutex to protect shared counters
+			mu.Lock()
+			defer mu.Unlock()
+
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to create past meeting participant record",
+					logging.ErrKey, err,
+					"past_meeting_uid", pastMeeting.UID,
+					"meeting_uid", meeting.UID,
+					"email", r.Email,
+				)
+				failedCount++
+				failedEmails = append(failedEmails, r.Email)
+				// Continue creating other participants even if one fails
+			} else {
+				successCount++
+			}
+			return nil
+		})
+	}
+
+	errWorkerPool := concurrent.NewWorkerPool(10).Run(ctx, tasks...)
+	if errWorkerPool != nil {
+		slog.ErrorContext(ctx, "failed to create some past meeting participant records",
+			logging.ErrKey, errWorkerPool,
+			"meeting_uid", meeting.UID,
+			"past_meeting_uid", pastMeeting.UID,
+		)
+	}
+
+	slog.DebugContext(ctx, "completed creating past meeting participant records",
+		"past_meeting_uid", pastMeeting.UID,
+		"meeting_uid", meeting.UID,
+		"total_registrants", len(registrants),
+		"successful", successCount,
+		"failed", failedCount,
+		"failed_emails", failedEmails,
+	)
+
+	// Return error if all creations failed
+	if failedCount > 0 && successCount == 0 {
+		return fmt.Errorf("failed to create any participant records")
+	}
+
+	return nil
+}
+
+// updatePastMeetingSessionEndTime updates the end time for the matching session in an existing PastMeeting
+func (s *MeetingsService) updatePastMeetingSessionEndTime(ctx context.Context, pastMeeting *models.PastMeeting, sessionUUID string, startTime, endTime time.Time) error {
+	slog.DebugContext(ctx, "updating past meeting session end time",
+		"past_meeting_uid", pastMeeting.UID,
+		"session_uuid", sessionUUID,
+		"end_time", endTime,
+	)
+
+	// Find the session with matching UUID and update its end time
+	sessionFound := false
+	for i := range pastMeeting.Sessions {
+		if pastMeeting.Sessions[i].UID == sessionUUID {
+			// Update end time
+			pastMeeting.Sessions[i].EndTime = &endTime
+
+			// If the session doesn't have a start time (zero value), use the one from the payload
+			if pastMeeting.Sessions[i].StartTime.IsZero() {
+				pastMeeting.Sessions[i].StartTime = startTime
+				slog.WarnContext(ctx, "session missing start time, using start time from payload",
+					"session_uuid", sessionUUID,
+					"start_time_from_payload", startTime,
+				)
+			}
+
+			sessionFound = true
+			slog.DebugContext(ctx, "found and updated session end time",
+				"session_uuid", sessionUUID,
+				"start_time", pastMeeting.Sessions[i].StartTime,
+				"end_time", endTime,
+			)
+			break
+		}
+	}
+
+	if !sessionFound {
+		slog.WarnContext(ctx, "session UUID not found in past meeting, adding new session",
+			"session_uuid", sessionUUID,
+			"past_meeting_uid", pastMeeting.UID,
+		)
+		// If session not found, add a new session with both start and end times
+		// This could happen if there was a problem with the original session creation
+		pastMeeting.Sessions = append(pastMeeting.Sessions, models.Session{
+			UID:       sessionUUID,
+			StartTime: startTime,
+			EndTime:   &endTime,
+		})
+	}
+
+	// Update the PastMeeting record in the repository
+	// We need to get the current revision first
+	_, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, pastMeeting.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get past meeting revision for update", logging.ErrKey, err)
+		return fmt.Errorf("failed to get past meeting revision: %w", err)
+	}
+
+	err = s.PastMeetingRepository.Update(ctx, pastMeeting, revision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update past meeting with session end time", logging.ErrKey, err)
+		return fmt.Errorf("failed to update past meeting: %w", err)
+	}
+
+	slog.InfoContext(ctx, "successfully updated past meeting session end time",
+		"past_meeting_uid", pastMeeting.UID,
+		"session_uuid", sessionUUID,
+	)
+
+	return nil
+}
+
+// createPastMeetingRecordForEndedEvent creates a PastMeeting record when meeting.ended is received without a prior meeting.started
+func (s *MeetingsService) createPastMeetingRecordForEndedEvent(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
+	return s.createPastMeetingRecordWithSession(ctx, meeting, zoomData)
+}
+
+// createPastMeetingRecordWithSession creates a PastMeeting record with the specified session details
+func (s *MeetingsService) createPastMeetingRecordWithSession(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
+	contextType := "creating past meeting record"
+	if zoomData.EndTime != nil {
+		contextType = "creating past meeting record for ended event (fallback)"
+	}
+
+	logFields := []any{
+		"meeting_uid", meeting.UID,
+		"zoom_meeting_uuid", zoomData.UUID,
+		"actual_start_time", zoomData.StartTime,
+		"timezone", zoomData.Timezone,
+	}
+	if zoomData.EndTime != nil {
+		logFields = append(logFields, "actual_end_time", *zoomData.EndTime)
+	}
+
+	slog.DebugContext(ctx, contextType, logFields...)
+
+	// Get platform meeting ID from Zoom config
+	platformMeetingID := ""
+	if meeting.ZoomConfig != nil {
+		platformMeetingID = meeting.ZoomConfig.MeetingID
+	}
+
+	// Calculate scheduled end time based on duration
+	scheduledEndTime := meeting.StartTime.Add(time.Duration(meeting.Duration) * time.Minute)
+
+	// Create session with appropriate end time
+	session := models.Session{
+		UID:       zoomData.UUID,
+		StartTime: zoomData.StartTime,
+		EndTime:   zoomData.EndTime, // nil for started events, set for ended events
+	}
+
+	// Create PastMeeting record with current meeting attributes and actual webhook data
+	pastMeeting := &models.PastMeeting{
+		UID:                  uuid.New().String(),
+		MeetingUID:           meeting.UID,
+		OccurrenceID:         "", // TODO: set occurrence ID once we have occurrences figured out
+		ProjectUID:           meeting.ProjectUID,
+		ScheduledStartTime:   meeting.StartTime, // Scheduled time from our meeting
+		ScheduledEndTime:     scheduledEndTime,
+		Duration:             meeting.Duration,
+		Timezone:             zoomData.Timezone, // Use timezone from webhook payload
+		Recurrence:           meeting.Recurrence,
+		Title:                meeting.Title,
+		Description:          meeting.Description,
+		Committees:           meeting.Committees,
+		Platform:             meeting.Platform,
+		PlatformMeetingID:    platformMeetingID,
+		EarlyJoinTimeMinutes: meeting.EarlyJoinTimeMinutes,
+		MeetingType:          meeting.MeetingType,
+		Visibility:           meeting.Visibility,
+		Restricted:           meeting.Restricted,
+		ArtifactVisibility:   meeting.ArtifactVisibility,
+		PublicLink:           meeting.PublicLink,
+		RecordingEnabled:     meeting.RecordingEnabled,
+		TranscriptEnabled:    meeting.TranscriptEnabled,
+		YoutubeUploadEnabled: meeting.YoutubeUploadEnabled,
+		ZoomConfig:           meeting.ZoomConfig,
+		Sessions:             []models.Session{session},
+	}
+
+	// Create the PastMeeting record
+	err := s.PastMeetingRepository.Create(ctx, pastMeeting)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create past meeting record", logging.ErrKey, err)
+		return nil, fmt.Errorf("failed to create past meeting record: %w", err)
+	}
+
+	successLogFields := []any{
+		"past_meeting_uid", pastMeeting.UID,
+		"meeting_uid", meeting.UID,
+	}
+	if zoomData.EndTime != nil {
+		successLogFields = append(successLogFields, "session_duration", zoomData.EndTime.Sub(zoomData.StartTime))
+	}
+
+	slog.DebugContext(ctx, "successfully created past meeting record", successLogFields...)
+
+	return pastMeeting, nil
+}
+
+// updateParticipantAttendance updates an existing participant record to mark them as attended and add a new session
+func (s *MeetingsService) updateParticipantAttendance(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, joinTime time.Time) error {
+	slog.DebugContext(ctx, "updating participant attendance and adding session",
+		"participant_uid", participant.UID,
+		"email", participant.Email,
+		"session_uid", sessionUID,
+		"join_time", joinTime,
+	)
+
+	// Mark as attended
+	participant.IsAttended = true
+
+	// Add new session for this join event
+	newSession := models.ParticipantSession{
+		UID:      sessionUID,
+		JoinTime: joinTime,
+		// LeaveTime will be set when participant leaves
+	}
+
+	// Check if this session already exists (shouldn't happen, but be safe)
+	sessionExists := false
+	for _, session := range participant.Sessions {
+		if session.UID == sessionUID {
+			sessionExists = true
+			slog.WarnContext(ctx, "session already exists for participant, skipping",
+				"participant_uid", participant.UID,
+				"session_uid", sessionUID,
+			)
+			break
+		}
+	}
+
+	if !sessionExists {
+		participant.Sessions = append(participant.Sessions, newSession)
+		slog.DebugContext(ctx, "added new session to participant",
+			"participant_uid", participant.UID,
+			"session_uid", sessionUID,
+			"total_sessions", len(participant.Sessions),
+		)
+	}
+
+	// Get current revision for update
+	_, revision, err := s.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get participant revision for attendance update", logging.ErrKey, err)
+		return fmt.Errorf("failed to get participant revision: %w", err)
+	}
+
+	// Update the participant record
+	err = s.PastMeetingParticipantRepository.Update(ctx, participant, revision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update participant attendance", logging.ErrKey, err)
+		return fmt.Errorf("failed to update participant: %w", err)
+	}
+
+	slog.DebugContext(ctx, "successfully updated participant attendance and session",
+		"participant_uid", participant.UID,
+		"email", participant.Email,
+		"session_uid", sessionUID,
+	)
+
+	return nil
+}
+
+// createParticipantFromJoinedEvent creates a new participant record from a participant_joined event
+func (s *MeetingsService) createParticipantFromJoinedEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
+	slog.DebugContext(ctx, "creating participant from joined event",
+		"past_meeting_uid", pastMeeting.UID,
+		"participant_email", participant.Email,
+		"participant_name", participant.UserName,
+	)
+
+	// Create session for joined event
+	session := models.ParticipantSession{
+		UID:      participant.ID,
+		JoinTime: participant.JoinTime,
+		// LeaveTime will be set when participant leaves
+	}
+
+	return s.createParticipantRecord(ctx, pastMeeting, participant, session)
+}
+
+// parseNameFromUserName attempts to parse first and last name from a display name
+func parseNameFromUserName(userName string) (firstName, lastName string) {
+	if userName == "" {
+		return "", ""
+	}
+
+	parts := strings.Fields(strings.TrimSpace(userName))
+	if len(parts) == 0 {
+		return "", ""
+	}
+
+	if len(parts) == 1 {
+		return parts[0], ""
+	}
+
+	// First part is first name, everything else is last name
+	firstName = parts[0]
+	lastName = strings.Join(parts[1:], " ")
+	return firstName, lastName
+}
+
+// updateParticipantSessionLeaveTime updates a participant's session with the leave time and reason
+func (s *MeetingsService) updateParticipantSessionLeaveTime(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, leaveTime time.Time, leaveReason string) error {
+	slog.DebugContext(ctx, "updating participant session leave time",
+		"participant_uid", participant.UID,
+		"email", participant.Email,
+		"session_uid", sessionUID,
+		"leave_time", leaveTime,
+	)
+
+	// Find the session with matching UID and update its leave time
+	sessionFound := false
+	for i := range participant.Sessions {
+		if participant.Sessions[i].UID == sessionUID {
+			participant.Sessions[i].LeaveTime = &leaveTime
+			participant.Sessions[i].LeaveReason = leaveReason
+			sessionFound = true
+
+			// Calculate duration if we have both join and leave times
+			duration := leaveTime.Sub(participant.Sessions[i].JoinTime)
+			slog.DebugContext(ctx, "found and updated session leave time",
+				"session_uid", sessionUID,
+				"join_time", participant.Sessions[i].JoinTime,
+				"leave_time", leaveTime,
+				"duration", duration,
+			)
+			break
+		}
+	}
+
+	if !sessionFound {
+		// Session not found - this could happen if we missed the join event
+		// Create a session with just the leave time (we'll estimate join time if possible)
+		slog.WarnContext(ctx, "session not found for participant, creating new session with leave time",
+			"participant_uid", participant.UID,
+			"session_uid", sessionUID,
+		)
+
+		newSession := models.ParticipantSession{
+			UID:         sessionUID,
+			LeaveTime:   &leaveTime,
+			LeaveReason: leaveReason,
+			// JoinTime will be zero value - we don't have this information
+			// Could potentially be estimated from duration if provided
+		}
+		participant.Sessions = append(participant.Sessions, newSession)
+	}
+
+	// Get current revision for update
+	_, revision, err := s.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get participant revision for session update", logging.ErrKey, err)
+		return fmt.Errorf("failed to get participant revision: %w", err)
+	}
+
+	// Update the participant record
+	err = s.PastMeetingParticipantRepository.Update(ctx, participant, revision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update participant session", logging.ErrKey, err)
+		return fmt.Errorf("failed to update participant: %w", err)
+	}
+
+	slog.DebugContext(ctx, "successfully updated participant session leave time",
+		"participant_uid", participant.UID,
+		"session_uid", sessionUID,
+	)
+
+	return nil
+}
+
+// createParticipantFromLeftEvent creates a new participant record from a participant_left event
+func (s *MeetingsService) createParticipantFromLeftEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
+	slog.DebugContext(ctx, "creating participant from left event",
+		"past_meeting_uid", pastMeeting.UID,
+		"participant_email", participant.Email,
+		"participant_name", participant.UserName,
+		"join_time", participant.JoinTime,
+		"leave_time", participant.LeaveTime,
+	)
+
+	session := models.ParticipantSession{
+		UID:         participant.ID,
+		JoinTime:    participant.JoinTime,
+		LeaveTime:   &participant.LeaveTime,
+		LeaveReason: participant.LeaveReason,
+	}
+
+	return s.createParticipantRecord(ctx, pastMeeting, participant, session)
+}
+
+// createParticipantRecord creates a participant record with the given session data
+func (s *MeetingsService) createParticipantRecord(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant, session models.ParticipantSession) (*models.PastMeetingParticipant, error) {
+	// Check if this participant was invited (has a registrant record for this meeting)
+	var matchingRegistrant *models.Registrant
+	registrants, err := s.RegistrantRepository.ListByEmail(ctx, participant.Email)
+	if err != nil {
+		slog.WarnContext(ctx, "could not check registrant records for participant",
+			logging.ErrKey, err,
+			"participant_email", participant.Email,
+		)
+		// Continue without failing - we'll treat as non-invited
+	} else {
+		// Check if any registrant is for this meeting
+		for _, registrant := range registrants {
+			if registrant.MeetingUID == pastMeeting.MeetingUID {
+				matchingRegistrant = registrant
+				slog.DebugContext(ctx, "participant was invited (found registrant record)",
+					"participant_email", participant.Email,
+					"registrant_uid", registrant.UID,
+				)
+				break
+			}
+		}
+	}
+
+	// Create new participant record based on whether they're a registrant
+	var newParticipant *models.PastMeetingParticipant
+
+	if matchingRegistrant != nil {
+		// Use registrant information for accurate data
+		slog.DebugContext(ctx, "creating participant from registrant data",
+			"registrant_uid", matchingRegistrant.UID,
+			"email", matchingRegistrant.Email,
+		)
+
+		newParticipant = &models.PastMeetingParticipant{
+			UID:                uuid.New().String(),
+			PastMeetingUID:     pastMeeting.UID,
+			MeetingUID:         pastMeeting.MeetingUID,
+			Email:              participant.Email,
+			FirstName:          matchingRegistrant.FirstName,
+			LastName:           matchingRegistrant.LastName,
+			JobTitle:           matchingRegistrant.JobTitle,
+			OrgName:            matchingRegistrant.OrgName,
+			OrgIsMember:        matchingRegistrant.OrgIsMember,
+			OrgIsProjectMember: matchingRegistrant.OrgIsProjectMember,
+			AvatarURL:          matchingRegistrant.AvatarURL,
+			Username:           matchingRegistrant.Username,
+			Host:               matchingRegistrant.Host,
+			IsInvited:          true,
+			IsAttended:         true,
+			Sessions:           []models.ParticipantSession{session},
+		}
+	} else {
+		// Parse name from Zoom data for non-registered participants
+		firstName, lastName := parseNameFromUserName(participant.UserName)
+		slog.DebugContext(ctx, "creating participant from Zoom data (not registered)",
+			"zoom_username", participant.UserName,
+			"parsed_first_name", firstName,
+			"parsed_last_name", lastName,
+		)
+
+		newParticipant = &models.PastMeetingParticipant{
+			UID:            uuid.New().String(),
+			PastMeetingUID: pastMeeting.UID,
+			MeetingUID:     pastMeeting.MeetingUID,
+			Email:          participant.Email,
+			FirstName:      firstName,
+			LastName:       lastName,
+			IsInvited:      false,
+			IsAttended:     true,
+			Sessions:       []models.ParticipantSession{session},
+		}
+	}
+
+	// Create the participant record
+	err = s.PastMeetingParticipantRepository.Create(ctx, newParticipant)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create participant record",
+			logging.ErrKey, err,
+		)
+		return nil, fmt.Errorf("failed to create participant: %w", err)
+	}
+
+	// Log success with appropriate details
+	logFields := []any{
+		"participant_uid", newParticipant.UID,
+		"email", participant.Email,
+		"is_invited", newParticipant.IsInvited,
+	}
+
+	// Add session duration if we have both join and leave times
+	if session.LeaveTime != nil && !session.JoinTime.IsZero() {
+		duration := session.LeaveTime.Sub(session.JoinTime)
+		logFields = append(logFields, "session_duration", duration)
+	}
+
+	slog.DebugContext(ctx, "successfully created participant record", logFields...)
+
+	return newParticipant, nil
 }

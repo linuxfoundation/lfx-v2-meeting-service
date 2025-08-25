@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
 	"github.com/stretchr/testify/assert"
@@ -25,13 +26,13 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 		subject      string
 		messageData  []byte
 		setupService func() *MeetingsService
-		setupMocks   func(*domain.MockMeetingRepository, *domain.MockRegistrantRepository, *domain.MockMessageBuilder)
+		setupMocks   func(*mocks.MockMeetingRepository, *mocks.MockRegistrantRepository, *mocks.MockMessageBuilder)
 	}{
 		{
 			name:        "handle meeting get title message",
 			subject:     models.MeetingGetTitleSubject,
 			messageData: []byte("01234567-89ab-cdef-0123-456789abcdef"),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				now := time.Now()
 				mockMeetingRepo.On("GetBase", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
 					&models.MeetingBase{
@@ -48,7 +49,7 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 			name:        "handle meeting deleted message",
 			subject:     models.MeetingDeletedSubject,
 			messageData: []byte(`{"meeting_uid":"meeting-to-delete"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				now := time.Now()
 				// Setup registrants for deletion
 				registrants := []*models.Registrant{
@@ -81,7 +82,7 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 			name:        "unknown subject",
 			subject:     "unknown.subject",
 			messageData: []byte(`{}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// No mock calls expected
 			},
 		},
@@ -90,21 +91,21 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var service *MeetingsService
-			var mockMeetingRepo *domain.MockMeetingRepository
-			var mockRegistrantRepo *domain.MockRegistrantRepository
-			var mockBuilder *domain.MockMessageBuilder
+			var mockMeetingRepo *mocks.MockMeetingRepository
+			var mockRegistrantRepo *mocks.MockRegistrantRepository
+			var mockBuilder *mocks.MockMessageBuilder
 			var mockAuth *auth.MockJWTAuth
 
 			if tt.setupService != nil {
 				service = tt.setupService()
 				// Create mock repositories for setup function, even if not used
-				mockMeetingRepo = &domain.MockMeetingRepository{}
-				mockRegistrantRepo = &domain.MockRegistrantRepository{}
-				mockBuilder = &domain.MockMessageBuilder{}
+				mockMeetingRepo = &mocks.MockMeetingRepository{}
+				mockRegistrantRepo = &mocks.MockRegistrantRepository{}
+				mockBuilder = &mocks.MockMessageBuilder{}
 				mockAuth = &auth.MockJWTAuth{}
 			} else {
 				service, mockMeetingRepo, mockBuilder, mockAuth = setupServiceForTesting()
-				mockRegistrantRepo = &domain.MockRegistrantRepository{}
+				mockRegistrantRepo = &mocks.MockRegistrantRepository{}
 				service.RegistrantRepository = mockRegistrantRepo
 			}
 
@@ -112,14 +113,14 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 
 			// Add email service mocks if needed for meeting deletion
 			if tt.subject == models.MeetingDeletedSubject {
-				if mockEmailService, ok := service.EmailService.(*domain.MockEmailService); ok {
+				if mockEmailService, ok := service.EmailService.(*mocks.MockEmailService); ok {
 					// Add flexible email mock that accepts any cancellation email
 					mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 				}
 			}
 
 			// Create mock message - meeting deletion messages don't expect replies
-			var mockMsg *mockMessage
+			var mockMsg *mocks.MockMessage
 			if tt.subject == models.MeetingDeletedSubject {
 				mockMsg = newMockMessageNoReply(tt.subject, tt.messageData)
 			} else {
@@ -171,17 +172,17 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 			{
 				name: "repository error",
 				setupService: func() *MeetingsService {
-					mockRepo := &domain.MockMeetingRepository{}
+					mockRepo := &mocks.MockMeetingRepository{}
 					mockRepo.On("GetBase", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
 						nil, domain.ErrInternal,
 					)
 
 					return &MeetingsService{
 						MeetingRepository:    mockRepo,
-						RegistrantRepository: &domain.MockRegistrantRepository{},
-						MessageBuilder:       &domain.MockMessageBuilder{},
+						RegistrantRepository: &mocks.MockRegistrantRepository{},
+						MessageBuilder:       &mocks.MockMessageBuilder{},
 						Auth:                 &auth.MockJWTAuth{},
-						PlatformRegistry:     &domain.MockPlatformRegistry{},
+						PlatformRegistry:     &mocks.MockPlatformRegistry{},
 					}
 				},
 				subject:     models.MeetingGetTitleSubject,
@@ -202,7 +203,7 @@ func TestMeetingsService_HandleMessage(t *testing.T) {
 					service.HandleMessage(ctx, mockMsg)
 				})
 
-				if mockRepo, ok := service.MeetingRepository.(*domain.MockMeetingRepository); ok {
+				if mockRepo, ok := service.MeetingRepository.(*mocks.MockMeetingRepository); ok {
 					mockRepo.AssertExpectations(t)
 				}
 			})
@@ -254,14 +255,14 @@ func TestMeetingsService_HandleMeetingGetTitle(t *testing.T) {
 	tests := []struct {
 		name        string
 		messageData []byte
-		setupMocks  func(*domain.MockMeetingRepository)
+		setupMocks  func(*mocks.MockMeetingRepository)
 		expectedErr bool
 		validate    func(*testing.T, []byte)
 	}{
 		{
 			name:        "successful get meeting title",
 			messageData: []byte("01234567-89ab-cdef-0123-456789abcdef"),
-			setupMocks: func(mockRepo *domain.MockMeetingRepository) {
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository) {
 				now := time.Now()
 				mockRepo.On("GetBase", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
 					&models.MeetingBase{
@@ -281,7 +282,7 @@ func TestMeetingsService_HandleMeetingGetTitle(t *testing.T) {
 		{
 			name:        "meeting not found",
 			messageData: []byte("01234567-89ab-cdef-0123-456789abcd00"),
-			setupMocks: func(mockRepo *domain.MockMeetingRepository) {
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository) {
 				mockRepo.On("GetBase", mock.Anything, "01234567-89ab-cdef-0123-456789abcd00").Return(
 					nil, domain.ErrMeetingNotFound,
 				)
@@ -291,7 +292,7 @@ func TestMeetingsService_HandleMeetingGetTitle(t *testing.T) {
 		{
 			name:        "invalid JSON",
 			messageData: []byte(`invalid-json`),
-			setupMocks: func(mockRepo *domain.MockMeetingRepository) {
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository) {
 				// No repo calls expected
 			},
 			expectedErr: true,
@@ -299,7 +300,7 @@ func TestMeetingsService_HandleMeetingGetTitle(t *testing.T) {
 		{
 			name:        "missing UID",
 			messageData: []byte(`{}`),
-			setupMocks: func(mockRepo *domain.MockMeetingRepository) {
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository) {
 				// No repo calls expected
 			},
 			expectedErr: true,
@@ -307,7 +308,7 @@ func TestMeetingsService_HandleMeetingGetTitle(t *testing.T) {
 		{
 			name:        "empty UID",
 			messageData: []byte(`{"uid": ""}`),
-			setupMocks: func(mockRepo *domain.MockMeetingRepository) {
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository) {
 				// No repo calls expected
 			},
 			expectedErr: true,
@@ -345,7 +346,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 	tests := []struct {
 		name           string
 		messageData    []byte
-		setupMocks     func(*domain.MockMeetingRepository, *domain.MockRegistrantRepository, *domain.MockMessageBuilder)
+		setupMocks     func(*mocks.MockMeetingRepository, *mocks.MockRegistrantRepository, *mocks.MockMessageBuilder)
 		setupService   func() *MeetingsService
 		expectedErr    bool
 		expectedResult string
@@ -354,7 +355,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "successful cleanup with multiple registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-123"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				now := time.Now()
 				// Setup registrants to be cleaned up
 				registrants := []*models.Registrant{
@@ -414,7 +415,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "successful cleanup with no registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-empty"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-empty").Return([]*models.Registrant{}, nil)
 			},
 			expectedErr: false,
@@ -425,7 +426,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "partial failure in registrant cleanup",
 			messageData: []byte(`{"meeting_uid":"meeting-456"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				now := time.Now()
 				registrants := []*models.Registrant{
 					{
@@ -471,7 +472,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "error getting registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-error"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-error").Return(nil, domain.ErrInternal)
 			},
 			expectedErr: true,
@@ -479,7 +480,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "invalid JSON message",
 			messageData: []byte(`invalid-json`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// No mock calls expected
 			},
 			expectedErr: true,
@@ -487,7 +488,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "empty meeting UID",
 			messageData: []byte(`{"meeting_uid":""}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// No mock calls expected
 			},
 			expectedErr: true,
@@ -495,7 +496,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "missing meeting UID",
 			messageData: []byte(`{}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// No mock calls expected
 			},
 			expectedErr: true,
@@ -503,7 +504,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "registrant already deleted during cleanup",
 			messageData: []byte(`{"meeting_uid":"meeting-already-deleted"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				registrants := []*models.Registrant{
 					{
 						UID:        "registrant-already-deleted",
@@ -535,7 +536,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 					Auth:                 &auth.MockJWTAuth{},
 				}
 			},
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// No mock calls expected for service not ready
 			},
 			expectedErr: true,
@@ -546,7 +547,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "concurrent processing of many registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-concurrent"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				now := time.Now()
 				// Create many registrants to test concurrent processing
 				const numRegistrants = 50
@@ -590,7 +591,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		{
 			name:        "end-to-end message handling integration",
 			messageData: []byte(`{"meeting_uid":"integration-test-meeting"}`),
-			setupMocks: func(mockMeetingRepo *domain.MockMeetingRepository, mockRegistrantRepo *domain.MockRegistrantRepository, mockBuilder *domain.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				now := time.Now()
 				// Test the full message handling flow
 				registrants := []*models.Registrant{
@@ -632,26 +633,26 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var service *MeetingsService
-			var mockMeetingRepo *domain.MockMeetingRepository
-			var mockRegistrantRepo *domain.MockRegistrantRepository
-			var mockBuilder *domain.MockMessageBuilder
+			var mockMeetingRepo *mocks.MockMeetingRepository
+			var mockRegistrantRepo *mocks.MockRegistrantRepository
+			var mockBuilder *mocks.MockMessageBuilder
 
 			if tt.setupService != nil {
 				service = tt.setupService()
 				// Create mock repositories for setup function, even if not used
-				mockMeetingRepo = &domain.MockMeetingRepository{}
-				mockRegistrantRepo = &domain.MockRegistrantRepository{}
-				mockBuilder = &domain.MockMessageBuilder{}
+				mockMeetingRepo = &mocks.MockMeetingRepository{}
+				mockRegistrantRepo = &mocks.MockRegistrantRepository{}
+				mockBuilder = &mocks.MockMessageBuilder{}
 			} else {
 				service, mockMeetingRepo, mockBuilder, _ = setupServiceForTesting()
-				mockRegistrantRepo = &domain.MockRegistrantRepository{}
+				mockRegistrantRepo = &mocks.MockRegistrantRepository{}
 				service.RegistrantRepository = mockRegistrantRepo
 			}
 
 			tt.setupMocks(mockMeetingRepo, mockRegistrantRepo, mockBuilder)
 
 			// Add email service mocks for meeting deletion tests
-			if mockEmailService, ok := service.EmailService.(*domain.MockEmailService); ok {
+			if mockEmailService, ok := service.EmailService.(*mocks.MockEmailService); ok {
 				// Add flexible email mock that accepts any cancellation email
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			}
@@ -683,7 +684,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 	// Special integration test that goes through HandleMessage
 	t.Run("full message handler integration", func(t *testing.T) {
 		service, mockMeetingRepo, mockBuilder, _ := setupServiceForTesting()
-		mockRegistrantRepo := &domain.MockRegistrantRepository{}
+		mockRegistrantRepo := &mocks.MockRegistrantRepository{}
 		service.RegistrantRepository = mockRegistrantRepo
 
 		now := time.Now()
@@ -718,7 +719,7 @@ func TestMeetingsService_HandleMeetingDeleted(t *testing.T) {
 		}, nil)
 
 		// Add email service mock for cancellation email
-		if mockEmailService, ok := service.EmailService.(*domain.MockEmailService); ok {
+		if mockEmailService, ok := service.EmailService.(*mocks.MockEmailService); ok {
 			mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 		}
 

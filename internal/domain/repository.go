@@ -29,6 +29,9 @@ type MeetingRepository interface {
 
 	// Bulk operations
 	ListAll(ctx context.Context) ([]*models.MeetingBase, []*models.MeetingSettings, error)
+
+	// Platform-specific operations
+	GetByZoomMeetingID(ctx context.Context, zoomMeetingID string) (*models.MeetingBase, error)
 }
 
 // RegistrantRepository defines the interface for registrant storage operations.
