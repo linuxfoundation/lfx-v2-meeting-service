@@ -9,6 +9,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -378,6 +379,8 @@ func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeet
 		return nil, domain.ErrServiceUnavailable
 	}
 
+	start := time.Now()
+
 	// List all meetings
 	meetings, err := s.ListAllBase(ctx)
 	if err != nil {
@@ -390,6 +393,14 @@ func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeet
 			return meeting, nil
 		}
 	}
+
+	elapsed := time.Since(start)
+	slog.DebugContext(ctx, "fetched meetings by zoom meeting ID",
+		"elapsed_time_ms", elapsed.Milliseconds(),
+		"elapsed_time", elapsed.String(),
+		"zoom_meeting_id", zoomMeetingID,
+		"meetings_count", len(meetings),
+	)
 
 	return nil, domain.ErrMeetingNotFound
 }
