@@ -3090,12 +3090,12 @@ func NewCreatePastMeetingPayload(body *CreatePastMeetingRequestBody, version *st
 		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
 		MeetingType:          body.MeetingType,
 		Visibility:           body.Visibility,
-		Restricted:           *body.Restricted,
+		Restricted:           body.Restricted,
 		ArtifactVisibility:   body.ArtifactVisibility,
 		PublicLink:           body.PublicLink,
-		RecordingEnabled:     *body.RecordingEnabled,
-		TranscriptEnabled:    *body.TranscriptEnabled,
-		YoutubeUploadEnabled: *body.YoutubeUploadEnabled,
+		RecordingEnabled:     body.RecordingEnabled,
+		TranscriptEnabled:    body.TranscriptEnabled,
+		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
@@ -3445,18 +3445,6 @@ func ValidateCreatePastMeetingRequestBody(body *CreatePastMeetingRequestBody) (e
 	}
 	if body.Platform == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("platform", "body"))
-	}
-	if body.Restricted == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("restricted", "body"))
-	}
-	if body.RecordingEnabled == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("recording_enabled", "body"))
-	}
-	if body.TranscriptEnabled == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("transcript_enabled", "body"))
-	}
-	if body.YoutubeUploadEnabled == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("youtube_upload_enabled", "body"))
 	}
 	if body.MeetingUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))

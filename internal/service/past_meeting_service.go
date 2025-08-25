@@ -202,26 +202,22 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, payload *mee
 	// Create the domain model
 	now := time.Now()
 	pastMeeting := &models.PastMeeting{
-		UID:                  uuid.New().String(),
-		MeetingUID:           payload.MeetingUID,
-		ProjectUID:           payload.ProjectUID,
-		ScheduledStartTime:   scheduledStartTime,
-		ScheduledEndTime:     scheduledEndTime,
-		Duration:             payload.Duration,
-		Timezone:             payload.Timezone,
-		Recurrence:           recurrence,
-		Title:                payload.Title,
-		Description:          payload.Description,
-		Committees:           committees,
-		Platform:             payload.Platform,
-		Restricted:           payload.Restricted,
-		RecordingEnabled:     payload.RecordingEnabled,
-		TranscriptEnabled:    payload.TranscriptEnabled,
-		YoutubeUploadEnabled: payload.YoutubeUploadEnabled,
-		ZoomConfig:           zoomConfig,
-		Sessions:             sessions,
-		CreatedAt:            &now,
-		UpdatedAt:            &now,
+		UID:                uuid.New().String(),
+		MeetingUID:         payload.MeetingUID,
+		ProjectUID:         payload.ProjectUID,
+		ScheduledStartTime: scheduledStartTime,
+		ScheduledEndTime:   scheduledEndTime,
+		Duration:           payload.Duration,
+		Timezone:           payload.Timezone,
+		Recurrence:         recurrence,
+		Title:              payload.Title,
+		Description:        payload.Description,
+		Committees:         committees,
+		Platform:           payload.Platform,
+		ZoomConfig:         zoomConfig,
+		Sessions:           sessions,
+		CreatedAt:          &now,
+		UpdatedAt:          &now,
 	}
 
 	// Set optional fields if provided
@@ -246,6 +242,18 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, payload *mee
 	if payload.PublicLink != nil {
 		pastMeeting.PublicLink = *payload.PublicLink
 	}
+	if payload.Restricted != nil {
+		pastMeeting.Restricted = *payload.Restricted
+	}
+	if payload.RecordingEnabled != nil {
+		pastMeeting.RecordingEnabled = *payload.RecordingEnabled
+	}
+	if payload.TranscriptEnabled != nil {
+		pastMeeting.TranscriptEnabled = *payload.TranscriptEnabled
+	}
+	if payload.YoutubeUploadEnabled != nil {
+		pastMeeting.YoutubeUploadEnabled = *payload.YoutubeUploadEnabled
+	}
 
 	// Save to repository
 	if err := s.PastMeetingRepository.Create(ctx, pastMeeting); err != nil {
@@ -269,9 +277,9 @@ func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.Pas
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
 	pastMeeting, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, uid)
 	if err != nil {
-		if errors.Is(err, domain.ErrMeetingNotFound) {
+		if errors.Is(err, domain.ErrPastMeetingNotFound) {
 			slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, err)
-			return nil, "", domain.ErrMeetingNotFound
+			return nil, "", domain.ErrPastMeetingNotFound
 		}
 		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
 		return nil, "", domain.ErrInternal
@@ -281,6 +289,25 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*m
 }
 
 func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "past meeting service not ready", logging.PriorityCritical())
+		return domain.ErrServiceUnavailable
+	}
+
+	var err error
+	if s.Config.SkipEtagValidation {
+		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
+		_, revision, err = s.PastMeetingRepository.GetWithRevision(ctx, uid)
+		if err != nil {
+			if errors.Is(err, domain.ErrPastMeetingNotFound) {
+				slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, err)
+				return domain.ErrPastMeetingNotFound
+			}
+			slog.ErrorContext(ctx, "error getting meeting from store", logging.ErrKey, err)
+			return domain.ErrInternal
+		}
+	}
+
 	// Check if the past meeting exists
 	exists, err := s.PastMeetingRepository.Exists(ctx, uid)
 	if err != nil {
@@ -289,14 +316,18 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found", "uid", uid)
-		return domain.ErrMeetingNotFound
+		return domain.ErrPastMeetingNotFound
 	}
 
 	// Delete the past meeting
 	if err := s.PastMeetingRepository.Delete(ctx, uid, revision); err != nil {
-		if errors.Is(err, domain.ErrMeetingNotFound) {
+		if errors.Is(err, domain.ErrRevisionMismatch) {
+			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
+			return domain.ErrRevisionMismatch
+		}
+		if errors.Is(err, domain.ErrPastMeetingNotFound) {
 			slog.WarnContext(ctx, "past meeting not found during deletion", logging.ErrKey, err)
-			return domain.ErrMeetingNotFound
+			return domain.ErrPastMeetingNotFound
 		}
 		slog.ErrorContext(ctx, "error deleting past meeting", logging.ErrKey, err)
 		return domain.ErrInternal

@@ -297,7 +297,7 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 
 	meetingObj := payload.Object
 
-	slog.InfoContext(ctx, "meeting started",
+	slog.DebugContext(ctx, "meeting started",
 		"zoom_meeting_id", meetingObj.ID,
 		"zoom_meeting_uuid", meetingObj.UUID,
 		"topic", meetingObj.Topic,
@@ -321,6 +321,10 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 	}
 	pastMeeting, err := s.createPastMeetingRecord(ctx, meeting, zoomData)
 	if err != nil {
+		slog.ErrorContext(ctx, "failed to create past meeting record",
+			logging.ErrKey, err,
+			logging.PriorityCritical(),
+		)
 		return fmt.Errorf("failed to create past meeting record: %w", err)
 	}
 
@@ -328,7 +332,10 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 	err = s.createPastMeetingParticipants(ctx, pastMeeting, meeting)
 	if err != nil {
 		// Log the error but don't fail the entire webhook processing
-		slog.ErrorContext(ctx, "failed to create past meeting participants", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "failed to create past meeting participants",
+			logging.ErrKey, err,
+			logging.PriorityCritical(),
+		)
 	}
 
 	return nil
@@ -344,7 +351,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 	}
 
 	meetingObj := payload.Object
-	slog.InfoContext(ctx, "processing meeting ended event",
+	slog.DebugContext(ctx, "processing meeting ended event",
 		"zoom_meeting_uuid", meetingObj.UUID,
 		"zoom_meeting_id", meetingObj.ID,
 		"topic", meetingObj.Topic,
@@ -390,6 +397,10 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 		}
 		pastMeeting, err := s.createPastMeetingRecordForEndedEvent(ctx, meeting, zoomData)
 		if err != nil {
+			slog.ErrorContext(ctx, "failed to create past meeting record for ended event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
 			return fmt.Errorf("failed to create past meeting record for ended event: %w", err)
 		}
 
@@ -397,7 +408,10 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 		err = s.createPastMeetingParticipants(ctx, pastMeeting, meeting)
 		if err != nil {
 			// Log the error but don't fail the entire webhook processing
-			slog.ErrorContext(ctx, "failed to create past meeting participants for ended event", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "failed to create past meeting participants for ended event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
 		}
 
 		slog.InfoContext(ctx, "successfully created past meeting record from ended event",
@@ -418,7 +432,7 @@ func (s *ZoomWebhookHandler) handleMeetingDeletedEvent(ctx context.Context, even
 		return fmt.Errorf("failed to parse meeting deleted payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing meeting deleted event",
+	slog.DebugContext(ctx, "processing meeting deleted event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -439,7 +453,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 	meetingObj := payload.Object
 	participant := meetingObj.Participant
 
-	slog.InfoContext(ctx, "processing participant joined event",
+	slog.DebugContext(ctx, "processing participant joined event",
 		"zoom_meeting_uuid", meetingObj.UUID,
 		"zoom_meeting_id", meetingObj.ID,
 		"participant_id", participant.ID,
@@ -492,6 +506,10 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 		}
 		newParticipant, err := s.createParticipantFromJoinedEvent(ctx, pastMeeting, zoomParticipant)
 		if err != nil {
+			slog.ErrorContext(ctx, "failed to create participant from joined event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
 			return fmt.Errorf("failed to create participant from joined event: %w", err)
 		}
 		slog.InfoContext(ctx, "created new participant from joined event",
@@ -516,7 +534,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 	meetingObj := payload.Object
 	participant := meetingObj.Participant
 
-	slog.InfoContext(ctx, "processing participant left event",
+	slog.DebugContext(ctx, "processing participant left event",
 		"zoom_meeting_uuid", meetingObj.UUID,
 		"zoom_meeting_id", meetingObj.ID,
 		"participant_id", participant.ID,
@@ -579,6 +597,10 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 
 		newParticipant, err := s.createParticipantFromLeftEvent(ctx, pastMeeting, zoomParticipant)
 		if err != nil {
+			slog.ErrorContext(ctx, "failed to create participant from left event",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
 			return fmt.Errorf("failed to create participant from left event: %w", err)
 		}
 		slog.InfoContext(ctx, "created participant record from left event",
@@ -601,7 +623,7 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 		return fmt.Errorf("failed to parse recording completed payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing recording completed event",
+	slog.DebugContext(ctx, "processing recording completed event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -621,7 +643,7 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 		return fmt.Errorf("failed to parse transcript completed payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing transcript completed event",
+	slog.DebugContext(ctx, "processing transcript completed event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -640,7 +662,7 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 		return fmt.Errorf("failed to parse summary completed payload: %w", err)
 	}
 
-	slog.InfoContext(ctx, "processing summary completed event",
+	slog.DebugContext(ctx, "processing summary completed event",
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
@@ -659,7 +681,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecord(ctx context.Context, meetin
 
 // createPastMeetingParticipants creates participant records for all registrants of a meeting
 func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, pastMeeting *models.PastMeeting, meeting *models.MeetingBase) error {
-	slog.InfoContext(ctx, "creating past meeting participant records",
+	slog.DebugContext(ctx, "creating past meeting participant records",
 		"past_meeting_uid", pastMeeting.UID,
 		"meeting_uid", meeting.UID,
 	)
@@ -727,7 +749,7 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 		)
 	}
 
-	slog.InfoContext(ctx, "completed creating past meeting participant records",
+	slog.DebugContext(ctx, "completed creating past meeting participant records",
 		"past_meeting_uid", pastMeeting.UID,
 		"meeting_uid", meeting.UID,
 		"total_registrants", len(registrants),
@@ -746,7 +768,7 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 
 // updatePastMeetingSessionEndTime updates the end time for the matching session in an existing PastMeeting
 func (s *ZoomWebhookHandler) updatePastMeetingSessionEndTime(ctx context.Context, pastMeeting *models.PastMeeting, sessionUUID string, startTime, endTime time.Time) error {
-	slog.InfoContext(ctx, "updating past meeting session end time",
+	slog.DebugContext(ctx, "updating past meeting session end time",
 		"past_meeting_uid", pastMeeting.UID,
 		"session_uuid", sessionUUID,
 		"end_time", endTime,
@@ -762,14 +784,14 @@ func (s *ZoomWebhookHandler) updatePastMeetingSessionEndTime(ctx context.Context
 			// If the session doesn't have a start time (zero value), use the one from the payload
 			if pastMeeting.Sessions[i].StartTime.IsZero() {
 				pastMeeting.Sessions[i].StartTime = startTime
-				slog.InfoContext(ctx, "session missing start time, using start time from payload",
+				slog.WarnContext(ctx, "session missing start time, using start time from payload",
 					"session_uuid", sessionUUID,
 					"start_time_from_payload", startTime,
 				)
 			}
 
 			sessionFound = true
-			slog.InfoContext(ctx, "found and updated session end time",
+			slog.DebugContext(ctx, "found and updated session end time",
 				"session_uuid", sessionUUID,
 				"start_time", pastMeeting.Sessions[i].StartTime,
 				"end_time", endTime,
@@ -836,7 +858,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		logFields = append(logFields, "actual_end_time", *zoomData.EndTime)
 	}
 
-	slog.InfoContext(ctx, contextType, logFields...)
+	slog.DebugContext(ctx, contextType, logFields...)
 
 	// Get platform meeting ID from Zoom config
 	platformMeetingID := ""
@@ -898,14 +920,14 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		successLogFields = append(successLogFields, "session_duration", zoomData.EndTime.Sub(zoomData.StartTime))
 	}
 
-	slog.InfoContext(ctx, "successfully created past meeting record", successLogFields...)
+	slog.DebugContext(ctx, "successfully created past meeting record", successLogFields...)
 
 	return pastMeeting, nil
 }
 
 // updateParticipantAttendance updates an existing participant record to mark them as attended and add a new session
 func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, joinTime time.Time) error {
-	slog.InfoContext(ctx, "updating participant attendance and adding session",
+	slog.DebugContext(ctx, "updating participant attendance and adding session",
 		"participant_uid", participant.UID,
 		"email", participant.Email,
 		"session_uid", sessionUID,
@@ -937,7 +959,7 @@ func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, pa
 
 	if !sessionExists {
 		participant.Sessions = append(participant.Sessions, newSession)
-		slog.InfoContext(ctx, "added new session to participant",
+		slog.DebugContext(ctx, "added new session to participant",
 			"participant_uid", participant.UID,
 			"session_uid", sessionUID,
 			"total_sessions", len(participant.Sessions),
@@ -958,7 +980,7 @@ func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, pa
 		return fmt.Errorf("failed to update participant: %w", err)
 	}
 
-	slog.InfoContext(ctx, "successfully updated participant attendance and session",
+	slog.DebugContext(ctx, "successfully updated participant attendance and session",
 		"participant_uid", participant.UID,
 		"email", participant.Email,
 		"session_uid", sessionUID,
@@ -969,7 +991,7 @@ func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, pa
 
 // createParticipantFromJoinedEvent creates a new participant record from a participant_joined event
 func (s *ZoomWebhookHandler) createParticipantFromJoinedEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
-	slog.InfoContext(ctx, "creating participant from joined event",
+	slog.DebugContext(ctx, "creating participant from joined event",
 		"past_meeting_uid", pastMeeting.UID,
 		"participant_email", participant.Email,
 		"participant_name", participant.UserName,
@@ -1008,7 +1030,7 @@ func parseNameFromUserName(userName string) (firstName, lastName string) {
 
 // updateParticipantSessionLeaveTime updates a participant's session with the leave time and reason
 func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, leaveTime time.Time, leaveReason string) error {
-	slog.InfoContext(ctx, "updating participant session leave time",
+	slog.DebugContext(ctx, "updating participant session leave time",
 		"participant_uid", participant.UID,
 		"email", participant.Email,
 		"session_uid", sessionUID,
@@ -1025,7 +1047,7 @@ func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(ctx context.Conte
 
 			// Calculate duration if we have both join and leave times
 			duration := leaveTime.Sub(participant.Sessions[i].JoinTime)
-			slog.InfoContext(ctx, "found and updated session leave time",
+			slog.DebugContext(ctx, "found and updated session leave time",
 				"session_uid", sessionUID,
 				"join_time", participant.Sessions[i].JoinTime,
 				"leave_time", leaveTime,
@@ -1067,7 +1089,7 @@ func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(ctx context.Conte
 		return fmt.Errorf("failed to update participant: %w", err)
 	}
 
-	slog.InfoContext(ctx, "successfully updated participant session leave time",
+	slog.DebugContext(ctx, "successfully updated participant session leave time",
 		"participant_uid", participant.UID,
 		"session_uid", sessionUID,
 	)
@@ -1077,7 +1099,7 @@ func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(ctx context.Conte
 
 // createParticipantFromLeftEvent creates a new participant record from a participant_left event
 func (s *ZoomWebhookHandler) createParticipantFromLeftEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
-	slog.InfoContext(ctx, "creating participant from left event",
+	slog.DebugContext(ctx, "creating participant from left event",
 		"past_meeting_uid", pastMeeting.UID,
 		"participant_email", participant.Email,
 		"participant_name", participant.UserName,
@@ -1111,7 +1133,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 		for _, registrant := range registrants {
 			if registrant.MeetingUID == pastMeeting.MeetingUID {
 				matchingRegistrant = registrant
-				slog.InfoContext(ctx, "participant was invited (found registrant record)",
+				slog.DebugContext(ctx, "participant was invited (found registrant record)",
 					"participant_email", participant.Email,
 					"registrant_uid", registrant.UID,
 				)
@@ -1125,7 +1147,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 
 	if matchingRegistrant != nil {
 		// Use registrant information for accurate data
-		slog.InfoContext(ctx, "creating participant from registrant data",
+		slog.DebugContext(ctx, "creating participant from registrant data",
 			"registrant_uid", matchingRegistrant.UID,
 			"email", matchingRegistrant.Email,
 		)
@@ -1151,7 +1173,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 	} else {
 		// Parse name from Zoom data for non-registered participants
 		firstName, lastName := parseNameFromUserName(participant.UserName)
-		slog.InfoContext(ctx, "creating participant from Zoom data (not registered)",
+		slog.DebugContext(ctx, "creating participant from Zoom data (not registered)",
 			"zoom_username", participant.UserName,
 			"parsed_first_name", firstName,
 			"parsed_last_name", lastName,
@@ -1192,7 +1214,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 		logFields = append(logFields, "session_duration", duration)
 	}
 
-	slog.InfoContext(ctx, "successfully created participant record", logFields...)
+	slog.DebugContext(ctx, "successfully created participant record", logFields...)
 
 	return newParticipant, nil
 }

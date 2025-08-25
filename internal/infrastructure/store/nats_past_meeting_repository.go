@@ -63,8 +63,8 @@ func (s *NatsPastMeetingRepository) GetWithRevision(ctx context.Context, pastMee
 	entry, err := s.get(ctx, pastMeetingUID)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, domain.ErrMeetingNotFound)
-			return nil, 0, domain.ErrMeetingNotFound
+			slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, domain.ErrPastMeetingNotFound)
+			return nil, 0, domain.ErrPastMeetingNotFound
 		}
 		slog.ErrorContext(ctx, "error getting past meeting from NATS KV", logging.ErrKey, err)
 		return nil, 0, domain.ErrInternal
@@ -151,7 +151,7 @@ func (s *NatsPastMeetingRepository) Update(ctx context.Context, pastMeeting *mod
 	_, err = s.PastMeetings.Update(ctx, pastMeeting.UID, pastMeetingBytes, revision)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.ErrMeetingNotFound
+			return domain.ErrPastMeetingNotFound
 		}
 		slog.ErrorContext(ctx, "error updating past meeting in NATS KV", logging.ErrKey, err)
 		return domain.ErrInternal
@@ -168,7 +168,11 @@ func (s *NatsPastMeetingRepository) Delete(ctx context.Context, pastMeetingUID s
 	err := s.PastMeetings.Delete(ctx, pastMeetingUID, jetstream.LastRevision(revision))
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.ErrMeetingNotFound
+			return domain.ErrPastMeetingNotFound
+		}
+		if strings.Contains(err.Error(), "wrong last sequence") {
+			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
+			return domain.ErrRevisionMismatch
 		}
 		slog.ErrorContext(ctx, "error deleting past meeting from NATS KV", logging.ErrKey, err)
 		return domain.ErrInternal
@@ -276,7 +280,7 @@ func (s *NatsPastMeetingRepository) GetByMeetingAndOccurrence(ctx context.Contex
 		}
 	}
 
-	return nil, domain.ErrMeetingNotFound
+	return nil, domain.ErrPastMeetingNotFound
 }
 
 func (s *NatsPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error) {
@@ -312,7 +316,7 @@ func (s *NatsPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, 
 		}
 	}
 
-	return nil, domain.ErrMeetingNotFound
+	return nil, domain.ErrPastMeetingNotFound
 }
 
 // Ensure NatsPastMeetingRepository implements domain.PastMeetingRepository

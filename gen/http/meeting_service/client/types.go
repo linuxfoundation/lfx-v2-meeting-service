@@ -213,7 +213,7 @@ type CreatePastMeetingRequestBody struct {
 	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
 	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
 	// only invited users or anyone?)
-	Restricted bool `form:"restricted" json:"restricted" xml:"restricted"`
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
@@ -222,11 +222,11 @@ type CreatePastMeetingRequestBody struct {
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
 	// Whether recording is enabled for the meeting
-	RecordingEnabled bool `form:"recording_enabled" json:"recording_enabled" xml:"recording_enabled"`
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
 	// Whether transcription is enabled for the meeting
-	TranscriptEnabled bool `form:"transcript_enabled" json:"transcript_enabled" xml:"transcript_enabled"`
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled bool `form:"youtube_upload_enabled" json:"youtube_upload_enabled" xml:"youtube_upload_enabled"`
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// Sessions represent individual start/end periods if a meeting was stopped and

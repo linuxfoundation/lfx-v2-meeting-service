@@ -230,7 +230,7 @@ type CreatePastMeetingPayload struct {
 	Visibility *string
 	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
 	// only invited users or anyone?)
-	Restricted bool
+	Restricted *bool
 	// The visibility of artifacts to users (e.g. public, only for registrants,
 	// only for hosts)
 	ArtifactVisibility *string
@@ -239,11 +239,11 @@ type CreatePastMeetingPayload struct {
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string
 	// Whether recording is enabled for the meeting
-	RecordingEnabled bool
+	RecordingEnabled *bool
 	// Whether transcription is enabled for the meeting
-	TranscriptEnabled bool
+	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled bool
+	YoutubeUploadEnabled *bool
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFull
 	// Sessions represent individual start/end periods if a meeting was stopped and

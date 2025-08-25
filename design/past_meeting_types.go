@@ -34,7 +34,7 @@ var CreatePastMeetingPayload = Type("CreatePastMeetingPayload", func() {
 	YoutubeUploadEnabledAttribute()
 	ZoomConfigFullAttribute()
 	PastMeetingSessionsAttribute()
-	Required("meeting_uid", "project_uid", "scheduled_start_time", "scheduled_end_time", "duration", "timezone", "title", "description", "platform", "restricted", "recording_enabled", "transcript_enabled", "youtube_upload_enabled")
+	Required("meeting_uid", "project_uid", "scheduled_start_time", "scheduled_end_time", "duration", "timezone", "title", "description", "platform")
 })
 
 // PastMeeting is the DSL type for a past meeting record.

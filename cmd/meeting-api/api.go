@@ -84,6 +84,7 @@ func createResponse(code int, err error) error {
 }
 
 // handleError converts domain errors to HTTP errors.
+// TODO: figure out solution where we don't need to update this function when new errors are added.
 func handleError(err error) error {
 	switch err {
 	case domain.ErrServiceUnavailable:
@@ -96,6 +97,8 @@ func handleError(err error) error {
 		return createResponse(http.StatusBadRequest, domain.ErrRegistrantAlreadyExists)
 	case domain.ErrMeetingNotFound:
 		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
+	case domain.ErrPastMeetingNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrPastMeetingNotFound)
 	case domain.ErrRegistrantNotFound:
 		return createResponse(http.StatusNotFound, domain.ErrRegistrantNotFound)
 	case domain.ErrInternal, domain.ErrUnmarshal:
