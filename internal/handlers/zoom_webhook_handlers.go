@@ -363,7 +363,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 
 	// Try to find existing PastMeeting record by platform meeting ID
 	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
-	if err != nil && err != domain.ErrMeetingNotFound {
+	if err != nil && err != domain.ErrPastMeetingNotFound {
 		slog.ErrorContext(ctx, "error searching for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing past meeting: %w", err)
 	}
@@ -465,7 +465,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 	// Find the PastMeeting record by platform meeting ID
 	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
 	if err != nil {
-		if err == domain.ErrMeetingNotFound {
+		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
 				"zoom_meeting_id", meetingObj.ID,
 				"participant_email", participant.Email,
@@ -478,7 +478,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 
 	// Try to find existing PastMeetingParticipant record
 	existingParticipant, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
-	if err != nil && err != domain.ErrRegistrantNotFound {
+	if err != nil && err != domain.ErrPastMeetingParticipantNotFound {
 		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing participant: %w", err)
 	}
@@ -547,7 +547,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 	// Find the PastMeeting record by platform meeting ID
 	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
 	if err != nil {
-		if err == domain.ErrMeetingNotFound {
+		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
 				"zoom_meeting_id", meetingObj.ID,
 				"participant_email", participant.Email,
@@ -560,7 +560,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 
 	// Try to find existing PastMeetingParticipant record
 	existingParticipant, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
-	if err != nil && err != domain.ErrRegistrantNotFound {
+	if err != nil && err != domain.ErrPastMeetingParticipantNotFound {
 		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing participant: %w", err)
 	}

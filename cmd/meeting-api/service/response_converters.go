@@ -33,6 +33,7 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 		Recurrence:  convertDomainToRecurrenceResponse(meetingBase.Recurrence),
 		Title:       utils.StringPtr(meetingBase.Title),
 		Description: utils.StringPtr(meetingBase.Description),
+		Restricted:  utils.BoolPtr(meetingBase.Restricted),
 	}
 
 	// Only set string fields if they're not empty
@@ -53,6 +54,9 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 	}
 	if meetingBase.JoinURL != "" {
 		meetingFull.JoinURL = utils.StringPtr(meetingBase.JoinURL)
+	}
+	if meetingBase.EarlyJoinTimeMinutes != 0 {
+		meetingFull.EarlyJoinTimeMinutes = utils.IntPtr(meetingBase.EarlyJoinTimeMinutes)
 	}
 	if meetingBase.EmailDeliveryErrorCount != 0 {
 		meetingFull.EmailDeliveryErrorCount = utils.IntPtr(meetingBase.EmailDeliveryErrorCount)
@@ -82,6 +86,12 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 		meetingFull.Occurrences = make([]*meetingservice.Occurrence, 0, len(meetingBase.Occurrences))
 		for _, o := range meetingBase.Occurrences {
 			meetingFull.Occurrences = append(meetingFull.Occurrences, convertDomainToOccurrenceResponse(&o))
+		}
+	}
+	if len(meetingBase.Committees) > 0 {
+		meetingFull.Committees = make([]*meetingservice.Committee, 0, len(meetingBase.Committees))
+		for _, c := range meetingBase.Committees {
+			meetingFull.Committees = append(meetingFull.Committees, convertDomainToCommitteeResponse(&c))
 		}
 	}
 
@@ -446,7 +456,7 @@ func ConvertDomainToPastMeetingParticipantResponse(domainParticipant *models.Pas
 
 	participant := &meetingservice.PastMeetingParticipant{
 		UID:                domainParticipant.UID,
-		PastMeetingUID:     utils.StringPtr(domainParticipant.PastMeetingUID),
+		PastMeetingUID:     domainParticipant.PastMeetingUID,
 		MeetingUID:         domainParticipant.MeetingUID,
 		Email:              domainParticipant.Email,
 		FirstName:          domainParticipant.FirstName,

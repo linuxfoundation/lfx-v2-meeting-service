@@ -5,6 +5,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // MergeUpdateRegistrantRequest merges an update request with an existing registrant
@@ -26,16 +28,16 @@ func MergeUpdateRegistrantRequest(reqRegistrant *Registrant, existingRegistrant 
 	now := time.Now().UTC()
 	registrant := &Registrant{
 		UID:          existingRegistrant.UID,
-		MeetingUID:   reqRegistrant.MeetingUID,
-		Email:        reqRegistrant.Email,
-		FirstName:    reqRegistrant.FirstName,
-		LastName:     reqRegistrant.LastName,
+		MeetingUID:   existingRegistrant.MeetingUID,
+		Email:        utils.CoalesceString(reqRegistrant.Email, existingRegistrant.Email),
+		FirstName:    utils.CoalesceString(reqRegistrant.FirstName, existingRegistrant.FirstName),
+		LastName:     utils.CoalesceString(reqRegistrant.LastName, existingRegistrant.LastName),
 		Host:         reqRegistrant.Host,
-		JobTitle:     reqRegistrant.JobTitle,
-		OccurrenceID: reqRegistrant.OccurrenceID,
-		OrgName:      reqRegistrant.OrgName,
-		AvatarURL:    reqRegistrant.AvatarURL,
-		Username:     reqRegistrant.Username,
+		JobTitle:     utils.CoalesceString(reqRegistrant.JobTitle, existingRegistrant.JobTitle),
+		OccurrenceID: utils.CoalesceString(reqRegistrant.OccurrenceID, existingRegistrant.OccurrenceID),
+		OrgName:      utils.CoalesceString(reqRegistrant.OrgName, existingRegistrant.OrgName),
+		AvatarURL:    utils.CoalesceString(reqRegistrant.AvatarURL, existingRegistrant.AvatarURL),
+		Username:     utils.CoalesceString(reqRegistrant.Username, existingRegistrant.Username),
 		CreatedAt:    existingRegistrant.CreatedAt,
 		UpdatedAt:    &now,
 	}

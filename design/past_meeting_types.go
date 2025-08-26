@@ -77,7 +77,7 @@ func PastMeetingAttributes() {
 var Session = Type("Session", func() {
 	Description("A single start/end session of a meeting on the platform")
 	Attribute("uid", String, "The unique identifier of the session", func() {
-		Example("session-123")
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
 		Format(FormatUUID)
 	})
 	Attribute("start_time", String, "The start time of the session", func() {

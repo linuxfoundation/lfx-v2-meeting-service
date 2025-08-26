@@ -24,29 +24,34 @@ func MergeUpdateMeetingRequest(reqMeeting *MeetingBase, existingMeeting *Meeting
 
 	now := time.Now().UTC()
 	meeting := &MeetingBase{
-		UID:                  existingMeeting.UID,
-		ProjectUID:           reqMeeting.ProjectUID,
-		StartTime:            reqMeeting.StartTime,
-		Duration:             reqMeeting.Duration,
-		Timezone:             reqMeeting.Timezone,
-		Recurrence:           reqMeeting.Recurrence,
-		Title:                reqMeeting.Title,
-		Description:          reqMeeting.Description,
-		Committees:           reqMeeting.Committees,
-		Platform:             reqMeeting.Platform,
-		EarlyJoinTimeMinutes: reqMeeting.EarlyJoinTimeMinutes,
-		MeetingType:          reqMeeting.MeetingType,
-		Visibility:           reqMeeting.Visibility,
-		Restricted:           reqMeeting.Restricted,
-		ArtifactVisibility:   reqMeeting.ArtifactVisibility,
-		PublicLink:           existingMeeting.PublicLink, // Preserve platform-generated URL
-		JoinURL:              existingMeeting.JoinURL,    // Preserve platform-generated URL
-		RecordingEnabled:     reqMeeting.RecordingEnabled,
-		TranscriptEnabled:    reqMeeting.TranscriptEnabled,
-		YoutubeUploadEnabled: reqMeeting.YoutubeUploadEnabled,
-		ZoomConfig:           mergeUpdateMeetingRequestZoomConfig(reqMeeting.ZoomConfig, existingMeeting.ZoomConfig),
-		CreatedAt:            existingMeeting.CreatedAt,
-		UpdatedAt:            &now,
+		UID:                             existingMeeting.UID,
+		ProjectUID:                      reqMeeting.ProjectUID,
+		StartTime:                       reqMeeting.StartTime,
+		Duration:                        reqMeeting.Duration,
+		Timezone:                        reqMeeting.Timezone,
+		Recurrence:                      reqMeeting.Recurrence,
+		Title:                           reqMeeting.Title,
+		Description:                     reqMeeting.Description,
+		Committees:                      reqMeeting.Committees,
+		Platform:                        reqMeeting.Platform,
+		EarlyJoinTimeMinutes:            reqMeeting.EarlyJoinTimeMinutes,
+		MeetingType:                     reqMeeting.MeetingType,
+		Visibility:                      reqMeeting.Visibility,
+		Restricted:                      reqMeeting.Restricted,
+		ArtifactVisibility:              reqMeeting.ArtifactVisibility,
+		PublicLink:                      existingMeeting.PublicLink, // Preserve platform-generated URL
+		JoinURL:                         existingMeeting.JoinURL,    // Preserve platform-generated URL
+		RecordingEnabled:                reqMeeting.RecordingEnabled,
+		TranscriptEnabled:               reqMeeting.TranscriptEnabled,
+		YoutubeUploadEnabled:            reqMeeting.YoutubeUploadEnabled,
+		Occurrences:                     existingMeeting.Occurrences,
+		EmailDeliveryErrorCount:         existingMeeting.EmailDeliveryErrorCount,
+		RegistrantCount:                 existingMeeting.RegistrantCount,
+		RegistrantResponseAcceptedCount: existingMeeting.RegistrantResponseAcceptedCount,
+		RegistrantResponseDeclinedCount: existingMeeting.RegistrantResponseDeclinedCount,
+		ZoomConfig:                      mergeUpdateMeetingRequestZoomConfig(reqMeeting.ZoomConfig, existingMeeting.ZoomConfig),
+		CreatedAt:                       existingMeeting.CreatedAt,
+		UpdatedAt:                       &now,
 	}
 
 	return meeting

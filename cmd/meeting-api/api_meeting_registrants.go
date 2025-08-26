@@ -35,6 +35,10 @@ func (s *MeetingsAPI) GetMeetingRegistrants(ctx context.Context, payload *meetin
 
 // CreateMeetingRegistrant creates a new meeting registrant.
 func (s *MeetingsAPI) CreateMeetingRegistrant(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
+	if payload == nil || payload.MeetingUID == "" {
+		return nil, domain.ErrValidationFailed
+	}
+
 	createRegistrantReq := service.ConvertCreateRegistrantPayloadToDomain(payload)
 
 	registrant, err := s.registrantService.CreateMeetingRegistrant(ctx, createRegistrantReq)

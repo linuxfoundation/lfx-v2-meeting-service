@@ -936,8 +936,9 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "occurrence_id": "1640995200",
+      "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "org_name": "Ipsam fugiat quis qui quam explicabo molestiae.",
+      "past_meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "username": "Iste non commodi sint sed est."
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -978,7 +979,7 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "occurrence_id": "1640995200",
+      "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "org_name": "Tempora voluptatem inventore.",
       "username": "Officia tempore necessitatibus deleniti natus."
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"

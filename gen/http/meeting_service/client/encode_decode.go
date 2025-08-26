@@ -3069,9 +3069,7 @@ func (c *Client) BuildUpdatePastMeetingParticipantRequest(ctx context.Context, v
 		if !ok {
 			return nil, goahttp.ErrInvalidType("Meeting Service", "update-past-meeting-participant", "*meetingservice.UpdatePastMeetingParticipantPayload", v)
 		}
-		if p.PastMeetingUID != nil {
-			pastMeetingUID = *p.PastMeetingUID
-		}
+		pastMeetingUID = p.PastMeetingUID
 		if p.UID != nil {
 			uid = *p.UID
 		}
@@ -3915,14 +3913,13 @@ func marshalSessionRequestBodyToMeetingserviceSession(v *SessionRequestBody) *me
 func unmarshalPastMeetingParticipantResponseBodyToMeetingservicePastMeetingParticipant(v *PastMeetingParticipantResponseBody) *meetingservice.PastMeetingParticipant {
 	res := &meetingservice.PastMeetingParticipant{
 		UID:                *v.UID,
-		PastMeetingUID:     v.PastMeetingUID,
+		PastMeetingUID:     *v.PastMeetingUID,
 		MeetingUID:         *v.MeetingUID,
 		Email:              *v.Email,
 		FirstName:          *v.FirstName,
 		LastName:           *v.LastName,
 		Host:               v.Host,
 		JobTitle:           v.JobTitle,
-		OccurrenceID:       v.OccurrenceID,
 		OrgName:            v.OrgName,
 		OrgIsMember:        v.OrgIsMember,
 		OrgIsProjectMember: v.OrgIsProjectMember,

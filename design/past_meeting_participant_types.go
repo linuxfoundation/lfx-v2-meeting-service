@@ -10,35 +10,35 @@ import (
 // CreatePastMeetingParticipantPayload represents the payload for creating a past meeting participant
 var CreatePastMeetingParticipantPayload = Type("CreatePastMeetingParticipantPayload", func() {
 	Description("Payload for creating a new past meeting participant")
+	PastMeetingParticipantPastMeetingUIDAttribute()
 	RegistrantEmailAttribute()
 	RegistrantFirstNameAttribute()
 	RegistrantLastNameAttribute()
 	RegistrantHostAttribute()
 	RegistrantJobTitleAttribute()
 	RegistrantOrgNameAttribute()
-	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUsernameAttribute()
 	PastMeetingParticipantIsInvitedAttribute()
 	PastMeetingParticipantIsAttendedAttribute()
-	Required("meeting_uid", "email", "first_name", "last_name")
+	Required("past_meeting_uid", "email", "first_name", "last_name")
 })
 
 // UpdatePastMeetingParticipantPayload represents the payload for updating a past meeting participant
 var UpdatePastMeetingParticipantPayload = Type("UpdatePastMeetingParticipantPayload", func() {
 	Description("Payload for updating an existing past meeting participant")
+	PastMeetingParticipantPastMeetingUIDAttribute()
 	RegistrantEmailAttribute()
 	RegistrantFirstNameAttribute()
 	RegistrantLastNameAttribute()
 	RegistrantHostAttribute()
 	RegistrantJobTitleAttribute()
 	RegistrantOrgNameAttribute()
-	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUsernameAttribute()
 	PastMeetingParticipantIsInvitedAttribute()
 	PastMeetingParticipantIsAttendedAttribute()
-	Required("meeting_uid", "email", "first_name", "last_name")
+	Required("past_meeting_uid", "email", "first_name", "last_name")
 })
 
 // PastMeetingParticipant represents a past meeting participant
@@ -52,7 +52,6 @@ var PastMeetingParticipant = Type("PastMeetingParticipant", func() {
 	RegistrantLastNameAttribute()
 	RegistrantHostAttribute()
 	RegistrantJobTitleAttribute()
-	RegistrantOccurrenceIDAttribute()
 	RegistrantOrgNameAttribute()
 	RegistrantOrgIsMemberAttribute()
 	RegistrantOrgIsProjectMemberAttribute()
@@ -62,7 +61,7 @@ var PastMeetingParticipant = Type("PastMeetingParticipant", func() {
 	PastMeetingParticipantIsAttendedAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
-	Required("uid", "meeting_uid", "email", "first_name", "last_name")
+	Required("uid", "past_meeting_uid", "meeting_uid", "email", "first_name", "last_name")
 })
 
 // PastMeetingParticipantUIDAttribute is the DSL attribute for past meeting participant UID.
@@ -84,14 +83,14 @@ func PastMeetingParticipantPastMeetingUIDAttribute() {
 
 // PastMeetingParticipantIsInvitedAttribute is the DSL attribute for past meeting participant is invited.
 func PastMeetingParticipantIsInvitedAttribute() {
-	Attribute("is_invited", Boolean, "Whether the past meeting participant is invited", func() {
+	Attribute("is_invited", Boolean, "Whether the participant was invited to this past meeting", func() {
 		Example(true)
 	})
 }
 
 // PastMeetingParticipantIsAttendedAttribute is the DSL attribute for past meeting participant is attended.
 func PastMeetingParticipantIsAttendedAttribute() {
-	Attribute("is_attended", Boolean, "Whether the past meeting participant is attended", func() {
+	Attribute("is_attended", Boolean, "Whether the participant attended this past meeting", func() {
 		Example(true)
 	})
 }

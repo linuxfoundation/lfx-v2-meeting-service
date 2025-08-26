@@ -79,6 +79,7 @@ func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Contex
 func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingReq *models.PastMeeting) (*models.PastMeeting, error) {
 	// Check if service is ready
 	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -142,6 +143,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 
 func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
 	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -156,6 +158,7 @@ func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.Pas
 
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
 	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, "", domain.ErrServiceUnavailable
 	}
 
@@ -174,7 +177,7 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*m
 
 func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "past meeting service not ready", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
 	}
 

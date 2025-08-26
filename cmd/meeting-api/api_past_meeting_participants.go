@@ -31,7 +31,7 @@ func (s *MeetingsAPI) GetPastMeetingParticipants(ctx context.Context, payload *m
 
 	return &meetingsvc.GetPastMeetingParticipantsResult{
 		Participants: responseParticipants,
-		CacheControl: utils.StringPtr("public, max-age=300"),
+		CacheControl: nil,
 	}, nil
 }
 
@@ -70,7 +70,7 @@ func (s *MeetingsAPI) GetPastMeetingParticipant(ctx context.Context, payload *me
 
 // UpdatePastMeetingParticipant updates an existing participant for a past meeting
 func (s *MeetingsAPI) UpdatePastMeetingParticipant(ctx context.Context, payload *meetingsvc.UpdatePastMeetingParticipantPayload) (*meetingsvc.PastMeetingParticipant, error) {
-	if payload == nil || payload.PastMeetingUID == nil || payload.UID == nil {
+	if payload == nil || payload.PastMeetingUID == "" || payload.UID == nil {
 		return nil, domain.ErrValidationFailed
 	}
 

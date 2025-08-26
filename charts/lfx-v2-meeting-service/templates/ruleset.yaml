@@ -350,7 +350,7 @@ spec:
         methods:
           - POST
         routes:
-          - path: /meetings
+          - path: /past_meetings
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -373,7 +373,7 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    # TODO: remove this rule once we remove the list meetings endpoint.
+    # TODO: remove this rule once we remove the list past meetings endpoint.
     # It is not meant to be used by applications, it should only be used
     # in local development, therefore the authorizer allows all requests.
     - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:list"
@@ -381,7 +381,7 @@ spec:
         methods:
           - GET
         routes:
-          - path: /meetings
+          - path: /past_meetings
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -430,6 +430,149 @@ spec:
           - DELETE
         routes:
           - path: /past_meetings/:id
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:create"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /past_meetings/:id/participants
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    # TODO: remove this rule once we remove the list past meeting participants endpoint.
+    # It is not meant to be used by applications, it should only be used
+    # in local development, therefore the authorizer allows all requests.
+    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:list"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /past_meetings/:id/participants
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:update"
+      match:
+        methods:
+          - PUT
+        routes:
+          - path: /past_meetings/:id/participants/:participant_id
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /past_meetings/:id/participants/:participant_id
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:delete"
+      match:
+        methods:
+          - DELETE
+        routes:
+          - path: /past_meetings/:id/participants/:participant_id
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator

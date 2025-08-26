@@ -5,21 +5,17 @@ package main
 
 import (
 	"context"
-	"log/slog"
-	"strconv"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // GetPastMeetings implements the Goa service interface for listing past meetings
 func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.GetPastMeetingsPayload) (*meetingsvc.GetPastMeetingsResult, error) {
-	if !s.pastMeetingService.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return nil, handleError(domain.ErrServiceUnavailable)
+	if payload == nil {
+		return nil, handleError(domain.ErrValidationFailed)
 	}
 
 	pastMeetings, err := s.pastMeetingService.GetPastMeetings(ctx)
@@ -42,12 +38,14 @@ func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.G
 
 // CreatePastMeeting implements the Goa service interface for creating past meetings
 func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) (*meetingsvc.PastMeeting, error) {
-	if !s.pastMeetingService.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return nil, handleError(domain.ErrServiceUnavailable)
+	if payload == nil {
+		return nil, handleError(domain.ErrValidationFailed)
 	}
 
 	createPastMeetingReq := service.ConvertCreatePastMeetingPayloadToDomain(payload)
+	if createPastMeetingReq == nil {
+		return nil, handleError(domain.ErrValidationFailed)
+	}
 
 	pastMeeting, err := s.pastMeetingService.CreatePastMeeting(ctx, createPastMeetingReq)
 	if err != nil {
@@ -59,9 +57,8 @@ func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc
 
 // GetPastMeeting implements the Goa service interface for getting a single past meeting
 func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.GetPastMeetingPayload) (*meetingsvc.GetPastMeetingResult, error) {
-	if !s.pastMeetingService.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return nil, handleError(domain.ErrServiceUnavailable)
+	if payload == nil || payload.UID == nil {
+		return nil, handleError(domain.ErrValidationFailed)
 	}
 
 	pastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, *payload.UID)
@@ -79,16 +76,13 @@ func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.Ge
 
 // DeletePastMeeting implements the Goa service interface for deleting past meetings
 func (s *MeetingsAPI) DeletePastMeeting(ctx context.Context, payload *meetingsvc.DeletePastMeetingPayload) error {
-	if !s.pastMeetingService.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return handleError(domain.ErrServiceUnavailable)
+	if payload == nil || payload.UID == nil {
+		return handleError(domain.ErrValidationFailed)
 	}
 
-	// Parse the revision from If-Match header
-	revision, err := strconv.ParseUint(*payload.IfMatch, 10, 64)
+	revision, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {
-		slog.WarnContext(ctx, "invalid If-Match header", logging.ErrKey, err)
-		return handleError(domain.ErrValidationFailed)
+		return handleError(err)
 	}
 
 	err = s.pastMeetingService.DeletePastMeeting(ctx, *payload.UID, revision)

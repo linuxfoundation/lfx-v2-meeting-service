@@ -424,7 +424,6 @@ The service handles incoming messages on these subjects:
 | `lfx.webhook.zoom.meeting.participant_left` | Zoom meeting participant left event |
 | `lfx.webhook.zoom.meeting.recording.completed` | Zoom meeting recording completed event |
 | `lfx.webhook.zoom.meeting.recording.transcript_completed` | Zoom meeting recording transcript completed event |
-| `lfx.webhook.zoom.meeting.recording.completed` | Zoom meeting recording completed event |
 
 ### Message Schemas
 
@@ -465,7 +464,9 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/meetings/{uid}/registrants` | GET, POST | List/create registrants |
 | `/meetings/{uid}/registrants/{id}` | GET, PUT, DELETE | Get/update/delete registrant |
 | `/past_meetings` | GET, POST | List/create past meetings |
-| `/past_meetings/{uid}` | GET, PUT, DELETE | Get/update/delete past meetings |
+| `/past_meetings/{uid}` | GET, DELETE | Get/delete past meeting |
+| `/past_meetings/{uid}/participants` | GET, POST | List/create past meeting participants |
+| `/past_meetings/{uid}/participants/{id}` | GET, PUT, DELETE | Get/update/delete past meeting participant |
 
 ## 🔧 Configuration
 

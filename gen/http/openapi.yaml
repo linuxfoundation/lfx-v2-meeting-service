@@ -1062,6 +1062,7 @@ paths:
                         $ref: '#/definitions/MeetingServiceGetPastMeetingParticipantResponseBody'
                         required:
                             - uid
+                            - past_meeting_uid
                             - meeting_uid
                             - email
                             - first_name
@@ -1148,6 +1149,7 @@ paths:
                         $ref: '#/definitions/PastMeetingParticipant'
                         required:
                             - uid
+                            - past_meeting_uid
                             - meeting_uid
                             - email
                             - first_name
@@ -1480,6 +1482,7 @@ paths:
                   schema:
                     $ref: '#/definitions/MeetingServiceCreatePastMeetingParticipantRequestBody'
                     required:
+                        - past_meeting_uid
                         - meeting_uid
                         - email
                         - first_name
@@ -1491,6 +1494,7 @@ paths:
                         $ref: '#/definitions/PastMeetingParticipant'
                         required:
                             - uid
+                            - past_meeting_uid
                             - meeting_uid
                             - email
                             - first_name
@@ -2655,15 +2659,20 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
-            occurrence_id:
+            meeting_uid:
                 type: string
-                description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
-                example: "1640995200"
-                pattern: ^[0-9]*$
+                description: The UID of the meeting
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
             org_name:
                 type: string
                 description: User's organization
                 example: Minus qui iure molestiae et consequatur amet.
+            past_meeting_uid:
+                type: string
+                description: The unique identifier of the past meeting
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
             username:
                 type: string
                 description: User's LF ID
@@ -2677,10 +2686,12 @@ definitions:
             is_invited: true
             job_title: Software Engineer
             last_name: Doe
-            occurrence_id: "1640995200"
+            meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             org_name: Accusamus at nam et voluptatem qui vitae.
+            past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             username: Sunt laudantium non et nostrum saepe.
         required:
+            - past_meeting_uid
             - meeting_uid
             - email
             - first_name
@@ -3804,7 +3815,6 @@ definitions:
                       job_title: Software Engineer
                       last_name: Doe
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      occurrence_id: "1640995200"
                       org_is_member: false
                       org_is_project_member: true
                       org_name: Iste non sed laudantium velit aliquam.
@@ -3822,7 +3832,6 @@ definitions:
                       job_title: Software Engineer
                       last_name: Doe
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      occurrence_id: "1640995200"
                       org_is_member: false
                       org_is_project_member: true
                       org_name: Iste non sed laudantium velit aliquam.
@@ -3842,7 +3851,6 @@ definitions:
                   job_title: Software Engineer
                   last_name: Doe
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  occurrence_id: "1640995200"
                   org_is_member: false
                   org_is_project_member: true
                   org_name: Iste non sed laudantium velit aliquam.
@@ -3860,7 +3868,6 @@ definitions:
                   job_title: Software Engineer
                   last_name: Doe
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  occurrence_id: "1640995200"
                   org_is_member: false
                   org_is_project_member: true
                   org_name: Iste non sed laudantium velit aliquam.
@@ -3878,7 +3885,6 @@ definitions:
                   job_title: Software Engineer
                   last_name: Doe
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  occurrence_id: "1640995200"
                   org_is_member: false
                   org_is_project_member: true
                   org_name: Iste non sed laudantium velit aliquam.
@@ -4740,11 +4746,11 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
-            occurrence_id:
+            meeting_uid:
                 type: string
-                description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
-                example: "1640995200"
-                pattern: ^[0-9]*$
+                description: The UID of the meeting
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
             org_name:
                 type: string
                 description: User's organization
@@ -4762,7 +4768,7 @@ definitions:
             is_invited: true
             job_title: Software Engineer
             last_name: Doe
-            occurrence_id: "1640995200"
+            meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             org_name: Architecto nihil eum quis culpa eum adipisci.
             username: Enim voluptas excepturi veniam aperiam omnis odio.
         required:
@@ -5196,11 +5202,6 @@ definitions:
                 description: The UID of the meeting
                 example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 format: uuid
-            occurrence_id:
-                type: string
-                description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
-                example: "1640995200"
-                pattern: ^[0-9]*$
             org_is_member:
                 type: boolean
                 description: Whether the registrant is in an organization that has a membership with the LF. If unknown, don't pass this field; the API will find the value by default
@@ -5244,7 +5245,6 @@ definitions:
             job_title: Software Engineer
             last_name: Doe
             meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            occurrence_id: "1640995200"
             org_is_member: true
             org_is_project_member: false
             org_name: Temporibus atque aut ipsum placeat accusantium.
@@ -5254,6 +5254,7 @@ definitions:
             username: Nihil et non dolores in quas.
         required:
             - uid
+            - past_meeting_uid
             - meeting_uid
             - email
             - first_name

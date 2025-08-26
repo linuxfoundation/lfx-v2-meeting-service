@@ -237,6 +237,10 @@ type CreatePastMeetingRequestBody struct {
 // CreatePastMeetingParticipantRequestBody is the type of the "Meeting Service"
 // service "create-past-meeting-participant" endpoint HTTP request body.
 type CreatePastMeetingParticipantRequestBody struct {
+	// The unique identifier of the past meeting
+	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
+	// The UID of the meeting
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
@@ -249,9 +253,6 @@ type CreatePastMeetingParticipantRequestBody struct {
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// User's organization
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
@@ -265,6 +266,8 @@ type CreatePastMeetingParticipantRequestBody struct {
 // UpdatePastMeetingParticipantRequestBody is the type of the "Meeting Service"
 // service "update-past-meeting-participant" endpoint HTTP request body.
 type UpdatePastMeetingParticipantRequestBody struct {
+	// The UID of the meeting
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
@@ -277,9 +280,6 @@ type UpdatePastMeetingParticipantRequestBody struct {
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// User's organization
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
@@ -670,9 +670,6 @@ type CreatePastMeetingParticipantResponseBody struct {
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// User's organization
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// Whether the registrant is in an organization that has a membership with the
@@ -720,9 +717,6 @@ type UpdatePastMeetingParticipantResponseBody struct {
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// User's organization
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// Whether the registrant is in an organization that has a membership with the
@@ -2086,9 +2080,6 @@ type PastMeetingParticipantResponseBody struct {
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// User's organization
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// Whether the registrant is in an organization that has a membership with the
@@ -2302,17 +2293,18 @@ func NewCreatePastMeetingRequestBody(p *meetingservice.CreatePastMeetingPayload)
 // "Meeting Service" service.
 func NewCreatePastMeetingParticipantRequestBody(p *meetingservice.CreatePastMeetingParticipantPayload) *CreatePastMeetingParticipantRequestBody {
 	body := &CreatePastMeetingParticipantRequestBody{
-		Email:        p.Email,
-		FirstName:    p.FirstName,
-		LastName:     p.LastName,
-		Host:         p.Host,
-		JobTitle:     p.JobTitle,
-		OrgName:      p.OrgName,
-		OccurrenceID: p.OccurrenceID,
-		AvatarURL:    p.AvatarURL,
-		Username:     p.Username,
-		IsInvited:    p.IsInvited,
-		IsAttended:   p.IsAttended,
+		PastMeetingUID: p.PastMeetingUID,
+		MeetingUID:     p.MeetingUID,
+		Email:          p.Email,
+		FirstName:      p.FirstName,
+		LastName:       p.LastName,
+		Host:           p.Host,
+		JobTitle:       p.JobTitle,
+		OrgName:        p.OrgName,
+		AvatarURL:      p.AvatarURL,
+		Username:       p.Username,
+		IsInvited:      p.IsInvited,
+		IsAttended:     p.IsAttended,
 	}
 	return body
 }
@@ -2322,17 +2314,17 @@ func NewCreatePastMeetingParticipantRequestBody(p *meetingservice.CreatePastMeet
 // "Meeting Service" service.
 func NewUpdatePastMeetingParticipantRequestBody(p *meetingservice.UpdatePastMeetingParticipantPayload) *UpdatePastMeetingParticipantRequestBody {
 	body := &UpdatePastMeetingParticipantRequestBody{
-		Email:        p.Email,
-		FirstName:    p.FirstName,
-		LastName:     p.LastName,
-		Host:         p.Host,
-		JobTitle:     p.JobTitle,
-		OrgName:      p.OrgName,
-		OccurrenceID: p.OccurrenceID,
-		AvatarURL:    p.AvatarURL,
-		Username:     p.Username,
-		IsInvited:    p.IsInvited,
-		IsAttended:   p.IsAttended,
+		MeetingUID: p.MeetingUID,
+		Email:      p.Email,
+		FirstName:  p.FirstName,
+		LastName:   p.LastName,
+		Host:       p.Host,
+		JobTitle:   p.JobTitle,
+		OrgName:    p.OrgName,
+		AvatarURL:  p.AvatarURL,
+		Username:   p.Username,
+		IsInvited:  p.IsInvited,
+		IsAttended: p.IsAttended,
 	}
 	return body
 }
@@ -3516,14 +3508,13 @@ func NewGetPastMeetingParticipantsServiceUnavailable(body *GetPastMeetingPartici
 func NewCreatePastMeetingParticipantPastMeetingParticipantCreated(body *CreatePastMeetingParticipantResponseBody) *meetingservice.PastMeetingParticipant {
 	v := &meetingservice.PastMeetingParticipant{
 		UID:                *body.UID,
-		PastMeetingUID:     body.PastMeetingUID,
+		PastMeetingUID:     *body.PastMeetingUID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
 		FirstName:          *body.FirstName,
 		LastName:           *body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
-		OccurrenceID:       body.OccurrenceID,
 		OrgName:            body.OrgName,
 		OrgIsMember:        body.OrgIsMember,
 		OrgIsProjectMember: body.OrgIsProjectMember,
@@ -3598,14 +3589,13 @@ func NewCreatePastMeetingParticipantServiceUnavailable(body *CreatePastMeetingPa
 func NewGetPastMeetingParticipantResultOK(body *GetPastMeetingParticipantResponseBody, etag *string) *meetingservice.GetPastMeetingParticipantResult {
 	v := &meetingservice.PastMeetingParticipant{
 		UID:                *body.UID,
-		PastMeetingUID:     body.PastMeetingUID,
+		PastMeetingUID:     *body.PastMeetingUID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
 		FirstName:          *body.FirstName,
 		LastName:           *body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
-		OccurrenceID:       body.OccurrenceID,
 		OrgName:            body.OrgName,
 		OrgIsMember:        body.OrgIsMember,
 		OrgIsProjectMember: body.OrgIsProjectMember,
@@ -3663,14 +3653,13 @@ func NewGetPastMeetingParticipantServiceUnavailable(body *GetPastMeetingParticip
 func NewUpdatePastMeetingParticipantPastMeetingParticipantOK(body *UpdatePastMeetingParticipantResponseBody) *meetingservice.PastMeetingParticipant {
 	v := &meetingservice.PastMeetingParticipant{
 		UID:                *body.UID,
-		PastMeetingUID:     body.PastMeetingUID,
+		PastMeetingUID:     *body.PastMeetingUID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
 		FirstName:          *body.FirstName,
 		LastName:           *body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
-		OccurrenceID:       body.OccurrenceID,
 		OrgName:            body.OrgName,
 		OrgIsMember:        body.OrgIsMember,
 		OrgIsProjectMember: body.OrgIsProjectMember,
@@ -4551,6 +4540,9 @@ func ValidateCreatePastMeetingParticipantResponseBody(body *CreatePastMeetingPar
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
 	}
+	if body.PastMeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
+	}
 	if body.MeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
 	}
@@ -4594,9 +4586,6 @@ func ValidateCreatePastMeetingParticipantResponseBody(body *CreatePastMeetingPar
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
-	}
-	if body.OccurrenceID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
@@ -4616,6 +4605,9 @@ func ValidateGetPastMeetingParticipantResponseBody(body *GetPastMeetingParticipa
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
 	}
+	if body.PastMeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
+	}
 	if body.MeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
 	}
@@ -4659,9 +4651,6 @@ func ValidateGetPastMeetingParticipantResponseBody(body *GetPastMeetingParticipa
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
-	}
-	if body.OccurrenceID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
@@ -4681,6 +4670,9 @@ func ValidateUpdatePastMeetingParticipantResponseBody(body *UpdatePastMeetingPar
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
 	}
+	if body.PastMeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
+	}
 	if body.MeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
 	}
@@ -4724,9 +4716,6 @@ func ValidateUpdatePastMeetingParticipantResponseBody(body *UpdatePastMeetingPar
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
-	}
-	if body.OccurrenceID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
@@ -6345,6 +6334,9 @@ func ValidatePastMeetingParticipantResponseBody(body *PastMeetingParticipantResp
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
 	}
+	if body.PastMeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
+	}
 	if body.MeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
 	}
@@ -6388,9 +6380,6 @@ func ValidatePastMeetingParticipantResponseBody(body *PastMeetingParticipantResp
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
-	}
-	if body.OccurrenceID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))

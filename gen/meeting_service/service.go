@@ -206,6 +206,10 @@ type CreatePastMeetingParticipantPayload struct {
 	Version *string
 	// The unique identifier of the past meeting
 	UID *string
+	// The unique identifier of the past meeting
+	PastMeetingUID string
+	// The UID of the meeting
+	MeetingUID string
 	// User's email address
 	Email string
 	// User's first name
@@ -218,9 +222,6 @@ type CreatePastMeetingParticipantPayload struct {
 	JobTitle *string
 	// User's organization
 	OrgName *string
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID
@@ -799,7 +800,7 @@ type PastMeetingParticipant struct {
 	// The UID of the past meeting participant
 	UID string
 	// The unique identifier of the past meeting
-	PastMeetingUID *string
+	PastMeetingUID string
 	// The UID of the meeting
 	MeetingUID string
 	// User's email address
@@ -812,9 +813,6 @@ type PastMeetingParticipant struct {
 	Host *bool
 	// User's job title
 	JobTitle *string
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string
 	// User's organization
 	OrgName *string
 	// Whether the registrant is in an organization that has a membership with the
@@ -1074,9 +1072,11 @@ type UpdatePastMeetingParticipantPayload struct {
 	// Version of the API
 	Version *string
 	// The unique identifier of the past meeting
-	PastMeetingUID *string
+	PastMeetingUID string
 	// The UID of the past meeting participant
 	UID *string
+	// The UID of the meeting
+	MeetingUID string
 	// User's email address
 	Email string
 	// User's first name
@@ -1089,9 +1089,6 @@ type UpdatePastMeetingParticipantPayload struct {
 	JobTitle *string
 	// User's organization
 	OrgName *string
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string
 	// User's avatar URL
 	AvatarURL *string
 	// User's LF ID

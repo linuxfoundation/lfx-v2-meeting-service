@@ -88,6 +88,11 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.C
 }
 
 func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx context.Context, participant *models.PastMeetingParticipant) error {
+	if participant == nil || participant.PastMeetingUID == "" {
+		slog.WarnContext(ctx, "participant and past meeting UID are required")
+		return domain.ErrValidationFailed
+	}
+
 	// Check if the past meeting exists
 	exists, err := s.PastMeetingRepository.Exists(ctx, participant.PastMeetingUID)
 	if err != nil {
@@ -138,6 +143,10 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	// Get the past meeting to populate the MeetingUID
 	pastMeeting, err := s.PastMeetingRepository.Get(ctx, participant.PastMeetingUID)
 	if err != nil {
+		if errors.Is(err, domain.ErrPastMeetingNotFound) {
+			slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, err)
+			return nil, domain.ErrPastMeetingNotFound
+		}
 		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}

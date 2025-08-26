@@ -239,8 +239,8 @@ func TestPastMeetingParticipantService_CreatePastMeetingParticipant(t *testing.T
 				Sessions: []models.ParticipantSession{
 					{
 						UID:       "session-1",
-						JoinTime:  mustParseTime("2023-12-01T10:00:00Z"),
-						LeaveTime: &[]time.Time{mustParseTime("2023-12-01T11:00:00Z")}[0],
+						JoinTime:  mustParseTimeForTest("2023-12-01T10:00:00Z"),
+						LeaveTime: &[]time.Time{mustParseTimeForTest("2023-12-01T11:00:00Z")}[0],
 					},
 				},
 			},

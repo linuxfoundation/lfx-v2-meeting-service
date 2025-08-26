@@ -8,15 +8,19 @@ import (
 	"time"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // ConvertCreateMeetingPayloadToDomain converts a Goa CreateMeetingPayload to domain model
-func ConvertCreateMeetingPayloadToDomain(payload *meetingservice.CreateMeetingPayload) *models.MeetingFull {
+func ConvertCreateMeetingPayloadToDomain(payload *meetingservice.CreateMeetingPayload) (*models.MeetingFull, error) {
 	// Convert payload to domain - split into Base and Settings
-	base := convertCreateMeetingBasePayloadToDomain(payload)
+	base, err := convertCreateMeetingBasePayloadToDomain(payload)
+	if err != nil {
+		return nil, domain.ErrValidationFailed
+	}
 	settings := convertCreateMeetingSettingsPayloadToDomain(payload)
 
 	request := &models.MeetingFull{
@@ -24,12 +28,12 @@ func ConvertCreateMeetingPayloadToDomain(payload *meetingservice.CreateMeetingPa
 		Settings: settings,
 	}
 
-	return request
+	return request, nil
 }
 
-func convertCreateMeetingBasePayloadToDomain(payload *meetingservice.CreateMeetingPayload) *models.MeetingBase {
+func convertCreateMeetingBasePayloadToDomain(payload *meetingservice.CreateMeetingPayload) (*models.MeetingBase, error) {
 	if payload == nil {
-		return nil
+		return nil, domain.ErrValidationFailed
 	}
 
 	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
@@ -37,7 +41,7 @@ func convertCreateMeetingBasePayloadToDomain(payload *meetingservice.CreateMeeti
 		slog.Error("failed to parse start time", logging.ErrKey, err,
 			"start_time", payload.StartTime,
 		)
-		return nil
+		return nil, domain.ErrValidationFailed
 	}
 
 	now := time.Now().UTC()
@@ -64,14 +68,10 @@ func convertCreateMeetingBasePayloadToDomain(payload *meetingservice.CreateMeeti
 		UpdatedAt:            &now,
 	}
 
-	return meeting
+	return meeting, nil
 }
 
 func convertCreateMeetingSettingsPayloadToDomain(payload *meetingservice.CreateMeetingPayload) *models.MeetingSettings {
-	if payload == nil {
-		return nil
-	}
-
 	now := time.Now().UTC()
 	return &models.MeetingSettings{
 		UID:        "", // This will get populated by the service
@@ -142,10 +142,6 @@ func convertRecurrenceToDomain(r *meetingservice.Recurrence) *models.Recurrence 
 
 // ConvertMeetingUpdatePayloadToDomain converts a Goa UpdateMeetingBasePayload to domain model
 func ConvertMeetingUpdatePayloadToDomain(payload *meetingservice.UpdateMeetingBasePayload) *models.MeetingBase {
-	if payload == nil {
-		return nil
-	}
-
 	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
 	if err != nil {
 		slog.Error("failed to parse start time", logging.ErrKey, err,
@@ -186,10 +182,6 @@ func ConvertMeetingUpdatePayloadToDomain(payload *meetingservice.UpdateMeetingBa
 
 // ConvertUpdateSettingsPayloadToDomain converts a Goa UpdateMeetingSettingsPayload to domain model
 func ConvertUpdateSettingsPayloadToDomain(payload *meetingservice.UpdateMeetingSettingsPayload) *models.MeetingSettings {
-	if payload == nil {
-		return nil
-	}
-
 	now := time.Now().UTC()
 	result := &models.MeetingSettings{
 		UID:        utils.StringValue(payload.UID),
@@ -203,10 +195,6 @@ func ConvertUpdateSettingsPayloadToDomain(payload *meetingservice.UpdateMeetingS
 
 // ConvertCreateRegistrantPayloadToDomain converts a Goa CreateMeetingRegistrantPayload type to the domain Registrant model for database storage
 func ConvertCreateRegistrantPayloadToDomain(goaRegistrant *meetingservice.CreateMeetingRegistrantPayload) *models.Registrant {
-	if goaRegistrant == nil {
-		return nil
-	}
-
 	now := time.Now().UTC()
 	registrant := &models.Registrant{
 		UID:                "", // This will get populated by the service
@@ -231,10 +219,6 @@ func ConvertCreateRegistrantPayloadToDomain(goaRegistrant *meetingservice.Create
 
 // ConvertUpdateRegistrantPayloadToDomain converts a Goa UpdateMeetingRegistrantPayload to a domain Registrant model
 func ConvertUpdateRegistrantPayloadToDomain(payload *meetingservice.UpdateMeetingRegistrantPayload) *models.Registrant {
-	if payload == nil {
-		return nil
-	}
-
 	now := time.Now().UTC()
 	registrant := &models.Registrant{
 		UID:                *payload.UID,
@@ -259,10 +243,6 @@ func ConvertUpdateRegistrantPayloadToDomain(payload *meetingservice.UpdateMeetin
 
 // ConvertCreatePastMeetingParticipantPayloadToDomain converts a CreatePastMeetingParticipantPayload type to the domain PastMeetingParticipant model for database storage
 func ConvertCreatePastMeetingParticipantPayloadToDomain(payload *meetingservice.CreatePastMeetingParticipantPayload) *models.PastMeetingParticipant {
-	if payload == nil {
-		return nil
-	}
-
 	now := time.Now().UTC()
 	participant := &models.PastMeetingParticipant{
 		UID:                "", // This will get populated by the service
@@ -289,14 +269,10 @@ func ConvertCreatePastMeetingParticipantPayloadToDomain(payload *meetingservice.
 
 // ConvertUpdatePastMeetingParticipantPayloadToDomain converts an UpdatePastMeetingParticipantPayload to a domain PastMeetingParticipant model
 func ConvertUpdatePastMeetingParticipantPayloadToDomain(payload *meetingservice.UpdatePastMeetingParticipantPayload) *models.PastMeetingParticipant {
-	if payload == nil {
-		return nil
-	}
-
 	now := time.Now().UTC()
 	participant := &models.PastMeetingParticipant{
 		UID:                utils.StringValue(payload.UID),
-		PastMeetingUID:     utils.StringValue(payload.PastMeetingUID),
+		PastMeetingUID:     payload.PastMeetingUID,
 		MeetingUID:         "", // This will get populated by the service
 		Email:              payload.Email,
 		FirstName:          payload.FirstName,
@@ -319,10 +295,6 @@ func ConvertUpdatePastMeetingParticipantPayloadToDomain(payload *meetingservice.
 
 // ConvertCreatePastMeetingPayloadToDomain converts a CreatePastMeetingPayload type to the domain PastMeeting model
 func ConvertCreatePastMeetingPayloadToDomain(payload *meetingservice.CreatePastMeetingPayload) *models.PastMeeting {
-	if payload == nil {
-		return nil
-	}
-
 	scheduledStartTime, err := time.Parse(time.RFC3339, payload.ScheduledStartTime)
 	if err != nil {
 		slog.Error("failed to parse scheduled start time", logging.ErrKey, err,

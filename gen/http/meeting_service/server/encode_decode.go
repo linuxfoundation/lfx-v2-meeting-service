@@ -3242,7 +3242,6 @@ func marshalMeetingservicePastMeetingParticipantToPastMeetingParticipantResponse
 		LastName:           v.LastName,
 		Host:               v.Host,
 		JobTitle:           v.JobTitle,
-		OccurrenceID:       v.OccurrenceID,
 		OrgName:            v.OrgName,
 		OrgIsMember:        v.OrgIsMember,
 		OrgIsProjectMember: v.OrgIsProjectMember,

@@ -32,7 +32,10 @@ func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMe
 
 // CreateMeeting creates a new meeting.
 func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.MeetingFull, error) {
-	createMeetingReq := service.ConvertCreateMeetingPayloadToDomain(payload)
+	createMeetingReq, err := service.ConvertCreateMeetingPayloadToDomain(payload)
+	if err != nil {
+		return nil, handleError(err)
+	}
 
 	meeting, err := s.meetingService.CreateMeeting(ctx, createMeetingReq)
 	if err != nil {

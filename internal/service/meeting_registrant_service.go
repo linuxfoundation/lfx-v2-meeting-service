@@ -90,7 +90,7 @@ func createRegistrantContext(ctx context.Context, registrantUID, meetingUID stri
 // CreateMeetingRegistrant creates a new registrant for a meeting
 func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant) (*models.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -179,7 +179,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 // GetMeetingRegistrants gets all registrants for a meeting
 func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, uid string) ([]*models.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -213,7 +213,7 @@ func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, ui
 // GetMeetingRegistrant gets a specific registrant by UID
 func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string) (*models.Registrant, string, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, "", domain.ErrServiceUnavailable
 	}
 
@@ -286,7 +286,7 @@ func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx co
 // UpdateMeetingRegistrant updates an existing registrant
 func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, revision uint64) (*models.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
@@ -383,7 +383,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 	return reqRegistrant, nil
 }
 
-// deleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
+// DeleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
 // It can optionally skip revision checking when skipRevisionCheck is true (useful for bulk cleanup operations).
 func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantDB.UID))
@@ -477,7 +477,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Conte
 // DeleteMeetingRegistrant deletes a registrant from a meeting
 func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string, revision uint64) error {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
 	}
 

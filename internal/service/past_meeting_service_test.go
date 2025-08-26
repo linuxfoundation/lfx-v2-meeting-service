@@ -18,7 +18,7 @@ import (
 )
 
 // mustParseTime is a helper function for tests
-func mustParseTime(timeStr string) time.Time {
+func mustParseTimeForTest(timeStr string) time.Time {
 	t, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		panic(err)
@@ -116,8 +116,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -137,8 +137,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				Sessions: []models.Session{
 					{
 						UID:       "session-1",
-						StartTime: mustParseTime(scheduledStartTime),
-						EndTime:   &[]time.Time{mustParseTime(scheduledEndTime)}[0],
+						StartTime: mustParseTimeForTest(scheduledStartTime),
+						EndTime:   &[]time.Time{mustParseTimeForTest(scheduledEndTime)}[0],
 					},
 				},
 			},
@@ -182,8 +182,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -216,8 +216,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledEndTime), // Swapped
-				ScheduledEndTime:   mustParseTime(scheduledStartTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledEndTime), // Swapped
+				ScheduledEndTime:   mustParseTimeForTest(scheduledStartTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -231,8 +231,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -249,8 +249,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -273,8 +273,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				return &models.PastMeeting{
 					MeetingUID:         "meeting-123",
 					ProjectUID:         "project-123",
-					ScheduledStartTime: mustParseTime(scheduledStartTime),
-					ScheduledEndTime:   mustParseTime(scheduledEndTime),
+					ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+					ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 					Title:              "Recurring Meeting",
 					Description:        "Test Description",
 					Platform:           "Zoom",
@@ -308,8 +308,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Committee Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -349,21 +349,21 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				return &models.PastMeeting{
 					MeetingUID:         "meeting-123",
 					ProjectUID:         "project-123",
-					ScheduledStartTime: mustParseTime(scheduledStartTime),
-					ScheduledEndTime:   mustParseTime(scheduledEndTime),
+					ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+					ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 					Title:              "Multi-session Meeting",
 					Description:        "Test Description",
 					Platform:           "Zoom",
 					Sessions: []models.Session{
 						{
 							UID:       "session-1",
-							StartTime: mustParseTime(scheduledStartTime),
-							EndTime:   &[]time.Time{mustParseTime(scheduledEndTime)}[0],
+							StartTime: mustParseTimeForTest(scheduledStartTime),
+							EndTime:   &[]time.Time{mustParseTimeForTest(scheduledEndTime)}[0],
 						},
 						{
 							UID:       "session-2",
-							StartTime: mustParseTime(session2StartTime),
-							EndTime:   &[]time.Time{mustParseTime(session2EndTime)}[0],
+							StartTime: mustParseTimeForTest(session2StartTime),
+							EndTime:   &[]time.Time{mustParseTimeForTest(session2EndTime)}[0],
 						},
 					},
 				}
@@ -388,8 +388,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -790,8 +790,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -809,8 +809,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -823,8 +823,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -837,8 +837,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "",
 				Description:        "Test Description",
 				Platform:           "Zoom",
@@ -851,8 +851,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "",
 				Platform:           "Zoom",
@@ -865,8 +865,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledStartTime),
-				ScheduledEndTime:   mustParseTime(scheduledEndTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledStartTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
 				Platform:           "",
@@ -879,8 +879,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 			payload: &models.PastMeeting{
 				MeetingUID:         "meeting-123",
 				ProjectUID:         "project-123",
-				ScheduledStartTime: mustParseTime(scheduledEndTime),
-				ScheduledEndTime:   mustParseTime(scheduledStartTime),
+				ScheduledStartTime: mustParseTimeForTest(scheduledEndTime),
+				ScheduledEndTime:   mustParseTimeForTest(scheduledStartTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
 				Platform:           "Zoom",
