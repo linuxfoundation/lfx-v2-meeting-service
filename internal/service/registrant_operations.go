@@ -6,6 +6,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
@@ -45,6 +47,12 @@ func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Con
 	// TODO: add validation about occurrence ID once we occurrences calculated for meetings
 
 	return nil
+}
+
+// createRegistrantContext creates a background context with registrant and meeting UID attributes for async operations
+func createRegistrantContext(ctx context.Context, registrantUID, meetingUID string) context.Context {
+	bgCtx := logging.AppendCtx(ctx, slog.String("registrant_uid", registrantUID))
+	return logging.AppendCtx(bgCtx, slog.String("meeting_uid", meetingUID))
 }
 
 // CreateMeetingRegistrant creates a new registrant for a meeting
@@ -96,26 +104,52 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "created registrant", "registrant", registrant)
 
-	// Send indexing message for the new registrant
-	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionCreated, *registrantDB)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending indexing message for new registrant", logging.ErrKey, err, logging.PriorityCritical())
+	// Build list of NATS messages and email tasks
+	tasks := []func() error{
+		// Send indexing message for the new registrant
+		func() error {
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *registrantDB)
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending indexing message for new registrant", logging.ErrKey, err)
+			}
+			return nil // Don't fail on messaging errors
+		},
+		// Send invitation email to the registrant
+		func() error {
+			emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.sendRegistrantInvitationEmail(emailCtx, registrantDB)
+			if err != nil {
+				slog.ErrorContext(emailCtx, "failed to send invitation email", logging.ErrKey, err)
+			}
+			return nil // Don't fail on email errors
+		},
 	}
 
-	// Send a message about the new registrant to the fga-sync service
+	// Send a message about the new registrant to the fga-sync service if username exists
 	if registrantDB.Username != "" {
-		err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
-			UID:        registrantDB.UID,
-			Username:   registrantDB.Username,
-			MeetingUID: registrantDB.MeetingUID,
-			Host:       registrantDB.Host,
+		tasks = append(tasks, func() error {
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+				UID:        registrantDB.UID,
+				Username:   registrantDB.Username,
+				MeetingUID: registrantDB.MeetingUID,
+				Host:       registrantDB.Host,
+			})
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending message about new registrant", logging.ErrKey, err)
+			}
+			return nil // Don't fail on messaging errors
 		})
-		if err != nil {
-			slog.ErrorContext(ctx, "error sending message about new registrant", logging.ErrKey, err, logging.PriorityCritical())
-		}
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.
 		slog.DebugContext(ctx, "no username for registrant, skipping access message")
+	}
+
+	// Use WorkerPool to execute tasks concurrently
+	pool := concurrent.NewWorkerPool(len(tasks))
+	if err := pool.Run(ctx, tasks...); err != nil {
+		slog.ErrorContext(ctx, "error executing post-creation tasks", logging.ErrKey, err)
 	}
 
 	return registrant, nil
@@ -346,29 +380,137 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 
 	slog.DebugContext(ctx, "updated registrant", "registrant", registrant)
 
-	// Send indexing message for the updated registrant
-	err = s.MessageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrantDB)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending indexing message for updated registrant", logging.ErrKey, err, logging.PriorityCritical())
+	// Build list of NATS messages tasks
+	tasks := []func() error{
+		// Send indexing message for the updated registrant
+		func() error {
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *registrantDB)
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending indexing message for updated registrant", logging.ErrKey, err)
+			}
+			return nil // Don't fail on messaging errors
+		},
 	}
 
+	// Send a message about the updated registrant to the fga-sync service if username exists
 	if registrantDB.Username != "" {
-		// Send a message about the updated registrant to the fga-sync service
-		err = s.MessageBuilder.SendPutMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
-			UID:        registrantDB.UID,
-			Username:   registrantDB.Username,
-			MeetingUID: registrantDB.MeetingUID,
-			Host:       registrantDB.Host,
+		tasks = append(tasks, func() error {
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+				UID:        registrantDB.UID,
+				Username:   registrantDB.Username,
+				MeetingUID: registrantDB.MeetingUID,
+				Host:       registrantDB.Host,
+			})
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending message about updated registrant", logging.ErrKey, err)
+			}
+			return nil // Don't fail on messaging errors
 		})
-		if err != nil {
-			slog.ErrorContext(ctx, "error sending message about updated registrant", logging.ErrKey, err, logging.PriorityCritical())
-		}
 	} else {
 		// This can happen when the registrant is not an LF user but rather a guest user.
 		slog.DebugContext(ctx, "no username for registrant, skipping access message")
 	}
 
+	// Use WorkerPool to execute tasks concurrently
+	pool := concurrent.NewWorkerPool(len(tasks))
+	if err := pool.Run(ctx, tasks...); err != nil {
+		slog.ErrorContext(ctx, "error executing post-update tasks", logging.ErrKey, err)
+	}
+
 	return registrant, nil
+}
+
+// deleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
+// It can optionally skip revision checking when skipRevisionCheck is true (useful for bulk cleanup operations).
+func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
+	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantDB.UID))
+
+	// Delete the registrant from the database
+	var err error
+	if skipRevisionCheck {
+		// Use revision 0 to skip revision checking for bulk cleanup operations
+		err = s.RegistrantRepository.Delete(ctx, registrantDB.UID, 0)
+	} else {
+		err = s.RegistrantRepository.Delete(ctx, registrantDB.UID, revision)
+	}
+
+	if err != nil {
+		if errors.Is(err, domain.ErrRevisionMismatch) && !skipRevisionCheck {
+			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
+			return domain.ErrRevisionMismatch
+		}
+		if errors.Is(err, domain.ErrRegistrantNotFound) {
+			// If skipping revision check, this is expected during cleanup
+			if skipRevisionCheck {
+				slog.DebugContext(ctx, "registrant already deleted, skipping")
+				return nil
+			}
+			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
+			return domain.ErrRegistrantNotFound
+		}
+		slog.ErrorContext(ctx, "error deleting registrant", logging.ErrKey, err)
+		return domain.ErrInternal
+	}
+
+	slog.DebugContext(ctx, "deleted registrant")
+
+	// Send cleanup messages and cancellation email asynchronously using WorkerPool
+	var functions []func() error
+
+	// Send indexing delete message for the registrant
+	functions = append(functions, func() error {
+		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+
+		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrantDB.UID)
+		if err != nil {
+			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
+		}
+		return nil // Don't propagate messaging errors as they shouldn't fail the operation
+	})
+
+	// Send access removal message if the registrant has a username
+	if registrantDB.Username != "" {
+		functions = append(functions, func() error {
+			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+
+			err := s.MessageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+				UID:        registrantDB.UID,
+				Username:   registrantDB.Username,
+				MeetingUID: registrantDB.MeetingUID,
+				Host:       registrantDB.Host,
+			})
+			if err != nil {
+				slog.ErrorContext(msgCtx, "error sending message about deleted registrant", logging.ErrKey, err, logging.PriorityCritical())
+			}
+			return nil // Don't propagate messaging errors as they shouldn't fail the operation
+		})
+	} else {
+		// This can happen when the registrant is not an LF user but rather a guest user.
+		slog.DebugContext(ctx, "no username for registrant, skipping access message")
+	}
+
+	// Send cancellation email to the registrant
+	functions = append(functions, func() error {
+		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+
+		err := s.sendRegistrantCancellationEmail(emailCtx, registrantDB)
+		if err != nil {
+			slog.ErrorContext(emailCtx, "failed to send cancellation email", logging.ErrKey, err)
+		}
+		return nil // Don't propagate email errors as they shouldn't fail the operation
+	})
+
+	// Execute all functions concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(3) // Use 3 workers for the async operations
+	err = pool.Run(ctx, functions...)
+	if err != nil {
+		// Log the error but don't fail the operation since messaging/email errors are non-critical
+		slog.WarnContext(ctx, "some async operations failed during registrant cleanup", logging.ErrKey, err)
+	}
+
+	return nil
 }
 
 // DeleteMeetingRegistrant deletes a registrant from a meeting
@@ -438,44 +580,75 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 		return domain.ErrInternal
 	}
 
-	// Delete the registrant with revision check
-	err = s.RegistrantRepository.Delete(ctx, registrantUID, revision)
+	// Use the helper to delete the registrant with cleanup
+	return s.deleteRegistrantWithCleanup(ctx, registrantDB, revision, false)
+}
+
+// sendRegistrantInvitationEmail sends an invitation email to a newly created registrant
+func (s *MeetingsService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
+	// Get meeting details for the email
+	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {
-		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
-		}
-		if errors.Is(err, domain.ErrRegistrantNotFound) {
-			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
-			return domain.ErrRegistrantNotFound
-		}
-		slog.ErrorContext(ctx, "error deleting registrant", logging.ErrKey, err)
-		return domain.ErrInternal
+		return fmt.Errorf("failed to get meeting details: %w", err)
 	}
 
-	slog.DebugContext(ctx, "deleted registrant")
+	// Format recipient name
+	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
+	if recipientName == " " {
+		recipientName = "" // If both names are empty, use empty string
+	}
 
-	// Send indexing delete message for the registrant
-	err = s.MessageBuilder.SendDeleteIndexMeetingRegistrant(ctx, registrantDB.UID)
+	// Construct join link if available
+	joinLink := meetingDB.PublicLink
+	if joinLink == "" && meetingDB.ZoomConfig != nil && meetingDB.ZoomConfig.MeetingID != "" {
+		// Construct Zoom link if meeting ID is available
+		joinLink = fmt.Sprintf("https://zoom.us/j/%s", meetingDB.ZoomConfig.MeetingID)
+	}
+
+	// Create email invitation
+	invitation := domain.EmailInvitation{
+		RecipientEmail: registrant.Email,
+		RecipientName:  recipientName,
+		MeetingTitle:   meetingDB.Title,
+		StartTime:      meetingDB.StartTime,
+		Duration:       meetingDB.Duration,
+		Timezone:       meetingDB.Timezone,
+		Description:    meetingDB.Description,
+		JoinLink:       joinLink,
+		ProjectName:    "", // TODO: Add project name once project service integration is available
+	}
+
+	// Send the email
+	return s.EmailService.SendRegistrantInvitation(ctx, invitation)
+}
+
+// sendRegistrantCancellationEmail sends a cancellation email to a deleted registrant
+func (s *MeetingsService) sendRegistrantCancellationEmail(ctx context.Context, registrant *models.Registrant) error {
+	// Get meeting details for the email
+	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
+		return fmt.Errorf("failed to get meeting details: %w", err)
 	}
 
-	if registrantDB.Username != "" {
-		// Send a message about the deleted registrant to the fga-sync service
-		err = s.MessageBuilder.SendRemoveMeetingRegistrantAccess(ctx, models.MeetingRegistrantAccessMessage{
-			UID:        registrantDB.UID,
-			Username:   registrantDB.Username,
-			MeetingUID: registrantDB.MeetingUID,
-			Host:       registrantDB.Host,
-		})
-		if err != nil {
-			slog.ErrorContext(ctx, "error sending message about deleted registrant", logging.ErrKey, err, logging.PriorityCritical())
-		}
-	} else {
-		// This can happen when the registrant is not an LF user but rather a guest user.
-		slog.DebugContext(ctx, "no username for registrant, skipping access message")
+	// Format recipient name
+	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
+	if recipientName == " " {
+		recipientName = "" // If both names are empty, use empty string
 	}
 
-	return nil
+	// Create email cancellation
+	cancellation := domain.EmailCancellation{
+		RecipientEmail: registrant.Email,
+		RecipientName:  recipientName,
+		MeetingTitle:   meetingDB.Title,
+		StartTime:      meetingDB.StartTime,
+		Duration:       meetingDB.Duration,
+		Timezone:       meetingDB.Timezone,
+		Description:    meetingDB.Description,
+		ProjectName:    "", // TODO: Add project name once project service integration is available
+		Reason:         "Your registration has been removed from this meeting.",
+	}
+
+	// Send the email
+	return s.EmailService.SendRegistrantCancellation(ctx, cancellation)
 }

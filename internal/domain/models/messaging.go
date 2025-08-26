@@ -46,6 +46,20 @@ const (
 	// MeetingGetTitleSubject is the subject for the meeting get title.
 	// The subject is of the form: lfx.meetings-api.get_title
 	MeetingGetTitleSubject = "lfx.meetings-api.get_title"
+
+	// MeetingDeletedSubject is the subject for meeting deletion events.
+	// The subject is of the form: lfx.meetings-api.meeting_deleted
+	MeetingDeletedSubject = "lfx.meetings-api.meeting_deleted"
+
+	// Zoom webhook event subjects - mirrors the actual Zoom webhook event names
+	ZoomWebhookMeetingStartedSubject               = "lfx.webhook.zoom.meeting.started"
+	ZoomWebhookMeetingEndedSubject                 = "lfx.webhook.zoom.meeting.ended"
+	ZoomWebhookMeetingDeletedSubject               = "lfx.webhook.zoom.meeting.deleted"
+	ZoomWebhookMeetingParticipantJoinedSubject     = "lfx.webhook.zoom.meeting.participant_joined"
+	ZoomWebhookMeetingParticipantLeftSubject       = "lfx.webhook.zoom.meeting.participant_left"
+	ZoomWebhookRecordingCompletedSubject           = "lfx.webhook.zoom.recording.completed"
+	ZoomWebhookRecordingTranscriptCompletedSubject = "lfx.webhook.zoom.recording.transcript_completed"
+	ZoomWebhookMeetingSummaryCompletedSubject      = "lfx.webhook.zoom.meeting.summary_completed"
 )
 
 // MessageAction is a type for the action of a meeting message.
@@ -87,4 +101,18 @@ type MeetingRegistrantAccessMessage struct {
 	MeetingUID string `json:"meeting_uid"`
 	Username   string `json:"username"`
 	Host       bool   `json:"host"`
+}
+
+// MeetingDeletedMessage is the schema for the message sent when a meeting is deleted.
+// This message is used internally to trigger cleanup of all associated registrants.
+type MeetingDeletedMessage struct {
+	MeetingUID string `json:"meeting_uid"`
+}
+
+// ZoomWebhookEventMessage is the schema for Zoom webhook events sent via NATS for async processing.
+// This maintains backward compatibility while new handlers can use the typed payload structs.
+type ZoomWebhookEventMessage struct {
+	EventType string                 `json:"event_type"`
+	EventTS   int64                  `json:"event_ts"`
+	Payload   map[string]interface{} `json:"payload"`
 }

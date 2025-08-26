@@ -1,0 +1,28 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+
+Meeting Invitation
+==================
+
+Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},
+
+You have been invited to the following meeting{{if .ProjectName}} for {{.ProjectName}}{{end}}:
+
+Meeting Details:
+----------------
+Meeting: {{.MeetingTitle}}
+Date & Time: {{formatTime .StartTime .Timezone}}
+Duration: {{formatDuration .Duration}}
+Time Zone: {{.Timezone}}
+
+{{if .Description}}Description:
+{{.Description}}
+
+{{end}}{{if .JoinLink}}Join the Meeting:
+{{.JoinLink}}
+{{else}}Meeting link will be provided closer to the meeting time.
+{{end}}
+
+---
+This is an automated email from the Linux Foundation Meeting Service.
+Please do not reply to this email.

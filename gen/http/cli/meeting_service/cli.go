@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|readyz|livez)
 `
 }
 
@@ -115,6 +115,11 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingRegistrantBearerTokenFlag = meetingServiceDeleteMeetingRegistrantFlags.String("bearer-token", "", "")
 		meetingServiceDeleteMeetingRegistrantIfMatchFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("if-match", "", "")
 
+		meetingServiceZoomWebhookFlags             = flag.NewFlagSet("zoom-webhook", flag.ExitOnError)
+		meetingServiceZoomWebhookBodyFlag          = meetingServiceZoomWebhookFlags.String("body", "REQUIRED", "")
+		meetingServiceZoomWebhookZoomSignatureFlag = meetingServiceZoomWebhookFlags.String("zoom-signature", "", "")
+		meetingServiceZoomWebhookZoomTimestampFlag = meetingServiceZoomWebhookFlags.String("zoom-timestamp", "", "")
+
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
@@ -132,6 +137,7 @@ func ParseEndpoint(
 	meetingServiceGetMeetingRegistrantFlags.Usage = meetingServiceGetMeetingRegistrantUsage
 	meetingServiceUpdateMeetingRegistrantFlags.Usage = meetingServiceUpdateMeetingRegistrantUsage
 	meetingServiceDeleteMeetingRegistrantFlags.Usage = meetingServiceDeleteMeetingRegistrantUsage
+	meetingServiceZoomWebhookFlags.Usage = meetingServiceZoomWebhookUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -205,6 +211,9 @@ func ParseEndpoint(
 			case "delete-meeting-registrant":
 				epf = meetingServiceDeleteMeetingRegistrantFlags
 
+			case "zoom-webhook":
+				epf = meetingServiceZoomWebhookFlags
+
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
@@ -272,6 +281,9 @@ func ParseEndpoint(
 			case "delete-meeting-registrant":
 				endpoint = c.DeleteMeetingRegistrant()
 				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantIfMatchFlag)
+			case "zoom-webhook":
+				endpoint = c.ZoomWebhook()
+				data, err = meetingservicec.BuildZoomWebhookPayload(*meetingServiceZoomWebhookBodyFlag, *meetingServiceZoomWebhookZoomSignatureFlag, *meetingServiceZoomWebhookZoomTimestampFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -307,6 +319,7 @@ COMMAND:
     get-meeting-registrant: Get a specific registrant for a meeting by UID
     update-meeting-registrant: Update an existing registrant for a meeting
     delete-meeting-registrant: Delete a registrant from a meeting
+    zoom-webhook: Handle Zoom webhook events for meeting lifecycle, participants, and recordings.
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -341,51 +354,73 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Veniam occaecati sed vitae non aut totam.",
-               "Laborum earum praesentium.",
-               "Velit recusandae voluptatem in ut."
+               "Dolore et similique ut.",
+               "Sunt qui modi non et cupiditate.",
+               "Iure vero ipsa possimus sint et.",
+               "Quod vero."
             ],
-            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
+            "uid": "Recusandae voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Veniam occaecati sed vitae non aut totam.",
-               "Laborum earum praesentium.",
-               "Velit recusandae voluptatem in ut."
+               "Dolore et similique ut.",
+               "Sunt qui modi non et cupiditate.",
+               "Iure vero ipsa possimus sint et.",
+               "Quod vero."
             ],
-            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
+            "uid": "Recusandae voluptatem."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Dolore et similique ut.",
+               "Sunt qui modi non et cupiditate.",
+               "Iure vero ipsa possimus sint et.",
+               "Quod vero."
+            ],
+            "uid": "Recusandae voluptatem."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Dolore et similique ut.",
+               "Sunt qui modi non et cupiditate.",
+               "Iure vero ipsa possimus sint et.",
+               "Quod vero."
+            ],
+            "uid": "Recusandae voluptatem."
          }
       ],
-      "description": "Alias quasi eum non ipsum minima fuga.",
-      "duration": 590,
-      "early_join_time_minutes": 16,
+      "description": "Totam dolorem laborum earum praesentium.",
+      "duration": 225,
+      "early_join_time_minutes": 35,
       "meeting_type": "Board",
       "organizers": [
-         "A iure vero ipsa possimus sint.",
-         "Consequatur quod vero ipsa esse."
+         "Nesciunt earum.",
+         "Unde quis voluptate est qui.",
+         "Nobis totam.",
+         "Enim aut consequatur ducimus tenetur."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "recording_enabled": true,
+      "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1977-09-25T01:54:22Z",
-         "end_times": 3400756039590933957,
-         "monthly_day": 16,
-         "monthly_week": 1,
+         "end_date_time": "2011-07-03T06:12:48Z",
+         "end_times": 659936626783690641,
+         "monthly_day": 28,
+         "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 7055716465626542352,
-         "type": 2,
+         "repeat_interval": 5088681791056192937,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Delectus totam ullam quia iusto sed atque.",
-      "title": "Distinctio similique.",
-      "transcript_enabled": false,
-      "visibility": "public",
-      "youtube_upload_enabled": true,
+      "timezone": "Et consequuntur quaerat ut aliquam sunt possimus.",
+      "title": "Est aut veniam occaecati sed vitae non.",
+      "transcript_enabled": true,
+      "visibility": "private",
+      "youtube_upload_enabled": false,
       "zoom_config": {
-         "ai_companion_enabled": true,
+         "ai_companion_enabled": false,
          "ai_summary_require_approval": false
       }
    }' --version "1" --bearer-token "eyJhbGci..."
@@ -434,63 +469,49 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Veniam occaecati sed vitae non aut totam.",
-               "Laborum earum praesentium.",
-               "Velit recusandae voluptatem in ut."
+               "Dolore et similique ut.",
+               "Sunt qui modi non et cupiditate.",
+               "Iure vero ipsa possimus sint et.",
+               "Quod vero."
             ],
-            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
+            "uid": "Recusandae voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Veniam occaecati sed vitae non aut totam.",
-               "Laborum earum praesentium.",
-               "Velit recusandae voluptatem in ut."
+               "Dolore et similique ut.",
+               "Sunt qui modi non et cupiditate.",
+               "Iure vero ipsa possimus sint et.",
+               "Quod vero."
             ],
-            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Veniam occaecati sed vitae non aut totam.",
-               "Laborum earum praesentium.",
-               "Velit recusandae voluptatem in ut."
-            ],
-            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Veniam occaecati sed vitae non aut totam.",
-               "Laborum earum praesentium.",
-               "Velit recusandae voluptatem in ut."
-            ],
-            "uid": "Repudiandae laborum quibusdam ut ut earum assumenda."
+            "uid": "Recusandae voluptatem."
          }
       ],
-      "description": "Et vero.",
-      "duration": 273,
-      "early_join_time_minutes": 32,
-      "meeting_type": "None",
+      "description": "Natus doloribus et labore esse.",
+      "duration": 236,
+      "early_join_time_minutes": 25,
+      "meeting_type": "Board",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1977-09-25T01:54:22Z",
-         "end_times": 3400756039590933957,
-         "monthly_day": 16,
-         "monthly_week": 1,
+         "end_date_time": "2011-07-03T06:12:48Z",
+         "end_times": 659936626783690641,
+         "monthly_day": 28,
+         "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 7055716465626542352,
-         "type": 2,
+         "repeat_interval": 5088681791056192937,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Mollitia nemo est aut dolores.",
-      "title": "Officia provident perspiciatis nihil.",
-      "transcript_enabled": false,
-      "visibility": "private",
+      "timezone": "Vero est deleniti illo eveniet dolores.",
+      "title": "Vero consequuntur minus vitae dolores.",
+      "transcript_enabled": true,
+      "visibility": "public",
       "youtube_upload_enabled": true,
       "zoom_config": {
-         "ai_companion_enabled": true,
+         "ai_companion_enabled": false,
          "ai_summary_require_approval": false
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
@@ -510,9 +531,10 @@ Update an existing meeting's settings.
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
       "organizers": [
-         "Esse occaecati rem recusandae architecto vero.",
-         "Impedit autem.",
-         "Est consequatur qui tenetur."
+         "Maxime soluta officiis in et reiciendis.",
+         "Quam non.",
+         "Aut velit fugiat.",
+         "Sed fuga itaque."
       ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -563,8 +585,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Ducimus itaque quaerat voluptatibus magni.",
-      "username": "Temporibus rerum quidem voluptatem est nobis optio."
+      "org_name": "Temporibus occaecati ut delectus repudiandae dolores.",
+      "username": "Minima est non tenetur aliquid est voluptas."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -599,12 +621,12 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": false,
+      "host": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Eligendi temporibus occaecati ut delectus repudiandae.",
-      "username": "Explicabo minima."
+      "org_name": "Qui nemo dolores ea.",
+      "username": "Tempore dolor ad sit voluptatem delectus qui."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
@@ -621,6 +643,23 @@ Delete a registrant from a meeting
 
 Example:
     %[1]s meeting-service delete-meeting-registrant --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+`, os.Args[0])
+}
+
+func meetingServiceZoomWebhookUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service zoom-webhook -body JSON -zoom-signature STRING -zoom-timestamp STRING
+
+Handle Zoom webhook events for meeting lifecycle, participants, and recordings.
+    -body JSON: 
+    -zoom-signature STRING: 
+    -zoom-timestamp STRING: 
+
+Example:
+    %[1]s meeting-service zoom-webhook --body '{
+      "event": "meeting.started",
+      "event_ts": 1609459200000,
+      "payload": "Minima eos inventore quisquam quo voluptatibus."
+   }' --zoom-signature "Ducimus eos tempora quis dolor repudiandae." --zoom-timestamp "Tenetur eligendi ut voluptatem."
 `, os.Args[0])
 }
 

@@ -26,11 +26,12 @@ func NewPlatformConfigsFromEnv() PlatformConfigs {
 // Initialize sets up all configured platforms and registers them with the service
 func Initialize(configs PlatformConfigs, svc *service.MeetingsService) {
 	// Create platform registry
-	registry := platform.NewRegistry()
+	platformRegistry := platform.NewRegistry()
 
-	// Setup individual platforms
-	SetupZoom(registry, configs.Zoom)
+	// Setup Zoom platform and get its webhook validator
+	zoomWebhookValidator := SetupZoom(platformRegistry, configs.Zoom)
 
-	// Set the platform registry in the service
-	svc.PlatformRegistry = registry
+	// Set the platform registry and Zoom webhook validator in the service
+	svc.PlatformRegistry = platformRegistry
+	svc.ZoomWebhookValidator = zoomWebhookValidator
 }

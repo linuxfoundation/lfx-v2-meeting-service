@@ -57,8 +57,12 @@ func AppendCtx(parent context.Context, attr slog.Attr) context.Context {
 	}
 
 	if v, ok := parent.Value(slogFields).([]slog.Attr); ok {
-		v = append(v, attr)
-		return context.WithValue(parent, slogFields, v)
+		// Create a new slice to avoid race conditions when multiple goroutines
+		// append to the same parent context
+		newV := make([]slog.Attr, len(v), len(v)+1)
+		copy(newV, v)
+		newV = append(newV, attr)
+		return context.WithValue(parent, slogFields, newV)
 	}
 
 	v := []slog.Attr{}

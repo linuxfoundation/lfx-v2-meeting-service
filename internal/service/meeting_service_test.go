@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestNewMeetingsService(t *testing.T) {
@@ -48,11 +48,13 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service ready with all dependencies",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository:    &domain.MockMeetingRepository{},
-					RegistrantRepository: &domain.MockRegistrantRepository{},
-					MessageBuilder:       &domain.MockMessageBuilder{},
-					PlatformRegistry:     &domain.MockPlatformRegistry{},
-					Auth:                 &auth.MockJWTAuth{},
+					MeetingRepository:                &mocks.MockMeetingRepository{},
+					RegistrantRepository:             &mocks.MockRegistrantRepository{},
+					PastMeetingRepository:            &mocks.MockPastMeetingRepository{},
+					PastMeetingParticipantRepository: &mocks.MockPastMeetingParticipantRepository{},
+					MessageBuilder:                   &mocks.MockMessageBuilder{},
+					PlatformRegistry:                 &mocks.MockPlatformRegistry{},
+					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: true,
@@ -61,11 +63,13 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service not ready - missing repository",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository:    nil,
-					RegistrantRepository: &domain.MockRegistrantRepository{},
-					MessageBuilder:       &domain.MockMessageBuilder{},
-					PlatformRegistry:     &domain.MockPlatformRegistry{},
-					Auth:                 &auth.MockJWTAuth{},
+					MeetingRepository:                nil,
+					RegistrantRepository:             &mocks.MockRegistrantRepository{},
+					PastMeetingRepository:            &mocks.MockPastMeetingRepository{},
+					PastMeetingParticipantRepository: &mocks.MockPastMeetingParticipantRepository{},
+					MessageBuilder:                   &mocks.MockMessageBuilder{},
+					PlatformRegistry:                 &mocks.MockPlatformRegistry{},
+					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -74,11 +78,13 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service not ready - missing message builder",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository:    &domain.MockMeetingRepository{},
-					RegistrantRepository: &domain.MockRegistrantRepository{},
-					MessageBuilder:       nil,
-					PlatformRegistry:     &domain.MockPlatformRegistry{},
-					Auth:                 &auth.MockJWTAuth{},
+					MeetingRepository:                &mocks.MockMeetingRepository{},
+					RegistrantRepository:             &mocks.MockRegistrantRepository{},
+					PastMeetingRepository:            &mocks.MockPastMeetingRepository{},
+					PastMeetingParticipantRepository: &mocks.MockPastMeetingParticipantRepository{},
+					MessageBuilder:                   nil,
+					PlatformRegistry:                 &mocks.MockPlatformRegistry{},
+					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -87,11 +93,13 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service not ready - missing registrant repository",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository:    &domain.MockMeetingRepository{},
-					RegistrantRepository: nil,
-					MessageBuilder:       &domain.MockMessageBuilder{},
-					PlatformRegistry:     &domain.MockPlatformRegistry{},
-					Auth:                 &auth.MockJWTAuth{},
+					MeetingRepository:                &mocks.MockMeetingRepository{},
+					RegistrantRepository:             nil,
+					PastMeetingRepository:            &mocks.MockPastMeetingRepository{},
+					PastMeetingParticipantRepository: &mocks.MockPastMeetingParticipantRepository{},
+					MessageBuilder:                   &mocks.MockMessageBuilder{},
+					PlatformRegistry:                 &mocks.MockPlatformRegistry{},
+					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -100,11 +108,13 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service not ready - missing platform registry",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository:    &domain.MockMeetingRepository{},
-					RegistrantRepository: &domain.MockRegistrantRepository{},
-					MessageBuilder:       &domain.MockMessageBuilder{},
-					PlatformRegistry:     nil,
-					Auth:                 &auth.MockJWTAuth{},
+					MeetingRepository:                &mocks.MockMeetingRepository{},
+					RegistrantRepository:             &mocks.MockRegistrantRepository{},
+					PastMeetingRepository:            &mocks.MockPastMeetingRepository{},
+					PastMeetingParticipantRepository: &mocks.MockPastMeetingParticipantRepository{},
+					MessageBuilder:                   &mocks.MockMessageBuilder{},
+					PlatformRegistry:                 nil,
+					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -113,11 +123,13 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service not ready - missing both critical dependencies",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository:    nil,
-					RegistrantRepository: nil,
-					MessageBuilder:       nil,
-					PlatformRegistry:     nil,
-					Auth:                 &auth.MockJWTAuth{},
+					MeetingRepository:                nil,
+					RegistrantRepository:             nil,
+					PastMeetingRepository:            nil,
+					PastMeetingParticipantRepository: nil,
+					MessageBuilder:                   nil,
+					PlatformRegistry:                 nil,
+					Auth:                             &auth.MockJWTAuth{},
 				}
 			},
 			expectedReady: false,
@@ -126,11 +138,13 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 			name: "service ready without auth (auth is not checked in ServiceReady)",
 			setupService: func() *MeetingsService {
 				return &MeetingsService{
-					MeetingRepository:    &domain.MockMeetingRepository{},
-					RegistrantRepository: &domain.MockRegistrantRepository{},
-					MessageBuilder:       &domain.MockMessageBuilder{},
-					PlatformRegistry:     &domain.MockPlatformRegistry{},
-					Auth:                 nil,
+					MeetingRepository:                &mocks.MockMeetingRepository{},
+					RegistrantRepository:             &mocks.MockRegistrantRepository{},
+					PastMeetingRepository:            &mocks.MockPastMeetingRepository{},
+					PastMeetingParticipantRepository: &mocks.MockPastMeetingParticipantRepository{},
+					MessageBuilder:                   &mocks.MockMessageBuilder{},
+					PlatformRegistry:                 &mocks.MockPlatformRegistry{},
+					Auth:                             nil,
 				}
 			},
 			expectedReady: true,
@@ -148,19 +162,25 @@ func TestMeetingsService_ServiceReady(t *testing.T) {
 
 func TestMeetingsService_Dependencies(t *testing.T) {
 	t.Run("service maintains dependency references", func(t *testing.T) {
-		mockRepo := &domain.MockMeetingRepository{}
-		mockRegistrantRepo := &domain.MockRegistrantRepository{}
+		mockRepo := &mocks.MockMeetingRepository{}
+		mockRegistrantRepo := &mocks.MockRegistrantRepository{}
+		mockPastMeetingRepo := &mocks.MockPastMeetingRepository{}
+		mockPastMeetingParticipantRepo := &mocks.MockPastMeetingParticipantRepository{}
 		mockAuth := &auth.MockJWTAuth{}
-		mockBuilder := &domain.MockMessageBuilder{}
+		mockBuilder := &mocks.MockMessageBuilder{}
 
 		service := NewMeetingsService(mockAuth, ServiceConfig{})
 		service.MeetingRepository = mockRepo
 		service.RegistrantRepository = mockRegistrantRepo
+		service.PastMeetingRepository = mockPastMeetingRepo
+		service.PastMeetingParticipantRepository = mockPastMeetingParticipantRepo
 		service.MessageBuilder = mockBuilder
 
 		// Verify dependencies are correctly set
 		assert.Same(t, mockRepo, service.MeetingRepository)
 		assert.Same(t, mockRegistrantRepo, service.RegistrantRepository)
+		assert.Same(t, mockPastMeetingRepo, service.PastMeetingRepository)
+		assert.Same(t, mockPastMeetingParticipantRepo, service.PastMeetingParticipantRepository)
 		assert.Same(t, mockAuth, service.Auth)
 		assert.Same(t, mockBuilder, service.MessageBuilder)
 	})
@@ -174,43 +194,28 @@ func TestMeetingsService_Interfaces(t *testing.T) {
 }
 
 // Setup helper for common test scenarios
-func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, *domain.MockMessageBuilder, *auth.MockJWTAuth) {
-	mockRepo := &domain.MockMeetingRepository{}
-	mockBuilder := &domain.MockMessageBuilder{}
+func setupServiceForTesting() (*MeetingsService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder, *auth.MockJWTAuth) {
+	mockRepo := &mocks.MockMeetingRepository{}
+	mockBuilder := &mocks.MockMessageBuilder{}
 	mockAuth := &auth.MockJWTAuth{}
+	mockEmailService := &mocks.MockEmailService{}
 
 	service := NewMeetingsService(mockAuth, ServiceConfig{})
 	service.MeetingRepository = mockRepo
-	service.RegistrantRepository = &domain.MockRegistrantRepository{}
+	service.RegistrantRepository = &mocks.MockRegistrantRepository{}
+	service.PastMeetingRepository = &mocks.MockPastMeetingRepository{}
+	service.PastMeetingParticipantRepository = &mocks.MockPastMeetingParticipantRepository{}
 	service.MessageBuilder = mockBuilder
-	service.PlatformRegistry = &domain.MockPlatformRegistry{}
+	service.PlatformRegistry = &mocks.MockPlatformRegistry{}
+	service.EmailService = mockEmailService
 
 	return service, mockRepo, mockBuilder, mockAuth
 }
 
-// Mock message for testing
-type mockMessage struct {
-	subject string
-	data    []byte
-	mock.Mock
+func newMockMessage(subject string, data []byte) *mocks.MockMessage {
+	return mocks.NewMockMessageWithReply(data, subject, true)
 }
 
-func (m *mockMessage) Subject() string {
-	return m.subject
-}
-
-func (m *mockMessage) Data() []byte {
-	return m.data
-}
-
-func (m *mockMessage) Respond(data []byte) error {
-	args := m.Called(data)
-	return args.Error(0)
-}
-
-func newMockMessage(subject string, data []byte) *mockMessage {
-	return &mockMessage{
-		subject: subject,
-		data:    data,
-	}
+func newMockMessageNoReply(subject string, data []byte) *mocks.MockMessage {
+	return mocks.NewMockMessageWithReply(data, subject, false)
 }

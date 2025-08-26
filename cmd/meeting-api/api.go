@@ -5,14 +5,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/middleware"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"goa.design/goa/v3/security"
 )
 
@@ -22,9 +26,9 @@ type MeetingsAPI struct {
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
-func NewMeetingsAPI(service *service.MeetingsService) *MeetingsAPI {
+func NewMeetingsAPI(svc *service.MeetingsService) *MeetingsAPI {
 	return &MeetingsAPI{
-		service: service,
+		service: svc,
 	}
 }
 
@@ -91,4 +95,98 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 	}
 	// Return a new context containing the principal as a value.
 	return context.WithValue(ctx, constants.PrincipalContextID, principal), nil
+}
+
+// ZoomWebhook handles Zoom webhook events by validating signatures and forwarding to NATS for async processing.
+func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
+	logger := slog.With("component", "meetings_api", "method", "ZoomWebhook")
+	slog.InfoContext(ctx, "Zoom webhook payload", "payload", payload)
+
+	if !s.service.ServiceReady() {
+		logger.ErrorContext(ctx, "Service not ready")
+		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+	}
+
+	// Validate Zoom webhook signature if provided
+	if payload.ZoomSignature != nil && payload.ZoomTimestamp != nil {
+		// Check if Zoom webhook validator is configured
+		if s.service.ZoomWebhookValidator == nil {
+			logger.ErrorContext(ctx, "Zoom webhook validator not configured")
+			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("zoom webhook validation not configured"))
+		}
+
+		// Get the raw request body from context for signature validation
+		bodyBytes, ok := middleware.GetRawBodyFromContext(ctx)
+		if !ok {
+			logger.ErrorContext(ctx, "Raw request body not available in context")
+			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("raw body not captured"))
+		}
+
+		if err := s.service.ZoomWebhookValidator.ValidateSignature(bodyBytes, *payload.ZoomSignature, *payload.ZoomTimestamp); err != nil {
+			logger.WarnContext(ctx, "Zoom webhook signature validation failed", "error", err)
+			return nil, &meetingsvc.UnauthorizedError{
+				Code:    "401",
+				Message: "Invalid webhook signature",
+			}
+		}
+
+		logger.DebugContext(ctx, "Zoom webhook signature validation passed")
+	}
+
+	// Validate event type and payload
+	if payload.Payload == nil || payload.Event == "" {
+		logger.WarnContext(ctx, "Webhook payload missing event field")
+		return nil, createResponse(http.StatusBadRequest, fmt.Errorf("invalid webhook payload: missing event field"))
+	}
+
+	eventType := payload.Event
+
+	// Map event type to NATS subject
+	subject := getZoomWebhookSubject(eventType)
+	if subject == "" {
+		logger.WarnContext(ctx, "Unsupported Zoom webhook event type", "event_type", eventType)
+		return nil, createResponse(http.StatusBadRequest, fmt.Errorf("unsupported event type: %s", eventType))
+	}
+
+	// Create webhook event message for NATS
+	payloadMap, ok := payload.Payload.(map[string]interface{})
+	if !ok {
+		logger.ErrorContext(ctx, "Webhook payload is not a valid map", "payload_type", fmt.Sprintf("%T", payload.Payload))
+		return nil, createResponse(http.StatusBadRequest, fmt.Errorf("invalid webhook payload format"))
+	}
+
+	webhookMessage := models.ZoomWebhookEventMessage{
+		EventType: eventType,
+		EventTS:   payload.EventTs,
+		Payload:   payloadMap,
+	}
+
+	// Publish to NATS for async processing
+	if err := s.service.MessageBuilder.PublishZoomWebhookEvent(ctx, subject, webhookMessage); err != nil {
+		logger.ErrorContext(ctx, "Failed to publish webhook event to NATS", "error", err, "event_type", eventType, "subject", subject)
+		return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("failed to process webhook event"))
+	}
+
+	logger.InfoContext(ctx, "Zoom webhook event published to NATS successfully", "event_type", eventType, "subject", subject)
+
+	return &meetingsvc.ZoomWebhookResponse{
+		Status:  "success",
+		Message: utils.StringPtr(fmt.Sprintf("Event %s queued for processing", eventType)),
+	}, nil
+}
+
+// getZoomWebhookSubject maps Zoom event types to NATS subjects
+func getZoomWebhookSubject(eventType string) string {
+	eventSubjectMap := map[string]string{
+		"meeting.started":                models.ZoomWebhookMeetingStartedSubject,
+		"meeting.ended":                  models.ZoomWebhookMeetingEndedSubject,
+		"meeting.deleted":                models.ZoomWebhookMeetingDeletedSubject,
+		"meeting.participant_joined":     models.ZoomWebhookMeetingParticipantJoinedSubject,
+		"meeting.participant_left":       models.ZoomWebhookMeetingParticipantLeftSubject,
+		"recording.completed":            models.ZoomWebhookRecordingCompletedSubject,
+		"recording.transcript_completed": models.ZoomWebhookRecordingTranscriptCompletedSubject,
+		"meeting.summary_completed":      models.ZoomWebhookMeetingSummaryCompletedSubject,
+	}
+
+	return eventSubjectMap[eventType]
 }

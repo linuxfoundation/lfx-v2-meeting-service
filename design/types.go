@@ -113,3 +113,51 @@ var ServiceUnavailableError = Type("ServiceUnavailableError", func() {
 	})
 	Required("code", "message")
 })
+
+// UnauthorizedError is the DSL type for an unauthorized error.
+var UnauthorizedError = Type("UnauthorizedError", func() {
+	Attribute("code", String, "HTTP status code", func() {
+		Example("401")
+	})
+	Attribute("message", String, "Error message", func() {
+		Example("Unauthorized request.")
+	})
+	Required("code", "message")
+})
+
+// ZoomWebhookPayload represents the payload structure for Zoom webhook events
+var ZoomWebhookPayload = Type("ZoomWebhookPayload", func() {
+	Description("Zoom webhook event payload")
+	Attribute("event", String, "The type of event", func() {
+		Example("meeting.started")
+		Enum("meeting.started", "meeting.ended", "meeting.deleted",
+			"meeting.participant_joined", "meeting.participant_left",
+			"recording.completed", "recording.transcript_completed",
+			"meeting.summary_completed")
+	})
+	Attribute("event_ts", Int64, "Event timestamp in milliseconds", func() {
+		Example(1609459200000)
+	})
+	Attribute("payload", Any, "Event-specific payload data", func() {
+		Description("Contains meeting, participant, or recording data depending on event type")
+	})
+	Attribute("zoom_signature", String, "Zoom webhook signature for verification", func() {
+		Description("HMAC-SHA256 signature of the request body")
+	})
+	Attribute("zoom_timestamp", String, "Zoom timestamp header for replay protection", func() {
+		Description("Timestamp when the webhook was sent")
+	})
+	Required("event", "event_ts", "payload")
+})
+
+// ZoomWebhookResponse represents the response for webhook processing
+var ZoomWebhookResponse = Type("ZoomWebhookResponse", func() {
+	Description("Response indicating successful webhook processing")
+	Attribute("status", String, "Processing status", func() {
+		Example("success")
+	})
+	Attribute("message", String, "Optional message", func() {
+		Example("Event processed successfully")
+	})
+	Required("status")
+})

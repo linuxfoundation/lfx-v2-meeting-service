@@ -46,6 +46,18 @@ service:
   # port is the service port
   port: 8080
 
+# serviceAccount is the configuration for the Kubernetes service account
+serviceAccount:
+  # create specifies whether a service account should be created
+  create: true
+  # name is the name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # annotations to add to the service account
+  annotations: {}
+  # automountServiceAccountToken is a boolean to determine if the service account token should be automatically mounted
+  automountServiceAccountToken: true
+
 # nats is the configuration for the NATS server
 nats:
   # url is the URL of the NATS server
@@ -114,6 +126,48 @@ nats:
     # compression is a boolean to determine if the KV bucket should be compressed
     compression: true
 
+  # kv_bucket_past_meetings is the configuration for the KV bucket for storing past meetings
+  kv_bucket_past_meetings:
+    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
+    # set it to false if you want to use an existing KV bucket.
+    creation: true
+    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
+    # set it to false if you want the bucket to be deleted when the chart is uninstalled
+    keep: true
+    # name is the name of the KV bucket for storing past meetings
+    name: past-meetings
+    # history is the number of history entries to keep for the KV bucket
+    history: 20
+    # storage is the storage type for the KV bucket
+    storage: file
+    # maxValueSize is the maximum size of a value in the KV bucket
+    maxValueSize: 10485760  # 10MB
+    # maxBytes is the maximum number of bytes in the KV bucket
+    maxBytes: 5368709120  # 5GB
+    # compression is a boolean to determine if the KV bucket should be compressed
+    compression: true
+
+  # kv_bucket_past_meeting_participants is the configuration for the KV bucket for storing past meeting participants
+  kv_bucket_past_meeting_participants:
+    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
+    # set it to false if you want to use an existing KV bucket.
+    creation: true
+    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
+    # set it to false if you want the bucket to be deleted when the chart is uninstalled
+    keep: true
+    # name is the name of the KV bucket for storing past meeting participants
+    name: past-meeting-participants
+    # history is the number of history entries to keep for the KV bucket
+    history: 20
+    # storage is the storage type for the KV bucket
+    storage: file
+    # maxValueSize is the maximum size of a value in the KV bucket
+    maxValueSize: 10485760  # 10MB
+    # maxBytes is the maximum number of bytes in the KV bucket
+    maxBytes: 5368709120  # 5GB
+    # compression is a boolean to determine if the KV bucket should be compressed
+    compression: true
+
 # openfga is the configuration for the OpenFGA server
 openfga:
   # enabled is a boolean to determine if the OpenFGA server should be enabled for authorization
@@ -127,6 +181,23 @@ heimdall:
   url: http://lfx-platform-heimdall.lfx.svc.cluster.local:4456
   # jwksUrl is the JWKS URL for JWT verification
   jwksUrl: http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks
+
+# email is the configuration for email notifications
+email:
+  # enabled is a boolean to determine if email notifications should be sent
+  enabled: true
+  # smtp is the SMTP server configuration
+  smtp:
+    # host is the SMTP server hostname
+    host: lfx-platform-mailpit-smtp.lfx.svc.cluster.local
+    # port is the SMTP server port
+    port: 25
+    # from is the sender email address
+    from: noreply@lfx.linuxfoundation.org
+    # username is the SMTP username (optional for authenticated SMTP)
+    username: ""
+    # password is the SMTP password (optional for authenticated SMTP)
+    password: ""
 
 # zoom is the configuration for Zoom integration
 zoom:

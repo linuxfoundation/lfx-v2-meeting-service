@@ -42,6 +42,9 @@ type Service interface {
 	UpdateMeetingRegistrant(context.Context, *UpdateMeetingRegistrantPayload) (res *Registrant, err error)
 	// Delete a registrant from a meeting
 	DeleteMeetingRegistrant(context.Context, *DeleteMeetingRegistrantPayload) (err error)
+	// Handle Zoom webhook events for meeting lifecycle, participants, and
+	// recordings.
+	ZoomWebhook(context.Context, *ZoomWebhookPayload) (res *ZoomWebhookResponse, err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -68,7 +71,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [14]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "readyz", "livez"}
+var MethodNames = [15]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -607,6 +610,13 @@ type ServiceUnavailableError struct {
 	Message string
 }
 
+type UnauthorizedError struct {
+	// HTTP status code
+	Code string
+	// Error message
+	Message string
+}
+
 // UpdateMeetingBasePayload is the payload type of the Meeting Service service
 // update-meeting-base method.
 type UpdateMeetingBasePayload struct {
@@ -733,6 +743,30 @@ type ZoomConfigPost struct {
 	AiSummaryRequireApproval *bool
 }
 
+// ZoomWebhookPayload is the payload type of the Meeting Service service
+// zoom-webhook method.
+type ZoomWebhookPayload struct {
+	// The type of event
+	Event string
+	// Event timestamp in milliseconds
+	EventTs int64
+	// Contains meeting, participant, or recording data depending on event type
+	Payload any
+	// HMAC-SHA256 signature of the request body
+	ZoomSignature *string
+	// Timestamp when the webhook was sent
+	ZoomTimestamp *string
+}
+
+// ZoomWebhookResponse is the result type of the Meeting Service service
+// zoom-webhook method.
+type ZoomWebhookResponse struct {
+	// Processing status
+	Status string
+	// Optional message
+	Message *string
+}
+
 // Error returns an error description.
 func (e *BadRequestError) Error() string {
 	return ""
@@ -816,4 +850,21 @@ func (e *ServiceUnavailableError) ErrorName() string {
 // GoaErrorName returns "ServiceUnavailableError".
 func (e *ServiceUnavailableError) GoaErrorName() string {
 	return "ServiceUnavailable"
+}
+
+// Error returns an error description.
+func (e *UnauthorizedError) Error() string {
+	return ""
+}
+
+// ErrorName returns "UnauthorizedError".
+//
+// Deprecated: Use GoaErrorName - https://github.com/goadesign/goa/issues/3105
+func (e *UnauthorizedError) ErrorName() string {
+	return e.GoaErrorName()
+}
+
+// GoaErrorName returns "UnauthorizedError".
+func (e *UnauthorizedError) GoaErrorName() string {
+	return "Unauthorized"
 }

@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -25,16 +27,26 @@ func (s *MeetingsService) HandleMessage(ctx context.Context, msg domain.Message)
 	var err error
 
 	handlers := map[string]func(ctx context.Context, msg domain.Message) ([]byte, error){
-		models.MeetingGetTitleSubject: s.HandleMeetingGetTitle,
+		models.MeetingGetTitleSubject:                         s.HandleMeetingGetTitle,
+		models.MeetingDeletedSubject:                          s.HandleMeetingDeleted,
+		models.ZoomWebhookMeetingStartedSubject:               s.HandleZoomMeetingStarted,
+		models.ZoomWebhookMeetingEndedSubject:                 s.HandleZoomMeetingEnded,
+		models.ZoomWebhookMeetingDeletedSubject:               s.HandleZoomMeetingDeleted,
+		models.ZoomWebhookMeetingParticipantJoinedSubject:     s.HandleZoomParticipantJoined,
+		models.ZoomWebhookMeetingParticipantLeftSubject:       s.HandleZoomParticipantLeft,
+		models.ZoomWebhookRecordingCompletedSubject:           s.HandleZoomRecordingCompleted,
+		models.ZoomWebhookRecordingTranscriptCompletedSubject: s.HandleZoomTranscriptCompleted,
+		models.ZoomWebhookMeetingSummaryCompletedSubject:      s.HandleZoomSummaryCompleted,
 	}
 
 	handler, ok := handlers[subject]
 	if !ok {
 		slog.WarnContext(ctx, "unknown subject")
-		err = msg.Respond(nil)
-		if err != nil {
-			slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
-			return
+		if msg.HasReply() {
+			err = msg.Respond(nil)
+			if err != nil {
+				slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+			}
 		}
 		return
 	}
@@ -43,21 +55,26 @@ func (s *MeetingsService) HandleMessage(ctx context.Context, msg domain.Message)
 	if err != nil {
 		slog.ErrorContext(ctx, "error handling message",
 			logging.ErrKey, err,
-			"subject", subject,
 		)
-		err = msg.Respond(nil)
-		if err != nil {
-			slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+		if msg.HasReply() {
+			err = msg.Respond(nil)
+			if err != nil {
+				slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+			}
 		}
 		return
 	}
-	err = msg.Respond(response)
-	if err != nil {
-		slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
-		return
-	}
 
-	slog.DebugContext(ctx, "responded to NATS message", "response", response)
+	if msg.HasReply() {
+		err = msg.Respond(response)
+		if err != nil {
+			slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+			return
+		}
+		slog.DebugContext(ctx, "responded to NATS message", "response", response)
+	} else {
+		slog.DebugContext(ctx, "handled NATS message (no reply expected)")
+	}
 }
 
 func (s *MeetingsService) handleMeetingGetAttribute(ctx context.Context, msg domain.Message, subject, getAttribute string) ([]byte, error) {
@@ -103,4 +120,77 @@ func (s *MeetingsService) handleMeetingGetAttribute(ctx context.Context, msg dom
 // HandleMeetingGetTitle is the message handler for the meeting-get-title subject.
 func (s *MeetingsService) HandleMeetingGetTitle(ctx context.Context, msg domain.Message) ([]byte, error) {
 	return s.handleMeetingGetAttribute(ctx, msg, models.MeetingGetTitleSubject, "title")
+}
+
+// HandleMeetingDeleted is the message handler for the meeting-deleted subject.
+// It cleans up all registrants associated with the deleted meeting.
+func (s *MeetingsService) HandleMeetingDeleted(ctx context.Context, msg domain.Message) ([]byte, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not ready")
+		return nil, fmt.Errorf("service not ready")
+	}
+
+	// Parse the meeting deletion message
+	var meetingDeletedMsg models.MeetingDeletedMessage
+	err := json.Unmarshal(msg.Data(), &meetingDeletedMsg)
+	if err != nil {
+		slog.ErrorContext(ctx, "error unmarshaling meeting deleted message", logging.ErrKey, err)
+		return nil, err
+	}
+
+	meetingUID := meetingDeletedMsg.MeetingUID
+	if meetingUID == "" {
+		slog.WarnContext(ctx, "meeting UID is empty in deletion message")
+		return nil, fmt.Errorf("meeting UID is required")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+	slog.InfoContext(ctx, "processing meeting deletion, cleaning up registrants")
+
+	// Get all registrants for the meeting
+	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting registrants for deleted meeting", logging.ErrKey, err)
+		return nil, err
+	}
+
+	if len(registrants) == 0 {
+		slog.DebugContext(ctx, "no registrants to clean up for deleted meeting")
+		return []byte("success"), nil
+	}
+
+	slog.InfoContext(ctx, "cleaning up registrants for deleted meeting", "registrant_count", len(registrants))
+
+	// Process registrants concurrently using WorkerPool
+	var tasks []func() error
+	for _, registrant := range registrants {
+		reg := registrant // capture loop variable
+		tasks = append(tasks, func() error {
+			// Use the shared helper with skipRevisionCheck=true for bulk cleanup
+			err := s.deleteRegistrantWithCleanup(ctx, reg, 0, true)
+			if err != nil {
+				slog.ErrorContext(ctx, "error deleting registrant",
+					"registrant_uid", reg.UID,
+					logging.ErrKey, err,
+					logging.PriorityCritical())
+				return err
+			}
+			slog.DebugContext(ctx, "successfully cleaned up registrant", "registrant_uid", reg.UID)
+			return nil
+		})
+	}
+
+	// Execute all cleanup operations concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(10) // Use 10 workers, same concurrency as before
+	err = pool.Run(ctx, tasks...)
+	if err != nil {
+		slog.ErrorContext(ctx, "some registrant cleanup operations failed",
+			"total_registrants", len(registrants),
+			logging.ErrKey, err,
+			logging.PriorityCritical())
+		return nil, fmt.Errorf("failed to clean up registrants: %w", err)
+	}
+
+	slog.InfoContext(ctx, "successfully cleaned up all registrants for deleted meeting", "registrant_count", len(registrants))
+	return []byte("success"), nil
 }
