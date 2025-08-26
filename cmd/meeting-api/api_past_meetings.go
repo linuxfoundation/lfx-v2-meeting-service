@@ -47,7 +47,9 @@ func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc
 		return nil, handleError(domain.ErrServiceUnavailable)
 	}
 
-	pastMeeting, err := s.pastMeetingService.CreatePastMeeting(ctx, payload)
+	createPastMeetingReq := service.ConvertCreatePastMeetingPayloadToDomain(payload)
+
+	pastMeeting, err := s.pastMeetingService.CreatePastMeeting(ctx, createPastMeetingReq)
 	if err != nil {
 		return nil, handleError(err)
 	}

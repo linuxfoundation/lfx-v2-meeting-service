@@ -8,10 +8,8 @@ import (
 	"errors"
 	"log/slog"
 	"strconv"
-	"time"
 
 	"github.com/google/uuid"
-	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -48,39 +46,29 @@ func (s *PastMeetingService) ServiceReady() bool {
 		s.MessageBuilder != nil
 }
 
-func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) error {
+func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Context, pastMeeting *models.PastMeeting) error {
 	// Validate that required fields are present
-	if payload.MeetingUID == "" {
+	if pastMeeting == nil {
 		return domain.ErrValidationFailed
 	}
-	if payload.ProjectUID == "" {
+	if pastMeeting.MeetingUID == "" {
 		return domain.ErrValidationFailed
 	}
-	if payload.Title == "" {
+	if pastMeeting.ProjectUID == "" {
 		return domain.ErrValidationFailed
 	}
-	if payload.Description == "" {
+	if pastMeeting.Title == "" {
 		return domain.ErrValidationFailed
 	}
-	if payload.Platform == "" {
+	if pastMeeting.Description == "" {
 		return domain.ErrValidationFailed
 	}
-
-	// Parse and validate timestamps
-	scheduledStartTime, err := time.Parse(time.RFC3339, payload.ScheduledStartTime)
-	if err != nil {
-		slog.WarnContext(ctx, "invalid scheduled start time format", logging.ErrKey, err)
-		return domain.ErrValidationFailed
-	}
-
-	scheduledEndTime, err := time.Parse(time.RFC3339, payload.ScheduledEndTime)
-	if err != nil {
-		slog.WarnContext(ctx, "invalid scheduled end time format", logging.ErrKey, err)
+	if pastMeeting.Platform == "" {
 		return domain.ErrValidationFailed
 	}
 
 	// Validate that end time is after start time
-	if scheduledEndTime.Before(scheduledStartTime) {
+	if pastMeeting.ScheduledEndTime.Before(pastMeeting.ScheduledStartTime) {
 		slog.WarnContext(ctx, "scheduled end time cannot be before start time")
 		return domain.ErrValidationFailed
 	}
@@ -88,176 +76,33 @@ func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Contex
 	return nil
 }
 
-func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) (*models.PastMeeting, error) {
+func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingReq *models.PastMeeting) (*models.PastMeeting, error) {
+	// Check if service is ready
+	if !s.ServiceReady() {
+		return nil, domain.ErrServiceUnavailable
+	}
+
 	// Validate the payload
-	if err := s.validateCreatePastMeetingPayload(ctx, payload); err != nil {
+	if err := s.validateCreatePastMeetingPayload(ctx, pastMeetingReq); err != nil {
 		return nil, err
 	}
 
 	// Check if the original meeting exists (optional validation)
-	exists, err := s.MeetingRepository.Exists(ctx, payload.MeetingUID)
+	exists, err := s.MeetingRepository.Exists(ctx, pastMeetingReq.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if meeting exists", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
 	if !exists {
-		slog.WarnContext(ctx, "referenced meeting does not exist", "meeting_uid", payload.MeetingUID)
+		slog.WarnContext(ctx, "referenced meeting does not exist", "meeting_uid", pastMeetingReq.MeetingUID)
 		// This is not an error - past meetings can be created for meetings that no longer exist
 	}
 
-	// Parse timestamps
-	scheduledStartTime, _ := time.Parse(time.RFC3339, payload.ScheduledStartTime)
-	scheduledEndTime, _ := time.Parse(time.RFC3339, payload.ScheduledEndTime)
-
-	// Convert committees from DSL to domain models
-	var committees []models.Committee
-	if payload.Committees != nil {
-		for _, committee := range payload.Committees {
-			committees = append(committees, models.Committee{
-				UID:                   committee.UID,
-				AllowedVotingStatuses: committee.AllowedVotingStatuses,
-			})
-		}
-	}
-
-	// Convert recurrence from DSL to domain model
-	var recurrence *models.Recurrence
-	if payload.Recurrence != nil {
-		recurrence = &models.Recurrence{
-			Type:           payload.Recurrence.Type,
-			RepeatInterval: payload.Recurrence.RepeatInterval,
-		}
-
-		if payload.Recurrence.WeeklyDays != nil {
-			recurrence.WeeklyDays = *payload.Recurrence.WeeklyDays
-		}
-		if payload.Recurrence.MonthlyDay != nil {
-			recurrence.MonthlyDay = *payload.Recurrence.MonthlyDay
-		}
-		if payload.Recurrence.MonthlyWeek != nil {
-			recurrence.MonthlyWeek = *payload.Recurrence.MonthlyWeek
-		}
-		if payload.Recurrence.MonthlyWeekDay != nil {
-			recurrence.MonthlyWeekDay = *payload.Recurrence.MonthlyWeekDay
-		}
-		if payload.Recurrence.EndTimes != nil {
-			recurrence.EndTimes = *payload.Recurrence.EndTimes
-		}
-		if payload.Recurrence.EndDateTime != nil {
-			endDateTime, err := time.Parse(time.RFC3339, *payload.Recurrence.EndDateTime)
-			if err != nil {
-				slog.WarnContext(ctx, "invalid recurrence end date time format", logging.ErrKey, err)
-				return nil, domain.ErrValidationFailed
-			}
-			recurrence.EndDateTime = &endDateTime
-		}
-	}
-
-	// Convert Zoom config from DSL to domain model
-	var zoomConfig *models.ZoomConfig
-	if payload.ZoomConfig != nil {
-		zoomConfig = &models.ZoomConfig{}
-
-		if payload.ZoomConfig.MeetingID != nil {
-			zoomConfig.MeetingID = *payload.ZoomConfig.MeetingID
-		}
-		if payload.ZoomConfig.Passcode != nil {
-			zoomConfig.Passcode = *payload.ZoomConfig.Passcode
-		}
-		if payload.ZoomConfig.AiCompanionEnabled != nil {
-			zoomConfig.AICompanionEnabled = *payload.ZoomConfig.AiCompanionEnabled
-		}
-		if payload.ZoomConfig.AiSummaryRequireApproval != nil {
-			zoomConfig.AISummaryRequireApproval = *payload.ZoomConfig.AiSummaryRequireApproval
-		}
-	}
-
-	// Convert sessions from DSL to domain models
-	var sessions []models.Session
-	if payload.Sessions != nil {
-		for _, session := range payload.Sessions {
-			startTime, err := time.Parse(time.RFC3339, session.StartTime)
-			if err != nil {
-				slog.WarnContext(ctx, "invalid session start time format", logging.ErrKey, err)
-				return nil, domain.ErrValidationFailed
-			}
-
-			domainSession := models.Session{
-				UID:       session.UID,
-				StartTime: startTime,
-			}
-
-			if session.EndTime != nil {
-				endTime, err := time.Parse(time.RFC3339, *session.EndTime)
-				if err != nil {
-					slog.WarnContext(ctx, "invalid session end time format", logging.ErrKey, err)
-					return nil, domain.ErrValidationFailed
-				}
-				domainSession.EndTime = &endTime
-			}
-
-			sessions = append(sessions, domainSession)
-		}
-	}
-
 	// Create the domain model
-	now := time.Now()
-	pastMeeting := &models.PastMeeting{
-		UID:                uuid.New().String(),
-		MeetingUID:         payload.MeetingUID,
-		ProjectUID:         payload.ProjectUID,
-		ScheduledStartTime: scheduledStartTime,
-		ScheduledEndTime:   scheduledEndTime,
-		Duration:           payload.Duration,
-		Timezone:           payload.Timezone,
-		Recurrence:         recurrence,
-		Title:              payload.Title,
-		Description:        payload.Description,
-		Committees:         committees,
-		Platform:           payload.Platform,
-		ZoomConfig:         zoomConfig,
-		Sessions:           sessions,
-		CreatedAt:          &now,
-		UpdatedAt:          &now,
-	}
-
-	// Set optional fields if provided
-	if payload.OccurrenceID != nil {
-		pastMeeting.OccurrenceID = *payload.OccurrenceID
-	}
-	if payload.PlatformMeetingID != nil {
-		pastMeeting.PlatformMeetingID = *payload.PlatformMeetingID
-	}
-	if payload.EarlyJoinTimeMinutes != nil {
-		pastMeeting.EarlyJoinTimeMinutes = *payload.EarlyJoinTimeMinutes
-	}
-	if payload.MeetingType != nil {
-		pastMeeting.MeetingType = *payload.MeetingType
-	}
-	if payload.Visibility != nil {
-		pastMeeting.Visibility = *payload.Visibility
-	}
-	if payload.ArtifactVisibility != nil {
-		pastMeeting.ArtifactVisibility = *payload.ArtifactVisibility
-	}
-	if payload.PublicLink != nil {
-		pastMeeting.PublicLink = *payload.PublicLink
-	}
-	if payload.Restricted != nil {
-		pastMeeting.Restricted = *payload.Restricted
-	}
-	if payload.RecordingEnabled != nil {
-		pastMeeting.RecordingEnabled = *payload.RecordingEnabled
-	}
-	if payload.TranscriptEnabled != nil {
-		pastMeeting.TranscriptEnabled = *payload.TranscriptEnabled
-	}
-	if payload.YoutubeUploadEnabled != nil {
-		pastMeeting.YoutubeUploadEnabled = *payload.YoutubeUploadEnabled
-	}
+	pastMeetingReq.UID = uuid.New().String()
 
 	// Save to repository
-	if err := s.PastMeetingRepository.Create(ctx, pastMeeting); err != nil {
+	if err := s.PastMeetingRepository.Create(ctx, pastMeetingReq); err != nil {
 		slog.ErrorContext(ctx, "error creating past meeting", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
@@ -266,22 +111,22 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, payload *mee
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeeting)
+			return s.MessageBuilder.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeetingReq)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
-			committees := make([]string, len(pastMeeting.Committees))
-			for i, committee := range pastMeeting.Committees {
+			committees := make([]string, len(pastMeetingReq.Committees))
+			for i, committee := range pastMeetingReq.Committees {
 				committees[i] = committee.UID
 			}
 			// Determine if the meeting is public based on visibility
-			isPublic := pastMeeting.Visibility == "public"
+			isPublic := pastMeetingReq.Visibility == "public"
 
 			return s.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
-				UID:        pastMeeting.UID,
-				MeetingUID: pastMeeting.MeetingUID,
+				UID:        pastMeetingReq.UID,
+				MeetingUID: pastMeetingReq.MeetingUID,
 				Public:     isPublic,
-				ProjectUID: pastMeeting.ProjectUID,
+				ProjectUID: pastMeetingReq.ProjectUID,
 				Committees: committees,
 			})
 		},
@@ -292,10 +137,14 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, payload *mee
 		// Don't fail the operation if messaging fails
 	}
 
-	return pastMeeting, nil
+	return pastMeetingReq, nil
 }
 
 func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
+	if !s.ServiceReady() {
+		return nil, domain.ErrServiceUnavailable
+	}
+
 	pastMeetings, err := s.PastMeetingRepository.ListAll(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing past meetings", logging.ErrKey, err)
@@ -306,6 +155,10 @@ func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.Pas
 }
 
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
+	if !s.ServiceReady() {
+		return nil, "", domain.ErrServiceUnavailable
+	}
+
 	pastMeeting, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrPastMeetingNotFound) {

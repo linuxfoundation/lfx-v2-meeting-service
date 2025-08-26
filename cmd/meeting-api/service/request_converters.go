@@ -316,3 +316,115 @@ func ConvertUpdatePastMeetingParticipantPayloadToDomain(payload *meetingservice.
 
 	return participant
 }
+
+// ConvertCreatePastMeetingPayloadToDomain converts a CreatePastMeetingPayload type to the domain PastMeeting model
+func ConvertCreatePastMeetingPayloadToDomain(payload *meetingservice.CreatePastMeetingPayload) *models.PastMeeting {
+	if payload == nil {
+		return nil
+	}
+
+	scheduledStartTime, err := time.Parse(time.RFC3339, payload.ScheduledStartTime)
+	if err != nil {
+		slog.Error("failed to parse scheduled start time", logging.ErrKey, err,
+			"scheduled_start_time", payload.ScheduledStartTime,
+		)
+		return nil
+	}
+
+	scheduledEndTime, err := time.Parse(time.RFC3339, payload.ScheduledEndTime)
+	if err != nil {
+		slog.Error("failed to parse scheduled end time", logging.ErrKey, err,
+			"scheduled_end_time", payload.ScheduledEndTime,
+		)
+		return nil
+	}
+
+	now := time.Now().UTC()
+	pastMeeting := &models.PastMeeting{
+		UID:                  "", // This will get populated by the service
+		MeetingUID:           payload.MeetingUID,
+		OccurrenceID:         utils.StringValue(payload.OccurrenceID),
+		ProjectUID:           payload.ProjectUID,
+		ScheduledStartTime:   scheduledStartTime,
+		ScheduledEndTime:     scheduledEndTime,
+		Duration:             payload.Duration,
+		Timezone:             payload.Timezone,
+		Recurrence:           convertRecurrenceToDomain(payload.Recurrence),
+		Title:                payload.Title,
+		Description:          payload.Description,
+		Committees:           convertCommitteesToDomain(payload.Committees),
+		Platform:             payload.Platform,
+		PlatformMeetingID:    utils.StringValue(payload.PlatformMeetingID),
+		EarlyJoinTimeMinutes: utils.IntValue(payload.EarlyJoinTimeMinutes),
+		MeetingType:          utils.StringValue(payload.MeetingType),
+		Visibility:           utils.StringValue(payload.Visibility),
+		Restricted:           utils.BoolValue(payload.Restricted),
+		ArtifactVisibility:   utils.StringValue(payload.ArtifactVisibility),
+		PublicLink:           utils.StringValue(payload.PublicLink),
+		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
+		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
+		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
+		ZoomConfig:           convertZoomConfigFullToDomain(payload.ZoomConfig),
+		Sessions:             convertSessionsFullToDomain(payload.Sessions),
+		CreatedAt:            &now,
+		UpdatedAt:            &now,
+	}
+
+	return pastMeeting
+}
+
+// convertZoomConfigFullToDomain converts a ZoomConfigFull to domain ZoomConfig
+func convertZoomConfigFullToDomain(z *meetingservice.ZoomConfigFull) *models.ZoomConfig {
+	if z == nil {
+		return nil
+	}
+
+	return &models.ZoomConfig{
+		MeetingID:                utils.StringValue(z.MeetingID),
+		Passcode:                 utils.StringValue(z.Passcode),
+		AICompanionEnabled:       utils.BoolValue(z.AiCompanionEnabled),
+		AISummaryRequireApproval: utils.BoolValue(z.AiSummaryRequireApproval),
+	}
+}
+
+// convertSessionsFullToDomain converts Sessions to domain Sessions
+func convertSessionsFullToDomain(sessions []*meetingservice.Session) []models.Session {
+	if sessions == nil {
+		return nil
+	}
+
+	var result []models.Session
+	for _, session := range sessions {
+		if session == nil {
+			continue
+		}
+
+		startTime, err := time.Parse(time.RFC3339, session.StartTime)
+		if err != nil {
+			slog.Error("failed to parse session start time", logging.ErrKey, err,
+				"start_time", session.StartTime,
+			)
+			continue
+		}
+
+		domainSession := models.Session{
+			UID:       session.UID,
+			StartTime: startTime,
+		}
+
+		if session.EndTime != nil {
+			endTime, err := time.Parse(time.RFC3339, *session.EndTime)
+			if err != nil {
+				slog.Error("failed to parse session end time", logging.ErrKey, err,
+					"end_time", *session.EndTime,
+				)
+			} else {
+				domainSession.EndTime = &endTime
+			}
+		}
+
+		result = append(result, domainSession)
+	}
+
+	return result
+}
