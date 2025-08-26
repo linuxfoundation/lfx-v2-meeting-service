@@ -397,7 +397,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name:        "partial deletion failure continues processing",
+			name:        "partial deletion failure returns error",
 			messageData: []byte(`{"meeting_uid":"meeting-partial"}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				registrants := []*models.Registrant{
@@ -415,14 +415,14 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 					},
 				}
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-partial").Return(registrants, nil)
-				// First deletion succeeds
-				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil)
-				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil)
+				// Both deletions may be attempted concurrently, but at least one will fail
+				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil).Maybe()
+				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(domain.ErrInternal)
+				// Messaging calls may or may not happen due to concurrent execution and fail-fast behavior
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil).Maybe()
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
 					return msg.UID == "registrant-1"
-				})).Return(nil)
-				// Second deletion fails but should continue
-				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(domain.ErrInternal)
+				})).Return(nil).Maybe()
 				// Email sending might be attempted for successful deletion
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-partial").Return(&models.MeetingBase{
 					UID:   "meeting-partial",
@@ -430,7 +430,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				}, nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
-			expectError: false, // Handler continues despite individual failures
+			expectError: true, // Handler fails when any deletion fails due to WorkerPool fail-fast behavior
 		},
 	}
 

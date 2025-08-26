@@ -356,8 +356,8 @@ func TestPastMeetingParticipantService_CreatePastMeetingParticipant(t *testing.T
 				mockParticipantRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
 
 				// Messaging fails but operation continues
-				mockBuilder.On("SendIndexPastMeetingParticipant", mock.Anything, models.ActionCreated, mock.Anything).Return(errors.New("messaging error"))
-				mockBuilder.On("SendPutPastMeetingParticipantAccess", mock.Anything, mock.Anything).Return(errors.New("messaging error"))
+				mockBuilder.On("SendIndexPastMeetingParticipant", mock.Anything, models.ActionCreated, mock.Anything).Maybe().Return(errors.New("messaging error"))
+				mockBuilder.On("SendPutPastMeetingParticipantAccess", mock.Anything, mock.Anything).Maybe().Return(errors.New("messaging error"))
 			},
 			wantErr: false,
 		},
@@ -778,8 +778,8 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 				mockParticipantRepo.On("Delete", mock.Anything, "participant-123", uint64(42)).Return(nil)
 
 				// Messaging fails but operation continues
-				mockBuilder.On("SendDeleteIndexPastMeetingParticipant", mock.Anything, "participant-123").Return(errors.New("messaging error"))
-				mockBuilder.On("SendRemovePastMeetingParticipantAccess", mock.Anything, mock.Anything).Return(errors.New("messaging error"))
+				mockBuilder.On("SendDeleteIndexPastMeetingParticipant", mock.Anything, "participant-123").Maybe().Return(errors.New("messaging error"))
+				mockBuilder.On("SendRemovePastMeetingParticipantAccess", mock.Anything, mock.Anything).Maybe().Return(errors.New("messaging error"))
 			},
 			wantErr: false,
 		},
