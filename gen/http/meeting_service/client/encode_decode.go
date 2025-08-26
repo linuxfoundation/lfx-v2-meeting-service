@@ -2581,6 +2581,815 @@ func DecodeDeletePastMeetingResponse(decoder func(*http.Response) goahttp.Decode
 	}
 }
 
+// BuildGetPastMeetingParticipantsRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "get-past-meeting-participants" endpoint
+func (c *Client) BuildGetPastMeetingParticipantsRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid string
+	)
+	{
+		p, ok := v.(*meetingservice.GetPastMeetingParticipantsPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-participants", "*meetingservice.GetPastMeetingParticipantsPayload", v)
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetPastMeetingParticipantsMeetingServicePath(uid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-past-meeting-participants", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetPastMeetingParticipantsRequest returns an encoder for requests sent
+// to the Meeting Service get-past-meeting-participants server.
+func EncodeGetPastMeetingParticipantsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetPastMeetingParticipantsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-participants", "*meetingservice.GetPastMeetingParticipantsPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetPastMeetingParticipantsResponse returns a decoder for responses
+// returned by the Meeting Service get-past-meeting-participants endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeGetPastMeetingParticipantsResponse may return the following errors:
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetPastMeetingParticipantsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetPastMeetingParticipantsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			err = ValidateGetPastMeetingParticipantsResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			var (
+				cacheControl *string
+			)
+			cacheControlRaw := resp.Header.Get("Cache-Control")
+			if cacheControlRaw != "" {
+				cacheControl = &cacheControlRaw
+			}
+			res := NewGetPastMeetingParticipantsResultOK(&body, cacheControl)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetPastMeetingParticipantsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			err = ValidateGetPastMeetingParticipantsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			return nil, NewGetPastMeetingParticipantsInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetPastMeetingParticipantsNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			err = ValidateGetPastMeetingParticipantsNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			return nil, NewGetPastMeetingParticipantsNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetPastMeetingParticipantsServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			err = ValidateGetPastMeetingParticipantsServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participants", err)
+			}
+			return nil, NewGetPastMeetingParticipantsServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-past-meeting-participants", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildCreatePastMeetingParticipantRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "create-past-meeting-participant" endpoint
+func (c *Client) BuildCreatePastMeetingParticipantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid string
+	)
+	{
+		p, ok := v.(*meetingservice.CreatePastMeetingParticipantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "create-past-meeting-participant", "*meetingservice.CreatePastMeetingParticipantPayload", v)
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreatePastMeetingParticipantMeetingServicePath(uid)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-past-meeting-participant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeCreatePastMeetingParticipantRequest returns an encoder for requests
+// sent to the Meeting Service create-past-meeting-participant server.
+func EncodeCreatePastMeetingParticipantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.CreatePastMeetingParticipantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "create-past-meeting-participant", "*meetingservice.CreatePastMeetingParticipantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewCreatePastMeetingParticipantRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-past-meeting-participant", err)
+		}
+		return nil
+	}
+}
+
+// DecodeCreatePastMeetingParticipantResponse returns a decoder for responses
+// returned by the Meeting Service create-past-meeting-participant endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeCreatePastMeetingParticipantResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeCreatePastMeetingParticipantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body CreatePastMeetingParticipantResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			err = ValidateCreatePastMeetingParticipantResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			res := NewCreatePastMeetingParticipantPastMeetingParticipantCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CreatePastMeetingParticipantBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			err = ValidateCreatePastMeetingParticipantBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			return nil, NewCreatePastMeetingParticipantBadRequest(&body)
+		case http.StatusConflict:
+			var (
+				body CreatePastMeetingParticipantConflictResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			err = ValidateCreatePastMeetingParticipantConflictResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			return nil, NewCreatePastMeetingParticipantConflict(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CreatePastMeetingParticipantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			err = ValidateCreatePastMeetingParticipantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			return nil, NewCreatePastMeetingParticipantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body CreatePastMeetingParticipantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			err = ValidateCreatePastMeetingParticipantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			return nil, NewCreatePastMeetingParticipantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body CreatePastMeetingParticipantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			err = ValidateCreatePastMeetingParticipantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-past-meeting-participant", err)
+			}
+			return nil, NewCreatePastMeetingParticipantServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-past-meeting-participant", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetPastMeetingParticipantRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "get-past-meeting-participant" endpoint
+func (c *Client) BuildGetPastMeetingParticipantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		pastMeetingUID string
+		uid            string
+	)
+	{
+		p, ok := v.(*meetingservice.GetPastMeetingParticipantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-participant", "*meetingservice.GetPastMeetingParticipantPayload", v)
+		}
+		if p.PastMeetingUID != nil {
+			pastMeetingUID = *p.PastMeetingUID
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetPastMeetingParticipantMeetingServicePath(pastMeetingUID, uid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-past-meeting-participant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetPastMeetingParticipantRequest returns an encoder for requests sent
+// to the Meeting Service get-past-meeting-participant server.
+func EncodeGetPastMeetingParticipantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetPastMeetingParticipantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-participant", "*meetingservice.GetPastMeetingParticipantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetPastMeetingParticipantResponse returns a decoder for responses
+// returned by the Meeting Service get-past-meeting-participant endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeGetPastMeetingParticipantResponse may return the following errors:
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetPastMeetingParticipantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetPastMeetingParticipantResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			err = ValidateGetPastMeetingParticipantResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			var (
+				etag *string
+			)
+			etagRaw := resp.Header.Get("Etag")
+			if etagRaw != "" {
+				etag = &etagRaw
+			}
+			res := NewGetPastMeetingParticipantResultOK(&body, etag)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetPastMeetingParticipantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			err = ValidateGetPastMeetingParticipantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			return nil, NewGetPastMeetingParticipantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetPastMeetingParticipantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			err = ValidateGetPastMeetingParticipantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			return nil, NewGetPastMeetingParticipantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetPastMeetingParticipantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			err = ValidateGetPastMeetingParticipantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-participant", err)
+			}
+			return nil, NewGetPastMeetingParticipantServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-past-meeting-participant", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildUpdatePastMeetingParticipantRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "update-past-meeting-participant" endpoint
+func (c *Client) BuildUpdatePastMeetingParticipantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		pastMeetingUID string
+		uid            string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdatePastMeetingParticipantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-past-meeting-participant", "*meetingservice.UpdatePastMeetingParticipantPayload", v)
+		}
+		if p.PastMeetingUID != nil {
+			pastMeetingUID = *p.PastMeetingUID
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdatePastMeetingParticipantMeetingServicePath(pastMeetingUID, uid)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-past-meeting-participant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdatePastMeetingParticipantRequest returns an encoder for requests
+// sent to the Meeting Service update-past-meeting-participant server.
+func EncodeUpdatePastMeetingParticipantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdatePastMeetingParticipantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-past-meeting-participant", "*meetingservice.UpdatePastMeetingParticipantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewUpdatePastMeetingParticipantRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-past-meeting-participant", err)
+		}
+		return nil
+	}
+}
+
+// DecodeUpdatePastMeetingParticipantResponse returns a decoder for responses
+// returned by the Meeting Service update-past-meeting-participant endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeUpdatePastMeetingParticipantResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeUpdatePastMeetingParticipantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body UpdatePastMeetingParticipantResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			err = ValidateUpdatePastMeetingParticipantResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			res := NewUpdatePastMeetingParticipantPastMeetingParticipantOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdatePastMeetingParticipantBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			err = ValidateUpdatePastMeetingParticipantBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			return nil, NewUpdatePastMeetingParticipantBadRequest(&body)
+		case http.StatusConflict:
+			var (
+				body UpdatePastMeetingParticipantConflictResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			err = ValidateUpdatePastMeetingParticipantConflictResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			return nil, NewUpdatePastMeetingParticipantConflict(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdatePastMeetingParticipantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			err = ValidateUpdatePastMeetingParticipantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			return nil, NewUpdatePastMeetingParticipantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body UpdatePastMeetingParticipantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			err = ValidateUpdatePastMeetingParticipantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			return nil, NewUpdatePastMeetingParticipantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body UpdatePastMeetingParticipantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			err = ValidateUpdatePastMeetingParticipantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-participant", err)
+			}
+			return nil, NewUpdatePastMeetingParticipantServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-past-meeting-participant", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildDeletePastMeetingParticipantRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "delete-past-meeting-participant" endpoint
+func (c *Client) BuildDeletePastMeetingParticipantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		pastMeetingUID string
+		uid            string
+	)
+	{
+		p, ok := v.(*meetingservice.DeletePastMeetingParticipantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-past-meeting-participant", "*meetingservice.DeletePastMeetingParticipantPayload", v)
+		}
+		if p.PastMeetingUID != nil {
+			pastMeetingUID = *p.PastMeetingUID
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeletePastMeetingParticipantMeetingServicePath(pastMeetingUID, uid)}
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-past-meeting-participant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDeletePastMeetingParticipantRequest returns an encoder for requests
+// sent to the Meeting Service delete-past-meeting-participant server.
+func EncodeDeletePastMeetingParticipantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.DeletePastMeetingParticipantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "delete-past-meeting-participant", "*meetingservice.DeletePastMeetingParticipantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDeletePastMeetingParticipantResponse returns a decoder for responses
+// returned by the Meeting Service delete-past-meeting-participant endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeDeletePastMeetingParticipantResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeDeletePastMeetingParticipantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body DeletePastMeetingParticipantBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			err = ValidateDeletePastMeetingParticipantBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			return nil, NewDeletePastMeetingParticipantBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DeletePastMeetingParticipantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			err = ValidateDeletePastMeetingParticipantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			return nil, NewDeletePastMeetingParticipantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body DeletePastMeetingParticipantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			err = ValidateDeletePastMeetingParticipantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			return nil, NewDeletePastMeetingParticipantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body DeletePastMeetingParticipantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			err = ValidateDeletePastMeetingParticipantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-past-meeting-participant", err)
+			}
+			return nil, NewDeletePastMeetingParticipantServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-past-meeting-participant", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildReadyzRequest instantiates a HTTP request object with method and path
 // set to call the "Meeting Service" service "readyz" endpoint
 func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -3095,6 +3904,34 @@ func marshalSessionRequestBodyToMeetingserviceSession(v *SessionRequestBody) *me
 		UID:       v.UID,
 		StartTime: v.StartTime,
 		EndTime:   v.EndTime,
+	}
+
+	return res
+}
+
+// unmarshalPastMeetingParticipantResponseBodyToMeetingservicePastMeetingParticipant
+// builds a value of type *meetingservice.PastMeetingParticipant from a value
+// of type *PastMeetingParticipantResponseBody.
+func unmarshalPastMeetingParticipantResponseBodyToMeetingservicePastMeetingParticipant(v *PastMeetingParticipantResponseBody) *meetingservice.PastMeetingParticipant {
+	res := &meetingservice.PastMeetingParticipant{
+		UID:                *v.UID,
+		PastMeetingUID:     v.PastMeetingUID,
+		MeetingUID:         *v.MeetingUID,
+		Email:              *v.Email,
+		FirstName:          *v.FirstName,
+		LastName:           *v.LastName,
+		Host:               v.Host,
+		JobTitle:           v.JobTitle,
+		OccurrenceID:       v.OccurrenceID,
+		OrgName:            v.OrgName,
+		OrgIsMember:        v.OrgIsMember,
+		OrgIsProjectMember: v.OrgIsProjectMember,
+		AvatarURL:          v.AvatarURL,
+		Username:           v.Username,
+		IsInvited:          v.IsInvited,
+		IsAttended:         v.IsAttended,
+		CreatedAt:          v.CreatedAt,
+		UpdatedAt:          v.UpdatedAt,
 	}
 
 	return res

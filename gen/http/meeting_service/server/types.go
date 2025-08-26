@@ -234,6 +234,62 @@ type CreatePastMeetingRequestBody struct {
 	Sessions []*SessionRequestBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 }
 
+// CreatePastMeetingParticipantRequestBody is the type of the "Meeting Service"
+// service "create-past-meeting-participant" endpoint HTTP request body.
+type CreatePastMeetingParticipantRequestBody struct {
+	// User's email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// User's first name
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// User's last name
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Whether the past meeting participant is invited
+	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
+	// Whether the past meeting participant is attended
+	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+}
+
+// UpdatePastMeetingParticipantRequestBody is the type of the "Meeting Service"
+// service "update-past-meeting-participant" endpoint HTTP request body.
+type UpdatePastMeetingParticipantRequestBody struct {
+	// User's email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// User's first name
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// User's last name
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Whether the past meeting participant is invited
+	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
+	// Whether the past meeting participant is attended
+	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -586,6 +642,109 @@ type CreatePastMeetingResponseBody struct {
 // GetPastMeetingResponseBody is the type of the "Meeting Service" service
 // "get-past-meeting" endpoint HTTP response body.
 type GetPastMeetingResponseBody PastMeetingResponseBody
+
+// GetPastMeetingParticipantsResponseBody is the type of the "Meeting Service"
+// service "get-past-meeting-participants" endpoint HTTP response body.
+type GetPastMeetingParticipantsResponseBody struct {
+	// Past meeting participants
+	Participants []*PastMeetingParticipantResponseBody `form:"participants" json:"participants" xml:"participants"`
+}
+
+// CreatePastMeetingParticipantResponseBody is the type of the "Meeting
+// Service" service "create-past-meeting-participant" endpoint HTTP response
+// body.
+type CreatePastMeetingParticipantResponseBody struct {
+	// The UID of the past meeting participant
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// The unique identifier of the past meeting
+	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
+	// The UID of the meeting
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
+	// User's email address
+	Email string `form:"email" json:"email" xml:"email"`
+	// User's first name
+	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	// User's last name
+	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// LF. If unknown, don't pass this field; the API will find the value by default
+	OrgIsMember *bool `form:"org_is_member,omitempty" json:"org_is_member,omitempty" xml:"org_is_member,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Whether the past meeting participant is invited
+	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
+	// Whether the past meeting participant is attended
+	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// GetPastMeetingParticipantResponseBody is the type of the "Meeting Service"
+// service "get-past-meeting-participant" endpoint HTTP response body.
+type GetPastMeetingParticipantResponseBody PastMeetingParticipantResponseBody
+
+// UpdatePastMeetingParticipantResponseBody is the type of the "Meeting
+// Service" service "update-past-meeting-participant" endpoint HTTP response
+// body.
+type UpdatePastMeetingParticipantResponseBody struct {
+	// The UID of the past meeting participant
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// The unique identifier of the past meeting
+	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
+	// The UID of the meeting
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
+	// User's email address
+	Email string `form:"email" json:"email" xml:"email"`
+	// User's first name
+	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	// User's last name
+	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// LF. If unknown, don't pass this field; the API will find the value by default
+	OrgIsMember *bool `form:"org_is_member,omitempty" json:"org_is_member,omitempty" xml:"org_is_member,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Whether the past meeting participant is invited
+	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
+	// Whether the past meeting participant is attended
+	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
 
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
@@ -1217,6 +1376,206 @@ type DeletePastMeetingServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// GetPastMeetingParticipantsInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-participants" endpoint HTTP
+// response body for the "InternalServerError" error.
+type GetPastMeetingParticipantsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingParticipantsNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-past-meeting-participants" endpoint HTTP response body
+// for the "NotFound" error.
+type GetPastMeetingParticipantsNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingParticipantsServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-participants" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetPastMeetingParticipantsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreatePastMeetingParticipantBadRequestResponseBody is the type of the
+// "Meeting Service" service "create-past-meeting-participant" endpoint HTTP
+// response body for the "BadRequest" error.
+type CreatePastMeetingParticipantBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreatePastMeetingParticipantConflictResponseBody is the type of the "Meeting
+// Service" service "create-past-meeting-participant" endpoint HTTP response
+// body for the "Conflict" error.
+type CreatePastMeetingParticipantConflictResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreatePastMeetingParticipantInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "create-past-meeting-participant" endpoint
+// HTTP response body for the "InternalServerError" error.
+type CreatePastMeetingParticipantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreatePastMeetingParticipantNotFoundResponseBody is the type of the "Meeting
+// Service" service "create-past-meeting-participant" endpoint HTTP response
+// body for the "NotFound" error.
+type CreatePastMeetingParticipantNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreatePastMeetingParticipantServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "create-past-meeting-participant" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type CreatePastMeetingParticipantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingParticipantInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-participant" endpoint HTTP
+// response body for the "InternalServerError" error.
+type GetPastMeetingParticipantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingParticipantNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-past-meeting-participant" endpoint HTTP response body
+// for the "NotFound" error.
+type GetPastMeetingParticipantNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingParticipantServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-participant" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetPastMeetingParticipantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdatePastMeetingParticipantBadRequestResponseBody is the type of the
+// "Meeting Service" service "update-past-meeting-participant" endpoint HTTP
+// response body for the "BadRequest" error.
+type UpdatePastMeetingParticipantBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdatePastMeetingParticipantConflictResponseBody is the type of the "Meeting
+// Service" service "update-past-meeting-participant" endpoint HTTP response
+// body for the "Conflict" error.
+type UpdatePastMeetingParticipantConflictResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdatePastMeetingParticipantInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "update-past-meeting-participant" endpoint
+// HTTP response body for the "InternalServerError" error.
+type UpdatePastMeetingParticipantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdatePastMeetingParticipantNotFoundResponseBody is the type of the "Meeting
+// Service" service "update-past-meeting-participant" endpoint HTTP response
+// body for the "NotFound" error.
+type UpdatePastMeetingParticipantNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdatePastMeetingParticipantServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "update-past-meeting-participant" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type UpdatePastMeetingParticipantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeletePastMeetingParticipantBadRequestResponseBody is the type of the
+// "Meeting Service" service "delete-past-meeting-participant" endpoint HTTP
+// response body for the "BadRequest" error.
+type DeletePastMeetingParticipantBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeletePastMeetingParticipantInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "delete-past-meeting-participant" endpoint
+// HTTP response body for the "InternalServerError" error.
+type DeletePastMeetingParticipantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeletePastMeetingParticipantNotFoundResponseBody is the type of the "Meeting
+// Service" service "delete-past-meeting-participant" endpoint HTTP response
+// body for the "NotFound" error.
+type DeletePastMeetingParticipantNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeletePastMeetingParticipantServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "delete-past-meeting-participant" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type DeletePastMeetingParticipantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
 // service "readyz" endpoint HTTP response body for the "ServiceUnavailable"
 // error.
@@ -1605,6 +1964,51 @@ type SessionResponseBody struct {
 	StartTime string `form:"start_time" json:"start_time" xml:"start_time"`
 	// The end time of the session (may be null if session is ongoing)
 	EndTime *string `form:"end_time,omitempty" json:"end_time,omitempty" xml:"end_time,omitempty"`
+}
+
+// PastMeetingParticipantResponseBody is used to define fields on response body
+// types.
+type PastMeetingParticipantResponseBody struct {
+	// The UID of the past meeting participant
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// The unique identifier of the past meeting
+	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
+	// The UID of the meeting
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
+	// User's email address
+	Email string `form:"email" json:"email" xml:"email"`
+	// User's first name
+	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	// User's last name
+	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	// If user should have access as a meeting host
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// User's job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// User's organization
+	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// LF. If unknown, don't pass this field; the API will find the value by default
+	OrgIsMember *bool `form:"org_is_member,omitempty" json:"org_is_member,omitempty" xml:"org_is_member,omitempty"`
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
+	// User's avatar URL
+	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LF ID
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Whether the past meeting participant is invited
+	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
+	// Whether the past meeting participant is attended
+	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -2124,6 +2528,103 @@ func NewGetPastMeetingResponseBody(res *meetingservice.GetPastMeetingResult) *Ge
 		for i, val := range res.PastMeeting.Sessions {
 			body.Sessions[i] = marshalMeetingserviceSessionToSessionResponseBody(val)
 		}
+	}
+	return body
+}
+
+// NewGetPastMeetingParticipantsResponseBody builds the HTTP response body from
+// the result of the "get-past-meeting-participants" endpoint of the "Meeting
+// Service" service.
+func NewGetPastMeetingParticipantsResponseBody(res *meetingservice.GetPastMeetingParticipantsResult) *GetPastMeetingParticipantsResponseBody {
+	body := &GetPastMeetingParticipantsResponseBody{}
+	if res.Participants != nil {
+		body.Participants = make([]*PastMeetingParticipantResponseBody, len(res.Participants))
+		for i, val := range res.Participants {
+			body.Participants[i] = marshalMeetingservicePastMeetingParticipantToPastMeetingParticipantResponseBody(val)
+		}
+	} else {
+		body.Participants = []*PastMeetingParticipantResponseBody{}
+	}
+	return body
+}
+
+// NewCreatePastMeetingParticipantResponseBody builds the HTTP response body
+// from the result of the "create-past-meeting-participant" endpoint of the
+// "Meeting Service" service.
+func NewCreatePastMeetingParticipantResponseBody(res *meetingservice.PastMeetingParticipant) *CreatePastMeetingParticipantResponseBody {
+	body := &CreatePastMeetingParticipantResponseBody{
+		UID:                res.UID,
+		PastMeetingUID:     res.PastMeetingUID,
+		MeetingUID:         res.MeetingUID,
+		Email:              res.Email,
+		FirstName:          res.FirstName,
+		LastName:           res.LastName,
+		Host:               res.Host,
+		JobTitle:           res.JobTitle,
+		OccurrenceID:       res.OccurrenceID,
+		OrgName:            res.OrgName,
+		OrgIsMember:        res.OrgIsMember,
+		OrgIsProjectMember: res.OrgIsProjectMember,
+		AvatarURL:          res.AvatarURL,
+		Username:           res.Username,
+		IsInvited:          res.IsInvited,
+		IsAttended:         res.IsAttended,
+		CreatedAt:          res.CreatedAt,
+		UpdatedAt:          res.UpdatedAt,
+	}
+	return body
+}
+
+// NewGetPastMeetingParticipantResponseBody builds the HTTP response body from
+// the result of the "get-past-meeting-participant" endpoint of the "Meeting
+// Service" service.
+func NewGetPastMeetingParticipantResponseBody(res *meetingservice.GetPastMeetingParticipantResult) *GetPastMeetingParticipantResponseBody {
+	body := &GetPastMeetingParticipantResponseBody{
+		UID:                res.Participant.UID,
+		PastMeetingUID:     res.Participant.PastMeetingUID,
+		MeetingUID:         res.Participant.MeetingUID,
+		Email:              res.Participant.Email,
+		FirstName:          res.Participant.FirstName,
+		LastName:           res.Participant.LastName,
+		Host:               res.Participant.Host,
+		JobTitle:           res.Participant.JobTitle,
+		OccurrenceID:       res.Participant.OccurrenceID,
+		OrgName:            res.Participant.OrgName,
+		OrgIsMember:        res.Participant.OrgIsMember,
+		OrgIsProjectMember: res.Participant.OrgIsProjectMember,
+		AvatarURL:          res.Participant.AvatarURL,
+		Username:           res.Participant.Username,
+		IsInvited:          res.Participant.IsInvited,
+		IsAttended:         res.Participant.IsAttended,
+		CreatedAt:          res.Participant.CreatedAt,
+		UpdatedAt:          res.Participant.UpdatedAt,
+	}
+	return body
+}
+
+// NewUpdatePastMeetingParticipantResponseBody builds the HTTP response body
+// from the result of the "update-past-meeting-participant" endpoint of the
+// "Meeting Service" service.
+func NewUpdatePastMeetingParticipantResponseBody(res *meetingservice.PastMeetingParticipant) *UpdatePastMeetingParticipantResponseBody {
+	body := &UpdatePastMeetingParticipantResponseBody{
+		UID:                res.UID,
+		PastMeetingUID:     res.PastMeetingUID,
+		MeetingUID:         res.MeetingUID,
+		Email:              res.Email,
+		FirstName:          res.FirstName,
+		LastName:           res.LastName,
+		Host:               res.Host,
+		JobTitle:           res.JobTitle,
+		OccurrenceID:       res.OccurrenceID,
+		OrgName:            res.OrgName,
+		OrgIsMember:        res.OrgIsMember,
+		OrgIsProjectMember: res.OrgIsProjectMember,
+		AvatarURL:          res.AvatarURL,
+		Username:           res.Username,
+		IsInvited:          res.IsInvited,
+		IsAttended:         res.IsAttended,
+		CreatedAt:          res.CreatedAt,
+		UpdatedAt:          res.UpdatedAt,
 	}
 	return body
 }
@@ -2812,6 +3313,226 @@ func NewDeletePastMeetingServiceUnavailableResponseBody(res *meetingservice.Serv
 	return body
 }
 
+// NewGetPastMeetingParticipantsInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-participants"
+// endpoint of the "Meeting Service" service.
+func NewGetPastMeetingParticipantsInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetPastMeetingParticipantsInternalServerErrorResponseBody {
+	body := &GetPastMeetingParticipantsInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingParticipantsNotFoundResponseBody builds the HTTP response
+// body from the result of the "get-past-meeting-participants" endpoint of the
+// "Meeting Service" service.
+func NewGetPastMeetingParticipantsNotFoundResponseBody(res *meetingservice.NotFoundError) *GetPastMeetingParticipantsNotFoundResponseBody {
+	body := &GetPastMeetingParticipantsNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingParticipantsServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-participants"
+// endpoint of the "Meeting Service" service.
+func NewGetPastMeetingParticipantsServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetPastMeetingParticipantsServiceUnavailableResponseBody {
+	body := &GetPastMeetingParticipantsServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreatePastMeetingParticipantBadRequestResponseBody builds the HTTP
+// response body from the result of the "create-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewCreatePastMeetingParticipantBadRequestResponseBody(res *meetingservice.BadRequestError) *CreatePastMeetingParticipantBadRequestResponseBody {
+	body := &CreatePastMeetingParticipantBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreatePastMeetingParticipantConflictResponseBody builds the HTTP response
+// body from the result of the "create-past-meeting-participant" endpoint of
+// the "Meeting Service" service.
+func NewCreatePastMeetingParticipantConflictResponseBody(res *meetingservice.ConflictError) *CreatePastMeetingParticipantConflictResponseBody {
+	body := &CreatePastMeetingParticipantConflictResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreatePastMeetingParticipantInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the "create-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewCreatePastMeetingParticipantInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *CreatePastMeetingParticipantInternalServerErrorResponseBody {
+	body := &CreatePastMeetingParticipantInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreatePastMeetingParticipantNotFoundResponseBody builds the HTTP response
+// body from the result of the "create-past-meeting-participant" endpoint of
+// the "Meeting Service" service.
+func NewCreatePastMeetingParticipantNotFoundResponseBody(res *meetingservice.NotFoundError) *CreatePastMeetingParticipantNotFoundResponseBody {
+	body := &CreatePastMeetingParticipantNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreatePastMeetingParticipantServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the "create-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewCreatePastMeetingParticipantServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *CreatePastMeetingParticipantServiceUnavailableResponseBody {
+	body := &CreatePastMeetingParticipantServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingParticipantInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-participant" endpoint
+// of the "Meeting Service" service.
+func NewGetPastMeetingParticipantInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetPastMeetingParticipantInternalServerErrorResponseBody {
+	body := &GetPastMeetingParticipantInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingParticipantNotFoundResponseBody builds the HTTP response
+// body from the result of the "get-past-meeting-participant" endpoint of the
+// "Meeting Service" service.
+func NewGetPastMeetingParticipantNotFoundResponseBody(res *meetingservice.NotFoundError) *GetPastMeetingParticipantNotFoundResponseBody {
+	body := &GetPastMeetingParticipantNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingParticipantServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-participant" endpoint
+// of the "Meeting Service" service.
+func NewGetPastMeetingParticipantServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetPastMeetingParticipantServiceUnavailableResponseBody {
+	body := &GetPastMeetingParticipantServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdatePastMeetingParticipantBadRequestResponseBody builds the HTTP
+// response body from the result of the "update-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewUpdatePastMeetingParticipantBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdatePastMeetingParticipantBadRequestResponseBody {
+	body := &UpdatePastMeetingParticipantBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdatePastMeetingParticipantConflictResponseBody builds the HTTP response
+// body from the result of the "update-past-meeting-participant" endpoint of
+// the "Meeting Service" service.
+func NewUpdatePastMeetingParticipantConflictResponseBody(res *meetingservice.ConflictError) *UpdatePastMeetingParticipantConflictResponseBody {
+	body := &UpdatePastMeetingParticipantConflictResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdatePastMeetingParticipantInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the "update-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewUpdatePastMeetingParticipantInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdatePastMeetingParticipantInternalServerErrorResponseBody {
+	body := &UpdatePastMeetingParticipantInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdatePastMeetingParticipantNotFoundResponseBody builds the HTTP response
+// body from the result of the "update-past-meeting-participant" endpoint of
+// the "Meeting Service" service.
+func NewUpdatePastMeetingParticipantNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdatePastMeetingParticipantNotFoundResponseBody {
+	body := &UpdatePastMeetingParticipantNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdatePastMeetingParticipantServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the "update-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewUpdatePastMeetingParticipantServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdatePastMeetingParticipantServiceUnavailableResponseBody {
+	body := &UpdatePastMeetingParticipantServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeletePastMeetingParticipantBadRequestResponseBody builds the HTTP
+// response body from the result of the "delete-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewDeletePastMeetingParticipantBadRequestResponseBody(res *meetingservice.BadRequestError) *DeletePastMeetingParticipantBadRequestResponseBody {
+	body := &DeletePastMeetingParticipantBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeletePastMeetingParticipantInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the "delete-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewDeletePastMeetingParticipantInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *DeletePastMeetingParticipantInternalServerErrorResponseBody {
+	body := &DeletePastMeetingParticipantInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeletePastMeetingParticipantNotFoundResponseBody builds the HTTP response
+// body from the result of the "delete-past-meeting-participant" endpoint of
+// the "Meeting Service" service.
+func NewDeletePastMeetingParticipantNotFoundResponseBody(res *meetingservice.NotFoundError) *DeletePastMeetingParticipantNotFoundResponseBody {
+	body := &DeletePastMeetingParticipantNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeletePastMeetingParticipantServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the "delete-past-meeting-participant"
+// endpoint of the "Meeting Service" service.
+func NewDeletePastMeetingParticipantServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *DeletePastMeetingParticipantServiceUnavailableResponseBody {
+	body := &DeletePastMeetingParticipantServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewReadyzServiceUnavailableResponseBody builds the HTTP response body from
 // the result of the "readyz" endpoint of the "Meeting Service" service.
 func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *ReadyzServiceUnavailableResponseBody {
@@ -3136,6 +3857,90 @@ func NewGetPastMeetingPayload(uid string, version *string, bearerToken *string) 
 // delete-past-meeting endpoint payload.
 func NewDeletePastMeetingPayload(uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeletePastMeetingPayload {
 	v := &meetingservice.DeletePastMeetingPayload{}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.IfMatch = ifMatch
+
+	return v
+}
+
+// NewGetPastMeetingParticipantsPayload builds a Meeting Service service
+// get-past-meeting-participants endpoint payload.
+func NewGetPastMeetingParticipantsPayload(uid string, version *string, bearerToken *string) *meetingservice.GetPastMeetingParticipantsPayload {
+	v := &meetingservice.GetPastMeetingParticipantsPayload{}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewCreatePastMeetingParticipantPayload builds a Meeting Service service
+// create-past-meeting-participant endpoint payload.
+func NewCreatePastMeetingParticipantPayload(body *CreatePastMeetingParticipantRequestBody, uid string, version *string, bearerToken *string) *meetingservice.CreatePastMeetingParticipantPayload {
+	v := &meetingservice.CreatePastMeetingParticipantPayload{
+		Email:        *body.Email,
+		FirstName:    *body.FirstName,
+		LastName:     *body.LastName,
+		Host:         body.Host,
+		JobTitle:     body.JobTitle,
+		OrgName:      body.OrgName,
+		OccurrenceID: body.OccurrenceID,
+		AvatarURL:    body.AvatarURL,
+		Username:     body.Username,
+		IsInvited:    body.IsInvited,
+		IsAttended:   body.IsAttended,
+	}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetPastMeetingParticipantPayload builds a Meeting Service service
+// get-past-meeting-participant endpoint payload.
+func NewGetPastMeetingParticipantPayload(pastMeetingUID string, uid string, version *string, bearerToken *string) *meetingservice.GetPastMeetingParticipantPayload {
+	v := &meetingservice.GetPastMeetingParticipantPayload{}
+	v.PastMeetingUID = &pastMeetingUID
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewUpdatePastMeetingParticipantPayload builds a Meeting Service service
+// update-past-meeting-participant endpoint payload.
+func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRequestBody, pastMeetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdatePastMeetingParticipantPayload {
+	v := &meetingservice.UpdatePastMeetingParticipantPayload{
+		Email:        *body.Email,
+		FirstName:    *body.FirstName,
+		LastName:     *body.LastName,
+		Host:         body.Host,
+		JobTitle:     body.JobTitle,
+		OrgName:      body.OrgName,
+		OccurrenceID: body.OccurrenceID,
+		AvatarURL:    body.AvatarURL,
+		Username:     body.Username,
+		IsInvited:    body.IsInvited,
+		IsAttended:   body.IsAttended,
+	}
+	v.PastMeetingUID = &pastMeetingUID
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.IfMatch = ifMatch
+
+	return v
+}
+
+// NewDeletePastMeetingParticipantPayload builds a Meeting Service service
+// delete-past-meeting-participant endpoint payload.
+func NewDeletePastMeetingParticipantPayload(pastMeetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeletePastMeetingParticipantPayload {
+	v := &meetingservice.DeletePastMeetingParticipantPayload{}
+	v.PastMeetingUID = &pastMeetingUID
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
@@ -3524,6 +4329,94 @@ func ValidateCreatePastMeetingRequestBody(body *CreatePastMeetingRequestBody) (e
 				err = goa.MergeErrors(err, err2)
 			}
 		}
+	}
+	return
+}
+
+// ValidateCreatePastMeetingParticipantRequestBody runs the validations defined
+// on Create-Past-Meeting-ParticipantRequestBody
+func ValidateCreatePastMeetingParticipantRequestBody(body *CreatePastMeetingParticipantRequestBody) (err error) {
+	if body.Email == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
+	}
+	if body.FirstName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
+	}
+	if body.LastName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+	}
+	if body.AvatarURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+	}
+	return
+}
+
+// ValidateUpdatePastMeetingParticipantRequestBody runs the validations defined
+// on Update-Past-Meeting-ParticipantRequestBody
+func ValidateUpdatePastMeetingParticipantRequestBody(body *UpdatePastMeetingParticipantRequestBody) (err error) {
+	if body.Email == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
+	}
+	if body.FirstName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
+	}
+	if body.LastName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+		}
+	}
+	if body.FirstName != nil {
+		if utf8.RuneCountInString(*body.FirstName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+		}
+	}
+	if body.LastName != nil {
+		if utf8.RuneCountInString(*body.LastName) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+	}
+	if body.AvatarURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
 	return
 }

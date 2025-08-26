@@ -23,12 +23,13 @@ import (
 
 // MeetingsAPI implements the meetingsvc.Service interface
 type MeetingsAPI struct {
-	authService        *service.AuthService
-	meetingService     *service.MeetingService
-	registrantService  *service.MeetingRegistrantService
-	pastMeetingService *service.PastMeetingService
-	meetingHandler     *handlers.MeetingHandler
-	zoomWebhookHandler *handlers.ZoomWebhookHandler
+	authService                   *service.AuthService
+	meetingService                *service.MeetingService
+	registrantService             *service.MeetingRegistrantService
+	pastMeetingService            *service.PastMeetingService
+	pastMeetingParticipantService *service.PastMeetingParticipantService
+	meetingHandler                *handlers.MeetingHandler
+	zoomWebhookHandler            *handlers.ZoomWebhookHandler
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
@@ -37,16 +38,18 @@ func NewMeetingsAPI(
 	meetingService *service.MeetingService,
 	registrantService *service.MeetingRegistrantService,
 	pastMeetingService *service.PastMeetingService,
+	pastMeetingParticipantService *service.PastMeetingParticipantService,
 	zoomWebhookHandler *handlers.ZoomWebhookHandler,
 	meetingHandler *handlers.MeetingHandler,
 ) *MeetingsAPI {
 	return &MeetingsAPI{
-		authService:        authService,
-		meetingService:     meetingService,
-		registrantService:  registrantService,
-		pastMeetingService: pastMeetingService,
-		zoomWebhookHandler: zoomWebhookHandler,
-		meetingHandler:     meetingHandler,
+		authService:                   authService,
+		meetingService:                meetingService,
+		registrantService:             registrantService,
+		pastMeetingService:            pastMeetingService,
+		pastMeetingParticipantService: pastMeetingParticipantService,
+		zoomWebhookHandler:            zoomWebhookHandler,
+		meetingHandler:                meetingHandler,
 	}
 }
 
@@ -94,13 +97,17 @@ func handleError(err error) error {
 	case domain.ErrRevisionMismatch:
 		return createResponse(http.StatusBadRequest, domain.ErrRevisionMismatch)
 	case domain.ErrRegistrantAlreadyExists:
-		return createResponse(http.StatusBadRequest, domain.ErrRegistrantAlreadyExists)
+		return createResponse(http.StatusConflict, domain.ErrRegistrantAlreadyExists)
+	case domain.ErrPastMeetingParticipantAlreadyExists:
+		return createResponse(http.StatusConflict, domain.ErrPastMeetingParticipantAlreadyExists)
 	case domain.ErrMeetingNotFound:
 		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
-	case domain.ErrPastMeetingNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrPastMeetingNotFound)
 	case domain.ErrRegistrantNotFound:
 		return createResponse(http.StatusNotFound, domain.ErrRegistrantNotFound)
+	case domain.ErrPastMeetingNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrPastMeetingNotFound)
+	case domain.ErrPastMeetingParticipantNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrPastMeetingParticipantNotFound)
 	case domain.ErrInternal, domain.ErrUnmarshal:
 		return createResponse(http.StatusInternalServerError, domain.ErrInternal)
 	}

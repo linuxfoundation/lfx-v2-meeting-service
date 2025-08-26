@@ -256,3 +256,63 @@ func ConvertUpdateRegistrantPayloadToDomain(payload *meetingservice.UpdateMeetin
 
 	return registrant
 }
+
+// ConvertCreatePastMeetingParticipantPayloadToDomain converts a CreatePastMeetingParticipantPayload type to the domain PastMeetingParticipant model for database storage
+func ConvertCreatePastMeetingParticipantPayloadToDomain(payload *meetingservice.CreatePastMeetingParticipantPayload) *models.PastMeetingParticipant {
+	if payload == nil {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	participant := &models.PastMeetingParticipant{
+		UID:                "", // This will get populated by the service
+		PastMeetingUID:     utils.StringValue(payload.UID),
+		MeetingUID:         "", // This will need to be populated by the service from the past meeting
+		Email:              payload.Email,
+		FirstName:          payload.FirstName,
+		LastName:           payload.LastName,
+		Host:               utils.BoolValue(payload.Host),
+		JobTitle:           utils.StringValue(payload.JobTitle),
+		OrgName:            utils.StringValue(payload.OrgName),
+		OrgIsMember:        false, // This will get populated by the service
+		OrgIsProjectMember: false, // This will get populated by the service
+		AvatarURL:          utils.StringValue(payload.AvatarURL),
+		Username:           utils.StringValue(payload.Username),
+		IsInvited:          utils.BoolValue(payload.IsInvited),
+		IsAttended:         utils.BoolValue(payload.IsAttended),
+		CreatedAt:          &now,
+		UpdatedAt:          &now,
+	}
+
+	return participant
+}
+
+// ConvertUpdatePastMeetingParticipantPayloadToDomain converts an UpdatePastMeetingParticipantPayload to a domain PastMeetingParticipant model
+func ConvertUpdatePastMeetingParticipantPayloadToDomain(payload *meetingservice.UpdatePastMeetingParticipantPayload) *models.PastMeetingParticipant {
+	if payload == nil {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	participant := &models.PastMeetingParticipant{
+		UID:                utils.StringValue(payload.UID),
+		PastMeetingUID:     utils.StringValue(payload.PastMeetingUID),
+		MeetingUID:         "", // This will get populated by the service
+		Email:              payload.Email,
+		FirstName:          payload.FirstName,
+		LastName:           payload.LastName,
+		Host:               utils.BoolValue(payload.Host),
+		JobTitle:           utils.StringValue(payload.JobTitle),
+		OrgName:            utils.StringValue(payload.OrgName),
+		OrgIsMember:        false, // This will get populated by the service
+		OrgIsProjectMember: false, // This will get populated by the service
+		AvatarURL:          utils.StringValue(payload.AvatarURL),
+		Username:           utils.StringValue(payload.Username),
+		IsInvited:          utils.BoolValue(payload.IsInvited),
+		IsAttended:         utils.BoolValue(payload.IsAttended),
+		CreatedAt:          nil, // This will get populated by the service
+		UpdatedAt:          &now,
+	}
+
+	return participant
+}

@@ -63,8 +63,8 @@ func (s *NatsPastMeetingParticipantRepository) GetWithRevision(ctx context.Conte
 	entry, err := s.get(ctx, participantUID)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			slog.WarnContext(ctx, "past meeting participant not found", logging.ErrKey, domain.ErrRegistrantNotFound)
-			return nil, 0, domain.ErrRegistrantNotFound
+			slog.WarnContext(ctx, "past meeting participant not found", logging.ErrKey, domain.ErrPastMeetingParticipantNotFound)
+			return nil, 0, domain.ErrPastMeetingParticipantNotFound
 		}
 		slog.ErrorContext(ctx, "error getting past meeting participant from NATS KV", logging.ErrKey, err)
 		return nil, 0, domain.ErrInternal
@@ -140,8 +140,12 @@ func (s *NatsPastMeetingParticipantRepository) Update(ctx context.Context, parti
 	// Update in NATS KV with revision check
 	_, err = s.PastMeetingParticipants.Update(ctx, participant.UID, participantBytes, revision)
 	if err != nil {
+		if strings.Contains(err.Error(), "wrong last sequence") {
+			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
+			return domain.ErrRevisionMismatch
+		}
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.ErrRegistrantNotFound
+			return domain.ErrPastMeetingParticipantNotFound
 		}
 		slog.ErrorContext(ctx, "error updating past meeting participant in NATS KV", logging.ErrKey, err)
 		return domain.ErrInternal
@@ -157,8 +161,12 @@ func (s *NatsPastMeetingParticipantRepository) Delete(ctx context.Context, parti
 
 	err := s.PastMeetingParticipants.Delete(ctx, participantUID, jetstream.LastRevision(revision))
 	if err != nil {
+		if strings.Contains(err.Error(), "wrong last sequence") {
+			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
+			return domain.ErrRevisionMismatch
+		}
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.ErrRegistrantNotFound
+			return domain.ErrPastMeetingParticipantNotFound
 		}
 		slog.ErrorContext(ctx, "error deleting past meeting participant from NATS KV", logging.ErrKey, err)
 		return domain.ErrInternal
@@ -272,7 +280,7 @@ func (s *NatsPastMeetingParticipantRepository) GetByPastMeetingAndEmail(ctx cont
 		}
 	}
 
-	return nil, domain.ErrRegistrantNotFound
+	return nil, domain.ErrPastMeetingParticipantNotFound
 }
 
 // Ensure NatsPastMeetingParticipantRepository implements domain.PastMeetingParticipantRepository

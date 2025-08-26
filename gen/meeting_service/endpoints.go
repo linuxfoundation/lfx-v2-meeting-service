@@ -16,25 +16,30 @@ import (
 
 // Endpoints wraps the "Meeting Service" service endpoints.
 type Endpoints struct {
-	GetMeetings             goa.Endpoint
-	CreateMeeting           goa.Endpoint
-	GetMeetingBase          goa.Endpoint
-	GetMeetingSettings      goa.Endpoint
-	UpdateMeetingBase       goa.Endpoint
-	UpdateMeetingSettings   goa.Endpoint
-	DeleteMeeting           goa.Endpoint
-	GetMeetingRegistrants   goa.Endpoint
-	CreateMeetingRegistrant goa.Endpoint
-	GetMeetingRegistrant    goa.Endpoint
-	UpdateMeetingRegistrant goa.Endpoint
-	DeleteMeetingRegistrant goa.Endpoint
-	ZoomWebhook             goa.Endpoint
-	GetPastMeetings         goa.Endpoint
-	CreatePastMeeting       goa.Endpoint
-	GetPastMeeting          goa.Endpoint
-	DeletePastMeeting       goa.Endpoint
-	Readyz                  goa.Endpoint
-	Livez                   goa.Endpoint
+	GetMeetings                  goa.Endpoint
+	CreateMeeting                goa.Endpoint
+	GetMeetingBase               goa.Endpoint
+	GetMeetingSettings           goa.Endpoint
+	UpdateMeetingBase            goa.Endpoint
+	UpdateMeetingSettings        goa.Endpoint
+	DeleteMeeting                goa.Endpoint
+	GetMeetingRegistrants        goa.Endpoint
+	CreateMeetingRegistrant      goa.Endpoint
+	GetMeetingRegistrant         goa.Endpoint
+	UpdateMeetingRegistrant      goa.Endpoint
+	DeleteMeetingRegistrant      goa.Endpoint
+	ZoomWebhook                  goa.Endpoint
+	GetPastMeetings              goa.Endpoint
+	CreatePastMeeting            goa.Endpoint
+	GetPastMeeting               goa.Endpoint
+	DeletePastMeeting            goa.Endpoint
+	GetPastMeetingParticipants   goa.Endpoint
+	CreatePastMeetingParticipant goa.Endpoint
+	GetPastMeetingParticipant    goa.Endpoint
+	UpdatePastMeetingParticipant goa.Endpoint
+	DeletePastMeetingParticipant goa.Endpoint
+	Readyz                       goa.Endpoint
+	Livez                        goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -43,25 +48,30 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		GetMeetings:             NewGetMeetingsEndpoint(s, a.JWTAuth),
-		CreateMeeting:           NewCreateMeetingEndpoint(s, a.JWTAuth),
-		GetMeetingBase:          NewGetMeetingBaseEndpoint(s, a.JWTAuth),
-		GetMeetingSettings:      NewGetMeetingSettingsEndpoint(s, a.JWTAuth),
-		UpdateMeetingBase:       NewUpdateMeetingBaseEndpoint(s, a.JWTAuth),
-		UpdateMeetingSettings:   NewUpdateMeetingSettingsEndpoint(s, a.JWTAuth),
-		DeleteMeeting:           NewDeleteMeetingEndpoint(s, a.JWTAuth),
-		GetMeetingRegistrants:   NewGetMeetingRegistrantsEndpoint(s, a.JWTAuth),
-		CreateMeetingRegistrant: NewCreateMeetingRegistrantEndpoint(s, a.JWTAuth),
-		GetMeetingRegistrant:    NewGetMeetingRegistrantEndpoint(s, a.JWTAuth),
-		UpdateMeetingRegistrant: NewUpdateMeetingRegistrantEndpoint(s, a.JWTAuth),
-		DeleteMeetingRegistrant: NewDeleteMeetingRegistrantEndpoint(s, a.JWTAuth),
-		ZoomWebhook:             NewZoomWebhookEndpoint(s),
-		GetPastMeetings:         NewGetPastMeetingsEndpoint(s, a.JWTAuth),
-		CreatePastMeeting:       NewCreatePastMeetingEndpoint(s, a.JWTAuth),
-		GetPastMeeting:          NewGetPastMeetingEndpoint(s, a.JWTAuth),
-		DeletePastMeeting:       NewDeletePastMeetingEndpoint(s, a.JWTAuth),
-		Readyz:                  NewReadyzEndpoint(s),
-		Livez:                   NewLivezEndpoint(s),
+		GetMeetings:                  NewGetMeetingsEndpoint(s, a.JWTAuth),
+		CreateMeeting:                NewCreateMeetingEndpoint(s, a.JWTAuth),
+		GetMeetingBase:               NewGetMeetingBaseEndpoint(s, a.JWTAuth),
+		GetMeetingSettings:           NewGetMeetingSettingsEndpoint(s, a.JWTAuth),
+		UpdateMeetingBase:            NewUpdateMeetingBaseEndpoint(s, a.JWTAuth),
+		UpdateMeetingSettings:        NewUpdateMeetingSettingsEndpoint(s, a.JWTAuth),
+		DeleteMeeting:                NewDeleteMeetingEndpoint(s, a.JWTAuth),
+		GetMeetingRegistrants:        NewGetMeetingRegistrantsEndpoint(s, a.JWTAuth),
+		CreateMeetingRegistrant:      NewCreateMeetingRegistrantEndpoint(s, a.JWTAuth),
+		GetMeetingRegistrant:         NewGetMeetingRegistrantEndpoint(s, a.JWTAuth),
+		UpdateMeetingRegistrant:      NewUpdateMeetingRegistrantEndpoint(s, a.JWTAuth),
+		DeleteMeetingRegistrant:      NewDeleteMeetingRegistrantEndpoint(s, a.JWTAuth),
+		ZoomWebhook:                  NewZoomWebhookEndpoint(s),
+		GetPastMeetings:              NewGetPastMeetingsEndpoint(s, a.JWTAuth),
+		CreatePastMeeting:            NewCreatePastMeetingEndpoint(s, a.JWTAuth),
+		GetPastMeeting:               NewGetPastMeetingEndpoint(s, a.JWTAuth),
+		DeletePastMeeting:            NewDeletePastMeetingEndpoint(s, a.JWTAuth),
+		GetPastMeetingParticipants:   NewGetPastMeetingParticipantsEndpoint(s, a.JWTAuth),
+		CreatePastMeetingParticipant: NewCreatePastMeetingParticipantEndpoint(s, a.JWTAuth),
+		GetPastMeetingParticipant:    NewGetPastMeetingParticipantEndpoint(s, a.JWTAuth),
+		UpdatePastMeetingParticipant: NewUpdatePastMeetingParticipantEndpoint(s, a.JWTAuth),
+		DeletePastMeetingParticipant: NewDeletePastMeetingParticipantEndpoint(s, a.JWTAuth),
+		Readyz:                       NewReadyzEndpoint(s),
+		Livez:                        NewLivezEndpoint(s),
 	}
 }
 
@@ -85,6 +95,11 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CreatePastMeeting = m(e.CreatePastMeeting)
 	e.GetPastMeeting = m(e.GetPastMeeting)
 	e.DeletePastMeeting = m(e.DeletePastMeeting)
+	e.GetPastMeetingParticipants = m(e.GetPastMeetingParticipants)
+	e.CreatePastMeetingParticipant = m(e.CreatePastMeetingParticipant)
+	e.GetPastMeetingParticipant = m(e.GetPastMeetingParticipant)
+	e.UpdatePastMeetingParticipant = m(e.UpdatePastMeetingParticipant)
+	e.DeletePastMeetingParticipant = m(e.DeletePastMeetingParticipant)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
 }
@@ -463,6 +478,125 @@ func NewDeletePastMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa
 			return nil, err
 		}
 		return nil, s.DeletePastMeeting(ctx, p)
+	}
+}
+
+// NewGetPastMeetingParticipantsEndpoint returns an endpoint function that
+// calls the method "get-past-meeting-participants" of service "Meeting
+// Service".
+func NewGetPastMeetingParticipantsEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetPastMeetingParticipantsPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetPastMeetingParticipants(ctx, p)
+	}
+}
+
+// NewCreatePastMeetingParticipantEndpoint returns an endpoint function that
+// calls the method "create-past-meeting-participant" of service "Meeting
+// Service".
+func NewCreatePastMeetingParticipantEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreatePastMeetingParticipantPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreatePastMeetingParticipant(ctx, p)
+	}
+}
+
+// NewGetPastMeetingParticipantEndpoint returns an endpoint function that calls
+// the method "get-past-meeting-participant" of service "Meeting Service".
+func NewGetPastMeetingParticipantEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetPastMeetingParticipantPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetPastMeetingParticipant(ctx, p)
+	}
+}
+
+// NewUpdatePastMeetingParticipantEndpoint returns an endpoint function that
+// calls the method "update-past-meeting-participant" of service "Meeting
+// Service".
+func NewUpdatePastMeetingParticipantEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdatePastMeetingParticipantPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.UpdatePastMeetingParticipant(ctx, p)
+	}
+}
+
+// NewDeletePastMeetingParticipantEndpoint returns an endpoint function that
+// calls the method "delete-past-meeting-participant" of service "Meeting
+// Service".
+func NewDeletePastMeetingParticipantEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeletePastMeetingParticipantPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeletePastMeetingParticipant(ctx, p)
 	}
 }
 

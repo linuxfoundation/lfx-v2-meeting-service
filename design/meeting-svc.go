@@ -659,6 +659,196 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// TODO: delete this endpoint once the query service supports meeting registrant queries
+	// GET past meeting participants endpoint
+	Method("get-past-meeting-participants", func() {
+		Description("Get all participants for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("participants", ArrayOf(PastMeetingParticipant), "Past meeting participants")
+			Attribute("cache_control", String, "Cache control header", func() {
+				Example("public, max-age=300")
+			})
+			Required("participants")
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{uid}/participants")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Header("cache_control:Cache-Control")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// POST past meeting participant endpoint
+	Method("create-past-meeting-participant", func() {
+		Description("Create a new participant for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			Extend(CreatePastMeetingParticipantPayload)
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingUIDAttribute()
+		})
+
+		Result(PastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("Conflict", ConflictError, "Past meeting participant already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/past_meetings/{uid}/participants")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET past meeting participant by UID endpoint
+	Method("get-past-meeting-participant", func() {
+		Description("Get a specific participant for a past meeting by UID")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingParticipantPastMeetingUIDAttribute()
+			PastMeetingParticipantUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("participant", PastMeetingParticipant)
+			EtagAttribute()
+			Required("participant")
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting or participant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{past_meeting_uid}/participants/{uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Body("participant")
+				Header("etag:ETag")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// PUT past meeting participant endpoint
+	Method("update-past-meeting-participant", func() {
+		Description("Update an existing participant for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			Extend(UpdatePastMeetingParticipantPayload)
+			BearerTokenAttribute()
+			IfMatchAttribute()
+			VersionAttribute()
+			PastMeetingParticipantPastMeetingUIDAttribute()
+			PastMeetingParticipantUIDAttribute()
+		})
+
+		Result(PastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Past meeting or participant not found")
+		Error("Conflict", ConflictError, "Conflict")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/past_meetings/{past_meeting_uid}/participants/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("past_meeting_uid") // past meeting uid
+				Param("uid")              // past meeting participant uid
+			})
+			Header("bearer_token:Authorization")
+			Header("if_match:If-Match")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE past meeting participant endpoint
+	Method("delete-past-meeting-participant", func() {
+		Description("Delete a participant from a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			IfMatchAttribute()
+			VersionAttribute()
+			PastMeetingParticipantPastMeetingUIDAttribute()
+			PastMeetingParticipantUIDAttribute()
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting or participant not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/past_meetings/{past_meeting_uid}/participants/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("past_meeting_uid") // past meeting uid
+				Param("uid")              // past meeting participant uid
+			})
+			Header("bearer_token:Authorization")
+			Header("if_match:If-Match")
+			Response(StatusNoContent)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
 		Result(Bytes, func() {

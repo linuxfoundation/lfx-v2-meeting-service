@@ -15,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
 // PastMeetingService implements the meetingsvc.Service interface and domain.MessageHandler
@@ -261,6 +262,36 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, payload *mee
 		return nil, domain.ErrInternal
 	}
 
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.MessageBuilder.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeeting)
+		},
+		func() error {
+			// For the message we only need the committee UIDs.
+			committees := make([]string, len(pastMeeting.Committees))
+			for i, committee := range pastMeeting.Committees {
+				committees[i] = committee.UID
+			}
+			// Determine if the meeting is public based on visibility
+			isPublic := pastMeeting.Visibility == "public"
+
+			return s.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+				UID:        pastMeeting.UID,
+				MeetingUID: pastMeeting.MeetingUID,
+				Public:     isPublic,
+				ProjectUID: pastMeeting.ProjectUID,
+				Committees: committees,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
+	}
+
 	return pastMeeting, nil
 }
 
@@ -331,6 +362,22 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 		}
 		slog.ErrorContext(ctx, "error deleting past meeting", logging.ErrKey, err)
 		return domain.ErrInternal
+	}
+
+	// Use WorkerPool for concurrent NATS deletion message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.MessageBuilder.SendDeleteIndexPastMeeting(ctx, uid)
+		},
+		func() error {
+			return s.MessageBuilder.SendDeleteAllAccessPastMeeting(ctx, uid)
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS deletion messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails - the deletion already succeeded
 	}
 
 	return nil

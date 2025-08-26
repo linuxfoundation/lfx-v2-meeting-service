@@ -75,3 +75,43 @@ func (m *MockMessageBuilder) SendMeetingDeleted(ctx context.Context, data models
 	args := m.Called(ctx, data)
 	return args.Error(0)
 }
+
+func (m *MockMessageBuilder) SendIndexPastMeeting(ctx context.Context, action models.MessageAction, data models.PastMeeting) error {
+	args := m.Called(ctx, action, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendDeleteIndexPastMeeting(ctx context.Context, data string) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendIndexPastMeetingParticipant(ctx context.Context, action models.MessageAction, data models.PastMeetingParticipant) error {
+	args := m.Called(ctx, action, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendDeleteIndexPastMeetingParticipant(ctx context.Context, data string) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendDeleteAllAccessPastMeeting(ctx context.Context, data string) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendPutPastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}

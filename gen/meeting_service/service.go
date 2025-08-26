@@ -54,6 +54,16 @@ type Service interface {
 	GetPastMeeting(context.Context, *GetPastMeetingPayload) (res *GetPastMeetingResult, err error)
 	// Delete an existing past meeting.
 	DeletePastMeeting(context.Context, *DeletePastMeetingPayload) (err error)
+	// Get all participants for a past meeting
+	GetPastMeetingParticipants(context.Context, *GetPastMeetingParticipantsPayload) (res *GetPastMeetingParticipantsResult, err error)
+	// Create a new participant for a past meeting
+	CreatePastMeetingParticipant(context.Context, *CreatePastMeetingParticipantPayload) (res *PastMeetingParticipant, err error)
+	// Get a specific participant for a past meeting by UID
+	GetPastMeetingParticipant(context.Context, *GetPastMeetingParticipantPayload) (res *GetPastMeetingParticipantResult, err error)
+	// Update an existing participant for a past meeting
+	UpdatePastMeetingParticipant(context.Context, *UpdatePastMeetingParticipantPayload) (res *PastMeetingParticipant, err error)
+	// Delete a participant from a past meeting
+	DeletePastMeetingParticipant(context.Context, *DeletePastMeetingParticipantPayload) (err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -80,7 +90,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [19]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "readyz", "livez"}
+var MethodNames = [24]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -187,6 +197,40 @@ type CreateMeetingRegistrantPayload struct {
 	Username *string
 }
 
+// CreatePastMeetingParticipantPayload is the payload type of the Meeting
+// Service service create-past-meeting-participant method.
+type CreatePastMeetingParticipantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	UID *string
+	// User's email address
+	Email string
+	// User's first name
+	FirstName string
+	// User's last name
+	LastName string
+	// If user should have access as a meeting host
+	Host *bool
+	// User's job title
+	JobTitle *string
+	// User's organization
+	OrgName *string
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string
+	// User's avatar URL
+	AvatarURL *string
+	// User's LF ID
+	Username *string
+	// Whether the past meeting participant is invited
+	IsInvited *bool
+	// Whether the past meeting participant is attended
+	IsAttended *bool
+}
+
 // CreatePastMeetingPayload is the payload type of the Meeting Service service
 // create-past-meeting method.
 type CreatePastMeetingPayload struct {
@@ -276,6 +320,21 @@ type DeleteMeetingRegistrantPayload struct {
 	// The UID of the meeting
 	MeetingUID *string
 	// The UID of the registrant
+	UID *string
+}
+
+// DeletePastMeetingParticipantPayload is the payload type of the Meeting
+// Service service delete-past-meeting-participant method.
+type DeletePastMeetingParticipantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// If-Match header value for conditional requests
+	IfMatch *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	PastMeetingUID *string
+	// The UID of the past meeting participant
 	UID *string
 }
 
@@ -385,6 +444,47 @@ type GetMeetingsPayload struct {
 type GetMeetingsResult struct {
 	// Resources found
 	Meetings []*MeetingFull
+	// Cache control header
+	CacheControl *string
+}
+
+// GetPastMeetingParticipantPayload is the payload type of the Meeting Service
+// service get-past-meeting-participant method.
+type GetPastMeetingParticipantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	PastMeetingUID *string
+	// The UID of the past meeting participant
+	UID *string
+}
+
+// GetPastMeetingParticipantResult is the result type of the Meeting Service
+// service get-past-meeting-participant method.
+type GetPastMeetingParticipantResult struct {
+	Participant *PastMeetingParticipant
+	// ETag header value
+	Etag *string
+}
+
+// GetPastMeetingParticipantsPayload is the payload type of the Meeting Service
+// service get-past-meeting-participants method.
+type GetPastMeetingParticipantsPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	UID *string
+}
+
+// GetPastMeetingParticipantsResult is the result type of the Meeting Service
+// service get-past-meeting-participants method.
+type GetPastMeetingParticipantsResult struct {
+	// Past meeting participants
+	Participants []*PastMeetingParticipant
 	// Cache control header
 	CacheControl *string
 }
@@ -693,6 +793,51 @@ type PastMeeting struct {
 	UpdatedAt *string
 }
 
+// PastMeetingParticipant is the result type of the Meeting Service service
+// create-past-meeting-participant method.
+type PastMeetingParticipant struct {
+	// The UID of the past meeting participant
+	UID string
+	// The unique identifier of the past meeting
+	PastMeetingUID *string
+	// The UID of the meeting
+	MeetingUID string
+	// User's email address
+	Email string
+	// User's first name
+	FirstName string
+	// User's last name
+	LastName string
+	// If user should have access as a meeting host
+	Host *bool
+	// User's job title
+	JobTitle *string
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string
+	// User's organization
+	OrgName *string
+	// Whether the registrant is in an organization that has a membership with the
+	// LF. If unknown, don't pass this field; the API will find the value by default
+	OrgIsMember *bool
+	// Whether the registrant is in an organization that has a membership with the
+	// project (of the meeting). If unknown, don't pass this field; the API will
+	// find the value by default
+	OrgIsProjectMember *bool
+	// User's avatar URL
+	AvatarURL *string
+	// User's LF ID
+	Username *string
+	// Whether the past meeting participant is invited
+	IsInvited *bool
+	// Whether the past meeting participant is attended
+	IsAttended *bool
+	// The date and time the resource was created
+	CreatedAt *string
+	// The date and time the resource was last updated
+	UpdatedAt *string
+}
+
 // Meeting recurrence object
 type Recurrence struct {
 	// The recurrence type
@@ -917,6 +1062,44 @@ type UpdateMeetingSettingsPayload struct {
 	// The organizers of the meeting. This is a list of LFIDs of the meeting
 	// organizers.
 	Organizers []string
+}
+
+// UpdatePastMeetingParticipantPayload is the payload type of the Meeting
+// Service service update-past-meeting-participant method.
+type UpdatePastMeetingParticipantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// If-Match header value for conditional requests
+	IfMatch *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	PastMeetingUID *string
+	// The UID of the past meeting participant
+	UID *string
+	// User's email address
+	Email string
+	// User's first name
+	FirstName string
+	// User's last name
+	LastName string
+	// If user should have access as a meeting host
+	Host *bool
+	// User's job title
+	JobTitle *string
+	// User's organization
+	OrgName *string
+	// The ID of the specific occurrence the user should be invited to. If blank,
+	// user is invited to all occurrences
+	OccurrenceID *string
+	// User's avatar URL
+	AvatarURL *string
+	// User's LF ID
+	Username *string
+	// Whether the past meeting participant is invited
+	IsInvited *bool
+	// Whether the past meeting participant is attended
+	IsAttended *bool
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and

@@ -437,3 +437,49 @@ func ConvertDomainToPastMeetingResponse(pastMeeting *models.PastMeeting) *meetin
 
 	return result
 }
+
+// ConvertDomainToPastMeetingParticipantResponse converts a domain PastMeetingParticipant model to a service response type for API responses
+func ConvertDomainToPastMeetingParticipantResponse(domainParticipant *models.PastMeetingParticipant) *meetingservice.PastMeetingParticipant {
+	if domainParticipant == nil {
+		return nil
+	}
+
+	participant := &meetingservice.PastMeetingParticipant{
+		UID:                domainParticipant.UID,
+		PastMeetingUID:     utils.StringPtr(domainParticipant.PastMeetingUID),
+		MeetingUID:         domainParticipant.MeetingUID,
+		Email:              domainParticipant.Email,
+		FirstName:          domainParticipant.FirstName,
+		LastName:           domainParticipant.LastName,
+		Host:               utils.BoolPtr(domainParticipant.Host),
+		OrgIsMember:        utils.BoolPtr(domainParticipant.OrgIsMember),
+		OrgIsProjectMember: utils.BoolPtr(domainParticipant.OrgIsProjectMember),
+		IsInvited:          utils.BoolPtr(domainParticipant.IsInvited),
+		IsAttended:         utils.BoolPtr(domainParticipant.IsAttended),
+	}
+
+	// Set fields that are optional and should only be set if they are not empty
+	if domainParticipant.AvatarURL != "" {
+		participant.AvatarURL = utils.StringPtr(domainParticipant.AvatarURL)
+	}
+	if domainParticipant.Username != "" {
+		participant.Username = utils.StringPtr(domainParticipant.Username)
+	}
+	if domainParticipant.JobTitle != "" {
+		participant.JobTitle = utils.StringPtr(domainParticipant.JobTitle)
+	}
+	if domainParticipant.OrgName != "" {
+		participant.OrgName = utils.StringPtr(domainParticipant.OrgName)
+	}
+
+	// Convert timestamps
+	if domainParticipant.CreatedAt != nil {
+		participant.CreatedAt = utils.StringPtr(domainParticipant.CreatedAt.Format(time.RFC3339))
+	}
+
+	if domainParticipant.UpdatedAt != nil {
+		participant.UpdatedAt = utils.StringPtr(domainParticipant.UpdatedAt.Format(time.RFC3339))
+	}
+
+	return participant
+}

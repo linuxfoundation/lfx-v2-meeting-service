@@ -121,6 +121,7 @@ func main() {
 		meetingService,
 		registrantService,
 		pastMeetingService,
+		pastMeetingParticipantService,
 		zoomWebhookHandler,
 		meetingHandler,
 	)

@@ -80,6 +80,8 @@ func RegistrantMeetingUIDAttribute() {
 }
 
 // RegistrantEmailAttribute is the DSL attribute for registrant email.
+// TODO: this attribute (among others on the reigstrant model) are generic to user data and can be reused
+// in the past meeting participant model for example, so we should have this in a more generic file and function name.
 func RegistrantEmailAttribute() {
 	Attribute("email", String, "User's email address", func() {
 		Format(FormatEmail)
