@@ -7,6 +7,7 @@ ignore: |
   megalinter-reports
   styles
   gen/
+  cmd/meeting-api/kodata
 rules:
   line-length:
     max: 120
