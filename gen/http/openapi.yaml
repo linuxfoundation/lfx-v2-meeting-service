@@ -1118,7 +1118,7 @@ paths:
                   format: uuid
                 - name: uid
                   in: path
-                  description: The UID of the past meeting participant
+                  description: The unique identifier of the past meeting
                   required: true
                   type: string
                   format: uuid
@@ -1138,7 +1138,6 @@ paths:
                   schema:
                     $ref: '#/definitions/MeetingServiceUpdatePastMeetingParticipantRequestBody'
                     required:
-                        - meeting_uid
                         - email
                         - first_name
                         - last_name
@@ -1483,7 +1482,6 @@ paths:
                     $ref: '#/definitions/MeetingServiceCreatePastMeetingParticipantRequestBody'
                     required:
                         - past_meeting_uid
-                        - meeting_uid
                         - email
                         - first_name
                         - last_name
@@ -2643,11 +2641,11 @@ definitions:
                 example: false
             is_attended:
                 type: boolean
-                description: Whether the past meeting participant is attended
+                description: Whether the participant attended this past meeting
                 example: true
             is_invited:
                 type: boolean
-                description: Whether the past meeting participant is invited
+                description: Whether the participant was invited to this past meeting
                 example: true
             job_title:
                 type: string
@@ -2659,20 +2657,10 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
-            meeting_uid:
-                type: string
-                description: The UID of the meeting
-                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                format: uuid
             org_name:
                 type: string
                 description: User's organization
                 example: Minus qui iure molestiae et consequatur amet.
-            past_meeting_uid:
-                type: string
-                description: The unique identifier of the past meeting
-                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                format: uuid
             username:
                 type: string
                 description: User's LF ID
@@ -2686,13 +2674,10 @@ definitions:
             is_invited: true
             job_title: Software Engineer
             last_name: Doe
-            meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             org_name: Accusamus at nam et voluptatem qui vitae.
-            past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             username: Sunt laudantium non et nostrum saepe.
         required:
             - past_meeting_uid
-            - meeting_uid
             - email
             - first_name
             - last_name
@@ -2809,13 +2794,13 @@ definitions:
                 example:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             timezone:
                 type: string
                 description: The timezone of the meeting (e.g. 'America/New_York')
@@ -2878,10 +2863,10 @@ definitions:
             sessions:
                 - end_time: "2021-01-01T11:00:00Z"
                   start_time: "2021-01-01T10:00:00Z"
-                  uid: session-123
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - end_time: "2021-01-01T11:00:00Z"
                   start_time: "2021-01-01T10:00:00Z"
-                  uid: session-123
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             timezone: Cupiditate aut eos.
             title: Voluptatem vitae aut.
             transcript_enabled: true
@@ -3960,10 +3945,10 @@ definitions:
                       sessions:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       timezone: Assumenda laboriosam fugit doloremque.
                       title: Corrupti nemo iure perferendis voluptas ut.
                       transcript_enabled: true
@@ -4029,10 +4014,10 @@ definitions:
                       sessions:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       timezone: Assumenda laboriosam fugit doloremque.
                       title: Corrupti nemo iure perferendis voluptas ut.
                       transcript_enabled: true
@@ -4098,10 +4083,10 @@ definitions:
                       sessions:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       timezone: Assumenda laboriosam fugit doloremque.
                       title: Corrupti nemo iure perferendis voluptas ut.
                       transcript_enabled: true
@@ -4167,10 +4152,10 @@ definitions:
                       sessions:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       timezone: Assumenda laboriosam fugit doloremque.
                       title: Corrupti nemo iure perferendis voluptas ut.
                       transcript_enabled: true
@@ -4238,10 +4223,10 @@ definitions:
                   sessions:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   timezone: Assumenda laboriosam fugit doloremque.
                   title: Corrupti nemo iure perferendis voluptas ut.
                   transcript_enabled: true
@@ -4307,10 +4292,10 @@ definitions:
                   sessions:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   timezone: Assumenda laboriosam fugit doloremque.
                   title: Corrupti nemo iure perferendis voluptas ut.
                   transcript_enabled: true
@@ -4376,10 +4361,10 @@ definitions:
                   sessions:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   timezone: Assumenda laboriosam fugit doloremque.
                   title: Corrupti nemo iure perferendis voluptas ut.
                   transcript_enabled: true
@@ -4445,10 +4430,10 @@ definitions:
                   sessions:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   timezone: Assumenda laboriosam fugit doloremque.
                   title: Corrupti nemo iure perferendis voluptas ut.
                   transcript_enabled: true
@@ -4730,11 +4715,11 @@ definitions:
                 example: false
             is_attended:
                 type: boolean
-                description: Whether the past meeting participant is attended
+                description: Whether the participant attended this past meeting
                 example: true
             is_invited:
                 type: boolean
-                description: Whether the past meeting participant is invited
+                description: Whether the participant was invited to this past meeting
                 example: true
             job_title:
                 type: string
@@ -4746,11 +4731,6 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
-            meeting_uid:
-                type: string
-                description: The UID of the meeting
-                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                format: uuid
             org_name:
                 type: string
                 description: User's organization
@@ -4768,11 +4748,9 @@ definitions:
             is_invited: true
             job_title: Software Engineer
             last_name: Doe
-            meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             org_name: Architecto nihil eum quis culpa eum adipisci.
             username: Enim voluptas excepturi veniam aperiam omnis odio.
         required:
-            - meeting_uid
             - email
             - first_name
             - last_name
@@ -5037,16 +5015,16 @@ definitions:
                 example:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             timezone:
                 type: string
                 description: The timezone of the meeting (e.g. 'America/New_York')
@@ -5131,13 +5109,13 @@ definitions:
             sessions:
                 - end_time: "2021-01-01T11:00:00Z"
                   start_time: "2021-01-01T10:00:00Z"
-                  uid: session-123
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - end_time: "2021-01-01T11:00:00Z"
                   start_time: "2021-01-01T10:00:00Z"
-                  uid: session-123
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - end_time: "2021-01-01T11:00:00Z"
                   start_time: "2021-01-01T10:00:00Z"
-                  uid: session-123
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             timezone: Voluptate modi corporis.
             title: Excepturi rerum.
             transcript_enabled: true
@@ -5181,11 +5159,11 @@ definitions:
                 example: false
             is_attended:
                 type: boolean
-                description: Whether the past meeting participant is attended
+                description: Whether the participant attended this past meeting
                 example: true
             is_invited:
                 type: boolean
-                description: Whether the past meeting participant is invited
+                description: Whether the participant was invited to this past meeting
                 example: true
             job_title:
                 type: string
@@ -5470,13 +5448,13 @@ definitions:
             uid:
                 type: string
                 description: The unique identifier of the session
-                example: session-123
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 format: uuid
         description: A single start/end session of a meeting on the platform
         example:
             end_time: "2021-01-01T11:00:00Z"
             start_time: "2021-01-01T10:00:00Z"
-            uid: session-123
+            uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
         required:
             - uid
             - start_time

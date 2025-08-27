@@ -237,10 +237,6 @@ type CreatePastMeetingRequestBody struct {
 // CreatePastMeetingParticipantRequestBody is the type of the "Meeting Service"
 // service "create-past-meeting-participant" endpoint HTTP request body.
 type CreatePastMeetingParticipantRequestBody struct {
-	// The unique identifier of the past meeting
-	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// The UID of the meeting
-	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
 	// User's email address
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// User's first name
@@ -257,17 +253,15 @@ type CreatePastMeetingParticipantRequestBody struct {
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
 }
 
 // UpdatePastMeetingParticipantRequestBody is the type of the "Meeting Service"
 // service "update-past-meeting-participant" endpoint HTTP request body.
 type UpdatePastMeetingParticipantRequestBody struct {
-	// The UID of the meeting
-	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
 	// User's email address
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// User's first name
@@ -284,9 +278,9 @@ type UpdatePastMeetingParticipantRequestBody struct {
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
 }
 
@@ -683,9 +677,9 @@ type CreatePastMeetingParticipantResponseBody struct {
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
@@ -730,9 +724,9 @@ type UpdatePastMeetingParticipantResponseBody struct {
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
@@ -1992,9 +1986,9 @@ type PastMeetingParticipantResponseBody struct {
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
@@ -3868,18 +3862,16 @@ func NewGetPastMeetingParticipantsPayload(uid string, version *string, bearerTok
 // create-past-meeting-participant endpoint payload.
 func NewCreatePastMeetingParticipantPayload(body *CreatePastMeetingParticipantRequestBody, uid string, version *string, bearerToken *string) *meetingservice.CreatePastMeetingParticipantPayload {
 	v := &meetingservice.CreatePastMeetingParticipantPayload{
-		PastMeetingUID: *body.PastMeetingUID,
-		MeetingUID:     *body.MeetingUID,
-		Email:          *body.Email,
-		FirstName:      *body.FirstName,
-		LastName:       *body.LastName,
-		Host:           body.Host,
-		JobTitle:       body.JobTitle,
-		OrgName:        body.OrgName,
-		AvatarURL:      body.AvatarURL,
-		Username:       body.Username,
-		IsInvited:      body.IsInvited,
-		IsAttended:     body.IsAttended,
+		Email:      *body.Email,
+		FirstName:  *body.FirstName,
+		LastName:   *body.LastName,
+		Host:       body.Host,
+		JobTitle:   body.JobTitle,
+		OrgName:    body.OrgName,
+		AvatarURL:  body.AvatarURL,
+		Username:   body.Username,
+		IsInvited:  body.IsInvited,
+		IsAttended: body.IsAttended,
 	}
 	v.UID = &uid
 	v.Version = version
@@ -3904,7 +3896,6 @@ func NewGetPastMeetingParticipantPayload(pastMeetingUID string, uid string, vers
 // update-past-meeting-participant endpoint payload.
 func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRequestBody, pastMeetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdatePastMeetingParticipantPayload {
 	v := &meetingservice.UpdatePastMeetingParticipantPayload{
-		MeetingUID: *body.MeetingUID,
 		Email:      *body.Email,
 		FirstName:  *body.FirstName,
 		LastName:   *body.LastName,
@@ -4325,12 +4316,6 @@ func ValidateCreatePastMeetingRequestBody(body *CreatePastMeetingRequestBody) (e
 // ValidateCreatePastMeetingParticipantRequestBody runs the validations defined
 // on Create-Past-Meeting-ParticipantRequestBody
 func ValidateCreatePastMeetingParticipantRequestBody(body *CreatePastMeetingParticipantRequestBody) (err error) {
-	if body.PastMeetingUID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
-	}
-	if body.MeetingUID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
-	}
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
@@ -4339,12 +4324,6 @@ func ValidateCreatePastMeetingParticipantRequestBody(body *CreatePastMeetingPart
 	}
 	if body.LastName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
-	if body.PastMeetingUID != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", *body.PastMeetingUID, goa.FormatUUID))
-	}
-	if body.MeetingUID != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
 	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -4378,9 +4357,6 @@ func ValidateCreatePastMeetingParticipantRequestBody(body *CreatePastMeetingPart
 // ValidateUpdatePastMeetingParticipantRequestBody runs the validations defined
 // on Update-Past-Meeting-ParticipantRequestBody
 func ValidateUpdatePastMeetingParticipantRequestBody(body *UpdatePastMeetingParticipantRequestBody) (err error) {
-	if body.MeetingUID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
-	}
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
@@ -4389,9 +4365,6 @@ func ValidateUpdatePastMeetingParticipantRequestBody(body *UpdatePastMeetingPart
 	}
 	if body.LastName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
-	if body.MeetingUID != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
 	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))

@@ -141,13 +141,13 @@ func convertRecurrenceToDomain(r *meetingservice.Recurrence) *models.Recurrence 
 }
 
 // ConvertMeetingUpdatePayloadToDomain converts a Goa UpdateMeetingBasePayload to domain model
-func ConvertMeetingUpdatePayloadToDomain(payload *meetingservice.UpdateMeetingBasePayload) *models.MeetingBase {
+func ConvertMeetingUpdatePayloadToDomain(payload *meetingservice.UpdateMeetingBasePayload) (*models.MeetingBase, error) {
 	startTime, err := time.Parse(time.RFC3339, payload.StartTime)
 	if err != nil {
 		slog.Error("failed to parse start time", logging.ErrKey, err,
 			"start_time", payload.StartTime,
 		)
-		return nil
+		return nil, domain.ErrValidationFailed
 	}
 
 	now := time.Now().UTC()
@@ -177,7 +177,7 @@ func ConvertMeetingUpdatePayloadToDomain(payload *meetingservice.UpdateMeetingBa
 		UpdatedAt:            &now,
 	}
 
-	return meeting
+	return meeting, nil
 }
 
 // ConvertUpdateSettingsPayloadToDomain converts a Goa UpdateMeetingSettingsPayload to domain model

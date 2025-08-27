@@ -48,7 +48,8 @@ func NewMeetingRegistrantService(
 func (s *MeetingRegistrantService) ServiceReady() bool {
 	return s.MeetingRepository != nil &&
 		s.RegistrantRepository != nil &&
-		s.MessageBuilder != nil
+		s.MessageBuilder != nil &&
+		s.EmailService != nil
 }
 
 func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant) error {

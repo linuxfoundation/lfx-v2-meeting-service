@@ -500,7 +500,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         # When OpenFGA is disabled, allow all requests
         # (Only meant for *local development* because OpenFGA should be enabled when deployed)

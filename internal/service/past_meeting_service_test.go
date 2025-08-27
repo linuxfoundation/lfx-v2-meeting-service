@@ -100,8 +100,8 @@ func TestPastMeetingService_ServiceReady(t *testing.T) {
 func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now()
-	scheduledStartTime := now.Add(time.Hour).Format(time.RFC3339)
-	scheduledEndTime := now.Add(2 * time.Hour).Format(time.RFC3339)
+	scheduledStartTime := now.Add(-2 * time.Hour).Format(time.RFC3339)
+	scheduledEndTime := now.Add(-time.Hour).Format(time.RFC3339)
 
 	tests := []struct {
 		name        string
@@ -776,8 +776,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now()
-	scheduledStartTime := now.Add(time.Hour).Format(time.RFC3339)
-	scheduledEndTime := now.Add(2 * time.Hour).Format(time.RFC3339)
+	scheduledStartTime := now.Add(-2 * time.Hour).Format(time.RFC3339)
+	scheduledEndTime := now.Add(-time.Hour).Format(time.RFC3339)
 
 	tests := []struct {
 		name        string

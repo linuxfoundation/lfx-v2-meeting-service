@@ -151,6 +151,8 @@ type PastMeetingParticipantAccessMessage struct {
 	PastMeetingUID string `json:"past_meeting_uid"`
 	Username       string `json:"username"`
 	Host           bool   `json:"host"`
+	IsInvited      bool   `json:"is_invited"`
+	IsAttended     bool   `json:"is_attended"`
 }
 
 // ZoomWebhookEventMessage is the schema for Zoom webhook events sent via NATS for async processing.

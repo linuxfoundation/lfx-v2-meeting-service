@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -64,6 +65,18 @@ func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Contex
 		return domain.ErrValidationFailed
 	}
 	if pastMeeting.Platform == "" {
+		return domain.ErrValidationFailed
+	}
+
+	// Validate that the meeting has started in the past (UTC)
+	if !pastMeeting.ScheduledStartTime.Before(time.Now().UTC()) {
+		slog.WarnContext(ctx, "scheduled start time must be in the past")
+		return domain.ErrValidationFailed
+	}
+
+	// Validate that the meeting has ended in the past (UTC)
+	if !pastMeeting.ScheduledEndTime.Before(time.Now().UTC()) {
+		slog.WarnContext(ctx, "scheduled end time must be in the past")
 		return domain.ErrValidationFailed
 	}
 

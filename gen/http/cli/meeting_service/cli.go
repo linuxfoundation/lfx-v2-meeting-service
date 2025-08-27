@@ -160,7 +160,7 @@ func ParseEndpoint(
 		meetingServiceUpdatePastMeetingParticipantFlags              = flag.NewFlagSet("update-past-meeting-participant", flag.ExitOnError)
 		meetingServiceUpdatePastMeetingParticipantBodyFlag           = meetingServiceUpdatePastMeetingParticipantFlags.String("body", "REQUIRED", "")
 		meetingServiceUpdatePastMeetingParticipantPastMeetingUIDFlag = meetingServiceUpdatePastMeetingParticipantFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceUpdatePastMeetingParticipantUIDFlag            = meetingServiceUpdatePastMeetingParticipantFlags.String("uid", "REQUIRED", "The UID of the past meeting participant")
+		meetingServiceUpdatePastMeetingParticipantUIDFlag            = meetingServiceUpdatePastMeetingParticipantFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
 		meetingServiceUpdatePastMeetingParticipantVersionFlag        = meetingServiceUpdatePastMeetingParticipantFlags.String("version", "", "")
 		meetingServiceUpdatePastMeetingParticipantBearerTokenFlag    = meetingServiceUpdatePastMeetingParticipantFlags.String("bearer-token", "", "")
 		meetingServiceUpdatePastMeetingParticipantIfMatchFlag        = meetingServiceUpdatePastMeetingParticipantFlags.String("if-match", "", "")
@@ -854,12 +854,12 @@ Example:
          {
             "end_time": "2021-01-01T11:00:00Z",
             "start_time": "2021-01-01T10:00:00Z",
-            "uid": "session-123"
+            "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
          },
          {
             "end_time": "2021-01-01T11:00:00Z",
             "start_time": "2021-01-01T10:00:00Z",
-            "uid": "session-123"
+            "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
          }
       ],
       "timezone": "Quis tenetur voluptas in.",
@@ -936,9 +936,7 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "org_name": "Ipsam fugiat quis qui quam explicabo molestiae.",
-      "past_meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "username": "Iste non commodi sint sed est."
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -964,7 +962,7 @@ func meetingServiceUpdatePastMeetingParticipantUsage() {
 Update an existing participant for a past meeting
     -body JSON: 
     -past-meeting-uid STRING: The unique identifier of the past meeting
-    -uid STRING: The UID of the past meeting participant
+    -uid STRING: The unique identifier of the past meeting
     -version STRING: 
     -bearer-token STRING: 
     -if-match STRING: 
@@ -979,7 +977,6 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "org_name": "Tempora voluptatem inventore.",
       "username": "Officia tempore necessitatibus deleniti natus."
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"

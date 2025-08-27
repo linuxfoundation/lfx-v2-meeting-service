@@ -89,7 +89,10 @@ func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc
 		return nil, handleError(err)
 	}
 
-	updatedMeetingReq := service.ConvertMeetingUpdatePayloadToDomain(payload)
+	updatedMeetingReq, err := service.ConvertMeetingUpdatePayloadToDomain(payload)
+	if err != nil {
+		return nil, handleError(err)
+	}
 
 	updatedMeeting, err := s.meetingService.UpdateMeetingBase(ctx, updatedMeetingReq, etag)
 	if err != nil {

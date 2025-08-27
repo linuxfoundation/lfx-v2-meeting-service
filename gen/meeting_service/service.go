@@ -206,10 +206,6 @@ type CreatePastMeetingParticipantPayload struct {
 	Version *string
 	// The unique identifier of the past meeting
 	UID *string
-	// The unique identifier of the past meeting
-	PastMeetingUID string
-	// The UID of the meeting
-	MeetingUID string
 	// User's email address
 	Email string
 	// User's first name
@@ -226,9 +222,9 @@ type CreatePastMeetingParticipantPayload struct {
 	AvatarURL *string
 	// User's LF ID
 	Username *string
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool
 }
 
@@ -826,9 +822,9 @@ type PastMeetingParticipant struct {
 	AvatarURL *string
 	// User's LF ID
 	Username *string
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool
 	// The date and time the resource was created
 	CreatedAt *string
@@ -1073,10 +1069,8 @@ type UpdatePastMeetingParticipantPayload struct {
 	Version *string
 	// The unique identifier of the past meeting
 	PastMeetingUID string
-	// The UID of the past meeting participant
+	// The unique identifier of the past meeting
 	UID *string
-	// The UID of the meeting
-	MeetingUID string
 	// User's email address
 	Email string
 	// User's first name
@@ -1093,9 +1087,9 @@ type UpdatePastMeetingParticipantPayload struct {
 	AvatarURL *string
 	// User's LF ID
 	Username *string
-	// Whether the past meeting participant is invited
+	// Whether the participant was invited to this past meeting
 	IsInvited *bool
-	// Whether the past meeting participant is attended
+	// Whether the participant attended this past meeting
 	IsAttended *bool
 }
 

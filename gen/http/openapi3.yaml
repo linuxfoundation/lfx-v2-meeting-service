@@ -1997,10 +1997,10 @@ paths:
                                       sessions:
                                         - end_time: "2021-01-01T11:00:00Z"
                                           start_time: "2021-01-01T10:00:00Z"
-                                          uid: session-123
+                                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                         - end_time: "2021-01-01T11:00:00Z"
                                           start_time: "2021-01-01T10:00:00Z"
-                                          uid: session-123
+                                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       timezone: Assumenda laboriosam fugit doloremque.
                                       title: Corrupti nemo iure perferendis voluptas ut.
                                       transcript_enabled: true
@@ -2066,10 +2066,10 @@ paths:
                                       sessions:
                                         - end_time: "2021-01-01T11:00:00Z"
                                           start_time: "2021-01-01T10:00:00Z"
-                                          uid: session-123
+                                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                         - end_time: "2021-01-01T11:00:00Z"
                                           start_time: "2021-01-01T10:00:00Z"
-                                          uid: session-123
+                                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       timezone: Assumenda laboriosam fugit doloremque.
                                       title: Corrupti nemo iure perferendis voluptas ut.
                                       transcript_enabled: true
@@ -2135,10 +2135,10 @@ paths:
                                       sessions:
                                         - end_time: "2021-01-01T11:00:00Z"
                                           start_time: "2021-01-01T10:00:00Z"
-                                          uid: session-123
+                                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                         - end_time: "2021-01-01T11:00:00Z"
                                           start_time: "2021-01-01T10:00:00Z"
-                                          uid: session-123
+                                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       timezone: Assumenda laboriosam fugit doloremque.
                                       title: Corrupti nemo iure perferendis voluptas ut.
                                       transcript_enabled: true
@@ -2249,10 +2249,10 @@ paths:
                             sessions:
                                 - end_time: "2021-01-01T11:00:00Z"
                                   start_time: "2021-01-01T10:00:00Z"
-                                  uid: session-123
+                                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 - end_time: "2021-01-01T11:00:00Z"
                                   start_time: "2021-01-01T10:00:00Z"
-                                  uid: session-123
+                                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             timezone: Quis tenetur voluptas in.
                             title: Dicta est.
                             transcript_enabled: false
@@ -2312,10 +2312,10 @@ paths:
                                 sessions:
                                     - end_time: "2021-01-01T11:00:00Z"
                                       start_time: "2021-01-01T10:00:00Z"
-                                      uid: session-123
+                                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                     - end_time: "2021-01-01T11:00:00Z"
                                       start_time: "2021-01-01T10:00:00Z"
-                                      uid: session-123
+                                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 timezone: Assumenda natus.
                                 title: Quidem id magnam qui sit quidem.
                                 transcript_enabled: true
@@ -2585,11 +2585,11 @@ paths:
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - name: uid
                   in: path
-                  description: The UID of the past meeting participant
+                  description: The unique identifier of the past meeting
                   required: true
                   schema:
                     type: string
-                    description: The UID of the past meeting participant
+                    description: The unique identifier of the past meeting
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -2617,7 +2617,6 @@ paths:
                             is_invited: true
                             job_title: Software Engineer
                             last_name: Doe
-                            meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             org_name: Tempora voluptatem inventore.
                             username: Officia tempore necessitatibus deleniti natus.
             responses:
@@ -2868,10 +2867,10 @@ paths:
                                 sessions:
                                     - end_time: "2021-01-01T11:00:00Z"
                                       start_time: "2021-01-01T10:00:00Z"
-                                      uid: session-123
+                                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                     - end_time: "2021-01-01T11:00:00Z"
                                       start_time: "2021-01-01T10:00:00Z"
-                                      uid: session-123
+                                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 timezone: Assumenda laboriosam fugit doloremque.
                                 title: Corrupti nemo iure perferendis voluptas ut.
                                 transcript_enabled: true
@@ -3089,7 +3088,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/CreatePastMeetingParticipantPayload'
+                            $ref: '#/components/schemas/CreatePastMeetingParticipantRequestBody'
                         example:
                             avatar_url: https://example.com/avatar.jpg
                             email: user@example.com
@@ -3099,9 +3098,7 @@ paths:
                             is_invited: true
                             job_title: Software Engineer
                             last_name: Doe
-                            meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             org_name: Ipsam fugiat quis qui quam explicabo molestiae.
-                            past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             username: Iste non commodi sint sed est.
             responses:
                 "201":
@@ -3216,8 +3213,8 @@ paths:
                   schema:
                     type: string
                     description: HMAC-SHA256 signature of the request body
-                    example: Repellat dolore ut iure quia molestiae est.
-                  example: Sunt voluptatum voluptatem ipsam omnis officiis officiis.
+                    example: Et veniam.
+                  example: Voluptas id.
                 - name: x-zm-request-timestamp
                   in: header
                   description: Timestamp when the webhook was sent
@@ -3225,8 +3222,8 @@ paths:
                   schema:
                     type: string
                     description: Timestamp when the webhook was sent
-                    example: Error commodi.
-                  example: Minima aut.
+                    example: Sit aut numquam quidem cum nulla quidem.
+                  example: Reprehenderit ex iusto vel iste eius aut.
             requestBody:
                 required: true
                 content:
@@ -3603,11 +3600,11 @@ components:
                     example: true
                 is_attended:
                     type: boolean
-                    description: Whether the past meeting participant is attended
+                    description: Whether the participant attended this past meeting
                     example: true
                 is_invited:
                     type: boolean
-                    description: Whether the past meeting participant is invited
+                    description: Whether the participant was invited to this past meeting
                     example: true
                 job_title:
                     type: string
@@ -3619,16 +3616,11 @@ components:
                     example: Doe
                     minLength: 1
                     maxLength: 100
-                meeting_uid:
-                    type: string
-                    description: The UID of the meeting
-                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    format: uuid
                 org_name:
                     type: string
                     description: User's organization
                     example: Modi est ea.
-                past_meeting_uid:
+                uid:
                     type: string
                     description: The unique identifier of the past meeting
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -3647,13 +3639,76 @@ components:
                 is_invited: true
                 job_title: Software Engineer
                 last_name: Doe
-                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 org_name: Rerum commodi.
-                past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 username: Fugit voluptatem deleniti debitis esse.
             required:
                 - past_meeting_uid
-                - meeting_uid
+                - email
+                - first_name
+                - last_name
+        CreatePastMeetingParticipantRequestBody:
+            type: object
+            properties:
+                avatar_url:
+                    type: string
+                    description: User's avatar URL
+                    example: https://example.com/avatar.jpg
+                    format: uri
+                email:
+                    type: string
+                    description: User's email address
+                    example: user@example.com
+                    format: email
+                first_name:
+                    type: string
+                    description: User's first name
+                    example: John
+                    minLength: 1
+                    maxLength: 100
+                host:
+                    type: boolean
+                    description: If user should have access as a meeting host
+                    example: false
+                is_attended:
+                    type: boolean
+                    description: Whether the participant attended this past meeting
+                    example: true
+                is_invited:
+                    type: boolean
+                    description: Whether the participant was invited to this past meeting
+                    example: true
+                job_title:
+                    type: string
+                    description: User's job title
+                    example: Software Engineer
+                last_name:
+                    type: string
+                    description: User's last name
+                    example: Doe
+                    minLength: 1
+                    maxLength: 100
+                org_name:
+                    type: string
+                    description: User's organization
+                    example: Ipsa voluptatibus qui.
+                username:
+                    type: string
+                    description: User's LF ID
+                    example: Quis aut.
+            example:
+                avatar_url: https://example.com/avatar.jpg
+                email: user@example.com
+                first_name: John
+                host: true
+                is_attended: true
+                is_invited: true
+                job_title: Software Engineer
+                last_name: Doe
+                org_name: Tenetur et.
+                username: Aut et deleniti omnis animi minus.
+            required:
+                - past_meeting_uid
                 - email
                 - first_name
                 - last_name
@@ -3785,16 +3840,16 @@ components:
                     example:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
@@ -3862,13 +3917,13 @@ components:
                 sessions:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 timezone: Tempore modi molestias assumenda maxime.
                 title: Adipisci ipsam iste totam aliquid exercitationem sit.
                 transcript_enabled: true
@@ -4821,10 +4876,10 @@ components:
                           sessions:
                             - end_time: "2021-01-01T11:00:00Z"
                               start_time: "2021-01-01T10:00:00Z"
-                              uid: session-123
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             - end_time: "2021-01-01T11:00:00Z"
                               start_time: "2021-01-01T10:00:00Z"
-                              uid: session-123
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           timezone: Assumenda laboriosam fugit doloremque.
                           title: Corrupti nemo iure perferendis voluptas ut.
                           transcript_enabled: true
@@ -4890,10 +4945,10 @@ components:
                           sessions:
                             - end_time: "2021-01-01T11:00:00Z"
                               start_time: "2021-01-01T10:00:00Z"
-                              uid: session-123
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             - end_time: "2021-01-01T11:00:00Z"
                               start_time: "2021-01-01T10:00:00Z"
-                              uid: session-123
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           timezone: Assumenda laboriosam fugit doloremque.
                           title: Corrupti nemo iure perferendis voluptas ut.
                           transcript_enabled: true
@@ -4961,10 +5016,10 @@ components:
                       sessions:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       timezone: Assumenda laboriosam fugit doloremque.
                       title: Corrupti nemo iure perferendis voluptas ut.
                       transcript_enabled: true
@@ -5030,10 +5085,10 @@ components:
                       sessions:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       timezone: Assumenda laboriosam fugit doloremque.
                       title: Corrupti nemo iure perferendis voluptas ut.
                       transcript_enabled: true
@@ -5099,10 +5154,10 @@ components:
                       sessions:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       timezone: Assumenda laboriosam fugit doloremque.
                       title: Corrupti nemo iure perferendis voluptas ut.
                       transcript_enabled: true
@@ -6074,16 +6129,16 @@ components:
                     example:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
-                          uid: session-123
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
@@ -6168,13 +6223,13 @@ components:
                 sessions:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
-                      uid: session-123
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 timezone: Itaque ipsum.
                 title: Voluptas aut voluptatem beatae.
                 transcript_enabled: true
@@ -6217,11 +6272,11 @@ components:
                     example: false
                 is_attended:
                     type: boolean
-                    description: Whether the past meeting participant is attended
+                    description: Whether the participant attended this past meeting
                     example: true
                 is_invited:
                     type: boolean
-                    description: Whether the past meeting participant is invited
+                    description: Whether the participant was invited to this past meeting
                     example: true
                 job_title:
                     type: string
@@ -6501,13 +6556,13 @@ components:
                 uid:
                     type: string
                     description: The unique identifier of the session
-                    example: session-123
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
             description: A single start/end session of a meeting on the platform
             example:
                 end_time: "2021-01-01T11:00:00Z"
                 start_time: "2021-01-01T10:00:00Z"
-                uid: session-123
+                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             required:
                 - uid
                 - start_time
@@ -6909,11 +6964,11 @@ components:
                     example: false
                 is_attended:
                     type: boolean
-                    description: Whether the past meeting participant is attended
+                    description: Whether the participant attended this past meeting
                     example: true
                 is_invited:
                     type: boolean
-                    description: Whether the past meeting participant is invited
+                    description: Whether the participant was invited to this past meeting
                     example: true
                 job_title:
                     type: string
@@ -6925,16 +6980,11 @@ components:
                     example: Doe
                     minLength: 1
                     maxLength: 100
-                meeting_uid:
-                    type: string
-                    description: The UID of the meeting
-                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    format: uuid
                 org_name:
                     type: string
                     description: User's organization
                     example: Doloremque ad et aliquam modi assumenda corporis.
-                past_meeting_uid:
+                uid:
                     type: string
                     description: The unique identifier of the past meeting
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -6953,13 +7003,11 @@ components:
                 is_invited: true
                 job_title: Software Engineer
                 last_name: Doe
-                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 org_name: Similique aspernatur.
-                past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 username: Dolorum eveniet culpa est in.
             required:
                 - past_meeting_uid
-                - meeting_uid
                 - email
                 - first_name
                 - last_name
@@ -6988,11 +7036,11 @@ components:
                     example: false
                 is_attended:
                     type: boolean
-                    description: Whether the past meeting participant is attended
+                    description: Whether the participant attended this past meeting
                     example: true
                 is_invited:
                     type: boolean
-                    description: Whether the past meeting participant is invited
+                    description: Whether the participant was invited to this past meeting
                     example: true
                 job_title:
                     type: string
@@ -7004,33 +7052,26 @@ components:
                     example: Doe
                     minLength: 1
                     maxLength: 100
-                meeting_uid:
-                    type: string
-                    description: The UID of the meeting
-                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    format: uuid
                 org_name:
                     type: string
                     description: User's organization
-                    example: Ipsa voluptatibus qui.
+                    example: Dolore ut iure quia molestiae est ut.
                 username:
                     type: string
                     description: User's LF ID
-                    example: Quis aut.
+                    example: Voluptatum voluptatem ipsam.
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
                 first_name: John
-                host: true
+                host: false
                 is_attended: true
                 is_invited: true
                 job_title: Software Engineer
                 last_name: Doe
-                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                org_name: Tenetur et.
-                username: Aut et deleniti omnis animi minus.
+                org_name: Officiis qui error.
+                username: Placeat minima aut sunt consequatur.
             required:
-                - meeting_uid
                 - email
                 - first_name
                 - last_name

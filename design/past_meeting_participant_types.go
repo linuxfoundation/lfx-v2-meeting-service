@@ -10,7 +10,7 @@ import (
 // CreatePastMeetingParticipantPayload represents the payload for creating a past meeting participant
 var CreatePastMeetingParticipantPayload = Type("CreatePastMeetingParticipantPayload", func() {
 	Description("Payload for creating a new past meeting participant")
-	PastMeetingParticipantPastMeetingUIDAttribute()
+	PastMeetingUIDAttribute()
 	RegistrantEmailAttribute()
 	RegistrantFirstNameAttribute()
 	RegistrantLastNameAttribute()
@@ -27,7 +27,7 @@ var CreatePastMeetingParticipantPayload = Type("CreatePastMeetingParticipantPayl
 // UpdatePastMeetingParticipantPayload represents the payload for updating a past meeting participant
 var UpdatePastMeetingParticipantPayload = Type("UpdatePastMeetingParticipantPayload", func() {
 	Description("Payload for updating an existing past meeting participant")
-	PastMeetingParticipantPastMeetingUIDAttribute()
+	PastMeetingUIDAttribute()
 	RegistrantEmailAttribute()
 	RegistrantFirstNameAttribute()
 	RegistrantLastNameAttribute()
