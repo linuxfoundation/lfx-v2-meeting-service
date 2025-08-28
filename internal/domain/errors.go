@@ -9,6 +9,12 @@ import "errors"
 var (
 	// ErrMeetingNotFound is returned when a meeting is not found.
 	ErrMeetingNotFound = errors.New("meeting not found")
+	// ErrPastMeetingNotFound is returned when a past meeting is not found.
+	ErrPastMeetingNotFound = errors.New("past meeting not found")
+	// ErrPastMeetingParticipantNotFound is returned when a past meeting participant is not found.
+	ErrPastMeetingParticipantNotFound = errors.New("past meeting participant not found")
+	// ErrPastMeetingParticipantAlreadyExists is returned when a past meeting participant already exists.
+	ErrPastMeetingParticipantAlreadyExists = errors.New("past meeting participant already exists")
 	// ErrInternal is returned when an internal error occurs.
 	ErrInternal = errors.New("internal error")
 	// ErrRevisionMismatch is returned when a revision mismatch occurs.

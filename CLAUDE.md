@@ -49,7 +49,26 @@ The service supports sending invitation and cancellation emails for meeting regi
 
 ## Architecture Overview
 
-This is a Go microservice built with the Goa framework for generating APIs from design specifications. The service manages meetings and registrants for LF projects with integrations to third-party platforms like Zoom.
+The LFX v2 Meeting Service is a comprehensive microservice built with Go and the Goa framework. It provides robust CRUD operations for meetings and registrants with NATS JetStream persistence and JWT authentication.
+
+The service is built using a clean architecture pattern with the following layers:
+
+- **API Layer**: Goa-generated HTTP handlers and OpenAPI specifications
+- **Service Layer**: Business logic and orchestration
+- **Domain Layer**: Core business models and interfaces
+- **Infrastructure Layer**: NATS persistence, JWT authentication, and messaging
+
+### Key Features
+
+- **Meeting Management**: Complete CRUD operations with platform integration (Zoom support)
+- **Registrant Management**: Registration handling with email uniqueness validation
+- **Historical Tracking**: Past meeting records with session tracking and participant attendance
+- **Webhook Integration**: Platform event processing for real-time meeting state updates
+- **NATS JetStream Storage**: Scalable and resilient data persistence across 5 KV buckets
+- **NATS Messaging**: Event-driven communication with other services
+- **JWT Authentication**: Secure API access via Heimdall integration
+- **OpenAPI Documentation**: Auto-generated API specifications
+- **Comprehensive Testing**: Full unit test coverage with mocks
 
 ### Key Architectural Components
 
@@ -57,11 +76,11 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 
 - Design specifications in `design/` directory define API contracts
 - Generated code in `gen/` directory (HTTP handlers, client, OpenAPI specs)
-- Main API types: meetings and registrants with full CRUD operations
+- Main API types: meetings, registrants, and past meetings with full CRUD operations
 
 **Domain Layer** (`internal/domain/`)
 
-- Core business models in `models/` (Meeting, Registrant, Committee, Recurrence)
+- Core business models in `models/` (Meeting, Registrant, Committee, Recurrence, PastMeeting)
 - Domain interfaces for repository and messaging abstractions
 - Business logic isolated from infrastructure concerns
 
@@ -78,6 +97,11 @@ This is a Go microservice built with the Goa framework for generating APIs from 
 - Zoom integration (`zoom/`) for meeting platform services
 - Webhook handling (`webhook/`) for platform event processing
 - Five NATS KV buckets: "meetings", "meeting-settings", "meeting-registrants", "past-meetings", and "past-meeting-participants"
+
+**Handlers Layer** (`internal/handlers/`)
+
+- Message and webhook event handlers
+- Orchestrates business logic for async event processing
 
 **Middleware** (`internal/middleware/`)
 

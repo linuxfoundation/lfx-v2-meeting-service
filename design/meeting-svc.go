@@ -521,8 +521,337 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// GET all past meetings endpoint
+	Method("get-past-meetings", func() {
+		Description("Get all past meetings.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+		})
+
+		Result(func() {
+			Attribute("past_meetings", ArrayOf(PastMeeting), "Past meetings found")
+			Attribute("cache_control", String, "Cache control header", func() {
+				Example("public, max-age=300")
+			})
+			Required("past_meetings")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Header("cache_control:Cache-Control")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// POST past meeting endpoint
+	Method("create-past-meeting", func() {
+		Description("Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			Extend(CreatePastMeetingPayload)
+			BearerTokenAttribute()
+			VersionAttribute()
+		})
+
+		Result(PastMeeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Conflict", ConflictError, "Past meeting already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/past_meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET past meeting by ID endpoint
+	Method("get-past-meeting", func() {
+		Description("Get a past meeting by ID")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("past_meeting", PastMeeting)
+			EtagAttribute()
+			Required("past_meeting")
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{uid}")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Body("past_meeting")
+				Header("etag:ETag")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE past meeting endpoint by ID
+	Method("delete-past-meeting", func() {
+		Description("Delete an existing past meeting.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			IfMatchAttribute()
+			VersionAttribute()
+			PastMeetingUIDAttribute()
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/past_meetings/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("uid")
+			})
+			Header("bearer_token:Authorization")
+			Header("if_match:If-Match")
+			Response(StatusNoContent)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// TODO: delete this endpoint once the query service supports meeting registrant queries
+	// GET past meeting participants endpoint
+	Method("get-past-meeting-participants", func() {
+		Description("Get all participants for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("participants", ArrayOf(PastMeetingParticipant), "Past meeting participants")
+			Attribute("cache_control", String, "Cache control header", func() {
+				Example("public, max-age=300")
+			})
+			Required("participants")
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{uid}/participants")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Header("cache_control:Cache-Control")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// POST past meeting participant endpoint
+	Method("create-past-meeting-participant", func() {
+		Description("Create a new participant for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			Extend(CreatePastMeetingParticipantPayload)
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingUIDAttribute()
+		})
+
+		Result(PastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("Conflict", ConflictError, "Past meeting participant already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/past_meetings/{uid}/participants")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET past meeting participant by UID endpoint
+	Method("get-past-meeting-participant", func() {
+		Description("Get a specific participant for a past meeting by UID")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingParticipantPastMeetingUIDAttribute()
+			PastMeetingParticipantUIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("participant", PastMeetingParticipant)
+			EtagAttribute()
+			Required("participant")
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting or participant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{past_meeting_uid}/participants/{uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Body("participant")
+				Header("etag:ETag")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// PUT past meeting participant endpoint
+	Method("update-past-meeting-participant", func() {
+		Description("Update an existing participant for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			Extend(UpdatePastMeetingParticipantPayload)
+			BearerTokenAttribute()
+			IfMatchAttribute()
+			VersionAttribute()
+			PastMeetingParticipantPastMeetingUIDAttribute()
+			PastMeetingParticipantUIDAttribute()
+		})
+
+		Result(PastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Past meeting or participant not found")
+		Error("Conflict", ConflictError, "Conflict")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/past_meetings/{past_meeting_uid}/participants/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("past_meeting_uid") // past meeting uid
+				Param("uid")              // past meeting participant uid
+			})
+			Header("bearer_token:Authorization")
+			Header("if_match:If-Match")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE past meeting participant endpoint
+	Method("delete-past-meeting-participant", func() {
+		Description("Delete a participant from a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			IfMatchAttribute()
+			VersionAttribute()
+			PastMeetingParticipantPastMeetingUIDAttribute()
+			PastMeetingParticipantUIDAttribute()
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting or participant not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/past_meetings/{past_meeting_uid}/participants/{uid}")
+			Params(func() {
+				Param("version:v")
+				Param("past_meeting_uid") // past meeting uid
+				Param("uid")              // past meeting participant uid
+			})
+			Header("bearer_token:Authorization")
+			Header("if_match:If-Match")
+			Response(StatusNoContent)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
+		Meta("swagger:generate", "false")
 		Result(Bytes, func() {
 			Example("OK")
 		})
@@ -538,6 +867,7 @@ var _ = Service("Meeting Service", func() {
 
 	Method("livez", func() {
 		Description("Check if the service is alive.")
+		Meta("swagger:generate", "false")
 		Result(Bytes, func() {
 			Example("OK")
 		})
@@ -550,5 +880,16 @@ var _ = Service("Meeting Service", func() {
 	})
 
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
-	Files("/openapi.json", "gen/http/openapi3.json")
+	Files("/openapi.json", "gen/http/openapi.json", func() {
+		Meta("swagger:generate", "false")
+	})
+	Files("/openapi.yaml", "gen/http/openapi.yaml", func() {
+		Meta("swagger:generate", "false")
+	})
+	Files("/openapi3.json", "gen/http/openapi3.json", func() {
+		Meta("swagger:generate", "false")
+	})
+	Files("/openapi3.yaml", "gen/http/openapi3.yaml", func() {
+		Meta("swagger:generate", "false")
+	})
 })

@@ -88,6 +88,7 @@ type ZoomParticipantLeftPayload struct {
 			Duration          int       `json:"duration"`
 			Email             string    `json:"email"`
 			ParticipantUserID string    `json:"participant_user_id"`
+			LeaveReason       string    `json:"leave_reason,omitempty"`
 		} `json:"participant"`
 	} `json:"object"`
 }

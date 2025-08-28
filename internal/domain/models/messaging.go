@@ -17,6 +17,14 @@ const (
 	// The subject is of the form: lfx.index.meeting_registrant
 	IndexMeetingRegistrantSubject = "lfx.index.meeting_registrant"
 
+	// IndexPastMeetingSubject is the subject for the past meeting indexing.
+	// The subject is of the form: lfx.index.past_meeting
+	IndexPastMeetingSubject = "lfx.index.past_meeting"
+
+	// IndexPastMeetingParticipantSubject is the subject for the past meeting participant indexing.
+	// The subject is of the form: lfx.index.past_meeting_participant
+	IndexPastMeetingParticipantSubject = "lfx.index.past_meeting_participant"
+
 	// UpdateAccessMeetingSubject is the subject for the meeting access control updates.
 	// The subject is of the form: lfx.update_access.meeting
 	UpdateAccessMeetingSubject = "lfx.update_access.meeting"
@@ -32,6 +40,22 @@ const (
 	// RemoveRegistrantMeetingSubject is the subject for the meeting registrant access control deletion.
 	// The subject is of the form: lfx.remove_registrant.meeting
 	RemoveRegistrantMeetingSubject = "lfx.remove_registrant.meeting"
+
+	// UpdateAccessPastMeetingSubject is the subject for the past meeting access control updates.
+	// The subject is of the form: lfx.update_access.past_meeting
+	UpdateAccessPastMeetingSubject = "lfx.update_access.past_meeting"
+
+	// DeleteAllAccessPastMeetingSubject is the subject for the past meeting access control deletion.
+	// The subject is of the form: lfx.delete_all_access.past_meeting
+	DeleteAllAccessPastMeetingSubject = "lfx.delete_all_access.past_meeting"
+
+	// PutParticipantPastMeetingSubject is the subject for the past meeting participant access control updates.
+	// The subject is of the form: lfx.put_participant.past_meeting
+	PutParticipantPastMeetingSubject = "lfx.put_participant.past_meeting"
+
+	// RemoveParticipantPastMeetingSubject is the subject for the past meeting participant access control deletion.
+	// The subject is of the form: lfx.remove_participant.past_meeting
+	RemoveParticipantPastMeetingSubject = "lfx.remove_participant.past_meeting"
 )
 
 // NATS wildcard subjects that the meeting service handles messages about.
@@ -109,7 +133,30 @@ type MeetingDeletedMessage struct {
 	MeetingUID string `json:"meeting_uid"`
 }
 
+// PastMeetingAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
+// Past meetings don't have organizers, but they have a reference to the original meeting.
+type PastMeetingAccessMessage struct {
+	UID        string   `json:"uid"`
+	MeetingUID string   `json:"meeting_uid"`
+	Public     bool     `json:"public"`
+	ProjectUID string   `json:"project_uid"`
+	Committees []string `json:"committees"`
+}
+
+// PastMeetingParticipantAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
+type PastMeetingParticipantAccessMessage struct {
+	UID            string `json:"uid"`
+	PastMeetingUID string `json:"past_meeting_uid"`
+	Username       string `json:"username"`
+	Host           bool   `json:"host"`
+	IsInvited      bool   `json:"is_invited"`
+	IsAttended     bool   `json:"is_attended"`
+}
+
 // ZoomWebhookEventMessage is the schema for Zoom webhook events sent via NATS for async processing.
+// This maintains backward compatibility while new handlers can use the typed payload structs.
 type ZoomWebhookEventMessage struct {
 	EventType string                 `json:"event_type"`
 	EventTS   int64                  `json:"event_ts"`

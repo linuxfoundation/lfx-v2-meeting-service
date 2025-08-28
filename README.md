@@ -101,6 +101,7 @@ lfx-v2-meeting-service/
 │   │   ├── messaging/             # NATS messaging implementation
 │   │   └── store/                 # NATS KV store repositories
 │   ├── middleware/                # HTTP middleware
+│   ├── handlers/                  # Message handlers
 │   └── service/                   # Service layer implementation
 ├── pkg/                           # Public packages
 │   ├── constants/                 # Application constants
@@ -270,6 +271,7 @@ internal/infrastructure/zoom/
 - `ZOOM_ACCOUNT_ID`: OAuth Server-to-Server Account ID
 - `ZOOM_CLIENT_ID`: OAuth App Client ID  
 - `ZOOM_CLIENT_SECRET`: OAuth App Client Secret
+- `ZOOM_WEBHOOK_SECRET_TOKEN`: OAuth App webhook secret token
 
 For local development, copy `.env.example` to `.env` and fill in your Zoom credentials from 1Password.
 
@@ -410,10 +412,18 @@ The service publishes messages to the following NATS subjects:
 
 The service handles incoming messages on these subjects:
 
-| Subject | Purpose | Handler |
-|---------|---------|---------|
-| `lfx.meetings-api.get_title` | Meeting title requests | `HandleMeetingGetTitle` |
-| `lfx.meetings-api.meeting_deleted` | Meeting deletion cleanup | `HandleMeetingDeleted` |
+| Subject | Purpose |
+|---------|---------|
+| `lfx.meetings-api.get_title` | Meeting title requests |
+| `lfx.meetings-api.meeting_deleted` | Meeting deletion cleanup |
+| `lfx.webhook.zoom.meeting.started` | Zoom meeting started event |
+| `lfx.webhook.zoom.meeting.ended` | Zoom meeting ended event |
+| `lfx.webhook.zoom.meeting.deleted` | Zoom meeting deleted event |
+| `lfx.webhook.zoom.meeting.summary_completed` | Zoom meeting summary completed event |
+| `lfx.webhook.zoom.meeting.participant_joined` | Zoom meeting participant joined event |
+| `lfx.webhook.zoom.meeting.participant_left` | Zoom meeting participant left event |
+| `lfx.webhook.zoom.meeting.recording.completed` | Zoom meeting recording completed event |
+| `lfx.webhook.zoom.meeting.recording.transcript_completed` | Zoom meeting recording transcript completed event |
 
 ### Message Schemas
 
@@ -453,6 +463,10 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/meetings/{uid}` | GET, PUT, DELETE | Get/update/delete meeting |
 | `/meetings/{uid}/registrants` | GET, POST | List/create registrants |
 | `/meetings/{uid}/registrants/{id}` | GET, PUT, DELETE | Get/update/delete registrant |
+| `/past_meetings` | GET, POST | List/create past meetings |
+| `/past_meetings/{uid}` | GET, DELETE | Get/delete past meeting |
+| `/past_meetings/{uid}/participants` | GET, POST | List/create past meeting participants |
+| `/past_meetings/{uid}/participants/{id}` | GET, PUT, DELETE | Get/update/delete past meeting participant |
 
 ## 🔧 Configuration
 

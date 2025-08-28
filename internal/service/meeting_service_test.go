@@ -4,252 +4,612 @@
 package service
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/auth"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-func TestNewMeetingsService(t *testing.T) {
+// setupServiceForTesting creates a MeetingService with all mock dependencies for testing
+func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {
+	mockRepo := new(mocks.MockMeetingRepository)
+	mockBuilder := new(mocks.MockMessageBuilder)
+	mockPlatformRegistry := new(mocks.MockPlatformRegistry)
+
+	config := ServiceConfig{
+		SkipEtagValidation: false,
+	}
+
+	service := &MeetingService{
+		MeetingRepository: mockRepo,
+		MessageBuilder:    mockBuilder,
+		PlatformRegistry:  mockPlatformRegistry,
+		Config:            config,
+	}
+
+	return service, mockRepo, mockBuilder
+}
+
+func TestMeetingsService_GetMeetings(t *testing.T) {
 	tests := []struct {
-		name string
-		auth auth.IJWTAuth
+		name        string
+		setupMocks  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder)
+		expectedLen int
+		wantErr     bool
+		expectedErr error
 	}{
 		{
-			name: "create service with valid dependencies",
-			auth: &auth.MockJWTAuth{},
+			name: "successful get all meetings",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				now := time.Now()
+				startTime := now.Add(time.Hour * 24)
+				mockRepo.On("ListAll", mock.Anything).Return(
+					[]*models.MeetingBase{
+						{
+							UID:         "meeting-1",
+							Title:       "Test Meeting 1",
+							StartTime:   startTime,
+							Description: "Description 1",
+							CreatedAt:   &now,
+							UpdatedAt:   &now,
+						},
+						{
+							UID:         "meeting-2",
+							Title:       "Test Meeting 2",
+							StartTime:   startTime,
+							Description: "Description 2",
+							CreatedAt:   &now,
+							UpdatedAt:   &now,
+						},
+					},
+					[]*models.MeetingSettings{
+						{
+							UID:        "meeting-1",
+							Organizers: []string{"org1"},
+							CreatedAt:  &now,
+							UpdatedAt:  &now,
+						},
+						{
+							UID:        "meeting-2",
+							Organizers: []string{"org2"},
+							CreatedAt:  &now,
+							UpdatedAt:  &now,
+						},
+					},
+					nil,
+				)
+			},
+			expectedLen: 2,
+			wantErr:     false,
 		},
 		{
-			name: "create service with nil auth",
-			auth: nil,
+			name: "service not ready",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Don't set up repository - will make service not ready
+			},
+			expectedLen: 0,
+			wantErr:     true,
+			expectedErr: domain.ErrServiceUnavailable,
+		},
+		{
+			name: "repository error",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				mockRepo.On("ListAll", mock.Anything).Return(
+					nil, nil, domain.ErrInternal,
+				)
+			},
+			expectedLen: 0,
+			wantErr:     true,
+			expectedErr: domain.ErrInternal,
+		},
+		{
+			name: "empty meetings list",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				mockRepo.On("ListAll", mock.Anything).Return(
+					[]*models.MeetingBase{},
+					[]*models.MeetingSettings{},
+					nil,
+				)
+			},
+			expectedLen: 0,
+			wantErr:     false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service := NewMeetingsService(tt.auth, ServiceConfig{})
+			service, mockRepo, mockBuilder := setupServiceForTesting()
 
-			assert.NotNil(t, service)
-			assert.Equal(t, tt.auth, service.Auth)
-			assert.Nil(t, service.MessageBuilder) // Should be set separately
+			if tt.name == "service not ready" {
+				service.MeetingRepository = nil
+			}
+
+			tt.setupMocks(mockRepo, mockBuilder)
+
+			result, err := service.GetMeetings(context.Background())
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.Equal(t, tt.expectedErr, err)
+				}
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, result, tt.expectedLen)
+			}
+
+			mockRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
 		})
 	}
 }
 
-func TestMeetingsService_ServiceReady(t *testing.T) {
+func TestMeetingsService_CreateMeeting(t *testing.T) {
 	tests := []struct {
-		name          string
-		setupService  func() *MeetingsService
-		expectedReady bool
+		name        string
+		payload     *models.MeetingFull
+		setupMocks  func(*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder)
+		wantErr     bool
+		expectedErr error
+		validate    func(*testing.T, *models.MeetingFull)
 	}{
 		{
-			name: "service ready with all dependencies",
-			setupService: func() *MeetingsService {
-				return &MeetingsService{
-					MeetingRepository:                &domain.MockMeetingRepository{},
-					RegistrantRepository:             &domain.MockRegistrantRepository{},
-					PastMeetingRepository:            &domain.MockPastMeetingRepository{},
-					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
-					MessageBuilder:                   &domain.MockMessageBuilder{},
-					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					Auth:                             &auth.MockJWTAuth{},
-				}
+			name: "successful meeting creation",
+			payload: &models.MeetingFull{
+				Base: &models.MeetingBase{
+					Title:       "Test Meeting",
+					StartTime:   time.Now().Add(time.Hour * 24),
+					ProjectUID:  "project-123",
+					Description: "Test Description",
+					Platform:    "Zoom",
+				},
+				Settings: &models.MeetingSettings{
+					Organizers: []string{"org1"},
+				},
 			},
-			expectedReady: true,
+			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Set up platform registry mock
+				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
+				mockProvider := &mocks.MockPlatformProvider{}
+				mockProvider.On("CreateMeeting", mock.Anything, mock.Anything).Return(&domain.CreateMeetingResult{
+					PlatformMeetingID: "zoom-meeting-123",
+					JoinURL:           "https://zoom.us/j/123456789",
+					Passcode:          "test-pass",
+				}, nil)
+				mockProvider.On("StorePlatformData", mock.Anything, mock.Anything)
+				mockPlatformRegistry.On("GetProvider", "Zoom").Return(mockProvider, nil)
+
+				// Set up repository and message builder mocks
+				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(nil)
+				mockBuilder.On("SendIndexMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
+				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.Anything).Return(nil)
+			},
+			wantErr: false,
+			validate: func(t *testing.T, result *models.MeetingFull) {
+				assert.NotNil(t, result)
+				assert.NotNil(t, result.Base.UID)
+				assert.Equal(t, "Test Meeting", result.Base.Title)
+			},
 		},
 		{
-			name: "service not ready - missing repository",
-			setupService: func() *MeetingsService {
-				return &MeetingsService{
-					MeetingRepository:                nil,
-					RegistrantRepository:             &domain.MockRegistrantRepository{},
-					PastMeetingRepository:            &domain.MockPastMeetingRepository{},
-					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
-					MessageBuilder:                   &domain.MockMessageBuilder{},
-					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					Auth:                             &auth.MockJWTAuth{},
-				}
+			name: "service not ready",
+			payload: &models.MeetingFull{
+				Base: &models.MeetingBase{
+					Title:       "Test Meeting",
+					StartTime:   time.Now().Add(time.Hour * 24),
+					ProjectUID:  "project-123",
+					Description: "Test Description",
+					Platform:    "Zoom",
+				},
+				Settings: &models.MeetingSettings{
+					Organizers: []string{"org1"},
+				},
 			},
-			expectedReady: false,
+			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Service will not be ready - no mocks needed
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrServiceUnavailable,
 		},
 		{
-			name: "service not ready - missing message builder",
-			setupService: func() *MeetingsService {
-				return &MeetingsService{
-					MeetingRepository:                &domain.MockMeetingRepository{},
-					RegistrantRepository:             &domain.MockRegistrantRepository{},
-					PastMeetingRepository:            &domain.MockPastMeetingRepository{},
-					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
-					MessageBuilder:                   nil,
-					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					Auth:                             &auth.MockJWTAuth{},
-				}
+			name: "repository creation error",
+			payload: &models.MeetingFull{
+				Base: &models.MeetingBase{
+					Title:       "Test Meeting",
+					StartTime:   time.Now().Add(time.Hour * 24),
+					ProjectUID:  "project-123",
+					Description: "Test Description",
+					Platform:    "Zoom",
+				},
+				Settings: &models.MeetingSettings{
+					Organizers: []string{"org1"},
+				},
 			},
-			expectedReady: false,
-		},
-		{
-			name: "service not ready - missing registrant repository",
-			setupService: func() *MeetingsService {
-				return &MeetingsService{
-					MeetingRepository:                &domain.MockMeetingRepository{},
-					RegistrantRepository:             nil,
-					PastMeetingRepository:            &domain.MockPastMeetingRepository{},
-					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
-					MessageBuilder:                   &domain.MockMessageBuilder{},
-					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					Auth:                             &auth.MockJWTAuth{},
-				}
+			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Set up platform registry mock for cleanup on error
+				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
+				mockProvider := &mocks.MockPlatformProvider{}
+				mockProvider.On("CreateMeeting", mock.Anything, mock.Anything).Return(&domain.CreateMeetingResult{
+					PlatformMeetingID: "zoom-meeting-123",
+					JoinURL:           "https://zoom.us/j/123456789",
+					Passcode:          "test-pass",
+				}, nil)
+				mockProvider.On("StorePlatformData", mock.Anything, mock.Anything)
+				mockProvider.On("GetPlatformMeetingID", mock.Anything).Return("zoom-meeting-123")
+				mockProvider.On("DeleteMeeting", mock.Anything, mock.Anything).Return(nil)
+				mockPlatformRegistry.On("GetProvider", "Zoom").Return(mockProvider, nil)
+
+				// Repository returns error to test cleanup
+				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(domain.ErrInternal)
 			},
-			expectedReady: false,
-		},
-		{
-			name: "service not ready - missing platform registry",
-			setupService: func() *MeetingsService {
-				return &MeetingsService{
-					MeetingRepository:                &domain.MockMeetingRepository{},
-					RegistrantRepository:             &domain.MockRegistrantRepository{},
-					PastMeetingRepository:            &domain.MockPastMeetingRepository{},
-					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
-					MessageBuilder:                   &domain.MockMessageBuilder{},
-					PlatformRegistry:                 nil,
-					Auth:                             &auth.MockJWTAuth{},
-				}
-			},
-			expectedReady: false,
-		},
-		{
-			name: "service not ready - missing both critical dependencies",
-			setupService: func() *MeetingsService {
-				return &MeetingsService{
-					MeetingRepository:                nil,
-					RegistrantRepository:             nil,
-					PastMeetingRepository:            nil,
-					PastMeetingParticipantRepository: nil,
-					MessageBuilder:                   nil,
-					PlatformRegistry:                 nil,
-					Auth:                             &auth.MockJWTAuth{},
-				}
-			},
-			expectedReady: false,
-		},
-		{
-			name: "service ready without auth (auth is not checked in ServiceReady)",
-			setupService: func() *MeetingsService {
-				return &MeetingsService{
-					MeetingRepository:                &domain.MockMeetingRepository{},
-					RegistrantRepository:             &domain.MockRegistrantRepository{},
-					PastMeetingRepository:            &domain.MockPastMeetingRepository{},
-					PastMeetingParticipantRepository: &domain.MockPastMeetingParticipantRepository{},
-					MessageBuilder:                   &domain.MockMessageBuilder{},
-					PlatformRegistry:                 &domain.MockPlatformRegistry{},
-					Auth:                             nil,
-				}
-			},
-			expectedReady: true,
+			wantErr:     true,
+			expectedErr: domain.ErrInternal,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service := tt.setupService()
-			ready := service.ServiceReady()
-			assert.Equal(t, tt.expectedReady, ready)
+			service, mockRepo, mockBuilder := setupServiceForTesting()
+
+			if tt.name == "service not ready" {
+				service.MeetingRepository = nil
+			}
+
+			tt.setupMocks(service, mockRepo, mockBuilder)
+
+			result, err := service.CreateMeeting(context.Background(), tt.payload)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.Equal(t, tt.expectedErr, err)
+				}
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, result)
+				if tt.validate != nil {
+					tt.validate(t, result)
+				}
+			}
+
+			mockRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
+			if tt.name != "service not ready" {
+				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
+				mockPlatformRegistry.AssertExpectations(t)
+			}
 		})
 	}
 }
 
-func TestMeetingsService_Dependencies(t *testing.T) {
-	t.Run("service maintains dependency references", func(t *testing.T) {
-		mockRepo := &domain.MockMeetingRepository{}
-		mockRegistrantRepo := &domain.MockRegistrantRepository{}
-		mockPastMeetingRepo := &domain.MockPastMeetingRepository{}
-		mockPastMeetingParticipantRepo := &domain.MockPastMeetingParticipantRepository{}
-		mockAuth := &auth.MockJWTAuth{}
-		mockBuilder := &domain.MockMessageBuilder{}
+func TestMeetingsService_GetMeetingBase(t *testing.T) {
+	now := time.Now()
 
-		service := NewMeetingsService(mockAuth, ServiceConfig{})
-		service.MeetingRepository = mockRepo
-		service.RegistrantRepository = mockRegistrantRepo
-		service.PastMeetingRepository = mockPastMeetingRepo
-		service.PastMeetingParticipantRepository = mockPastMeetingParticipantRepo
-		service.MessageBuilder = mockBuilder
+	tests := []struct {
+		name        string
+		uid         string
+		setupMocks  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder)
+		wantErr     bool
+		expectedErr error
+		validate    func(*testing.T, *models.MeetingBase, string)
+	}{
+		{
+			name: "successful get meeting",
+			uid:  "test-meeting-uid",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				mockRepo.On("GetBaseWithRevision", mock.Anything, "test-meeting-uid").Return(
+					&models.MeetingBase{
+						UID:         "test-meeting-uid",
+						Title:       "Test Meeting",
+						StartTime:   now.Add(time.Hour * 24),
+						Description: "Test Description",
+						CreatedAt:   &now,
+						UpdatedAt:   &now,
+					},
+					uint64(123),
+					nil,
+				)
+			},
+			wantErr: false,
+			validate: func(t *testing.T, result *models.MeetingBase, etag string) {
+				assert.NotNil(t, result)
+				assert.Equal(t, "test-meeting-uid", result.UID)
+				assert.Equal(t, "Test Meeting", result.Title)
+				assert.Equal(t, "123", etag)
+			},
+		},
+		{
+			name: "meeting not found",
+			uid:  "non-existent-uid",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				mockRepo.On("GetBaseWithRevision", mock.Anything, "non-existent-uid").Return(
+					nil, uint64(0), domain.ErrMeetingNotFound,
+				)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrMeetingNotFound,
+		},
+		{
+			name: "empty UID",
+			uid:  "",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Repository is called even with empty UID, but returns error
+				mockRepo.On("GetBaseWithRevision", mock.Anything, "").Return(
+					nil, uint64(0), domain.ErrValidationFailed,
+				)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrInternal,
+		},
+	}
 
-		// Verify dependencies are correctly set
-		assert.Same(t, mockRepo, service.MeetingRepository)
-		assert.Same(t, mockRegistrantRepo, service.RegistrantRepository)
-		assert.Same(t, mockPastMeetingRepo, service.PastMeetingRepository)
-		assert.Same(t, mockPastMeetingParticipantRepo, service.PastMeetingParticipantRepository)
-		assert.Same(t, mockAuth, service.Auth)
-		assert.Same(t, mockBuilder, service.MessageBuilder)
-	})
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service, mockRepo, mockBuilder := setupServiceForTesting()
+			tt.setupMocks(mockRepo, mockBuilder)
 
-func TestMeetingsService_Interfaces(t *testing.T) {
-	t.Run("service implements MessageHandler interface", func(t *testing.T) {
-		service := &MeetingsService{}
-		assert.Implements(t, (*domain.MessageHandler)(nil), service)
-	})
-}
+			result, etag, err := service.GetMeetingBase(context.Background(), tt.uid)
 
-// Setup helper for common test scenarios
-func setupServiceForTesting() (*MeetingsService, *domain.MockMeetingRepository, *domain.MockMessageBuilder, *auth.MockJWTAuth) {
-	mockRepo := &domain.MockMeetingRepository{}
-	mockBuilder := &domain.MockMessageBuilder{}
-	mockAuth := &auth.MockJWTAuth{}
-	mockEmailService := &domain.MockEmailService{}
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.Equal(t, tt.expectedErr, err)
+				}
+				assert.Nil(t, result)
+				assert.Empty(t, etag)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, result)
+				if tt.validate != nil {
+					tt.validate(t, result, etag)
+				}
+			}
 
-	service := NewMeetingsService(mockAuth, ServiceConfig{})
-	service.MeetingRepository = mockRepo
-	service.RegistrantRepository = &domain.MockRegistrantRepository{}
-	service.PastMeetingRepository = &domain.MockPastMeetingRepository{}
-	service.PastMeetingParticipantRepository = &domain.MockPastMeetingParticipantRepository{}
-	service.MessageBuilder = mockBuilder
-	service.PlatformRegistry = &domain.MockPlatformRegistry{}
-	service.EmailService = mockEmailService
-
-	return service, mockRepo, mockBuilder, mockAuth
-}
-
-// Mock message for testing
-type mockMessage struct {
-	subject  string
-	data     []byte
-	hasReply bool
-	mock.Mock
-}
-
-func (m *mockMessage) Subject() string {
-	return m.subject
-}
-
-func (m *mockMessage) Data() []byte {
-	return m.data
-}
-
-func (m *mockMessage) Respond(data []byte) error {
-	args := m.Called(data)
-	return args.Error(0)
-}
-
-func (m *mockMessage) HasReply() bool {
-	return m.hasReply
-}
-
-func newMockMessage(subject string, data []byte) *mockMessage {
-	return &mockMessage{
-		subject: subject,
-		data:    data,
-		// Default to true for backward compatibility with existing tests
-		hasReply: true,
+			mockRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
+		})
 	}
 }
 
-func newMockMessageNoReply(subject string, data []byte) *mockMessage {
-	return &mockMessage{
-		subject:  subject,
-		data:     data,
-		hasReply: false,
+func TestMeetingsService_GetMeetingSettings(t *testing.T) {
+	tests := []struct {
+		name        string
+		uid         string
+		setupMocks  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder)
+		wantErr     bool
+		expectedErr error
+		validate    func(*testing.T, *models.MeetingSettings, string)
+	}{
+		{
+			name: "successful get meeting settings",
+			uid:  "meeting-123",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				now := time.Now()
+				mockRepo.On("GetSettingsWithRevision", mock.Anything, "meeting-123").Return(&models.MeetingSettings{
+					UID:        "meeting-123",
+					Organizers: []string{"org1", "org2"},
+					CreatedAt:  &now,
+					UpdatedAt:  &now,
+				}, uint64(1), nil)
+			},
+			wantErr: false,
+			validate: func(t *testing.T, result *models.MeetingSettings, etag string) {
+				assert.NotNil(t, result)
+				assert.Equal(t, "meeting-123", result.UID)
+				assert.Len(t, result.Organizers, 2)
+				assert.Equal(t, "1", etag)
+			},
+		},
+		{
+			name: "meeting settings not found",
+			uid:  "nonexistent-meeting",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				mockRepo.On("GetSettingsWithRevision", mock.Anything, "nonexistent-meeting").Return(nil, uint64(0), domain.ErrMeetingNotFound)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrMeetingNotFound,
+		},
+		{
+			name: "empty UID",
+			uid:  "",
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Repository is called with empty UID but should return validation error
+				mockRepo.On("GetSettingsWithRevision", mock.Anything, "").Return(nil, uint64(0), domain.ErrValidationFailed)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrInternal, // Service wraps validation errors as internal errors
+		},
+		{
+			name:        "service not ready",
+			uid:         "meeting-123",
+			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrServiceUnavailable,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service, mockRepo, mockBuilder := setupServiceForTesting()
+
+			if tt.name == "service not ready" {
+				service.MeetingRepository = nil
+			}
+
+			tt.setupMocks(mockRepo, mockBuilder)
+
+			result, etag, err := service.GetMeetingSettings(context.Background(), tt.uid)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.Equal(t, tt.expectedErr, err)
+				}
+				assert.Nil(t, result)
+				assert.Empty(t, etag)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, result)
+				if tt.validate != nil {
+					tt.validate(t, result, etag)
+				}
+			}
+
+			mockRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
+		})
+	}
+}
+
+func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
+	tests := []struct {
+		name        string
+		settings    *models.MeetingSettings
+		revision    uint64
+		setupMocks  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder)
+		wantErr     bool
+		expectedErr error
+		validate    func(*testing.T, *models.MeetingSettings)
+	}{
+		{
+			name: "successful update meeting settings",
+			settings: &models.MeetingSettings{
+				UID:        "meeting-123",
+				Organizers: []string{"org3", "org4"},
+			},
+			revision: 1,
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				now := time.Now()
+				existingSettings := &models.MeetingSettings{
+					UID:        "meeting-123",
+					Organizers: []string{"org1", "org2"},
+					CreatedAt:  &now,
+					UpdatedAt:  &now,
+				}
+
+				mockRepo.On("GetSettings", mock.Anything, "meeting-123").Return(existingSettings, nil)
+				mockRepo.On("UpdateSettings", mock.Anything, mock.MatchedBy(func(settings *models.MeetingSettings) bool {
+					return settings.UID == "meeting-123" &&
+						len(settings.Organizers) == 2 &&
+						settings.Organizers[0] == "org3" &&
+						settings.Organizers[1] == "org4" &&
+						settings.CreatedAt.Equal(now)
+				}), uint64(1)).Return(nil)
+
+				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionUpdated, mock.Anything).Return(nil)
+
+				mockRepo.On("GetBase", mock.Anything, "meeting-123").Return(&models.MeetingBase{
+					UID:        "meeting-123",
+					Title:      "Test Meeting",
+					ProjectUID: "project-123",
+					Visibility: "public",
+					Committees: []models.Committee{{UID: "committee-123"}},
+				}, nil)
+
+				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.MatchedBy(func(msg models.MeetingAccessMessage) bool {
+					return msg.UID == "meeting-123" &&
+						msg.ProjectUID == "project-123" &&
+						msg.Public == true &&
+						len(msg.Organizers) == 2 &&
+						msg.Organizers[0] == "org3" &&
+						msg.Organizers[1] == "org4"
+				})).Return(nil)
+			},
+			wantErr: false,
+			validate: func(t *testing.T, result *models.MeetingSettings) {
+				assert.NotNil(t, result)
+				assert.Equal(t, "meeting-123", result.UID)
+				assert.Len(t, result.Organizers, 2)
+				assert.Equal(t, "org3", result.Organizers[0])
+				assert.Equal(t, "org4", result.Organizers[1])
+			},
+		},
+		{
+			name: "meeting settings not found",
+			settings: &models.MeetingSettings{
+				UID:        "nonexistent-meeting",
+				Organizers: []string{"org1"},
+			},
+			revision: 1,
+			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+				mockRepo.On("GetSettings", mock.Anything, "nonexistent-meeting").Return(nil, domain.ErrMeetingNotFound)
+			},
+			wantErr:     true,
+			expectedErr: domain.ErrMeetingNotFound,
+		},
+		{
+			name:        "nil settings",
+			settings:    nil,
+			revision:    1,
+			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrValidationFailed,
+		},
+		{
+			name: "service not ready",
+			settings: &models.MeetingSettings{
+				UID:        "meeting-123",
+				Organizers: []string{"org1"},
+			},
+			revision:    1,
+			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrServiceUnavailable,
+		},
+		{
+			name: "empty UID",
+			settings: &models.MeetingSettings{
+				UID:        "",
+				Organizers: []string{"org1"},
+			},
+			revision:    1,
+			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
+			wantErr:     true,
+			expectedErr: domain.ErrValidationFailed,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service, mockRepo, mockBuilder := setupServiceForTesting()
+
+			if tt.name == "service not ready" {
+				service.MeetingRepository = nil
+			}
+
+			if tt.name == "skip etag validation mode" {
+				service.Config.SkipEtagValidation = true
+			}
+
+			tt.setupMocks(mockRepo, mockBuilder)
+
+			result, err := service.UpdateMeetingSettings(context.Background(), tt.settings, tt.revision)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.expectedErr != nil {
+					assert.Equal(t, tt.expectedErr, err)
+				}
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, result)
+				if tt.validate != nil {
+					tt.validate(t, result)
+				}
+			}
+
+			mockRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
+		})
 	}
 }
