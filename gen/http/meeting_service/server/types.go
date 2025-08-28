@@ -481,9 +481,9 @@ type CreateMeetingRegistrantResponseBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -524,9 +524,9 @@ type UpdateMeetingRegistrantResponseBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -659,9 +659,9 @@ type CreatePastMeetingParticipantResponseBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -706,9 +706,9 @@ type UpdatePastMeetingParticipantResponseBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -1852,9 +1852,9 @@ type RegistrantResponseBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -1968,9 +1968,9 @@ type PastMeetingParticipantResponseBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -3689,8 +3689,8 @@ func NewGetMeetingRegistrantsPayload(uid string, version *string, bearerToken *s
 func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody, meetingUID string, version *string, bearerToken *string) *meetingservice.CreateMeetingRegistrantPayload {
 	v := &meetingservice.CreateMeetingRegistrantPayload{
 		Email:        *body.Email,
-		FirstName:    *body.FirstName,
-		LastName:     *body.LastName,
+		FirstName:    body.FirstName,
+		LastName:     body.LastName,
 		Host:         body.Host,
 		JobTitle:     body.JobTitle,
 		OrgName:      body.OrgName,
@@ -3722,8 +3722,8 @@ func NewGetMeetingRegistrantPayload(meetingUID string, uid string, version *stri
 func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody, meetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdateMeetingRegistrantPayload {
 	v := &meetingservice.UpdateMeetingRegistrantPayload{
 		Email:        *body.Email,
-		FirstName:    *body.FirstName,
-		LastName:     *body.LastName,
+		FirstName:    body.FirstName,
+		LastName:     body.LastName,
 		Host:         body.Host,
 		JobTitle:     body.JobTitle,
 		OrgName:      body.OrgName,
@@ -3866,8 +3866,8 @@ func NewCreatePastMeetingParticipantPayload(body *CreatePastMeetingParticipantRe
 	v := &meetingservice.CreatePastMeetingParticipantPayload{
 		PastMeetingUID: *body.PastMeetingUID,
 		Email:          *body.Email,
-		FirstName:      *body.FirstName,
-		LastName:       *body.LastName,
+		FirstName:      body.FirstName,
+		LastName:       body.LastName,
 		Host:           body.Host,
 		JobTitle:       body.JobTitle,
 		OrgName:        body.OrgName,
@@ -3900,8 +3900,8 @@ func NewGetPastMeetingParticipantPayload(pastMeetingUID string, uid string, vers
 func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRequestBody, pastMeetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdatePastMeetingParticipantPayload {
 	v := &meetingservice.UpdatePastMeetingParticipantPayload{
 		Email:      *body.Email,
-		FirstName:  *body.FirstName,
-		LastName:   *body.LastName,
+		FirstName:  body.FirstName,
+		LastName:   body.LastName,
 		Host:       body.Host,
 		JobTitle:   body.JobTitle,
 		OrgName:    body.OrgName,
@@ -4102,12 +4102,6 @@ func ValidateCreateMeetingRegistrantRequestBody(body *CreateMeetingRegistrantReq
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
@@ -4145,12 +4139,6 @@ func ValidateCreateMeetingRegistrantRequestBody(body *CreateMeetingRegistrantReq
 func ValidateUpdateMeetingRegistrantRequestBody(body *UpdateMeetingRegistrantRequestBody) (err error) {
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
-	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
 	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -4325,12 +4313,6 @@ func ValidateCreatePastMeetingParticipantRequestBody(body *CreatePastMeetingPart
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
 	if body.PastMeetingUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", *body.PastMeetingUID, goa.FormatUUID))
 	}
@@ -4368,12 +4350,6 @@ func ValidateCreatePastMeetingParticipantRequestBody(body *CreatePastMeetingPart
 func ValidateUpdatePastMeetingParticipantRequestBody(body *UpdatePastMeetingParticipantRequestBody) (err error) {
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
-	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
 	}
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
