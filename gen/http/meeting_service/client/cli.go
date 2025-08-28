@@ -1133,8 +1133,9 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreatePastMeetingParticipantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Ipsam fugiat quis qui quam explicabo molestiae.\",\n      \"username\": \"Iste non commodi sint sed est.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Ipsam fugiat quis qui quam explicabo molestiae.\",\n      \"past_meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"username\": \"Iste non commodi sint sed est.\"\n   }'")
 		}
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", body.PastMeetingUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if utf8.RuneCountInString(body.FirstName) < 1 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 1, true))
@@ -1182,16 +1183,17 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 		}
 	}
 	v := &meetingservice.CreatePastMeetingParticipantPayload{
-		Email:      body.Email,
-		FirstName:  body.FirstName,
-		LastName:   body.LastName,
-		Host:       body.Host,
-		JobTitle:   body.JobTitle,
-		OrgName:    body.OrgName,
-		AvatarURL:  body.AvatarURL,
-		Username:   body.Username,
-		IsInvited:  body.IsInvited,
-		IsAttended: body.IsAttended,
+		PastMeetingUID: body.PastMeetingUID,
+		Email:          body.Email,
+		FirstName:      body.FirstName,
+		LastName:       body.LastName,
+		Host:           body.Host,
+		JobTitle:       body.JobTitle,
+		OrgName:        body.OrgName,
+		AvatarURL:      body.AvatarURL,
+		Username:       body.Username,
+		IsInvited:      body.IsInvited,
+		IsAttended:     body.IsAttended,
 	}
 	v.UID = &uid
 	v.Version = version

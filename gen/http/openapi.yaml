@@ -1118,7 +1118,7 @@ paths:
                   format: uuid
                 - name: uid
                   in: path
-                  description: The unique identifier of the past meeting
+                  description: The UID of the past meeting participant
                   required: true
                   type: string
                   format: uuid
@@ -2661,6 +2661,11 @@ definitions:
                 type: string
                 description: User's organization
                 example: Minus qui iure molestiae et consequatur amet.
+            past_meeting_uid:
+                type: string
+                description: The unique identifier of the past meeting
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
             username:
                 type: string
                 description: User's LF ID
@@ -2675,6 +2680,7 @@ definitions:
             job_title: Software Engineer
             last_name: Doe
             org_name: Accusamus at nam et voluptatem qui vitae.
+            past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             username: Sunt laudantium non et nostrum saepe.
         required:
             - past_meeting_uid

@@ -184,6 +184,8 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 				PastMeetingUID: participant.PastMeetingUID,
 				Username:       participant.Username,
 				Host:           participant.Host,
+				IsInvited:      participant.IsInvited,
+				IsAttended:     participant.IsAttended,
 			})
 		},
 	}
@@ -360,6 +362,8 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 				PastMeetingUID: participant.PastMeetingUID,
 				Username:       participant.Username,
 				Host:           participant.Host,
+				IsInvited:      participant.IsInvited,
+				IsAttended:     participant.IsAttended,
 			})
 		},
 	}
@@ -461,6 +465,8 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 				PastMeetingUID: participant.PastMeetingUID,
 				Username:       participant.Username,
 				Host:           participant.Host,
+				IsInvited:      participant.IsInvited,
+				IsAttended:     participant.IsAttended,
 			})
 		},
 	}

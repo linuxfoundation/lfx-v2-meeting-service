@@ -11,6 +11,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/api"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/webhook"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
 // ZoomConfig holds Zoom-specific configuration
@@ -71,7 +72,7 @@ func SetupZoom(config ZoomConfig) ZoomConfig {
 		slog.Info("Zoom webhook validation configured")
 		config.Validator = validator
 	} else {
-		slog.Warn("Zoom webhook validation not configured")
+		slog.Warn("Zoom webhook validation not configured", logging.PriorityCritical())
 	}
 
 	return config

@@ -206,6 +206,8 @@ type CreatePastMeetingParticipantPayload struct {
 	Version *string
 	// The unique identifier of the past meeting
 	UID *string
+	// The unique identifier of the past meeting
+	PastMeetingUID string
 	// User's email address
 	Email string
 	// User's first name
@@ -1069,7 +1071,7 @@ type UpdatePastMeetingParticipantPayload struct {
 	Version *string
 	// The unique identifier of the past meeting
 	PastMeetingUID string
-	// The unique identifier of the past meeting
+	// The UID of the past meeting participant
 	UID *string
 	// User's email address
 	Email string

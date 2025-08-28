@@ -2585,11 +2585,11 @@ paths:
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - name: uid
                   in: path
-                  description: The unique identifier of the past meeting
+                  description: The UID of the past meeting participant
                   required: true
                   schema:
                     type: string
-                    description: The unique identifier of the past meeting
+                    description: The UID of the past meeting participant
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -3088,7 +3088,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/CreatePastMeetingParticipantRequestBody'
+                            $ref: '#/components/schemas/CreatePastMeetingParticipantPayload'
                         example:
                             avatar_url: https://example.com/avatar.jpg
                             email: user@example.com
@@ -3099,6 +3099,7 @@ paths:
                             job_title: Software Engineer
                             last_name: Doe
                             org_name: Ipsam fugiat quis qui quam explicabo molestiae.
+                            past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             username: Iste non commodi sint sed est.
             responses:
                 "201":
@@ -3213,8 +3214,8 @@ paths:
                   schema:
                     type: string
                     description: HMAC-SHA256 signature of the request body
-                    example: Et veniam.
-                  example: Voluptas id.
+                    example: Repellat dolore ut iure quia molestiae est.
+                  example: Sunt voluptatum voluptatem ipsam omnis officiis officiis.
                 - name: x-zm-request-timestamp
                   in: header
                   description: Timestamp when the webhook was sent
@@ -3222,8 +3223,8 @@ paths:
                   schema:
                     type: string
                     description: Timestamp when the webhook was sent
-                    example: Sit aut numquam quidem cum nulla quidem.
-                  example: Reprehenderit ex iusto vel iste eius aut.
+                    example: Error commodi.
+                  example: Minima aut.
             requestBody:
                 required: true
                 content:
@@ -3620,7 +3621,7 @@ components:
                     type: string
                     description: User's organization
                     example: Modi est ea.
-                uid:
+                past_meeting_uid:
                     type: string
                     description: The unique identifier of the past meeting
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -3640,73 +3641,8 @@ components:
                 job_title: Software Engineer
                 last_name: Doe
                 org_name: Rerum commodi.
-                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 username: Fugit voluptatem deleniti debitis esse.
-            required:
-                - past_meeting_uid
-                - email
-                - first_name
-                - last_name
-        CreatePastMeetingParticipantRequestBody:
-            type: object
-            properties:
-                avatar_url:
-                    type: string
-                    description: User's avatar URL
-                    example: https://example.com/avatar.jpg
-                    format: uri
-                email:
-                    type: string
-                    description: User's email address
-                    example: user@example.com
-                    format: email
-                first_name:
-                    type: string
-                    description: User's first name
-                    example: John
-                    minLength: 1
-                    maxLength: 100
-                host:
-                    type: boolean
-                    description: If user should have access as a meeting host
-                    example: false
-                is_attended:
-                    type: boolean
-                    description: Whether the participant attended this past meeting
-                    example: true
-                is_invited:
-                    type: boolean
-                    description: Whether the participant was invited to this past meeting
-                    example: true
-                job_title:
-                    type: string
-                    description: User's job title
-                    example: Software Engineer
-                last_name:
-                    type: string
-                    description: User's last name
-                    example: Doe
-                    minLength: 1
-                    maxLength: 100
-                org_name:
-                    type: string
-                    description: User's organization
-                    example: Ipsa voluptatibus qui.
-                username:
-                    type: string
-                    description: User's LF ID
-                    example: Quis aut.
-            example:
-                avatar_url: https://example.com/avatar.jpg
-                email: user@example.com
-                first_name: John
-                host: true
-                is_attended: true
-                is_invited: true
-                job_title: Software Engineer
-                last_name: Doe
-                org_name: Tenetur et.
-                username: Aut et deleniti omnis animi minus.
             required:
                 - past_meeting_uid
                 - email
@@ -6984,7 +6920,7 @@ components:
                     type: string
                     description: User's organization
                     example: Doloremque ad et aliquam modi assumenda corporis.
-                uid:
+                past_meeting_uid:
                     type: string
                     description: The unique identifier of the past meeting
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -7004,7 +6940,7 @@ components:
                 job_title: Software Engineer
                 last_name: Doe
                 org_name: Similique aspernatur.
-                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 username: Dolorum eveniet culpa est in.
             required:
                 - past_meeting_uid
@@ -7055,22 +6991,22 @@ components:
                 org_name:
                     type: string
                     description: User's organization
-                    example: Dolore ut iure quia molestiae est ut.
+                    example: Ipsa voluptatibus qui.
                 username:
                     type: string
                     description: User's LF ID
-                    example: Voluptatum voluptatem ipsam.
+                    example: Quis aut.
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
                 first_name: John
-                host: false
+                host: true
                 is_attended: true
                 is_invited: true
                 job_title: Software Engineer
                 last_name: Doe
-                org_name: Officiis qui error.
-                username: Placeat minima aut sunt consequatur.
+                org_name: Tenetur et.
+                username: Aut et deleniti omnis animi minus.
             required:
                 - email
                 - first_name

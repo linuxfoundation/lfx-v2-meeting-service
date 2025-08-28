@@ -36,29 +36,6 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    # TODO: remove this rule once we remove the list meetings endpoint.
-    # It is not meant to be used by applications, it should only be used
-    # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:list"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /meetings
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        # This rule is on an endpoint that is just used for local development,
-        # it will get removed once we remove the list meetings endpoint.
-        - authorizer: allow_all
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
     - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:get"
       match:
         methods:

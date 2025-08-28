@@ -237,6 +237,8 @@ type CreatePastMeetingRequestBody struct {
 // CreatePastMeetingParticipantRequestBody is the type of the "Meeting Service"
 // service "create-past-meeting-participant" endpoint HTTP request body.
 type CreatePastMeetingParticipantRequestBody struct {
+	// The unique identifier of the past meeting
+	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
@@ -2287,16 +2289,17 @@ func NewCreatePastMeetingRequestBody(p *meetingservice.CreatePastMeetingPayload)
 // "Meeting Service" service.
 func NewCreatePastMeetingParticipantRequestBody(p *meetingservice.CreatePastMeetingParticipantPayload) *CreatePastMeetingParticipantRequestBody {
 	body := &CreatePastMeetingParticipantRequestBody{
-		Email:      p.Email,
-		FirstName:  p.FirstName,
-		LastName:   p.LastName,
-		Host:       p.Host,
-		JobTitle:   p.JobTitle,
-		OrgName:    p.OrgName,
-		AvatarURL:  p.AvatarURL,
-		Username:   p.Username,
-		IsInvited:  p.IsInvited,
-		IsAttended: p.IsAttended,
+		PastMeetingUID: p.PastMeetingUID,
+		Email:          p.Email,
+		FirstName:      p.FirstName,
+		LastName:       p.LastName,
+		Host:           p.Host,
+		JobTitle:       p.JobTitle,
+		OrgName:        p.OrgName,
+		AvatarURL:      p.AvatarURL,
+		Username:       p.Username,
+		IsInvited:      p.IsInvited,
+		IsAttended:     p.IsAttended,
 	}
 	return body
 }

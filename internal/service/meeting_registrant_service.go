@@ -243,6 +243,12 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 		return nil, "", domain.ErrInternal
 	}
 
+	// Ensure the registrant belongs to the requested meeting
+	if registrant.MeetingUID != meetingUID {
+		slog.WarnContext(ctx, "found registrant does not belong to requested meeting", logging.ErrKey, domain.ErrRegistrantNotFound)
+		return nil, "", domain.ErrRegistrantNotFound
+	}
+
 	// Store the revision in context for the custom encoder to use
 	revisionStr := strconv.FormatUint(revision, 10)
 	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)

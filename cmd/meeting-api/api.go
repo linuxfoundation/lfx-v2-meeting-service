@@ -88,6 +88,7 @@ func createResponse(code int, err error) error {
 
 // handleError converts domain errors to HTTP errors.
 // TODO: figure out solution where we don't need to update this function when new errors are added.
+// Resolved once
 func handleError(err error) error {
 	switch err {
 	case domain.ErrServiceUnavailable:
