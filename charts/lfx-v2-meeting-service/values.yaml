@@ -56,22 +56,22 @@ app:
       value: noreply@lfx.linuxfoundation.org
     # SMTP_USERNAME is optional
     SMTP_USERNAME:
-      valueFrom: ''
+      valueFrom: {}
     # SMTP_PASSWORD is optional
     SMTP_PASSWORD:
-      valueFrom: ''
+      valueFrom: {}
     # ZOOM_ACCOUNT_ID is optional
     ZOOM_ACCOUNT_ID:
-      valueFrom: ''
+      valueFrom: {}
     # ZOOM_CLIENT_ID is optional
     ZOOM_CLIENT_ID:
-      valueFrom: ''
+      valueFrom: {}
     # ZOOM_CLIENT_SECRET is optional
     ZOOM_CLIENT_SECRET:
-      valueFrom: ''
+      valueFrom: {}
     # ZOOM_WEBHOOK_SECRET_TOKEN is optional
     ZOOM_WEBHOOK_SECRET_TOKEN:
-      valueFrom: ''
+      valueFrom: {}
 
 # traefik is the configuration for Traefik Gateway API routing
 traefik:
