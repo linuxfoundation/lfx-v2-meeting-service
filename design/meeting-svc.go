@@ -851,6 +851,7 @@ var _ = Service("Meeting Service", func() {
 
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
+		Meta("swagger:generate", "false")
 		Result(Bytes, func() {
 			Example("OK")
 		})
@@ -866,6 +867,7 @@ var _ = Service("Meeting Service", func() {
 
 	Method("livez", func() {
 		Description("Check if the service is alive.")
+		Meta("swagger:generate", "false")
 		Result(Bytes, func() {
 			Example("OK")
 		})
@@ -878,5 +880,16 @@ var _ = Service("Meeting Service", func() {
 	})
 
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
-	Files("/openapi.json", "gen/http/openapi3.json")
+	Files("/openapi.json", "gen/http/openapi.json", func() {
+		Meta("swagger:generate", "false")
+	})
+	Files("/openapi.yaml", "gen/http/openapi.yaml", func() {
+		Meta("swagger:generate", "false")
+	})
+	Files("/openapi3.json", "gen/http/openapi3.json", func() {
+		Meta("swagger:generate", "false")
+	})
+	Files("/openapi3.yaml", "gen/http/openapi3.yaml", func() {
+		Meta("swagger:generate", "false")
+	})
 })

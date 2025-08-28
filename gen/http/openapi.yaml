@@ -12,23 +12,6 @@ produces:
     - application/xml
     - application/gob
 paths:
-    /livez:
-        get:
-            tags:
-                - Meeting Service
-            summary: livez Meeting Service
-            description: Check if the service is alive.
-            operationId: Meeting Service#livez
-            produces:
-                - text/plain
-            responses:
-                "200":
-                    description: OK response.
-                    schema:
-                        type: string
-                        format: byte
-            schemes:
-                - http
     /meetings:
         get:
             tags:
@@ -883,19 +866,6 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
-    /openapi.json:
-        get:
-            tags:
-                - Meeting Service
-            summary: Download gen/http/openapi3.json
-            operationId: Meeting Service#/openapi.json
-            responses:
-                "200":
-                    description: File downloaded
-                    schema:
-                        type: file
-            schemes:
-                - http
     /past_meetings:
         get:
             tags:
@@ -1536,30 +1506,6 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
-    /readyz:
-        get:
-            tags:
-                - Meeting Service
-            summary: readyz Meeting Service
-            description: Check if the service is able to take inbound requests.
-            operationId: Meeting Service#readyz
-            produces:
-                - text/plain
-            responses:
-                "200":
-                    description: OK response.
-                    schema:
-                        type: string
-                        format: byte
-                "503":
-                    description: Service Unavailable response.
-                    schema:
-                        $ref: '#/definitions/ServiceUnavailableError'
-                        required:
-                            - code
-                            - message
-            schemes:
-                - http
     /webhooks/zoom:
         post:
             tags:

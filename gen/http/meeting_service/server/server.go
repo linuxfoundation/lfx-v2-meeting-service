@@ -44,7 +44,10 @@ type Server struct {
 	DeletePastMeetingParticipant http.Handler
 	Readyz                       http.Handler
 	Livez                        http.Handler
+	GenHTTPOpenapiJSON           http.Handler
+	GenHTTPOpenapiYaml           http.Handler
 	GenHTTPOpenapi3JSON          http.Handler
+	GenHTTPOpenapi3Yaml          http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -71,12 +74,27 @@ func New(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
+	fileSystemGenHTTPOpenapiJSON http.FileSystem,
+	fileSystemGenHTTPOpenapiYaml http.FileSystem,
 	fileSystemGenHTTPOpenapi3JSON http.FileSystem,
+	fileSystemGenHTTPOpenapi3Yaml http.FileSystem,
 ) *Server {
+	if fileSystemGenHTTPOpenapiJSON == nil {
+		fileSystemGenHTTPOpenapiJSON = http.Dir(".")
+	}
+	fileSystemGenHTTPOpenapiJSON = appendPrefix(fileSystemGenHTTPOpenapiJSON, "/gen/http")
+	if fileSystemGenHTTPOpenapiYaml == nil {
+		fileSystemGenHTTPOpenapiYaml = http.Dir(".")
+	}
+	fileSystemGenHTTPOpenapiYaml = appendPrefix(fileSystemGenHTTPOpenapiYaml, "/gen/http")
 	if fileSystemGenHTTPOpenapi3JSON == nil {
 		fileSystemGenHTTPOpenapi3JSON = http.Dir(".")
 	}
 	fileSystemGenHTTPOpenapi3JSON = appendPrefix(fileSystemGenHTTPOpenapi3JSON, "/gen/http")
+	if fileSystemGenHTTPOpenapi3Yaml == nil {
+		fileSystemGenHTTPOpenapi3Yaml = http.Dir(".")
+	}
+	fileSystemGenHTTPOpenapi3Yaml = appendPrefix(fileSystemGenHTTPOpenapi3Yaml, "/gen/http")
 	return &Server{
 		Mounts: []*MountPoint{
 			{"GetMeetings", "GET", "/meetings"},
@@ -103,7 +121,10 @@ func New(
 			{"DeletePastMeetingParticipant", "DELETE", "/past_meetings/{past_meeting_uid}/participants/{uid}"},
 			{"Readyz", "GET", "/readyz"},
 			{"Livez", "GET", "/livez"},
-			{"Serve gen/http/openapi3.json", "GET", "/openapi.json"},
+			{"Serve gen/http/openapi.json", "GET", "/openapi.json"},
+			{"Serve gen/http/openapi.yaml", "GET", "/openapi.yaml"},
+			{"Serve gen/http/openapi3.json", "GET", "/openapi3.json"},
+			{"Serve gen/http/openapi3.yaml", "GET", "/openapi3.yaml"},
 		},
 		GetMeetings:                  NewGetMeetingsHandler(e.GetMeetings, mux, decoder, encoder, errhandler, formatter),
 		CreateMeeting:                NewCreateMeetingHandler(e.CreateMeeting, mux, decoder, encoder, errhandler, formatter),
@@ -129,7 +150,10 @@ func New(
 		DeletePastMeetingParticipant: NewDeletePastMeetingParticipantHandler(e.DeletePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
 		Readyz:                       NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
 		Livez:                        NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
+		GenHTTPOpenapiJSON:           http.FileServer(fileSystemGenHTTPOpenapiJSON),
+		GenHTTPOpenapiYaml:           http.FileServer(fileSystemGenHTTPOpenapiYaml),
 		GenHTTPOpenapi3JSON:          http.FileServer(fileSystemGenHTTPOpenapi3JSON),
+		GenHTTPOpenapi3Yaml:          http.FileServer(fileSystemGenHTTPOpenapi3Yaml),
 	}
 }
 
@@ -193,7 +217,10 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountDeletePastMeetingParticipantHandler(mux, h.DeletePastMeetingParticipant)
 	MountReadyzHandler(mux, h.Readyz)
 	MountLivezHandler(mux, h.Livez)
+	MountGenHTTPOpenapiJSON(mux, h.GenHTTPOpenapiJSON)
+	MountGenHTTPOpenapiYaml(mux, h.GenHTTPOpenapiYaml)
 	MountGenHTTPOpenapi3JSON(mux, h.GenHTTPOpenapi3JSON)
+	MountGenHTTPOpenapi3Yaml(mux, h.GenHTTPOpenapi3Yaml)
 }
 
 // Mount configures the mux to serve the Meeting Service endpoints.
@@ -1437,8 +1464,6 @@ type appendFS struct {
 // passing it to the underlying fs.FS.
 func (s appendFS) Open(name string) (http.File, error) {
 	switch name {
-	case "/openapi.json":
-		name = "/openapi3.json"
 	}
 	return s.fs.Open(path.Join(s.prefix, name))
 }
@@ -1449,8 +1474,26 @@ func appendPrefix(fsys http.FileSystem, prefix string) http.FileSystem {
 	return appendFS{prefix: prefix, fs: fsys}
 }
 
-// MountGenHTTPOpenapi3JSON configures the mux to serve GET request made to
+// MountGenHTTPOpenapiJSON configures the mux to serve GET request made to
 // "/openapi.json".
-func MountGenHTTPOpenapi3JSON(mux goahttp.Muxer, h http.Handler) {
+func MountGenHTTPOpenapiJSON(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("GET", "/openapi.json", h.ServeHTTP)
+}
+
+// MountGenHTTPOpenapiYaml configures the mux to serve GET request made to
+// "/openapi.yaml".
+func MountGenHTTPOpenapiYaml(mux goahttp.Muxer, h http.Handler) {
+	mux.Handle("GET", "/openapi.yaml", h.ServeHTTP)
+}
+
+// MountGenHTTPOpenapi3JSON configures the mux to serve GET request made to
+// "/openapi3.json".
+func MountGenHTTPOpenapi3JSON(mux goahttp.Muxer, h http.Handler) {
+	mux.Handle("GET", "/openapi3.json", h.ServeHTTP)
+}
+
+// MountGenHTTPOpenapi3Yaml configures the mux to serve GET request made to
+// "/openapi3.yaml".
+func MountGenHTTPOpenapi3Yaml(mux goahttp.Muxer, h http.Handler) {
+	mux.Handle("GET", "/openapi3.yaml", h.ServeHTTP)
 }
