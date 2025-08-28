@@ -20,6 +20,7 @@ type Message interface {
 // MessageHandler defines how the service handles incoming messages
 type MessageHandler interface {
 	HandleMessage(ctx context.Context, msg Message)
+	HandlerReady() bool
 }
 
 // MessageBuilder is a interface for the message builder.
@@ -30,8 +31,16 @@ type MessageBuilder interface {
 	SendDeleteIndexMeeting(ctx context.Context, data string) error
 	SendDeleteIndexMeetingSettings(ctx context.Context, data string) error
 	SendDeleteIndexMeetingRegistrant(ctx context.Context, data string) error
+	SendIndexPastMeeting(ctx context.Context, action models.MessageAction, data models.PastMeeting) error
+	SendDeleteIndexPastMeeting(ctx context.Context, data string) error
+	SendIndexPastMeetingParticipant(ctx context.Context, action models.MessageAction, data models.PastMeetingParticipant) error
+	SendDeleteIndexPastMeetingParticipant(ctx context.Context, data string) error
 	SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error
 	SendDeleteAllAccessMeeting(ctx context.Context, data string) error
+	SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error
+	SendDeleteAllAccessPastMeeting(ctx context.Context, data string) error
+	SendPutPastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error
+	SendRemovePastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error
 	SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
 	SendRemoveMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
 	SendMeetingDeleted(ctx context.Context, data models.MeetingDeletedMessage) error

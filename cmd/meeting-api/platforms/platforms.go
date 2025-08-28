@@ -7,8 +7,9 @@
 package platforms
 
 import (
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/platform"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 )
 
 // PlatformConfigs holds configuration for all supported platforms
@@ -23,15 +24,12 @@ func NewPlatformConfigsFromEnv() PlatformConfigs {
 	}
 }
 
-// Initialize sets up all configured platforms and registers them with the service
-func Initialize(configs PlatformConfigs, svc *service.MeetingsService) {
-	// Create platform registry
-	platformRegistry := platform.NewRegistry()
+// NewPlatformRegistry creates and configures a platform registry with all available platforms
+func NewPlatformRegistry(configs PlatformConfigs) domain.PlatformRegistry {
+	registry := platform.NewRegistry()
 
-	// Setup Zoom platform and get its webhook validator
-	zoomWebhookValidator := SetupZoom(platformRegistry, configs.Zoom)
+	// Register Zoom if configured
+	registry.RegisterProvider(models.PlatformZoom, configs.Zoom.PlatformProvider)
 
-	// Set the platform registry and Zoom webhook validator in the service
-	svc.PlatformRegistry = platformRegistry
-	svc.ZoomWebhookValidator = zoomWebhookValidator
+	return registry
 }

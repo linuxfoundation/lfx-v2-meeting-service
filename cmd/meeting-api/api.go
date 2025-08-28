@@ -13,6 +13,7 @@ import (
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/middleware"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
@@ -22,13 +23,33 @@ import (
 
 // MeetingsAPI implements the meetingsvc.Service interface
 type MeetingsAPI struct {
-	service *service.MeetingsService
+	authService                   *service.AuthService
+	meetingService                *service.MeetingService
+	registrantService             *service.MeetingRegistrantService
+	pastMeetingService            *service.PastMeetingService
+	pastMeetingParticipantService *service.PastMeetingParticipantService
+	meetingHandler                *handlers.MeetingHandler
+	zoomWebhookHandler            *handlers.ZoomWebhookHandler
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
-func NewMeetingsAPI(svc *service.MeetingsService) *MeetingsAPI {
+func NewMeetingsAPI(
+	authService *service.AuthService,
+	meetingService *service.MeetingService,
+	registrantService *service.MeetingRegistrantService,
+	pastMeetingService *service.PastMeetingService,
+	pastMeetingParticipantService *service.PastMeetingParticipantService,
+	zoomWebhookHandler *handlers.ZoomWebhookHandler,
+	meetingHandler *handlers.MeetingHandler,
+) *MeetingsAPI {
 	return &MeetingsAPI{
-		service: svc,
+		authService:                   authService,
+		meetingService:                meetingService,
+		registrantService:             registrantService,
+		pastMeetingService:            pastMeetingService,
+		pastMeetingParticipantService: pastMeetingParticipantService,
+		zoomWebhookHandler:            zoomWebhookHandler,
+		meetingHandler:                meetingHandler,
 	}
 }
 
@@ -65,9 +86,42 @@ func createResponse(code int, err error) error {
 	}
 }
 
+// handleError converts domain errors to HTTP errors.
+// TODO: figure out solution where we don't need to update this function when new errors are added.
+// Resolved once
+func handleError(err error) error {
+	switch err {
+	case domain.ErrServiceUnavailable:
+		return createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+	case domain.ErrValidationFailed:
+		return createResponse(http.StatusBadRequest, domain.ErrValidationFailed)
+	case domain.ErrRevisionMismatch:
+		return createResponse(http.StatusBadRequest, domain.ErrRevisionMismatch)
+	case domain.ErrRegistrantAlreadyExists:
+		return createResponse(http.StatusConflict, domain.ErrRegistrantAlreadyExists)
+	case domain.ErrPastMeetingParticipantAlreadyExists:
+		return createResponse(http.StatusConflict, domain.ErrPastMeetingParticipantAlreadyExists)
+	case domain.ErrMeetingNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
+	case domain.ErrRegistrantNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrRegistrantNotFound)
+	case domain.ErrPastMeetingNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrPastMeetingNotFound)
+	case domain.ErrPastMeetingParticipantNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrPastMeetingParticipantNotFound)
+	case domain.ErrInternal, domain.ErrUnmarshal:
+		return createResponse(http.StatusInternalServerError, domain.ErrInternal)
+	}
+	return err
+}
+
 // Readyz checks if the service is able to take inbound requests.
 func (s *MeetingsAPI) Readyz(_ context.Context) ([]byte, error) {
-	if !s.service.ServiceReady() {
+	if !s.meetingService.ServiceReady() ||
+		!s.registrantService.ServiceReady() ||
+		!s.pastMeetingService.ServiceReady() ||
+		!s.zoomWebhookHandler.HandlerReady() ||
+		!s.meetingHandler.HandlerReady() {
 		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
 	}
 	return []byte("OK\n"), nil
@@ -84,12 +138,12 @@ func (s *MeetingsAPI) Livez(_ context.Context) ([]byte, error) {
 
 // JWTAuth implements Auther interface for the JWT security scheme.
 func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *security.JWTScheme) (context.Context, error) {
-	if !s.service.ServiceReady() {
+	if !s.authService.ServiceReady() {
 		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
 	}
 
 	// Parse the Heimdall-authorized principal from the token.
-	principal, err := s.service.Auth.ParsePrincipal(ctx, bearerToken, slog.Default())
+	principal, err := s.authService.Auth.ParsePrincipal(ctx, bearerToken, slog.Default())
 	if err != nil {
 		return ctx, err
 	}
@@ -98,11 +152,13 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 }
 
 // ZoomWebhook handles Zoom webhook events by validating signatures and forwarding to NATS for async processing.
+// TODO: consider refactoring logic in this function to be done in the service layer. Ideally the application layer
+// shouldn't have to use the MessageBuilder or WebhookValidator directly.
 func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "meetings_api", "method", "ZoomWebhook")
 	slog.InfoContext(ctx, "Zoom webhook payload", "payload", payload)
 
-	if !s.service.ServiceReady() {
+	if !s.zoomWebhookHandler.HandlerReady() {
 		logger.ErrorContext(ctx, "Service not ready")
 		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
 	}
@@ -110,7 +166,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 	// Validate Zoom webhook signature if provided
 	if payload.ZoomSignature != nil && payload.ZoomTimestamp != nil {
 		// Check if Zoom webhook validator is configured
-		if s.service.ZoomWebhookValidator == nil {
+		if s.zoomWebhookHandler.WebhookValidator == nil {
 			logger.ErrorContext(ctx, "Zoom webhook validator not configured")
 			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("zoom webhook validation not configured"))
 		}
@@ -122,7 +178,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("raw body not captured"))
 		}
 
-		if err := s.service.ZoomWebhookValidator.ValidateSignature(bodyBytes, *payload.ZoomSignature, *payload.ZoomTimestamp); err != nil {
+		if err := s.zoomWebhookHandler.WebhookValidator.ValidateSignature(bodyBytes, *payload.ZoomSignature, *payload.ZoomTimestamp); err != nil {
 			logger.WarnContext(ctx, "Zoom webhook signature validation failed", "error", err)
 			return nil, &meetingsvc.UnauthorizedError{
 				Code:    "401",
@@ -162,7 +218,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 	}
 
 	// Publish to NATS for async processing
-	if err := s.service.MessageBuilder.PublishZoomWebhookEvent(ctx, subject, webhookMessage); err != nil {
+	if err := s.meetingService.MessageBuilder.PublishZoomWebhookEvent(ctx, subject, webhookMessage); err != nil {
 		logger.ErrorContext(ctx, "Failed to publish webhook event to NATS", "error", err, "event_type", eventType, "subject", subject)
 		return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("failed to process webhook event"))
 	}

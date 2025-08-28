@@ -76,6 +76,51 @@ func ZoomWebhookMeetingServicePath() string {
 	return "/webhooks/zoom"
 }
 
+// GetPastMeetingsMeetingServicePath returns the URL path to the Meeting Service service get-past-meetings HTTP endpoint.
+func GetPastMeetingsMeetingServicePath() string {
+	return "/past_meetings"
+}
+
+// CreatePastMeetingMeetingServicePath returns the URL path to the Meeting Service service create-past-meeting HTTP endpoint.
+func CreatePastMeetingMeetingServicePath() string {
+	return "/past_meetings"
+}
+
+// GetPastMeetingMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting HTTP endpoint.
+func GetPastMeetingMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/past_meetings/%v", uid)
+}
+
+// DeletePastMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-past-meeting HTTP endpoint.
+func DeletePastMeetingMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/past_meetings/%v", uid)
+}
+
+// GetPastMeetingParticipantsMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-participants HTTP endpoint.
+func GetPastMeetingParticipantsMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/past_meetings/%v/participants", uid)
+}
+
+// CreatePastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service create-past-meeting-participant HTTP endpoint.
+func CreatePastMeetingParticipantMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/past_meetings/%v/participants", uid)
+}
+
+// GetPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-participant HTTP endpoint.
+func GetPastMeetingParticipantMeetingServicePath(pastMeetingUID string, uid string) string {
+	return fmt.Sprintf("/past_meetings/%v/participants/%v", pastMeetingUID, uid)
+}
+
+// UpdatePastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service update-past-meeting-participant HTTP endpoint.
+func UpdatePastMeetingParticipantMeetingServicePath(pastMeetingUID string, uid string) string {
+	return fmt.Sprintf("/past_meetings/%v/participants/%v", pastMeetingUID, uid)
+}
+
+// DeletePastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service delete-past-meeting-participant HTTP endpoint.
+func DeletePastMeetingParticipantMeetingServicePath(pastMeetingUID string, uid string) string {
+	return fmt.Sprintf("/past_meetings/%v/participants/%v", pastMeetingUID, uid)
+}
+
 // ReadyzMeetingServicePath returns the URL path to the Meeting Service service readyz HTTP endpoint.
 func ReadyzMeetingServicePath() string {
 	return "/readyz"

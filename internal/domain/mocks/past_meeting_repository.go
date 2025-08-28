@@ -75,3 +75,11 @@ func (m *MockPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, 
 	}
 	return args.Get(0).(*models.PastMeeting), args.Error(1)
 }
+
+func (m *MockPastMeetingRepository) ListAll(ctx context.Context) ([]*models.PastMeeting, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.PastMeeting), args.Error(1)
+}

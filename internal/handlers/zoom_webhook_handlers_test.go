@@ -14,7 +14,7 @@
 // - meeting.participant_joined events (attendance tracking and session creation)
 // - meeting.participant_left events (session completion with leave time/reason)
 
-package service
+package handlers
 
 import (
 	"context"
@@ -31,7 +31,7 @@ import (
 // TestParseZoomWebhookEvent tests the webhook event parsing
 func TestParseZoomWebhookEvent(t *testing.T) {
 	ctx := context.Background()
-	service := &MeetingsService{}
+	handler := &ZoomWebhookHandler{}
 
 	tests := []struct {
 		name        string
@@ -147,7 +147,7 @@ func TestParseZoomWebhookEvent(t *testing.T) {
 			mockMsg := mocks.NewMockMessage(msgData, "")
 
 			// Parse the event
-			event, err := service.parseZoomWebhookEvent(ctx, mockMsg)
+			event, err := handler.parseZoomWebhookEvent(ctx, mockMsg)
 
 			if tt.shouldError {
 				assert.Error(t, err)

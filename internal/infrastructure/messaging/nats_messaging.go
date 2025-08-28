@@ -25,6 +25,13 @@ type MessageBuilder struct {
 	NatsConn INatsConn
 }
 
+// NewMessageBuilder creates a new MessageBuilder.
+func NewMessageBuilder(natsConn INatsConn) *MessageBuilder {
+	return &MessageBuilder{
+		NatsConn: natsConn,
+	}
+}
+
 // sendMessage sends the message to the NATS server.
 func (m *MessageBuilder) sendMessage(ctx context.Context, subject string, data []byte) error {
 	err := m.NatsConn.Publish(subject, data)
@@ -157,6 +164,80 @@ func (m *MessageBuilder) SendIndexMeetingRegistrant(ctx context.Context, action 
 // SendDeleteIndexMeetingRegistrant sends the message to the NATS server for the meeting registrant indexing.
 func (m *MessageBuilder) SendDeleteIndexMeetingRegistrant(ctx context.Context, data string) error {
 	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, models.ActionDeleted, []byte(data), nil)
+}
+
+// SendIndexPastMeeting sends the message to the NATS server for the past meeting indexing.
+func (m *MessageBuilder) SendIndexPastMeeting(ctx context.Context, action models.MessageAction, data models.PastMeeting) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.UID, data.MeetingUID, data.Title, data.ProjectUID)
+
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexPastMeeting sends the message to the NATS server for the past meeting indexing.
+func (m *MessageBuilder) SendDeleteIndexPastMeeting(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingSubject, models.ActionDeleted, []byte(data), nil)
+}
+
+// SendIndexPastMeetingParticipant sends the message to the NATS server for the past meeting participant indexing.
+func (m *MessageBuilder) SendIndexPastMeetingParticipant(ctx context.Context, action models.MessageAction, data models.PastMeetingParticipant) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.UID, data.PastMeetingUID, data.FirstName, data.LastName, data.Email, data.Username)
+
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingParticipantSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexPastMeetingParticipant sends the message to the NATS server for the past meeting participant indexing.
+func (m *MessageBuilder) SendDeleteIndexPastMeetingParticipant(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingParticipantSubject, models.ActionDeleted, []byte(data), nil)
+}
+
+// SendUpdateAccessPastMeeting sends the message to the NATS server for the past meeting access control updates.
+func (m *MessageBuilder) SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.UpdateAccessPastMeetingSubject, dataBytes)
+}
+
+// SendDeleteAllAccessPastMeeting sends the message to the NATS server for the past meeting access control deletion.
+func (m *MessageBuilder) SendDeleteAllAccessPastMeeting(ctx context.Context, data string) error {
+	return m.sendMessage(ctx, models.DeleteAllAccessPastMeetingSubject, []byte(data))
+}
+
+// SendPutPastMeetingParticipantAccess sends a message about a new participant being added to a past meeting.
+func (m *MessageBuilder) SendPutPastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.PutParticipantPastMeetingSubject, dataBytes)
+}
+
+// SendRemovePastMeetingParticipantAccess sends a message about a participant being removed from a past meeting.
+func (m *MessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.sendMessage(ctx, models.RemoveParticipantPastMeetingSubject, dataBytes)
 }
 
 // SendUpdateAccessMeeting sends the message to the NATS server for the access control updates.

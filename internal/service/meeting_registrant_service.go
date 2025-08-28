@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -19,9 +18,43 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
-func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) error {
+// MeetingRegistrantService implements the meetingsvc.Service interface and domain.MessageHandler
+type MeetingRegistrantService struct {
+	MeetingRepository    domain.MeetingRepository
+	RegistrantRepository domain.RegistrantRepository
+	EmailService         domain.EmailService
+	MessageBuilder       domain.MessageBuilder
+	Config               ServiceConfig
+}
+
+// NewMeetingRegistrantService creates a new MeetingRegistrantService.
+func NewMeetingRegistrantService(
+	meetingRepository domain.MeetingRepository,
+	registrantRepository domain.RegistrantRepository,
+	emailService domain.EmailService,
+	messageBuilder domain.MessageBuilder,
+	config ServiceConfig,
+) *MeetingRegistrantService {
+	return &MeetingRegistrantService{
+		Config:               config,
+		MeetingRepository:    meetingRepository,
+		RegistrantRepository: registrantRepository,
+		EmailService:         emailService,
+		MessageBuilder:       messageBuilder,
+	}
+}
+
+// ServiceReady checks if the service is ready for use.
+func (s *MeetingRegistrantService) ServiceReady() bool {
+	return s.MeetingRepository != nil &&
+		s.RegistrantRepository != nil &&
+		s.MessageBuilder != nil &&
+		s.EmailService != nil
+}
+
+func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant) error {
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.GetBase(ctx, payload.MeetingUID)
+	_, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -32,13 +65,13 @@ func (s *MeetingsService) validateCreateMeetingRegistrantPayload(ctx context.Con
 	}
 
 	// Check that there isn't already a registrant with the same email address for this meeting.
-	registrants, err := s.RegistrantRepository.ListByEmail(ctx, payload.Email)
+	registrants, err := s.RegistrantRepository.ListByEmail(ctx, reqRegistrant.Email)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing registrants by email", logging.ErrKey, err)
 		return domain.ErrInternal
 	}
 	for _, registrant := range registrants {
-		if registrant.Email == payload.Email && registrant.MeetingUID == payload.MeetingUID {
+		if registrant.Email == reqRegistrant.Email && registrant.MeetingUID == reqRegistrant.MeetingUID {
 			slog.WarnContext(ctx, "registrant already exists for meeting with same email address", logging.ErrKey, domain.ErrRegistrantAlreadyExists)
 			return domain.ErrRegistrantAlreadyExists
 		}
@@ -56,41 +89,32 @@ func createRegistrantContext(ctx context.Context, registrantUID, meetingUID stri
 }
 
 // CreateMeetingRegistrant creates a new registrant for a meeting
-func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
+func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant) (*models.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
-	if payload == nil {
+	if reqRegistrant == nil {
 		slog.WarnContext(ctx, "payload is required")
 		return nil, domain.ErrValidationFailed
 	}
 
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", payload.MeetingUID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", reqRegistrant.MeetingUID))
 
 	// Validate the payload
-	err := s.validateCreateMeetingRegistrantPayload(ctx, payload)
+	err := s.validateCreateMeetingRegistrantRequest(ctx, reqRegistrant)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert payload to domain model
-	registrantDB := models.ToRegistrantDBModelFromCreatePayload(payload)
-	if registrantDB == nil {
-		// This should never happen since we validate the payload above.
-		// Therefore we can return an internal error.
-		return nil, domain.ErrInternal
-	}
-
 	// Generate UID for the registrant
-	registrantDB.UID = uuid.New().String()
-	registrantDB.MeetingUID = payload.MeetingUID
+	reqRegistrant.UID = uuid.New().String()
 
-	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantDB.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", reqRegistrant.UID))
 
 	// Create the registrant
-	err = s.RegistrantRepository.Create(ctx, registrantDB)
+	err = s.RegistrantRepository.Create(ctx, reqRegistrant)
 	if err != nil {
 		if errors.Is(err, domain.ErrRegistrantAlreadyExists) {
 			slog.WarnContext(ctx, "registrant already exists", logging.ErrKey, err)
@@ -100,16 +124,14 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 		return nil, domain.ErrInternal
 	}
 
-	registrant := models.FromRegistrantDBModel(registrantDB)
-
-	slog.DebugContext(ctx, "created registrant", "registrant", registrant)
+	slog.DebugContext(ctx, "created registrant", "registrant", reqRegistrant)
 
 	// Build list of NATS messages and email tasks
 	tasks := []func() error{
 		// Send indexing message for the new registrant
 		func() error {
-			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *registrantDB)
+			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
+			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for new registrant", logging.ErrKey, err)
 			}
@@ -117,8 +139,8 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 		},
 		// Send invitation email to the registrant
 		func() error {
-			emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-			err := s.sendRegistrantInvitationEmail(emailCtx, registrantDB)
+			emailCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
+			err := s.sendRegistrantInvitationEmail(emailCtx, reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(emailCtx, "failed to send invitation email", logging.ErrKey, err)
 			}
@@ -127,14 +149,14 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 	}
 
 	// Send a message about the new registrant to the fga-sync service if username exists
-	if registrantDB.Username != "" {
+	if reqRegistrant.Username != "" {
 		tasks = append(tasks, func() error {
-			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
 			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
-				UID:        registrantDB.UID,
-				Username:   registrantDB.Username,
-				MeetingUID: registrantDB.MeetingUID,
-				Host:       registrantDB.Host,
+				UID:        reqRegistrant.UID,
+				Username:   reqRegistrant.Username,
+				MeetingUID: reqRegistrant.MeetingUID,
+				Host:       reqRegistrant.Host,
 			})
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about new registrant", logging.ErrKey, err)
@@ -152,26 +174,20 @@ func (s *MeetingsService) CreateMeetingRegistrant(ctx context.Context, payload *
 		slog.ErrorContext(ctx, "error executing post-creation tasks", logging.ErrKey, err)
 	}
 
-	return registrant, nil
+	return reqRegistrant, nil
 }
 
 // GetMeetingRegistrants gets all registrants for a meeting
-func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantsPayload) (*meetingsvc.GetMeetingRegistrantsResult, error) {
+func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, uid string) ([]*models.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
-	if payload == nil || payload.UID == nil {
-		slog.WarnContext(ctx, "meeting UID is required")
-		return nil, domain.ErrValidationFailed
-	}
-
-	meetingUID := *payload.UID
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.GetBase(ctx, meetingUID)
+	_, err := s.MeetingRepository.GetBase(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
 			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
@@ -181,46 +197,26 @@ func (s *MeetingsService) GetMeetingRegistrants(ctx context.Context, payload *me
 		return nil, domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "meeting found", "meeting_uid", meetingUID)
+	slog.DebugContext(ctx, "meeting found", "meeting_uid", uid)
 
 	// Get all registrants for the meeting
-	registrantsDB, err := s.RegistrantRepository.ListByMeeting(ctx, meetingUID)
+	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, uid)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing meeting registrants", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
 
-	slog.DebugContext(ctx, "listing meeting registrants", "meeting_uid", meetingUID)
-
-	registrants := make([]*meetingsvc.Registrant, len(registrantsDB))
-	for i, registrantDB := range registrantsDB {
-		registrants[i] = models.FromRegistrantDBModel(registrantDB)
-	}
-
-	result := &meetingsvc.GetMeetingRegistrantsResult{
-		Registrants:  registrants,
-		CacheControl: nil, // TODO: Add cache control logic if needed
-	}
-
 	slog.DebugContext(ctx, "returning meeting registrants", "count", len(registrants))
 
-	return result, nil
+	return registrants, nil
 }
 
 // GetMeetingRegistrant gets a specific registrant by UID
-func (s *MeetingsService) GetMeetingRegistrant(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantPayload) (*meetingsvc.GetMeetingRegistrantResult, error) {
+func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string) (*models.Registrant, string, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, "", domain.ErrServiceUnavailable
 	}
-
-	if payload == nil || payload.MeetingUID == nil || payload.UID == nil {
-		slog.WarnContext(ctx, "meeting UID and registrant UID are required")
-		return nil, domain.ErrValidationFailed
-	}
-
-	meetingUID := *payload.MeetingUID
-	registrantUID := *payload.UID
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantUID))
@@ -229,41 +225,40 @@ func (s *MeetingsService) GetMeetingRegistrant(ctx context.Context, payload *mee
 	exists, err := s.MeetingRepository.Exists(ctx, meetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if meeting exists", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, "", domain.ErrInternal
 	}
 	if !exists {
 		slog.WarnContext(ctx, "meeting not found", logging.ErrKey, domain.ErrMeetingNotFound)
-		return nil, domain.ErrMeetingNotFound
+		return nil, "", domain.ErrMeetingNotFound
 	}
 
 	// Get registrant with revision from store
-	registrantDB, revision, err := s.RegistrantRepository.GetWithRevision(ctx, registrantUID)
+	registrant, revision, err := s.RegistrantRepository.GetWithRevision(ctx, registrantUID)
 	if err != nil {
 		if errors.Is(err, domain.ErrRegistrantNotFound) {
 			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
-			return nil, domain.ErrRegistrantNotFound
+			return nil, "", domain.ErrRegistrantNotFound
 		}
 		slog.ErrorContext(ctx, "error getting registrant from store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, "", domain.ErrInternal
 	}
 
-	registrant := models.FromRegistrantDBModel(registrantDB)
+	// Ensure the registrant belongs to the requested meeting
+	if registrant.MeetingUID != meetingUID {
+		slog.WarnContext(ctx, "found registrant does not belong to requested meeting", logging.ErrKey, domain.ErrRegistrantNotFound)
+		return nil, "", domain.ErrRegistrantNotFound
+	}
 
 	// Store the revision in context for the custom encoder to use
 	revisionStr := strconv.FormatUint(revision, 10)
 	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)
 
-	result := &meetingsvc.GetMeetingRegistrantResult{
-		Registrant: registrant,
-		Etag:       &revisionStr,
-	}
-
 	slog.DebugContext(ctx, "returning registrant", "registrant", registrant, "revision", revision)
 
-	return result, nil
+	return registrant, revisionStr, nil
 }
 
-func (s *MeetingsService) validateUpdateMeetingRegistrantPayload(ctx context.Context, payload *meetingsvc.UpdateMeetingRegistrantPayload, existingRegistrant *models.Registrant) error {
+func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant, existingRegistrant *models.Registrant) error {
 	// Check that the meeting exists
 	exists, err := s.MeetingRepository.Exists(ctx, existingRegistrant.MeetingUID)
 	if err != nil {
@@ -275,15 +270,15 @@ func (s *MeetingsService) validateUpdateMeetingRegistrantPayload(ctx context.Con
 		return domain.ErrMeetingNotFound
 	}
 
-	if existingRegistrant.Email != payload.Email {
+	if existingRegistrant.Email != reqRegistrant.Email {
 		// If changing the email address, check that there isn't already a registrant for this meeting with the new email address.
-		registrants, err := s.RegistrantRepository.ListByEmail(ctx, payload.Email)
+		registrants, err := s.RegistrantRepository.ListByEmail(ctx, reqRegistrant.Email)
 		if err != nil {
 			slog.ErrorContext(ctx, "error listing registrants by email", logging.ErrKey, err)
 			return domain.ErrInternal
 		}
 		for _, registrant := range registrants {
-			if registrant.Email == payload.Email && registrant.MeetingUID == existingRegistrant.MeetingUID {
+			if registrant.Email == reqRegistrant.Email && registrant.MeetingUID == existingRegistrant.MeetingUID {
 				slog.WarnContext(ctx, "registrant already exists for meeting with same email address", logging.ErrKey, domain.ErrRegistrantAlreadyExists)
 				return domain.ErrRegistrantAlreadyExists
 			}
@@ -296,38 +291,19 @@ func (s *MeetingsService) validateUpdateMeetingRegistrantPayload(ctx context.Con
 }
 
 // UpdateMeetingRegistrant updates an existing registrant
-func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *meetingsvc.UpdateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
+func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, revision uint64) (*models.Registrant, error) {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
-	if payload == nil || payload.UID == nil {
-		slog.WarnContext(ctx, "registrant UID is required")
-		return nil, domain.ErrValidationFailed
-	}
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", reqRegistrant.MeetingUID))
+	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", reqRegistrant.UID))
 
-	meetingUID := payload.MeetingUID
-	registrantUID := *payload.UID
-
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
-	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantUID))
-
-	var revision uint64
 	var err error
-	if !s.Config.SkipEtagValidation {
-		if payload.IfMatch == nil {
-			slog.WarnContext(ctx, "If-Match header is missing")
-			return nil, domain.ErrValidationFailed
-		}
-		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
-		if err != nil {
-			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
-			return nil, domain.ErrValidationFailed
-		}
-	} else {
+	if s.Config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.RegistrantRepository.GetWithRevision(ctx, registrantUID)
+		_, revision, err = s.RegistrantRepository.GetWithRevision(ctx, reqRegistrant.UID)
 		if err != nil {
 			if errors.Is(err, domain.ErrRegistrantNotFound) {
 				slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
@@ -341,7 +317,7 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the registrant exists and get existing data for the update
-	existingRegistrantDB, err := s.RegistrantRepository.Get(ctx, registrantUID)
+	existingRegistrant, err := s.RegistrantRepository.Get(ctx, reqRegistrant.UID)
 	if err != nil {
 		if errors.Is(err, domain.ErrRegistrantNotFound) {
 			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, err)
@@ -351,22 +327,16 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 		return nil, domain.ErrInternal
 	}
 
-	// Validate the payload
-	err = s.validateUpdateMeetingRegistrantPayload(ctx, payload, existingRegistrantDB)
+	// Validate the request
+	err = s.validateUpdateMeetingRegistrantRequest(ctx, reqRegistrant, existingRegistrant)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert payload to domain model
-	registrantDB := models.ToRegistrantDBModelFromUpdatePayload(payload, existingRegistrantDB)
-	if registrantDB == nil {
-		// This should never happen since we validate the payload above.
-		// Therefore we can return an internal error.
-		return nil, domain.ErrInternal
-	}
+	reqRegistrant = models.MergeUpdateRegistrantRequest(reqRegistrant, existingRegistrant)
 
 	// Update the registrant
-	err = s.RegistrantRepository.Update(ctx, registrantDB, revision)
+	err = s.RegistrantRepository.Update(ctx, reqRegistrant, revision)
 	if err != nil {
 		if errors.Is(err, domain.ErrRevisionMismatch) {
 			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
@@ -376,16 +346,14 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 		return nil, domain.ErrInternal
 	}
 
-	registrant := models.FromRegistrantDBModel(registrantDB)
-
-	slog.DebugContext(ctx, "updated registrant", "registrant", registrant)
+	slog.DebugContext(ctx, "updated registrant", "registrant", reqRegistrant)
 
 	// Build list of NATS messages tasks
 	tasks := []func() error{
 		// Send indexing message for the updated registrant
 		func() error {
-			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
-			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *registrantDB)
+			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
+			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for updated registrant", logging.ErrKey, err)
 			}
@@ -394,14 +362,14 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 	}
 
 	// Send a message about the updated registrant to the fga-sync service if username exists
-	if registrantDB.Username != "" {
+	if reqRegistrant.Username != "" {
 		tasks = append(tasks, func() error {
-			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
 			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
-				UID:        registrantDB.UID,
-				Username:   registrantDB.Username,
-				MeetingUID: registrantDB.MeetingUID,
-				Host:       registrantDB.Host,
+				UID:        reqRegistrant.UID,
+				Username:   reqRegistrant.Username,
+				MeetingUID: reqRegistrant.MeetingUID,
+				Host:       reqRegistrant.Host,
 			})
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about updated registrant", logging.ErrKey, err)
@@ -419,12 +387,12 @@ func (s *MeetingsService) UpdateMeetingRegistrant(ctx context.Context, payload *
 		slog.ErrorContext(ctx, "error executing post-update tasks", logging.ErrKey, err)
 	}
 
-	return registrant, nil
+	return reqRegistrant, nil
 }
 
-// deleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
+// DeleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
 // It can optionally skip revision checking when skipRevisionCheck is true (useful for bulk cleanup operations).
-func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
+func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantDB.UID))
 
 	// Delete the registrant from the database
@@ -514,36 +482,17 @@ func (s *MeetingsService) deleteRegistrantWithCleanup(ctx context.Context, regis
 }
 
 // DeleteMeetingRegistrant deletes a registrant from a meeting
-func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *meetingsvc.DeleteMeetingRegistrantPayload) error {
+func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string, revision uint64) error {
 	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "NATS connection or store not initialized", logging.PriorityCritical())
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.ErrServiceUnavailable
 	}
-
-	if payload == nil || payload.MeetingUID == nil || payload.UID == nil {
-		slog.WarnContext(ctx, "meeting UID and registrant UID are required")
-		return domain.ErrValidationFailed
-	}
-
-	meetingUID := *payload.MeetingUID
-	registrantUID := *payload.UID
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantUID))
 
-	var revision uint64
 	var err error
-	if !s.Config.SkipEtagValidation {
-		if payload.IfMatch == nil {
-			slog.WarnContext(ctx, "If-Match header is missing")
-			return domain.ErrValidationFailed
-		}
-		revision, err = strconv.ParseUint(*payload.IfMatch, 10, 64)
-		if err != nil {
-			slog.ErrorContext(ctx, "error parsing If-Match header", logging.ErrKey, err)
-			return domain.ErrValidationFailed
-		}
-	} else {
+	if s.Config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
 		_, revision, err = s.RegistrantRepository.GetWithRevision(ctx, registrantUID)
 		if err != nil {
@@ -581,11 +530,11 @@ func (s *MeetingsService) DeleteMeetingRegistrant(ctx context.Context, payload *
 	}
 
 	// Use the helper to delete the registrant with cleanup
-	return s.deleteRegistrantWithCleanup(ctx, registrantDB, revision, false)
+	return s.DeleteRegistrantWithCleanup(ctx, registrantDB, revision, false)
 }
 
 // sendRegistrantInvitationEmail sends an invitation email to a newly created registrant
-func (s *MeetingsService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
+func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
 	// Get meeting details for the email
 	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {
@@ -623,7 +572,7 @@ func (s *MeetingsService) sendRegistrantInvitationEmail(ctx context.Context, reg
 }
 
 // sendRegistrantCancellationEmail sends a cancellation email to a deleted registrant
-func (s *MeetingsService) sendRegistrantCancellationEmail(ctx context.Context, registrant *models.Registrant) error {
+func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.Context, registrant *models.Registrant) error {
 	// Get meeting details for the email
 	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {

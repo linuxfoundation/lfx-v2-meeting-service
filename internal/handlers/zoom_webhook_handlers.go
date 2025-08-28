@@ -1,7 +1,7 @@
 // Copyright The Linux Foundation and each contributor to LFX.
 // SPDX-License-Identifier: MIT
 
-package service
+package handlers
 
 import (
 	"context"
@@ -16,8 +16,41 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
+
+// ZoomWebhookHandler handles Zoom webhook events.
+type ZoomWebhookHandler struct {
+	meetingService                *service.MeetingService
+	registrantService             *service.MeetingRegistrantService
+	pastMeetingService            *service.PastMeetingService
+	pastMeetingParticipantService *service.PastMeetingParticipantService
+	WebhookValidator              domain.WebhookValidator
+}
+
+func NewZoomWebhookHandler(
+	meetingService *service.MeetingService,
+	registrantService *service.MeetingRegistrantService,
+	pastMeetingService *service.PastMeetingService,
+	pastMeetingParticipantService *service.PastMeetingParticipantService,
+	webhookValidator domain.WebhookValidator,
+) *ZoomWebhookHandler {
+	return &ZoomWebhookHandler{
+		meetingService:                meetingService,
+		registrantService:             registrantService,
+		pastMeetingService:            pastMeetingService,
+		pastMeetingParticipantService: pastMeetingParticipantService,
+		WebhookValidator:              webhookValidator,
+	}
+}
+
+func (s *ZoomWebhookHandler) HandlerReady() bool {
+	return s.meetingService.ServiceReady() &&
+		s.registrantService.ServiceReady() &&
+		s.pastMeetingService.ServiceReady() &&
+		s.pastMeetingParticipantService.ServiceReady()
+}
 
 // ZoomPayloadForPastMeeting contains the essential Zoom webhook data for creating PastMeeting records
 type ZoomPayloadForPastMeeting struct {
@@ -39,8 +72,66 @@ type ZoomPayloadForParticipant struct {
 	LeaveReason       string
 }
 
+// HandleMessage implements [domain.MessageHandler] interface
+func (s *ZoomWebhookHandler) HandleMessage(ctx context.Context, msg domain.Message) {
+	subject := msg.Subject()
+	ctx = logging.AppendCtx(ctx, slog.String("subject", subject))
+	slog.DebugContext(ctx, "handling NATS message")
+
+	var response []byte
+	var err error
+
+	handlers := map[string]func(ctx context.Context, msg domain.Message) ([]byte, error){
+		models.ZoomWebhookMeetingStartedSubject:               s.HandleZoomMeetingStarted,
+		models.ZoomWebhookMeetingEndedSubject:                 s.HandleZoomMeetingEnded,
+		models.ZoomWebhookMeetingDeletedSubject:               s.HandleZoomMeetingDeleted,
+		models.ZoomWebhookMeetingParticipantJoinedSubject:     s.HandleZoomParticipantJoined,
+		models.ZoomWebhookMeetingParticipantLeftSubject:       s.HandleZoomParticipantLeft,
+		models.ZoomWebhookRecordingCompletedSubject:           s.HandleZoomRecordingCompleted,
+		models.ZoomWebhookRecordingTranscriptCompletedSubject: s.HandleZoomTranscriptCompleted,
+		models.ZoomWebhookMeetingSummaryCompletedSubject:      s.HandleZoomSummaryCompleted,
+	}
+
+	handler, ok := handlers[subject]
+	if !ok {
+		slog.WarnContext(ctx, "unknown subject")
+		if msg.HasReply() {
+			err = msg.Respond(nil)
+			if err != nil {
+				slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+			}
+		}
+		return
+	}
+
+	response, err = handler(ctx, msg)
+	if err != nil {
+		slog.ErrorContext(ctx, "error handling message",
+			logging.ErrKey, err,
+		)
+		if msg.HasReply() {
+			err = msg.Respond(nil)
+			if err != nil {
+				slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+			}
+		}
+		return
+	}
+
+	if msg.HasReply() {
+		err = msg.Respond(response)
+		if err != nil {
+			slog.ErrorContext(ctx, "error responding to NATS message", logging.ErrKey, err)
+			return
+		}
+		slog.DebugContext(ctx, "responded to NATS message", "response", response)
+	} else {
+		slog.DebugContext(ctx, "handled NATS message (no reply expected)")
+	}
+}
+
 // parseZoomWebhookEvent is a helper to parse webhook event messages
-func (s *MeetingsService) parseZoomWebhookEvent(ctx context.Context, msg domain.Message) (*models.ZoomWebhookEventMessage, error) {
+func (s *ZoomWebhookHandler) parseZoomWebhookEvent(ctx context.Context, msg domain.Message) (*models.ZoomWebhookEventMessage, error) {
 	var webhookEvent models.ZoomWebhookEventMessage
 	if err := json.Unmarshal(msg.Data(), &webhookEvent); err != nil {
 		slog.ErrorContext(ctx, "failed to unmarshal Zoom webhook event", logging.ErrKey, err)
@@ -50,7 +141,7 @@ func (s *MeetingsService) parseZoomWebhookEvent(ctx context.Context, msg domain.
 }
 
 // HandleZoomMeetingStarted handles meeting.started webhook events
-func (s *MeetingsService) HandleZoomMeetingStarted(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomMeetingStarted(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -68,7 +159,7 @@ func (s *MeetingsService) HandleZoomMeetingStarted(ctx context.Context, msg doma
 }
 
 // HandleZoomMeetingEnded handles meeting.ended webhook events
-func (s *MeetingsService) HandleZoomMeetingEnded(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomMeetingEnded(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -86,7 +177,7 @@ func (s *MeetingsService) HandleZoomMeetingEnded(ctx context.Context, msg domain
 }
 
 // HandleZoomMeetingDeleted handles meeting.deleted webhook events
-func (s *MeetingsService) HandleZoomMeetingDeleted(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomMeetingDeleted(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -104,7 +195,7 @@ func (s *MeetingsService) HandleZoomMeetingDeleted(ctx context.Context, msg doma
 }
 
 // HandleZoomParticipantJoined handles meeting.participant_joined webhook events
-func (s *MeetingsService) HandleZoomParticipantJoined(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomParticipantJoined(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -122,7 +213,7 @@ func (s *MeetingsService) HandleZoomParticipantJoined(ctx context.Context, msg d
 }
 
 // HandleZoomParticipantLeft handles meeting.participant_left webhook events
-func (s *MeetingsService) HandleZoomParticipantLeft(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomParticipantLeft(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -140,7 +231,7 @@ func (s *MeetingsService) HandleZoomParticipantLeft(ctx context.Context, msg dom
 }
 
 // HandleZoomRecordingCompleted handles recording.completed webhook events
-func (s *MeetingsService) HandleZoomRecordingCompleted(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomRecordingCompleted(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -158,7 +249,7 @@ func (s *MeetingsService) HandleZoomRecordingCompleted(ctx context.Context, msg 
 }
 
 // HandleZoomTranscriptCompleted handles recording.transcript_completed webhook events
-func (s *MeetingsService) HandleZoomTranscriptCompleted(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomTranscriptCompleted(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -176,7 +267,7 @@ func (s *MeetingsService) HandleZoomTranscriptCompleted(ctx context.Context, msg
 }
 
 // HandleZoomSummaryCompleted handles meeting.summary_completed webhook events
-func (s *MeetingsService) HandleZoomSummaryCompleted(ctx context.Context, msg domain.Message) ([]byte, error) {
+func (s *ZoomWebhookHandler) HandleZoomSummaryCompleted(ctx context.Context, msg domain.Message) ([]byte, error) {
 	webhookEvent, err := s.parseZoomWebhookEvent(ctx, msg)
 	if err != nil {
 		return nil, err
@@ -194,7 +285,7 @@ func (s *MeetingsService) HandleZoomSummaryCompleted(ctx context.Context, msg do
 }
 
 // handleMeetingStartedEvent processes meeting.started events
-func (s *MeetingsService) handleMeetingStartedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	slog.InfoContext(ctx, "processing meeting started event")
 
 	// Convert to typed payload
@@ -215,7 +306,7 @@ func (s *MeetingsService) handleMeetingStartedEvent(ctx context.Context, event m
 	)
 
 	// Find the meeting by Zoom meeting ID
-	meeting, err := s.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+	meeting, err := s.meetingService.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to find meeting by Zoom ID", logging.ErrKey, err)
 		return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
@@ -251,7 +342,7 @@ func (s *MeetingsService) handleMeetingStartedEvent(ctx context.Context, event m
 }
 
 // handleMeetingEndedEvent processes meeting.ended events
-func (s *MeetingsService) handleMeetingEndedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	// Convert to typed payload
 	payload, err := event.ToMeetingEndedPayload()
 	if err != nil {
@@ -271,8 +362,8 @@ func (s *MeetingsService) handleMeetingEndedEvent(ctx context.Context, event mod
 	)
 
 	// Try to find existing PastMeeting record by platform meeting ID
-	existingPastMeeting, err := s.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
-	if err != nil && err != domain.ErrMeetingNotFound {
+	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	if err != nil && err != domain.ErrPastMeetingNotFound {
 		slog.ErrorContext(ctx, "error searching for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing past meeting: %w", err)
 	}
@@ -291,7 +382,7 @@ func (s *MeetingsService) handleMeetingEndedEvent(ctx context.Context, event mod
 		)
 
 		// Find the meeting by Zoom meeting ID first
-		meeting, err := s.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+		meeting, err := s.meetingService.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to find meeting by Zoom ID for fallback creation", logging.ErrKey, err)
 			return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
@@ -333,7 +424,7 @@ func (s *MeetingsService) handleMeetingEndedEvent(ctx context.Context, event mod
 }
 
 // handleMeetingDeletedEvent processes meeting.deleted events
-func (s *MeetingsService) handleMeetingDeletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleMeetingDeletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	// Convert to typed payload
 	payload, err := event.ToMeetingDeletedPayload()
 	if err != nil {
@@ -351,7 +442,7 @@ func (s *MeetingsService) handleMeetingDeletedEvent(ctx context.Context, event m
 }
 
 // handleParticipantJoinedEvent processes meeting.participant_joined events
-func (s *MeetingsService) handleParticipantJoinedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	// Convert to typed payload
 	payload, err := event.ToParticipantJoinedPayload()
 	if err != nil {
@@ -372,9 +463,9 @@ func (s *MeetingsService) handleParticipantJoinedEvent(ctx context.Context, even
 	)
 
 	// Find the PastMeeting record by platform meeting ID
-	pastMeeting, err := s.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
 	if err != nil {
-		if err == domain.ErrMeetingNotFound {
+		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
 				"zoom_meeting_id", meetingObj.ID,
 				"participant_email", participant.Email,
@@ -386,8 +477,8 @@ func (s *MeetingsService) handleParticipantJoinedEvent(ctx context.Context, even
 	}
 
 	// Try to find existing PastMeetingParticipant record
-	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
-	if err != nil && err != domain.ErrRegistrantNotFound {
+	existingParticipant, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
+	if err != nil && err != domain.ErrPastMeetingParticipantNotFound {
 		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing participant: %w", err)
 	}
@@ -432,7 +523,7 @@ func (s *MeetingsService) handleParticipantJoinedEvent(ctx context.Context, even
 }
 
 // handleParticipantLeftEvent processes meeting.participant_left events
-func (s *MeetingsService) handleParticipantLeftEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	// Convert to typed payload
 	payload, err := event.ToParticipantLeftPayload()
 	if err != nil {
@@ -454,9 +545,9 @@ func (s *MeetingsService) handleParticipantLeftEvent(ctx context.Context, event 
 	)
 
 	// Find the PastMeeting record by platform meeting ID
-	pastMeeting, err := s.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
 	if err != nil {
-		if err == domain.ErrMeetingNotFound {
+		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
 				"zoom_meeting_id", meetingObj.ID,
 				"participant_email", participant.Email,
@@ -468,8 +559,8 @@ func (s *MeetingsService) handleParticipantLeftEvent(ctx context.Context, event 
 	}
 
 	// Try to find existing PastMeetingParticipant record
-	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
-	if err != nil && err != domain.ErrRegistrantNotFound {
+	existingParticipant, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
+	if err != nil && err != domain.ErrPastMeetingParticipantNotFound {
 		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing participant: %w", err)
 	}
@@ -524,7 +615,7 @@ func (s *MeetingsService) handleParticipantLeftEvent(ctx context.Context, event 
 }
 
 // handleRecordingCompletedEvent processes recording.completed events
-func (s *MeetingsService) handleRecordingCompletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	// Convert to typed payload
 	payload, err := event.ToRecordingCompletedPayload()
 	if err != nil {
@@ -544,7 +635,7 @@ func (s *MeetingsService) handleRecordingCompletedEvent(ctx context.Context, eve
 }
 
 // handleTranscriptCompletedEvent processes recording.transcript_completed events
-func (s *MeetingsService) handleTranscriptCompletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	// Convert to typed payload
 	payload, err := event.ToTranscriptCompletedPayload()
 	if err != nil {
@@ -563,7 +654,7 @@ func (s *MeetingsService) handleTranscriptCompletedEvent(ctx context.Context, ev
 }
 
 // handleSummaryCompletedEvent processes meeting.summary_completed events
-func (s *MeetingsService) handleSummaryCompletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
+func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, event models.ZoomWebhookEventMessage) error {
 	// Convert to typed payload
 	payload, err := event.ToSummaryCompletedPayload()
 	if err != nil {
@@ -584,19 +675,19 @@ func (s *MeetingsService) handleSummaryCompletedEvent(ctx context.Context, event
 }
 
 // createPastMeetingRecord creates a historical record for a meeting that has started
-func (s *MeetingsService) createPastMeetingRecord(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
+func (s *ZoomWebhookHandler) createPastMeetingRecord(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
 	return s.createPastMeetingRecordWithSession(ctx, meeting, zoomData)
 }
 
 // createPastMeetingParticipants creates participant records for all registrants of a meeting
-func (s *MeetingsService) createPastMeetingParticipants(ctx context.Context, pastMeeting *models.PastMeeting, meeting *models.MeetingBase) error {
+func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, pastMeeting *models.PastMeeting, meeting *models.MeetingBase) error {
 	slog.DebugContext(ctx, "creating past meeting participant records",
 		"past_meeting_uid", pastMeeting.UID,
 		"meeting_uid", meeting.UID,
 	)
 
 	// Get all registrants for this meeting
-	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, meeting.UID)
+	registrants, err := s.registrantService.RegistrantRepository.ListByMeeting(ctx, meeting.UID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get registrants for meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to get registrants: %w", err)
@@ -626,7 +717,7 @@ func (s *MeetingsService) createPastMeetingParticipants(ctx context.Context, pas
 				// Sessions will be updated when participants join/leave
 			}
 
-			err := s.PastMeetingParticipantRepository.Create(ctx, participant)
+			err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.Create(ctx, participant)
 
 			// Use mutex to protect shared counters
 			mu.Lock()
@@ -676,7 +767,7 @@ func (s *MeetingsService) createPastMeetingParticipants(ctx context.Context, pas
 }
 
 // updatePastMeetingSessionEndTime updates the end time for the matching session in an existing PastMeeting
-func (s *MeetingsService) updatePastMeetingSessionEndTime(ctx context.Context, pastMeeting *models.PastMeeting, sessionUUID string, startTime, endTime time.Time) error {
+func (s *ZoomWebhookHandler) updatePastMeetingSessionEndTime(ctx context.Context, pastMeeting *models.PastMeeting, sessionUUID string, startTime, endTime time.Time) error {
 	slog.DebugContext(ctx, "updating past meeting session end time",
 		"past_meeting_uid", pastMeeting.UID,
 		"session_uuid", sessionUUID,
@@ -725,13 +816,13 @@ func (s *MeetingsService) updatePastMeetingSessionEndTime(ctx context.Context, p
 
 	// Update the PastMeeting record in the repository
 	// We need to get the current revision first
-	_, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, pastMeeting.UID)
+	_, revision, err := s.pastMeetingService.PastMeetingRepository.GetWithRevision(ctx, pastMeeting.UID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get past meeting revision for update", logging.ErrKey, err)
 		return fmt.Errorf("failed to get past meeting revision: %w", err)
 	}
 
-	err = s.PastMeetingRepository.Update(ctx, pastMeeting, revision)
+	err = s.pastMeetingService.PastMeetingRepository.Update(ctx, pastMeeting, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update past meeting with session end time", logging.ErrKey, err)
 		return fmt.Errorf("failed to update past meeting: %w", err)
@@ -746,12 +837,12 @@ func (s *MeetingsService) updatePastMeetingSessionEndTime(ctx context.Context, p
 }
 
 // createPastMeetingRecordForEndedEvent creates a PastMeeting record when meeting.ended is received without a prior meeting.started
-func (s *MeetingsService) createPastMeetingRecordForEndedEvent(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
+func (s *ZoomWebhookHandler) createPastMeetingRecordForEndedEvent(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
 	return s.createPastMeetingRecordWithSession(ctx, meeting, zoomData)
 }
 
 // createPastMeetingRecordWithSession creates a PastMeeting record with the specified session details
-func (s *MeetingsService) createPastMeetingRecordWithSession(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
+func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
 	contextType := "creating past meeting record"
 	if zoomData.EndTime != nil {
 		contextType = "creating past meeting record for ended event (fallback)"
@@ -815,7 +906,7 @@ func (s *MeetingsService) createPastMeetingRecordWithSession(ctx context.Context
 	}
 
 	// Create the PastMeeting record
-	err := s.PastMeetingRepository.Create(ctx, pastMeeting)
+	err := s.pastMeetingService.PastMeetingRepository.Create(ctx, pastMeeting)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create past meeting record", logging.ErrKey, err)
 		return nil, fmt.Errorf("failed to create past meeting record: %w", err)
@@ -835,7 +926,7 @@ func (s *MeetingsService) createPastMeetingRecordWithSession(ctx context.Context
 }
 
 // updateParticipantAttendance updates an existing participant record to mark them as attended and add a new session
-func (s *MeetingsService) updateParticipantAttendance(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, joinTime time.Time) error {
+func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, joinTime time.Time) error {
 	slog.DebugContext(ctx, "updating participant attendance and adding session",
 		"participant_uid", participant.UID,
 		"email", participant.Email,
@@ -876,14 +967,14 @@ func (s *MeetingsService) updateParticipantAttendance(ctx context.Context, parti
 	}
 
 	// Get current revision for update
-	_, revision, err := s.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
+	_, revision, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get participant revision for attendance update", logging.ErrKey, err)
 		return fmt.Errorf("failed to get participant revision: %w", err)
 	}
 
 	// Update the participant record
-	err = s.PastMeetingParticipantRepository.Update(ctx, participant, revision)
+	err = s.pastMeetingParticipantService.PastMeetingParticipantRepository.Update(ctx, participant, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update participant attendance", logging.ErrKey, err)
 		return fmt.Errorf("failed to update participant: %w", err)
@@ -899,7 +990,7 @@ func (s *MeetingsService) updateParticipantAttendance(ctx context.Context, parti
 }
 
 // createParticipantFromJoinedEvent creates a new participant record from a participant_joined event
-func (s *MeetingsService) createParticipantFromJoinedEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
+func (s *ZoomWebhookHandler) createParticipantFromJoinedEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
 	slog.DebugContext(ctx, "creating participant from joined event",
 		"past_meeting_uid", pastMeeting.UID,
 		"participant_email", participant.Email,
@@ -938,7 +1029,7 @@ func parseNameFromUserName(userName string) (firstName, lastName string) {
 }
 
 // updateParticipantSessionLeaveTime updates a participant's session with the leave time and reason
-func (s *MeetingsService) updateParticipantSessionLeaveTime(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, leaveTime time.Time, leaveReason string) error {
+func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, leaveTime time.Time, leaveReason string) error {
 	slog.DebugContext(ctx, "updating participant session leave time",
 		"participant_uid", participant.UID,
 		"email", participant.Email,
@@ -985,14 +1076,14 @@ func (s *MeetingsService) updateParticipantSessionLeaveTime(ctx context.Context,
 	}
 
 	// Get current revision for update
-	_, revision, err := s.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
+	_, revision, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get participant revision for session update", logging.ErrKey, err)
 		return fmt.Errorf("failed to get participant revision: %w", err)
 	}
 
 	// Update the participant record
-	err = s.PastMeetingParticipantRepository.Update(ctx, participant, revision)
+	err = s.pastMeetingParticipantService.PastMeetingParticipantRepository.Update(ctx, participant, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update participant session", logging.ErrKey, err)
 		return fmt.Errorf("failed to update participant: %w", err)
@@ -1007,7 +1098,7 @@ func (s *MeetingsService) updateParticipantSessionLeaveTime(ctx context.Context,
 }
 
 // createParticipantFromLeftEvent creates a new participant record from a participant_left event
-func (s *MeetingsService) createParticipantFromLeftEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
+func (s *ZoomWebhookHandler) createParticipantFromLeftEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
 	slog.DebugContext(ctx, "creating participant from left event",
 		"past_meeting_uid", pastMeeting.UID,
 		"participant_email", participant.Email,
@@ -1027,10 +1118,10 @@ func (s *MeetingsService) createParticipantFromLeftEvent(ctx context.Context, pa
 }
 
 // createParticipantRecord creates a participant record with the given session data
-func (s *MeetingsService) createParticipantRecord(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant, session models.ParticipantSession) (*models.PastMeetingParticipant, error) {
+func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant, session models.ParticipantSession) (*models.PastMeetingParticipant, error) {
 	// Check if this participant was invited (has a registrant record for this meeting)
 	var matchingRegistrant *models.Registrant
-	registrants, err := s.RegistrantRepository.ListByEmail(ctx, participant.Email)
+	registrants, err := s.registrantService.RegistrantRepository.ListByEmail(ctx, participant.Email)
 	if err != nil {
 		slog.WarnContext(ctx, "could not check registrant records for participant",
 			logging.ErrKey, err,
@@ -1102,7 +1193,7 @@ func (s *MeetingsService) createParticipantRecord(ctx context.Context, pastMeeti
 	}
 
 	// Create the participant record
-	err = s.PastMeetingParticipantRepository.Create(ctx, newParticipant)
+	err = s.pastMeetingParticipantService.PastMeetingParticipantRepository.Create(ctx, newParticipant)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create participant record",
 			logging.ErrKey, err,
