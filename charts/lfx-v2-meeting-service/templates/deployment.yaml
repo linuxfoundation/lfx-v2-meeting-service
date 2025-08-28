@@ -30,7 +30,7 @@ spec:
               value: {{ $config.value | quote }}
               {{- else if $config.valueFrom }}
               valueFrom:
-              {{- toYaml $config.valueFrom | nindent 14 }}
+                {{- toYaml $config.valueFrom | nindent 14 }}
               {{- end }}
           {{- end }}
           ports:
