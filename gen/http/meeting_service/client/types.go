@@ -121,9 +121,9 @@ type CreateMeetingRegistrantRequestBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -145,9 +145,9 @@ type UpdateMeetingRegistrantRequestBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -242,9 +242,9 @@ type CreatePastMeetingParticipantRequestBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -267,9 +267,9 @@ type UpdatePastMeetingParticipantRequestBody struct {
 	// User's email address
 	Email string `form:"email" json:"email" xml:"email"`
 	// User's first name
-	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// User's last name
-	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
 	// User's job title
@@ -2879,8 +2879,8 @@ func NewCreateMeetingRegistrantRegistrantCreated(body *CreateMeetingRegistrantRe
 		UID:                *body.UID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
+		FirstName:          body.FirstName,
+		LastName:           body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
 		OccurrenceID:       body.OccurrenceID,
@@ -2958,8 +2958,8 @@ func NewGetMeetingRegistrantResultOK(body *GetMeetingRegistrantResponseBody, eta
 		UID:                *body.UID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
+		FirstName:          body.FirstName,
+		LastName:           body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
 		OccurrenceID:       body.OccurrenceID,
@@ -3019,8 +3019,8 @@ func NewUpdateMeetingRegistrantRegistrantOK(body *UpdateMeetingRegistrantRespons
 		UID:                *body.UID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
+		FirstName:          body.FirstName,
+		LastName:           body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
 		OccurrenceID:       body.OccurrenceID,
@@ -3505,8 +3505,8 @@ func NewCreatePastMeetingParticipantPastMeetingParticipantCreated(body *CreatePa
 		PastMeetingUID:     *body.PastMeetingUID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
+		FirstName:          body.FirstName,
+		LastName:           body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
 		OrgName:            body.OrgName,
@@ -3586,8 +3586,8 @@ func NewGetPastMeetingParticipantResultOK(body *GetPastMeetingParticipantRespons
 		PastMeetingUID:     *body.PastMeetingUID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
+		FirstName:          body.FirstName,
+		LastName:           body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
 		OrgName:            body.OrgName,
@@ -3650,8 +3650,8 @@ func NewUpdatePastMeetingParticipantPastMeetingParticipantOK(body *UpdatePastMee
 		PastMeetingUID:     *body.PastMeetingUID,
 		MeetingUID:         *body.MeetingUID,
 		Email:              *body.Email,
-		FirstName:          *body.FirstName,
-		LastName:           *body.LastName,
+		FirstName:          body.FirstName,
+		LastName:           body.LastName,
 		Host:               body.Host,
 		JobTitle:           body.JobTitle,
 		OrgName:            body.OrgName,
@@ -4125,12 +4125,6 @@ func ValidateCreateMeetingRegistrantResponseBody(body *CreateMeetingRegistrantRe
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -4187,12 +4181,6 @@ func ValidateGetMeetingRegistrantResponseBody(body *GetMeetingRegistrantResponse
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -4248,12 +4236,6 @@ func ValidateUpdateMeetingRegistrantResponseBody(body *UpdateMeetingRegistrantRe
 	}
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
-	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
 	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
@@ -4543,12 +4525,6 @@ func ValidateCreatePastMeetingParticipantResponseBody(body *CreatePastMeetingPar
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -4608,12 +4584,6 @@ func ValidateGetPastMeetingParticipantResponseBody(body *GetPastMeetingParticipa
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -4672,12 +4642,6 @@ func ValidateUpdatePastMeetingParticipantResponseBody(body *UpdatePastMeetingPar
 	}
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
-	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
 	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
@@ -6115,12 +6079,6 @@ func ValidateRegistrantResponseBody(body *RegistrantResponseBody) (err error) {
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
-	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -6336,12 +6294,6 @@ func ValidatePastMeetingParticipantResponseBody(body *PastMeetingParticipantResp
 	}
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
-	}
-	if body.FirstName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
-	}
-	if body.LastName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
 	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))

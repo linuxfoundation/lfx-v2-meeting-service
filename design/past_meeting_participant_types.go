@@ -21,7 +21,7 @@ var CreatePastMeetingParticipantPayload = Type("CreatePastMeetingParticipantPayl
 	RegistrantUsernameAttribute()
 	PastMeetingParticipantIsInvitedAttribute()
 	PastMeetingParticipantIsAttendedAttribute()
-	Required("past_meeting_uid", "email", "first_name", "last_name")
+	Required("past_meeting_uid", "email")
 })
 
 // UpdatePastMeetingParticipantPayload represents the payload for updating a past meeting participant
@@ -38,7 +38,7 @@ var UpdatePastMeetingParticipantPayload = Type("UpdatePastMeetingParticipantPayl
 	RegistrantUsernameAttribute()
 	PastMeetingParticipantIsInvitedAttribute()
 	PastMeetingParticipantIsAttendedAttribute()
-	Required("past_meeting_uid", "email", "first_name", "last_name")
+	Required("past_meeting_uid", "email")
 })
 
 // PastMeetingParticipant represents a past meeting participant
@@ -61,7 +61,7 @@ var PastMeetingParticipant = Type("PastMeetingParticipant", func() {
 	PastMeetingParticipantIsAttendedAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
-	Required("uid", "past_meeting_uid", "meeting_uid", "email", "first_name", "last_name")
+	Required("uid", "past_meeting_uid", "meeting_uid", "email")
 })
 
 // PastMeetingParticipantUIDAttribute is the DSL attribute for past meeting participant UID.

@@ -179,9 +179,9 @@ type CreateMeetingRegistrantPayload struct {
 	// User's email address
 	Email string
 	// User's first name
-	FirstName string
+	FirstName *string
 	// User's last name
-	LastName string
+	LastName *string
 	// If user should have access as a meeting host
 	Host *bool
 	// User's job title
@@ -211,9 +211,9 @@ type CreatePastMeetingParticipantPayload struct {
 	// User's email address
 	Email string
 	// User's first name
-	FirstName string
+	FirstName *string
 	// User's last name
-	LastName string
+	LastName *string
 	// If user should have access as a meeting host
 	Host *bool
 	// User's job title
@@ -804,9 +804,9 @@ type PastMeetingParticipant struct {
 	// User's email address
 	Email string
 	// User's first name
-	FirstName string
+	FirstName *string
 	// User's last name
-	LastName string
+	LastName *string
 	// If user should have access as a meeting host
 	Host *bool
 	// User's job title
@@ -904,9 +904,9 @@ type Registrant struct {
 	// User's email address
 	Email string
 	// User's first name
-	FirstName string
+	FirstName *string
 	// User's last name
-	LastName string
+	LastName *string
 	// If user should have access as a meeting host
 	Host *bool
 	// User's job title
@@ -1026,9 +1026,9 @@ type UpdateMeetingRegistrantPayload struct {
 	// User's email address
 	Email string
 	// User's first name
-	FirstName string
+	FirstName *string
 	// User's last name
-	LastName string
+	LastName *string
 	// If user should have access as a meeting host
 	Host *bool
 	// User's job title
@@ -1076,9 +1076,9 @@ type UpdatePastMeetingParticipantPayload struct {
 	// User's email address
 	Email string
 	// User's first name
-	FirstName string
+	FirstName *string
 	// User's last name
-	LastName string
+	LastName *string
 	// If user should have access as a meeting host
 	Host *bool
 	// User's job title
