@@ -24,7 +24,7 @@ spec:
             allowPrivilegeEscalation: false
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-          {{- range $name, $config := .Values.environment }}
+          {{- range $name, $config := .Values.app.environment }}
             - name: {{ $name }}
               {{- if $config.value }}
               value: {{ $config.value | quote }}
