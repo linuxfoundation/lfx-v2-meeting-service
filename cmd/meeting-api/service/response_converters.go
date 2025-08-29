@@ -272,8 +272,8 @@ func convertDomainToOccurrenceResponse(o *models.Occurrence) *meetingservice.Occ
 	if o.ResponseCountYes != 0 {
 		occ.ResponseCountYes = utils.IntPtr(o.ResponseCountYes)
 	}
-	if o.Status != "" {
-		occ.Status = utils.StringPtr(o.Status)
+	if o.IsCancelled {
+		occ.IsCancelled = utils.BoolPtr(o.IsCancelled)
 	}
 
 	if o.Recurrence != nil {

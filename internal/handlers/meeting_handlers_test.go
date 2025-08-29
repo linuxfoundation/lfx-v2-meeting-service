@@ -29,10 +29,12 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 		SkipEtagValidation: false,
 	}
 
+	occurrenceService := service.NewOccurrenceService()
 	meetingService := &service.MeetingService{
 		MeetingRepository: mockMeetingRepo,
 		MessageBuilder:    mockMessageBuilder,
 		PlatformRegistry:  mockPlatformRegistry,
+		OccurrenceService: occurrenceService,
 		Config:            config,
 	}
 

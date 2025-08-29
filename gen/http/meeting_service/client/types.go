@@ -1754,8 +1754,8 @@ type OccurrenceResponseBody struct {
 	ResponseCountNo *int `form:"response_count_no,omitempty" json:"response_count_no,omitempty" xml:"response_count_no,omitempty"`
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
-	// Occurrence status from platform
-	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// Whether the occurrence is cancelled
+	IsCancelled *bool `form:"is_cancelled,omitempty" json:"is_cancelled,omitempty" xml:"is_cancelled,omitempty"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -5907,11 +5907,6 @@ func ValidateOccurrenceResponseBody(body *OccurrenceResponseBody) (err error) {
 	if body.Recurrence != nil {
 		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
-		}
-	}
-	if body.Status != nil {
-		if !(*body.Status == "active" || *body.Status == "cancelled") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"active", "cancelled"}))
 		}
 	}
 	return

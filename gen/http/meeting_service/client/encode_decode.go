@@ -3632,7 +3632,7 @@ func unmarshalOccurrenceResponseBodyToMeetingserviceOccurrence(v *OccurrenceResp
 		RegistrantCount:  v.RegistrantCount,
 		ResponseCountNo:  v.ResponseCountNo,
 		ResponseCountYes: v.ResponseCountYes,
-		Status:           v.Status,
+		IsCancelled:      v.IsCancelled,
 	}
 	if v.Recurrence != nil {
 		res.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v.Recurrence)

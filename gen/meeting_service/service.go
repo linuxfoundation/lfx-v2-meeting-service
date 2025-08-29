@@ -722,8 +722,8 @@ type Occurrence struct {
 	ResponseCountNo *int
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int
-	// Occurrence status from platform
-	Status *string
+	// Whether the occurrence is cancelled
+	IsCancelled *bool
 }
 
 // PastMeeting is the result type of the Meeting Service service

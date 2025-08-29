@@ -1754,8 +1754,8 @@ type OccurrenceResponseBody struct {
 	ResponseCountNo *int `form:"response_count_no,omitempty" json:"response_count_no,omitempty" xml:"response_count_no,omitempty"`
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
-	// Occurrence status from platform
-	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// Whether the occurrence is cancelled
+	IsCancelled *bool `form:"is_cancelled,omitempty" json:"is_cancelled,omitempty" xml:"is_cancelled,omitempty"`
 }
 
 // MeetingBaseResponseBody is used to define fields on response body types.

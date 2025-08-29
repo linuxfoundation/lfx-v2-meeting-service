@@ -3046,7 +3046,7 @@ func marshalMeetingserviceOccurrenceToOccurrenceResponseBody(v *meetingservice.O
 		RegistrantCount:  v.RegistrantCount,
 		ResponseCountNo:  v.ResponseCountNo,
 		ResponseCountYes: v.ResponseCountYes,
-		Status:           v.Status,
+		IsCancelled:      v.IsCancelled,
 	}
 	if v.Recurrence != nil {
 		res.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceResponseBody(v.Recurrence)

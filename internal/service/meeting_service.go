@@ -25,6 +25,7 @@ type MeetingService struct {
 	MeetingRepository domain.MeetingRepository
 	MessageBuilder    domain.MessageBuilder
 	PlatformRegistry  domain.PlatformRegistry
+	OccurrenceService domain.OccurrenceService
 	Config            ServiceConfig
 }
 
@@ -33,12 +34,14 @@ func NewMeetingService(
 	meetingRepository domain.MeetingRepository,
 	messageBuilder domain.MessageBuilder,
 	platformRegistry domain.PlatformRegistry,
+	occurrenceService domain.OccurrenceService,
 	config ServiceConfig,
 ) *MeetingService {
 	return &MeetingService{
 		MeetingRepository: meetingRepository,
 		MessageBuilder:    messageBuilder,
 		PlatformRegistry:  platformRegistry,
+		OccurrenceService: occurrenceService,
 		Config:            config,
 	}
 }
@@ -110,7 +113,8 @@ func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[st
 func (s *MeetingService) ServiceReady() bool {
 	return s.MeetingRepository != nil &&
 		s.MessageBuilder != nil &&
-		s.PlatformRegistry != nil
+		s.PlatformRegistry != nil &&
+		s.OccurrenceService != nil
 }
 
 // GetMeetings fetches all meetings
@@ -135,14 +139,18 @@ func (s *MeetingService) GetMeetings(ctx context.Context) ([]*models.MeetingFull
 	}
 
 	meetings := make([]*models.MeetingFull, len(meetingsBase))
+	currentTime := time.Now()
+
 	for i, meeting := range meetingsBase {
-		var s *models.MeetingSettings
+		var settings *models.MeetingSettings
 		if meeting != nil {
-			s = settingsByUID[meeting.UID]
+			settings = settingsByUID[meeting.UID]
+			// Calculate next 50 occurrences from current time
+			meeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
 		}
 		meetings[i] = &models.MeetingFull{
 			Base:     meeting,
-			Settings: s,
+			Settings: settings,
 		}
 	}
 
@@ -207,6 +215,9 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 			"platform", reqMeeting.Base.Platform,
 			"platform_meeting_id", result.PlatformMeetingID)
 	}
+
+	// Calculate first 50 occurrences for the new meeting
+	reqMeeting.Base.Occurrences = s.OccurrenceService.CalculateOccurrences(reqMeeting.Base, 50)
 
 	// Create the meeting in the repository
 	// TODO: handle rollbacks better
@@ -288,6 +299,10 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 	// Store the revision in context for the custom encoder to use
 	revisionStr := strconv.FormatUint(revision, 10)
 	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)
+
+	// Calculate next 50 occurrences from current time
+	currentTime := time.Now()
+	meetingDB.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
 
 	slog.DebugContext(ctx, "returning meeting", "meeting", meetingDB, "revision", revision)
 
@@ -477,6 +492,10 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		slog.ErrorContext(ctx, "failed to send NATS messages for updated meeting", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
+
+	// Calculate occurrences for the updated meeting
+	currentTime := time.Now()
+	reqMeeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(reqMeeting, currentTime, 50)
 
 	slog.DebugContext(ctx, "returning updated meeting", "meeting", reqMeeting)
 

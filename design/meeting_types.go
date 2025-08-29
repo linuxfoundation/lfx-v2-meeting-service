@@ -194,9 +194,7 @@ var Occurrence = Type("Occurrence", func() {
 	Attribute("registrant_count", Int, "Number of registrants for this meeting occurrence")
 	Attribute("response_count_no", Int, "Number of registrants who declined the invite for this occurrence")
 	Attribute("response_count_yes", Int, "Number of registrants who accepted the invite for this occurrence")
-	Attribute("status", String, "Occurrence status from platform", func() {
-		Enum("active", "cancelled")
-	})
+	Attribute("is_cancelled", Boolean, "Whether the occurrence is cancelled")
 })
 
 // MeetingOrganizersAttribute is the DSL attribute for meeting organizers.

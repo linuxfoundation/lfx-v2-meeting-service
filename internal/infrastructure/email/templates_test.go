@@ -235,10 +235,10 @@ func TestFormatRecurrence(t *testing.T) {
 
 	t.Run("weekly recurrence", func(t *testing.T) {
 		tests := []struct {
-			name        string
-			interval    int
-			weeklyDays  string
-			expected    string
+			name       string
+			interval   int
+			weeklyDays string
+			expected   string
 		}{
 			{
 				name:     "weekly every week",
@@ -251,16 +251,16 @@ func TestFormatRecurrence(t *testing.T) {
 				expected: "Every 2 weeks",
 			},
 			{
-				name:        "weekly on Monday and Friday",
-				interval:    1,
-				weeklyDays:  "2,6",
-				expected:    "Weekly on Monday and Friday",
+				name:       "weekly on Monday and Friday",
+				interval:   1,
+				weeklyDays: "2,6",
+				expected:   "Weekly on Monday and Friday",
 			},
 			{
-				name:        "weekly on Monday, Wednesday, and Friday",
-				interval:    1,
-				weeklyDays:  "2,4,6",
-				expected:    "Weekly on Monday, Wednesday and Friday",
+				name:       "weekly on Monday, Wednesday, and Friday",
+				interval:   1,
+				weeklyDays: "2,4,6",
+				expected:   "Weekly on Monday, Wednesday and Friday",
 			},
 		}
 
@@ -279,12 +279,12 @@ func TestFormatRecurrence(t *testing.T) {
 
 	t.Run("monthly recurrence", func(t *testing.T) {
 		tests := []struct {
-			name            string
-			interval        int
-			monthlyDay      int
-			monthlyWeek     int
-			monthlyWeekDay  int
-			expected        string
+			name           string
+			interval       int
+			monthlyDay     int
+			monthlyWeek    int
+			monthlyWeekDay int
+			expected       string
 		}{
 			{
 				name:     "monthly every month",
@@ -337,10 +337,10 @@ func TestFormatRecurrence(t *testing.T) {
 		endDate := time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC)
 
 		tests := []struct {
-			name         string
-			endTimes     int
-			endDateTime  *time.Time
-			expected     string
+			name        string
+			endTimes    int
+			endDateTime *time.Time
+			expected    string
 		}{
 			{
 				name:     "daily with 10 occurrences",
@@ -380,9 +380,9 @@ func TestFormatRecurrence(t *testing.T) {
 
 func TestFormatWeeklyDaysText(t *testing.T) {
 	tests := []struct {
-		name        string
-		weeklyDays  string
-		expected    string
+		name       string
+		weeklyDays string
+		expected   string
 	}{
 		{
 			name:       "single day - Monday",
