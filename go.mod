@@ -10,6 +10,7 @@ toolchain go1.24.4
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/go-viper/mapstructure/v2 v2.4.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/nats-io/nats.go v1.44.0
 	github.com/stretchr/testify v1.10.0

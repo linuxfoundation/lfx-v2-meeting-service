@@ -148,6 +148,111 @@ type ICSMeetingCancellationParams struct {
 	Recurrence     *models.Recurrence
 }
 
+// ICSMeetingUpdateParams holds parameters for generating a meeting update ICS file
+type ICSMeetingUpdateParams struct {
+	MeetingUID     string // Unique meeting identifier for consistent ICS UID
+	MeetingTitle   string
+	Description    string
+	StartTime      time.Time
+	Duration       int // Duration in minutes
+	Timezone       string
+	JoinLink       string
+	MeetingID      string
+	Passcode       string
+	RecipientEmail string
+	Recurrence     *models.Recurrence
+	Sequence       int // Incremented sequence number for updates
+}
+
+// GenerateMeetingUpdateICS generates an ICS file for updating a meeting
+func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (string, error) {
+	// Load timezone
+	loc, err := time.LoadLocation(params.Timezone)
+	if err != nil {
+		loc = time.UTC
+	}
+
+	// Generate consistent UID using meeting UID
+	uid := params.MeetingUID
+	dtstamp := time.Now().UTC().Format("20060102T150405Z")
+
+	// Convert times to the meeting timezone
+	startLocal := params.StartTime.In(loc)
+	endLocal := startLocal.Add(time.Duration(params.Duration) * time.Minute)
+
+	// Format times in YYYYMMDDTHHMMSS format
+	dtstart := startLocal.Format("20060102T150405")
+	dtend := endLocal.Format("20060102T150405")
+
+	// Build the ICS content
+	var ics strings.Builder
+
+	// Calendar header
+	ics.WriteString("BEGIN:VCALENDAR\r\n")
+	ics.WriteString(fmt.Sprintf("VERSION:%s\r\n", ICALVersion))
+	ics.WriteString(fmt.Sprintf("PRODID:%s\r\n", ICSProdID))
+	ics.WriteString(fmt.Sprintf("CALSCALE:%s\r\n", ICALScale))
+	ics.WriteString("METHOD:REQUEST\r\n")
+
+	// Timezone definition
+	ics.WriteString(generateTimezoneDefinition(params.Timezone, loc))
+
+	// Event
+	ics.WriteString("BEGIN:VEVENT\r\n")
+	ics.WriteString(fmt.Sprintf("UID:%s\r\n", uid))
+	ics.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", dtstamp))
+	ics.WriteString(fmt.Sprintf("ORGANIZER;CN=%s:mailto:%s\r\n", OrganizerName, OrganizerEmail))
+	ics.WriteString(fmt.Sprintf("DTSTART;TZID=%s:%s\r\n", params.Timezone, dtstart))
+	ics.WriteString(fmt.Sprintf("DTEND;TZID=%s:%s\r\n", params.Timezone, dtend))
+
+	// Add recurrence rule if provided
+	if params.Recurrence != nil {
+		rrule := generateRRule(params.Recurrence)
+		if rrule != "" {
+			ics.WriteString(fmt.Sprintf("RRULE:%s\r\n", rrule))
+		}
+	}
+
+	// Meeting details
+	ics.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICSText(params.MeetingTitle)))
+
+	// Build enhanced description with meeting details
+	descriptionText := buildDescription(params.Description, params.MeetingID, params.Passcode, params.JoinLink, params.StartTime, params.Duration, params.Timezone, params.Recurrence)
+	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
+
+	// Location (Zoom URL) - only add if join link exists
+	if params.JoinLink != "" {
+		ics.WriteString(fmt.Sprintf("LOCATION:%s\r\n", params.JoinLink))
+		// URL property for the join link
+		ics.WriteString(fmt.Sprintf("URL:%s\r\n", params.JoinLink))
+	}
+
+	// Attendee
+	if params.RecipientEmail != "" {
+		ics.WriteString(fmt.Sprintf("ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=%s:mailto:%s\r\n",
+			params.RecipientEmail, params.RecipientEmail))
+	}
+
+	// Meeting properties
+	ics.WriteString("STATUS:CONFIRMED\r\n")
+	ics.WriteString("TRANSP:OPAQUE\r\n")
+	ics.WriteString("CLASS:PUBLIC\r\n")
+	ics.WriteString("PRIORITY:5\r\n")
+	ics.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", params.Sequence)) // Incremented sequence for updates
+
+	// Alarm (reminder 15 minutes before)
+	ics.WriteString("BEGIN:VALARM\r\n")
+	ics.WriteString("TRIGGER:-PT15M\r\n")
+	ics.WriteString("ACTION:DISPLAY\r\n")
+	ics.WriteString(fmt.Sprintf("DESCRIPTION:Reminder: %s\r\n", escapeICSText(params.MeetingTitle)))
+	ics.WriteString("END:VALARM\r\n")
+
+	ics.WriteString("END:VEVENT\r\n")
+	ics.WriteString("END:VCALENDAR\r\n")
+
+	return ics.String(), nil
+}
+
 // GenerateMeetingCancellationICS generates an ICS file for cancelling a meeting
 func (g *ICSGenerator) GenerateMeetingCancellationICS(params ICSMeetingCancellationParams) (string, error) {
 	loc, err := time.LoadLocation(params.Timezone)

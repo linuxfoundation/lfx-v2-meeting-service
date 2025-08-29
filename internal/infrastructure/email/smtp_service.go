@@ -41,10 +41,12 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 
 	// Define all templates to load
 	templateConfigs := map[string]templateConfig{
-		"invitationHTML":   {"meeting_invitation.html", "templates/meeting_invitation.html"},
-		"invitationText":   {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
-		"cancellationHTML": {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
-		"cancellationText": {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
+		"invitationHTML":        {"meeting_invitation.html", "templates/meeting_invitation.html"},
+		"invitationText":        {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
+		"cancellationHTML":      {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
+		"cancellationText":      {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
+		"updatedInvitationHTML": {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
+		"updatedInvitationText": {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},
 	}
 
 	// Load all templates
@@ -67,6 +69,10 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 			Cancellation: TemplateSet{
 				HTML: loadedTemplates["cancellationHTML"],
 				Text: loadedTemplates["cancellationText"],
+			},
+			UpdatedInvitation: TemplateSet{
+				HTML: loadedTemplates["updatedInvitationHTML"],
+				Text: loadedTemplates["updatedInvitationText"],
 			},
 		},
 	}
@@ -205,6 +211,79 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	slog.InfoContext(ctx, "cancellation email sent successfully")
 	if attachment != nil {
 		slog.InfoContext(ctx, "ICS cancellation attachment included")
+	}
+	return nil
+}
+
+// SendRegistrantUpdatedInvitation sends an update notification email to a meeting registrant
+func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation domain.EmailUpdatedInvitation) error {
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", updatedInvitation.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", updatedInvitation.MeetingTitle))
+
+	// Generate ICS update file if we have the necessary data and it's a future meeting
+	var attachment *domain.EmailAttachment
+	if updatedInvitation.StartTime.After(time.Now()) {
+		icsContent, err := s.icsGenerator.GenerateMeetingUpdateICS(ICSMeetingUpdateParams{
+			MeetingUID:     updatedInvitation.MeetingUID,
+			MeetingTitle:   updatedInvitation.MeetingTitle,
+			Description:    updatedInvitation.Description,
+			StartTime:      updatedInvitation.StartTime,
+			Duration:       updatedInvitation.Duration,
+			Timezone:       updatedInvitation.Timezone,
+			JoinLink:       updatedInvitation.JoinLink,
+			MeetingID:      updatedInvitation.MeetingID,
+			Passcode:       updatedInvitation.Passcode,
+			RecipientEmail: updatedInvitation.RecipientEmail,
+			Recurrence:     updatedInvitation.Recurrence,
+			Sequence:       1, // Incremented sequence for updates
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to generate ICS update", logging.ErrKey, err)
+			// Continue without ICS - don't fail the whole email
+		} else {
+			// Create attachment
+			attachment = &domain.EmailAttachment{
+				Filename:    fmt.Sprintf("%s-updated.ics", strings.ReplaceAll(updatedInvitation.MeetingTitle, " ", "_")),
+				ContentType: "text/calendar; charset=UTF-8; method=REQUEST",
+				Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
+			}
+			updatedInvitation.ICSAttachment = attachment
+		}
+	}
+
+	// Generate email content from templates
+	htmlContent, err := renderTemplate(s.templates.Meeting.UpdatedInvitation.HTML, updatedInvitation)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to render updated invitation HTML template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render updated invitation HTML template: %w", err)
+	}
+
+	textContent, err := renderTemplate(s.templates.Meeting.UpdatedInvitation.Text, updatedInvitation)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to render updated invitation text template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render updated invitation text template: %w", err)
+	}
+
+	// Build and send the email with attachment
+	subject := fmt.Sprintf("Meeting Updated: %s", updatedInvitation.MeetingTitle)
+	message := buildEmailMessageWithParams(EmailMessageParams{
+		Recipient:   updatedInvitation.RecipientEmail,
+		Subject:     subject,
+		HTMLContent: htmlContent,
+		TextContent: textContent,
+		Attachment:  attachment,
+		Config:      s.config,
+	})
+
+	err = sendEmailMessage(updatedInvitation.RecipientEmail, message, s.config)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send updated invitation email", logging.ErrKey, err)
+		return err
+	}
+
+	slog.InfoContext(ctx, "updated invitation email sent successfully")
+	if attachment != nil {
+		slog.InfoContext(ctx, "ICS update attachment included")
 	}
 	return nil
 }

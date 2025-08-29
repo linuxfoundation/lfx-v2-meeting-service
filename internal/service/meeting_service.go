@@ -6,10 +6,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -39,6 +41,69 @@ func NewMeetingService(
 		PlatformRegistry:  platformRegistry,
 		Config:            config,
 	}
+}
+
+// detectMeetingBaseChanges compares two MeetingBase structs and returns a map of changes
+func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[string]any {
+	changes := make(map[string]any)
+
+	if oldMeeting.Title != newMeeting.Title {
+		changes["Title"] = newMeeting.Title
+	}
+	if oldMeeting.Description != newMeeting.Description {
+		changes["Description"] = newMeeting.Description
+	}
+	if !oldMeeting.StartTime.Equal(newMeeting.StartTime) {
+		changes["Start Time"] = newMeeting.StartTime.Format("2006-01-02 15:04:05 MST")
+	}
+	if oldMeeting.Duration != newMeeting.Duration {
+		changes["Duration"] = fmt.Sprintf("%d minutes", newMeeting.Duration)
+	}
+	if oldMeeting.Timezone != newMeeting.Timezone {
+		changes["Timezone"] = newMeeting.Timezone
+	}
+	if oldMeeting.Visibility != newMeeting.Visibility {
+		changes["Visibility"] = newMeeting.Visibility
+	}
+	if oldMeeting.JoinURL != newMeeting.JoinURL {
+		changes["Join URL"] = newMeeting.JoinURL
+	}
+
+	// Compare platform-specific fields
+	if oldMeeting.Platform != newMeeting.Platform {
+		changes["Platform"] = newMeeting.Platform
+	}
+
+	// Check if Zoom config changed (basic comparison)
+	if oldMeeting.ZoomConfig != nil && newMeeting.ZoomConfig != nil {
+		if oldMeeting.ZoomConfig.MeetingID != newMeeting.ZoomConfig.MeetingID {
+			changes["Meeting ID"] = newMeeting.ZoomConfig.MeetingID
+		}
+		if oldMeeting.ZoomConfig.Passcode != newMeeting.ZoomConfig.Passcode {
+			changes["Passcode"] = newMeeting.ZoomConfig.Passcode
+		}
+	} else if oldMeeting.ZoomConfig == nil && newMeeting.ZoomConfig != nil {
+		changes["Zoom Configuration"] = "Added Zoom configuration"
+	} else if oldMeeting.ZoomConfig != nil && newMeeting.ZoomConfig == nil {
+		changes["Zoom Configuration"] = "Removed Zoom configuration"
+	}
+
+	// Compare recurrence using cmp package for comprehensive comparison
+	oldHasRecurrence := oldMeeting.Recurrence != nil
+	newHasRecurrence := newMeeting.Recurrence != nil
+	if oldHasRecurrence != newHasRecurrence {
+		if newHasRecurrence {
+			changes["Recurrence"] = "Added recurrence pattern"
+		} else {
+			changes["Recurrence"] = "Removed recurrence pattern"
+		}
+	} else if oldHasRecurrence && newHasRecurrence {
+		if !cmp.Equal(oldMeeting.Recurrence, newMeeting.Recurrence) {
+			changes["Recurrence"] = "Modified recurrence pattern"
+		}
+	}
+
+	return changes
 }
 
 // ServiceReady checks if the service is ready for use.
@@ -352,6 +417,9 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		}
 	}
 
+	// Detect changes before updating
+	changes := detectMeetingBaseChanges(existingMeetingDB, reqMeeting)
+
 	// Update the meeting in the repository
 	err = s.MeetingRepository.UpdateBase(ctx, reqMeeting, revision)
 	if err != nil {
@@ -366,8 +434,8 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		return nil, domain.ErrInternal
 	}
 
-	// Use WorkerPool for concurrent NATS message sending
-	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	// Use WorkerPool for concurrent NATS message sending (always 3 messages now)
+	pool := concurrent.NewWorkerPool(3)
 
 	messages := []func() error{
 		func() error {
@@ -394,6 +462,13 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 				ProjectUID: reqMeeting.ProjectUID,
 				Organizers: settingsDB.Organizers,
 				Committees: committees,
+			})
+		},
+		func() error {
+			// Always send meeting updated message for other services to consume
+			return s.MessageBuilder.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
+				MeetingUID: reqMeeting.UID,
+				Changes:    changes,
 			})
 		},
 	}

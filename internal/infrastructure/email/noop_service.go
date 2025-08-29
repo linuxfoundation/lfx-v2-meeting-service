@@ -36,3 +36,12 @@ func (s *NoOpService) SendRegistrantCancellation(ctx context.Context, cancellati
 	slog.DebugContext(ctx, "email service disabled, skipping cancellation email")
 	return nil
 }
+
+// SendRegistrantUpdatedInvitation logs the update but doesn't send an email
+func (s *NoOpService) SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation domain.EmailUpdatedInvitation) error {
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", updatedInvitation.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", updatedInvitation.MeetingTitle))
+
+	slog.DebugContext(ctx, "email service disabled, skipping update notification email")
+	return nil
+}

@@ -25,8 +25,9 @@ type TemplateSet struct {
 
 // MeetingTemplates holds all meeting-related templates
 type MeetingTemplates struct {
-	Invitation   TemplateSet
-	Cancellation TemplateSet
+	Invitation        TemplateSet
+	Cancellation      TemplateSet
+	UpdatedInvitation TemplateSet
 }
 
 // Templates holds all template categories
@@ -43,8 +44,9 @@ type templateConfig struct {
 // loadTemplate loads a single template with the shared function map
 func loadTemplate(config templateConfig) (*template.Template, error) {
 	tmpl, err := template.New(config.name).Funcs(template.FuncMap{
-		"formatTime":     formatTime,
-		"formatDuration": formatDuration,
+		"formatTime":       formatTime,
+		"formatDuration":   formatDuration,
+		"formatRecurrence": formatRecurrence,
 	}).ParseFS(templateFS, config.path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %s template: %w", config.name, err)
