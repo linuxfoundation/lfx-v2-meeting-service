@@ -20,9 +20,15 @@ Time Zone: {{.Timezone}}
 
 {{end}}{{if .JoinLink}}Join the Meeting:
 {{.JoinLink}}
-{{else}}Meeting link will be provided closer to the meeting time.
+{{if .MeetingID}}
+Meeting ID: {{.MeetingID}}{{if .Passcode}}
+Passcode: {{.Passcode}}{{end}}
+{{end}}{{else}}Meeting link will be provided closer to the meeting time.
 {{end}}
-
+{{if .ICSAttachment}}
+📅 Calendar Event Attached
+A calendar file (.ics) is attached to this email. Open it to automatically add this meeting to your calendar application.
+{{end}}
 ---
 This is an automated email from the Linux Foundation Meeting Service.
 Please do not reply to this email.

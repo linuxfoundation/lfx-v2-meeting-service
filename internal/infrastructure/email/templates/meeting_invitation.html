@@ -123,8 +123,20 @@
         
         <p><small>Or copy and paste this link into your browser:</small><br>
         <a href="{{.JoinLink}}">{{.JoinLink}}</a></p>
+        
+        {{if .MeetingID}}
+        <p><small><strong>Meeting ID:</strong> {{.MeetingID}}<br>
+        {{if .Passcode}}<strong>Passcode:</strong> {{.Passcode}}{{end}}</small></p>
+        {{end}}
         {{else}}
         <p><em>Meeting link will be provided closer to the meeting time.</em></p>
+        {{end}}
+        
+        {{if .ICSAttachment}}
+        <p style="margin-top: 20px; padding: 15px; background-color: #f0f8ff; border-left: 4px solid #0068c8; border-radius: 4px;">
+            <strong>📅 Calendar Event Attached</strong><br>
+            A calendar file (.ics) is attached to this email. Open it to automatically add this meeting to your calendar application.
+        </p>
         {{end}}
         
         <div class="footer">

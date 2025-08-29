@@ -5,6 +5,7 @@ package email
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -15,8 +16,9 @@ import (
 
 // SMTPService implements the EmailService interface using SMTP
 type SMTPService struct {
-	config    SMTPConfig
-	templates Templates
+	config       SMTPConfig
+	templates    Templates
+	icsGenerator *ICSGenerator
 }
 
 // SMTPConfig holds the SMTP server configuration
@@ -31,7 +33,8 @@ type SMTPConfig struct {
 // NewSMTPService creates a new SMTP email service
 func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 	service := &SMTPService{
-		config: config,
+		config:       config,
+		icsGenerator: NewICSGenerator(),
 	}
 
 	// Define all templates to load
@@ -74,6 +77,39 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", invitation.RecipientEmail))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", invitation.MeetingTitle))
 
+	// Generate ICS file content
+	icsContent, err := s.icsGenerator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+		MeetingTitle:   invitation.MeetingTitle,
+		Description:    invitation.Description,
+		StartTime:      invitation.StartTime,
+		Duration:       invitation.Duration,
+		Timezone:       invitation.Timezone,
+		JoinLink:       invitation.JoinLink,
+		MeetingID:      invitation.MeetingID,
+		Passcode:       invitation.Passcode,
+		RecipientEmail: invitation.RecipientEmail,
+		Recurrence:     invitation.Recurrence,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to generate ICS file", logging.ErrKey, err)
+		// Continue without attachment if ICS generation fails
+		icsContent = ""
+	}
+
+	// Create ICS attachment if generated successfully
+	var attachment *domain.EmailAttachment
+	if icsContent != "" {
+		// Encode ICS content to base64
+		encodedContent := base64.StdEncoding.EncodeToString([]byte(icsContent))
+		attachment = &domain.EmailAttachment{
+			Filename:    "meeting-invitation.ics",
+			ContentType: "text/calendar",
+			Content:     encodedContent,
+		}
+		// Store in invitation for template access
+		invitation.ICSAttachment = attachment
+	}
+
 	// Generate email content from templates
 	htmlContent, err := renderTemplate(s.templates.Meeting.Invitation.HTML, invitation)
 	if err != nil {
@@ -87,9 +123,9 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		return fmt.Errorf("failed to render text template: %w", err)
 	}
 
-	// Build and send the email
+	// Build and send the email with attachment
 	subject := fmt.Sprintf("Invitation: %s", invitation.MeetingTitle)
-	message := buildEmailMessage(invitation.RecipientEmail, subject, htmlContent, textContent, s.config)
+	message := buildEmailMessageWithAttachment(invitation.RecipientEmail, subject, htmlContent, textContent, attachment, s.config)
 	err = sendEmailMessage(invitation.RecipientEmail, message, s.config)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send invitation email", logging.ErrKey, err)
@@ -97,6 +133,9 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 	}
 
 	slog.InfoContext(ctx, "invitation email sent successfully")
+	if attachment != nil {
+		slog.InfoContext(ctx, "ICS attachment included in invitation")
+	}
 	return nil
 }
 

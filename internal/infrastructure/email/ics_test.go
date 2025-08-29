@@ -1,0 +1,385 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
+package email
+
+import (
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
+	generator := NewICSGenerator()
+
+	// Test time
+	startTime := time.Date(2024, 1, 15, 14, 0, 0, 0, time.UTC)
+
+	t.Run("basic meeting without recurrence", func(t *testing.T) {
+		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingTitle:   "Team Standup",
+			Description:    "Weekly team sync meeting",
+			StartTime:      startTime,
+			Duration:       60,
+			Timezone:       "America/New_York",
+			JoinLink:       "https://zoom.us/j/123456789",
+			MeetingID:      "123456789",
+			Passcode:       "abc123",
+			RecipientEmail: "user@example.com",
+			Recurrence:     nil,
+		})
+
+		require.NoError(t, err)
+		assert.Contains(t, ics, "BEGIN:VCALENDAR")
+		assert.Contains(t, ics, "END:VCALENDAR")
+		assert.Contains(t, ics, "BEGIN:VEVENT")
+		assert.Contains(t, ics, "END:VEVENT")
+		assert.Contains(t, ics, "SUMMARY:Team Standup")
+		assert.Contains(t, ics, "ORGANIZER;CN=ITX:mailto:itx@linuxfoundation.org")
+		assert.Contains(t, ics, "LOCATION:https://zoom.us/j/123456789")
+		assert.Contains(t, ics, "Meeting ID: 123456789")
+		assert.Contains(t, ics, "Passcode: abc123")
+		assert.Contains(t, ics, "ATTENDEE")
+		assert.Contains(t, ics, "user@example.com")
+		assert.Contains(t, ics, "BEGIN:VALARM")
+		assert.Contains(t, ics, "TRIGGER:-PT15M")
+	})
+
+	t.Run("meeting with daily recurrence", func(t *testing.T) {
+		recurrence := &models.Recurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndTimes:       10,
+		}
+
+		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingTitle:   "Daily Standup",
+			Description:    "Daily team sync",
+			StartTime:      startTime,
+			Duration:       30,
+			Timezone:       "UTC",
+			JoinLink:       "https://zoom.us/j/987654321",
+			MeetingID:      "987654321",
+			Passcode:       "xyz789",
+			RecipientEmail: "team@example.com",
+			Recurrence:     recurrence,
+		})
+
+		require.NoError(t, err)
+		assert.Contains(t, ics, "RRULE:FREQ=DAILY;COUNT=10")
+		assert.Contains(t, ics, "SUMMARY:Daily Standup")
+	})
+
+	t.Run("meeting with weekly recurrence", func(t *testing.T) {
+		recurrence := &models.Recurrence{
+			Type:           2, // Weekly
+			RepeatInterval: 2,
+			WeeklyDays:     "2,4,6", // Monday, Wednesday, Friday
+			EndTimes:       20,
+		}
+
+		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingTitle:   "Bi-weekly Meeting",
+			Description:    "Bi-weekly team meeting",
+			StartTime:      startTime,
+			Duration:       45,
+			Timezone:       "Europe/London",
+			JoinLink:       "https://zoom.us/j/555555555",
+			MeetingID:      "555555555",
+			Passcode:       "",
+			RecipientEmail: "group@example.com",
+			Recurrence:     recurrence,
+		})
+
+		require.NoError(t, err)
+		assert.Contains(t, ics, "RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR;COUNT=20")
+	})
+
+	t.Run("meeting with monthly recurrence by day", func(t *testing.T) {
+		recurrence := &models.Recurrence{
+			Type:           3, // Monthly
+			RepeatInterval: 1,
+			MonthlyDay:     15,
+			EndTimes:       12,
+		}
+
+		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingTitle:   "Monthly Review",
+			Description:    "Monthly project review",
+			StartTime:      startTime,
+			Duration:       90,
+			Timezone:       "Asia/Tokyo",
+			JoinLink:       "",
+			MeetingID:      "",
+			Passcode:       "",
+			RecipientEmail: "manager@example.com",
+			Recurrence:     recurrence,
+		})
+
+		require.NoError(t, err)
+		assert.Contains(t, ics, "RRULE:FREQ=MONTHLY;BYMONTHDAY=15;COUNT=12")
+	})
+
+	t.Run("meeting with monthly recurrence by week", func(t *testing.T) {
+		endDate := startTime.Add(365 * 24 * time.Hour)
+		recurrence := &models.Recurrence{
+			Type:           3, // Monthly
+			RepeatInterval: 1,
+			MonthlyWeek:    2, // Second week
+			MonthlyWeekDay: 3, // Tuesday
+			EndDateTime:    &endDate,
+		}
+
+		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingTitle:   "Monthly Board Meeting",
+			Description:    "Board meeting",
+			StartTime:      startTime,
+			Duration:       120,
+			Timezone:       "America/Los_Angeles",
+			JoinLink:       "https://zoom.us/j/111111111",
+			MeetingID:      "111111111",
+			Passcode:       "secure",
+			RecipientEmail: "board@example.com",
+			Recurrence:     recurrence,
+		})
+
+		require.NoError(t, err)
+		assert.Contains(t, ics, "RRULE:FREQ=MONTHLY;BYDAY=2TU;UNTIL=")
+	})
+
+	t.Run("meeting without join link", func(t *testing.T) {
+		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingTitle:   "In-Person Meeting",
+			Description:    "Meet at the office",
+			StartTime:      startTime,
+			Duration:       60,
+			Timezone:       "America/Chicago",
+			JoinLink:       "",
+			MeetingID:      "",
+			Passcode:       "",
+			RecipientEmail: "office@example.com",
+			Recurrence:     nil,
+		})
+
+		require.NoError(t, err)
+		// Check that LOCATION field is not present (but X-LIC-LOCATION in VTIMEZONE is ok)
+		assert.NotContains(t, ics, "\nLOCATION:")
+		assert.NotContains(t, ics, "\nURL:")
+		assert.NotContains(t, ics, "Meeting ID:")
+		assert.NotContains(t, ics, "Passcode:")
+	})
+}
+
+func TestConvertWeeklyDays(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "single day",
+			input:    "2",
+			expected: "MO",
+		},
+		{
+			name:     "multiple days",
+			input:    "1,3,5",
+			expected: "SU,TU,TH",
+		},
+		{
+			name:     "all weekdays",
+			input:    "2,3,4,5,6",
+			expected: "MO,TU,WE,TH,FR",
+		},
+		{
+			name:     "weekend",
+			input:    "1,7",
+			expected: "SU,SA",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "invalid day",
+			input:    "8,9",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := convertWeeklyDays(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestGetWeekdayName(t *testing.T) {
+	tests := []struct {
+		weekday  int
+		expected string
+	}{
+		{1, "SU"},
+		{2, "MO"},
+		{3, "TU"},
+		{4, "WE"},
+		{5, "TH"},
+		{6, "FR"},
+		{7, "SA"},
+		{0, ""},
+		{8, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(rune(tt.weekday)), func(t *testing.T) {
+			result := getWeekdayName(tt.weekday)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestEscapeICSText(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "simple text",
+			input:    "Hello World",
+			expected: "Hello World",
+		},
+		{
+			name:     "text with comma",
+			input:    "Hello, World",
+			expected: `Hello\, World`,
+		},
+		{
+			name:     "text with semicolon",
+			input:    "Title: Meeting; Description: Test",
+			expected: `Title: Meeting\; Description: Test`,
+		},
+		{
+			name:     "text with newline",
+			input:    "Line 1\nLine 2",
+			expected: `Line 1\nLine 2`,
+		},
+		{
+			name:     "text with backslash",
+			input:    `Path\to\file`,
+			expected: `Path\\to\\file`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := escapeICSText(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFoldICSLine(t *testing.T) {
+	t.Run("short line", func(t *testing.T) {
+		input := "Short line"
+		result := foldICSLine(input, 75)
+		assert.Equal(t, input, result)
+	})
+
+	t.Run("long line", func(t *testing.T) {
+		input := strings.Repeat("a", 100)
+		result := foldICSLine(input, 75)
+
+		// Check that the line was folded
+		assert.Contains(t, result, "\r\n ")
+
+		// Check that no individual line exceeds the limit
+		lines := strings.Split(result, "\r\n")
+		for i, line := range lines {
+			if i > 0 {
+				// Continued lines should start with a space
+				assert.True(t, strings.HasPrefix(line, " "))
+				// Remove the leading space for length check
+				line = strings.TrimPrefix(line, " ")
+			}
+			assert.LessOrEqual(t, len(line), 75)
+		}
+	})
+}
+
+func TestBuildDescription(t *testing.T) {
+	startTime := time.Date(2024, 1, 15, 14, 0, 0, 0, time.UTC)
+	recurrence := &models.Recurrence{
+		Type:           2, // Weekly
+		RepeatInterval: 1,
+		WeeklyDays:     "2,4,6", // Monday, Wednesday, Friday
+		EndTimes:       10,
+	}
+
+	t.Run("with all details", func(t *testing.T) {
+		desc := buildDescription(
+			"Original description",
+			"123456789",
+			"abc123",
+			"https://zoom.us/j/123456789",
+			startTime,
+			60,
+			"America/New_York",
+			recurrence,
+		)
+
+		assert.Contains(t, desc, "Original description")
+		assert.Contains(t, desc, "Meeting ID: 123456789")
+		assert.Contains(t, desc, "Passcode: abc123")
+		assert.Contains(t, desc, "Join URL: https://zoom.us/j/123456789")
+		assert.Contains(t, desc, "Dial-in Options")
+		assert.Contains(t, desc, "Find your local number")
+		assert.Contains(t, desc, "Start Time:")
+		assert.Contains(t, desc, "Duration: 1 hour")
+		assert.Contains(t, desc, "Recurrence: Weekly on Monday, Wednesday and Friday")
+	})
+
+	t.Run("without passcode", func(t *testing.T) {
+		desc := buildDescription(
+			"",
+			"987654321",
+			"",
+			"https://zoom.us/j/987654321",
+			startTime,
+			30,
+			"UTC",
+			nil,
+		)
+
+		assert.Contains(t, desc, "Meeting ID: 987654321")
+		assert.NotContains(t, desc, "Passcode:")
+		assert.Contains(t, desc, "enter Meeting ID: 987654321#")
+		assert.Contains(t, desc, "Duration: 30 minutes")
+		assert.NotContains(t, desc, "Recurrence:")
+	})
+
+	t.Run("without meeting details", func(t *testing.T) {
+		desc := buildDescription(
+			"Simple meeting",
+			"",
+			"",
+			"",
+			startTime,
+			90,
+			"Europe/London",
+			nil,
+		)
+
+		assert.Contains(t, desc, "Simple meeting")
+		assert.NotContains(t, desc, "Meeting ID:")
+		assert.NotContains(t, desc, "Passcode:")
+		assert.NotContains(t, desc, "Join URL:")
+		assert.NotContains(t, desc, "Dial-in Options")
+	})
+}
