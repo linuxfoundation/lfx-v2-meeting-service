@@ -19,7 +19,7 @@ var CreateRegistrantPayload = Type("CreateRegistrantPayload", func() {
 	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUsernameAttribute()
-	Required("meeting_uid", "email", "first_name", "last_name")
+	Required("meeting_uid", "email")
 })
 
 // UpdateRegistrantPayload represents the payload for updating a registrant
@@ -34,7 +34,7 @@ var UpdateRegistrantPayload = Type("UpdateRegistrantPayload", func() {
 	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
 	RegistrantUsernameAttribute()
-	Required("meeting_uid", "email", "first_name", "last_name")
+	Required("meeting_uid", "email")
 })
 
 // Registrant represents a meeting registrant
@@ -55,7 +55,7 @@ var Registrant = Type("Registrant", func() {
 	RegistrantUsernameAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
-	Required("uid", "meeting_uid", "email", "first_name", "last_name")
+	Required("uid", "meeting_uid", "email")
 })
 
 //

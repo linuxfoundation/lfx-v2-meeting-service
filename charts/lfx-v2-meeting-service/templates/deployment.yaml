@@ -24,40 +24,15 @@ spec:
             allowPrivilegeEscalation: false
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: NATS_URL
-              value: {{ .Values.nats.url }}
-            - name: LOG_LEVEL
-              value: {{ .Values.app.logLevel }}
-            - name: LOG_ADD_SOURCE
-              value: {{ .Values.app.logAddSource | quote }}
-            - name: JWKS_URL
-              value: {{ .Values.heimdall.jwksUrl }}
-            - name: JWT_AUDIENCE
-              value: {{ .Values.app.audience }}
-            - name: SKIP_ETAG_VALIDATION
-              value: {{ .Values.app.skipEtagValidation | quote }}
-            - name: JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL
-              value: {{ .Values.app.jwtAuthDisabledMockLocalPrincipal }}
-            - name: EMAIL_ENABLED
-              value: {{ .Values.email.enabled | quote }}
-            - name: SMTP_HOST
-              value: {{ .Values.email.smtp.host }}
-            - name: SMTP_PORT
-              value: {{ .Values.email.smtp.port | quote }}
-            - name: SMTP_FROM
-              value: {{ .Values.email.smtp.from }}
-            - name: SMTP_USERNAME
-              value: {{ .Values.email.smtp.username }}
-            - name: SMTP_PASSWORD
-              value: {{ .Values.email.smtp.password }}
-            - name: ZOOM_ACCOUNT_ID
-              value: {{ .Values.zoom.accountId }}
-            - name: ZOOM_CLIENT_ID
-              value: {{ .Values.zoom.clientId }}
-            - name: ZOOM_CLIENT_SECRET
-              value: {{ .Values.zoom.clientSecret }}
-            - name: ZOOM_WEBHOOK_SECRET_TOKEN
-              value: {{ .Values.zoom.webhookSecretToken }}
+          {{- range $name, $config := .Values.app.environment }}
+          - name: {{ $name }}
+            {{- if $config.value }}
+            value: {{ $config.value | quote }}
+            {{- else if $config.valueFrom }}
+            valueFrom:
+              {{- toYaml $config.valueFrom | nindent 14 }}
+            {{- end }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: web

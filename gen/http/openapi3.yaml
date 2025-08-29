@@ -3522,8 +3522,6 @@ components:
                 username: Libero dolore qui adipisci velit.
             required:
                 - email
-                - first_name
-                - last_name
         CreatePastMeetingParticipantPayload:
             type: object
             properties:
@@ -3594,8 +3592,6 @@ components:
             required:
                 - past_meeting_uid
                 - email
-                - first_name
-                - last_name
         CreatePastMeetingPayload:
             type: object
             properties:
@@ -3888,8 +3884,6 @@ components:
             required:
                 - meeting_uid
                 - email
-                - first_name
-                - last_name
         GetMeetingRegistrantsResponseBody:
             type: object
             properties:
@@ -6232,8 +6226,6 @@ components:
                 - past_meeting_uid
                 - meeting_uid
                 - email
-                - first_name
-                - last_name
         Recurrence:
             type: object
             properties:
@@ -6405,8 +6397,6 @@ components:
                 - uid
                 - meeting_uid
                 - email
-                - first_name
-                - last_name
         ServiceUnavailableError:
             type: object
             properties:
@@ -6893,8 +6883,6 @@ components:
             required:
                 - past_meeting_uid
                 - email
-                - first_name
-                - last_name
         UpdatePastMeetingParticipantRequestBody:
             type: object
             properties:
@@ -6957,8 +6945,6 @@ components:
                 username: Aut et deleniti omnis animi minus.
             required:
                 - email
-                - first_name
-                - last_name
         UpdateRegistrantPayload:
             type: object
             properties:
@@ -7019,8 +7005,6 @@ components:
             required:
                 - meeting_uid
                 - email
-                - first_name
-                - last_name
         ZoomConfigFull:
             type: object
             properties:

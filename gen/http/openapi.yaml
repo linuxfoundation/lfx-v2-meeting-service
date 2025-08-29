@@ -171,8 +171,6 @@ paths:
                     $ref: '#/definitions/MeetingServiceCreateMeetingRegistrantRequestBody'
                     required:
                         - email
-                        - first_name
-                        - last_name
             responses:
                 "201":
                     description: Created response.
@@ -182,8 +180,6 @@ paths:
                             - uid
                             - meeting_uid
                             - email
-                            - first_name
-                            - last_name
                 "400":
                     description: Bad Request response.
                     schema:
@@ -264,8 +260,6 @@ paths:
                             - uid
                             - meeting_uid
                             - email
-                            - first_name
-                            - last_name
                     headers:
                         ETag:
                             description: ETag header value
@@ -338,8 +332,6 @@ paths:
                     $ref: '#/definitions/MeetingServiceUpdateMeetingRegistrantRequestBody'
                     required:
                         - email
-                        - first_name
-                        - last_name
             responses:
                 "200":
                     description: OK response.
@@ -349,8 +341,6 @@ paths:
                             - uid
                             - meeting_uid
                             - email
-                            - first_name
-                            - last_name
                 "400":
                     description: Bad Request response.
                     schema:
@@ -1035,8 +1025,6 @@ paths:
                             - past_meeting_uid
                             - meeting_uid
                             - email
-                            - first_name
-                            - last_name
                     headers:
                         ETag:
                             description: ETag header value
@@ -1109,8 +1097,6 @@ paths:
                     $ref: '#/definitions/MeetingServiceUpdatePastMeetingParticipantRequestBody'
                     required:
                         - email
-                        - first_name
-                        - last_name
             responses:
                 "200":
                     description: OK response.
@@ -1121,8 +1107,6 @@ paths:
                             - past_meeting_uid
                             - meeting_uid
                             - email
-                            - first_name
-                            - last_name
                 "400":
                     description: Bad Request response.
                     schema:
@@ -1453,8 +1437,6 @@ paths:
                     required:
                         - past_meeting_uid
                         - email
-                        - first_name
-                        - last_name
             responses:
                 "201":
                     description: Created response.
@@ -1465,8 +1447,6 @@ paths:
                             - past_meeting_uid
                             - meeting_uid
                             - email
-                            - first_name
-                            - last_name
                 "400":
                     description: Bad Request response.
                     schema:
@@ -2383,8 +2363,6 @@ definitions:
             username: Aliquam aliquam saepe natus porro.
         required:
             - email
-            - first_name
-            - last_name
     MeetingServiceCreateMeetingRequestBody:
         title: MeetingServiceCreateMeetingRequestBody
         type: object
@@ -2631,8 +2609,6 @@ definitions:
         required:
             - past_meeting_uid
             - email
-            - first_name
-            - last_name
     MeetingServiceCreatePastMeetingRequestBody:
         title: MeetingServiceCreatePastMeetingRequestBody
         type: object
@@ -4618,8 +4594,6 @@ definitions:
             username: Sed quia illum incidunt asperiores totam qui.
         required:
             - email
-            - first_name
-            - last_name
     MeetingServiceUpdateMeetingSettingsRequestBody:
         title: MeetingServiceUpdateMeetingSettingsRequestBody
         type: object
@@ -4704,8 +4678,6 @@ definitions:
             username: Enim voluptas excepturi veniam aperiam omnis odio.
         required:
             - email
-            - first_name
-            - last_name
     MeetingSettings:
         title: MeetingSettings
         type: object
@@ -5187,8 +5159,6 @@ definitions:
             - past_meeting_uid
             - meeting_uid
             - email
-            - first_name
-            - last_name
     Recurrence:
         title: Recurrence
         type: object
@@ -5362,8 +5332,6 @@ definitions:
             - uid
             - meeting_uid
             - email
-            - first_name
-            - last_name
     ServiceUnavailableError:
         title: ServiceUnavailableError
         type: object

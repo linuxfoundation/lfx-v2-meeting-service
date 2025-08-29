@@ -529,17 +529,25 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Magnam dolor mollitia neque ducimus voluptate ullam.\",\n      \"username\": \"Et consequatur aut aut praesentium qui aliquam.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
-		if utf8.RuneCountInString(body.FirstName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 1, true))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.FirstName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 100, false))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 1, true))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 100, false))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+			}
 		}
 		if body.OccurrenceID != nil {
 			err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
@@ -653,17 +661,25 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Temporibus eligendi laudantium et.\",\n      \"username\": \"Voluptatem ex sapiente laudantium ipsum velit quod.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
-		if utf8.RuneCountInString(body.FirstName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 1, true))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.FirstName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 100, false))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 1, true))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 100, false))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+			}
 		}
 		if body.OccurrenceID != nil {
 			err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
@@ -1137,17 +1153,25 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", body.PastMeetingUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
-		if utf8.RuneCountInString(body.FirstName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 1, true))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.FirstName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 100, false))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 1, true))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 100, false))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+			}
 		}
 		if body.AvatarURL != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
@@ -1260,17 +1284,25 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Tempora voluptatem inventore.\",\n      \"username\": \"Officia tempore necessitatibus deleniti natus.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
-		if utf8.RuneCountInString(body.FirstName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 1, true))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.FirstName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", body.FirstName, utf8.RuneCountInString(body.FirstName), 100, false))
+		if body.FirstName != nil {
+			if utf8.RuneCountInString(*body.FirstName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.first_name", *body.FirstName, utf8.RuneCountInString(*body.FirstName), 100, false))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 1, true))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) < 1 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 1, true))
+			}
 		}
-		if utf8.RuneCountInString(body.LastName) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", body.LastName, utf8.RuneCountInString(body.LastName), 100, false))
+		if body.LastName != nil {
+			if utf8.RuneCountInString(*body.LastName) > 100 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
+			}
 		}
 		if body.AvatarURL != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
