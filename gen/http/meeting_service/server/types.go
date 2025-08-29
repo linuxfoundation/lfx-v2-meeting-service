@@ -4007,8 +4007,8 @@ func ValidateCreateMeetingRequestBody(body *CreateMeetingRequestBody) (err error
 		}
 	}
 	if body.ArtifactVisibility != nil {
-		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_registrants" || *body.ArtifactVisibility == "public") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_registrants", "public"}))
 		}
 	}
 	return
@@ -4089,8 +4089,8 @@ func ValidateUpdateMeetingBaseRequestBody(body *UpdateMeetingBaseRequestBody) (e
 		}
 	}
 	if body.ArtifactVisibility != nil {
-		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_registrants" || *body.ArtifactVisibility == "public") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_registrants", "public"}))
 		}
 	}
 	return
@@ -4294,8 +4294,8 @@ func ValidateCreatePastMeetingRequestBody(body *CreatePastMeetingRequestBody) (e
 		}
 	}
 	if body.ArtifactVisibility != nil {
-		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_registrants" || *body.ArtifactVisibility == "public") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_registrants", "public"}))
 		}
 	}
 	if body.PublicLink != nil {

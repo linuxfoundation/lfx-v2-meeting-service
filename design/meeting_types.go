@@ -300,7 +300,7 @@ func RestrictedAttribute() {
 // ArtifactVisibilityAttribute is the DSL attribute for artifact visibility.
 func ArtifactVisibilityAttribute() {
 	Attribute("artifact_visibility", String, "The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)", func() {
-		Enum("meeting_hosts", "meeting_participants", "public")
+		Enum("meeting_hosts", "meeting_registrants", "public")
 	})
 }
 

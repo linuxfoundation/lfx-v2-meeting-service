@@ -1918,7 +1918,7 @@ paths:
                                 $ref: '#/components/schemas/GetPastMeetingsResponseBody'
                             example:
                                 past_meetings:
-                                    - artifact_visibility: meeting_participants
+                                    - artifact_visibility: meeting_registrants
                                       committees:
                                         - allowed_voting_statuses:
                                             - Aliquid voluptas quia et.
@@ -1987,7 +1987,7 @@ paths:
                                         ai_summary_require_approval: true
                                         meeting_id: "1234567890"
                                         passcode: "147258"
-                                    - artifact_visibility: meeting_participants
+                                    - artifact_visibility: meeting_registrants
                                       committees:
                                         - allowed_voting_statuses:
                                             - Aliquid voluptas quia et.
@@ -2056,7 +2056,7 @@ paths:
                                         ai_summary_require_approval: true
                                         meeting_id: "1234567890"
                                         passcode: "147258"
-                                    - artifact_visibility: meeting_participants
+                                    - artifact_visibility: meeting_registrants
                                       committees:
                                         - allowed_voting_statuses:
                                             - Aliquid voluptas quia et.
@@ -2788,7 +2788,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/PastMeeting'
                             example:
-                                artifact_visibility: meeting_participants
+                                artifact_visibility: meeting_registrants
                                 committees:
                                     - allowed_voting_statuses:
                                         - Aliquid voluptas quia et.
@@ -3289,10 +3289,10 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: meeting_participants
+                    example: meeting_registrants
                     enum:
                         - meeting_hosts
-                        - meeting_participants
+                        - meeting_registrants
                         - public
                 committees:
                     type: array
@@ -3605,7 +3605,7 @@ components:
                     example: public
                     enum:
                         - meeting_hosts
-                        - meeting_participants
+                        - meeting_registrants
                         - public
                 committees:
                     type: array
@@ -4707,7 +4707,7 @@ components:
                         $ref: '#/components/schemas/PastMeeting'
                     description: Past meetings found
                     example:
-                        - artifact_visibility: meeting_participants
+                        - artifact_visibility: meeting_registrants
                           committees:
                             - allowed_voting_statuses:
                                 - Aliquid voluptas quia et.
@@ -4776,7 +4776,7 @@ components:
                             ai_summary_require_approval: true
                             meeting_id: "1234567890"
                             passcode: "147258"
-                        - artifact_visibility: meeting_participants
+                        - artifact_visibility: meeting_registrants
                           committees:
                             - allowed_voting_statuses:
                                 - Aliquid voluptas quia et.
@@ -4847,7 +4847,7 @@ components:
                             passcode: "147258"
             example:
                 past_meetings:
-                    - artifact_visibility: meeting_participants
+                    - artifact_visibility: meeting_registrants
                       committees:
                         - allowed_voting_statuses:
                             - Aliquid voluptas quia et.
@@ -4916,7 +4916,7 @@ components:
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_participants
+                    - artifact_visibility: meeting_registrants
                       committees:
                         - allowed_voting_statuses:
                             - Aliquid voluptas quia et.
@@ -4985,7 +4985,7 @@ components:
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_participants
+                    - artifact_visibility: meeting_registrants
                       committees:
                         - allowed_voting_statuses:
                             - Aliquid voluptas quia et.
@@ -5082,7 +5082,7 @@ components:
                     example: public
                     enum:
                         - meeting_hosts
-                        - meeting_participants
+                        - meeting_registrants
                         - public
                 committees:
                     type: array
@@ -5320,7 +5320,7 @@ components:
                     $ref: '#/components/schemas/ZoomConfigFull'
             description: A base representation of a meeting.
             example:
-                artifact_visibility: meeting_participants
+                artifact_visibility: meeting_registrants
                 committees:
                     - allowed_voting_statuses:
                         - Et eligendi tempore ipsum consequatur ab.
@@ -5438,10 +5438,10 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: meeting_participants
+                    example: meeting_registrants
                     enum:
                         - meeting_hosts
-                        - meeting_participants
+                        - meeting_registrants
                         - public
                 committees:
                     type: array
@@ -5641,7 +5641,7 @@ components:
                     $ref: '#/components/schemas/ZoomConfigFull'
             description: A full representation of LF Meetings with sub-objects populated.
             example:
-                artifact_visibility: meeting_participants
+                artifact_visibility: meeting_registrants
                 committees:
                     - allowed_voting_statuses:
                         - Et eligendi tempore ipsum consequatur ab.
@@ -5889,7 +5889,7 @@ components:
                     example: public
                     enum:
                         - meeting_hosts
-                        - meeting_participants
+                        - meeting_registrants
                         - public
                 committees:
                     type: array
@@ -6476,7 +6476,7 @@ components:
                     example: public
                     enum:
                         - meeting_hosts
-                        - meeting_participants
+                        - meeting_registrants
                         - public
                 committees:
                     type: array
@@ -6582,7 +6582,7 @@ components:
                 zoom_config:
                     $ref: '#/components/schemas/ZoomConfigPost'
             example:
-                artifact_visibility: meeting_participants
+                artifact_visibility: meeting_registrants
                 committees:
                     - allowed_voting_statuses:
                         - Doloremque et.
@@ -6631,10 +6631,10 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: meeting_participants
+                    example: meeting_registrants
                     enum:
                         - meeting_hosts
-                        - meeting_participants
+                        - meeting_registrants
                         - public
                 committees:
                     type: array

@@ -1657,10 +1657,10 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                example: meeting_participants
+                example: meeting_registrants
                 enum:
                     - meeting_hosts
-                    - meeting_participants
+                    - meeting_registrants
                     - public
             committees:
                 type: array
@@ -1993,10 +1993,10 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                example: meeting_participants
+                example: meeting_registrants
                 enum:
                     - meeting_hosts
-                    - meeting_participants
+                    - meeting_registrants
                     - public
             committees:
                 type: array
@@ -2202,7 +2202,7 @@ definitions:
                 $ref: '#/definitions/ZoomConfigFull'
         description: A full representation of LF Meetings with sub-objects populated.
         example:
-            artifact_visibility: meeting_participants
+            artifact_visibility: meeting_registrants
             committees:
                 - allowed_voting_statuses:
                     - Aliquid voluptas quia et.
@@ -2392,10 +2392,10 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                example: meeting_participants
+                example: meeting_registrants
                 enum:
                     - meeting_hosts
-                    - meeting_participants
+                    - meeting_registrants
                     - public
             committees:
                 type: array
@@ -2511,7 +2511,7 @@ definitions:
             zoom_config:
                 $ref: '#/definitions/ZoomConfigPost'
         example:
-            artifact_visibility: meeting_participants
+            artifact_visibility: meeting_registrants
             committees:
                 - allowed_voting_statuses:
                     - Doloremque et.
@@ -2640,10 +2640,10 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                example: meeting_participants
+                example: meeting_registrants
                 enum:
                     - meeting_hosts
-                    - meeting_participants
+                    - meeting_registrants
                     - public
             committees:
                 type: array
@@ -3844,7 +3844,7 @@ definitions:
                     $ref: '#/definitions/PastMeeting'
                 description: Past meetings found
                 example:
-                    - artifact_visibility: meeting_participants
+                    - artifact_visibility: meeting_registrants
                       committees:
                         - allowed_voting_statuses:
                             - Aliquid voluptas quia et.
@@ -3913,7 +3913,7 @@ definitions:
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_participants
+                    - artifact_visibility: meeting_registrants
                       committees:
                         - allowed_voting_statuses:
                             - Aliquid voluptas quia et.
@@ -3982,7 +3982,7 @@ definitions:
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_participants
+                    - artifact_visibility: meeting_registrants
                       committees:
                         - allowed_voting_statuses:
                             - Aliquid voluptas quia et.
@@ -4051,7 +4051,7 @@ definitions:
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_participants
+                    - artifact_visibility: meeting_registrants
                       committees:
                         - allowed_voting_statuses:
                             - Aliquid voluptas quia et.
@@ -4122,7 +4122,7 @@ definitions:
                         passcode: "147258"
         example:
             past_meetings:
-                - artifact_visibility: meeting_participants
+                - artifact_visibility: meeting_registrants
                   committees:
                     - allowed_voting_statuses:
                         - Aliquid voluptas quia et.
@@ -4191,7 +4191,7 @@ definitions:
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
-                - artifact_visibility: meeting_participants
+                - artifact_visibility: meeting_registrants
                   committees:
                     - allowed_voting_statuses:
                         - Aliquid voluptas quia et.
@@ -4260,7 +4260,7 @@ definitions:
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
-                - artifact_visibility: meeting_participants
+                - artifact_visibility: meeting_registrants
                   committees:
                     - allowed_voting_statuses:
                         - Aliquid voluptas quia et.
@@ -4329,7 +4329,7 @@ definitions:
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
-                - artifact_visibility: meeting_participants
+                - artifact_visibility: meeting_registrants
                   committees:
                     - allowed_voting_statuses:
                         - Aliquid voluptas quia et.
@@ -4407,10 +4407,10 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                example: meeting_participants
+                example: meeting_registrants
                 enum:
                     - meeting_hosts
-                    - meeting_participants
+                    - meeting_registrants
                     - public
             committees:
                 type: array
@@ -4508,7 +4508,7 @@ definitions:
             zoom_config:
                 $ref: '#/definitions/ZoomConfigPost'
         example:
-            artifact_visibility: meeting_participants
+            artifact_visibility: meeting_registrants
             committees:
                 - allowed_voting_statuses:
                     - Doloremque et.
@@ -4840,10 +4840,10 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                example: meeting_participants
+                example: meeting_registrants
                 enum:
                     - meeting_hosts
-                    - meeting_participants
+                    - meeting_registrants
                     - public
             committees:
                 type: array
