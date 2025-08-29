@@ -6,6 +6,7 @@ package email
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/stretchr/testify/assert"
@@ -27,6 +28,8 @@ func TestNewSMTPService(t *testing.T) {
 	assert.NotNil(t, service.templates.Meeting.Invitation.Text)
 	assert.NotNil(t, service.templates.Meeting.Cancellation.HTML)
 	assert.NotNil(t, service.templates.Meeting.Cancellation.Text)
+	assert.NotNil(t, service.templates.Meeting.UpdatedInvitation.HTML)
+	assert.NotNil(t, service.templates.Meeting.UpdatedInvitation.Text)
 }
 
 func TestNoOpService(t *testing.T) {
@@ -43,6 +46,18 @@ func TestNoOpService(t *testing.T) {
 		MeetingTitle:   "Test Meeting Cancelled",
 	}
 
+	updatedInvitation := domain.EmailUpdatedInvitation{
+		RecipientEmail: "user@example.com",
+		MeetingTitle:   "Test Meeting Updated",
+		StartTime:      time.Now().Add(24 * time.Hour),
+		Duration:       60,
+		Timezone:       "UTC",
+		Changes: map[string]any{
+			"title":      "New Title",
+			"start_time": "2024-01-15T14:30:00Z",
+		},
+	}
+
 	t.Run("SendRegistrantInvitation", func(t *testing.T) {
 		err := service.SendRegistrantInvitation(context.Background(), invitation)
 		assert.NoError(t, err)
@@ -50,6 +65,11 @@ func TestNoOpService(t *testing.T) {
 
 	t.Run("SendRegistrantCancellation", func(t *testing.T) {
 		err := service.SendRegistrantCancellation(context.Background(), cancellation)
+		assert.NoError(t, err)
+	})
+
+	t.Run("SendRegistrantUpdatedInvitation", func(t *testing.T) {
+		err := service.SendRegistrantUpdatedInvitation(context.Background(), updatedInvitation)
 		assert.NoError(t, err)
 	})
 }

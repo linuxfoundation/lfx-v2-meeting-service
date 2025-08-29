@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -191,6 +192,370 @@ func TestFormatDuration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatDuration(tt.minutes)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestFormatRecurrence(t *testing.T) {
+	t.Run("nil recurrence", func(t *testing.T) {
+		result := formatRecurrence(nil)
+		assert.Equal(t, "", result)
+	})
+
+	t.Run("daily recurrence", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			interval int
+			expected string
+		}{
+			{
+				name:     "daily every day",
+				interval: 1,
+				expected: "Daily",
+			},
+			{
+				name:     "daily every 3 days",
+				interval: 3,
+				expected: "Every 3 days",
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				recurrence := &models.Recurrence{
+					Type:           1, // Daily
+					RepeatInterval: tt.interval,
+				}
+				result := formatRecurrence(recurrence)
+				assert.Equal(t, tt.expected, result)
+			})
+		}
+	})
+
+	t.Run("weekly recurrence", func(t *testing.T) {
+		tests := []struct {
+			name        string
+			interval    int
+			weeklyDays  string
+			expected    string
+		}{
+			{
+				name:     "weekly every week",
+				interval: 1,
+				expected: "Weekly",
+			},
+			{
+				name:     "weekly every 2 weeks",
+				interval: 2,
+				expected: "Every 2 weeks",
+			},
+			{
+				name:        "weekly on Monday and Friday",
+				interval:    1,
+				weeklyDays:  "2,6",
+				expected:    "Weekly on Monday and Friday",
+			},
+			{
+				name:        "weekly on Monday, Wednesday, and Friday",
+				interval:    1,
+				weeklyDays:  "2,4,6",
+				expected:    "Weekly on Monday, Wednesday and Friday",
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				recurrence := &models.Recurrence{
+					Type:           2, // Weekly
+					RepeatInterval: tt.interval,
+					WeeklyDays:     tt.weeklyDays,
+				}
+				result := formatRecurrence(recurrence)
+				assert.Equal(t, tt.expected, result)
+			})
+		}
+	})
+
+	t.Run("monthly recurrence", func(t *testing.T) {
+		tests := []struct {
+			name            string
+			interval        int
+			monthlyDay      int
+			monthlyWeek     int
+			monthlyWeekDay  int
+			expected        string
+		}{
+			{
+				name:     "monthly every month",
+				interval: 1,
+				expected: "Monthly",
+			},
+			{
+				name:     "monthly every 3 months",
+				interval: 3,
+				expected: "Every 3 months",
+			},
+			{
+				name:       "monthly on day 15",
+				interval:   1,
+				monthlyDay: 15,
+				expected:   "Monthly on day 15",
+			},
+			{
+				name:           "monthly on first Monday",
+				interval:       1,
+				monthlyWeek:    1,
+				monthlyWeekDay: 2,
+				expected:       "Monthly on the first Monday",
+			},
+			{
+				name:           "monthly on third Friday",
+				interval:       1,
+				monthlyWeek:    3,
+				monthlyWeekDay: 6,
+				expected:       "Monthly on the third Friday",
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				recurrence := &models.Recurrence{
+					Type:           3, // Monthly
+					RepeatInterval: tt.interval,
+					MonthlyDay:     tt.monthlyDay,
+					MonthlyWeek:    tt.monthlyWeek,
+					MonthlyWeekDay: tt.monthlyWeekDay,
+				}
+				result := formatRecurrence(recurrence)
+				assert.Equal(t, tt.expected, result)
+			})
+		}
+	})
+
+	t.Run("recurrence with end conditions", func(t *testing.T) {
+		endDate := time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC)
+
+		tests := []struct {
+			name         string
+			endTimes     int
+			endDateTime  *time.Time
+			expected     string
+		}{
+			{
+				name:     "daily with 10 occurrences",
+				endTimes: 10,
+				expected: "Daily (10 occurrences)",
+			},
+			{
+				name:        "daily until December 31, 2024",
+				endDateTime: &endDate,
+				expected:    "Daily (until December 31, 2024)",
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				recurrence := &models.Recurrence{
+					Type:           1, // Daily
+					RepeatInterval: 1,
+					EndTimes:       tt.endTimes,
+					EndDateTime:    tt.endDateTime,
+				}
+				result := formatRecurrence(recurrence)
+				assert.Equal(t, tt.expected, result)
+			})
+		}
+	})
+
+	t.Run("custom recurrence type", func(t *testing.T) {
+		recurrence := &models.Recurrence{
+			Type:           99, // Unknown type
+			RepeatInterval: 1,
+		}
+		result := formatRecurrence(recurrence)
+		assert.Equal(t, "Custom recurrence", result)
+	})
+}
+
+func TestFormatWeeklyDaysText(t *testing.T) {
+	tests := []struct {
+		name        string
+		weeklyDays  string
+		expected    string
+	}{
+		{
+			name:       "single day - Monday",
+			weeklyDays: "2",
+			expected:   "Monday",
+		},
+		{
+			name:       "two days - Monday and Friday",
+			weeklyDays: "2,6",
+			expected:   "Monday and Friday",
+		},
+		{
+			name:       "three days - Monday, Wednesday, Friday",
+			weeklyDays: "2,4,6",
+			expected:   "Monday, Wednesday and Friday",
+		},
+		{
+			name:       "all weekdays",
+			weeklyDays: "2,3,4,5,6",
+			expected:   "Monday, Tuesday, Wednesday, Thursday and Friday",
+		},
+		{
+			name:       "weekend days",
+			weeklyDays: "1,7",
+			expected:   "Sunday and Saturday",
+		},
+		{
+			name:       "with spaces",
+			weeklyDays: " 2 , 4 , 6 ",
+			expected:   "Monday, Wednesday and Friday",
+		},
+		{
+			name:       "invalid day numbers",
+			weeklyDays: "8,9,10",
+			expected:   "",
+		},
+		{
+			name:       "mixed valid and invalid",
+			weeklyDays: "2,8,6",
+			expected:   "Monday and Friday",
+		},
+		{
+			name:       "empty string",
+			weeklyDays: "",
+			expected:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatWeeklyDaysText(tt.weeklyDays)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestGetOrdinalWeek(t *testing.T) {
+	tests := []struct {
+		name     string
+		week     int
+		expected string
+	}{
+		{
+			name:     "first week",
+			week:     1,
+			expected: "first",
+		},
+		{
+			name:     "second week",
+			week:     2,
+			expected: "second",
+		},
+		{
+			name:     "third week",
+			week:     3,
+			expected: "third",
+		},
+		{
+			name:     "fourth week",
+			week:     4,
+			expected: "fourth",
+		},
+		{
+			name:     "fifth week",
+			week:     5,
+			expected: "fifth",
+		},
+		{
+			name:     "sixth week (fallback)",
+			week:     6,
+			expected: "6th",
+		},
+		{
+			name:     "zero week (fallback)",
+			week:     0,
+			expected: "0th",
+		},
+		{
+			name:     "negative week (fallback)",
+			week:     -1,
+			expected: "-1th",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getOrdinalWeek(tt.week)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestGetWeekdayFullName(t *testing.T) {
+	tests := []struct {
+		name     string
+		weekday  int
+		expected string
+	}{
+		{
+			name:     "Sunday",
+			weekday:  1,
+			expected: "Sunday",
+		},
+		{
+			name:     "Monday",
+			weekday:  2,
+			expected: "Monday",
+		},
+		{
+			name:     "Tuesday",
+			weekday:  3,
+			expected: "Tuesday",
+		},
+		{
+			name:     "Wednesday",
+			weekday:  4,
+			expected: "Wednesday",
+		},
+		{
+			name:     "Thursday",
+			weekday:  5,
+			expected: "Thursday",
+		},
+		{
+			name:     "Friday",
+			weekday:  6,
+			expected: "Friday",
+		},
+		{
+			name:     "Saturday",
+			weekday:  7,
+			expected: "Saturday",
+		},
+		{
+			name:     "invalid weekday zero",
+			weekday:  0,
+			expected: "",
+		},
+		{
+			name:     "invalid weekday eight",
+			weekday:  8,
+			expected: "",
+		},
+		{
+			name:     "negative weekday",
+			weekday:  -1,
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getWeekdayFullName(tt.weekday)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
