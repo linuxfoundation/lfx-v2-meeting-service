@@ -18,6 +18,7 @@ type EmailService interface {
 
 // EmailInvitation contains the data needed to send a meeting invitation email
 type EmailInvitation struct {
+	MeetingUID     string // Meeting UID for consistent calendar event identification
 	RecipientEmail string
 	RecipientName  string
 	MeetingTitle   string
@@ -35,6 +36,7 @@ type EmailInvitation struct {
 
 // EmailCancellation contains the data needed to send a meeting cancellation email
 type EmailCancellation struct {
+	MeetingUID     string // Meeting UID for consistent calendar event identification
 	RecipientEmail string
 	RecipientName  string
 	MeetingTitle   string
@@ -42,8 +44,10 @@ type EmailCancellation struct {
 	Duration       int // Duration in minutes
 	Timezone       string
 	Description    string
-	ProjectName    string // Optional project name for context
-	Reason         string // Optional reason for cancellation
+	ProjectName    string             // Optional project name for context
+	Reason         string             // Optional reason for cancellation
+	Recurrence     *models.Recurrence // Recurrence pattern for ICS
+	ICSAttachment  *EmailAttachment   // ICS calendar attachment for cancellation
 }
 
 // EmailAttachment represents a file attachment for an email

@@ -129,6 +129,13 @@
         </div>
         {{end}}
         
+        {{if .ICSAttachment}}
+        <p style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+            <strong>📅 Calendar Cancellation Attached</strong><br>
+            A calendar cancellation file (.ics) is attached to this email. Open it to automatically remove this meeting from your calendar application.
+        </p>
+        {{end}}
+        
         <p>We apologize for any inconvenience this may cause. If you have any questions, please contact the meeting organizer.</p>
         
         <div class="footer">

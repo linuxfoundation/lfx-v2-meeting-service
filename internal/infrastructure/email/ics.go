@@ -4,7 +4,6 @@
 package email
 
 import (
-	"crypto/rand"
 	"fmt"
 	"strings"
 	"time"
@@ -23,6 +22,7 @@ func NewICSGenerator() *ICSGenerator {
 // ICSMeetingInvitationParams contains all the information needed to generate an ICS file
 // for a meeting invitation
 type ICSMeetingInvitationParams struct {
+	MeetingUID     string // Unique meeting identifier for consistent ICS UID
 	MeetingTitle   string
 	Description    string
 	StartTime      time.Time
@@ -43,8 +43,8 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 		loc = time.UTC
 	}
 
-	// Generate unique identifiers
-	uid := generateUID()
+	// Generate consistent UID using meeting UID
+	uid := param.MeetingUID
 	dtstamp := time.Now().UTC().Format("20060102T150405Z")
 
 	// Convert times to the meeting timezone
@@ -122,13 +122,6 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	ics.WriteString("END:VCALENDAR\r\n")
 
 	return ics.String(), nil
-}
-
-// generateUID generates a unique identifier for the event
-func generateUID() string {
-	bytes := make([]byte, 16)
-	_, _ = rand.Read(bytes)
-	return fmt.Sprintf("%x-%d@lfx.linuxfoundation.org", bytes, time.Now().UnixNano())
 }
 
 // generateTimezoneDefinition generates the VTIMEZONE component
@@ -354,4 +347,66 @@ func foldICSLine(line string, maxLength int) string {
 	}
 
 	return folded.String()
+}
+
+// ICSMeetingCancellationParams holds parameters for generating a meeting cancellation ICS file
+type ICSMeetingCancellationParams struct {
+	MeetingUID     string // Unique meeting identifier for consistent ICS UID
+	MeetingTitle   string
+	StartTime      time.Time
+	Duration       int // Duration in minutes
+	Timezone       string
+	RecipientEmail string
+	Recurrence     *models.Recurrence
+}
+
+// GenerateMeetingCancellationICS generates an ICS file for cancelling a meeting
+func (g *ICSGenerator) GenerateMeetingCancellationICS(params ICSMeetingCancellationParams) (string, error) {
+	loc, err := time.LoadLocation(params.Timezone)
+	if err != nil {
+		return "", fmt.Errorf("invalid timezone: %w", err)
+	}
+
+	startTime := params.StartTime.In(loc)
+	endTime := startTime.Add(time.Duration(params.Duration) * time.Minute)
+
+	// Use the same UID as the invitation for proper cancellation matching
+	uid := params.MeetingUID
+
+	var icsContent strings.Builder
+	icsContent.WriteString("BEGIN:VCALENDAR\r\n")
+	icsContent.WriteString("VERSION:2.0\r\n")
+	icsContent.WriteString("PRODID:-//Linux Foundation//LFX Meeting Service//EN\r\n")
+	icsContent.WriteString("METHOD:CANCEL\r\n")
+	icsContent.WriteString("CALSCALE:GREGORIAN\r\n")
+	icsContent.WriteString("BEGIN:VEVENT\r\n")
+	icsContent.WriteString(fmt.Sprintf("UID:%s\r\n", uid))
+	icsContent.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", time.Now().UTC().Format("20060102T150405Z")))
+	icsContent.WriteString(fmt.Sprintf("DTSTART;TZID=%s:%s\r\n", params.Timezone, startTime.Format("20060102T150405")))
+	icsContent.WriteString(fmt.Sprintf("DTEND;TZID=%s:%s\r\n", params.Timezone, endTime.Format("20060102T150405")))
+	icsContent.WriteString(fmt.Sprintf("SUMMARY:%s (CANCELLED)\r\n", escapeICSText(params.MeetingTitle)))
+	icsContent.WriteString("STATUS:CANCELLED\r\n")
+	icsContent.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", 1)) // Increment sequence for cancellation
+	icsContent.WriteString("ORGANIZER;CN=ITX:mailto:itx@linuxfoundation.org\r\n")
+
+	if params.RecipientEmail != "" {
+		icsContent.WriteString(fmt.Sprintf("ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:%s\r\n", params.RecipientEmail))
+	}
+
+	// Add recurrence rule if this was a recurring meeting
+	if params.Recurrence != nil {
+		rrule := generateRRule(params.Recurrence)
+		if rrule != "" {
+			icsContent.WriteString(fmt.Sprintf("RRULE:%s\r\n", rrule))
+		}
+	}
+
+	icsContent.WriteString("END:VEVENT\r\n")
+
+	// Include timezone definition
+	icsContent.WriteString(generateTimezoneDefinition(params.Timezone, loc))
+
+	icsContent.WriteString("END:VCALENDAR\r\n")
+
+	return icsContent.String(), nil
 }

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"html/template"
 	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -79,6 +81,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 
 	// Generate ICS file content
 	icsContent, err := s.icsGenerator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+		MeetingUID:     invitation.MeetingUID,
 		MeetingTitle:   invitation.MeetingTitle,
 		Description:    invitation.Description,
 		StartTime:      invitation.StartTime,
@@ -144,6 +147,32 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", cancellation.RecipientEmail))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", cancellation.MeetingTitle))
 
+	// Generate ICS cancellation file if we have the necessary data
+	var attachment *domain.EmailAttachment
+	if cancellation.StartTime.After(time.Now()) {
+		icsContent, err := s.icsGenerator.GenerateMeetingCancellationICS(ICSMeetingCancellationParams{
+			MeetingUID:     cancellation.MeetingUID,
+			MeetingTitle:   cancellation.MeetingTitle,
+			StartTime:      cancellation.StartTime,
+			Duration:       cancellation.Duration,
+			Timezone:       cancellation.Timezone,
+			RecipientEmail: cancellation.RecipientEmail,
+			Recurrence:     cancellation.Recurrence,
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to generate ICS cancellation", logging.ErrKey, err)
+			// Continue without ICS - don't fail the whole email
+		} else {
+			// Create attachment
+			attachment = &domain.EmailAttachment{
+				Filename:    fmt.Sprintf("%s-cancellation.ics", strings.ReplaceAll(cancellation.MeetingTitle, " ", "_")),
+				ContentType: "text/calendar; charset=UTF-8; method=CANCEL",
+				Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
+			}
+			cancellation.ICSAttachment = attachment
+		}
+	}
+
 	// Generate email content from templates
 	htmlContent, err := renderTemplate(s.templates.Meeting.Cancellation.HTML, cancellation)
 	if err != nil {
@@ -157,9 +186,16 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 		return fmt.Errorf("failed to render cancellation text template: %w", err)
 	}
 
-	// Build and send the email
+	// Build and send the email with attachment
 	subject := fmt.Sprintf("Meeting Cancellation: %s", cancellation.MeetingTitle)
-	message := buildEmailMessage(cancellation.RecipientEmail, subject, htmlContent, textContent, s.config)
+	message := buildEmailMessageWithParams(EmailMessageParams{
+		Recipient:   cancellation.RecipientEmail,
+		Subject:     subject,
+		HTMLContent: htmlContent,
+		TextContent: textContent,
+		Attachment:  attachment,
+		Config:      s.config,
+	})
 	err = sendEmailMessage(cancellation.RecipientEmail, message, s.config)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send cancellation email", logging.ErrKey, err)
@@ -167,5 +203,8 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	}
 
 	slog.InfoContext(ctx, "cancellation email sent successfully")
+	if attachment != nil {
+		slog.InfoContext(ctx, "ICS cancellation attachment included")
+	}
 	return nil
 }

@@ -21,6 +21,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 
 	t.Run("basic meeting without recurrence", func(t *testing.T) {
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingUID:     "meeting-123",
 			MeetingTitle:   "Team Standup",
 			Description:    "Weekly team sync meeting",
 			StartTime:      startTime,
@@ -38,6 +39,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		assert.Contains(t, ics, "END:VCALENDAR")
 		assert.Contains(t, ics, "BEGIN:VEVENT")
 		assert.Contains(t, ics, "END:VEVENT")
+		assert.Contains(t, ics, "UID:meeting-123")
 		assert.Contains(t, ics, "SUMMARY:Team Standup")
 		assert.Contains(t, ics, "ORGANIZER;CN=ITX:mailto:itx@linuxfoundation.org")
 		assert.Contains(t, ics, "LOCATION:https://zoom.us/j/123456789")
@@ -57,6 +59,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingUID:     "daily-meeting-456",
 			MeetingTitle:   "Daily Standup",
 			Description:    "Daily team sync",
 			StartTime:      startTime,
@@ -83,6 +86,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingUID:     "biweekly-meeting-789",
 			MeetingTitle:   "Bi-weekly Meeting",
 			Description:    "Bi-weekly team meeting",
 			StartTime:      startTime,
@@ -108,6 +112,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingUID:     "monthly-review-101",
 			MeetingTitle:   "Monthly Review",
 			Description:    "Monthly project review",
 			StartTime:      startTime,
@@ -135,6 +140,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingUID:     "board-meeting-202",
 			MeetingTitle:   "Monthly Board Meeting",
 			Description:    "Board meeting",
 			StartTime:      startTime,
@@ -153,6 +159,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 
 	t.Run("meeting without join link", func(t *testing.T) {
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
+			MeetingUID:     "inperson-meeting-303",
 			MeetingTitle:   "In-Person Meeting",
 			Description:    "Meet at the office",
 			StartTime:      startTime,
@@ -382,4 +389,67 @@ func TestBuildDescription(t *testing.T) {
 		assert.NotContains(t, desc, "Join URL:")
 		assert.NotContains(t, desc, "Dial-in Options")
 	})
+}
+
+// Test ICS cancellation generation
+func TestGenerateMeetingCancellationICS(t *testing.T) {
+	generator := NewICSGenerator()
+	startTime := time.Date(2024, 10, 25, 10, 0, 0, 0, time.UTC)
+
+	params := ICSMeetingCancellationParams{
+		MeetingUID:     "test-meeting-cancel-123",
+		MeetingTitle:   "Test Meeting",
+		StartTime:      startTime,
+		Duration:       60,
+		Timezone:       "America/New_York",
+		RecipientEmail: "test@example.com",
+		Recurrence:     nil,
+	}
+
+	icsContent, err := generator.GenerateMeetingCancellationICS(params)
+	assert.NoError(t, err)
+
+	// Check for required ICS fields
+	assert.Contains(t, icsContent, "BEGIN:VCALENDAR")
+	assert.Contains(t, icsContent, "END:VCALENDAR")
+	assert.Contains(t, icsContent, "UID:test-meeting-cancel-123")
+	assert.Contains(t, icsContent, "METHOD:CANCEL")
+	assert.Contains(t, icsContent, "STATUS:CANCELLED")
+	assert.Contains(t, icsContent, "SUMMARY:Test Meeting (CANCELLED)")
+	assert.Contains(t, icsContent, "ORGANIZER;CN=ITX:mailto:itx@linuxfoundation.org")
+	assert.Contains(t, icsContent, "ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:test@example.com")
+	assert.Contains(t, icsContent, "SEQUENCE:1") // Should have incremented sequence
+	assert.Contains(t, icsContent, "DTSTART;TZID=America/New_York:20241025T060000")
+	assert.Contains(t, icsContent, "DTEND;TZID=America/New_York:20241025T070000")
+}
+
+func TestGenerateMeetingCancellationICS_WithRecurrence(t *testing.T) {
+	generator := NewICSGenerator()
+	startTime := time.Date(2024, 10, 25, 10, 0, 0, 0, time.UTC)
+
+	// Weekly recurring meeting
+	recurrence := &models.Recurrence{
+		Type:           2, // Weekly
+		RepeatInterval: 1,
+		WeeklyDays:     "2,4", // Monday and Wednesday
+	}
+
+	params := ICSMeetingCancellationParams{
+		MeetingUID:     "weekly-staff-cancel-456",
+		MeetingTitle:   "Weekly Staff Meeting",
+		StartTime:      startTime,
+		Duration:       30,
+		Timezone:       "UTC",
+		RecipientEmail: "staff@example.com",
+		Recurrence:     recurrence,
+	}
+
+	icsContent, err := generator.GenerateMeetingCancellationICS(params)
+	assert.NoError(t, err)
+
+	// Check for recurrence rule and UID
+	assert.Contains(t, icsContent, "UID:weekly-staff-cancel-456")
+	assert.Contains(t, icsContent, "RRULE:FREQ=WEEKLY;BYDAY=MO,WE")
+	assert.Contains(t, icsContent, "STATUS:CANCELLED")
+	assert.Contains(t, icsContent, "SUMMARY:Weekly Staff Meeting (CANCELLED)")
 }

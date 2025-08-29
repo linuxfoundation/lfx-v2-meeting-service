@@ -563,6 +563,7 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 
 	// Create email invitation
 	invitation := domain.EmailInvitation{
+		MeetingUID:     meetingDB.UID,
 		RecipientEmail: registrant.Email,
 		RecipientName:  recipientName,
 		MeetingTitle:   meetingDB.Title,
@@ -597,6 +598,7 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 
 	// Create email cancellation
 	cancellation := domain.EmailCancellation{
+		MeetingUID:     meetingDB.UID,
 		RecipientEmail: registrant.Email,
 		RecipientName:  recipientName,
 		MeetingTitle:   meetingDB.Title,
@@ -606,6 +608,7 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 		Description:    meetingDB.Description,
 		ProjectName:    "", // TODO: Add project name once project service integration is available
 		Reason:         "Your registration has been removed from this meeting.",
+		Recurrence:     meetingDB.Recurrence,
 	}
 
 	// Send the email
