@@ -21,6 +21,15 @@ spec:
     - path:
         type: PathPrefix
         value: /meetings/
+    - path:
+        type: Exact
+        value: /past_meetings
+    - path:
+        type: PathPrefix
+        value: /past_meetings/
+    - path:
+        type: PathPrefix
+        value: /webhooks/
     {{- if .Values.heimdall.enabled }}
     filters:
     - type: ExtensionRef
