@@ -617,3 +617,383 @@ func TestMessageBuilder_SendRemoveMeetingRegistrantAccess(t *testing.T) {
 		t.Errorf("expected Host %t, got %t", registrantMsg.Host, receivedMsg.Host)
 	}
 }
+
+// Tests for Tags() functionality in messaging methods
+
+func TestMessageBuilder_SendIndexMeeting_TagsGeneration(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	meeting := models.MeetingBase{
+		UID:         "meeting-123",
+		ProjectUID:  "project-456",
+		Title:       "Weekly Standup",
+		Description: "Team sync meeting",
+		Committees: []models.Committee{
+			{UID: "committee-789"},
+			{UID: "committee-101"},
+		},
+	}
+
+	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	// Verify tags are included and match expected values
+	expectedTags := []string{
+		"meeting-123",
+		"meeting_uid:meeting-123",
+		"project_uid:project-456",
+		"committee_uid:committee-789",
+		"committee_uid:committee-101",
+		"Weekly Standup",
+		"Team sync meeting",
+	}
+
+	if len(indexerMsg.Tags) != len(expectedTags) {
+		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
+	}
+
+	for i, expectedTag := range expectedTags {
+		if i >= len(indexerMsg.Tags) {
+			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
+		} else if indexerMsg.Tags[i] != expectedTag {
+			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
+		}
+	}
+}
+
+func TestMessageBuilder_SendIndexMeetingSettings_TagsGeneration(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	settings := models.MeetingSettings{
+		UID:        "meeting-settings-123",
+		Organizers: []string{"user1", "user2"},
+	}
+
+	err := builder.SendIndexMeetingSettings(ctx, models.ActionUpdated, settings)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	// Verify tags are included and match expected values
+	expectedTags := []string{
+		"meeting-settings-123",
+		"meeting_uid:meeting-settings-123",
+	}
+
+	if len(indexerMsg.Tags) != len(expectedTags) {
+		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
+	}
+
+	for i, expectedTag := range expectedTags {
+		if i >= len(indexerMsg.Tags) {
+			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
+		} else if indexerMsg.Tags[i] != expectedTag {
+			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
+		}
+	}
+}
+
+func TestMessageBuilder_SendIndexMeetingRegistrant_TagsGeneration(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	registrant := models.Registrant{
+		UID:        "registrant-123",
+		MeetingUID: "meeting-456",
+		FirstName:  "John",
+		LastName:   "Doe",
+		Email:      "john.doe@example.com",
+		Username:   "johndoe",
+	}
+
+	err := builder.SendIndexMeetingRegistrant(ctx, models.ActionCreated, registrant)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	// Verify tags are included and match expected values
+	expectedTags := []string{
+		"registrant-123",
+		"registrant_uid:registrant-123",
+		"meeting_uid:meeting-456",
+		"John",
+		"Doe",
+		"john.doe@example.com",
+		"johndoe",
+	}
+
+	if len(indexerMsg.Tags) != len(expectedTags) {
+		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
+	}
+
+	for i, expectedTag := range expectedTags {
+		if i >= len(indexerMsg.Tags) {
+			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
+		} else if indexerMsg.Tags[i] != expectedTag {
+			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
+		}
+	}
+}
+
+func TestMessageBuilder_SendIndexPastMeeting_TagsGeneration(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	pastMeeting := models.PastMeeting{
+		UID:          "past-meeting-123",
+		MeetingUID:   "meeting-456",
+		ProjectUID:   "project-789",
+		OccurrenceID: "occurrence-101",
+		Title:        "Past Weekly Standup",
+		Description:  "Past team sync meeting",
+	}
+
+	err := builder.SendIndexPastMeeting(ctx, models.ActionCreated, pastMeeting)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	// Verify tags are included and match expected values
+	expectedTags := []string{
+		"past-meeting-123",
+		"past_meeting_uid:past-meeting-123",
+		"meeting_uid:meeting-456",
+		"project_uid:project-789",
+		"occurrence_id:occurrence-101",
+		"Past Weekly Standup",
+		"Past team sync meeting",
+	}
+
+	if len(indexerMsg.Tags) != len(expectedTags) {
+		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
+	}
+
+	for i, expectedTag := range expectedTags {
+		if i >= len(indexerMsg.Tags) {
+			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
+		} else if indexerMsg.Tags[i] != expectedTag {
+			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
+		}
+	}
+}
+
+func TestMessageBuilder_SendIndexPastMeetingParticipant_TagsGeneration(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+	participant := models.PastMeetingParticipant{
+		UID:            "participant-123",
+		PastMeetingUID: "past-meeting-456",
+		MeetingUID:     "meeting-789",
+		FirstName:      "Jane",
+		LastName:       "Smith",
+		Username:       "janesmith",
+		Email:          "jane.smith@example.com",
+	}
+
+	err := builder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, participant)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	// Verify tags are included and match expected values
+	expectedTags := []string{
+		"participant-123",
+		"past_meeting_participant_uid:participant-123",
+		"past_meeting_uid:past-meeting-456",
+		"meeting_uid:meeting-789",
+		"Jane",
+		"Smith",
+		"janesmith",
+		"jane.smith@example.com",
+	}
+
+	if len(indexerMsg.Tags) != len(expectedTags) {
+		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
+	}
+
+	for i, expectedTag := range expectedTags {
+		if i >= len(indexerMsg.Tags) {
+			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
+		} else if indexerMsg.Tags[i] != expectedTag {
+			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
+		}
+	}
+}
+
+func TestMessageBuilder_TagsGeneration_EmptyFields(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	ctx := context.Background()
+
+	// Test with meeting having only UID
+	meeting := models.MeetingBase{
+		UID: "meeting-only-uid",
+	}
+
+	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
+	if err != nil {
+		t.Errorf("expected no error, got: %v", err)
+	}
+
+	if len(mockConn.publishedMsgs) != 1 {
+		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
+		return
+	}
+
+	msg := mockConn.publishedMsgs[0]
+	var indexerMsg models.MeetingIndexerMessage
+	err = json.Unmarshal(msg.data, &indexerMsg)
+	if err != nil {
+		t.Errorf("failed to unmarshal message: %v", err)
+		return
+	}
+
+	// Should only have UID-related tags
+	expectedTags := []string{
+		"meeting-only-uid",
+		"meeting_uid:meeting-only-uid",
+	}
+
+	if len(indexerMsg.Tags) != len(expectedTags) {
+		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
+	}
+
+	for i, expectedTag := range expectedTags {
+		if i >= len(indexerMsg.Tags) {
+			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
+		} else if indexerMsg.Tags[i] != expectedTag {
+			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
+		}
+	}
+}
+
+func TestMessageBuilder_TagsGeneration_NilData(t *testing.T) {
+	mockConn := &mockNatsConn{
+		connected: true,
+	}
+	builder := &MessageBuilder{
+		NatsConn: mockConn,
+	}
+
+	// Test setIndexerTags with empty input
+	tags := builder.setIndexerTags()
+	if len(tags) != 0 {
+		t.Errorf("expected empty tags slice, got %d tags", len(tags))
+	}
+
+	// Test setIndexerTags with some tags
+	tags = builder.setIndexerTags("tag1", "tag2", "tag3")
+	expectedTags := []string{"tag1", "tag2", "tag3"}
+
+	if len(tags) != len(expectedTags) {
+		t.Errorf("expected %d tags, got %d", len(expectedTags), len(tags))
+	}
+
+	for i, expectedTag := range expectedTags {
+		if i >= len(tags) {
+			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
+		} else if tags[i] != expectedTag {
+			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, tags[i])
+		}
+	}
+}
