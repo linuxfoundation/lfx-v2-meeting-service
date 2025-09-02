@@ -12,20 +12,66 @@ image:
 
 # app is the configuration for the application
 app:
-  # logLevel is the log level (debug, info, warn, error)
-  logLevel: info
-  # logAddSource is a boolean to determine if the log source should be added
-  logAddSource: true
   # audience is the JWT audience required for this authentication with this app
   audience: lfx-v2-meeting-service
   # skipEtagValidation is a boolean to determine if the etag validation should be skipped
   # (only use for local development)
   skipEtagValidation: false
-  # jwtAuthDisabledMockLocalPrincipal mocks auth for local development to use a set principal
-  # (only use for local development)
-  jwtAuthDisabledMockLocalPrincipal: ""
   # use_oidc_contextualizer is a boolean to determine if the OIDC contextualizer should be used
   use_oidc_contextualizer: true
+
+  environment:
+    # NATS_URL is required
+    NATS_URL:
+      value: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
+    # LOG_LEVEL is optional
+    LOG_LEVEL:
+      value: info
+    # LOG_ADD_SOURCE is optional
+    LOG_ADD_SOURCE:
+      value: true
+    # JWKS_URL is required unless JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL is set to a non-empty value
+    JWKS_URL:
+      value: http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks
+    # JWT_AUDIENCE is required
+    JWT_AUDIENCE:
+      value: lfx-v2-meeting-service
+    # SKIP_ETAG_VALIDATION is optional
+    SKIP_ETAG_VALIDATION:
+      value: "false"
+    # JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL is optional
+    JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL:
+      value: ''
+    # EMAIL_ENABLED is optional
+    EMAIL_ENABLED:
+      value: "true"
+    # SMTP_HOST is optional
+    SMTP_HOST:
+      value: lfx-platform-mailpit-smtp.lfx.svc.cluster.local
+    # SMTP_PORT is optional
+    SMTP_PORT:
+      value: "25"
+    # SMTP_FROM is optional
+    SMTP_FROM:
+      value: noreply@lfx.linuxfoundation.org
+    # SMTP_USERNAME is optional
+    SMTP_USERNAME:
+      value: null
+    # SMTP_PASSWORD is optional
+    SMTP_PASSWORD:
+      value: null
+    # ZOOM_ACCOUNT_ID is optional
+    ZOOM_ACCOUNT_ID:
+      value: null
+    # ZOOM_CLIENT_ID is optional
+    ZOOM_CLIENT_ID:
+      value: null
+    # ZOOM_CLIENT_SECRET is optional
+    ZOOM_CLIENT_SECRET:
+      value: null
+    # ZOOM_WEBHOOK_SECRET_TOKEN is optional
+    ZOOM_WEBHOOK_SECRET_TOKEN:
+      value: null
 
 # traefik is the configuration for Traefik Gateway API routing
 traefik:
@@ -60,8 +106,6 @@ serviceAccount:
 
 # nats is the configuration for the NATS server
 nats:
-  # url is the URL of the NATS server
-  url: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
 
   # kv_bucket_meetings is the configuration for the KV bucket for storing meeting base information
   kv_bucket_meetings:
@@ -179,33 +223,3 @@ openfga:
 heimdall:
   enabled: true
   url: http://lfx-platform-heimdall.lfx.svc.cluster.local:4456
-  # jwksUrl is the JWKS URL for JWT verification
-  jwksUrl: http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks
-
-# email is the configuration for email notifications
-email:
-  # enabled is a boolean to determine if email notifications should be sent
-  enabled: true
-  # smtp is the SMTP server configuration
-  smtp:
-    # host is the SMTP server hostname
-    host: lfx-platform-mailpit-smtp.lfx.svc.cluster.local
-    # port is the SMTP server port
-    port: 25
-    # from is the sender email address
-    from: noreply@lfx.linuxfoundation.org
-    # username is the SMTP username (optional for authenticated SMTP)
-    username: ""
-    # password is the SMTP password (optional for authenticated SMTP)
-    password: ""
-
-# zoom is the configuration for Zoom integration
-zoom:
-  # accountId is the Zoom OAuth Server-to-Server Account ID
-  accountId: ""
-  # clientId is the Zoom OAuth App Client ID
-  clientId: ""
-  # clientSecret is the Zoom OAuth App Client Secret
-  clientSecret: ""
-  # Oauth app secret token (for webhook events)
-  webhookSecretToken: ""

@@ -21,13 +21,22 @@ spec:
     - path:
         type: PathPrefix
         value: /meetings/
+    - path:
+        type: Exact
+        value: /past_meetings
+    - path:
+        type: PathPrefix
+        value: /past_meetings/
+    - path:
+        type: PathPrefix
+        value: /webhooks/
     {{- if .Values.heimdall.enabled }}
     filters:
     - type: ExtensionRef
       extensionRef:
         group: traefik.io
         kind: Middleware
-        name: heimdall
+        name: heimdall-forward-body
     {{- end }}
     backendRefs:
     - name: lfx-v2-meeting-service
