@@ -524,7 +524,7 @@ Example:
          "monthly_day": 24,
          "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320147,
+         "repeat_interval": 4711238312625320148,
          "type": 1,
          "weekly_days": "1,3,5"
       },
@@ -611,7 +611,7 @@ Example:
          "monthly_day": 24,
          "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320147,
+         "repeat_interval": 4711238312625320148,
          "type": 1,
          "weekly_days": "1,3,5"
       },
@@ -843,7 +843,7 @@ Example:
          "monthly_day": 24,
          "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320147,
+         "repeat_interval": 4711238312625320148,
          "type": 1,
          "weekly_days": "1,3,5"
       },

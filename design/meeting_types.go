@@ -137,6 +137,7 @@ you must set the value of this field as '2' and the value of the 'type' paramete
 For a daily meeting, the maximum interval you can set is '90' days. 
 For a weekly meeting the maximum interval that you can set is of '12' weeks. 
 For a monthly meeting, there is a maximum of '3' months.`)
+		Minimum(1)
 	})
 	Field(3, "weekly_days", String, func() {
 		Description(`This field is required if you're scheduling a recurring meeting of type '2' to state which day(s) 

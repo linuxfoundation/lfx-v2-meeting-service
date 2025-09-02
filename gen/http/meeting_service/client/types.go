@@ -5884,6 +5884,11 @@ func ValidateRecurrenceResponseBody(body *RecurrenceResponseBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{1, 2, 3}))
 		}
 	}
+	if body.RepeatInterval != nil {
+		if *body.RepeatInterval < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.repeat_interval", *body.RepeatInterval, 1, true))
+		}
+	}
 	if body.WeeklyDays != nil {
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.weekly_days", *body.WeeklyDays, "^[1-7](,[1-7])*$"))
 	}
@@ -5976,6 +5981,9 @@ func ValidateOccurrenceResponseBody(body *OccurrenceResponseBody) (err error) {
 func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	if !(body.Type == 1 || body.Type == 2 || body.Type == 3) {
 		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{1, 2, 3}))
+	}
+	if body.RepeatInterval < 1 {
+		err = goa.MergeErrors(err, goa.InvalidRangeError("body.repeat_interval", body.RepeatInterval, 1, true))
 	}
 	if body.WeeklyDays != nil {
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.weekly_days", *body.WeeklyDays, "^[1-7](,[1-7])*$"))

@@ -12,6 +12,11 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 )
 
+const (
+	MaxWeeksCount  = 1000
+	MaxMonthsCount = 500
+)
+
 // OccurrenceService implements the domain.OccurrenceService interface
 type OccurrenceService struct{}
 
@@ -143,7 +148,7 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 		weekCount++
 
 		// Safety check to prevent infinite loops
-		if weekCount > 1000 {
+		if weekCount > MaxWeeksCount {
 			break
 		}
 	}
@@ -191,7 +196,7 @@ func (s *OccurrenceService) calculateMonthlyOccurrences(meeting *models.MeetingB
 		current = occurrenceDate
 
 		// Safety check to prevent infinite loops
-		if monthCount > 1000 {
+		if monthCount > MaxMonthsCount {
 			break
 		}
 	}
@@ -242,8 +247,12 @@ func (s *OccurrenceService) calculateMonthlyByWeekDay(startTime time.Time, month
 	daysToAdd := (int(targetWeekday) - int(firstOfMonth.Weekday()) + 7) % 7
 	firstOccurrence := firstOfMonth.AddDate(0, 0, daysToAdd)
 
-	// Add weeks to get to the target week
-	return firstOccurrence.AddDate(0, 0, (week-1)*7)
+	candidate := firstOccurrence.AddDate(0, 0, (week-1)*7)
+	if candidate.Month() != targetMonth.Month() {
+		lastOfMonth := time.Date(targetMonth.Year(), targetMonth.Month()+1, 0, startTime.Hour(), startTime.Minute(), startTime.Second(), startTime.Nanosecond(), loc)
+		return s.findLastWeekdayOfMonth(lastOfMonth, targetWeekday)
+	}
+	return candidate
 }
 
 // Helper functions
@@ -272,7 +281,7 @@ func (s *OccurrenceService) parseWeeklyDays(weeklyDays string) []int {
 		if day, err := strconv.Atoi(dayStr); err == nil && day >= 1 && day <= 7 {
 			// Convert from 1=Sunday, 2=Monday to Go's 0=Sunday, 1=Monday format
 			// day 1 (Sunday) -> 0, day 2 (Monday) -> 1, etc.
-			goWeekday := (day - 1) % 7
+			goWeekday := day - 1
 			days = append(days, goWeekday)
 		}
 	}

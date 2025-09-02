@@ -13,15 +13,22 @@ import (
 
 // ICS constants for consistent values across all generated ICS files
 const (
-	ICSProdID   = "-//Linux Foundation//LFX Meeting Service//EN"
-	ICALVersion = "2.0"
-	ICALScale   = "GREGORIAN"
+	ICSProdID         = "-//Linux Foundation//LFX Meeting Service//EN"
+	ICALVersion       = "2.0"
+	ICALScale         = "GREGORIAN"
+	ICALMaxLineLength = 75 // this is arbitrarily set to 75 characters to avoid long lines
 )
 
 // ICS organizer information
 const (
 	OrganizerEmail = "itx@linuxfoundation.org"
 	OrganizerName  = "ITX"
+)
+
+// UTF-8 byte masks for line folding safety
+const (
+	UTF8TwoBitMask         = 0xC0 // Mask to isolate first two bits (11000000)
+	UTF8ContinuationPrefix = 0x80 // UTF-8 continuation byte prefix (10000000)
 )
 
 // ICSGenerator generates ICS (iCalendar) files for meeting invitations
@@ -53,7 +60,7 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	// Load timezone
 	loc, err := time.LoadLocation(param.Timezone)
 	if err != nil {
-		loc = time.UTC
+		return "", fmt.Errorf("invalid timezone %q: %w", param.Timezone, err)
 	}
 
 	// Generate consistent UID using meeting UID
@@ -169,7 +176,7 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 	// Load timezone
 	loc, err := time.LoadLocation(params.Timezone)
 	if err != nil {
-		loc = time.UTC
+		return "", fmt.Errorf("invalid timezone %q: %w", params.Timezone, err)
 	}
 
 	// Generate consistent UID using meeting UID
@@ -485,7 +492,7 @@ func escapeICSText(text string) string {
 	text = strings.ReplaceAll(text, ";", "\\;")
 
 	// Fold long lines (75 characters max per line, continued lines start with space)
-	return foldICSLine(text, 75)
+	return foldICSLine(text, ICALMaxLineLength)
 }
 
 // foldICSLine folds long lines according to RFC5545 (75 octets max)
@@ -514,7 +521,7 @@ func foldICSLine(line string, maxLength int) string {
 
 		// Find a safe place to break (not in the middle of a UTF-8 sequence)
 		breakPoint := cutLength
-		for breakPoint > 0 && remaining[breakPoint-1]&0xC0 == 0x80 {
+		for breakPoint > 0 && remaining[breakPoint-1]&UTF8TwoBitMask == UTF8ContinuationPrefix {
 			breakPoint--
 		}
 

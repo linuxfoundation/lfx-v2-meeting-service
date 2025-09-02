@@ -703,7 +703,8 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 
 	if existingParticipant != nil {
 		// Update existing participant's session with leave time
-		err = s.updateParticipantSessionLeaveTime(ctx, existingParticipant, participant.ParticipantUUID, participant.LeaveTime, participant.LeaveReason)
+		joinTime := participant.LeaveTime.Add(-time.Duration(participant.Duration) * time.Second)
+		err = s.updateParticipantSessionLeaveTime(ctx, existingParticipant, participant.ParticipantUUID, joinTime, participant.LeaveTime, participant.LeaveReason)
 		if err != nil {
 			return fmt.Errorf("failed to update participant session leave time: %w", err)
 		}
@@ -1014,7 +1015,7 @@ func (s *ZoomWebhookHandler) findClosestOccurrenceID(meeting *models.MeetingBase
 
 	// Find the occurrence with the closest start time
 	var closestOccurrence *models.Occurrence
-	minDiff := time.Duration(math.MaxInt64)
+	minDiff := time.Duration(math.MaxInt64 - 1)
 
 	for i := range occurrences {
 		occ := &occurrences[i]
@@ -1253,7 +1254,14 @@ func parseNameFromUserName(userName string) (firstName, lastName string) {
 }
 
 // updateParticipantSessionLeaveTime updates a participant's session with the leave time and reason
-func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, leaveTime time.Time, leaveReason string) error {
+func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(
+	ctx context.Context,
+	participant *models.PastMeetingParticipant,
+	sessionUID string,
+	joinTime time.Time,
+	leaveTime time.Time,
+	leaveReason string,
+) error {
 	slog.DebugContext(ctx, "updating participant session leave time",
 		"participant_uid", participant.UID,
 		"email", participant.Email,

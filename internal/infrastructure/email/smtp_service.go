@@ -112,7 +112,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		encodedContent := base64.StdEncoding.EncodeToString([]byte(icsContent))
 		attachment = &domain.EmailAttachment{
 			Filename:    "meeting-invitation.ics",
-			ContentType: "text/calendar",
+			ContentType: "text/calendar; charset=UTF-8; method=REQUEST",
 			Content:     encodedContent,
 		}
 		// Store in invitation for template access
@@ -153,7 +153,8 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", cancellation.RecipientEmail))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", cancellation.MeetingTitle))
 
-	// Generate ICS cancellation file if we have the necessary data
+	// Generate ICS cancellation file if the meeting series is not completed yet.
+	// Otherwise if it is completed, then we don't need to remove the series from the user's calendar.
 	var attachment *domain.EmailAttachment
 	if cancellation.StartTime.After(time.Now()) {
 		icsContent, err := s.icsGenerator.GenerateMeetingCancellationICS(ICSMeetingCancellationParams{

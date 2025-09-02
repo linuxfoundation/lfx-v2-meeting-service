@@ -83,9 +83,6 @@ func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[st
 		if oldMeeting.ZoomConfig.MeetingID != newMeeting.ZoomConfig.MeetingID {
 			changes["Meeting ID"] = newMeeting.ZoomConfig.MeetingID
 		}
-		if oldMeeting.ZoomConfig.Passcode != newMeeting.ZoomConfig.Passcode {
-			changes["Passcode"] = newMeeting.ZoomConfig.Passcode
-		}
 	case oldMeeting.ZoomConfig == nil && newMeeting.ZoomConfig != nil:
 		changes["Zoom Configuration"] = "Added Zoom configuration"
 	case oldMeeting.ZoomConfig != nil && newMeeting.ZoomConfig == nil:
