@@ -58,6 +58,13 @@ const (
 	RemoveParticipantPastMeetingSubject = "lfx.remove_participant.past_meeting"
 )
 
+// NATS subjects that external services handle and that the meeting service requests.
+const (
+	// CommitteeGetNameSubject is the subject for committee name validation.
+	// The subject is of the form: lfx.committee-api.get_name
+	CommitteeGetNameSubject = "lfx.committee-api.get_name"
+)
+
 // NATS wildcard subjects that the meeting service handles messages about.
 const (
 	// MeetingsAPIQueue is the subject name for the meetings API.

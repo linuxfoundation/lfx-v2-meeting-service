@@ -8,11 +8,13 @@ import (
 	"errors"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
@@ -99,6 +101,44 @@ func (s *MeetingService) validateCreateMeetingPayload(ctx context.Context, paylo
 	return nil
 }
 
+func (s *MeetingService) validateCommittees(ctx context.Context, committees []models.Committee) error {
+	if len(committees) == 0 {
+		return nil
+	}
+
+	messageBuilder, ok := s.MessageBuilder.(*messaging.MessageBuilder)
+	if !ok {
+		slog.ErrorContext(ctx, "message builder is not of expected type for committee validation")
+		return domain.ErrInternal
+	}
+
+	var invalidCommittees []string
+
+	for _, committee := range committees {
+		if committee.UID == "" {
+			continue
+		}
+
+		_, err := messageBuilder.ValidateCommitteeExists(ctx, committee.UID)
+		if err != nil {
+			var committeNotFoundErr *messaging.CommitteeNotFoundError
+			if errors.As(err, &committeNotFoundErr) {
+				invalidCommittees = append(invalidCommittees, committee.UID)
+			} else {
+				slog.ErrorContext(ctx, "error validating committee", "committee_uid", committee.UID, logging.ErrKey, err)
+				return domain.ErrInternal
+			}
+		}
+	}
+
+	if len(invalidCommittees) > 0 {
+		slog.WarnContext(ctx, "invalid committees provided", "invalid_committee_uids", strings.Join(invalidCommittees, ", "))
+		return domain.ErrValidationFailed
+	}
+
+	return nil
+}
+
 // CreateMeeting creates a new meeting
 func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.MeetingFull) (*models.MeetingFull, error) {
 	if !s.ServiceReady() {
@@ -111,7 +151,11 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	}
 
 	// TODO: Check if project exists - integrate with project service
-	// TODO: Check if committees exist once the committee service is implemented.
+
+	// Validate committees exist
+	if err := s.validateCommittees(ctx, reqMeeting.Base.Committees); err != nil {
+		return nil, err
+	}
 
 	// Generate UID for the meeting
 	reqMeeting.Base.UID = uuid.New().String()
@@ -318,7 +362,11 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 	reqMeeting = models.MergeUpdateMeetingRequest(reqMeeting, existingMeetingDB)
 
 	// TODO: Check if project exists - integrate with project service
-	// TODO: Check if committees exist once the committee service is implemented.
+
+	// Validate committees exist
+	if err := s.validateCommittees(ctx, reqMeeting.Committees); err != nil {
+		return nil, err
+	}
 
 	// Update meeting on external platform if configured
 	if reqMeeting.Platform != "" {

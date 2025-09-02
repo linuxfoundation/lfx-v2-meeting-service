@@ -7,17 +7,20 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/nats-io/nats.go"
 )
 
 // INatsConn is a NATS connection interface needed for the [MeetingsService].
 type INatsConn interface {
 	IsConnected() bool
 	Publish(subj string, data []byte) error
+	Request(subj string, data []byte, timeout time.Duration) (*nats.Msg, error)
 }
 
 // MessageBuilder is the builder for the message and sends it to the NATS server.
@@ -304,4 +307,54 @@ func (m *MessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject st
 	)
 
 	return m.sendMessage(ctx, subject, messageBytes)
+}
+
+// ValidateCommitteeExists checks if a committee exists by sending a request to committee-api.
+// Returns the committee name if it exists, or an error if it doesn't exist or there's a communication error.
+func (m *MessageBuilder) ValidateCommitteeExists(ctx context.Context, committeeUID string) (string, error) {
+	// Prepare request payload
+	request := struct {
+		UID string `json:"uid"`
+	}{
+		UID: committeeUID,
+	}
+
+	requestBytes, err := json.Marshal(request)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling committee request", logging.ErrKey, err, "committee_uid", committeeUID)
+		return "", err
+	}
+
+	// Send request with 5 second timeout
+	msg, err := m.NatsConn.Request(models.CommitteeGetNameSubject, requestBytes, 5*time.Second)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending committee validation request", logging.ErrKey, err, "committee_uid", committeeUID)
+		return "", err
+	}
+
+	// Parse response
+	responseStr := string(msg.Data)
+
+	// Try to parse as JSON error response first
+	var errorResponse struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(msg.Data, &errorResponse); err == nil && errorResponse.Error != "" {
+		slog.WarnContext(ctx, "committee not found", "committee_uid", committeeUID, "error", errorResponse.Error)
+		return "", &CommitteeNotFoundError{UID: committeeUID, Details: errorResponse.Error}
+	}
+
+	// If not a JSON error, treat as committee name
+	slog.DebugContext(ctx, "committee validation successful", "committee_uid", committeeUID, "name", responseStr)
+	return responseStr, nil
+}
+
+// CommitteeNotFoundError represents an error when a committee is not found.
+type CommitteeNotFoundError struct {
+	UID     string
+	Details string
+}
+
+func (e *CommitteeNotFoundError) Error() string {
+	return "committee not found: " + e.UID
 }

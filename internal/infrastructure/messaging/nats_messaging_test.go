@@ -9,9 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/nats-io/nats.go"
 )
 
 // mockNatsConn implements INatsConn for testing
@@ -39,6 +41,22 @@ func (m *mockNatsConn) Publish(subj string, data []byte) error {
 		return m.publishError
 	}
 	return nil
+}
+
+func (m *mockNatsConn) Request(subj string, data []byte, timeout time.Duration) (*nats.Msg, error) {
+	// For testing purposes, return a simple mock response
+	m.publishedMsgs = append(m.publishedMsgs, publishedMessage{
+		subject: subj,
+		data:    data,
+	})
+	if m.publishError != nil {
+		return nil, m.publishError
+	}
+	// Return a mock response message
+	return &nats.Msg{
+		Subject: subj,
+		Data:    []byte("mock response"),
+	}, nil
 }
 
 func TestMessageBuilder_sendMessage(t *testing.T) {
