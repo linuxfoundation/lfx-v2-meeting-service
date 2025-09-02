@@ -3252,6 +3252,29 @@ func marshalMeetingservicePastMeetingParticipantToPastMeetingParticipantResponse
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
 	}
+	if v.Sessions != nil {
+		res.Sessions = make([]*ParticipantSessionResponseBody, len(v.Sessions))
+		for i, val := range v.Sessions {
+			res.Sessions[i] = marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(val)
+		}
+	}
+
+	return res
+}
+
+// marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody
+// builds a value of type *ParticipantSessionResponseBody from a value of type
+// *meetingservice.ParticipantSession.
+func marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(v *meetingservice.ParticipantSession) *ParticipantSessionResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &ParticipantSessionResponseBody{
+		UID:         v.UID,
+		JoinTime:    v.JoinTime,
+		LeaveTime:   v.LeaveTime,
+		LeaveReason: v.LeaveReason,
+	}
 
 	return res
 }

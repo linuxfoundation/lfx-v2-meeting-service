@@ -319,5 +319,43 @@ func (s *NatsPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, 
 	return nil, domain.ErrPastMeetingNotFound
 }
 
+func (s *NatsPastMeetingRepository) GetByPlatformMeetingIDAndOccurrence(ctx context.Context, platform, platformMeetingID, occurrenceID string) (*models.PastMeeting, error) {
+	if s.PastMeetings == nil {
+		return nil, domain.ErrServiceUnavailable
+	}
+
+	keysLister, err := s.PastMeetings.ListKeys(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "error listing past meeting keys from NATS KV store", logging.ErrKey, err)
+		return nil, domain.ErrInternal
+	}
+
+	platform = strings.ToLower(platform)
+
+	for key := range keysLister.Keys() {
+		entry, err := s.get(ctx, key)
+		if err != nil {
+			if !errors.Is(err, jetstream.ErrKeyNotFound) {
+				slog.ErrorContext(ctx, "error getting past meeting from NATS KV store", logging.ErrKey, err, "key", key)
+			}
+			continue
+		}
+
+		pastMeeting, err := s.unmarshal(ctx, entry)
+		if err != nil {
+			slog.ErrorContext(ctx, "error unmarshaling past meeting", logging.ErrKey, err, "key", key)
+			continue
+		}
+
+		if strings.ToLower(pastMeeting.Platform) == platform &&
+			pastMeeting.PlatformMeetingID == platformMeetingID &&
+			pastMeeting.OccurrenceID == occurrenceID {
+			return pastMeeting, nil
+		}
+	}
+
+	return nil, domain.ErrPastMeetingNotFound
+}
+
 // Ensure NatsPastMeetingRepository implements domain.PastMeetingRepository
 var _ domain.PastMeetingRepository = (*NatsPastMeetingRepository)(nil)

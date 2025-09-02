@@ -115,6 +115,7 @@ func main() {
 		registrantService,
 		pastMeetingService,
 		pastMeetingParticipantService,
+		occurrenceService,
 		platformConfigs.Zoom.Validator,
 	)
 

@@ -24,6 +24,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	serviceMocks "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -332,6 +333,142 @@ func TestParseNameFromUserName(t *testing.T) {
 			firstName, lastName := parseNameFromUserName(tt.input)
 			assert.Equal(t, tt.firstName, firstName)
 			assert.Equal(t, tt.lastName, lastName)
+		})
+	}
+}
+
+// TestFindClosestOccurrenceID tests the occurrence ID calculation logic
+func TestFindClosestOccurrenceID(t *testing.T) {
+	scheduledTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+	actualTime := time.Date(2024, 1, 15, 10, 5, 0, 0, time.UTC) // 5 minutes later
+
+	tests := []struct {
+		name              string
+		meeting           *models.MeetingBase
+		actualStart       time.Time
+		expectedID        string
+		description       string
+		mockOccurrences   []models.Occurrence
+		expectServiceCall bool
+	}{
+		{
+			name: "non-recurring meeting returns scheduled start time unix timestamp",
+			meeting: &models.MeetingBase{
+				UID:        "meeting-1",
+				StartTime:  scheduledTime,
+				Recurrence: nil,
+			},
+			actualStart:       actualTime,
+			expectedID:        "1705312800", // Unix timestamp of scheduledTime (not actualTime)
+			description:       "Non-recurring meetings should use scheduled start time unix timestamp as occurrence ID",
+			expectServiceCall: false, // No service call for non-recurring meetings
+		},
+		{
+			name: "recurring meeting without calculated occurrences returns scheduled start time unix timestamp",
+			meeting: &models.MeetingBase{
+				UID:       "meeting-2",
+				StartTime: scheduledTime,
+				Recurrence: &models.Recurrence{
+					Type:           1,
+					RepeatInterval: 1,
+				},
+			},
+			actualStart:       actualTime,
+			expectedID:        "1705312800",
+			description:       "Recurring meetings without calculated occurrences should fall back to scheduled start time unix timestamp",
+			mockOccurrences:   []models.Occurrence{}, // Empty slice from service
+			expectServiceCall: true,
+		},
+		{
+			name: "recurring meeting finds exact matching occurrence",
+			meeting: &models.MeetingBase{
+				UID:       "meeting-3",
+				StartTime: scheduledTime,
+				Recurrence: &models.Recurrence{
+					Type:           1,
+					RepeatInterval: 1,
+				},
+			},
+			actualStart: scheduledTime, // Exactly matches the occurrence start time
+			expectedID:  "1705312800",  // Unix timestamp of scheduledTime
+			description: "Should return the occurrence ID that exactly matches the actual start time",
+			mockOccurrences: []models.Occurrence{
+				{
+					OccurrenceID: "1705312800", // Unix timestamp of scheduledTime
+					StartTime:    &scheduledTime,
+				},
+				{
+					OccurrenceID: "1705399200", // Unix timestamp of scheduledTime + 24 hours
+					StartTime: func() *time.Time {
+						t := scheduledTime.Add(24 * time.Hour)
+						return &t
+					}(),
+				},
+			},
+			expectServiceCall: true,
+		},
+		{
+			name: "recurring meeting finds closest occurrence",
+			meeting: &models.MeetingBase{
+				UID:       "meeting-4",
+				StartTime: scheduledTime,
+				Recurrence: &models.Recurrence{
+					Type:           1,
+					RepeatInterval: 1,
+				},
+			},
+			actualStart: scheduledTime.Add(25 * time.Hour), // Closer to second occurrence
+			expectedID:  "1705399200",                      // Unix timestamp of scheduledTime + 24 hours
+			description: "Should return the occurrence ID closest to the actual start time",
+			mockOccurrences: []models.Occurrence{
+				{
+					OccurrenceID: "1705312800", // Unix timestamp of scheduledTime
+					StartTime:    &scheduledTime,
+				},
+				{
+					OccurrenceID: "1705399200", // Unix timestamp of scheduledTime + 24 hours
+					StartTime: func() *time.Time {
+						t := scheduledTime.Add(24 * time.Hour)
+						return &t
+					}(),
+				},
+				{
+					OccurrenceID: "1705485600", // Unix timestamp of scheduledTime + 48 hours
+					StartTime: func() *time.Time {
+						t := scheduledTime.Add(48 * time.Hour)
+						return &t
+					}(),
+				},
+			},
+			expectServiceCall: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create mock occurrence service
+			mockOccurrenceService := &serviceMocks.MockOccurrenceService{}
+
+			if tt.expectServiceCall {
+				// Set up mock to return the expected occurrences when called with search window
+				mockOccurrenceService.On(
+					"CalculateOccurrencesFromDate",
+					tt.meeting,
+					tt.actualStart.AddDate(0, -1, 0), // search start (1 month back)
+					100,
+				).Return(tt.mockOccurrences)
+			}
+
+			// Create handler with mock service
+			handler := &ZoomWebhookHandler{
+				occurrenceService: mockOccurrenceService,
+			}
+
+			result := handler.findClosestOccurrenceID(tt.meeting, tt.actualStart)
+			assert.Equal(t, tt.expectedID, result, tt.description)
+
+			// Verify mock expectations
+			mockOccurrenceService.AssertExpectations(t)
 		})
 	}
 }

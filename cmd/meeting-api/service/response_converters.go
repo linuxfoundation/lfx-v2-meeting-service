@@ -491,5 +491,25 @@ func ConvertDomainToPastMeetingParticipantResponse(domainParticipant *models.Pas
 		participant.UpdatedAt = utils.StringPtr(domainParticipant.UpdatedAt.Format(time.RFC3339))
 	}
 
+	// Convert participant sessions
+	if len(domainParticipant.Sessions) > 0 {
+		var sessions []*meetingservice.ParticipantSession
+		for _, s := range domainParticipant.Sessions {
+			session := &meetingservice.ParticipantSession{
+				UID:      s.UID,
+				JoinTime: s.JoinTime.Format(time.RFC3339),
+			}
+			if s.LeaveTime != nil {
+				leaveTime := s.LeaveTime.Format(time.RFC3339)
+				session.LeaveTime = &leaveTime
+			}
+			if s.LeaveReason != "" {
+				session.LeaveReason = utils.StringPtr(s.LeaveReason)
+			}
+			sessions = append(sessions, session)
+		}
+		participant.Sessions = sessions
+	}
+
 	return participant
 }

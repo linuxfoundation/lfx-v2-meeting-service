@@ -1149,7 +1149,7 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreatePastMeetingParticipantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Ipsam fugiat quis qui quam explicabo molestiae.\",\n      \"past_meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"username\": \"Iste non commodi sint sed est.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Fugiat quis qui quam explicabo.\",\n      \"past_meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"username\": \"Porro iste non commodi sint sed est.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", body.PastMeetingUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
@@ -1281,7 +1281,7 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdatePastMeetingParticipantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Tempora voluptatem inventore.\",\n      \"username\": \"Officia tempore necessitatibus deleniti natus.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Voluptatem inventore in officia tempore necessitatibus deleniti.\",\n      \"username\": \"Possimus ea id.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if body.FirstName != nil {

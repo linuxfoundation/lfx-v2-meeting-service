@@ -6,8 +6,11 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +29,7 @@ type ZoomWebhookHandler struct {
 	registrantService             *service.MeetingRegistrantService
 	pastMeetingService            *service.PastMeetingService
 	pastMeetingParticipantService *service.PastMeetingParticipantService
+	occurrenceService             domain.OccurrenceService
 	WebhookValidator              domain.WebhookValidator
 }
 
@@ -34,6 +38,7 @@ func NewZoomWebhookHandler(
 	registrantService *service.MeetingRegistrantService,
 	pastMeetingService *service.PastMeetingService,
 	pastMeetingParticipantService *service.PastMeetingParticipantService,
+	occurrenceService domain.OccurrenceService,
 	webhookValidator domain.WebhookValidator,
 ) *ZoomWebhookHandler {
 	return &ZoomWebhookHandler{
@@ -41,6 +46,7 @@ func NewZoomWebhookHandler(
 		registrantService:             registrantService,
 		pastMeetingService:            pastMeetingService,
 		pastMeetingParticipantService: pastMeetingParticipantService,
+		occurrenceService:             occurrenceService,
 		WebhookValidator:              webhookValidator,
 	}
 }
@@ -64,7 +70,7 @@ type ZoomPayloadForPastMeeting struct {
 type ZoomPayloadForParticipant struct {
 	UserID            string
 	UserName          string
-	ID                string
+	ParticipantUUID   string
 	JoinTime          time.Time
 	Email             string
 	ParticipantUserID string
@@ -312,33 +318,112 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 		return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
 	}
 
-	// Create the past meeting record
-	zoomData := ZoomPayloadForPastMeeting{
-		UUID:      meetingObj.UUID,
-		StartTime: meetingObj.StartTime,
-		EndTime:   nil, // meeting.started events don't have end time
-		Timezone:  meetingObj.Timezone,
-	}
-	pastMeeting, err := s.createPastMeetingRecord(ctx, meeting, zoomData)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to create past meeting record",
-			logging.ErrKey, err,
-			logging.PriorityCritical(),
-		)
-		return fmt.Errorf("failed to create past meeting record: %w", err)
+	// // Handle session management for this meeting started event
+	// newPastMeeting, err := s.handleMeetingStartedSession(ctx, meeting, payload)
+	// if err != nil {
+	// 	slog.ErrorContext(ctx, "failed to handle meeting started session",
+	// 		logging.ErrKey, err,
+	// 		logging.PriorityCritical(),
+	// 	)
+	// 	return fmt.Errorf("failed to handle meeting started session: %w", err)
+	// }
+
+	// Calculate the closest occurrence ID based on the actual start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+
+	// Check if a past meeting already exists for this occurrence
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	if err != nil && !errors.Is(err, domain.ErrPastMeetingNotFound) {
+		slog.ErrorContext(ctx, "failed to check for existing past meeting", logging.ErrKey, err)
+		return fmt.Errorf("failed to check for existing past meeting: %w", err)
 	}
 
-	// Create participant records for all registrants
-	err = s.createPastMeetingParticipants(ctx, pastMeeting, meeting)
-	if err != nil {
-		// Log the error but don't fail the entire webhook processing
-		slog.ErrorContext(ctx, "failed to create past meeting participants",
-			logging.ErrKey, err,
-			logging.PriorityCritical(),
+	if pastMeeting == nil {
+		slog.DebugContext(ctx, "creating new past meeting record",
+			"meeting_uid", meeting.UID,
+			"occurrence_id", occurrenceID,
+			"zoom_meeting_id", meetingObj.ID,
+			"session_uid", meetingObj.UUID,
 		)
+
+		zoomData := ZoomPayloadForPastMeeting{
+			UUID:      meetingObj.UUID,
+			StartTime: meetingObj.StartTime,
+			EndTime:   nil, // Will be set when meeting ends
+			Timezone:  meetingObj.Timezone,
+		}
+
+		newPastMeeting, err := s.createPastMeetingRecordWithSession(ctx, meeting, zoomData)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to create new past meeting record", logging.ErrKey, err)
+			return fmt.Errorf("failed to create new past meeting record: %w", err)
+		}
+
+		err = s.createPastMeetingParticipants(ctx, newPastMeeting, meeting)
+		if err != nil {
+			// Log the error but don't fail the entire webhook processing
+			slog.ErrorContext(ctx, "failed to create past meeting participants",
+				logging.ErrKey, err,
+				logging.PriorityCritical(),
+			)
+		}
+
+		return nil
 	}
+
+	newSession := models.Session{
+		UID:       meetingObj.UUID,
+		StartTime: meetingObj.StartTime,
+		EndTime:   nil, // Will be set when meeting ends
+	}
+
+	slog.DebugContext(ctx, "found existing past meeting, managing sessions",
+		"past_meeting_uid", pastMeeting.UID,
+		"occurrence_id", occurrenceID,
+		"new_session_uid", newSession.UID,
+		"existing_sessions_count", len(pastMeeting.Sessions),
+	)
+
+	// Add or update the session using helper function
+	updatedSessions := s.addOrUpdateSession(pastMeeting.Sessions, newSession)
+	pastMeeting.Sessions = updatedSessions
+
+	// Update the past meeting with the new/updated session
+	_, revision, err := s.pastMeetingService.PastMeetingRepository.GetWithRevision(ctx, pastMeeting.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get past meeting revision", logging.ErrKey, err)
+		return fmt.Errorf("failed to get past meeting revision: %w", err)
+	}
+
+	err = s.pastMeetingService.PastMeetingRepository.Update(ctx, pastMeeting, revision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update past meeting with new session", logging.ErrKey, err)
+		return fmt.Errorf("failed to update past meeting with new session: %w", err)
+	}
+
+	slog.DebugContext(ctx, "successfully updated past meeting with new session",
+		"past_meeting_uid", pastMeeting.UID,
+		"session_uid", newSession.UID,
+		"total_sessions", len(pastMeeting.Sessions),
+	)
 
 	return nil
+}
+
+// addOrUpdateSession adds a new session to the list or updates an existing session with the same UID.
+// It loops through ALL sessions to check for duplicates (not just the last one).
+func (s *ZoomWebhookHandler) addOrUpdateSession(existingSessions []models.Session, newSession models.Session) []models.Session {
+	// Check all existing sessions for a matching UID
+	for i, session := range existingSessions {
+		if session.UID == newSession.UID {
+			// Found duplicate UID - overwrite the existing session
+			existingSessions[i] = newSession
+			return existingSessions
+		}
+	}
+
+	// No duplicate found - append the new session
+	return append(existingSessions, newSession)
 }
 
 // handleMeetingEndedEvent processes meeting.ended events
@@ -361,8 +446,24 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 		"timezone", meetingObj.Timezone,
 	)
 
-	// Try to find existing PastMeeting record by platform meeting ID
-	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	// First, get the meeting from database to calculate the correct occurrence ID
+	meeting, err := s.meetingService.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+	if err != nil {
+		if err == domain.ErrMeetingNotFound {
+			slog.WarnContext(ctx, "meeting not found in database for ended event, skipping",
+				"zoom_meeting_id", meetingObj.ID,
+			)
+			return nil
+		}
+		slog.ErrorContext(ctx, "error getting meeting from database", logging.ErrKey, err)
+		return fmt.Errorf("failed to get meeting: %w", err)
+	}
+
+	// Calculate the closest occurrence ID based on the actual start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+
+	// Try to find existing PastMeeting record by platform meeting ID and occurrence ID
+	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
 	if err != nil && err != domain.ErrPastMeetingNotFound {
 		slog.ErrorContext(ctx, "error searching for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing past meeting: %w", err)
@@ -377,6 +478,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 	} else {
 		// Fallback flow: Create PastMeeting since meeting.started might have been missed
 		slog.WarnContext(ctx, "no existing past meeting found for ended event, creating as fallback",
+			"occurrence_id", occurrenceID,
 			"zoom_meeting_id", meetingObj.ID,
 			"zoom_meeting_uuid", meetingObj.UUID,
 		)
@@ -456,14 +558,30 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 	slog.DebugContext(ctx, "processing participant joined event",
 		"zoom_meeting_uuid", meetingObj.UUID,
 		"zoom_meeting_id", meetingObj.ID,
-		"participant_id", participant.ID,
+		"participant_id", participant.ParticipantUUID,
 		"participant_name", participant.UserName,
 		"participant_email", participant.Email,
 		"join_time", participant.JoinTime,
 	)
 
-	// Find the PastMeeting record by platform meeting ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	// First, get the meeting from database to calculate the correct occurrence ID
+	meeting, err := s.meetingService.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+	if err != nil {
+		if err == domain.ErrMeetingNotFound {
+			slog.WarnContext(ctx, "meeting not found in database for participant joined event, skipping",
+				"zoom_meeting_id", meetingObj.ID,
+			)
+			return nil
+		}
+		slog.ErrorContext(ctx, "error getting meeting from database", logging.ErrKey, err)
+		return fmt.Errorf("failed to get meeting: %w", err)
+	}
+
+	// Calculate the closest occurrence ID based on the actual start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+
+	// Find the PastMeeting record by platform meeting ID and occurrence ID
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
@@ -485,21 +603,22 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 
 	if existingParticipant != nil {
 		// Update existing participant to mark as attended and add new session
-		err = s.updateParticipantAttendance(ctx, existingParticipant, participant.ID, participant.JoinTime)
+		err = s.updateParticipantAttendance(ctx, existingParticipant, participant.ParticipantUUID, participant.JoinTime)
 		if err != nil {
 			return fmt.Errorf("failed to update participant attendance: %w", err)
 		}
 		slog.InfoContext(ctx, "updated existing participant attendance",
+			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", existingParticipant.UID,
 			"email", participant.Email,
-			"session_uid", participant.ID,
+			"session_uid", participant.ParticipantUUID,
 		)
 	} else {
 		// Create new participant record
 		zoomParticipant := ZoomPayloadForParticipant{
 			UserID:            participant.UserID,
 			UserName:          participant.UserName,
-			ID:                participant.ID,
+			ParticipantUUID:   participant.ParticipantUUID,
 			JoinTime:          participant.JoinTime,
 			Email:             participant.Email,
 			ParticipantUserID: participant.ParticipantUserID,
@@ -513,6 +632,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 			return fmt.Errorf("failed to create participant from joined event: %w", err)
 		}
 		slog.InfoContext(ctx, "created new participant from joined event",
+			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", newParticipant.UID,
 			"email", participant.Email,
 			"is_invited", newParticipant.IsInvited,
@@ -537,15 +657,31 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 	slog.DebugContext(ctx, "processing participant left event",
 		"zoom_meeting_uuid", meetingObj.UUID,
 		"zoom_meeting_id", meetingObj.ID,
-		"participant_id", participant.ID,
+		"participant_id", participant.ParticipantUUID,
 		"participant_name", participant.UserName,
 		"participant_email", participant.Email,
 		"leave_time", participant.LeaveTime,
 		"duration", participant.Duration,
 	)
 
-	// Find the PastMeeting record by platform meeting ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	// First, get the meeting from database to calculate the correct occurrence ID
+	meeting, err := s.meetingService.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
+	if err != nil {
+		if err == domain.ErrMeetingNotFound {
+			slog.WarnContext(ctx, "meeting not found in database for participant left event, skipping",
+				"zoom_meeting_id", meetingObj.ID,
+			)
+			return nil
+		}
+		slog.ErrorContext(ctx, "error getting meeting from database", logging.ErrKey, err)
+		return fmt.Errorf("failed to get meeting: %w", err)
+	}
+
+	// Calculate the closest occurrence ID based on the actual start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+
+	// Find the PastMeeting record by platform meeting ID and occurrence ID
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
@@ -567,14 +703,15 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 
 	if existingParticipant != nil {
 		// Update existing participant's session with leave time
-		err = s.updateParticipantSessionLeaveTime(ctx, existingParticipant, participant.ID, participant.LeaveTime, participant.LeaveReason)
+		err = s.updateParticipantSessionLeaveTime(ctx, existingParticipant, participant.ParticipantUUID, participant.LeaveTime, participant.LeaveReason)
 		if err != nil {
 			return fmt.Errorf("failed to update participant session leave time: %w", err)
 		}
 		slog.InfoContext(ctx, "updated participant session leave time",
+			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", existingParticipant.UID,
 			"email", participant.Email,
-			"session_uid", participant.ID,
+			"session_uid", participant.ParticipantUUID,
 			"duration", participant.Duration,
 		)
 	} else {
@@ -587,7 +724,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 		zoomParticipant := ZoomPayloadForParticipant{
 			UserID:            participant.UserID,
 			UserName:          participant.UserName,
-			ID:                participant.ID,
+			ParticipantUUID:   participant.ParticipantUUID,
 			JoinTime:          participant.LeaveTime.Add(-time.Duration(participant.Duration) * time.Second), // Calculate join time from leave time and duration
 			Email:             participant.Email,
 			ParticipantUserID: participant.ParticipantUserID,
@@ -604,6 +741,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 			return fmt.Errorf("failed to create participant from left event: %w", err)
 		}
 		slog.InfoContext(ctx, "created participant record from left event",
+			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", newParticipant.UID,
 			"email", participant.Email,
 			"calculated_join_time", zoomParticipant.JoinTime,
@@ -672,11 +810,6 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 	)
 
 	return nil
-}
-
-// createPastMeetingRecord creates a historical record for a meeting that has started
-func (s *ZoomWebhookHandler) createPastMeetingRecord(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
-	return s.createPastMeetingRecordWithSession(ctx, meeting, zoomData)
 }
 
 // createPastMeetingParticipants creates participant records for all registrants of a meeting
@@ -841,6 +974,91 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordForEndedEvent(ctx context.Co
 	return s.createPastMeetingRecordWithSession(ctx, meeting, zoomData)
 }
 
+// findClosestOccurrenceID finds the occurrence ID closest to the given start time
+// For recurring meetings: calculates occurrences around the actual start time and returns the ID of the closest one
+// For non-recurring meetings: returns the meeting's scheduled start time as unix timestamp string
+func (s *ZoomWebhookHandler) findClosestOccurrenceID(meeting *models.MeetingBase, actualStartTime time.Time) string {
+	// For non-recurring meetings, use the scheduled start time from the meeting object
+	if meeting.Recurrence == nil {
+		occurrenceID := strconv.FormatInt(meeting.StartTime.Unix(), 10)
+		slog.Debug("non-recurring meeting, using scheduled start time as unix timestamp",
+			"meeting_uid", meeting.UID,
+			"occurrence_id", occurrenceID,
+			"scheduled_start_time", meeting.StartTime,
+			"actual_start_time", actualStartTime,
+		)
+		return occurrenceID
+	}
+
+	// For recurring meetings, use the OccurrenceService to calculate occurrences
+	// around the actual start time and find the closest match
+
+	// Calculate search start (look back 1 month from actual start time)
+	searchStart := actualStartTime.AddDate(0, -1, 0)
+
+	// Calculate occurrences starting from 1 month before the actual start time
+	occurrences := s.occurrenceService.CalculateOccurrencesFromDate(meeting, searchStart, 100)
+
+	// If no occurrences found, fallback to scheduled start time
+	if len(occurrences) == 0 {
+		occurrenceID := strconv.FormatInt(meeting.StartTime.Unix(), 10)
+		slog.Debug("no occurrences found for recurring meeting, using scheduled start time as unix timestamp",
+			"meeting_uid", meeting.UID,
+			"occurrence_id", occurrenceID,
+			"scheduled_start_time", meeting.StartTime,
+			"actual_start_time", actualStartTime,
+			"search_start", searchStart,
+		)
+		return occurrenceID
+	}
+
+	// Find the occurrence with the closest start time
+	var closestOccurrence *models.Occurrence
+	minDiff := time.Duration(math.MaxInt64)
+
+	for i := range occurrences {
+		occ := &occurrences[i]
+		if occ.StartTime == nil {
+			continue
+		}
+
+		// Calculate absolute time difference
+		diff := actualStartTime.Sub(*occ.StartTime)
+		if diff < 0 {
+			diff = -diff
+		}
+
+		// Update if this occurrence is closer
+		if diff < minDiff {
+			minDiff = diff
+			closestOccurrence = occ
+		}
+	}
+
+	// If we found a close occurrence, use its ID
+	if closestOccurrence != nil && closestOccurrence.OccurrenceID != "" {
+		slog.Debug("found closest occurrence for recurring meeting using OccurrenceService",
+			"meeting_uid", meeting.UID,
+			"occurrence_id", closestOccurrence.OccurrenceID,
+			"occurrence_start_time", closestOccurrence.StartTime,
+			"actual_start_time", actualStartTime,
+			"occurrences_searched", len(occurrences),
+		)
+		return closestOccurrence.OccurrenceID
+	}
+
+	// Fallback to scheduled start time unix timestamp if no valid occurrence found
+	occurrenceID := strconv.FormatInt(meeting.StartTime.Unix(), 10)
+	slog.Warn("no valid occurrence found for recurring meeting, using scheduled start time as unix timestamp",
+		"meeting_uid", meeting.UID,
+		"occurrence_id", occurrenceID,
+		"scheduled_start_time", meeting.StartTime,
+		"actual_start_time", actualStartTime,
+		"occurrences_checked", len(occurrences),
+	)
+	return occurrenceID
+}
+
 // createPastMeetingRecordWithSession creates a PastMeeting record with the specified session details
 func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Context, meeting *models.MeetingBase, zoomData ZoomPayloadForPastMeeting) (*models.PastMeeting, error) {
 	contextType := "creating past meeting record"
@@ -848,11 +1066,17 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		contextType = "creating past meeting record for ended event (fallback)"
 	}
 
+	// Calculate occurrence ID based on meeting type and occurrences
+	occurrenceID := s.findClosestOccurrenceID(meeting, zoomData.StartTime)
+
 	logFields := []any{
 		"meeting_uid", meeting.UID,
 		"zoom_meeting_uuid", zoomData.UUID,
 		"actual_start_time", zoomData.StartTime,
 		"timezone", zoomData.Timezone,
+		"occurrence_id", occurrenceID,
+		"is_recurring", meeting.Recurrence != nil,
+		"occurrences_count", len(meeting.Occurrences),
 	}
 	if zoomData.EndTime != nil {
 		logFields = append(logFields, "actual_end_time", *zoomData.EndTime)
@@ -880,7 +1104,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 	pastMeeting := &models.PastMeeting{
 		UID:                  uuid.New().String(),
 		MeetingUID:           meeting.UID,
-		OccurrenceID:         "", // TODO: set occurrence ID once we have occurrences figured out
+		OccurrenceID:         occurrenceID,
 		ProjectUID:           meeting.ProjectUID,
 		ScheduledStartTime:   meeting.StartTime, // Scheduled time from our meeting
 		ScheduledEndTime:     scheduledEndTime,
@@ -999,7 +1223,7 @@ func (s *ZoomWebhookHandler) createParticipantFromJoinedEvent(ctx context.Contex
 
 	// Create session for joined event
 	session := models.ParticipantSession{
-		UID:      participant.ID,
+		UID:      participant.ParticipantUUID,
 		JoinTime: participant.JoinTime,
 		// LeaveTime will be set when participant leaves
 	}
@@ -1108,7 +1332,7 @@ func (s *ZoomWebhookHandler) createParticipantFromLeftEvent(ctx context.Context,
 	)
 
 	session := models.ParticipantSession{
-		UID:         participant.ID,
+		UID:         participant.ParticipantUUID,
 		JoinTime:    participant.JoinTime,
 		LeaveTime:   &participant.LeaveTime,
 		LeaveReason: participant.LeaveReason,
