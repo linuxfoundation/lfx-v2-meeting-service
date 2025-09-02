@@ -165,13 +165,14 @@ func (s *OccurrenceService) calculateMonthlyOccurrences(meeting *models.MeetingB
 
 		var occurrenceDate time.Time
 
-		if meeting.Recurrence.MonthlyDay > 0 {
+		switch {
+		case meeting.Recurrence.MonthlyDay > 0:
 			// Monthly by day of month (e.g., 15th of every month)
 			occurrenceDate = s.calculateMonthlyByDay(startTime, monthCount, meeting.Recurrence.MonthlyDay, meeting.Recurrence.RepeatInterval, loc)
-		} else if meeting.Recurrence.MonthlyWeek != 0 && meeting.Recurrence.MonthlyWeekDay > 0 {
+		case meeting.Recurrence.MonthlyWeek != 0 && meeting.Recurrence.MonthlyWeekDay > 0:
 			// Monthly by week and day (e.g., 2nd Tuesday of every month)
 			occurrenceDate = s.calculateMonthlyByWeekDay(startTime, monthCount, meeting.Recurrence.MonthlyWeek, meeting.Recurrence.MonthlyWeekDay, meeting.Recurrence.RepeatInterval, loc)
-		} else {
+		default:
 			// Default to same day of month as start time
 			occurrenceDate = s.calculateMonthlyByDay(startTime, monthCount, startTime.Day(), meeting.Recurrence.RepeatInterval, loc)
 		}

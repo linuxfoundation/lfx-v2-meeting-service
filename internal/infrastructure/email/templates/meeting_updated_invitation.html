@@ -103,6 +103,13 @@
         .center {
             text-align: center;
         }
+        .calendar-update-notice {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-left: 4px solid #0068c8;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -172,7 +179,7 @@
         {{end}}
         
         {{if .ICSAttachment}}
-        <p style="margin-top: 20px; padding: 15px; background-color: #f0f8ff; border-left: 4px solid #0068c8; border-radius: 4px;">
+        <p class="calendar-update-notice">
             <strong>📅 Calendar Event Updated</strong><br>
             An updated calendar file (.ics) is attached to this email. Open it to automatically update this meeting in your calendar application.
         </p>
