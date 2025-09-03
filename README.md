@@ -148,8 +148,8 @@ When past meetings are created or updated, the following tags are automatically 
 
 | Field | Tag Format | Example | Purpose |
 |-------|------------|---------|---------|
-| UID | Plain value | `past-meeting-123-456-789` | Direct lookup by past meeting ID |
-| UID | `past_meeting_uid:<value>` | `past_meeting_uid:past-meeting-123-456-789` | Namespaced lookup by past meeting ID |
+| UID | Plain value | `ad83feb8-d34d-438e-b203-87c5df64f1e2` | Direct lookup by past meeting ID |
+| UID | `past_meeting_uid:<value>` | `past_meeting_uid:ad83feb8-d34d-438e-b203-87c5df64f1e2` | Namespaced lookup by past meeting ID |
 | MeetingUID | `meeting_uid:<value>` | `meeting_uid:061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Link to original meeting |
 | ProjectUID | `project_uid:<value>` | `project_uid:9493eae5-cd73-4c4a-b28f-3b8ec5280f6c` | Find past meetings for a project |
 | Committee UIDs | `committee_uid:<value>` | `committee_uid:cbef1ed5-17dc-4a50-84e2-6cddd70f6878` | Find meetings for specific committees |
