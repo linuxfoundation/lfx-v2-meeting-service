@@ -105,6 +105,7 @@ func TestPastMeeting_Tags(t *testing.T) {
 				"meeting_uid:meeting-456",
 				"project_uid:project-789",
 				"occurrence_id:occurrence-101",
+				"committee_uid:committee-111",
 				"Weekly Standup - Past",
 				"Past team sync meeting",
 			},

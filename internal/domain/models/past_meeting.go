@@ -81,6 +81,11 @@ func (p *PastMeeting) Tags() []string {
 		tags = append(tags, tag)
 	}
 
+	for _, committee := range p.Committees {
+		tag := fmt.Sprintf("committee_uid:%s", committee.UID)
+		tags = append(tags, tag)
+	}
+
 	if p.Title != "" {
 		// without prefix
 		tags = append(tags, p.Title)

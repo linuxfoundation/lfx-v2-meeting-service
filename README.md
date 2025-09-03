@@ -152,6 +152,7 @@ When past meetings are created or updated, the following tags are automatically 
 | UID | `past_meeting_uid:<value>` | `past_meeting_uid:past-meeting-123-456-789` | Namespaced lookup by past meeting ID |
 | MeetingUID | `meeting_uid:<value>` | `meeting_uid:061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Link to original meeting |
 | ProjectUID | `project_uid:<value>` | `project_uid:9493eae5-cd73-4c4a-b28f-3b8ec5280f6c` | Find past meetings for a project |
+| Committee UIDs | `committee_uid:<value>` | `committee_uid:cbef1ed5-17dc-4a50-84e2-6cddd70f6878` | Find meetings for specific committees |
 | OccurrenceID | `occurrence_id:<value>` | `occurrence_id:occurrence-789-012-345` | Find specific meeting occurrence |
 | Title | Plain value | `Weekly TSC Meeting - March 15, 2024` | Text search in past meeting titles |
 | Description | Plain value | `Discussed project roadmap and priorities` | Text search in past meeting descriptions |
