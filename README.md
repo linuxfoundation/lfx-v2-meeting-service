@@ -111,6 +111,86 @@ lfx-v2-meeting-service/
 └── go.mod                         # Go module definition
 ```
 
+## Meeting and Participant Tags
+
+The Meeting API service generates a comprehensive set of tags for meetings, registrants, and participants that are sent to the indexer-service. These tags enable searchability and discoverability of meeting-related content through OpenSearch.
+
+### Tags Generated for Meetings and Settings
+
+When meetings and meeting settings are created or updated, the following tags are automatically generated:
+
+| Field | Tag Format | Example | Purpose |
+|-------|------------|---------|---------|
+| UID | Plain value | `061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Direct lookup by ID |
+| UID | `meeting_uid:<value>` | `meeting_uid:061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Namespaced lookup by ID |
+| ProjectUID | `project_uid:<value>` | `project_uid:9493eae5-cd73-4c4a-b28f-3b8ec5280f6c` | Find meetings for a project |
+| Committee UIDs | `committee_uid:<value>` | `committee_uid:cbef1ed5-17dc-4a50-84e2-6cddd70f6878` | Find meetings for specific committees |
+| Title | Plain value | `Weekly Technical Steering Committee` | Text search in meeting titles |
+| Description | Plain value | `Weekly meeting to discuss technical decisions` | Text search in meeting descriptions |
+
+### Tags Generated for Meeting Registrants
+
+When meeting registrants are created or updated, the following tags are automatically generated:
+
+| Field | Tag Format | Example | Purpose |
+|-------|------------|---------|---------|
+| UID | Plain value | `registrant-123-456-789` | Direct lookup by registrant ID |
+| UID | `registrant_uid:<value>` | `registrant_uid:registrant-123-456-789` | Namespaced lookup by registrant ID |
+| MeetingUID | `meeting_uid:<value>` | `meeting_uid:061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Find registrants for a specific meeting |
+| FirstName | Plain value | `John` | Text search by first name |
+| LastName | Plain value | `Doe` | Text search by last name |
+| Email | Plain value | `john.doe@example.com` | Text search by email address |
+| Username | Plain value | `johndoe` | Text search by username |
+
+### Tags Generated for Past Meetings
+
+When past meetings are created or updated, the following tags are automatically generated:
+
+| Field | Tag Format | Example | Purpose |
+|-------|------------|---------|---------|
+| UID | Plain value | `past-meeting-123-456-789` | Direct lookup by past meeting ID |
+| UID | `past_meeting_uid:<value>` | `past_meeting_uid:past-meeting-123-456-789` | Namespaced lookup by past meeting ID |
+| MeetingUID | `meeting_uid:<value>` | `meeting_uid:061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Link to original meeting |
+| ProjectUID | `project_uid:<value>` | `project_uid:9493eae5-cd73-4c4a-b28f-3b8ec5280f6c` | Find past meetings for a project |
+| OccurrenceID | `occurrence_id:<value>` | `occurrence_id:occurrence-789-012-345` | Find specific meeting occurrence |
+| Title | Plain value | `Weekly TSC Meeting - March 15, 2024` | Text search in past meeting titles |
+| Description | Plain value | `Discussed project roadmap and priorities` | Text search in past meeting descriptions |
+
+### Tags Generated for Past Meeting Participants
+
+When past meeting participants are created or updated, the following tags are automatically generated:
+
+| Field | Tag Format | Example | Purpose |
+|-------|------------|---------|---------|
+| UID | Plain value | `899a891c-0079-4ecf-b32c-c75fbc8c471e` | Direct lookup by participant ID |
+| UID | `past_meeting_participant_uid:<value>` | `past_meeting_participant_uid:899a891c-0079-4ecf-b32c-c75fbc8c471e` | Namespaced lookup by participant ID |
+| PastMeetingUID | `past_meeting_uid:<value>` | `past_meeting_uid:8ba24fb9-0d15-45f2-b6e6-11423fae572e` | Find participants for a past meeting |
+| MeetingUID | `meeting_uid:<value>` | `meeting_uid:061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Link to original meeting |
+| FirstName | Plain value | `Jane` | Text search by first name |
+| LastName | Plain value | `Smith` | Text search by last name |
+| Username | Plain value | `janesmith` | Text search by username |
+| Email | Plain value | `jane.smith@example.com` | Text search by email address |
+
+### How Tags Are Used
+
+Tags serve multiple important purposes in the LFX system:
+
+1. **Indexed Search**: Tags are indexed in OpenSearch, enabling fast lookups and text searches across meetings, registrants, and participants
+
+2. **Relationship Navigation**:
+   - Meeting-project relationships can be traversed using the `project_uid` tags
+   - Meeting-committee relationships can be traversed using the `committee_uid` tags
+   - Meeting-registrant relationships can be traversed using the `meeting_uid` tags
+   - Past meeting-participant relationships can be traversed using the `past_meeting_uid` tags
+
+3. **Multiple Access Patterns**: Both plain value and prefixed tags support different query patterns:
+   - Plain values support general text search (e.g., "find meetings containing 'TSC'")
+   - Prefixed values support field-specific search (e.g., "find registrants with email 'john@example.com'")
+
+4. **Historical Tracking**: Past meetings and participants maintain references to original meetings via `meeting_uid` tags, enabling historical analysis and reporting
+
+5. **Data Synchronization**: When meetings, registrants, or participants are updated, their tags are automatically updated, ensuring search results remain current
+
 ## 🛠️ Development
 
 ### Prerequisites

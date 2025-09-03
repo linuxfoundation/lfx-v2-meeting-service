@@ -123,6 +123,8 @@ type CreateMeetingRequest struct {
 }
 
 // Tags generates a consistent set of tags for the meeting.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
 func (m *MeetingBase) Tags() []string {
 	tags := []string{}
 
@@ -162,6 +164,9 @@ func (m *MeetingBase) Tags() []string {
 
 }
 
+// Tags generates a consistent set of tags for the meeting settings.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
 func (m *MeetingSettings) Tags() []string {
 	tags := []string{}
 

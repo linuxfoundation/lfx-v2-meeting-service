@@ -40,6 +40,8 @@ type ParticipantSession struct {
 }
 
 // Tags generates a consistent set of tags for the past meeting participant.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
 func (p *PastMeetingParticipant) Tags() []string {
 	tags := []string{}
 
