@@ -134,8 +134,8 @@ When meeting registrants are created or updated, the following tags are automati
 
 | Field | Tag Format | Example | Purpose |
 |-------|------------|---------|---------|
-| UID | Plain value | `registrant-123-456-789` | Direct lookup by registrant ID |
-| UID | `registrant_uid:<value>` | `registrant_uid:registrant-123-456-789` | Namespaced lookup by registrant ID |
+| UID | Plain value | `f3c5b4e4-f5a8-4902-a48d-e7ad963bf7d1` | Direct lookup by registrant ID |
+| UID | `registrant_uid:<value>` | `registrant_uid:f3c5b4e4-f5a8-4902-a48d-e7ad963bf7d1` | Namespaced lookup by registrant ID |
 | MeetingUID | `meeting_uid:<value>` | `meeting_uid:061a110a-7c38-4cd3-bfcf-fc8511a37f35` | Find registrants for a specific meeting |
 | FirstName | Plain value | `John` | Text search by first name |
 | LastName | Plain value | `Doe` | Text search by last name |
