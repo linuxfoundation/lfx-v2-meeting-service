@@ -209,7 +209,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	}
 
 	// Use WorkerPool for concurrent NATS message sending
-	pool := concurrent.NewWorkerPool(3) // 3 messages to send
+	pool := concurrent.NewWorkerPool(4) // 4 messages to send
 
 	messages := []func() error{
 		func() error {
@@ -231,6 +231,13 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 				ProjectUID: reqMeeting.Base.ProjectUID,
 				Organizers: reqMeeting.Settings.Organizers,
 				Committees: committees,
+			})
+		},
+		func() error {
+			return s.MessageBuilder.SendMeetingCreated(ctx, models.MeetingCreatedMessage{
+				MeetingUID: reqMeeting.Base.UID,
+				Base:       reqMeeting.Base,
+				Settings:   reqMeeting.Settings,
 			})
 		},
 	}
@@ -414,22 +421,22 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		return nil, domain.ErrInternal
 	}
 
+	// Get the meeting settings to retrieve organizers for the updated message
+	settingsDB, err := s.MeetingRepository.GetSettings(ctx, reqMeeting.UID)
+	if err != nil {
+		// If we can't get settings, use empty organizers array rather than failing
+		slog.WarnContext(ctx, "could not retrieve meeting settings for messages", logging.ErrKey, err)
+		settingsDB = &models.MeetingSettings{Organizers: []string{}}
+	}
+
 	// Use WorkerPool for concurrent NATS message sending
-	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	pool := concurrent.NewWorkerPool(3) // 3 messages to send
 
 	messages := []func() error{
 		func() error {
 			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting)
 		},
 		func() error {
-			// Get the meeting settings to retrieve organizers
-			settingsDB, err := s.MeetingRepository.GetSettings(ctx, reqMeeting.UID)
-			if err != nil {
-				// If we can't get settings, use empty organizers array rather than failing
-				slog.WarnContext(ctx, "could not retrieve meeting settings for access message", logging.ErrKey, err)
-				settingsDB = &models.MeetingSettings{Organizers: []string{}}
-			}
-
 			// For the message we only need the committee UIDs.
 			committees := make([]string, len(reqMeeting.Committees))
 			for i, committee := range reqMeeting.Committees {
@@ -442,6 +449,14 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 				ProjectUID: reqMeeting.ProjectUID,
 				Organizers: settingsDB.Organizers,
 				Committees: committees,
+			})
+		},
+		func() error {
+			return s.MessageBuilder.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
+				MeetingUID:   reqMeeting.UID,
+				UpdatedBase:  reqMeeting,
+				PreviousBase: existingMeetingDB,
+				Settings:     settingsDB,
 			})
 		},
 	}

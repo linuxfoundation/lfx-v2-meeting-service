@@ -44,5 +44,7 @@ type MessageBuilder interface {
 	SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
 	SendRemoveMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
 	SendMeetingDeleted(ctx context.Context, data models.MeetingDeletedMessage) error
+	SendMeetingCreated(ctx context.Context, data models.MeetingCreatedMessage) error
+	SendMeetingUpdated(ctx context.Context, data models.MeetingUpdatedMessage) error
 	PublishZoomWebhookEvent(ctx context.Context, subject string, message models.ZoomWebhookEventMessage) error
 }

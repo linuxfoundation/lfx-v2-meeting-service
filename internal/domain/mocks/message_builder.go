@@ -76,6 +76,16 @@ func (m *MockMessageBuilder) SendMeetingDeleted(ctx context.Context, data models
 	return args.Error(0)
 }
 
+func (m *MockMessageBuilder) SendMeetingCreated(ctx context.Context, data models.MeetingCreatedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendMeetingUpdated(ctx context.Context, data models.MeetingUpdatedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
 func (m *MockMessageBuilder) SendIndexPastMeeting(ctx context.Context, action models.MessageAction, data models.PastMeeting) error {
 	args := m.Called(ctx, action, data)
 	return args.Error(0)

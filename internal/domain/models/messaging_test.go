@@ -71,6 +71,41 @@ func TestMessagingSubjects(t *testing.T) {
 			subject:  MeetingGetTitleSubject,
 			expected: "lfx.meetings-api.get_title",
 		},
+		{
+			name:     "MeetingDeletedSubject",
+			subject:  MeetingDeletedSubject,
+			expected: "lfx.meetings-api.meeting_deleted",
+		},
+		{
+			name:     "MeetingCreatedSubject",
+			subject:  MeetingCreatedSubject,
+			expected: "lfx.meetings-api.meeting_created",
+		},
+		{
+			name:     "MeetingUpdatedSubject",
+			subject:  MeetingUpdatedSubject,
+			expected: "lfx.meetings-api.meeting_updated",
+		},
+		{
+			name:     "CommitteeGetNameSubject",
+			subject:  CommitteeGetNameSubject,
+			expected: "lfx.committee-api.get_name",
+		},
+		{
+			name:     "CommitteeGetMembersSubject",
+			subject:  CommitteeGetMembersSubject,
+			expected: "lfx.committee-api.get_members",
+		},
+		{
+			name:     "CommitteeMemberCreatedSubject",
+			subject:  CommitteeMemberCreatedSubject,
+			expected: "lfx.committee-api.member_created",
+		},
+		{
+			name:     "CommitteeMemberDeletedSubject",
+			subject:  CommitteeMemberDeletedSubject,
+			expected: "lfx.committee-api.member_deleted",
+		},
 	}
 
 	for _, tt := range tests {

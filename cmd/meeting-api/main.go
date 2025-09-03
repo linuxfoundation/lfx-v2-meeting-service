@@ -116,6 +116,12 @@ func main() {
 		platformConfigs.Zoom.Validator,
 	)
 
+	committeeHandler := handlers.NewCommitteeHandlers(
+		meetingService,
+		registrantService,
+		messageBuilder,
+	)
+
 	svc := NewMeetingsAPI(
 		authService,
 		meetingService,
@@ -124,6 +130,7 @@ func main() {
 		pastMeetingParticipantService,
 		zoomWebhookHandler,
 		meetingHandler,
+		committeeHandler,
 	)
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)
