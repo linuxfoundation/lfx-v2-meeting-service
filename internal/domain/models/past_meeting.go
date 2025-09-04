@@ -4,6 +4,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -45,4 +46,55 @@ type Session struct {
 	UID       string     `json:"uid"`
 	StartTime time.Time  `json:"start_time"`
 	EndTime   *time.Time `json:"end_time,omitempty"`
+}
+
+// Tags generates a consistent set of tags for the past meeting.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
+func (p *PastMeeting) Tags() []string {
+	tags := []string{}
+
+	if p == nil {
+		return nil
+	}
+
+	if p.UID != "" {
+		// without prefix
+		tags = append(tags, p.UID)
+		// with prefix
+		tag := fmt.Sprintf("past_meeting_uid:%s", p.UID)
+		tags = append(tags, tag)
+	}
+
+	if p.MeetingUID != "" {
+		tag := fmt.Sprintf("meeting_uid:%s", p.MeetingUID)
+		tags = append(tags, tag)
+	}
+
+	if p.ProjectUID != "" {
+		tag := fmt.Sprintf("project_uid:%s", p.ProjectUID)
+		tags = append(tags, tag)
+	}
+
+	if p.OccurrenceID != "" {
+		tag := fmt.Sprintf("occurrence_id:%s", p.OccurrenceID)
+		tags = append(tags, tag)
+	}
+
+	for _, committee := range p.Committees {
+		tag := fmt.Sprintf("committee_uid:%s", committee.UID)
+		tags = append(tags, tag)
+	}
+
+	if p.Title != "" {
+		// without prefix
+		tags = append(tags, p.Title)
+	}
+
+	if p.Description != "" {
+		// without prefix
+		tags = append(tags, p.Description)
+	}
+
+	return tags
 }
