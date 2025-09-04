@@ -79,6 +79,10 @@ const (
 	// The subject is of the form: lfx.meetings-api.meeting_deleted
 	MeetingDeletedSubject = "lfx.meetings-api.meeting_deleted"
 
+	// MeetingUpdatedSubject is the subject for meeting update events.
+	// The subject is of the form: lfx.meetings-api.meeting_updated
+	MeetingUpdatedSubject = "lfx.meetings-api.meeting_updated"
+
 	// Zoom webhook event subjects - mirrors the actual Zoom webhook event names
 	ZoomWebhookMeetingStartedSubject               = "lfx.webhook.zoom.meeting.started"
 	ZoomWebhookMeetingEndedSubject                 = "lfx.webhook.zoom.meeting.ended"
@@ -135,6 +139,13 @@ type MeetingRegistrantAccessMessage struct {
 // This message is used internally to trigger cleanup of all associated registrants.
 type MeetingDeletedMessage struct {
 	MeetingUID string `json:"meeting_uid"`
+}
+
+// MeetingUpdatedMessage is the schema for the message sent when a meeting is updated.
+// This message is used internally to notify registrants about meeting changes.
+type MeetingUpdatedMessage struct {
+	MeetingUID string         `json:"meeting_uid"`
+	Changes    map[string]any `json:"changes"` // Map of field names to their new values
 }
 
 // PastMeetingAccessMessage is the schema for the data in the message sent to the fga-sync service.

@@ -98,7 +98,7 @@ func (r *NatsPastMeetingRecordingRepository) Get(ctx context.Context, recordingU
 	err = json.Unmarshal(entry.Value(), &recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshalling recording", logging.ErrKey, err, "recording_uid", recordingUID)
-		return nil, fmt.Errorf("failed to unmarshal recording: %w", err)
+		return nil, domain.ErrUnmarshal
 	}
 
 	return &recording, nil
@@ -120,7 +120,7 @@ func (r *NatsPastMeetingRecordingRepository) GetWithRevision(ctx context.Context
 	err = json.Unmarshal(entry.Value(), &recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshalling recording", logging.ErrKey, err, "recording_uid", recordingUID)
-		return nil, 0, fmt.Errorf("failed to unmarshal recording: %w", err)
+		return nil, 0, domain.ErrUnmarshal
 	}
 
 	return &recording, entry.Revision(), nil
@@ -135,7 +135,7 @@ func (r *NatsPastMeetingRecordingRepository) Update(ctx context.Context, recordi
 	data, err := json.Marshal(recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshalling recording", logging.ErrKey, err, "recording_uid", recording.UID)
-		return fmt.Errorf("failed to marshal recording: %w", err)
+		return domain.ErrMarshal
 	}
 
 	_, err = r.kv.Update(ctx, recording.UID, data, revision)
@@ -154,7 +154,7 @@ func (r *NatsPastMeetingRecordingRepository) GetByPastMeetingUID(ctx context.Con
 	// This could be optimized with secondary indexes in the future
 	recordings, err := r.ListAll(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list recordings: %w", err)
+		return nil, domain.ErrInternal
 	}
 
 	for _, recording := range recordings {

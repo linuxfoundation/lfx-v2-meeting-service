@@ -524,7 +524,7 @@ Example:
          "monthly_day": 24,
          "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320147,
+         "repeat_interval": 4711238312625320148,
          "type": 1,
          "weekly_days": "1,3,5"
       },
@@ -611,7 +611,7 @@ Example:
          "monthly_day": 24,
          "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320147,
+         "repeat_interval": 4711238312625320148,
          "type": 1,
          "weekly_days": "1,3,5"
       },
@@ -843,7 +843,7 @@ Example:
          "monthly_day": 24,
          "monthly_week": -1,
          "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320147,
+         "repeat_interval": 4711238312625320148,
          "type": 1,
          "weekly_days": "1,3,5"
       },
@@ -931,14 +931,14 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": true,
+      "host": false,
       "is_attended": true,
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Ipsam fugiat quis qui quam explicabo molestiae.",
+      "org_name": "Fugiat quis qui quam explicabo.",
       "past_meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "username": "Iste non commodi sint sed est."
+      "username": "Porro iste non commodi sint sed est."
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -973,13 +973,13 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": true,
+      "host": false,
       "is_attended": true,
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Tempora voluptatem inventore.",
-      "username": "Officia tempore necessitatibus deleniti natus."
+      "org_name": "Voluptatem inventore in officia tempore necessitatibus deleniti.",
+      "username": "Possimus ea id."
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }

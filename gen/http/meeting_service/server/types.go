@@ -683,6 +683,8 @@ type CreatePastMeetingParticipantResponseBody struct {
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -730,6 +732,8 @@ type UpdatePastMeetingParticipantResponseBody struct {
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -1754,8 +1758,8 @@ type OccurrenceResponseBody struct {
 	ResponseCountNo *int `form:"response_count_no,omitempty" json:"response_count_no,omitempty" xml:"response_count_no,omitempty"`
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
-	// Occurrence status from platform
-	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// Whether the occurrence is cancelled
+	IsCancelled *bool `form:"is_cancelled,omitempty" json:"is_cancelled,omitempty" xml:"is_cancelled,omitempty"`
 }
 
 // MeetingBaseResponseBody is used to define fields on response body types.
@@ -1992,10 +1996,26 @@ type PastMeetingParticipantResponseBody struct {
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// ParticipantSessionResponseBody is used to define fields on response body
+// types.
+type ParticipantSessionResponseBody struct {
+	// Session UID from the meeting platform (e.g., Zoom)
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// ISO 8601 timestamp when participant joined the session
+	JoinTime string `form:"join_time" json:"join_time" xml:"join_time"`
+	// ISO 8601 timestamp when participant left the session (null if still in
+	// meeting)
+	LeaveTime *string `form:"leave_time,omitempty" json:"leave_time,omitempty" xml:"leave_time,omitempty"`
+	// Reason provided by the meeting platform for leaving
+	LeaveReason *string `form:"leave_reason,omitempty" json:"leave_reason,omitempty" xml:"leave_reason,omitempty"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -2558,6 +2578,12 @@ func NewCreatePastMeetingParticipantResponseBody(res *meetingservice.PastMeeting
 		CreatedAt:          res.CreatedAt,
 		UpdatedAt:          res.UpdatedAt,
 	}
+	if res.Sessions != nil {
+		body.Sessions = make([]*ParticipantSessionResponseBody, len(res.Sessions))
+		for i, val := range res.Sessions {
+			body.Sessions[i] = marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(val)
+		}
+	}
 	return body
 }
 
@@ -2584,6 +2610,12 @@ func NewGetPastMeetingParticipantResponseBody(res *meetingservice.GetPastMeeting
 		CreatedAt:          res.Participant.CreatedAt,
 		UpdatedAt:          res.Participant.UpdatedAt,
 	}
+	if res.Participant.Sessions != nil {
+		body.Sessions = make([]*ParticipantSessionResponseBody, len(res.Participant.Sessions))
+		for i, val := range res.Participant.Sessions {
+			body.Sessions[i] = marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(val)
+		}
+	}
 	return body
 }
 
@@ -2609,6 +2641,12 @@ func NewUpdatePastMeetingParticipantResponseBody(res *meetingservice.PastMeeting
 		IsAttended:         res.IsAttended,
 		CreatedAt:          res.CreatedAt,
 		UpdatedAt:          res.UpdatedAt,
+	}
+	if res.Sessions != nil {
+		body.Sessions = make([]*ParticipantSessionResponseBody, len(res.Sessions))
+		for i, val := range res.Sessions {
+			body.Sessions[i] = marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(val)
+		}
 	}
 	return body
 }
@@ -4392,6 +4430,11 @@ func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{1, 2, 3}))
+		}
+	}
+	if body.RepeatInterval != nil {
+		if *body.RepeatInterval < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.repeat_interval", *body.RepeatInterval, 1, true))
 		}
 	}
 	if body.WeeklyDays != nil {

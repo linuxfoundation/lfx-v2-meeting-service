@@ -1,14 +1,18 @@
 {{/* Copyright The Linux Foundation and each contributor to LFX. */}}
 {{/* SPDX-License-Identifier: MIT */}}
 
-Meeting Invitation
-==================
+Meeting Updated
+===============
 
 Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},
 
-You have been invited to the following meeting{{if .ProjectName}} for {{.ProjectName}}{{end}}:
+The meeting "{{.MeetingTitle}}" has been updated{{if .ProjectName}} for {{.ProjectName}}{{end}}.
 
-Meeting Details:
+{{if .Changes}}What Changed:
+{{range $field, $value := .Changes}}- {{$field}}: {{$value}}
+{{end}}
+
+{{end}}Meeting Details:
 ----------------
 Meeting: {{.MeetingTitle}}
 Date & Time: {{formatTime .StartTime .Timezone}}
@@ -26,8 +30,8 @@ Passcode: {{.Passcode}}{{end}}
 {{end}}{{else}}Meeting link will be provided closer to the meeting time.
 {{end}}
 {{if .ICSAttachment}}
-📅 Calendar Event Attached
-A calendar file (.ics) is attached to this email. Open it to automatically add this meeting to your calendar application.
+📅 Calendar Event Updated
+An updated calendar file (.ics) is attached to this email. Open it to automatically update this meeting in your calendar application.
 {{end}}
 ---
 This is an automated email from the Linux Foundation Meeting Service.

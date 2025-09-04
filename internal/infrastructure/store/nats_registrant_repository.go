@@ -141,10 +141,8 @@ func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string
 			continue
 		}
 		if !strings.HasPrefix(decodedKey, indexKey) {
-			slog.Debug("registrant bucket: index key does not match", "indexKey", indexKey, "decodedKey", decodedKey)
 			continue
 		}
-		slog.Debug("registrant bucket: determined registrant UID", "registrantUID", parts[4])
 		registrantUID := parts[4]
 
 		registrant, err := s.Get(ctx, registrantUID)

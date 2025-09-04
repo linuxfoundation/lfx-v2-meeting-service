@@ -125,3 +125,8 @@ func (m *MockMessageBuilder) SendDeleteIndexPastMeetingRecording(ctx context.Con
 	args := m.Called(ctx, data)
 	return args.Error(0)
 }
+
+func (m *MockMessageBuilder) SendMeetingUpdated(ctx context.Context, data models.MeetingUpdatedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
