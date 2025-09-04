@@ -399,8 +399,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
 
 				// Messaging fails but operation continues
-				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(errors.New("messaging error"))
-				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything).Return(errors.New("messaging error"))
+				// Due to errgroup behavior, either one or both calls might be made depending on timing
+				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(errors.New("messaging error")).Maybe()
+				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything).Return(errors.New("messaging error")).Maybe()
 			},
 			wantErr: false,
 		},

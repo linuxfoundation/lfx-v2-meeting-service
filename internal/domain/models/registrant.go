@@ -4,6 +4,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -24,4 +25,50 @@ type Registrant struct {
 	Username           string     `json:"username,omitempty"`
 	CreatedAt          *time.Time `json:"created_at,omitempty"`
 	UpdatedAt          *time.Time `json:"updated_at,omitempty"`
+}
+
+// Tags generates a consistent set of tags for the registrant.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
+func (r *Registrant) Tags() []string {
+	tags := []string{}
+
+	if r == nil {
+		return nil
+	}
+
+	if r.UID != "" {
+		// without prefix
+		tags = append(tags, r.UID)
+		// with prefix
+		tag := fmt.Sprintf("registrant_uid:%s", r.UID)
+		tags = append(tags, tag)
+	}
+
+	if r.MeetingUID != "" {
+		tag := fmt.Sprintf("meeting_uid:%s", r.MeetingUID)
+		tags = append(tags, tag)
+	}
+
+	if r.FirstName != "" {
+		// without prefix
+		tags = append(tags, r.FirstName)
+	}
+
+	if r.LastName != "" {
+		// without prefix
+		tags = append(tags, r.LastName)
+	}
+
+	if r.Email != "" {
+		// without prefix
+		tags = append(tags, r.Email)
+	}
+
+	if r.Username != "" {
+		// without prefix
+		tags = append(tags, r.Username)
+	}
+
+	return tags
 }

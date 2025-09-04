@@ -4,6 +4,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -36,4 +37,55 @@ type ParticipantSession struct {
 	JoinTime    time.Time  `json:"join_time"`
 	LeaveTime   *time.Time `json:"leave_time,omitempty"`
 	LeaveReason string     `json:"leave_reason,omitempty"`
+}
+
+// Tags generates a consistent set of tags for the past meeting participant.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
+func (p *PastMeetingParticipant) Tags() []string {
+	tags := []string{}
+
+	if p == nil {
+		return nil
+	}
+
+	if p.UID != "" {
+		// without prefix
+		tags = append(tags, p.UID)
+		// with prefix
+		tag := fmt.Sprintf("past_meeting_participant_uid:%s", p.UID)
+		tags = append(tags, tag)
+	}
+
+	if p.PastMeetingUID != "" {
+		tag := fmt.Sprintf("past_meeting_uid:%s", p.PastMeetingUID)
+		tags = append(tags, tag)
+	}
+
+	if p.MeetingUID != "" {
+		tag := fmt.Sprintf("meeting_uid:%s", p.MeetingUID)
+		tags = append(tags, tag)
+	}
+
+	if p.FirstName != "" {
+		// without prefix
+		tags = append(tags, p.FirstName)
+	}
+
+	if p.LastName != "" {
+		// without prefix
+		tags = append(tags, p.LastName)
+	}
+
+	if p.Username != "" {
+		// without prefix
+		tags = append(tags, p.Username)
+	}
+
+	if p.Email != "" {
+		// without prefix
+		tags = append(tags, p.Email)
+	}
+
+	return tags
 }
