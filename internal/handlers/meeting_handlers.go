@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -59,6 +60,7 @@ func (s *MeetingHandler) HandleMessage(ctx context.Context, msg domain.Message) 
 	handlers := map[string]func(ctx context.Context, msg domain.Message) ([]byte, error){
 		models.MeetingGetTitleSubject: s.HandleMeetingGetTitle,
 		models.MeetingDeletedSubject:  s.HandleMeetingDeleted,
+		models.MeetingUpdatedSubject:  s.HandleMeetingUpdated,
 	}
 
 	handler, ok := handlers[subject]
@@ -213,5 +215,122 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 	}
 
 	slog.InfoContext(ctx, "successfully cleaned up all registrants for deleted meeting", "registrant_count", len(registrants))
+	return []byte("success"), nil
+}
+
+// HandleMeetingUpdated is the message handler for the meeting-updated subject.
+// It sends update notification emails to all registrants of the updated meeting.
+func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Message) ([]byte, error) {
+	if !s.meetingService.ServiceReady() {
+		slog.ErrorContext(ctx, "service not ready")
+		return nil, fmt.Errorf("service not ready")
+	}
+
+	// Parse the meeting updated message
+	var meetingUpdatedMsg models.MeetingUpdatedMessage
+	err := json.Unmarshal(msg.Data(), &meetingUpdatedMsg)
+	if err != nil {
+		slog.ErrorContext(ctx, "error unmarshaling meeting updated message", logging.ErrKey, err)
+		return nil, err
+	}
+
+	meetingUID := meetingUpdatedMsg.MeetingUID
+	if meetingUID == "" {
+		slog.WarnContext(ctx, "meeting UID is empty in updated message")
+		return nil, fmt.Errorf("meeting UID is required")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+	slog.InfoContext(ctx, "processing meeting update", "changes", meetingUpdatedMsg.Changes)
+
+	// Check if there are any changes worth notifying about
+	if len(meetingUpdatedMsg.Changes) == 0 {
+		slog.DebugContext(ctx, "no meaningful changes to notify registrants about")
+		return []byte("success"), nil
+	}
+
+	slog.DebugContext(ctx, "meaningful changes detected, notifying registrants", "changes", meetingUpdatedMsg.Changes)
+
+	// Get all registrants for the meeting
+	registrants, err := s.registrantService.RegistrantRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting registrants for updated meeting", logging.ErrKey, err)
+		return nil, err
+	}
+
+	if len(registrants) == 0 {
+		slog.DebugContext(ctx, "no registrants to notify for updated meeting")
+		return []byte("success"), nil
+	}
+
+	slog.DebugContext(ctx, "sending update notifications to registrants", "registrant_count", len(registrants))
+
+	// Process registrants concurrently using WorkerPool
+	var tasks []func() error
+	for _, registrant := range registrants {
+		reg := registrant // capture loop variable
+		tasks = append(tasks, func() error {
+			// Get meeting details for the email
+			meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, meetingUID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error getting meeting details for update notification",
+					"registrant_uid", reg.UID, logging.ErrKey, err)
+				return err
+			}
+
+			// Build recipient name from first and last name
+			var recipientName string
+			if reg.FirstName != "" || reg.LastName != "" {
+				recipientName = strings.TrimSpace(fmt.Sprintf("%s %s", reg.FirstName, reg.LastName))
+			}
+
+			// Extract meeting ID and passcode from Zoom config
+			var meetingID, passcode string
+			if meeting.ZoomConfig != nil {
+				meetingID = meeting.ZoomConfig.MeetingID
+				passcode = meeting.ZoomConfig.Passcode
+			}
+
+			// Send update notification email to registrant
+			updatedInvitation := domain.EmailUpdatedInvitation{
+				MeetingUID:     meetingUID,
+				RecipientEmail: reg.Email,
+				RecipientName:  recipientName,
+				MeetingTitle:   meeting.Title,
+				StartTime:      meeting.StartTime,
+				Duration:       meeting.Duration,
+				Timezone:       meeting.Timezone,
+				Description:    meeting.Description,
+				JoinLink:       meeting.JoinURL,
+				MeetingID:      meetingID,
+				Passcode:       passcode,
+				Recurrence:     meeting.Recurrence,
+				Changes:        meetingUpdatedMsg.Changes,
+			}
+
+			err = s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
+			if err != nil {
+				slog.ErrorContext(ctx, "error sending update notification email",
+					"registrant_uid", reg.UID, "email", reg.Email, logging.ErrKey, err)
+				return err
+			}
+
+			slog.DebugContext(ctx, "update notification sent successfully", "registrant_uid", reg.UID, "email", reg.Email)
+			return nil
+		})
+	}
+
+	// Execute all notification operations concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(10) // Use 10 workers for concurrent processing
+	err = pool.Run(ctx, tasks...)
+	if err != nil {
+		slog.ErrorContext(ctx, "some notification operations failed",
+			"total_registrants", len(registrants),
+			logging.ErrKey, err,
+			logging.PriorityCritical())
+		return nil, fmt.Errorf("failed to send update notifications: %w", err)
+	}
+
+	slog.InfoContext(ctx, "successfully sent update notifications to all registrants", "registrant_count", len(registrants))
 	return []byte("success"), nil
 }

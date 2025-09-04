@@ -115,3 +115,8 @@ func (m *MockMessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.
 	args := m.Called(ctx, data)
 	return args.Error(0)
 }
+
+func (m *MockMessageBuilder) SendMeetingUpdated(ctx context.Context, data models.MeetingUpdatedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}

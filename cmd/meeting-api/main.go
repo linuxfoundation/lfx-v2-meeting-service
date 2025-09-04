@@ -73,10 +73,12 @@ func main() {
 	}
 	messageBuilder := messaging.NewMessageBuilder(natsConn)
 	authService := service.NewAuthService(jwtAuth)
+	occurrenceService := service.NewOccurrenceService()
 	meetingService := service.NewMeetingService(
 		repos.Meeting,
 		messageBuilder,
 		platformRegistry,
+		occurrenceService,
 		serviceConfig,
 	)
 	registrantService := service.NewMeetingRegistrantService(
@@ -113,6 +115,7 @@ func main() {
 		registrantService,
 		pastMeetingService,
 		pastMeetingParticipantService,
+		occurrenceService,
 		platformConfigs.Zoom.Validator,
 	)
 

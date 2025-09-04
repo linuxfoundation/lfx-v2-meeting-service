@@ -722,8 +722,21 @@ type Occurrence struct {
 	ResponseCountNo *int
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int
-	// Occurrence status from platform
-	Status *string
+	// Whether the occurrence is cancelled
+	IsCancelled *bool
+}
+
+// A single join/leave session of a participant in a meeting
+type ParticipantSession struct {
+	// Session UID from the meeting platform (e.g., Zoom)
+	UID string
+	// ISO 8601 timestamp when participant joined the session
+	JoinTime string
+	// ISO 8601 timestamp when participant left the session (null if still in
+	// meeting)
+	LeaveTime *string
+	// Reason provided by the meeting platform for leaving
+	LeaveReason *string
 }
 
 // PastMeeting is the result type of the Meeting Service service
@@ -828,6 +841,8 @@ type PastMeetingParticipant struct {
 	IsInvited *bool
 	// Whether the participant attended this past meeting
 	IsAttended *bool
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSession
 	// The date and time the resource was created
 	CreatedAt *string
 	// The date and time the resource was last updated

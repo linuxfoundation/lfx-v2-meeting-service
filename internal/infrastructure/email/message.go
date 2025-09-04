@@ -10,6 +10,8 @@ import (
 	"net/smtp"
 	"strings"
 	"time"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 )
 
 // generateBoundary creates a unique boundary string for multipart messages
@@ -34,41 +36,128 @@ func generateMessageID(config SMTPConfig) string {
 	return fmt.Sprintf("<%x.%d@%s>", bytes, time.Now().UnixNano(), domain)
 }
 
+// EmailMessageParams contains all the information needed to build an email message
+type EmailMessageParams struct {
+	Recipient   string
+	Subject     string
+	HTMLContent string
+	TextContent string
+	Attachment  *domain.EmailAttachment
+	Config      SMTPConfig
+}
+
 // buildEmailMessage builds the complete email message with headers and multipart content
 func buildEmailMessage(recipient, subject, htmlContent, textContent string, config SMTPConfig) string {
-	boundary := generateBoundary()
-	messageID := generateMessageID(config)
+	return buildEmailMessageWithParams(EmailMessageParams{
+		Recipient:   recipient,
+		Subject:     subject,
+		HTMLContent: htmlContent,
+		TextContent: textContent,
+		Attachment:  nil,
+		Config:      config,
+	})
+}
 
+// buildEmailMessageWithAttachment builds the complete email message with optional attachment
+func buildEmailMessageWithAttachment(recipient, subject, htmlContent, textContent string, attachment *domain.EmailAttachment, config SMTPConfig) string {
+	return buildEmailMessageWithParams(EmailMessageParams{
+		Recipient:   recipient,
+		Subject:     subject,
+		HTMLContent: htmlContent,
+		TextContent: textContent,
+		Attachment:  attachment,
+		Config:      config,
+	})
+}
+
+// buildEmailMessageWithParams builds the complete email message using structured parameters
+func buildEmailMessageWithParams(params EmailMessageParams) string {
+	messageID := generateMessageID(params.Config)
 	var message strings.Builder
 
 	// RFC 5322 required and recommended headers
-	message.WriteString(fmt.Sprintf("From: %s\r\n", config.From))
-	message.WriteString(fmt.Sprintf("To: %s\r\n", recipient))
-	message.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
+	message.WriteString(fmt.Sprintf("From: %s\r\n", params.Config.From))
+	message.WriteString(fmt.Sprintf("To: %s\r\n", params.Recipient))
+	message.WriteString(fmt.Sprintf("Subject: %s\r\n", params.Subject))
 	message.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123Z)))
 	message.WriteString(fmt.Sprintf("Message-ID: %s\r\n", messageID))
 	message.WriteString("MIME-Version: 1.0\r\n")
-	message.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=\"%s\"\r\n", boundary))
-	message.WriteString("\r\n")
 
-	// Plain text part
-	message.WriteString(fmt.Sprintf("--%s\r\n", boundary))
-	message.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
-	message.WriteString("Content-Transfer-Encoding: 8bit\r\n")
-	message.WriteString("\r\n")
-	message.WriteString(textContent)
-	message.WriteString("\r\n")
+	if params.Attachment != nil {
+		// With attachment: use multipart/mixed
+		mixedBoundary := generateBoundary()
+		message.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", mixedBoundary))
+		message.WriteString("\r\n")
 
-	// HTML part
-	message.WriteString(fmt.Sprintf("--%s\r\n", boundary))
-	message.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
-	message.WriteString("Content-Transfer-Encoding: 8bit\r\n")
-	message.WriteString("\r\n")
-	message.WriteString(htmlContent)
-	message.WriteString("\r\n")
+		// Start mixed multipart
+		message.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
 
-	// End boundary
-	message.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
+		// Alternative part (text and HTML)
+		alternativeBoundary := generateBoundary()
+		message.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=\"%s\"\r\n", alternativeBoundary))
+		message.WriteString("\r\n")
+
+		// Plain text part
+		message.WriteString(fmt.Sprintf("--%s\r\n", alternativeBoundary))
+		message.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
+		message.WriteString("Content-Transfer-Encoding: 8bit\r\n")
+		message.WriteString("\r\n")
+		message.WriteString(params.TextContent)
+		message.WriteString("\r\n")
+
+		// HTML part
+		message.WriteString(fmt.Sprintf("--%s\r\n", alternativeBoundary))
+		message.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
+		message.WriteString("Content-Transfer-Encoding: 8bit\r\n")
+		message.WriteString("\r\n")
+		message.WriteString(params.HTMLContent)
+		message.WriteString("\r\n")
+
+		// End alternative boundary
+		message.WriteString(fmt.Sprintf("--%s--\r\n", alternativeBoundary))
+
+		// Attachment part
+		message.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
+		message.WriteString(fmt.Sprintf("Content-Type: %s; name=\"%s\"\r\n", params.Attachment.ContentType, params.Attachment.Filename))
+		message.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", params.Attachment.Filename))
+		message.WriteString("Content-Transfer-Encoding: base64\r\n")
+
+		// Add method=REQUEST for calendar files
+		if params.Attachment.ContentType == "text/calendar" {
+			message.WriteString("Content-Type: text/calendar; charset=UTF-8; method=REQUEST\r\n")
+		}
+
+		message.WriteString("\r\n")
+		message.WriteString(params.Attachment.Content)
+		message.WriteString("\r\n")
+
+		// End mixed boundary
+		message.WriteString(fmt.Sprintf("--%s--\r\n", mixedBoundary))
+	} else {
+		// Without attachment: use multipart/alternative (original logic)
+		boundary := generateBoundary()
+		message.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=\"%s\"\r\n", boundary))
+		message.WriteString("\r\n")
+
+		// Plain text part
+		message.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		message.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
+		message.WriteString("Content-Transfer-Encoding: 8bit\r\n")
+		message.WriteString("\r\n")
+		message.WriteString(params.TextContent)
+		message.WriteString("\r\n")
+
+		// HTML part
+		message.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		message.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
+		message.WriteString("Content-Transfer-Encoding: 8bit\r\n")
+		message.WriteString("\r\n")
+		message.WriteString(params.HTMLContent)
+		message.WriteString("\r\n")
+
+		// End boundary
+		message.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
+	}
 
 	return message.String()
 }

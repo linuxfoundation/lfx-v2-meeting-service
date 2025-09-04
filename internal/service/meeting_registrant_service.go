@@ -554,8 +554,16 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		joinLink = fmt.Sprintf("https://zoom.us/j/%s", meetingDB.ZoomConfig.MeetingID)
 	}
 
+	// Extract meeting ID and passcode for ICS generation
+	var meetingID, passcode string
+	if meetingDB.ZoomConfig != nil {
+		meetingID = meetingDB.ZoomConfig.MeetingID
+		passcode = meetingDB.ZoomConfig.Passcode
+	}
+
 	// Create email invitation
 	invitation := domain.EmailInvitation{
+		MeetingUID:     meetingDB.UID,
 		RecipientEmail: registrant.Email,
 		RecipientName:  recipientName,
 		MeetingTitle:   meetingDB.Title,
@@ -565,6 +573,9 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		Description:    meetingDB.Description,
 		JoinLink:       joinLink,
 		ProjectName:    "", // TODO: Add project name once project service integration is available
+		MeetingID:      meetingID,
+		Passcode:       passcode,
+		Recurrence:     meetingDB.Recurrence,
 	}
 
 	// Send the email
@@ -587,6 +598,7 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 
 	// Create email cancellation
 	cancellation := domain.EmailCancellation{
+		MeetingUID:     meetingDB.UID,
 		RecipientEmail: registrant.Email,
 		RecipientName:  recipientName,
 		MeetingTitle:   meetingDB.Title,
@@ -596,6 +608,7 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 		Description:    meetingDB.Description,
 		ProjectName:    "", // TODO: Add project name once project service integration is available
 		Reason:         "Your registration has been removed from this meeting.",
+		Recurrence:     meetingDB.Recurrence,
 	}
 
 	// Send the email

@@ -6,10 +6,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -23,6 +25,7 @@ type MeetingService struct {
 	MeetingRepository domain.MeetingRepository
 	MessageBuilder    domain.MessageBuilder
 	PlatformRegistry  domain.PlatformRegistry
+	OccurrenceService domain.OccurrenceService
 	Config            ServiceConfig
 }
 
@@ -31,21 +34,85 @@ func NewMeetingService(
 	meetingRepository domain.MeetingRepository,
 	messageBuilder domain.MessageBuilder,
 	platformRegistry domain.PlatformRegistry,
+	occurrenceService domain.OccurrenceService,
 	config ServiceConfig,
 ) *MeetingService {
 	return &MeetingService{
 		MeetingRepository: meetingRepository,
 		MessageBuilder:    messageBuilder,
 		PlatformRegistry:  platformRegistry,
+		OccurrenceService: occurrenceService,
 		Config:            config,
 	}
+}
+
+// detectMeetingBaseChanges compares two MeetingBase structs and returns a map of changes
+func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[string]any {
+	changes := make(map[string]any)
+
+	if oldMeeting.Title != newMeeting.Title {
+		changes["Title"] = newMeeting.Title
+	}
+	if oldMeeting.Description != newMeeting.Description {
+		changes["Description"] = newMeeting.Description
+	}
+	if !oldMeeting.StartTime.Equal(newMeeting.StartTime) {
+		changes["Start Time"] = newMeeting.StartTime.Format("2006-01-02 15:04:05 MST")
+	}
+	if oldMeeting.Duration != newMeeting.Duration {
+		changes["Duration"] = fmt.Sprintf("%d minutes", newMeeting.Duration)
+	}
+	if oldMeeting.Timezone != newMeeting.Timezone {
+		changes["Timezone"] = newMeeting.Timezone
+	}
+	if oldMeeting.Visibility != newMeeting.Visibility {
+		changes["Visibility"] = newMeeting.Visibility
+	}
+	if oldMeeting.JoinURL != newMeeting.JoinURL {
+		changes["Join URL"] = newMeeting.JoinURL
+	}
+
+	// Compare platform-specific fields
+	if oldMeeting.Platform != newMeeting.Platform {
+		changes["Platform"] = newMeeting.Platform
+	}
+
+	// Check if Zoom config changed (basic comparison)
+	switch {
+	case oldMeeting.ZoomConfig != nil && newMeeting.ZoomConfig != nil:
+		if oldMeeting.ZoomConfig.MeetingID != newMeeting.ZoomConfig.MeetingID {
+			changes["Meeting ID"] = newMeeting.ZoomConfig.MeetingID
+		}
+	case oldMeeting.ZoomConfig == nil && newMeeting.ZoomConfig != nil:
+		changes["Zoom Configuration"] = "Added Zoom configuration"
+	case oldMeeting.ZoomConfig != nil && newMeeting.ZoomConfig == nil:
+		changes["Zoom Configuration"] = "Removed Zoom configuration"
+	}
+
+	// Compare recurrence using cmp package for comprehensive comparison
+	oldHasRecurrence := oldMeeting.Recurrence != nil
+	newHasRecurrence := newMeeting.Recurrence != nil
+	if oldHasRecurrence != newHasRecurrence {
+		if newHasRecurrence {
+			changes["Recurrence"] = "Added recurrence pattern"
+		} else {
+			changes["Recurrence"] = "Removed recurrence pattern"
+		}
+	} else if oldHasRecurrence && newHasRecurrence {
+		if !cmp.Equal(oldMeeting.Recurrence, newMeeting.Recurrence) {
+			changes["Recurrence"] = "Modified recurrence pattern"
+		}
+	}
+
+	return changes
 }
 
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingService) ServiceReady() bool {
 	return s.MeetingRepository != nil &&
 		s.MessageBuilder != nil &&
-		s.PlatformRegistry != nil
+		s.PlatformRegistry != nil &&
+		s.OccurrenceService != nil
 }
 
 // GetMeetings fetches all meetings
@@ -70,14 +137,18 @@ func (s *MeetingService) GetMeetings(ctx context.Context) ([]*models.MeetingFull
 	}
 
 	meetings := make([]*models.MeetingFull, len(meetingsBase))
+	currentTime := time.Now()
+
 	for i, meeting := range meetingsBase {
-		var s *models.MeetingSettings
+		var settings *models.MeetingSettings
 		if meeting != nil {
-			s = settingsByUID[meeting.UID]
+			settings = settingsByUID[meeting.UID]
+			// Calculate next 50 occurrences from current time
+			meeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
 		}
 		meetings[i] = &models.MeetingFull{
 			Base:     meeting,
-			Settings: s,
+			Settings: settings,
 		}
 	}
 
@@ -142,6 +213,9 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 			"platform", reqMeeting.Base.Platform,
 			"platform_meeting_id", result.PlatformMeetingID)
 	}
+
+	// Calculate first 50 occurrences for the new meeting
+	reqMeeting.Base.Occurrences = s.OccurrenceService.CalculateOccurrences(reqMeeting.Base, 50)
 
 	// Create the meeting in the repository
 	// TODO: handle rollbacks better
@@ -223,6 +297,10 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 	// Store the revision in context for the custom encoder to use
 	revisionStr := strconv.FormatUint(revision, 10)
 	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)
+
+	// Calculate next 50 occurrences from current time
+	currentTime := time.Now()
+	meetingDB.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
 
 	slog.DebugContext(ctx, "returning meeting", "meeting", meetingDB, "revision", revision)
 
@@ -352,6 +430,9 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		}
 	}
 
+	// Detect changes before updating
+	changes := detectMeetingBaseChanges(existingMeetingDB, reqMeeting)
+
 	// Update the meeting in the repository
 	err = s.MeetingRepository.UpdateBase(ctx, reqMeeting, revision)
 	if err != nil {
@@ -366,8 +447,8 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		return nil, domain.ErrInternal
 	}
 
-	// Use WorkerPool for concurrent NATS message sending
-	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	// Use WorkerPool for concurrent NATS message sending (always 3 messages now)
+	pool := concurrent.NewWorkerPool(3)
 
 	messages := []func() error{
 		func() error {
@@ -396,12 +477,23 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 				Committees: committees,
 			})
 		},
+		func() error {
+			// Always send meeting updated message for other services to consume
+			return s.MessageBuilder.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
+				MeetingUID: reqMeeting.UID,
+				Changes:    changes,
+			})
+		},
 	}
 
 	if err := pool.Run(ctx, messages...); err != nil {
 		slog.ErrorContext(ctx, "failed to send NATS messages for updated meeting", logging.ErrKey, err)
 		return nil, domain.ErrInternal
 	}
+
+	// Calculate occurrences for the updated meeting
+	currentTime := time.Now()
+	reqMeeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(reqMeeting, currentTime, 50)
 
 	slog.DebugContext(ctx, "returning updated meeting", "meeting", reqMeeting)
 

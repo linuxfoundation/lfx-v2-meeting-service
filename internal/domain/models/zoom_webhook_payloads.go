@@ -63,6 +63,7 @@ type ZoomParticipantJoinedPayload struct {
 			UserID            string    `json:"user_id"`
 			UserName          string    `json:"user_name"`
 			ID                string    `json:"id"`
+			ParticipantUUID   string    `json:"participant_uuid"`
 			JoinTime          time.Time `json:"join_time"`
 			Email             string    `json:"email"`
 			ParticipantUserID string    `json:"participant_user_id"`
@@ -84,6 +85,7 @@ type ZoomParticipantLeftPayload struct {
 			UserID            string    `json:"user_id"`
 			UserName          string    `json:"user_name"`
 			ID                string    `json:"id"`
+			ParticipantUUID   string    `json:"participant_uuid"`
 			LeaveTime         time.Time `json:"leave_time"`
 			Duration          int       `json:"duration"`
 			Email             string    `json:"email"`
