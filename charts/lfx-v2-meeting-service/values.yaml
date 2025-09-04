@@ -244,3 +244,4 @@ openfga:
 heimdall:
   enabled: true
   url: http://lfx-platform-heimdall.lfx.svc.cluster.local:4456
+  add_middleware: false
