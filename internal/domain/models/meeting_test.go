@@ -139,7 +139,7 @@ func TestOccurrence_JSONSerialization(t *testing.T) {
 		RegistrantCount:  5,
 		ResponseCountNo:  1,
 		ResponseCountYes: 4,
-		Status:           "scheduled",
+		IsCancelled:      false,
 	}
 
 	data, err := json.Marshal(occurrence)
@@ -235,7 +235,7 @@ func TestMeeting_WithComplexStructures(t *testing.T) {
 				RegistrantCount:  10,
 				ResponseCountYes: 8,
 				ResponseCountNo:  2,
-				Status:           "scheduled",
+				IsCancelled:      false,
 			},
 		},
 		CreatedAt: &now,

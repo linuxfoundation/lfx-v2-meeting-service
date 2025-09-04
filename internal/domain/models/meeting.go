@@ -82,7 +82,7 @@ type Occurrence struct {
 	RegistrantCount  int         `json:"registrant_count,omitempty"`
 	ResponseCountNo  int         `json:"response_count_no,omitempty"`
 	ResponseCountYes int         `json:"response_count_yes,omitempty"`
-	Status           string      `json:"status,omitempty"`
+	IsCancelled      bool        `json:"is_cancelled,omitempty"`
 }
 
 // ZoomConfig represents Zoom-specific configuration for a meeting

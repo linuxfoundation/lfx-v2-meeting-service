@@ -3632,7 +3632,7 @@ func unmarshalOccurrenceResponseBodyToMeetingserviceOccurrence(v *OccurrenceResp
 		RegistrantCount:  v.RegistrantCount,
 		ResponseCountNo:  v.ResponseCountNo,
 		ResponseCountYes: v.ResponseCountYes,
-		Status:           v.Status,
+		IsCancelled:      v.IsCancelled,
 	}
 	if v.Recurrence != nil {
 		res.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v.Recurrence)
@@ -3929,6 +3929,29 @@ func unmarshalPastMeetingParticipantResponseBodyToMeetingservicePastMeetingParti
 		IsAttended:         v.IsAttended,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
+	}
+	if v.Sessions != nil {
+		res.Sessions = make([]*meetingservice.ParticipantSession, len(v.Sessions))
+		for i, val := range v.Sessions {
+			res.Sessions[i] = unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(val)
+		}
+	}
+
+	return res
+}
+
+// unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession
+// builds a value of type *meetingservice.ParticipantSession from a value of
+// type *ParticipantSessionResponseBody.
+func unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(v *ParticipantSessionResponseBody) *meetingservice.ParticipantSession {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.ParticipantSession{
+		UID:         *v.UID,
+		JoinTime:    *v.JoinTime,
+		LeaveTime:   v.LeaveTime,
+		LeaveReason: v.LeaveReason,
 	}
 
 	return res
