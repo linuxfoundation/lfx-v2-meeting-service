@@ -4,6 +4,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -44,6 +45,42 @@ type RecordingFileData struct {
 	DownloadURL       string    `json:"download_url"`        // URL for downloading the file
 	Status            string    `json:"status"`
 	RecordingType     string    `json:"recording_type"`
+}
+
+// Tags generates a consistent set of tags for the past meeting.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
+func (p *PastMeetingRecording) Tags() []string {
+	tags := []string{}
+
+	if p == nil {
+		return nil
+	}
+
+	if p.UID != "" {
+		// without prefix
+		tags = append(tags, p.UID)
+		// with prefix
+		tag := fmt.Sprintf("past_meeting_recording_uid:%s", p.UID)
+		tags = append(tags, tag)
+	}
+
+	if p.PastMeetingUID != "" {
+		tag := fmt.Sprintf("past_meeting_uid:%s", p.PastMeetingUID)
+		tags = append(tags, tag)
+	}
+
+	if p.Platform != "" {
+		tag := fmt.Sprintf("platform:%s", p.Platform)
+		tags = append(tags, tag)
+	}
+
+	if p.PlatformMeetingID != "" {
+		tag := fmt.Sprintf("platform_meeting_id:%s", p.PlatformMeetingID)
+		tags = append(tags, tag)
+	}
+
+	return tags
 }
 
 // AddRecordingSession adds a new recording session to the existing recording.

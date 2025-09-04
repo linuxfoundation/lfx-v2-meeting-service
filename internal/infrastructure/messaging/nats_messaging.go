@@ -48,11 +48,15 @@ func (m *MessageBuilder) sendIndexerMessage(ctx context.Context, subject string,
 	headers := make(map[string]string)
 	if authorization, ok := ctx.Value(constants.AuthorizationContextID).(string); ok {
 		headers[constants.AuthorizationHeader] = authorization
+	} else {
+		// Fallback for system-generated events (webhooks, etc.) that don't have user auth context
+		// This is just a dummy value so that the indexer service can still process the message,
+		// given that it requires an authorization header.
+		headers[constants.AuthorizationHeader] = "Bearer meeting-service"
 	}
 	if principal, ok := ctx.Value(constants.PrincipalContextID).(string); ok {
 		headers[constants.XOnBehalfOfHeader] = principal
 	}
-
 	var payload any
 	switch action {
 	case models.ActionCreated, models.ActionUpdated:
@@ -210,7 +214,7 @@ func (m *MessageBuilder) SendIndexPastMeetingRecording(ctx context.Context, acti
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.PastMeetingUID, data.Platform)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingRecordingSubject, action, dataBytes, tags)
 }
