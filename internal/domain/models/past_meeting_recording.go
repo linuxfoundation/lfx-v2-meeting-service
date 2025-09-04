@@ -42,8 +42,8 @@ type RecordingFileData struct {
 	FileSize          int64     `json:"file_size"`           // Size in bytes
 	PlayURL           string    `json:"play_url"`            // URL for playing the file
 	DownloadURL       string    `json:"download_url"`        // URL for downloading the file
-	Status            string    `json:"status"`              // "completed", "processing", etc.
-	RecordingType     string    `json:"recording_type"`      // "shared_screen_with_speaker_view", "audio_only", etc.
+	Status            string    `json:"status"`
+	RecordingType     string    `json:"recording_type"`
 }
 
 // AddRecordingSession adds a new recording session to the existing recording.

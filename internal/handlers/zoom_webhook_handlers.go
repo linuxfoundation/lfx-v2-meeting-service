@@ -669,7 +669,6 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 
 	var recording *models.PastMeetingRecording
 	if existingRecording != nil {
-		// Update existing recording with new files
 		recording, err = s.pastMeetingRecordingService.UpdateRecording(ctx, existingRecording.UID, recordingFromPayload)
 		if err != nil {
 			slog.ErrorContext(ctx, "error updating recording", logging.ErrKey, err,
@@ -687,7 +686,6 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 			"total_size", recording.TotalSize,
 		)
 	} else {
-		// Create new recording
 		recording, err = s.pastMeetingRecordingService.CreateRecording(ctx, recordingFromPayload)
 		if err != nil {
 			slog.ErrorContext(ctx, "error creating recording", logging.ErrKey, err,
@@ -709,7 +707,6 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 }
 
 // createRecordingFromZoomPayload converts a Zoom recording completed payload to a domain model.
-// This conversion logic belongs in the application layer (handler) rather than the domain model.
 func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID string, payload models.ZoomRecordingCompletedPayload) *models.PastMeetingRecording {
 	recording := &models.PastMeetingRecording{
 		PastMeetingUID:    pastMeetingUID,
@@ -743,14 +740,12 @@ func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID strin
 		})
 	}
 
-	// Add files to the recording (this will calculate total size and count)
 	recording.AddRecordingFiles(recordingFiles)
 
 	return recording
 }
 
 // createRecordingFromZoomTranscriptPayload converts a Zoom transcript completed payload to a domain model.
-// This conversion logic belongs in the application layer (handler) rather than the domain model.
 func (s *ZoomWebhookHandler) createRecordingFromZoomTranscriptPayload(pastMeetingUID string, payload models.ZoomTranscriptCompletedPayload) *models.PastMeetingRecording {
 	recording := &models.PastMeetingRecording{
 		PastMeetingUID:    pastMeetingUID,
@@ -783,7 +778,6 @@ func (s *ZoomWebhookHandler) createRecordingFromZoomTranscriptPayload(pastMeetin
 		})
 	}
 
-	// Add files to the recording (this will calculate total size and count)
 	recording.AddRecordingFiles(recordingFiles)
 
 	return recording
@@ -839,7 +833,6 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 
 	var recording *models.PastMeetingRecording
 	if existingRecording != nil {
-		// Update existing recording with new transcript files
 		recording, err = s.pastMeetingRecordingService.UpdateRecording(ctx, existingRecording.UID, recordingFromPayload)
 		if err != nil {
 			slog.ErrorContext(ctx, "error updating recording with transcript", logging.ErrKey, err,
@@ -857,7 +850,6 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 			"total_size", recording.TotalSize,
 		)
 	} else {
-		// Create new recording with transcript files
 		recording, err = s.pastMeetingRecordingService.CreateRecording(ctx, recordingFromPayload)
 		if err != nil {
 			slog.ErrorContext(ctx, "error creating recording with transcript", logging.ErrKey, err,
