@@ -78,6 +78,22 @@ func (s *MeetingsAPI) GetMeetingSettings(ctx context.Context, payload *meetingsv
 	}, nil
 }
 
+// GetMeetingJoinURL gets the join URL for a specific meeting
+func (s *MeetingsAPI) GetMeetingJoinURL(ctx context.Context, payload *meetingsvc.GetMeetingJoinURLPayload) (*meetingsvc.GetMeetingJoinURLResult, error) {
+	if payload == nil || payload.UID == nil {
+		return nil, domain.ErrValidationFailed
+	}
+
+	joinURL, err := s.meetingService.GetMeetingJoinURL(ctx, *payload.UID)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return &meetingsvc.GetMeetingJoinURLResult{
+		JoinURL: joinURL,
+	}, nil
+}
+
 // UpdateMeetingBase updates a meeting's base information.
 func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc.UpdateMeetingBasePayload) (*meetingsvc.MeetingBase, error) {
 	if payload == nil || payload.UID == "" {

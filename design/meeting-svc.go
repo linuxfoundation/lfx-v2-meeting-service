@@ -178,6 +178,41 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// GET meeting join URL by ID endpoint
+	Method("get-meeting-join-url", func() {
+		Description("Get the join URL for a meeting. Requires the user to be either a participant or organizer of the meeting.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			MeetingUIDAttribute()
+		})
+
+		Result(func() {
+			JoinURLAttribute()
+			Required("join_url")
+		})
+
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("Unauthorized", UnauthorizedError, "User is not authorized to access the join URL")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{uid}/join_url")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("NotFound", StatusNotFound)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// PUT meeting base endpoint by ID
 	Method("update-meeting-base", func() {
 		Description("Update an existing meeting base.")

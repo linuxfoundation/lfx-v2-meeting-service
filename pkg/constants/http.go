@@ -3,6 +3,8 @@
 
 package constants
 
+import "fmt"
+
 // Constants for the HTTP request headers
 const (
 	// AuthorizationHeader is the header name for the authorization
@@ -40,3 +42,14 @@ type contextEtag string
 
 // ETagContextID is the context ID for the ETag
 const ETagContextID contextEtag = "etag"
+
+// LFX Application URLs
+const (
+	// LFXAppDomain is the base domain for the LFX web application
+	LFXAppDomain string = "app.lfx.dev"
+)
+
+// GenerateLFXMeetingURL generates the LFX app meeting URL with the given meeting UID and password
+func GenerateLFXMeetingURL(meetingUID, password string) string {
+	return fmt.Sprintf("https://%s/meetings/%s?password=%s", LFXAppDomain, meetingUID, password)
+}

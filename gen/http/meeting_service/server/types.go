@@ -333,11 +333,10 @@ type CreateMeetingResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -376,6 +375,15 @@ type GetMeetingBaseResponseBody MeetingBaseResponseBody
 // GetMeetingSettingsResponseBody is the type of the "Meeting Service" service
 // "get-meeting-settings" endpoint HTTP response body.
 type GetMeetingSettingsResponseBody MeetingSettingsResponseBody
+
+// GetMeetingJoinURLResponseBody is the type of the "Meeting Service" service
+// "get-meeting-join-url" endpoint HTTP response body.
+type GetMeetingJoinURLResponseBody struct {
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL string `form:"join_url" json:"join_url" xml:"join_url"`
+}
 
 // UpdateMeetingBaseResponseBody is the type of the "Meeting Service" service
 // "update-meeting-base" endpoint HTTP response body.
@@ -417,11 +425,10 @@ type UpdateMeetingBaseResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -864,6 +871,46 @@ type GetMeetingSettingsNotFoundResponseBody struct {
 // Service" service "get-meeting-settings" endpoint HTTP response body for the
 // "ServiceUnavailable" error.
 type GetMeetingSettingsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingJoinURLInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "get-meeting-join-url" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetMeetingJoinURLInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingJoinURLNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-meeting-join-url" endpoint HTTP response body for the
+// "NotFound" error.
+type GetMeetingJoinURLNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingJoinURLServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-meeting-join-url" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetMeetingJoinURLServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingJoinURLUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-meeting-join-url" endpoint HTTP response body for the
+// "Unauthorized" error.
+type GetMeetingJoinURLUnauthorizedResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
@@ -1619,11 +1666,10 @@ type MeetingFullResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -1801,11 +1847,10 @@ type MeetingBaseResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -2151,8 +2196,8 @@ func NewCreateMeetingResponseBody(res *meetingservice.MeetingFull) *CreateMeetin
 		Visibility:                      res.Visibility,
 		Restricted:                      res.Restricted,
 		ArtifactVisibility:              res.ArtifactVisibility,
-		JoinURL:                         res.JoinURL,
 		PublicLink:                      res.PublicLink,
+		Password:                        res.Password,
 		EmailDeliveryErrorCount:         res.EmailDeliveryErrorCount,
 		RecordingEnabled:                res.RecordingEnabled,
 		TranscriptEnabled:               res.TranscriptEnabled,
@@ -2207,8 +2252,8 @@ func NewGetMeetingBaseResponseBody(res *meetingservice.GetMeetingBaseResult) *Ge
 		Visibility:                      res.Meeting.Visibility,
 		Restricted:                      res.Meeting.Restricted,
 		ArtifactVisibility:              res.Meeting.ArtifactVisibility,
-		JoinURL:                         res.Meeting.JoinURL,
 		PublicLink:                      res.Meeting.PublicLink,
+		Password:                        res.Meeting.Password,
 		EmailDeliveryErrorCount:         res.Meeting.EmailDeliveryErrorCount,
 		RecordingEnabled:                res.Meeting.RecordingEnabled,
 		TranscriptEnabled:               res.Meeting.TranscriptEnabled,
@@ -2258,6 +2303,16 @@ func NewGetMeetingSettingsResponseBody(res *meetingservice.GetMeetingSettingsRes
 	return body
 }
 
+// NewGetMeetingJoinURLResponseBody builds the HTTP response body from the
+// result of the "get-meeting-join-url" endpoint of the "Meeting Service"
+// service.
+func NewGetMeetingJoinURLResponseBody(res *meetingservice.GetMeetingJoinURLResult) *GetMeetingJoinURLResponseBody {
+	body := &GetMeetingJoinURLResponseBody{
+		JoinURL: res.JoinURL,
+	}
+	return body
+}
+
 // NewUpdateMeetingBaseResponseBody builds the HTTP response body from the
 // result of the "update-meeting-base" endpoint of the "Meeting Service"
 // service.
@@ -2276,8 +2331,8 @@ func NewUpdateMeetingBaseResponseBody(res *meetingservice.MeetingBase) *UpdateMe
 		Visibility:                      res.Visibility,
 		Restricted:                      res.Restricted,
 		ArtifactVisibility:              res.ArtifactVisibility,
-		JoinURL:                         res.JoinURL,
 		PublicLink:                      res.PublicLink,
+		Password:                        res.Password,
 		EmailDeliveryErrorCount:         res.EmailDeliveryErrorCount,
 		RecordingEnabled:                res.RecordingEnabled,
 		TranscriptEnabled:               res.TranscriptEnabled,
@@ -2784,6 +2839,50 @@ func NewGetMeetingSettingsNotFoundResponseBody(res *meetingservice.NotFoundError
 // Service" service.
 func NewGetMeetingSettingsServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetMeetingSettingsServiceUnavailableResponseBody {
 	body := &GetMeetingSettingsServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingJoinURLInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "get-meeting-join-url" endpoint of the "Meeting
+// Service" service.
+func NewGetMeetingJoinURLInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetMeetingJoinURLInternalServerErrorResponseBody {
+	body := &GetMeetingJoinURLInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingJoinURLNotFoundResponseBody builds the HTTP response body from
+// the result of the "get-meeting-join-url" endpoint of the "Meeting Service"
+// service.
+func NewGetMeetingJoinURLNotFoundResponseBody(res *meetingservice.NotFoundError) *GetMeetingJoinURLNotFoundResponseBody {
+	body := &GetMeetingJoinURLNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingJoinURLServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "get-meeting-join-url" endpoint of the "Meeting
+// Service" service.
+func NewGetMeetingJoinURLServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetMeetingJoinURLServiceUnavailableResponseBody {
+	body := &GetMeetingJoinURLServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingJoinURLUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "get-meeting-join-url" endpoint of the "Meeting
+// Service" service.
+func NewGetMeetingJoinURLUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetMeetingJoinURLUnauthorizedResponseBody {
+	body := &GetMeetingJoinURLUnauthorizedResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}
@@ -3634,6 +3733,17 @@ func NewGetMeetingBasePayload(uid string, version *string, bearerToken *string) 
 // get-meeting-settings endpoint payload.
 func NewGetMeetingSettingsPayload(uid string, version *string, bearerToken *string) *meetingservice.GetMeetingSettingsPayload {
 	v := &meetingservice.GetMeetingSettingsPayload{}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetMeetingJoinURLPayload builds a Meeting Service service
+// get-meeting-join-url endpoint payload.
+func NewGetMeetingJoinURLPayload(uid string, version *string, bearerToken *string) *meetingservice.GetMeetingJoinURLPayload {
+	v := &meetingservice.GetMeetingJoinURLPayload{}
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken

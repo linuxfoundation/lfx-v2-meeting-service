@@ -32,6 +32,7 @@ type MeetingBase struct {
 	ArtifactVisibility              string       `json:"artifact_visibility,omitempty"`
 	PublicLink                      string       `json:"public_link,omitempty"`
 	JoinURL                         string       `json:"join_url,omitempty"`
+	Password                        string       `json:"password,omitempty"`
 	EmailDeliveryErrorCount         int          `json:"email_delivery_error_count,omitempty"`
 	RecordingEnabled                bool         `json:"recording_enabled"`
 	TranscriptEnabled               bool         `json:"transcript_enabled"`
