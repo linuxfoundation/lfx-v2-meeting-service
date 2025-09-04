@@ -179,7 +179,13 @@ func TestGenerateLFXMeetingURL(t *testing.T) {
 			name:        "special characters in password",
 			meetingUID:  "meeting-123",
 			password:    "pass@#$%",
-			expectedURL: "https://app.lfx.dev/meetings/meeting-123?password=pass@#$%",
+			expectedURL: "https://app.lfx.dev/meetings/meeting-123?password=pass%40%23%24%25",
+		},
+		{
+			name:        "password with spaces",
+			meetingUID:  "meeting-456",
+			password:    "password with spaces",
+			expectedURL: "https://app.lfx.dev/meetings/meeting-456?password=password+with+spaces",
 		},
 	}
 

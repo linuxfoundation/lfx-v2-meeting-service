@@ -70,7 +70,7 @@ spec:
         methods:
           - GET
         routes:
-          - path: /meetings/:id/join-url
+          - path: /meetings/:id/join_url
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator

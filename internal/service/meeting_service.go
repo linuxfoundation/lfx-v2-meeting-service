@@ -348,7 +348,7 @@ func (s *MeetingService) GetMeetingJoinURL(ctx context.Context, uid string) (str
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
-	// Get meeting base data from store
+	// Get meeting base data from store to get the join URL
 	meetingDB, _, err := s.MeetingRepository.GetBaseWithRevision(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrMeetingNotFound) {
@@ -359,11 +359,7 @@ func (s *MeetingService) GetMeetingJoinURL(ctx context.Context, uid string) (str
 		return "", domain.ErrInternal
 	}
 
-	// Return the join URL
-	joinURL := meetingDB.JoinURL
-	slog.DebugContext(ctx, "returning join URL", "join_url", joinURL)
-
-	return joinURL, nil
+	return meetingDB.JoinURL, nil
 }
 
 func (s *MeetingService) validateUpdateMeetingRequest(ctx context.Context, req *models.MeetingBase) error {

@@ -3,7 +3,10 @@
 
 package constants
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 // Constants for the HTTP request headers
 const (
@@ -51,5 +54,5 @@ const (
 
 // GenerateLFXMeetingURL generates the LFX app meeting URL with the given meeting UID and password
 func GenerateLFXMeetingURL(meetingUID, password string) string {
-	return fmt.Sprintf("https://%s/meetings/%s?password=%s", LFXAppDomain, meetingUID, password)
+	return fmt.Sprintf("https://%s/meetings/%s?password=%s", LFXAppDomain, meetingUID, url.QueryEscape(password))
 }
