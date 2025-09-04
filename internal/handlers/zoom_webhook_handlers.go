@@ -367,7 +367,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 	)
 
 	// Try to find existing PastMeeting record by platform meeting ID
-	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingObj.ID)
 	if err != nil && err != domain.ErrPastMeetingNotFound {
 		slog.ErrorContext(ctx, "error searching for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing past meeting: %w", err)
@@ -468,7 +468,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 	)
 
 	// Find the PastMeeting record by platform meeting ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingObj.ID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
@@ -550,7 +550,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 	)
 
 	// Find the PastMeeting record by platform meeting ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingObj.ID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingObj.ID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
@@ -638,7 +638,7 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 
 	// Find the PastMeeting record by platform meeting ID
 	meetingIDStr := strconv.FormatInt(payload.Object.ID, 10)
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingIDStr)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for recording completed event, skipping",
@@ -713,7 +713,7 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID string, payload models.ZoomRecordingCompletedPayload) *models.PastMeetingRecording {
 	recording := &models.PastMeetingRecording{
 		PastMeetingUID:    pastMeetingUID,
-		Platform:          "Zoom",
+		Platform:          models.PlatformZoom,
 		PlatformMeetingID: strconv.FormatInt(payload.Object.ID, 10),
 	}
 
@@ -754,7 +754,7 @@ func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID strin
 func (s *ZoomWebhookHandler) createRecordingFromZoomTranscriptPayload(pastMeetingUID string, payload models.ZoomTranscriptCompletedPayload) *models.PastMeetingRecording {
 	recording := &models.PastMeetingRecording{
 		PastMeetingUID:    pastMeetingUID,
-		Platform:          "Zoom",
+		Platform:          models.PlatformZoom,
 		PlatformMeetingID: strconv.FormatInt(payload.Object.ID, 10),
 	}
 
@@ -808,7 +808,7 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 
 	// Find the PastMeeting record by platform meeting ID
 	meetingIDStr := strconv.FormatInt(payload.Object.ID, 10)
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, "Zoom", meetingIDStr)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for transcript completed event, skipping",
