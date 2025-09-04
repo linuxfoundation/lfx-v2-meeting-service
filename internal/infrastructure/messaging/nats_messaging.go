@@ -120,7 +120,7 @@ func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.Mes
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.Title, data.ProjectUID, data.Description)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexMeetingSubject, action, dataBytes, tags)
 }
@@ -138,7 +138,7 @@ func (m *MessageBuilder) SendIndexMeetingSettings(ctx context.Context, action mo
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexMeetingSettingsSubject, action, dataBytes, tags)
 }
@@ -156,7 +156,7 @@ func (m *MessageBuilder) SendIndexMeetingRegistrant(ctx context.Context, action 
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.MeetingUID, data.FirstName, data.LastName, data.Email, data.Username)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, action, dataBytes, tags)
 }
@@ -174,7 +174,7 @@ func (m *MessageBuilder) SendIndexPastMeeting(ctx context.Context, action models
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.MeetingUID, data.Title, data.ProjectUID)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingSubject, action, dataBytes, tags)
 }
@@ -192,7 +192,7 @@ func (m *MessageBuilder) SendIndexPastMeetingParticipant(ctx context.Context, ac
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.PastMeetingUID, data.FirstName, data.LastName, data.Email, data.Username)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingParticipantSubject, action, dataBytes, tags)
 }
