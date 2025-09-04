@@ -149,6 +149,10 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 	// Get current recording with revision
 	currentRecording, revision, err := s.PastMeetingRecordingRepository.GetWithRevision(ctx, recordingUID)
 	if err != nil {
+		if err == domain.ErrPastMeetingRecordingNotFound {
+			slog.DebugContext(ctx, "recording not found for update", "recording_uid", recordingUID)
+			return nil, err
+		}
 		slog.ErrorContext(ctx, "error getting recording for update", logging.ErrKey, err, "recording_uid", recordingUID)
 		return nil, domain.ErrInternal
 	}
