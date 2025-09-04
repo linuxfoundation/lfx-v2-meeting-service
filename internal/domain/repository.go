@@ -90,3 +90,22 @@ type PastMeetingParticipantRepository interface {
 	ListByEmail(ctx context.Context, email string) ([]*models.PastMeetingParticipant, error)
 	GetByPastMeetingAndEmail(ctx context.Context, pastMeetingUID, email string) (*models.PastMeetingParticipant, error)
 }
+
+// PastMeetingRecordingRepository defines the interface for past meeting recording storage operations.
+// This interface can be implemented by different storage backends (NATS, PostgreSQL, etc.)
+type PastMeetingRecordingRepository interface {
+	// PastMeetingRecording full operations
+	Create(ctx context.Context, recording *models.PastMeetingRecording) error
+	Exists(ctx context.Context, recordingUID string) (bool, error)
+	Delete(ctx context.Context, recordingUID string, revision uint64) error
+
+	// PastMeetingRecording base operations
+	Get(ctx context.Context, recordingUID string) (*models.PastMeetingRecording, error)
+	GetWithRevision(ctx context.Context, recordingUID string) (*models.PastMeetingRecording, uint64, error)
+	Update(ctx context.Context, recording *models.PastMeetingRecording, revision uint64) error
+
+	// Query operations
+	GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingRecording, error)
+	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingRecording, error)
+	ListAll(ctx context.Context) ([]*models.PastMeetingRecording, error)
+}

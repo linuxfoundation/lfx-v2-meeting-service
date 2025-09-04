@@ -44,6 +44,10 @@ func (m *mockMessageHandler) HandleMessage(ctx context.Context, msg Message) {
 	m.handledMessages = append(m.handledMessages, msg)
 }
 
+func (m *mockMessageHandler) HandlerReady() bool {
+	return true
+}
+
 // mockMessageBuilder implements the MessageBuilder interface for testing
 type mockMessageBuilder struct {
 	indexMeetingCalls        []models.MeetingBase
@@ -57,8 +61,48 @@ func (m *mockMessageBuilder) SendIndexMeeting(ctx context.Context, action models
 	return nil
 }
 
+func (m *mockMessageBuilder) SendIndexMeetingSettings(ctx context.Context, action models.MessageAction, data models.MeetingSettings) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendIndexMeetingRegistrant(ctx context.Context, action models.MessageAction, data models.Registrant) error {
+	return nil
+}
+
 func (m *mockMessageBuilder) SendDeleteIndexMeeting(ctx context.Context, data string) error {
 	m.deleteIndexMeetingCalls = append(m.deleteIndexMeetingCalls, data)
+	return nil
+}
+
+func (m *mockMessageBuilder) SendDeleteIndexMeetingSettings(ctx context.Context, data string) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendDeleteIndexMeetingRegistrant(ctx context.Context, data string) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendIndexPastMeeting(ctx context.Context, action models.MessageAction, data models.PastMeeting) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendDeleteIndexPastMeeting(ctx context.Context, data string) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendIndexPastMeetingParticipant(ctx context.Context, action models.MessageAction, data models.PastMeetingParticipant) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendDeleteIndexPastMeetingParticipant(ctx context.Context, data string) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendIndexPastMeetingRecording(ctx context.Context, action models.MessageAction, data models.PastMeetingRecording) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendDeleteIndexPastMeetingRecording(ctx context.Context, data string) error {
 	return nil
 }
 
@@ -69,6 +113,38 @@ func (m *mockMessageBuilder) SendUpdateAccessMeeting(ctx context.Context, data m
 
 func (m *mockMessageBuilder) SendDeleteAllAccessMeeting(ctx context.Context, data string) error {
 	m.deleteAllAccessCalls = append(m.deleteAllAccessCalls, data)
+	return nil
+}
+
+func (m *mockMessageBuilder) SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendDeleteAllAccessPastMeeting(ctx context.Context, data string) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendPutPastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendRemoveMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) SendMeetingDeleted(ctx context.Context, data models.MeetingDeletedMessage) error {
+	return nil
+}
+
+func (m *mockMessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject string, message models.ZoomWebhookEventMessage) error {
 	return nil
 }
 

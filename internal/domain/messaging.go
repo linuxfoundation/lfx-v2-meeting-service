@@ -35,6 +35,8 @@ type MessageBuilder interface {
 	SendDeleteIndexPastMeeting(ctx context.Context, data string) error
 	SendIndexPastMeetingParticipant(ctx context.Context, action models.MessageAction, data models.PastMeetingParticipant) error
 	SendDeleteIndexPastMeetingParticipant(ctx context.Context, data string) error
+	SendIndexPastMeetingRecording(ctx context.Context, action models.MessageAction, data models.PastMeetingRecording) error
+	SendDeleteIndexPastMeetingRecording(ctx context.Context, data string) error
 	SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error
 	SendDeleteAllAccessMeeting(ctx context.Context, data string) error
 	SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error

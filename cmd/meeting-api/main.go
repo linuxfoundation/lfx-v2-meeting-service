@@ -99,6 +99,11 @@ func main() {
 		messageBuilder,
 		serviceConfig,
 	)
+	pastMeetingRecordingService := service.NewPastMeetingRecordingService(
+		repos.PastMeetingRecording,
+		messageBuilder,
+		serviceConfig,
+	)
 
 	// Initialize handlers
 	meetingHandler := handlers.NewMeetingHandler(
@@ -113,6 +118,7 @@ func main() {
 		registrantService,
 		pastMeetingService,
 		pastMeetingParticipantService,
+		pastMeetingRecordingService,
 		platformConfigs.Zoom.Validator,
 	)
 

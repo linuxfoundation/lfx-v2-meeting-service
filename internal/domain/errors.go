@@ -15,6 +15,8 @@ var (
 	ErrPastMeetingParticipantNotFound = errors.New("past meeting participant not found")
 	// ErrPastMeetingParticipantAlreadyExists is returned when a past meeting participant already exists.
 	ErrPastMeetingParticipantAlreadyExists = errors.New("past meeting participant already exists")
+	// ErrPastMeetingRecordingNotFound is returned when a past meeting recording is not found.
+	ErrPastMeetingRecordingNotFound = errors.New("past meeting recording not found")
 	// ErrInternal is returned when an internal error occurs.
 	ErrInternal = errors.New("internal error")
 	// ErrRevisionMismatch is returned when a revision mismatch occurs.

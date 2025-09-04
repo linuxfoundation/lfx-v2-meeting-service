@@ -64,7 +64,7 @@ The service is built using a clean architecture pattern with the following layer
 - **Registrant Management**: Registration handling with email uniqueness validation
 - **Historical Tracking**: Past meeting records with session tracking and participant attendance
 - **Webhook Integration**: Platform event processing for real-time meeting state updates
-- **NATS JetStream Storage**: Scalable and resilient data persistence across 5 KV buckets
+- **NATS JetStream Storage**: Scalable and resilient data persistence across 6 KV buckets
 - **NATS Messaging**: Event-driven communication with other services
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **OpenAPI Documentation**: Auto-generated API specifications
@@ -80,7 +80,7 @@ The service is built using a clean architecture pattern with the following layer
 
 **Domain Layer** (`internal/domain/`)
 
-- Core business models in `models/` (Meeting, Registrant, Committee, Recurrence, PastMeeting)
+- Core business models in `models/` (Meeting, Registrant, Committee, Recurrence, PastMeeting, PastMeetingRecording)
 - Domain interfaces for repository and messaging abstractions
 - Business logic isolated from infrastructure concerns
 
@@ -96,7 +96,7 @@ The service is built using a clean architecture pattern with the following layer
 - JWT authentication (`auth/`)
 - Zoom integration (`zoom/`) for meeting platform services
 - Webhook handling (`webhook/`) for platform event processing
-- Five NATS KV buckets: "meetings", "meeting-settings", "meeting-registrants", "past-meetings", and "past-meeting-participants"
+- Six NATS KV buckets: "meetings", "meeting-settings", "meeting-registrants", "past-meetings", "past-meeting-participants", and "past-meeting-recordings"
 
 **Handlers Layer** (`internal/handlers/`)
 
@@ -110,12 +110,13 @@ The service is built using a clean architecture pattern with the following layer
 ### Data Storage
 
 - Uses NATS JetStream KV stores for persistence
-- Five main buckets:
+- Six main buckets:
   - `meetings`: Core meeting information
   - `meeting-settings`: Meeting configuration and organizers
   - `meeting-registrants`: Meeting registration data
   - `past-meetings`: Historical meeting occurrences with session tracking
   - `past-meeting-participants`: Historical participant data with attendance tracking
+  - `past-meeting-recordings`: Recording metadata with session-based access URLs and file information
 - NATS messaging for event publishing (indexer integration)
 
 ### Meeting Types and Platforms
