@@ -356,14 +356,21 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 		}
 
 		// Find and remove/convert registrants for this committee member
-		err := h.removeCommitteeMemberFromMeeting(ctx, meeting, memberMsg)
+		isPublicMeeting := meeting.Visibility == "public"
+		err := h.committeeSyncService.RemoveCommitteeMemberFromMeeting(
+			ctx,
+			meeting.UID,
+			memberMsg.CommitteeUID,
+			memberMsg.Email,
+			isPublicMeeting,
+		)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to remove committee member from meeting",
 				"meeting_uid", meeting.UID,
 				"committee_uid", memberMsg.CommitteeUID,
 				"member_email", memberMsg.Email,
 				logging.ErrKey, err)
-			allErrors = append(allErrors, fmt.Errorf("failed to remove member from meeting %s: %w", meeting.UID, err))
+			allErrors = append(allErrors, fmt.Errorf("failed to remove committee member from meeting %s: %w", meeting.UID, err))
 		} else {
 			successCount++
 			slog.InfoContext(ctx, "successfully processed committee member removal from meeting",
@@ -382,25 +389,6 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 
 	if len(allErrors) > 0 {
 		return fmt.Errorf("failed to remove committee member from %d meetings: %v", len(allErrors), allErrors)
-	}
-
-	return nil
-}
-
-// removeCommitteeMemberFromMeeting removes or converts a specific committee member from a meeting
-func (h *CommitteeHandlers) removeCommitteeMemberFromMeeting(ctx context.Context, meeting *models.MeetingBase, memberMsg *models.CommitteeMember) error {
-	isPublicMeeting := meeting.Visibility == "public"
-
-	// Use the committee sync service's proper method for removing a committee member
-	err := h.committeeSyncService.RemoveCommitteeMemberFromMeeting(
-		ctx,
-		meeting.UID,
-		memberMsg.CommitteeUID,
-		memberMsg.Email,
-		isPublicMeeting,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to remove committee member from meeting: %w", err)
 	}
 
 	return nil

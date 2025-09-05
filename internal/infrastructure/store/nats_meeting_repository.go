@@ -274,7 +274,6 @@ func (s *NatsMeetingRepository) ListByCommittee(ctx context.Context, committeeUI
 
 	elapsed := time.Since(start)
 	slog.DebugContext(ctx, "fetched meetings by committee",
-		"elapsed_time_ms", elapsed.Milliseconds(),
 		"elapsed_time", elapsed.String(),
 		"committee_uid", committeeUID,
 		"total_meetings", len(meetingsBase),
@@ -452,7 +451,6 @@ func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeet
 
 	elapsed := time.Since(start)
 	slog.DebugContext(ctx, "fetched meetings by zoom meeting ID",
-		"elapsed_time_ms", elapsed.Milliseconds(),
 		"elapsed_time", elapsed.String(),
 		"zoom_meeting_id", zoomMeetingID,
 		"meetings_count", len(meetings),

@@ -352,7 +352,7 @@ func (m *MessageBuilder) GetCommitteeName(ctx context.Context, committeeUID stri
 	}
 
 	// Parse response
-	responseStr := string(msg.Data)
+	committeeName := string(msg.Data)
 
 	// Try to parse as JSON error response first
 	var errorResponse struct {
@@ -364,8 +364,8 @@ func (m *MessageBuilder) GetCommitteeName(ctx context.Context, committeeUID stri
 	}
 
 	// If not a JSON error, treat as committee name
-	slog.DebugContext(ctx, "committee name retrieved successfully", "committee_uid", committeeUID, "name", responseStr)
-	return responseStr, nil
+	slog.DebugContext(ctx, "committee name retrieved successfully", "committee_uid", committeeUID, "name", committeeName)
+	return committeeName, nil
 }
 
 // CommitteeNotFoundError represents an error when a committee is not found.

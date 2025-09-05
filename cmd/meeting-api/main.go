@@ -101,6 +101,7 @@ func main() {
 	)
 	committeeSyncService := service.NewCommitteeSyncService(
 		repos.Registrant,
+		registrantService,
 		messageBuilder,
 	)
 

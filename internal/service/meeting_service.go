@@ -430,7 +430,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 	}
 
 	// Use WorkerPool for concurrent NATS message sending
-	pool := concurrent.NewWorkerPool(3) // 3 messages to send
+	pool := concurrent.NewWorkerPool(3)
 
 	messages := []func() error{
 		func() error {
@@ -660,7 +660,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	}
 
 	// Use WorkerPool for concurrent NATS message sending
-	pool := concurrent.NewWorkerPool(3) // 3 messages to send
+	pool := concurrent.NewWorkerPool(3)
 
 	messages := []func() error{
 		func() error {
