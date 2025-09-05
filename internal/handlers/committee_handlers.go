@@ -9,27 +9,12 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
-	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 )
-
-// CommitteeEvent represents a generic event emitted for committee service operations
-type CommitteeEvent struct {
-	// EventType identifies the type of event (e.g., committee_member.created)
-	EventType string `json:"event_type"`
-	// Subject is the subject of the event (e.g. lfx.committee-api.committee_member.created)
-	Subject string `json:"subject"`
-	// Timestamp is when the event occurred
-	Timestamp time.Time `json:"timestamp"`
-	// Version is the event schema version
-	Version string `json:"version"`
-	// Data contains the event data
-	Data any `json:"data,omitempty"`
-}
 
 // CommitteeHandlers handles committee-related messages and events.
 type CommitteeHandlers struct {
@@ -97,7 +82,7 @@ func (h *CommitteeHandlers) HandleCommitteeMemberCreated(ctx context.Context, ms
 	slog.DebugContext(ctx, "handling committee member created message", "message", string(msg.Data()))
 
 	// Parse the committee member created message
-	var committeeMemberMsg CommitteeEvent
+	var committeeMemberMsg models.CommitteeEvent
 	err := json.Unmarshal(msg.Data(), &committeeMemberMsg)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshaling committee member created message", logging.ErrKey, err)
@@ -153,7 +138,7 @@ func (h *CommitteeHandlers) HandleCommitteeMemberDeleted(ctx context.Context, ms
 	slog.DebugContext(ctx, "handling committee member deleted message", "message", string(msg.Data()))
 
 	// Parse the committee member deleted message
-	var committeeMemberMsg CommitteeEvent
+	var committeeMemberMsg models.CommitteeEvent
 	err := json.Unmarshal(msg.Data(), &committeeMemberMsg)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshaling committee member deleted message", logging.ErrKey, err)

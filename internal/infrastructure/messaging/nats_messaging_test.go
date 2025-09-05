@@ -59,7 +59,7 @@ func (m *mockNatsConn) Request(subj string, data []byte, timeout time.Duration) 
 	}, nil
 }
 
-func TestMessageBuilder_sendMessage(t *testing.T) {
+func TestMessageBuilder_publish(t *testing.T) {
 	tests := []struct {
 		name          string
 		connected     bool
@@ -109,7 +109,7 @@ func TestMessageBuilder_sendMessage(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			err := builder.sendMessage(ctx, tt.subject, tt.data)
+			err := builder.publish(ctx, tt.subject, tt.data)
 
 			if tt.expectError && err == nil {
 				t.Error("expected error but got none")

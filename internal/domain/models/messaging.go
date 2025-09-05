@@ -179,6 +179,20 @@ type MeetingUpdatedMessage struct {
 	Settings     *MeetingSettings `json:"settings"`
 }
 
+// CommitteeEvent represents a generic event emitted for committee service operations
+type CommitteeEvent struct {
+	// EventType identifies the type of event (e.g., committee_member.created)
+	EventType string `json:"event_type"`
+	// Subject is the subject of the event (e.g. lfx.committee-api.committee_member.created)
+	Subject string `json:"subject"`
+	// Timestamp is when the event occurred
+	Timestamp time.Time `json:"timestamp"`
+	// Version is the event schema version
+	Version string `json:"version"`
+	// Data contains the event data
+	Data any `json:"data,omitempty"`
+}
+
 // CommitteeMemberBase represents the base committee member attributes
 type CommitteeMember struct {
 	UID           string                      `json:"uid"`
@@ -218,18 +232,6 @@ type CommitteeMemberVotingInfo struct {
 type CommitteeMemberOrganization struct {
 	Name    string `json:"name"`
 	Website string `json:"website,omitempty"`
-}
-
-// CommitteeMemberCreatedMessage is the schema for the message sent when a committee member is created.
-// This message comes from the committee-api service and triggers adding the member to relevant meetings.
-type CommitteeMemberCreatedMessage struct {
-	CommitteeMember
-}
-
-// CommitteeMemberDeletedMessage is the schema for the message sent when a committee member is deleted.
-// This message comes from the committee-api service and triggers removing/converting the member in relevant meetings.
-type CommitteeMemberDeletedMessage struct {
-	CommitteeMember
 }
 
 // PastMeetingAccessMessage is the schema for the data in the message sent to the fga-sync service.
