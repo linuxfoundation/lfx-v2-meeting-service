@@ -126,7 +126,7 @@ func (m *MockMessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.
 	return args.Error(0)
 }
 
-func (m *MockMessageBuilder) ValidateCommitteeExists(ctx context.Context, committeeUID string) (string, error) {
+func (m *MockMessageBuilder) GetCommitteeName(ctx context.Context, committeeUID string) (string, error) {
 	args := m.Called(ctx, committeeUID)
 	return args.String(0), args.Error(1)
 }

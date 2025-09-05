@@ -119,13 +119,13 @@ func (s *MeetingService) validateCommittees(ctx context.Context, committees []mo
 			continue
 		}
 
-		_, err := messageBuilder.ValidateCommitteeExists(ctx, committee.UID)
+		_, err := messageBuilder.GetCommitteeName(ctx, committee.UID)
 		if err != nil {
 			var committeNotFoundErr *messaging.CommitteeNotFoundError
 			if errors.As(err, &committeNotFoundErr) {
 				invalidCommittees = append(invalidCommittees, committee.UID)
 			} else {
-				slog.ErrorContext(ctx, "error validating committee", "committee_uid", committee.UID, logging.ErrKey, err)
+				slog.ErrorContext(ctx, "error getting committee name", "committee_uid", committee.UID, logging.ErrKey, err)
 				return domain.ErrInternal
 			}
 		}

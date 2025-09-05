@@ -331,13 +331,13 @@ func (m *MessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject st
 	return m.sendMessage(ctx, subject, messageBytes)
 }
 
-// ValidateCommitteeExists checks if a committee exists by sending a request to committee-api.
+// GetCommitteeName retrieves the committee name by sending a request to committee-api.
 // Returns the committee name if it exists, or an error if it doesn't exist or there's a communication error.
-func (m *MessageBuilder) ValidateCommitteeExists(ctx context.Context, committeeUID string) (string, error) {
+func (m *MessageBuilder) GetCommitteeName(ctx context.Context, committeeUID string) (string, error) {
 	// Send request with 5 second timeout
 	msg, err := m.NatsConn.Request(models.CommitteeGetNameSubject, []byte(committeeUID), 5*time.Second)
 	if err != nil {
-		slog.ErrorContext(ctx, "error sending committee validation request", logging.ErrKey, err, "committee_uid", committeeUID)
+		slog.ErrorContext(ctx, "error sending committee name request", logging.ErrKey, err, "committee_uid", committeeUID)
 		return "", err
 	}
 
@@ -354,7 +354,7 @@ func (m *MessageBuilder) ValidateCommitteeExists(ctx context.Context, committeeU
 	}
 
 	// If not a JSON error, treat as committee name
-	slog.DebugContext(ctx, "committee validation successful", "committee_uid", committeeUID, "name", responseStr)
+	slog.DebugContext(ctx, "committee name retrieved successfully", "committee_uid", committeeUID, "name", responseStr)
 	return responseStr, nil
 }
 
