@@ -16,6 +16,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -301,7 +302,7 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 				Duration:       meeting.Duration,
 				Timezone:       meeting.Timezone,
 				Description:    meeting.Description,
-				JoinLink:       meeting.JoinURL,
+				JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password),
 				MeetingID:      meetingID,
 				Passcode:       passcode,
 				Recurrence:     meeting.Recurrence,

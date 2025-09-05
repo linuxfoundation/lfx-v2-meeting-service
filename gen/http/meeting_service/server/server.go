@@ -24,6 +24,7 @@ type Server struct {
 	CreateMeeting                http.Handler
 	GetMeetingBase               http.Handler
 	GetMeetingSettings           http.Handler
+	GetMeetingJoinURL            http.Handler
 	UpdateMeetingBase            http.Handler
 	UpdateMeetingSettings        http.Handler
 	DeleteMeeting                http.Handler
@@ -101,6 +102,7 @@ func New(
 			{"CreateMeeting", "POST", "/meetings"},
 			{"GetMeetingBase", "GET", "/meetings/{uid}"},
 			{"GetMeetingSettings", "GET", "/meetings/{uid}/settings"},
+			{"GetMeetingJoinURL", "GET", "/meetings/{uid}/join_url"},
 			{"UpdateMeetingBase", "PUT", "/meetings/{uid}"},
 			{"UpdateMeetingSettings", "PUT", "/meetings/{uid}/settings"},
 			{"DeleteMeeting", "DELETE", "/meetings/{uid}"},
@@ -130,6 +132,7 @@ func New(
 		CreateMeeting:                NewCreateMeetingHandler(e.CreateMeeting, mux, decoder, encoder, errhandler, formatter),
 		GetMeetingBase:               NewGetMeetingBaseHandler(e.GetMeetingBase, mux, decoder, encoder, errhandler, formatter),
 		GetMeetingSettings:           NewGetMeetingSettingsHandler(e.GetMeetingSettings, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingJoinURL:            NewGetMeetingJoinURLHandler(e.GetMeetingJoinURL, mux, decoder, encoder, errhandler, formatter),
 		UpdateMeetingBase:            NewUpdateMeetingBaseHandler(e.UpdateMeetingBase, mux, decoder, encoder, errhandler, formatter),
 		UpdateMeetingSettings:        NewUpdateMeetingSettingsHandler(e.UpdateMeetingSettings, mux, decoder, encoder, errhandler, formatter),
 		DeleteMeeting:                NewDeleteMeetingHandler(e.DeleteMeeting, mux, decoder, encoder, errhandler, formatter),
@@ -166,6 +169,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.CreateMeeting = m(s.CreateMeeting)
 	s.GetMeetingBase = m(s.GetMeetingBase)
 	s.GetMeetingSettings = m(s.GetMeetingSettings)
+	s.GetMeetingJoinURL = m(s.GetMeetingJoinURL)
 	s.UpdateMeetingBase = m(s.UpdateMeetingBase)
 	s.UpdateMeetingSettings = m(s.UpdateMeetingSettings)
 	s.DeleteMeeting = m(s.DeleteMeeting)
@@ -197,6 +201,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountCreateMeetingHandler(mux, h.CreateMeeting)
 	MountGetMeetingBaseHandler(mux, h.GetMeetingBase)
 	MountGetMeetingSettingsHandler(mux, h.GetMeetingSettings)
+	MountGetMeetingJoinURLHandler(mux, h.GetMeetingJoinURL)
 	MountUpdateMeetingBaseHandler(mux, h.UpdateMeetingBase)
 	MountUpdateMeetingSettingsHandler(mux, h.UpdateMeetingSettings)
 	MountDeleteMeetingHandler(mux, h.DeleteMeeting)
@@ -412,6 +417,58 @@ func NewGetMeetingSettingsHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting-settings")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetMeetingJoinURLHandler configures the mux to serve the "Meeting
+// Service" service "get-meeting-join-url" endpoint.
+func MountGetMeetingJoinURLHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/meetings/{uid}/join_url", f)
+}
+
+// NewGetMeetingJoinURLHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "get-meeting-join-url"
+// endpoint.
+func NewGetMeetingJoinURLHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetMeetingJoinURLRequest(mux, decoder)
+		encodeResponse = EncodeGetMeetingJoinURLResponse(encoder)
+		encodeError    = EncodeGetMeetingJoinURLError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting-join-url")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

@@ -1,0 +1,9 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+
+# Gitleaks configuration to ignore false positives in generated files
+[allowlist]
+  paths = [
+    "^gen/.*"
+  ]
+  description = "Ignore generated files that contain UUID examples in API documentation"

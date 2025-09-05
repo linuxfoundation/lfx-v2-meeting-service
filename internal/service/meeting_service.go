@@ -188,6 +188,9 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	reqMeeting.Base.UID = uuid.New().String()
 	reqMeeting.Settings.UID = reqMeeting.Base.UID
 
+	// Generate password for the meeting
+	reqMeeting.Base.Password = uuid.New().String()
+
 	// Create meeting on external platform if configured
 	if reqMeeting.Base.Platform != "" {
 		provider, err := s.PlatformRegistry.GetProvider(reqMeeting.Base.Platform)
@@ -334,6 +337,29 @@ func (s *MeetingService) GetMeetingSettings(ctx context.Context, uid string) (*m
 	slog.DebugContext(ctx, "returning meeting settings", "settings", settingsDB, "revision", revision)
 
 	return settingsDB, revisionStr, nil
+}
+
+// GetMeetingJoinURL fetches the join URL for a specific meeting by ID
+func (s *MeetingService) GetMeetingJoinURL(ctx context.Context, uid string) (string, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return "", domain.ErrServiceUnavailable
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
+
+	// Get meeting base data from store to get the join URL
+	meetingDB, _, err := s.MeetingRepository.GetBaseWithRevision(ctx, uid)
+	if err != nil {
+		if errors.Is(err, domain.ErrMeetingNotFound) {
+			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
+			return "", domain.ErrMeetingNotFound
+		}
+		slog.ErrorContext(ctx, "error getting meeting from store", logging.ErrKey, err)
+		return "", domain.ErrInternal
+	}
+
+	return meetingDB.JoinURL, nil
 }
 
 func (s *MeetingService) validateUpdateMeetingRequest(ctx context.Context, req *models.MeetingBase) error {

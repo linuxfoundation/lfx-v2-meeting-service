@@ -52,8 +52,8 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 	if meetingBase.PublicLink != "" {
 		meetingFull.PublicLink = utils.StringPtr(meetingBase.PublicLink)
 	}
-	if meetingBase.JoinURL != "" {
-		meetingFull.JoinURL = utils.StringPtr(meetingBase.JoinURL)
+	if meetingBase.Password != "" {
+		meetingFull.Password = utils.StringPtr(meetingBase.Password)
 	}
 	if meetingBase.EarlyJoinTimeMinutes != 0 {
 		meetingFull.EarlyJoinTimeMinutes = utils.IntPtr(meetingBase.EarlyJoinTimeMinutes)
@@ -130,8 +130,8 @@ func ConvertDomainToBaseResponse(meeting *models.MeetingBase) *meetingservice.Me
 		Visibility:                      utils.StringPtr(meeting.Visibility),
 		Restricted:                      utils.BoolPtr(meeting.Restricted),
 		ArtifactVisibility:              utils.StringPtr(meeting.ArtifactVisibility),
-		JoinURL:                         utils.StringPtr(meeting.JoinURL),
 		PublicLink:                      utils.StringPtr(meeting.PublicLink),
+		Password:                        utils.StringPtr(meeting.Password),
 		EmailDeliveryErrorCount:         utils.IntPtr(meeting.EmailDeliveryErrorCount),
 		RecordingEnabled:                utils.BoolPtr(meeting.RecordingEnabled),
 		TranscriptEnabled:               utils.BoolPtr(meeting.TranscriptEnabled),

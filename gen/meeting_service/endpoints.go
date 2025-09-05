@@ -20,6 +20,7 @@ type Endpoints struct {
 	CreateMeeting                goa.Endpoint
 	GetMeetingBase               goa.Endpoint
 	GetMeetingSettings           goa.Endpoint
+	GetMeetingJoinURL            goa.Endpoint
 	UpdateMeetingBase            goa.Endpoint
 	UpdateMeetingSettings        goa.Endpoint
 	DeleteMeeting                goa.Endpoint
@@ -52,6 +53,7 @@ func NewEndpoints(s Service) *Endpoints {
 		CreateMeeting:                NewCreateMeetingEndpoint(s, a.JWTAuth),
 		GetMeetingBase:               NewGetMeetingBaseEndpoint(s, a.JWTAuth),
 		GetMeetingSettings:           NewGetMeetingSettingsEndpoint(s, a.JWTAuth),
+		GetMeetingJoinURL:            NewGetMeetingJoinURLEndpoint(s, a.JWTAuth),
 		UpdateMeetingBase:            NewUpdateMeetingBaseEndpoint(s, a.JWTAuth),
 		UpdateMeetingSettings:        NewUpdateMeetingSettingsEndpoint(s, a.JWTAuth),
 		DeleteMeeting:                NewDeleteMeetingEndpoint(s, a.JWTAuth),
@@ -82,6 +84,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CreateMeeting = m(e.CreateMeeting)
 	e.GetMeetingBase = m(e.GetMeetingBase)
 	e.GetMeetingSettings = m(e.GetMeetingSettings)
+	e.GetMeetingJoinURL = m(e.GetMeetingJoinURL)
 	e.UpdateMeetingBase = m(e.UpdateMeetingBase)
 	e.UpdateMeetingSettings = m(e.UpdateMeetingSettings)
 	e.DeleteMeeting = m(e.DeleteMeeting)
@@ -193,6 +196,29 @@ func NewGetMeetingSettingsEndpoint(s Service, authJWTFn security.AuthJWTFunc) go
 			return nil, err
 		}
 		return s.GetMeetingSettings(ctx, p)
+	}
+}
+
+// NewGetMeetingJoinURLEndpoint returns an endpoint function that calls the
+// method "get-meeting-join-url" of service "Meeting Service".
+func NewGetMeetingJoinURLEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetMeetingJoinURLPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetMeetingJoinURL(ctx, p)
 	}
 }
 
