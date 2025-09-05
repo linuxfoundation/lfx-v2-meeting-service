@@ -126,15 +126,23 @@ func (m *MessageBuilder) setIndexerTags(tags ...string) []string {
 	return tags
 }
 
+func (m *MessageBuilder) prepareMeetingBaseForIndexing(data models.MeetingBase) models.MeetingBase {
+	// Clear sensitive fields and customize data payload before indexing
+	data.JoinURL = ""
+	return data
+}
+
 // SendIndexMeeting sends the message to the NATS server for the meeting indexing.
 func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.MeetingBase) error {
+	data = m.prepareMeetingBaseForIndexing(data)
+
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.Title, data.ProjectUID, data.Description)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexMeetingSubject, action, dataBytes, tags)
 }
@@ -152,7 +160,7 @@ func (m *MessageBuilder) SendIndexMeetingSettings(ctx context.Context, action mo
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexMeetingSettingsSubject, action, dataBytes, tags)
 }
@@ -170,7 +178,7 @@ func (m *MessageBuilder) SendIndexMeetingRegistrant(ctx context.Context, action 
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.MeetingUID, data.FirstName, data.LastName, data.Email, data.Username)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, action, dataBytes, tags)
 }
@@ -188,7 +196,7 @@ func (m *MessageBuilder) SendIndexPastMeeting(ctx context.Context, action models
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.MeetingUID, data.Title, data.ProjectUID)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingSubject, action, dataBytes, tags)
 }
@@ -206,7 +214,7 @@ func (m *MessageBuilder) SendIndexPastMeetingParticipant(ctx context.Context, ac
 		return err
 	}
 
-	tags := m.setIndexerTags(data.UID, data.PastMeetingUID, data.FirstName, data.LastName, data.Email, data.Username)
+	tags := m.setIndexerTags(data.Tags()...)
 
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingParticipantSubject, action, dataBytes, tags)
 }

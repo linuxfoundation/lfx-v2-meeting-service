@@ -52,8 +52,8 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 	if meetingBase.PublicLink != "" {
 		meetingFull.PublicLink = utils.StringPtr(meetingBase.PublicLink)
 	}
-	if meetingBase.JoinURL != "" {
-		meetingFull.JoinURL = utils.StringPtr(meetingBase.JoinURL)
+	if meetingBase.Password != "" {
+		meetingFull.Password = utils.StringPtr(meetingBase.Password)
 	}
 	if meetingBase.EarlyJoinTimeMinutes != 0 {
 		meetingFull.EarlyJoinTimeMinutes = utils.IntPtr(meetingBase.EarlyJoinTimeMinutes)
@@ -130,8 +130,8 @@ func ConvertDomainToBaseResponse(meeting *models.MeetingBase) *meetingservice.Me
 		Visibility:                      utils.StringPtr(meeting.Visibility),
 		Restricted:                      utils.BoolPtr(meeting.Restricted),
 		ArtifactVisibility:              utils.StringPtr(meeting.ArtifactVisibility),
-		JoinURL:                         utils.StringPtr(meeting.JoinURL),
 		PublicLink:                      utils.StringPtr(meeting.PublicLink),
+		Password:                        utils.StringPtr(meeting.Password),
 		EmailDeliveryErrorCount:         utils.IntPtr(meeting.EmailDeliveryErrorCount),
 		RecordingEnabled:                utils.BoolPtr(meeting.RecordingEnabled),
 		TranscriptEnabled:               utils.BoolPtr(meeting.TranscriptEnabled),
@@ -272,8 +272,8 @@ func convertDomainToOccurrenceResponse(o *models.Occurrence) *meetingservice.Occ
 	if o.ResponseCountYes != 0 {
 		occ.ResponseCountYes = utils.IntPtr(o.ResponseCountYes)
 	}
-	if o.Status != "" {
-		occ.Status = utils.StringPtr(o.Status)
+	if o.IsCancelled {
+		occ.IsCancelled = utils.BoolPtr(o.IsCancelled)
 	}
 
 	if o.Recurrence != nil {
@@ -490,6 +490,26 @@ func ConvertDomainToPastMeetingParticipantResponse(domainParticipant *models.Pas
 
 	if domainParticipant.UpdatedAt != nil {
 		participant.UpdatedAt = utils.StringPtr(domainParticipant.UpdatedAt.Format(time.RFC3339))
+	}
+
+	// Convert participant sessions
+	if len(domainParticipant.Sessions) > 0 {
+		var sessions []*meetingservice.ParticipantSession
+		for _, s := range domainParticipant.Sessions {
+			session := &meetingservice.ParticipantSession{
+				UID:      s.UID,
+				JoinTime: s.JoinTime.Format(time.RFC3339),
+			}
+			if s.LeaveTime != nil {
+				leaveTime := s.LeaveTime.Format(time.RFC3339)
+				session.LeaveTime = &leaveTime
+			}
+			if s.LeaveReason != "" {
+				session.LeaveReason = utils.StringPtr(s.LeaveReason)
+			}
+			sessions = append(sessions, session)
+		}
+		participant.Sessions = sessions
 	}
 
 	return participant

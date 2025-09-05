@@ -21,6 +21,7 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 	mockRepo := new(mocks.MockMeetingRepository)
 	mockBuilder := new(mocks.MockMessageBuilder)
 	mockPlatformRegistry := new(mocks.MockPlatformRegistry)
+	occurrenceService := NewOccurrenceService()
 
 	config := ServiceConfig{
 		SkipEtagValidation: false,
@@ -30,6 +31,7 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 		MeetingRepository: mockRepo,
 		MessageBuilder:    mockBuilder,
 		PlatformRegistry:  mockPlatformRegistry,
+		OccurrenceService: occurrenceService,
 		Config:            config,
 	}
 

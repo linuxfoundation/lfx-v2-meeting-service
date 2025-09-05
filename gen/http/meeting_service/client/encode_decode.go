@@ -593,6 +593,161 @@ func DecodeGetMeetingSettingsResponse(decoder func(*http.Response) goahttp.Decod
 	}
 }
 
+// BuildGetMeetingJoinURLRequest instantiates a HTTP request object with method
+// and path set to call the "Meeting Service" service "get-meeting-join-url"
+// endpoint
+func (c *Client) BuildGetMeetingJoinURLRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid string
+	)
+	{
+		p, ok := v.(*meetingservice.GetMeetingJoinURLPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-meeting-join-url", "*meetingservice.GetMeetingJoinURLPayload", v)
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetMeetingJoinURLMeetingServicePath(uid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-meeting-join-url", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetMeetingJoinURLRequest returns an encoder for requests sent to the
+// Meeting Service get-meeting-join-url server.
+func EncodeGetMeetingJoinURLRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetMeetingJoinURLPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-meeting-join-url", "*meetingservice.GetMeetingJoinURLPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetMeetingJoinURLResponse returns a decoder for responses returned by
+// the Meeting Service get-meeting-join-url endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeGetMeetingJoinURLResponse may return the following errors:
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeGetMeetingJoinURLResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetMeetingJoinURLResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-join-url", err)
+			}
+			err = ValidateGetMeetingJoinURLResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-join-url", err)
+			}
+			res := NewGetMeetingJoinURLResultOK(&body)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetMeetingJoinURLInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-join-url", err)
+			}
+			err = ValidateGetMeetingJoinURLInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-join-url", err)
+			}
+			return nil, NewGetMeetingJoinURLInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetMeetingJoinURLNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-join-url", err)
+			}
+			err = ValidateGetMeetingJoinURLNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-join-url", err)
+			}
+			return nil, NewGetMeetingJoinURLNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetMeetingJoinURLServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-join-url", err)
+			}
+			err = ValidateGetMeetingJoinURLServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-join-url", err)
+			}
+			return nil, NewGetMeetingJoinURLServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body GetMeetingJoinURLUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-join-url", err)
+			}
+			err = ValidateGetMeetingJoinURLUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-join-url", err)
+			}
+			return nil, NewGetMeetingJoinURLUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-meeting-join-url", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildUpdateMeetingBaseRequest instantiates a HTTP request object with method
 // and path set to call the "Meeting Service" service "update-meeting-base"
 // endpoint
@@ -3523,8 +3678,8 @@ func unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull(v *MeetingFullR
 		Visibility:                      v.Visibility,
 		Restricted:                      v.Restricted,
 		ArtifactVisibility:              v.ArtifactVisibility,
-		JoinURL:                         v.JoinURL,
 		PublicLink:                      v.PublicLink,
+		Password:                        v.Password,
 		EmailDeliveryErrorCount:         v.EmailDeliveryErrorCount,
 		RecordingEnabled:                v.RecordingEnabled,
 		TranscriptEnabled:               v.TranscriptEnabled,
@@ -3632,7 +3787,7 @@ func unmarshalOccurrenceResponseBodyToMeetingserviceOccurrence(v *OccurrenceResp
 		RegistrantCount:  v.RegistrantCount,
 		ResponseCountNo:  v.ResponseCountNo,
 		ResponseCountYes: v.ResponseCountYes,
-		Status:           v.Status,
+		IsCancelled:      v.IsCancelled,
 	}
 	if v.Recurrence != nil {
 		res.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v.Recurrence)
@@ -3931,6 +4086,29 @@ func unmarshalPastMeetingParticipantResponseBodyToMeetingservicePastMeetingParti
 		IsAttended:         v.IsAttended,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
+	}
+	if v.Sessions != nil {
+		res.Sessions = make([]*meetingservice.ParticipantSession, len(v.Sessions))
+		for i, val := range v.Sessions {
+			res.Sessions[i] = unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(val)
+		}
+	}
+
+	return res
+}
+
+// unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession
+// builds a value of type *meetingservice.ParticipantSession from a value of
+// type *ParticipantSessionResponseBody.
+func unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(v *ParticipantSessionResponseBody) *meetingservice.ParticipantSession {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.ParticipantSession{
+		UID:         *v.UID,
+		JoinTime:    *v.JoinTime,
+		LeaveTime:   v.LeaveTime,
+		LeaveReason: v.LeaveReason,
 	}
 
 	return res

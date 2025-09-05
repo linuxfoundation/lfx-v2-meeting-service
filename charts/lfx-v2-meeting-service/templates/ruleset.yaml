@@ -21,11 +21,12 @@ spec:
         - contextualizer: oidc_contextualizer
         {{- end }}
         {{- if .Values.openfga.enabled }}
-        # TODO: update this authorizer check once we have a way to get the project_uid from the request body.
-        # Check that user has writer permission on the project
-        # The project_uid field in the request body determines which project to check
-        # Note: Projects without a project_uid result in a HTTP 400 service-level error.
-        - authorizer: allow_all
+        - authorizer: json_content_type
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
         {{- else -}}
         # When OpenFGA is disabled, allow all requests
         # (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -53,6 +54,39 @@ spec:
           config:
             values:
               relation: viewer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else -}}
+        # When OpenFGA is disabled, allow all requests
+        # (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:join_url"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /meetings/:id/join_url
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: participant
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         # When OpenFGA is disabled, allow all requests
@@ -335,11 +369,12 @@ spec:
         - contextualizer: oidc_contextualizer
         {{- end }}
         {{- if .Values.openfga.enabled }}
-        # TODO: update this authorizer check once we have a way to get the project_uid from the request body.
-        # Check that user has writer permission on the project
-        # The project_uid field in the request body determines which project to check
-        # Note: Projects without a project_uid result in a HTTP 400 service-level error.
-        - authorizer: allow_all
+        - authorizer: json_content_type
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
         {{- else -}}
         # When OpenFGA is disabled, allow all requests
         # (Only meant for *local development* because OpenFGA should be enabled when deployed)

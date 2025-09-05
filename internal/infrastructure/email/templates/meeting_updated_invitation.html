@@ -5,9 +5,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Meeting invitation email from Linux Foundation">
-    <meta name="keywords" content="meeting, invitation, linux foundation, lfx">
-    <title>Meeting Invitation</title>
+    <meta name="description" content="Meeting update notification email from Linux Foundation">
+    <meta name="keywords" content="meeting, update, invitation, linux foundation, lfx">
+    <title>Meeting Updated</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -33,6 +33,31 @@
             color: #0068c8;
             font-size: 24px;
             margin: 0;
+        }
+        .update-notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .update-notice h2 {
+            color: #856404;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .changes-list {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0068c8;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .change-item {
+            margin-bottom: 8px;
+        }
+        .change-label {
+            font-weight: bold;
+            color: #0068c8;
         }
         .meeting-details {
             background-color: #f8f9fa;
@@ -78,7 +103,7 @@
         .center {
             text-align: center;
         }
-        .calendar-notice {
+        .calendar-update-notice {
             margin-top: 20px;
             padding: 15px;
             background-color: #f0f8ff;
@@ -90,12 +115,26 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Meeting Invitation</h1>
+            <h1>Meeting Updated</h1>
         </div>
         
         <p>Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},</p>
         
-        <p>You have been invited to the following meeting{{if .ProjectName}} for <strong>{{.ProjectName}}</strong>{{end}}:</p>
+        <div class="update-notice">
+            <h2>Meeting Details Have Been Updated</h2>
+            <p>The meeting "{{.MeetingTitle}}" has been updated{{if .ProjectName}} for <strong>{{.ProjectName}}</strong>{{end}}.</p>
+        </div>
+
+        {{if .Changes}}
+        <div class="changes-list">
+            <strong>What Changed:</strong>
+            {{range $field, $value := .Changes}}
+            <div class="change-item">
+                <span class="change-label">{{$field}}:</span> {{$value}}
+            </div>
+            {{end}}
+        </div>
+        {{end}}
         
         <div class="meeting-details">
             <div class="detail-row">
@@ -140,9 +179,9 @@
         {{end}}
         
         {{if .ICSAttachment}}
-        <p class="calendar-notice">
-            <strong>📅 Calendar Event Attached</strong><br>
-            A calendar file (.ics) is attached to this email. Open it to automatically add this meeting to your calendar application.
+        <p class="calendar-update-notice">
+            <strong>📅 Calendar Event Updated</strong><br>
+            An updated calendar file (.ics) is attached to this email. Open it to automatically update this meeting in your calendar application.
         </p>
         {{end}}
         

@@ -59,6 +59,7 @@ var PastMeetingParticipant = Type("PastMeetingParticipant", func() {
 	RegistrantUsernameAttribute()
 	PastMeetingParticipantIsInvitedAttribute()
 	PastMeetingParticipantIsAttendedAttribute()
+	PastMeetingParticipantSessionsAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
 	Required("uid", "past_meeting_uid", "meeting_uid", "email")
@@ -94,3 +95,34 @@ func PastMeetingParticipantIsAttendedAttribute() {
 		Example(true)
 	})
 }
+
+// PastMeetingParticipantSessionsAttribute is the DSL attribute for past meeting participant sessions.
+func PastMeetingParticipantSessionsAttribute() {
+	Attribute("sessions", ArrayOf(ParticipantSession), "The sessions of the participant in the meeting", func() {
+		Description("List of join/leave sessions for this participant")
+	})
+}
+
+// ParticipantSession represents a single join/leave session of a participant in a meeting
+var ParticipantSession = Type("ParticipantSession", func() {
+	Description("A single join/leave session of a participant in a meeting")
+	Attribute("uid", String, "The unique identifier of the session", func() {
+		Example("session-abc123")
+		Description("Session UID from the meeting platform (e.g., Zoom)")
+	})
+	Attribute("join_time", String, "The time when the participant joined", func() {
+		Example("2024-01-15T10:30:00Z")
+		Format(FormatDateTime)
+		Description("ISO 8601 timestamp when participant joined the session")
+	})
+	Attribute("leave_time", String, "The time when the participant left", func() {
+		Example("2024-01-15T11:15:00Z")
+		Format(FormatDateTime)
+		Description("ISO 8601 timestamp when participant left the session (null if still in meeting)")
+	})
+	Attribute("leave_reason", String, "The reason for leaving", func() {
+		Example("left normally")
+		Description("Reason provided by the meeting platform for leaving")
+	})
+	Required("uid", "join_time")
+})

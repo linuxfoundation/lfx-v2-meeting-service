@@ -333,11 +333,10 @@ type CreateMeetingResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -376,6 +375,15 @@ type GetMeetingBaseResponseBody MeetingBaseResponseBody
 // GetMeetingSettingsResponseBody is the type of the "Meeting Service" service
 // "get-meeting-settings" endpoint HTTP response body.
 type GetMeetingSettingsResponseBody MeetingSettingsResponseBody
+
+// GetMeetingJoinURLResponseBody is the type of the "Meeting Service" service
+// "get-meeting-join-url" endpoint HTTP response body.
+type GetMeetingJoinURLResponseBody struct {
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
+}
 
 // UpdateMeetingBaseResponseBody is the type of the "Meeting Service" service
 // "update-meeting-base" endpoint HTTP response body.
@@ -417,11 +425,10 @@ type UpdateMeetingBaseResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -691,6 +698,8 @@ type CreatePastMeetingParticipantResponseBody struct {
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -738,6 +747,8 @@ type UpdatePastMeetingParticipantResponseBody struct {
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -868,6 +879,46 @@ type GetMeetingSettingsNotFoundResponseBody struct {
 // Service" service "get-meeting-settings" endpoint HTTP response body for the
 // "ServiceUnavailable" error.
 type GetMeetingSettingsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingJoinURLInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "get-meeting-join-url" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetMeetingJoinURLInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingJoinURLNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-meeting-join-url" endpoint HTTP response body for the
+// "NotFound" error.
+type GetMeetingJoinURLNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingJoinURLServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-meeting-join-url" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetMeetingJoinURLServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingJoinURLUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-meeting-join-url" endpoint HTTP response body for the
+// "Unauthorized" error.
+type GetMeetingJoinURLUnauthorizedResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -1623,11 +1674,10 @@ type MeetingFullResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -1762,8 +1812,8 @@ type OccurrenceResponseBody struct {
 	ResponseCountNo *int `form:"response_count_no,omitempty" json:"response_count_no,omitempty" xml:"response_count_no,omitempty"`
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
-	// Occurrence status from platform
-	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// Whether the occurrence is cancelled
+	IsCancelled *bool `form:"is_cancelled,omitempty" json:"is_cancelled,omitempty" xml:"is_cancelled,omitempty"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -1882,11 +1932,10 @@ type MeetingBaseResponseBody struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -2105,10 +2154,26 @@ type PastMeetingParticipantResponseBody struct {
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended this past meeting
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// ParticipantSessionResponseBody is used to define fields on response body
+// types.
+type ParticipantSessionResponseBody struct {
+	// Session UID from the meeting platform (e.g., Zoom)
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// ISO 8601 timestamp when participant joined the session
+	JoinTime *string `form:"join_time,omitempty" json:"join_time,omitempty" xml:"join_time,omitempty"`
+	// ISO 8601 timestamp when participant left the session (null if still in
+	// meeting)
+	LeaveTime *string `form:"leave_time,omitempty" json:"leave_time,omitempty" xml:"leave_time,omitempty"`
+	// Reason provided by the meeting platform for leaving
+	LeaveReason *string `form:"leave_reason,omitempty" json:"leave_reason,omitempty" xml:"leave_reason,omitempty"`
 }
 
 // NewCreateMeetingRequestBody builds the HTTP request body from the payload of
@@ -2398,8 +2463,8 @@ func NewCreateMeetingMeetingFullCreated(body *CreateMeetingResponseBody) *meetin
 		Visibility:                      body.Visibility,
 		Restricted:                      body.Restricted,
 		ArtifactVisibility:              body.ArtifactVisibility,
-		JoinURL:                         body.JoinURL,
 		PublicLink:                      body.PublicLink,
+		Password:                        body.Password,
 		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
 		RecordingEnabled:                body.RecordingEnabled,
 		TranscriptEnabled:               body.TranscriptEnabled,
@@ -2499,8 +2564,8 @@ func NewGetMeetingBaseResultOK(body *GetMeetingBaseResponseBody, etag *string) *
 		Visibility:                      body.Visibility,
 		Restricted:                      body.Restricted,
 		ArtifactVisibility:              body.ArtifactVisibility,
-		JoinURL:                         body.JoinURL,
 		PublicLink:                      body.PublicLink,
+		Password:                        body.Password,
 		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
 		RecordingEnabled:                body.RecordingEnabled,
 		TranscriptEnabled:               body.TranscriptEnabled,
@@ -2625,6 +2690,60 @@ func NewGetMeetingSettingsServiceUnavailable(body *GetMeetingSettingsServiceUnav
 	return v
 }
 
+// NewGetMeetingJoinURLResultOK builds a "Meeting Service" service
+// "get-meeting-join-url" endpoint result from a HTTP "OK" response.
+func NewGetMeetingJoinURLResultOK(body *GetMeetingJoinURLResponseBody) *meetingservice.GetMeetingJoinURLResult {
+	v := &meetingservice.GetMeetingJoinURLResult{
+		JoinURL: *body.JoinURL,
+	}
+
+	return v
+}
+
+// NewGetMeetingJoinURLInternalServerError builds a Meeting Service service
+// get-meeting-join-url endpoint InternalServerError error.
+func NewGetMeetingJoinURLInternalServerError(body *GetMeetingJoinURLInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingJoinURLNotFound builds a Meeting Service service
+// get-meeting-join-url endpoint NotFound error.
+func NewGetMeetingJoinURLNotFound(body *GetMeetingJoinURLNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingJoinURLServiceUnavailable builds a Meeting Service service
+// get-meeting-join-url endpoint ServiceUnavailable error.
+func NewGetMeetingJoinURLServiceUnavailable(body *GetMeetingJoinURLServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingJoinURLUnauthorized builds a Meeting Service service
+// get-meeting-join-url endpoint Unauthorized error.
+func NewGetMeetingJoinURLUnauthorized(body *GetMeetingJoinURLUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewUpdateMeetingBaseMeetingBaseOK builds a "Meeting Service" service
 // "update-meeting-base" endpoint result from a HTTP "OK" response.
 func NewUpdateMeetingBaseMeetingBaseOK(body *UpdateMeetingBaseResponseBody) *meetingservice.MeetingBase {
@@ -2642,8 +2761,8 @@ func NewUpdateMeetingBaseMeetingBaseOK(body *UpdateMeetingBaseResponseBody) *mee
 		Visibility:                      body.Visibility,
 		Restricted:                      body.Restricted,
 		ArtifactVisibility:              body.ArtifactVisibility,
-		JoinURL:                         body.JoinURL,
 		PublicLink:                      body.PublicLink,
+		Password:                        body.Password,
 		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
 		RecordingEnabled:                body.RecordingEnabled,
 		TranscriptEnabled:               body.TranscriptEnabled,
@@ -3537,6 +3656,12 @@ func NewCreatePastMeetingParticipantPastMeetingParticipantCreated(body *CreatePa
 		CreatedAt:          body.CreatedAt,
 		UpdatedAt:          body.UpdatedAt,
 	}
+	if body.Sessions != nil {
+		v.Sessions = make([]*meetingservice.ParticipantSession, len(body.Sessions))
+		for i, val := range body.Sessions {
+			v.Sessions[i] = unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(val)
+		}
+	}
 
 	return v
 }
@@ -3618,6 +3743,12 @@ func NewGetPastMeetingParticipantResultOK(body *GetPastMeetingParticipantRespons
 		CreatedAt:          body.CreatedAt,
 		UpdatedAt:          body.UpdatedAt,
 	}
+	if body.Sessions != nil {
+		v.Sessions = make([]*meetingservice.ParticipantSession, len(body.Sessions))
+		for i, val := range body.Sessions {
+			v.Sessions[i] = unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(val)
+		}
+	}
 	res := &meetingservice.GetPastMeetingParticipantResult{
 		Participant: v,
 	}
@@ -3681,6 +3812,12 @@ func NewUpdatePastMeetingParticipantPastMeetingParticipantOK(body *UpdatePastMee
 		IsAttended:         body.IsAttended,
 		CreatedAt:          body.CreatedAt,
 		UpdatedAt:          body.UpdatedAt,
+	}
+	if body.Sessions != nil {
+		v.Sessions = make([]*meetingservice.ParticipantSession, len(body.Sessions))
+		for i, val := range body.Sessions {
+			v.Sessions[i] = unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(val)
+		}
 	}
 
 	return v
@@ -3876,11 +4013,11 @@ func ValidateCreateMeetingResponseBody(body *CreateMeetingResponseBody) (err err
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
-	if body.JoinURL != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
-	}
 	if body.PublicLink != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
+	if body.Password != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.password", *body.Password, goa.FormatUUID))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
@@ -3967,11 +4104,11 @@ func ValidateGetMeetingBaseResponseBody(body *GetMeetingBaseResponseBody) (err e
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
-	if body.JoinURL != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
-	}
 	if body.PublicLink != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
+	if body.Password != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.password", *body.Password, goa.FormatUUID))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
@@ -4005,6 +4142,18 @@ func ValidateGetMeetingSettingsResponseBody(body *GetMeetingSettingsResponseBody
 	}
 	if body.UpdatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateGetMeetingJoinURLResponseBody runs the validations defined on
+// Get-Meeting-Join-UrlResponseBody
+func ValidateGetMeetingJoinURLResponseBody(body *GetMeetingJoinURLResponseBody) (err error) {
+	if body.JoinURL == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("join_url", "body"))
+	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
 	}
 	return
 }
@@ -4073,11 +4222,11 @@ func ValidateUpdateMeetingBaseResponseBody(body *UpdateMeetingBaseResponseBody) 
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
-	if body.JoinURL != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
-	}
 	if body.PublicLink != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
+	if body.Password != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.password", *body.Password, goa.FormatUUID))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
@@ -4611,6 +4760,13 @@ func ValidateCreatePastMeetingParticipantResponseBody(body *CreatePastMeetingPar
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
+	for _, e := range body.Sessions {
+		if e != nil {
+			if err2 := ValidateParticipantSessionResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
 	if body.CreatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
@@ -4670,6 +4826,13 @@ func ValidateGetPastMeetingParticipantResponseBody(body *GetPastMeetingParticipa
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
+	for _, e := range body.Sessions {
+		if e != nil {
+			if err2 := ValidateParticipantSessionResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
 	if body.CreatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
@@ -4728,6 +4891,13 @@ func ValidateUpdatePastMeetingParticipantResponseBody(body *UpdatePastMeetingPar
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+	}
+	for _, e := range body.Sessions {
+		if e != nil {
+			if err2 := ValidateParticipantSessionResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
 	}
 	if body.CreatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
@@ -4885,6 +5055,54 @@ func ValidateGetMeetingSettingsNotFoundResponseBody(body *GetMeetingSettingsNotF
 // ValidateGetMeetingSettingsServiceUnavailableResponseBody runs the
 // validations defined on get-meeting-settings_ServiceUnavailable_response_body
 func ValidateGetMeetingSettingsServiceUnavailableResponseBody(body *GetMeetingSettingsServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingJoinURLInternalServerErrorResponseBody runs the
+// validations defined on get-meeting-join-url_InternalServerError_response_body
+func ValidateGetMeetingJoinURLInternalServerErrorResponseBody(body *GetMeetingJoinURLInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingJoinURLNotFoundResponseBody runs the validations defined
+// on get-meeting-join-url_NotFound_response_body
+func ValidateGetMeetingJoinURLNotFoundResponseBody(body *GetMeetingJoinURLNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingJoinURLServiceUnavailableResponseBody runs the validations
+// defined on get-meeting-join-url_ServiceUnavailable_response_body
+func ValidateGetMeetingJoinURLServiceUnavailableResponseBody(body *GetMeetingJoinURLServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingJoinURLUnauthorizedResponseBody runs the validations
+// defined on get-meeting-join-url_Unauthorized_response_body
+func ValidateGetMeetingJoinURLUnauthorizedResponseBody(body *GetMeetingJoinURLUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
@@ -5835,11 +6053,11 @@ func ValidateMeetingFullResponseBody(body *MeetingFullResponseBody) (err error) 
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
-	if body.JoinURL != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
-	}
 	if body.PublicLink != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
+	if body.Password != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.password", *body.Password, goa.FormatUUID))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
@@ -5874,6 +6092,11 @@ func ValidateRecurrenceResponseBody(body *RecurrenceResponseBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{1, 2, 3}))
+		}
+	}
+	if body.RepeatInterval != nil {
+		if *body.RepeatInterval < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.repeat_interval", *body.RepeatInterval, 1, true))
 		}
 	}
 	if body.WeeklyDays != nil {
@@ -5960,11 +6183,6 @@ func ValidateOccurrenceResponseBody(body *OccurrenceResponseBody) (err error) {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
-	if body.Status != nil {
-		if !(*body.Status == "active" || *body.Status == "cancelled") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"active", "cancelled"}))
-		}
-	}
 	return
 }
 
@@ -5973,6 +6191,9 @@ func ValidateOccurrenceResponseBody(body *OccurrenceResponseBody) (err error) {
 func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	if !(body.Type == 1 || body.Type == 2 || body.Type == 3) {
 		err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{1, 2, 3}))
+	}
+	if body.RepeatInterval < 1 {
+		err = goa.MergeErrors(err, goa.InvalidRangeError("body.repeat_interval", body.RepeatInterval, 1, true))
 	}
 	if body.WeeklyDays != nil {
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.weekly_days", *body.WeeklyDays, "^[1-7](,[1-7])*$"))
@@ -6076,11 +6297,11 @@ func ValidateMeetingBaseResponseBody(body *MeetingBaseResponseBody) (err error) 
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
-	if body.JoinURL != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
-	}
 	if body.PublicLink != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
+	if body.Password != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.password", *body.Password, goa.FormatUUID))
 	}
 	if body.ZoomConfig != nil {
 		if err2 := ValidateZoomConfigFullResponseBody(body.ZoomConfig); err2 != nil {
@@ -6392,11 +6613,36 @@ func ValidatePastMeetingParticipantResponseBody(body *PastMeetingParticipantResp
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
+	for _, e := range body.Sessions {
+		if e != nil {
+			if err2 := ValidateParticipantSessionResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
 	if body.CreatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateParticipantSessionResponseBody runs the validations defined on
+// ParticipantSessionResponseBody
+func ValidateParticipantSessionResponseBody(body *ParticipantSessionResponseBody) (err error) {
+	if body.UID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
+	}
+	if body.JoinTime == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("join_time", "body"))
+	}
+	if body.JoinTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_time", *body.JoinTime, goa.FormatDateTime))
+	}
+	if body.LeaveTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.leave_time", *body.LeaveTime, goa.FormatDateTime))
 	}
 	return
 }

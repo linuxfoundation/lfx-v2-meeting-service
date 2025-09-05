@@ -72,6 +72,7 @@ type PastMeetingRepository interface {
 	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.PastMeeting, error)
 	GetByMeetingAndOccurrence(ctx context.Context, meetingUID, occurrenceID string) (*models.PastMeeting, error)
 	GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error)
+	GetByPlatformMeetingIDAndOccurrence(ctx context.Context, platform, platformMeetingID, occurrenceID string) (*models.PastMeeting, error)
 }
 
 // PastMeetingParticipantRepository defines the interface for past meeting participant storage operations.

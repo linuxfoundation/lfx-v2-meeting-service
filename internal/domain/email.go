@@ -6,16 +6,20 @@ package domain
 import (
 	"context"
 	"time"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 )
 
 // EmailService defines the interface for sending emails
 type EmailService interface {
 	SendRegistrantInvitation(ctx context.Context, invitation EmailInvitation) error
 	SendRegistrantCancellation(ctx context.Context, cancellation EmailCancellation) error
+	SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation EmailUpdatedInvitation) error
 }
 
 // EmailInvitation contains the data needed to send a meeting invitation email
 type EmailInvitation struct {
+	MeetingUID     string // Meeting UID for consistent calendar event identification
 	RecipientEmail string
 	RecipientName  string
 	MeetingTitle   string
@@ -24,11 +28,16 @@ type EmailInvitation struct {
 	Timezone       string
 	Description    string
 	JoinLink       string
-	ProjectName    string // Optional project name for context
+	ProjectName    string             // Optional project name for context
+	MeetingID      string             // Zoom meeting ID for dial-in
+	Passcode       string             // Zoom passcode
+	Recurrence     *models.Recurrence // Recurrence pattern for ICS
+	ICSAttachment  *EmailAttachment   // ICS calendar attachment
 }
 
 // EmailCancellation contains the data needed to send a meeting cancellation email
 type EmailCancellation struct {
+	MeetingUID     string // Meeting UID for consistent calendar event identification
 	RecipientEmail string
 	RecipientName  string
 	MeetingTitle   string
@@ -36,6 +45,34 @@ type EmailCancellation struct {
 	Duration       int // Duration in minutes
 	Timezone       string
 	Description    string
-	ProjectName    string // Optional project name for context
-	Reason         string // Optional reason for cancellation
+	ProjectName    string             // Optional project name for context
+	Reason         string             // Optional reason for cancellation
+	Recurrence     *models.Recurrence // Recurrence pattern for ICS
+	ICSAttachment  *EmailAttachment   // ICS calendar attachment for cancellation
+}
+
+// EmailUpdatedInvitation contains the data needed to send a meeting update notification email
+type EmailUpdatedInvitation struct {
+	MeetingUID     string // Meeting UID for consistent calendar event identification
+	RecipientEmail string
+	RecipientName  string
+	MeetingTitle   string
+	StartTime      time.Time
+	Duration       int // Duration in minutes
+	Timezone       string
+	Description    string
+	JoinLink       string
+	ProjectName    string             // Optional project name for context
+	MeetingID      string             // Zoom meeting ID for dial-in
+	Passcode       string             // Zoom passcode
+	Recurrence     *models.Recurrence // Recurrence pattern for ICS
+	Changes        map[string]any     // Map of what changed (field names to new values)
+	ICSAttachment  *EmailAttachment   // Updated ICS calendar attachment
+}
+
+// EmailAttachment represents a file attachment for an email
+type EmailAttachment struct {
+	Filename    string // Name of the attachment file
+	ContentType string // MIME type of the attachment
+	Content     string // Base64 encoded content
 }

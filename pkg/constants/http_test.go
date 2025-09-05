@@ -155,3 +155,52 @@ func TestContextMappingConsistency(t *testing.T) {
 		t.Errorf("PrincipalContextID (%q) should match XOnBehalfOfHeader (%q)", PrincipalContextID, XOnBehalfOfHeader)
 	}
 }
+
+func TestGenerateLFXMeetingURL(t *testing.T) {
+	tests := []struct {
+		name        string
+		meetingUID  string
+		password    string
+		expectedURL string
+	}{
+		{
+			name:        "valid meeting URL",
+			meetingUID:  "123e4567-e89b-12d3-a456-426614174000",
+			password:    "456e7890-e89b-12d3-a456-426614174001",
+			expectedURL: "https://app.lfx.dev/meetings/123e4567-e89b-12d3-a456-426614174000?password=456e7890-e89b-12d3-a456-426614174001",
+		},
+		{
+			name:        "empty values",
+			meetingUID:  "",
+			password:    "",
+			expectedURL: "https://app.lfx.dev/meetings/?password=",
+		},
+		{
+			name:        "special characters in password",
+			meetingUID:  "meeting-123",
+			password:    "pass@#$%",
+			expectedURL: "https://app.lfx.dev/meetings/meeting-123?password=pass%40%23%24%25",
+		},
+		{
+			name:        "password with spaces",
+			meetingUID:  "meeting-456",
+			password:    "password with spaces",
+			expectedURL: "https://app.lfx.dev/meetings/meeting-456?password=password+with+spaces",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GenerateLFXMeetingURL(tt.meetingUID, tt.password)
+			if result != tt.expectedURL {
+				t.Errorf("GenerateLFXMeetingURL() = %q, expected %q", result, tt.expectedURL)
+			}
+		})
+	}
+}
+
+func TestLFXAppDomainConstant(t *testing.T) {
+	if LFXAppDomain != "app.lfx.dev" {
+		t.Errorf("LFXAppDomain should be 'app.lfx.dev', got %q", LFXAppDomain)
+	}
+}

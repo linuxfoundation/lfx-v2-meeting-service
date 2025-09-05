@@ -547,15 +547,16 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		recipientName = "" // If both names are empty, use empty string
 	}
 
-	// Construct join link if available
-	joinLink := meetingDB.PublicLink
-	if joinLink == "" && meetingDB.ZoomConfig != nil && meetingDB.ZoomConfig.MeetingID != "" {
-		// Construct Zoom link if meeting ID is available
-		joinLink = fmt.Sprintf("https://zoom.us/j/%s", meetingDB.ZoomConfig.MeetingID)
+	// Extract meeting ID and passcode for ICS generation
+	var meetingID, passcode string
+	if meetingDB.ZoomConfig != nil {
+		meetingID = meetingDB.ZoomConfig.MeetingID
+		passcode = meetingDB.ZoomConfig.Passcode
 	}
 
 	// Create email invitation
 	invitation := domain.EmailInvitation{
+		MeetingUID:     meetingDB.UID,
 		RecipientEmail: registrant.Email,
 		RecipientName:  recipientName,
 		MeetingTitle:   meetingDB.Title,
@@ -563,8 +564,11 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		Duration:       meetingDB.Duration,
 		Timezone:       meetingDB.Timezone,
 		Description:    meetingDB.Description,
-		JoinLink:       joinLink,
+		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password),
 		ProjectName:    "", // TODO: Add project name once project service integration is available
+		MeetingID:      meetingID,
+		Passcode:       passcode,
+		Recurrence:     meetingDB.Recurrence,
 	}
 
 	// Send the email
@@ -587,6 +591,7 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 
 	// Create email cancellation
 	cancellation := domain.EmailCancellation{
+		MeetingUID:     meetingDB.UID,
 		RecipientEmail: registrant.Email,
 		RecipientName:  recipientName,
 		MeetingTitle:   meetingDB.Title,
@@ -596,6 +601,7 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 		Description:    meetingDB.Description,
 		ProjectName:    "", // TODO: Add project name once project service integration is available
 		Reason:         "Your registration has been removed from this meeting.",
+		Recurrence:     meetingDB.Recurrence,
 	}
 
 	// Send the email

@@ -29,10 +29,12 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 		SkipEtagValidation: false,
 	}
 
+	occurrenceService := service.NewOccurrenceService()
 	meetingService := &service.MeetingService{
 		MeetingRepository: mockMeetingRepo,
 		MessageBuilder:    mockMessageBuilder,
 		PlatformRegistry:  mockPlatformRegistry,
+		OccurrenceService: occurrenceService,
 		Config:            config,
 	}
 
@@ -469,6 +471,175 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 			mockRegistrantRepo.AssertExpectations(t)
 			mockBuilder.AssertExpectations(t)
 			// Don't assert email service for async operations
+		})
+	}
+}
+
+func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name        string
+		messageData []byte
+		setupMocks  func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService)
+		expectError bool
+	}{
+		{
+			name:        "successfully send update notifications to registrants",
+			messageData: []byte(`{"meeting_uid":"meeting-updated","changes":{"Title":"New Meeting Title","Start Time":"2024-01-01 10:00:00 UTC"}}`),
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
+				registrants := []*models.Registrant{
+					{
+						UID:        "registrant-1",
+						MeetingUID: "meeting-updated",
+						Email:      "user1@example.com",
+						FirstName:  "John",
+						LastName:   "Doe",
+					},
+					{
+						UID:        "registrant-2",
+						MeetingUID: "meeting-updated",
+						Email:      "user2@example.com",
+						FirstName:  "Jane",
+						LastName:   "Smith",
+					},
+				}
+				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-updated").Return(registrants, nil)
+
+				// Mock meeting retrieval for each registrant
+				meeting := &models.MeetingBase{
+					UID:       "meeting-updated",
+					Title:     "New Meeting Title",
+					StartTime: time.Now().Add(24 * time.Hour),
+					Duration:  60,
+					Timezone:  "UTC",
+					JoinURL:   "https://zoom.us/j/123456789",
+					ZoomConfig: &models.ZoomConfig{
+						MeetingID: "123456789",
+						Passcode:  "secret",
+					},
+				}
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-updated").Return(meeting, nil)
+
+				// Expect email notifications to be sent
+				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {
+					return invitation.MeetingUID == "meeting-updated" &&
+						len(invitation.Changes) == 2 &&
+						(invitation.RecipientEmail == "user1@example.com" || invitation.RecipientEmail == "user2@example.com")
+				})).Return(nil).Times(2)
+			},
+			expectError: false,
+		},
+		{
+			name:        "successfully handle meeting with no registrants",
+			messageData: []byte(`{"meeting_uid":"meeting-no-registrants","changes":{"Title":"Updated Title"}}`),
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
+				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-no-registrants").Return([]*models.Registrant{}, nil)
+			},
+			expectError: false,
+		},
+		{
+			name:        "successfully handle meeting with no meaningful changes",
+			messageData: []byte(`{"meeting_uid":"meeting-no-changes","changes":{}}`),
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
+				// No mock expectations since no processing should occur
+			},
+			expectError: false,
+		},
+		{
+			name:        "handle invalid JSON gracefully",
+			messageData: []byte(`invalid json`),
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
+				// No mock expectations
+			},
+			expectError: true,
+		},
+		{
+			name:        "handle empty meeting UID",
+			messageData: []byte(`{"meeting_uid":"","changes":{"Title":"Updated"}}`),
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
+				// No mock expectations
+			},
+			expectError: true,
+		},
+		{
+			name:        "handle repository error when listing registrants",
+			messageData: []byte(`{"meeting_uid":"meeting-repo-error","changes":{"Title":"Updated"}}`),
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
+				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-repo-error").Return([]*models.Registrant{}, domain.ErrInternal)
+			},
+			expectError: true,
+		},
+		{
+			name:        "handle partial email notification failures",
+			messageData: []byte(`{"meeting_uid":"meeting-partial-email-fail","changes":{"Duration":"120 minutes"}}`),
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
+				registrants := []*models.Registrant{
+					{
+						UID:        "registrant-success",
+						MeetingUID: "meeting-partial-email-fail",
+						Email:      "success@example.com",
+						FirstName:  "Success",
+						LastName:   "User",
+					},
+					{
+						UID:        "registrant-fail",
+						MeetingUID: "meeting-partial-email-fail",
+						Email:      "fail@example.com",
+						FirstName:  "Fail",
+						LastName:   "User",
+					},
+				}
+				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-partial-email-fail").Return(registrants, nil)
+
+				meeting := &models.MeetingBase{
+					UID:       "meeting-partial-email-fail",
+					Title:     "Test Meeting",
+					StartTime: time.Now().Add(24 * time.Hour),
+					Duration:  120,
+					Timezone:  "UTC",
+				}
+				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-partial-email-fail").Return(meeting, nil)
+
+				// First email succeeds, second fails
+				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {
+					return invitation.RecipientEmail == "success@example.com"
+				})).Return(nil).Maybe()
+
+				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {
+					return invitation.RecipientEmail == "fail@example.com"
+				})).Return(domain.ErrInternal).Maybe()
+			},
+			expectError: true, // WorkerPool fails fast on errors
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler, mockMeetingRepo, mockRegistrantRepo, mockBuilder, mockEmailService := setupHandlerForTesting()
+
+			tt.setupMocks(mockMeetingRepo, mockRegistrantRepo, mockBuilder, mockEmailService)
+
+			// Create mock message
+			mockMsg := mocks.NewMockMessage(tt.messageData, models.MeetingUpdatedSubject)
+
+			// Call the handler's HandleMessage which should route to HandleMeetingUpdated
+			if tt.expectError {
+				assert.NotPanics(t, func() {
+					handler.HandleMessage(ctx, mockMsg)
+				})
+			} else {
+				handler.HandleMessage(ctx, mockMsg)
+			}
+
+			// Give async operations time to complete
+			time.Sleep(200 * time.Millisecond)
+
+			// Verify expectations
+			mockMeetingRepo.AssertExpectations(t)
+			mockRegistrantRepo.AssertExpectations(t)
+			mockBuilder.AssertExpectations(t)
+			mockEmailService.AssertExpectations(t)
 		})
 	}
 }

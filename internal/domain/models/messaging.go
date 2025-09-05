@@ -177,6 +177,7 @@ type MeetingUpdatedMessage struct {
 	UpdatedBase  *MeetingBase     `json:"updated_base"`
 	PreviousBase *MeetingBase     `json:"previous_base"`
 	Settings     *MeetingSettings `json:"settings"`
+	Changes      map[string]any   `json:"changes"` // Map of field names to their new values
 }
 
 // CommitteeEvent represents a generic event emitted for committee service operations

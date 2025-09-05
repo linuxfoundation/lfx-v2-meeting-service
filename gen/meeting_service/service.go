@@ -26,6 +26,9 @@ type Service interface {
 	GetMeetingBase(context.Context, *GetMeetingBasePayload) (res *GetMeetingBaseResult, err error)
 	// Get a single meeting's settings.
 	GetMeetingSettings(context.Context, *GetMeetingSettingsPayload) (res *GetMeetingSettingsResult, err error)
+	// Get the join URL for a meeting. Requires the user to be either a participant
+	// or organizer of the meeting.
+	GetMeetingJoinURL(context.Context, *GetMeetingJoinURLPayload) (res *GetMeetingJoinURLResult, err error)
 	// Update an existing meeting base.
 	UpdateMeetingBase(context.Context, *UpdateMeetingBasePayload) (res *MeetingBase, err error)
 	// Update an existing meeting's settings.
@@ -90,7 +93,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [24]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "readyz", "livez"}
+var MethodNames = [25]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -369,6 +372,26 @@ type GetMeetingBaseResult struct {
 	Etag *string
 }
 
+// GetMeetingJoinURLPayload is the payload type of the Meeting Service service
+// get-meeting-join-url method.
+type GetMeetingJoinURLPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting
+	UID *string
+}
+
+// GetMeetingJoinURLResult is the result type of the Meeting Service service
+// get-meeting-join-url method.
+type GetMeetingJoinURLResult struct {
+	// The public join URL for participants to join the meeting via the LFX
+	// platform (e.g.
+	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
+	JoinURL string
+}
+
 // GetMeetingRegistrantPayload is the payload type of the Meeting Service
 // service get-meeting-registrant method.
 type GetMeetingRegistrantPayload struct {
@@ -572,11 +595,10 @@ type MeetingBase struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -645,11 +667,10 @@ type MeetingFull struct {
 	// The public join URL for participants to join the meeting via the LFX
 	// platform (e.g.
 	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
 	PublicLink *string
+	// Unique, non-guessable, password for the meeting - is needed to join a
+	// meeting and is included in invites
+	Password *string
 	// The number of registrants that have an email delivery error with their
 	// invite. The delivery errors are counted as the last invite that was sent to
 	// the registrant, so if a registrant previously had a delivery error but not
@@ -722,8 +743,21 @@ type Occurrence struct {
 	ResponseCountNo *int
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int
-	// Occurrence status from platform
-	Status *string
+	// Whether the occurrence is cancelled
+	IsCancelled *bool
+}
+
+// A single join/leave session of a participant in a meeting
+type ParticipantSession struct {
+	// Session UID from the meeting platform (e.g., Zoom)
+	UID string
+	// ISO 8601 timestamp when participant joined the session
+	JoinTime string
+	// ISO 8601 timestamp when participant left the session (null if still in
+	// meeting)
+	LeaveTime *string
+	// Reason provided by the meeting platform for leaving
+	LeaveReason *string
 }
 
 // PastMeeting is the result type of the Meeting Service service
@@ -828,6 +862,8 @@ type PastMeetingParticipant struct {
 	IsInvited *bool
 	// Whether the participant attended this past meeting
 	IsAttended *bool
+	// List of join/leave sessions for this participant
+	Sessions []*ParticipantSession
 	// The date and time the resource was created
 	CreatedAt *string
 	// The date and time the resource was last updated

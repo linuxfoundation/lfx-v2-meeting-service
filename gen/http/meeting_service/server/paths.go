@@ -31,6 +31,11 @@ func GetMeetingSettingsMeetingServicePath(uid string) string {
 	return fmt.Sprintf("/meetings/%v/settings", uid)
 }
 
+// GetMeetingJoinURLMeetingServicePath returns the URL path to the Meeting Service service get-meeting-join-url HTTP endpoint.
+func GetMeetingJoinURLMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/meetings/%v/join_url", uid)
+}
+
 // UpdateMeetingBaseMeetingServicePath returns the URL path to the Meeting Service service update-meeting-base HTTP endpoint.
 func UpdateMeetingBaseMeetingServicePath(uid string) string {
 	return fmt.Sprintf("/meetings/%v", uid)

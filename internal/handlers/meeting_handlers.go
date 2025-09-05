@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -15,6 +16,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -289,27 +291,124 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 		return nil, err
 	}
 
-	if meetingUpdatedMsg.MeetingUID == "" || meetingUpdatedMsg.UpdatedBase == nil || meetingUpdatedMsg.PreviousBase == nil {
-		slog.WarnContext(ctx, "invalid meeting updated message: missing required fields")
-		return nil, fmt.Errorf("meeting UID, updated base, and previous base data are required")
+	if meetingUpdatedMsg.MeetingUID == "" {
+		slog.WarnContext(ctx, "invalid meeting updated message: missing meeting UID")
+		return nil, fmt.Errorf("meeting UID is required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUpdatedMsg.MeetingUID))
 	slog.InfoContext(ctx, "processing meeting update post-tasks")
 
-	// Handle committee changes using the new CommitteeSyncService
-	isPublicMeeting := meetingUpdatedMsg.UpdatedBase.Visibility == "public"
-	err = s.committeeSyncService.SyncCommittees(
-		ctx,
-		meetingUpdatedMsg.MeetingUID,
-		meetingUpdatedMsg.PreviousBase.Committees,
-		meetingUpdatedMsg.UpdatedBase.Committees,
-		isPublicMeeting,
-	)
-	if err != nil {
-		// Log error but don't fail the entire handler - committee sync is non-critical
-		slog.ErrorContext(ctx, "committee change handling failed", logging.ErrKey, err)
+	// Handle update notifications to registrants
+	if len(meetingUpdatedMsg.Changes) > 0 {
+		slog.DebugContext(ctx, "meaningful changes detected, notifying registrants", "changes", meetingUpdatedMsg.Changes)
+		err = s.meetingUpdatedInvitations(ctx, meetingUpdatedMsg)
+		if err != nil {
+			slog.ErrorContext(ctx, "error sending update notifications to registrants", logging.ErrKey, err)
+			return nil, fmt.Errorf("failed to send update notifications: %w", err)
+		}
+	}
+
+	// Handle committee changes using the new CommitteeSyncService (only if we have the required fields)
+	if meetingUpdatedMsg.UpdatedBase != nil && meetingUpdatedMsg.PreviousBase != nil {
+		isPublicMeeting := meetingUpdatedMsg.UpdatedBase.Visibility == "public"
+		err = s.committeeSyncService.SyncCommittees(
+			ctx,
+			meetingUpdatedMsg.MeetingUID,
+			meetingUpdatedMsg.PreviousBase.Committees,
+			meetingUpdatedMsg.UpdatedBase.Committees,
+			isPublicMeeting,
+		)
+		if err != nil {
+			// Log error but don't fail the entire handler - committee sync is non-critical
+			slog.ErrorContext(ctx, "committee change handling failed", logging.ErrKey, err)
+		}
 	}
 
 	return []byte("success"), nil
+}
+
+func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg models.MeetingUpdatedMessage) error {
+	// Get all registrants for the meeting
+	registrants, err := s.registrantService.RegistrantRepository.ListByMeeting(ctx, msg.MeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting registrants for updated meeting", logging.ErrKey, err)
+		return err
+	}
+
+	if len(registrants) == 0 {
+		slog.DebugContext(ctx, "no registrants to notify for updated meeting")
+		return nil
+	}
+
+	slog.DebugContext(ctx, "sending update notifications to registrants", "registrant_count", len(registrants))
+
+	// Process registrants concurrently using WorkerPool
+	var tasks []func() error
+	for _, registrant := range registrants {
+		reg := registrant // capture loop variable
+		tasks = append(tasks, func() error {
+			// Get meeting details for the email
+			meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, msg.MeetingUID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error getting meeting details for update notification",
+					"registrant_uid", reg.UID, logging.ErrKey, err)
+				return err
+			}
+
+			// Build recipient name from first and last name
+			var recipientName string
+			if reg.FirstName != "" || reg.LastName != "" {
+				recipientName = strings.TrimSpace(fmt.Sprintf("%s %s", reg.FirstName, reg.LastName))
+			}
+
+			// Extract meeting ID and passcode from Zoom config
+			var meetingID, passcode string
+			if meeting.ZoomConfig != nil {
+				meetingID = meeting.ZoomConfig.MeetingID
+				passcode = meeting.ZoomConfig.Passcode
+			}
+
+			// Send update notification email to registrant
+			updatedInvitation := domain.EmailUpdatedInvitation{
+				MeetingUID:     msg.MeetingUID,
+				RecipientEmail: reg.Email,
+				RecipientName:  recipientName,
+				MeetingTitle:   meeting.Title,
+				StartTime:      meeting.StartTime,
+				Duration:       meeting.Duration,
+				Timezone:       meeting.Timezone,
+				Description:    meeting.Description,
+				JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password),
+				MeetingID:      meetingID,
+				Passcode:       passcode,
+				Recurrence:     meeting.Recurrence,
+				Changes:        msg.Changes,
+			}
+
+			err = s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
+			if err != nil {
+				slog.ErrorContext(ctx, "error sending update notification email",
+					"registrant_uid", reg.UID, "email", reg.Email, logging.ErrKey, err)
+				return err
+			}
+
+			slog.DebugContext(ctx, "update notification sent successfully", "registrant_uid", reg.UID, "email", reg.Email)
+			return nil
+		})
+	}
+
+	// Execute all notification operations concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(10) // Use 10 workers for concurrent processing
+	err = pool.Run(ctx, tasks...)
+	if err != nil {
+		slog.ErrorContext(ctx, "some notification operations failed",
+			"total_registrants", len(registrants),
+			logging.ErrKey, err,
+			logging.PriorityCritical())
+		return fmt.Errorf("failed to send update notifications: %w", err)
+	}
+
+	slog.InfoContext(ctx, "successfully sent update notifications to all registrants", "registrant_count", len(registrants))
+	return nil
 }

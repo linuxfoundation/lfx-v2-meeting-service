@@ -4,6 +4,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -31,6 +32,7 @@ type MeetingBase struct {
 	ArtifactVisibility              string       `json:"artifact_visibility,omitempty"`
 	PublicLink                      string       `json:"public_link,omitempty"`
 	JoinURL                         string       `json:"join_url,omitempty"`
+	Password                        string       `json:"password,omitempty"`
 	EmailDeliveryErrorCount         int          `json:"email_delivery_error_count,omitempty"`
 	RecordingEnabled                bool         `json:"recording_enabled"`
 	TranscriptEnabled               bool         `json:"transcript_enabled"`
@@ -81,7 +83,7 @@ type Occurrence struct {
 	RegistrantCount  int         `json:"registrant_count,omitempty"`
 	ResponseCountNo  int         `json:"response_count_no,omitempty"`
 	ResponseCountYes int         `json:"response_count_yes,omitempty"`
-	Status           string      `json:"status,omitempty"`
+	IsCancelled      bool        `json:"is_cancelled,omitempty"`
 }
 
 // ZoomConfig represents Zoom-specific configuration for a meeting
@@ -119,4 +121,67 @@ type CreateMeetingRequest struct {
 	YoutubeUploadEnabled bool        `json:"youtube_upload_enabled"`
 	ZoomConfig           *ZoomConfig `json:"zoom_config,omitempty"`
 	Organizers           []string    `json:"organizers"`
+}
+
+// Tags generates a consistent set of tags for the meeting.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
+func (m *MeetingBase) Tags() []string {
+	tags := []string{}
+
+	if m == nil {
+		return nil
+	}
+
+	if m.UID != "" {
+		// without prefix
+		tags = append(tags, m.UID)
+		// with prefix
+		tag := fmt.Sprintf("meeting_uid:%s", m.UID)
+		tags = append(tags, tag)
+	}
+
+	if m.ProjectUID != "" {
+		tag := fmt.Sprintf("project_uid:%s", m.ProjectUID)
+		tags = append(tags, tag)
+	}
+
+	for _, committee := range m.Committees {
+		tag := fmt.Sprintf("committee_uid:%s", committee.UID)
+		tags = append(tags, tag)
+	}
+
+	if m.Title != "" {
+		// without prefix
+		tags = append(tags, m.Title)
+	}
+
+	if m.Description != "" {
+		// without prefix
+		tags = append(tags, m.Description)
+	}
+
+	return tags
+
+}
+
+// Tags generates a consistent set of tags for the meeting settings.
+// IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
+func (m *MeetingSettings) Tags() []string {
+	tags := []string{}
+
+	if m == nil {
+		return nil
+	}
+
+	if m.UID != "" {
+		// without prefix
+		tags = append(tags, m.UID)
+		// with prefix
+		tag := fmt.Sprintf("meeting_uid:%s", m.UID)
+		tags = append(tags, tag)
+	}
+
+	return tags
 }

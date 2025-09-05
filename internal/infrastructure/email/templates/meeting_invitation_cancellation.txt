@@ -1,5 +1,5 @@
-# Copyright The Linux Foundation and each contributor to LFX.
-# SPDX-License-Identifier: MIT
+{{/* Copyright The Linux Foundation and each contributor to LFX. */}}
+{{/* SPDX-License-Identifier: MIT */}}
 
 Meeting Cancellation Notice
 ============================
@@ -22,6 +22,9 @@ Time Zone: {{.Timezone}}
 
 {{end}}{{if .Reason}}Cancellation Reason:
 {{.Reason}}
+
+{{end}}{{if .ICSAttachment}}📅 Calendar Cancellation Attached
+A calendar cancellation file (.ics) is attached to this email. Open it to automatically remove this meeting from your calendar application.
 
 {{end}}We apologize for any inconvenience this may cause. If you have any questions, please contact the meeting organizer.
 

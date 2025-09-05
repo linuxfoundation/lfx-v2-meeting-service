@@ -87,8 +87,8 @@ func MeetingBaseAttributes() {
 	VisibilityAttribute()
 	RestrictedAttribute()
 	ArtifactVisibilityAttribute()
-	JoinURLAttribute()
 	PublicLinkAttribute()
+	PasswordAttribute()
 	EmailDeliveryErrorCountAttribute()
 	RecordingEnabledAttribute()
 	TranscriptEnabledAttribute()
@@ -137,6 +137,7 @@ you must set the value of this field as '2' and the value of the 'type' paramete
 For a daily meeting, the maximum interval you can set is '90' days. 
 For a weekly meeting the maximum interval that you can set is of '12' weeks. 
 For a monthly meeting, there is a maximum of '3' months.`)
+		Minimum(1)
 	})
 	Field(3, "weekly_days", String, func() {
 		Description(`This field is required if you're scheduling a recurring meeting of type '2' to state which day(s) 
@@ -194,9 +195,7 @@ var Occurrence = Type("Occurrence", func() {
 	Attribute("registrant_count", Int, "Number of registrants for this meeting occurrence")
 	Attribute("response_count_no", Int, "Number of registrants who declined the invite for this occurrence")
 	Attribute("response_count_yes", Int, "Number of registrants who accepted the invite for this occurrence")
-	Attribute("status", String, "Occurrence status from platform", func() {
-		Enum("active", "cancelled")
-	})
+	Attribute("is_cancelled", Boolean, "Whether the occurrence is cancelled")
 })
 
 // MeetingOrganizersAttribute is the DSL attribute for meeting organizers.
