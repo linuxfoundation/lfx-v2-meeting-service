@@ -124,6 +124,7 @@ func main() {
 	committeeHandler := handlers.NewCommitteeHandlers(
 		meetingService,
 		registrantService,
+		committeeSyncService,
 		messageBuilder,
 	)
 

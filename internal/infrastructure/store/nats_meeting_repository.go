@@ -228,6 +228,62 @@ func (s *NatsMeetingRepository) ListAll(ctx context.Context) ([]*models.MeetingB
 	return meetingsBase, matchedSettings, nil
 }
 
+// ListByCommittee lists meetings that contain the specified committee UID
+func (s *NatsMeetingRepository) ListByCommittee(ctx context.Context, committeeUID string) ([]*models.MeetingBase, []*models.MeetingSettings, error) {
+	start := time.Now()
+
+	// Get all meetings first
+	meetingsBase, err := s.ListAllBase(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	allSettings, err := s.ListAllSettings(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Create a map of settings by UID for efficient lookup
+	settingsMap := make(map[string]*models.MeetingSettings)
+	for _, setting := range allSettings {
+		settingsMap[setting.UID] = setting
+	}
+
+	// Filter meetings that contain the specified committee
+	var filteredMeetings []*models.MeetingBase
+	var filteredSettings []*models.MeetingSettings
+
+	for _, meeting := range meetingsBase {
+		if meeting == nil {
+			continue
+		}
+
+		// Check if this meeting contains the specified committee
+		for _, committee := range meeting.Committees {
+			if committee.UID == committeeUID {
+				filteredMeetings = append(filteredMeetings, meeting)
+				if setting, exists := settingsMap[meeting.UID]; exists {
+					filteredSettings = append(filteredSettings, setting)
+				} else {
+					filteredSettings = append(filteredSettings, nil)
+				}
+				break
+			}
+		}
+	}
+
+	elapsed := time.Since(start)
+	slog.DebugContext(ctx, "fetched meetings by committee",
+		"elapsed_time_ms", elapsed.Milliseconds(),
+		"elapsed_time", elapsed.String(),
+		"committee_uid", committeeUID,
+		"total_meetings", len(meetingsBase),
+		"filtered_meetings", len(filteredMeetings),
+	)
+
+	return filteredMeetings, filteredSettings, nil
+}
+
 func (s *NatsMeetingRepository) putBase(ctx context.Context, meetingBase *models.MeetingBase) (uint64, error) {
 	jsonData, err := json.Marshal(meetingBase)
 	if err != nil {

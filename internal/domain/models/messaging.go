@@ -71,12 +71,12 @@ const (
 	CommitteeListMembersSubject = "lfx.committee-api.list_members"
 
 	// CommitteeMemberCreatedSubject is the subject for committee member creation events.
-	// The subject is of the form: lfx.committee-api.member_created
-	CommitteeMemberCreatedSubject = "lfx.committee-api.member_created"
+	// The subject is of the form: lfx.committee-api.committee_member.created
+	CommitteeMemberCreatedSubject = "lfx.committee-api.committee_member.created"
 
 	// CommitteeMemberDeletedSubject is the subject for committee member deletion events.
-	// The subject is of the form: lfx.committee-api.member_deleted
-	CommitteeMemberDeletedSubject = "lfx.committee-api.member_deleted"
+	// The subject is of the form: lfx.committee-api.committee_member.deleted
+	CommitteeMemberDeletedSubject = "lfx.committee-api.committee_member.deleted"
 )
 
 // NATS wildcard subjects that the meeting service handles messages about.

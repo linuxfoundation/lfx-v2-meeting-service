@@ -99,12 +99,12 @@ func TestMessagingSubjects(t *testing.T) {
 		{
 			name:     "CommitteeMemberCreatedSubject",
 			subject:  CommitteeMemberCreatedSubject,
-			expected: "lfx.committee-api.member_created",
+			expected: "lfx.committee-api.committee_member.created",
 		},
 		{
 			name:     "CommitteeMemberDeletedSubject",
 			subject:  CommitteeMemberDeletedSubject,
-			expected: "lfx.committee-api.member_deleted",
+			expected: "lfx.committee-api.committee_member.deleted",
 		},
 	}
 

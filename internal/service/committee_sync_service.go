@@ -230,7 +230,7 @@ func (s *CommitteeSyncService) addCommitteeMembersForCommittee(
 		"eligible_members", len(eligibleMembers))
 
 	// Add eligible members as registrants using worker pool for concurrent processing
-	return s.addCommitteeMembersAsRegistrants(ctx, meetingUID, committee.UID, eligibleMembers)
+	return s.AddCommitteeMembersAsRegistrants(ctx, meetingUID, committee.UID, eligibleMembers)
 }
 
 // filterMembersByVotingStatus filters committee members by their voting status
@@ -253,8 +253,8 @@ func (s *CommitteeSyncService) filterMembersByVotingStatus(
 	return eligible
 }
 
-// addCommitteeMembersAsRegistrants creates registrants for the eligible committee members
-func (s *CommitteeSyncService) addCommitteeMembersAsRegistrants(
+// AddCommitteeMembersAsRegistrants creates registrants for the eligible committee members
+func (s *CommitteeSyncService) AddCommitteeMembersAsRegistrants(
 	ctx context.Context,
 	meetingUID string,
 	committeeUID string,
@@ -664,7 +664,7 @@ func (s *CommitteeSyncService) updateCommitteeMembersForCommittee(
 
 	// Add new eligible members
 	if len(membersToAdd) > 0 {
-		err := s.addCommitteeMembersAsRegistrants(ctx, meetingUID, change.New.UID, membersToAdd)
+		err := s.AddCommitteeMembersAsRegistrants(ctx, meetingUID, change.New.UID, membersToAdd)
 		if err != nil {
 			return fmt.Errorf("failed to add new eligible members: %w", err)
 		}
@@ -751,4 +751,56 @@ func equalStringSlices(a, b []string) bool {
 	}
 
 	return true
+}
+
+// RemoveCommitteeMemberFromMeeting removes a specific committee member from a meeting
+// by finding their registrant records and removing/converting them based on meeting visibility
+func (s *CommitteeSyncService) RemoveCommitteeMemberFromMeeting(
+	ctx context.Context,
+	meetingUID string,
+	committeeUID string,
+	memberEmail string,
+	isPublicMeeting bool,
+) error {
+	// Get all registrants for this meeting
+	registrants, err := s.registrantRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		return fmt.Errorf("failed to list registrants for meeting %s: %w", meetingUID, err)
+	}
+
+	// Find registrants that match this committee member
+	var matchingRegistrants []*models.Registrant
+	for _, registrant := range registrants {
+		if registrant.Type == models.RegistrantTypeCommittee &&
+			registrant.CommitteeUID != nil &&
+			*registrant.CommitteeUID == committeeUID &&
+			registrant.Email == memberEmail {
+			matchingRegistrants = append(matchingRegistrants, registrant)
+		}
+	}
+
+	if len(matchingRegistrants) == 0 {
+		slog.DebugContext(ctx, "no matching committee registrants found for removal",
+			"meeting_uid", meetingUID,
+			"committee_uid", committeeUID,
+			"member_email", memberEmail)
+		return nil
+	}
+
+	slog.InfoContext(ctx, "found matching committee registrants for removal",
+		"meeting_uid", meetingUID,
+		"committee_uid", committeeUID,
+		"member_email", memberEmail,
+		"matching_registrants", len(matchingRegistrants),
+		"is_public_meeting", isPublicMeeting)
+
+	// Process each matching registrant using existing private methods
+	for _, registrant := range matchingRegistrants {
+		err := s.processCommitteeRegistrantRemoval(ctx, registrant, isPublicMeeting)
+		if err != nil {
+			return fmt.Errorf("failed to process registrant removal for %s: %w", registrant.UID, err)
+		}
+	}
+
+	return nil
 }
