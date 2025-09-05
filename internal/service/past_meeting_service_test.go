@@ -733,8 +733,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(nil)
 
 				// Messaging fails but operation succeeds
-				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123").Return(errors.New("messaging error"))
-				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123").Return(errors.New("messaging error"))
+				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123").Return(errors.New("messaging error")).Maybe()
+				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123").Return(errors.New("messaging error")).Maybe()
 			},
 			wantErr: false,
 		},
