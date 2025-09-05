@@ -40,7 +40,8 @@ func NewCommitteeHandlers(
 }
 
 func (h *CommitteeHandlers) HandlerReady() bool {
-	return h.meetingService.ServiceReady() && h.registrantService.ServiceReady()
+	return h.meetingService.ServiceReady() && h.registrantService.ServiceReady() &&
+		h.committeeSyncService.ServiceReady()
 }
 
 // HandleMessage implements domain.MessageHandler interface
@@ -231,9 +232,9 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 
 		// Find the committee configuration for this meeting
 		var committeeConfig *models.Committee
-		for _, committee := range meeting.Committees {
+		for i, committee := range meeting.Committees {
 			if committee.UID == memberMsg.CommitteeUID {
-				committeeConfig = &committee
+				committeeConfig = &meeting.Committees[i]
 				break
 			}
 		}
@@ -328,9 +329,9 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 
 		// Find the committee configuration for this meeting to get voting status requirements
 		var committeeConfig *models.Committee
-		for _, committee := range meeting.Committees {
+		for i, committee := range meeting.Committees {
 			if committee.UID == memberMsg.CommitteeUID {
-				committeeConfig = &committee
+				committeeConfig = &meeting.Committees[i]
 				break
 			}
 		}

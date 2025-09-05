@@ -49,7 +49,7 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 	// Create a committee sync service for testing
 	committeeSyncService := service.NewCommitteeSyncService(
 		mockRegistrantRepo,
-		nil, // registrant service not needed for this test
+		registrantService, // registrant service is needed for ServiceReady check
 		mockMessageBuilder,
 	)
 

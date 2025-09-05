@@ -226,7 +226,7 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 // HandleMeetingCreated is the message handler for the meeting-created subject.
 // It performs post-creation tasks like committee member synchronization.
 func (s *MeetingHandler) HandleMeetingCreated(ctx context.Context, msg domain.Message) ([]byte, error) {
-	if !s.meetingService.ServiceReady() {
+	if !s.meetingService.ServiceReady() || !s.committeeSyncService.ServiceReady() {
 		slog.ErrorContext(ctx, "service not ready")
 		return nil, fmt.Errorf("service not ready")
 	}
@@ -278,7 +278,7 @@ func (s *MeetingHandler) HandleMeetingCreated(ctx context.Context, msg domain.Me
 // HandleMeetingUpdated is the message handler for the meeting-updated subject.
 // It performs post-update tasks like committee member synchronization changes.
 func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Message) ([]byte, error) {
-	if !s.meetingService.ServiceReady() {
+	if !s.meetingService.ServiceReady() || !s.committeeSyncService.ServiceReady() {
 		slog.ErrorContext(ctx, "service not ready")
 		return nil, fmt.Errorf("service not ready")
 	}

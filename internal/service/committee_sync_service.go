@@ -49,6 +49,13 @@ func NewCommitteeSyncService(
 	}
 }
 
+// ServiceReady checks if the service is ready for use.
+func (s *CommitteeSyncService) ServiceReady() bool {
+	return s.registrantRepository != nil &&
+		s.registrantService != nil &&
+		s.messageBuilder != nil
+}
+
 // SyncCommittees synchronizes committee members between old and new committee configurations
 func (s *CommitteeSyncService) SyncCommittees(
 	ctx context.Context,
