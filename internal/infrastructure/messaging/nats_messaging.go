@@ -112,8 +112,16 @@ func (m *MessageBuilder) setIndexerTags(tags ...string) []string {
 	return tags
 }
 
+func (m *MessageBuilder) prepareMeetingBaseForIndexing(data models.MeetingBase) models.MeetingBase {
+	// Clear sensitive fields and customize data payload before indexing
+	data.JoinURL = ""
+	return data
+}
+
 // SendIndexMeeting sends the message to the NATS server for the meeting indexing.
 func (m *MessageBuilder) SendIndexMeeting(ctx context.Context, action models.MessageAction, data models.MeetingBase) error {
+	data = m.prepareMeetingBaseForIndexing(data)
+
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)

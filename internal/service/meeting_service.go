@@ -68,9 +68,6 @@ func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[st
 	if oldMeeting.Visibility != newMeeting.Visibility {
 		changes["Visibility"] = newMeeting.Visibility
 	}
-	if oldMeeting.JoinURL != newMeeting.JoinURL {
-		changes["Join URL"] = newMeeting.JoinURL
-	}
 
 	// Compare platform-specific fields
 	if oldMeeting.Platform != newMeeting.Platform {

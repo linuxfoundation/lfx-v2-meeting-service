@@ -40,7 +40,6 @@ func MergeUpdateMeetingRequest(reqMeeting *MeetingBase, existingMeeting *Meeting
 		Restricted:                      reqMeeting.Restricted,
 		ArtifactVisibility:              reqMeeting.ArtifactVisibility,
 		PublicLink:                      existingMeeting.PublicLink, // Preserve platform-generated URL
-		JoinURL:                         existingMeeting.JoinURL,    // Preserve platform-generated URL
 		RecordingEnabled:                reqMeeting.RecordingEnabled,
 		TranscriptEnabled:               reqMeeting.TranscriptEnabled,
 		YoutubeUploadEnabled:            reqMeeting.YoutubeUploadEnabled,
