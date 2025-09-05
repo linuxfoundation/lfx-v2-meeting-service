@@ -83,14 +83,14 @@ func (h *CommitteeHandlers) HandleCommitteeMemberCreated(ctx context.Context, ms
 		return nil, err
 	}
 
-	if committeeMemberMsg.CommitteeUID == "" || committeeMemberMsg.MemberEmail == "" {
+	if committeeMemberMsg.CommitteeUID == "" || committeeMemberMsg.Email == "" {
 		slog.WarnContext(ctx, "invalid committee member created message: missing required fields")
 		return nil, fmt.Errorf("committee UID and member email are required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", committeeMemberMsg.CommitteeUID))
-	ctx = logging.AppendCtx(ctx, slog.String("member_email", committeeMemberMsg.MemberEmail))
-	ctx = logging.AppendCtx(ctx, slog.String("voting_status", committeeMemberMsg.VotingStatus))
+	ctx = logging.AppendCtx(ctx, slog.String("member_email", committeeMemberMsg.Email))
+	ctx = logging.AppendCtx(ctx, slog.String("voting_status", committeeMemberMsg.Voting.Status))
 
 	slog.InfoContext(ctx, "processing new committee member, checking for relevant meetings")
 
@@ -122,14 +122,14 @@ func (h *CommitteeHandlers) HandleCommitteeMemberDeleted(ctx context.Context, ms
 		return nil, err
 	}
 
-	if committeeMemberMsg.CommitteeUID == "" || committeeMemberMsg.MemberEmail == "" {
+	if committeeMemberMsg.CommitteeUID == "" || committeeMemberMsg.Email == "" {
 		slog.WarnContext(ctx, "invalid committee member deleted message: missing required fields")
 		return nil, fmt.Errorf("committee UID and member email are required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", committeeMemberMsg.CommitteeUID))
-	ctx = logging.AppendCtx(ctx, slog.String("member_email", committeeMemberMsg.MemberEmail))
-	ctx = logging.AppendCtx(ctx, slog.String("voting_status", committeeMemberMsg.VotingStatus))
+	ctx = logging.AppendCtx(ctx, slog.String("member_email", committeeMemberMsg.Email))
+	ctx = logging.AppendCtx(ctx, slog.String("voting_status", committeeMemberMsg.Voting.Status))
 
 	slog.InfoContext(ctx, "processing deleted committee member, checking for relevant meetings")
 
@@ -165,16 +165,17 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 
 	slog.InfoContext(ctx, "committee member addition placeholder - implementation pending",
 		"committee_uid", memberMsg.CommitteeUID,
-		"member_email", memberMsg.MemberEmail,
-		"voting_status", memberMsg.VotingStatus)
+		"member_email", memberMsg.Email,
+		"voting_status", memberMsg.Voting.Status)
 
 	// For now, just log what would be processed
 	slog.DebugContext(ctx, "would search for meetings with committee and add member",
 		"committee_uid", memberMsg.CommitteeUID,
-		"member_username", memberMsg.MemberUsername,
-		"member_email", memberMsg.MemberEmail,
-		"member_name", memberMsg.MemberName,
-		"voting_status", memberMsg.VotingStatus)
+		"member_username", memberMsg.Username,
+		"member_email", memberMsg.Email,
+		"member_first_name", memberMsg.FirstName,
+		"member_last_name", memberMsg.LastName,
+		"voting_status", memberMsg.Voting.Status)
 
 	return nil
 }
@@ -202,16 +203,17 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 
 	slog.InfoContext(ctx, "committee member removal placeholder - implementation pending",
 		"committee_uid", memberMsg.CommitteeUID,
-		"member_email", memberMsg.MemberEmail,
-		"voting_status", memberMsg.VotingStatus)
+		"member_email", memberMsg.Email,
+		"voting_status", memberMsg.Voting.Status)
 
 	// For now, just log what would be processed
 	slog.DebugContext(ctx, "would search for meetings with committee and remove/convert member",
 		"committee_uid", memberMsg.CommitteeUID,
-		"member_username", memberMsg.MemberUsername,
-		"member_email", memberMsg.MemberEmail,
-		"member_name", memberMsg.MemberName,
-		"voting_status", memberMsg.VotingStatus,
+		"member_username", memberMsg.Username,
+		"member_email", memberMsg.Email,
+		"member_first_name", memberMsg.FirstName,
+		"member_last_name", memberMsg.LastName,
+		"voting_status", memberMsg.Voting.Status,
 		"action_public_meetings", "convert to direct registrant",
 		"action_private_meetings", "remove registrant entirely")
 

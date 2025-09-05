@@ -334,21 +334,8 @@ func (m *MessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject st
 // ValidateCommitteeExists checks if a committee exists by sending a request to committee-api.
 // Returns the committee name if it exists, or an error if it doesn't exist or there's a communication error.
 func (m *MessageBuilder) ValidateCommitteeExists(ctx context.Context, committeeUID string) (string, error) {
-	// Prepare request payload
-	request := struct {
-		UID string `json:"uid"`
-	}{
-		UID: committeeUID,
-	}
-
-	requestBytes, err := json.Marshal(request)
-	if err != nil {
-		slog.ErrorContext(ctx, "error marshalling committee request", logging.ErrKey, err, "committee_uid", committeeUID)
-		return "", err
-	}
-
 	// Send request with 5 second timeout
-	msg, err := m.NatsConn.Request(models.CommitteeGetNameSubject, requestBytes, 5*time.Second)
+	msg, err := m.NatsConn.Request(models.CommitteeGetNameSubject, []byte(committeeUID), 5*time.Second)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending committee validation request", logging.ErrKey, err, "committee_uid", committeeUID)
 		return "", err
@@ -379,4 +366,39 @@ type CommitteeNotFoundError struct {
 
 func (e *CommitteeNotFoundError) Error() string {
 	return "committee not found: " + e.UID
+}
+
+// GetCommitteeMembers fetches committee members from committee-api.
+// Returns the list of all committee members for the given committee.
+func (m *MessageBuilder) GetCommitteeMembers(ctx context.Context, committeeUID string) ([]models.CommitteeMember, error) {
+	// Send request with 10 second timeout (might return many members)
+	msg, err := m.NatsConn.Request(models.CommitteeListMembersSubject, []byte(committeeUID), 10*time.Second)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending committee members request", logging.ErrKey, err,
+			"committee_uid", committeeUID)
+		return nil, err
+	}
+
+	// Parse response - first try to parse as error response
+	var errorResponse struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(msg.Data, &errorResponse); err == nil && errorResponse.Error != "" {
+		slog.WarnContext(ctx, "committee members request failed", "committee_uid", committeeUID, "error", errorResponse.Error)
+		return nil, &CommitteeNotFoundError{UID: committeeUID, Details: errorResponse.Error}
+	}
+
+	// If not an error response, parse as direct array of committee members
+	var members []models.CommitteeMember
+	if err := json.Unmarshal(msg.Data, &members); err != nil {
+		slog.ErrorContext(ctx, "error unmarshalling committee members response", logging.ErrKey, err,
+			"committee_uid", committeeUID)
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "committee members fetch successful",
+		"committee_uid", committeeUID,
+		"member_count", len(members))
+
+	return members, nil
 }

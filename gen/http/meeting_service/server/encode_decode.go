@@ -3117,6 +3117,8 @@ func marshalMeetingserviceRegistrantToRegistrantResponseBody(v *meetingservice.R
 		FirstName:          v.FirstName,
 		LastName:           v.LastName,
 		Host:               v.Host,
+		Type:               v.Type,
+		CommitteeUID:       v.CommitteeUID,
 		JobTitle:           v.JobTitle,
 		OccurrenceID:       v.OccurrenceID,
 		OrgName:            v.OrgName,

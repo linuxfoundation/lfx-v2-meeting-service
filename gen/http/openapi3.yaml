@@ -703,6 +703,7 @@ paths:
                                 $ref: '#/components/schemas/Registrant'
                             example:
                                 avatar_url: https://example.com/avatar.jpg
+                                committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 created_at: "2021-01-01T00:00:00Z"
                                 email: user@example.com
                                 first_name: John
@@ -714,6 +715,7 @@ paths:
                                 org_is_member: true
                                 org_is_project_member: true
                                 org_name: Non repudiandae pariatur aut.
+                                type: direct
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
                                 username: Sunt quod voluptates dolore.
@@ -908,6 +910,7 @@ paths:
                                 $ref: '#/components/schemas/Registrant'
                             example:
                                 avatar_url: https://example.com/avatar.jpg
+                                committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 created_at: "2021-01-01T00:00:00Z"
                                 email: user@example.com
                                 first_name: John
@@ -919,6 +922,7 @@ paths:
                                 org_is_member: true
                                 org_is_project_member: false
                                 org_name: Ut dolor consequatur sint rerum.
+                                type: direct
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
                                 username: Officia optio iusto et.
@@ -1023,6 +1027,7 @@ paths:
                                 $ref: '#/components/schemas/Registrant'
                             example:
                                 avatar_url: https://example.com/avatar.jpg
+                                committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 created_at: "2021-01-01T00:00:00Z"
                                 email: user@example.com
                                 first_name: John
@@ -1034,6 +1039,7 @@ paths:
                                 org_is_member: false
                                 org_is_project_member: false
                                 org_name: Perspiciatis eum necessitatibus error voluptate et aut.
+                                type: direct
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2021-01-01T00:00:00Z"
                                 username: Quos aliquam.
@@ -1642,6 +1648,7 @@ paths:
                             example:
                                 registrants:
                                     - avatar_url: https://example.com/avatar.jpg
+                                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       created_at: "2021-01-01T00:00:00Z"
                                       email: user@example.com
                                       first_name: John
@@ -1653,10 +1660,12 @@ paths:
                                       org_is_member: true
                                       org_is_project_member: false
                                       org_name: Ut dolor consequatur sint rerum.
+                                      type: direct
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
                                       username: Officia optio iusto et.
                                     - avatar_url: https://example.com/avatar.jpg
+                                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       created_at: "2021-01-01T00:00:00Z"
                                       email: user@example.com
                                       first_name: John
@@ -1668,6 +1677,7 @@ paths:
                                       org_is_member: true
                                       org_is_project_member: false
                                       org_name: Ut dolor consequatur sint rerum.
+                                      type: direct
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
                                       username: Officia optio iusto et.
@@ -3894,6 +3904,7 @@ components:
                     description: Meeting registrants
                     example:
                         - avatar_url: https://example.com/avatar.jpg
+                          committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           created_at: "2021-01-01T00:00:00Z"
                           email: user@example.com
                           first_name: John
@@ -3905,10 +3916,12 @@ components:
                           org_is_member: true
                           org_is_project_member: false
                           org_name: Ut dolor consequatur sint rerum.
+                          type: direct
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
                           username: Officia optio iusto et.
                         - avatar_url: https://example.com/avatar.jpg
+                          committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           created_at: "2021-01-01T00:00:00Z"
                           email: user@example.com
                           first_name: John
@@ -3920,10 +3933,12 @@ components:
                           org_is_member: true
                           org_is_project_member: false
                           org_name: Ut dolor consequatur sint rerum.
+                          type: direct
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
                           username: Officia optio iusto et.
                         - avatar_url: https://example.com/avatar.jpg
+                          committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           created_at: "2021-01-01T00:00:00Z"
                           email: user@example.com
                           first_name: John
@@ -3935,12 +3950,14 @@ components:
                           org_is_member: true
                           org_is_project_member: false
                           org_name: Ut dolor consequatur sint rerum.
+                          type: direct
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
                           username: Officia optio iusto et.
             example:
                 registrants:
                     - avatar_url: https://example.com/avatar.jpg
+                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
                       first_name: John
@@ -3952,10 +3969,12 @@ components:
                       org_is_member: true
                       org_is_project_member: false
                       org_name: Ut dolor consequatur sint rerum.
+                      type: direct
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Officia optio iusto et.
                     - avatar_url: https://example.com/avatar.jpg
+                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
                       first_name: John
@@ -3967,10 +3986,12 @@ components:
                       org_is_member: true
                       org_is_project_member: false
                       org_name: Ut dolor consequatur sint rerum.
+                      type: direct
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Officia optio iusto et.
                     - avatar_url: https://example.com/avatar.jpg
+                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
                       first_name: John
@@ -3982,10 +4003,12 @@ components:
                       org_is_member: true
                       org_is_project_member: false
                       org_name: Ut dolor consequatur sint rerum.
+                      type: direct
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Officia optio iusto et.
                     - avatar_url: https://example.com/avatar.jpg
+                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
                       first_name: John
@@ -3997,6 +4020,7 @@ components:
                       org_is_member: true
                       org_is_project_member: false
                       org_name: Ut dolor consequatur sint rerum.
+                      type: direct
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Officia optio iusto et.
@@ -6310,6 +6334,11 @@ components:
                     description: User's avatar URL
                     example: https://example.com/avatar.jpg
                     format: uri
+                committee_uid:
+                    type: string
+                    description: The UID of the committee if registrant is a committee member
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
                 created_at:
                     type: string
                     description: The date and time the resource was created
@@ -6362,6 +6391,13 @@ components:
                     type: string
                     description: User's organization
                     example: Harum debitis ex consequatur provident est quidem.
+                type:
+                    type: string
+                    description: Type of registrant
+                    example: direct
+                    enum:
+                        - direct
+                        - committee
                 uid:
                     type: string
                     description: The UID of the registrant
@@ -6379,6 +6415,7 @@ components:
             description: Meeting registrant object
             example:
                 avatar_url: https://example.com/avatar.jpg
+                committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 created_at: "2021-01-01T00:00:00Z"
                 email: user@example.com
                 first_name: John
@@ -6390,6 +6427,7 @@ components:
                 org_is_member: false
                 org_is_project_member: false
                 org_name: Voluptatem pariatur enim ea laboriosam mollitia.
+                type: direct
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "2021-01-01T00:00:00Z"
                 username: Error qui.
@@ -6397,6 +6435,7 @@ components:
                 - uid
                 - meeting_uid
                 - email
+                - type
         ServiceUnavailableError:
             type: object
             properties:

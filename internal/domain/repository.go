@@ -40,6 +40,7 @@ type RegistrantRepository interface {
 	// Registrant full operations
 	Create(ctx context.Context, registrant *models.Registrant) error
 	Exists(ctx context.Context, registrantUID string) (bool, error)
+	ExistsByMeetingAndEmail(ctx context.Context, meetingUID, email string) (bool, error)
 	Delete(ctx context.Context, registrantUID string, revision uint64) error
 
 	// Registrant base operations

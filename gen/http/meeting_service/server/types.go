@@ -486,6 +486,10 @@ type CreateMeetingRegistrantResponseBody struct {
 	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Type of registrant
+	Type string `form:"type" json:"type" xml:"type"`
+	// The UID of the committee if registrant is a committee member
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
@@ -529,6 +533,10 @@ type UpdateMeetingRegistrantResponseBody struct {
 	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Type of registrant
+	Type string `form:"type" json:"type" xml:"type"`
+	// The UID of the committee if registrant is a committee member
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
@@ -1857,6 +1865,10 @@ type RegistrantResponseBody struct {
 	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Type of registrant
+	Type string `form:"type" json:"type" xml:"type"`
+	// The UID of the committee if registrant is a committee member
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
@@ -2334,6 +2346,8 @@ func NewCreateMeetingRegistrantResponseBody(res *meetingservice.Registrant) *Cre
 		FirstName:          res.FirstName,
 		LastName:           res.LastName,
 		Host:               res.Host,
+		Type:               res.Type,
+		CommitteeUID:       res.CommitteeUID,
 		JobTitle:           res.JobTitle,
 		OccurrenceID:       res.OccurrenceID,
 		OrgName:            res.OrgName,
@@ -2358,6 +2372,8 @@ func NewGetMeetingRegistrantResponseBody(res *meetingservice.GetMeetingRegistran
 		FirstName:          res.Registrant.FirstName,
 		LastName:           res.Registrant.LastName,
 		Host:               res.Registrant.Host,
+		Type:               res.Registrant.Type,
+		CommitteeUID:       res.Registrant.CommitteeUID,
 		JobTitle:           res.Registrant.JobTitle,
 		OccurrenceID:       res.Registrant.OccurrenceID,
 		OrgName:            res.Registrant.OrgName,
@@ -2382,6 +2398,8 @@ func NewUpdateMeetingRegistrantResponseBody(res *meetingservice.Registrant) *Upd
 		FirstName:          res.FirstName,
 		LastName:           res.LastName,
 		Host:               res.Host,
+		Type:               res.Type,
+		CommitteeUID:       res.CommitteeUID,
 		JobTitle:           res.JobTitle,
 		OccurrenceID:       res.OccurrenceID,
 		OrgName:            res.OrgName,

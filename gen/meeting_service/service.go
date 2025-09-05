@@ -909,6 +909,10 @@ type Registrant struct {
 	LastName *string
 	// If user should have access as a meeting host
 	Host *bool
+	// Type of registrant
+	Type string
+	// The UID of the committee if registrant is a committee member
+	CommitteeUID *string
 	// User's job title
 	JobTitle *string
 	// The ID of the specific occurrence the user should be invited to. If blank,

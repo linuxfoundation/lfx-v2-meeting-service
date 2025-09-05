@@ -125,3 +125,16 @@ func (m *MockMessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.
 	args := m.Called(ctx, data)
 	return args.Error(0)
 }
+
+func (m *MockMessageBuilder) ValidateCommitteeExists(ctx context.Context, committeeUID string) (string, error) {
+	args := m.Called(ctx, committeeUID)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockMessageBuilder) GetCommitteeMembers(ctx context.Context, committeeUID string) ([]models.CommitteeMember, error) {
+	args := m.Called(ctx, committeeUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.CommitteeMember), args.Error(1)
+}

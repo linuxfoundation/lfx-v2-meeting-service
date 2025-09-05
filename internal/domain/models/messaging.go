@@ -3,6 +3,8 @@
 
 package models
 
+import "time"
+
 // NATS subjects that the meeting service sends messages about.
 const (
 	// IndexMeetingSubject is the subject for the meeting indexing.
@@ -64,9 +66,9 @@ const (
 	// The subject is of the form: lfx.committee-api.get_name
 	CommitteeGetNameSubject = "lfx.committee-api.get_name"
 
-	// CommitteeGetMembersSubject is the subject for fetching committee members.
-	// The subject is of the form: lfx.committee-api.get_members
-	CommitteeGetMembersSubject = "lfx.committee-api.get_members"
+	// CommitteeListMembersSubject is the subject for fetching committee members.
+	// The subject is of the form: lfx.committee-api.list_members
+	CommitteeListMembersSubject = "lfx.committee-api.list_members"
 
 	// CommitteeMemberCreatedSubject is the subject for committee member creation events.
 	// The subject is of the form: lfx.committee-api.member_created
@@ -177,33 +179,57 @@ type MeetingUpdatedMessage struct {
 	Settings     *MeetingSettings `json:"settings"`
 }
 
+// CommitteeMemberBase represents the base committee member attributes
+type CommitteeMember struct {
+	UID           string                      `json:"uid"`
+	Username      string                      `json:"username"`
+	Email         string                      `json:"email"`
+	FirstName     string                      `json:"first_name"`
+	LastName      string                      `json:"last_name"`
+	JobTitle      string                      `json:"job_title,omitempty"`
+	Role          CommitteeMemberRole         `json:"role"`
+	AppointedBy   string                      `json:"appointed_by"`
+	Status        string                      `json:"status"`
+	Voting        CommitteeMemberVotingInfo   `json:"voting"`
+	Agency        string                      `json:"agency,omitempty"`
+	Country       string                      `json:"country,omitempty"`
+	Organization  CommitteeMemberOrganization `json:"organization"`
+	CommitteeUID  string                      `json:"committee_uid"`
+	CommitteeName string                      `json:"committee_name"`
+	CreatedAt     time.Time                   `json:"created_at"`
+	UpdatedAt     time.Time                   `json:"updated_at"`
+}
+
+// Role represents committee role information
+type CommitteeMemberRole struct {
+	Name      string `json:"name"`
+	StartDate string `json:"start_date,omitempty"`
+	EndDate   string `json:"end_date,omitempty"`
+}
+
+// VotingInfo represents voting information for the committee member
+type CommitteeMemberVotingInfo struct {
+	Status    string `json:"status"`
+	StartDate string `json:"start_date,omitempty"`
+	EndDate   string `json:"end_date,omitempty"`
+}
+
+// Organization represents organization information for the committee member
+type CommitteeMemberOrganization struct {
+	Name    string `json:"name"`
+	Website string `json:"website,omitempty"`
+}
+
 // CommitteeMemberCreatedMessage is the schema for the message sent when a committee member is created.
 // This message comes from the committee-api service and triggers adding the member to relevant meetings.
 type CommitteeMemberCreatedMessage struct {
-	CommitteeUID   string `json:"committee_uid"`
-	MemberUsername string `json:"member_username"`
-	MemberEmail    string `json:"member_email"`
-	MemberName     string `json:"member_name"`
-	VotingStatus   string `json:"voting_status"`
-	// Additional fields that might come from committee-api
-	MemberFirstName string `json:"member_first_name,omitempty"`
-	MemberLastName  string `json:"member_last_name,omitempty"`
-	MemberAvatarURL string `json:"member_avatar_url,omitempty"`
-	MemberJobTitle  string `json:"member_job_title,omitempty"`
-	MemberOrgName   string `json:"member_org_name,omitempty"`
+	CommitteeMember
 }
 
 // CommitteeMemberDeletedMessage is the schema for the message sent when a committee member is deleted.
 // This message comes from the committee-api service and triggers removing/converting the member in relevant meetings.
 type CommitteeMemberDeletedMessage struct {
-	CommitteeUID   string `json:"committee_uid"`
-	MemberUsername string `json:"member_username"`
-	MemberEmail    string `json:"member_email"`
-	MemberName     string `json:"member_name"`
-	VotingStatus   string `json:"voting_status"`
-	// Additional fields that might come from committee-api
-	MemberFirstName string `json:"member_first_name,omitempty"`
-	MemberLastName  string `json:"member_last_name,omitempty"`
+	CommitteeMember
 }
 
 // PastMeetingAccessMessage is the schema for the data in the message sent to the fga-sync service.

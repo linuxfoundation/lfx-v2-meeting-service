@@ -295,6 +295,28 @@ func (s *NatsRegistrantRepository) Exists(ctx context.Context, registrantUID str
 	return true, nil
 }
 
+// ExistsByMeetingAndEmail checks if a registrant exists for a given meeting and email.
+func (s *NatsRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, meetingUID, email string) (bool, error) {
+	if !s.IsReady(ctx) {
+		return false, domain.ErrServiceUnavailable
+	}
+
+	// List all registrants for the meeting
+	registrants, err := s.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if any registrant has the given email
+	for _, registrant := range registrants {
+		if registrant.Email == email {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // Get gets a registrant by its UID.
 func (s *NatsRegistrantRepository) Get(ctx context.Context, registrantUID string) (*models.Registrant, error) {
 	registrant, _, err := s.GetWithRevision(ctx, registrantUID)

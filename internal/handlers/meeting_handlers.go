@@ -18,12 +18,13 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
-// ZoomWebhookHandler handles Zoom webhook events.
+// MeetingHandler handles meeting-related messages and events.
 type MeetingHandler struct {
 	meetingService                *service.MeetingService
 	registrantService             *service.MeetingRegistrantService
 	pastMeetingService            *service.PastMeetingService
 	pastMeetingParticipantService *service.PastMeetingParticipantService
+	committeeSyncService          *service.CommitteeSyncService
 }
 
 func NewMeetingHandler(
@@ -31,12 +32,14 @@ func NewMeetingHandler(
 	registrantService *service.MeetingRegistrantService,
 	pastMeetingService *service.PastMeetingService,
 	pastMeetingParticipantService *service.PastMeetingParticipantService,
+	committeeSyncService *service.CommitteeSyncService,
 ) *MeetingHandler {
 	return &MeetingHandler{
 		meetingService:                meetingService,
 		registrantService:             registrantService,
 		pastMeetingService:            pastMeetingService,
 		pastMeetingParticipantService: pastMeetingParticipantService,
+		committeeSyncService:          committeeSyncService,
 	}
 }
 
@@ -247,7 +250,16 @@ func (s *MeetingHandler) HandleMeetingCreated(ctx context.Context, msg domain.Me
 		slog.InfoContext(ctx, "meeting has committees, starting committee member sync",
 			"committee_count", len(meetingCreatedMsg.Base.Committees))
 
-		err := s.syncCommitteeMembers(ctx, &meetingCreatedMsg)
+		// Use the new CommitteeSyncService to handle committee member sync
+		// For meeting creation, we sync from empty committees to new committees
+		isPublicMeeting := meetingCreatedMsg.Base.Visibility == "public"
+		err := s.committeeSyncService.SyncCommittees(
+			ctx,
+			meetingCreatedMsg.MeetingUID,
+			[]models.Committee{}, // No old committees for creation
+			meetingCreatedMsg.Base.Committees,
+			isPublicMeeting,
+		)
 		if err != nil {
 			// Log error but don't fail the entire handler - committee sync is non-critical
 			slog.ErrorContext(ctx, "committee member sync failed", logging.ErrKey, err)
@@ -259,33 +271,6 @@ func (s *MeetingHandler) HandleMeetingCreated(ctx context.Context, msg domain.Me
 	}
 
 	return []byte("success"), nil
-}
-
-// syncCommitteeMembers handles the synchronization of committee members as registrants.
-// This is a placeholder implementation that will be completed when committee-api contract is available.
-func (s *MeetingHandler) syncCommitteeMembers(ctx context.Context, meetingMsg *models.MeetingCreatedMessage) error {
-	// TODO: Implement committee member fetching and registrant creation
-	// This will involve:
-	// 1. For each committee in meetingMsg.Base.Committees:
-	//    - Send request to committee-api to get members filtered by AllowedVotingStatuses
-	//    - Parse response and extract member details
-	// 2. For each committee member:
-	//    - Check if registrant already exists (by email to avoid duplicates)
-	//    - Create registrant record if not exists
-	//    - Send appropriate NATS messages for indexing/access control
-
-	slog.InfoContext(ctx, "committee member sync placeholder - implementation pending committee-api contract",
-		"committee_count", len(meetingMsg.Base.Committees))
-
-	// For now, just log the committees that would be processed
-	for i, committee := range meetingMsg.Base.Committees {
-		slog.DebugContext(ctx, "would process committee",
-			"committee_index", i,
-			"committee_uid", committee.UID,
-			"allowed_voting_statuses", committee.AllowedVotingStatuses)
-	}
-
-	return nil
 }
 
 // HandleMeetingUpdated is the message handler for the meeting-updated subject.
@@ -312,219 +297,19 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUpdatedMsg.MeetingUID))
 	slog.InfoContext(ctx, "processing meeting update post-tasks")
 
-	// Check if committees have changed and handle committee member sync
-	err = s.handleCommitteeChanges(ctx, &meetingUpdatedMsg)
+	// Handle committee changes using the new CommitteeSyncService
+	isPublicMeeting := meetingUpdatedMsg.UpdatedBase.Visibility == "public"
+	err = s.committeeSyncService.SyncCommittees(
+		ctx,
+		meetingUpdatedMsg.MeetingUID,
+		meetingUpdatedMsg.PreviousBase.Committees,
+		meetingUpdatedMsg.UpdatedBase.Committees,
+		isPublicMeeting,
+	)
 	if err != nil {
 		// Log error but don't fail the entire handler - committee sync is non-critical
 		slog.ErrorContext(ctx, "committee change handling failed", logging.ErrKey, err)
 	}
 
 	return []byte("success"), nil
-}
-
-// handleCommitteeChanges manages committee member synchronization when committees change.
-func (s *MeetingHandler) handleCommitteeChanges(ctx context.Context, meetingMsg *models.MeetingUpdatedMessage) error {
-	oldCommittees := meetingMsg.PreviousBase.Committees
-	newCommittees := meetingMsg.UpdatedBase.Committees
-
-	// Create maps for easier comparison
-	oldCommitteeMap := make(map[string]models.Committee)
-	for _, committee := range oldCommittees {
-		oldCommitteeMap[committee.UID] = committee
-	}
-
-	newCommitteeMap := make(map[string]models.Committee)
-	for _, committee := range newCommittees {
-		newCommitteeMap[committee.UID] = committee
-	}
-
-	// Check if there are any changes
-	if len(oldCommittees) == 0 && len(newCommittees) == 0 {
-		slog.DebugContext(ctx, "no committees in old or new meeting - no changes to process")
-		return nil
-	}
-
-	hasChanges := false
-
-	// Check for added committees
-	var addedCommittees []models.Committee
-	for _, committee := range newCommittees {
-		if _, exists := oldCommitteeMap[committee.UID]; !exists {
-			addedCommittees = append(addedCommittees, committee)
-			hasChanges = true
-		}
-	}
-
-	// Check for removed committees
-	var removedCommittees []models.Committee
-	for _, committee := range oldCommittees {
-		if _, exists := newCommitteeMap[committee.UID]; !exists {
-			removedCommittees = append(removedCommittees, committee)
-			hasChanges = true
-		}
-	}
-
-	// Check for committees with changed voting statuses
-	var changedCommittees []struct {
-		Old models.Committee
-		New models.Committee
-	}
-	for _, newCommittee := range newCommittees {
-		if oldCommittee, exists := oldCommitteeMap[newCommittee.UID]; exists {
-			// Compare voting statuses
-			if !equalStringSlices(oldCommittee.AllowedVotingStatuses, newCommittee.AllowedVotingStatuses) {
-				changedCommittees = append(changedCommittees, struct {
-					Old models.Committee
-					New models.Committee
-				}{Old: oldCommittee, New: newCommittee})
-				hasChanges = true
-			}
-		}
-	}
-
-	if !hasChanges {
-		slog.DebugContext(ctx, "no committee changes detected")
-		return nil
-	}
-
-	isPublicMeeting := meetingMsg.UpdatedBase.Visibility == "public"
-
-	slog.InfoContext(ctx, "committee changes detected, processing member sync",
-		"added_committees", len(addedCommittees),
-		"removed_committees", len(removedCommittees),
-		"changed_committees", len(changedCommittees),
-		"is_public_meeting", isPublicMeeting)
-
-	// Handle added committees
-	if len(addedCommittees) > 0 {
-		err := s.handleAddedCommittees(ctx, meetingMsg, addedCommittees)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to handle added committees", logging.ErrKey, err)
-		}
-	}
-
-	// Handle removed committees
-	if len(removedCommittees) > 0 {
-		err := s.handleRemovedCommittees(ctx, meetingMsg, removedCommittees, isPublicMeeting)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to handle removed committees", logging.ErrKey, err)
-		}
-	}
-
-	// Handle committees with changed voting statuses
-	if len(changedCommittees) > 0 {
-		err := s.handleChangedCommittees(ctx, meetingMsg, changedCommittees)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to handle changed committees", logging.ErrKey, err)
-		}
-	}
-
-	return nil
-}
-
-// handleAddedCommittees processes committees that were added to the meeting.
-func (s *MeetingHandler) handleAddedCommittees(ctx context.Context, meetingMsg *models.MeetingUpdatedMessage, addedCommittees []models.Committee) error {
-	// TODO: Implement adding committee members as registrants
-	// This will involve:
-	// 1. For each added committee:
-	//    - Send request to committee-api to get members filtered by AllowedVotingStatuses
-	//    - Parse response and extract member details
-	// 2. For each committee member:
-	//    - Check if registrant already exists (by email to avoid duplicates)
-	//    - Create registrant record with type="committee" if not exists
-	//    - Send appropriate NATS messages for indexing/access control
-
-	slog.InfoContext(ctx, "added committees sync placeholder - implementation pending committee-api contract",
-		"added_committee_count", len(addedCommittees))
-
-	for i, committee := range addedCommittees {
-		slog.DebugContext(ctx, "would add committee members",
-			"committee_index", i,
-			"committee_uid", committee.UID,
-			"allowed_voting_statuses", committee.AllowedVotingStatuses)
-	}
-
-	return nil
-}
-
-// handleRemovedCommittees processes committees that were removed from the meeting.
-func (s *MeetingHandler) handleRemovedCommittees(ctx context.Context, meetingMsg *models.MeetingUpdatedMessage, removedCommittees []models.Committee, isPublicMeeting bool) error {
-	// TODO: Implement removing/updating committee members as registrants
-	// This will involve:
-	// 1. For each removed committee:
-	//    - Find all registrants with type="committee" for this committee
-	// 2. For each committee member registrant:
-	//    - If meeting is public: update registrant to type="direct" (keep them registered)
-	//    - If meeting is private: remove registrant entirely
-	//    - Send appropriate NATS messages for indexing/access control
-
-	action := "remove"
-	if isPublicMeeting {
-		action = "convert to direct"
-	}
-
-	slog.InfoContext(ctx, "removed committees sync placeholder - implementation pending committee-api contract",
-		"removed_committee_count", len(removedCommittees),
-		"action", action)
-
-	for i, committee := range removedCommittees {
-		slog.DebugContext(ctx, "would process removed committee",
-			"committee_index", i,
-			"committee_uid", committee.UID,
-			"action", action)
-	}
-
-	return nil
-}
-
-// handleChangedCommittees processes committees that had their voting statuses changed.
-func (s *MeetingHandler) handleChangedCommittees(ctx context.Context, meetingMsg *models.MeetingUpdatedMessage, changedCommittees []struct{ Old, New models.Committee }) error {
-	// TODO: Implement updating committee member registrants for voting status changes
-	// This will involve:
-	// 1. For each changed committee:
-	//    - Get current committee members with old voting statuses
-	//    - Get new committee members with new voting statuses
-	//    - Find members that should be removed (no longer match voting status)
-	//    - Find members that should be added (now match voting status)
-	//    - Process removals and additions similar to removed/added committees
-
-	slog.InfoContext(ctx, "changed committees sync placeholder - implementation pending committee-api contract",
-		"changed_committee_count", len(changedCommittees))
-
-	for i, change := range changedCommittees {
-		slog.DebugContext(ctx, "would process changed committee",
-			"committee_index", i,
-			"committee_uid", change.New.UID,
-			"old_voting_statuses", change.Old.AllowedVotingStatuses,
-			"new_voting_statuses", change.New.AllowedVotingStatuses)
-	}
-
-	return nil
-}
-
-// equalStringSlices compares two string slices for equality (order-independent).
-func equalStringSlices(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	// Create frequency maps
-	mapA := make(map[string]int)
-	mapB := make(map[string]int)
-
-	for _, str := range a {
-		mapA[str]++
-	}
-	for _, str := range b {
-		mapB[str]++
-	}
-
-	// Compare maps
-	for key, count := range mapA {
-		if mapB[key] != count {
-			return false
-		}
-	}
-
-	return true
 }
