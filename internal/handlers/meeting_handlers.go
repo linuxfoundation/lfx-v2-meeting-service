@@ -16,15 +16,17 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
-// ZoomWebhookHandler handles Zoom webhook events.
+// MeetingHandler handles meeting-related messages and events.
 type MeetingHandler struct {
 	meetingService                *service.MeetingService
 	registrantService             *service.MeetingRegistrantService
 	pastMeetingService            *service.PastMeetingService
 	pastMeetingParticipantService *service.PastMeetingParticipantService
+	committeeSyncService          *service.CommitteeSyncService
 }
 
 func NewMeetingHandler(
@@ -32,12 +34,14 @@ func NewMeetingHandler(
 	registrantService *service.MeetingRegistrantService,
 	pastMeetingService *service.PastMeetingService,
 	pastMeetingParticipantService *service.PastMeetingParticipantService,
+	committeeSyncService *service.CommitteeSyncService,
 ) *MeetingHandler {
 	return &MeetingHandler{
 		meetingService:                meetingService,
 		registrantService:             registrantService,
 		pastMeetingService:            pastMeetingService,
 		pastMeetingParticipantService: pastMeetingParticipantService,
+		committeeSyncService:          committeeSyncService,
 	}
 }
 
@@ -60,6 +64,7 @@ func (s *MeetingHandler) HandleMessage(ctx context.Context, msg domain.Message) 
 	handlers := map[string]func(ctx context.Context, msg domain.Message) ([]byte, error){
 		models.MeetingGetTitleSubject: s.HandleMeetingGetTitle,
 		models.MeetingDeletedSubject:  s.HandleMeetingDeleted,
+		models.MeetingCreatedSubject:  s.HandleMeetingCreated,
 		models.MeetingUpdatedSubject:  s.HandleMeetingUpdated,
 	}
 
@@ -218,10 +223,62 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 	return []byte("success"), nil
 }
 
+// HandleMeetingCreated is the message handler for the meeting-created subject.
+// It performs post-creation tasks like committee member synchronization.
+func (s *MeetingHandler) HandleMeetingCreated(ctx context.Context, msg domain.Message) ([]byte, error) {
+	if !s.meetingService.ServiceReady() || !s.committeeSyncService.ServiceReady() {
+		slog.ErrorContext(ctx, "service not ready")
+		return nil, fmt.Errorf("service not ready")
+	}
+
+	// Parse the meeting created message
+	var meetingCreatedMsg models.MeetingCreatedMessage
+	err := json.Unmarshal(msg.Data(), &meetingCreatedMsg)
+	if err != nil {
+		slog.ErrorContext(ctx, "error unmarshaling meeting created message", logging.ErrKey, err)
+		return nil, err
+	}
+
+	if meetingCreatedMsg.MeetingUID == "" || meetingCreatedMsg.Base == nil {
+		slog.WarnContext(ctx, "invalid meeting created message: missing required fields")
+		return nil, fmt.Errorf("meeting UID and base data are required")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingCreatedMsg.MeetingUID))
+	slog.InfoContext(ctx, "processing meeting creation post-tasks")
+
+	// Check if the meeting has committees that need syncing
+	if len(meetingCreatedMsg.Base.Committees) > 0 {
+		slog.InfoContext(ctx, "meeting has committees, starting committee member sync",
+			"committee_count", len(meetingCreatedMsg.Base.Committees))
+
+		// Use the new CommitteeSyncService to handle committee member sync
+		// For meeting creation, we sync from empty committees to new committees
+		isPublicMeeting := meetingCreatedMsg.Base.Visibility == "public"
+		err := s.committeeSyncService.SyncCommittees(
+			ctx,
+			meetingCreatedMsg.MeetingUID,
+			[]models.Committee{}, // No old committees for creation
+			meetingCreatedMsg.Base.Committees,
+			isPublicMeeting,
+		)
+		if err != nil {
+			// Log error but don't fail the entire handler - committee sync is non-critical
+			slog.ErrorContext(ctx, "committee member sync failed", logging.ErrKey, err)
+		} else {
+			slog.InfoContext(ctx, "committee member sync completed successfully")
+		}
+	} else {
+		slog.DebugContext(ctx, "no committees to sync for this meeting")
+	}
+
+	return []byte("success"), nil
+}
+
 // HandleMeetingUpdated is the message handler for the meeting-updated subject.
-// It sends update notification emails to all registrants of the updated meeting.
+// It performs post-update tasks like committee member synchronization changes.
 func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Message) ([]byte, error) {
-	if !s.meetingService.ServiceReady() {
+	if !s.meetingService.ServiceReady() || !s.committeeSyncService.ServiceReady() {
 		slog.ErrorContext(ctx, "service not ready")
 		return nil, fmt.Errorf("service not ready")
 	}
@@ -234,33 +291,54 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 		return nil, err
 	}
 
-	meetingUID := meetingUpdatedMsg.MeetingUID
-	if meetingUID == "" {
-		slog.WarnContext(ctx, "meeting UID is empty in updated message")
+	if meetingUpdatedMsg.MeetingUID == "" {
+		slog.WarnContext(ctx, "invalid meeting updated message: missing meeting UID")
 		return nil, fmt.Errorf("meeting UID is required")
 	}
 
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
-	slog.InfoContext(ctx, "processing meeting update", "changes", meetingUpdatedMsg.Changes)
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUpdatedMsg.MeetingUID))
+	slog.InfoContext(ctx, "processing meeting update post-tasks")
 
-	// Check if there are any changes worth notifying about
-	if len(meetingUpdatedMsg.Changes) == 0 {
-		slog.DebugContext(ctx, "no meaningful changes to notify registrants about")
-		return []byte("success"), nil
+	// Handle update notifications to registrants
+	if len(meetingUpdatedMsg.Changes) > 0 {
+		slog.DebugContext(ctx, "meaningful changes detected, notifying registrants", "changes", meetingUpdatedMsg.Changes)
+		err = s.meetingUpdatedInvitations(ctx, meetingUpdatedMsg)
+		if err != nil {
+			slog.ErrorContext(ctx, "error sending update notifications to registrants", logging.ErrKey, err)
+			return nil, fmt.Errorf("failed to send update notifications: %w", err)
+		}
 	}
 
-	slog.DebugContext(ctx, "meaningful changes detected, notifying registrants", "changes", meetingUpdatedMsg.Changes)
+	// Handle committee changes using the new CommitteeSyncService (only if we have the required fields)
+	if meetingUpdatedMsg.UpdatedBase != nil && meetingUpdatedMsg.PreviousBase != nil {
+		isPublicMeeting := meetingUpdatedMsg.UpdatedBase.Visibility == "public"
+		err = s.committeeSyncService.SyncCommittees(
+			ctx,
+			meetingUpdatedMsg.MeetingUID,
+			meetingUpdatedMsg.PreviousBase.Committees,
+			meetingUpdatedMsg.UpdatedBase.Committees,
+			isPublicMeeting,
+		)
+		if err != nil {
+			// Log error but don't fail the entire handler - committee sync is non-critical
+			slog.ErrorContext(ctx, "committee change handling failed", logging.ErrKey, err)
+		}
+	}
 
+	return []byte("success"), nil
+}
+
+func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg models.MeetingUpdatedMessage) error {
 	// Get all registrants for the meeting
-	registrants, err := s.registrantService.RegistrantRepository.ListByMeeting(ctx, meetingUID)
+	registrants, err := s.registrantService.RegistrantRepository.ListByMeeting(ctx, msg.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting registrants for updated meeting", logging.ErrKey, err)
-		return nil, err
+		return err
 	}
 
 	if len(registrants) == 0 {
 		slog.DebugContext(ctx, "no registrants to notify for updated meeting")
-		return []byte("success"), nil
+		return nil
 	}
 
 	slog.DebugContext(ctx, "sending update notifications to registrants", "registrant_count", len(registrants))
@@ -271,7 +349,7 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 		reg := registrant // capture loop variable
 		tasks = append(tasks, func() error {
 			// Get meeting details for the email
-			meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, meetingUID)
+			meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, msg.MeetingUID)
 			if err != nil {
 				slog.ErrorContext(ctx, "error getting meeting details for update notification",
 					"registrant_uid", reg.UID, logging.ErrKey, err)
@@ -293,7 +371,7 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 
 			// Send update notification email to registrant
 			updatedInvitation := domain.EmailUpdatedInvitation{
-				MeetingUID:     meetingUID,
+				MeetingUID:     msg.MeetingUID,
 				RecipientEmail: reg.Email,
 				RecipientName:  recipientName,
 				MeetingTitle:   meeting.Title,
@@ -301,11 +379,11 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 				Duration:       meeting.Duration,
 				Timezone:       meeting.Timezone,
 				Description:    meeting.Description,
-				JoinLink:       meeting.JoinURL,
+				JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password),
 				MeetingID:      meetingID,
 				Passcode:       passcode,
 				Recurrence:     meeting.Recurrence,
-				Changes:        meetingUpdatedMsg.Changes,
+				Changes:        msg.Changes,
 			}
 
 			err = s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
@@ -328,9 +406,9 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 			"total_registrants", len(registrants),
 			logging.ErrKey, err,
 			logging.PriorityCritical())
-		return nil, fmt.Errorf("failed to send update notifications: %w", err)
+		return fmt.Errorf("failed to send update notifications: %w", err)
 	}
 
 	slog.InfoContext(ctx, "successfully sent update notifications to all registrants", "registrant_count", len(registrants))
-	return []byte("success"), nil
+	return nil
 }

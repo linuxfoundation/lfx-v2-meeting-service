@@ -33,6 +33,10 @@ type Client struct {
 	// get-meeting-settings endpoint.
 	GetMeetingSettingsDoer goahttp.Doer
 
+	// GetMeetingJoinURL Doer is the HTTP client used to make requests to the
+	// get-meeting-join-url endpoint.
+	GetMeetingJoinURLDoer goahttp.Doer
+
 	// UpdateMeetingBase Doer is the HTTP client used to make requests to the
 	// update-meeting-base endpoint.
 	UpdateMeetingBaseDoer goahttp.Doer
@@ -136,6 +140,7 @@ func NewClient(
 		CreateMeetingDoer:                doer,
 		GetMeetingBaseDoer:               doer,
 		GetMeetingSettingsDoer:           doer,
+		GetMeetingJoinURLDoer:            doer,
 		UpdateMeetingBaseDoer:            doer,
 		UpdateMeetingSettingsDoer:        doer,
 		DeleteMeetingDoer:                doer,
@@ -255,6 +260,30 @@ func (c *Client) GetMeetingSettings() goa.Endpoint {
 		resp, err := c.GetMeetingSettingsDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-settings", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetMeetingJoinURL returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-meeting-join-url server.
+func (c *Client) GetMeetingJoinURL() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetMeetingJoinURLRequest(c.encoder)
+		decodeResponse = DecodeGetMeetingJoinURLResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetMeetingJoinURLRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetMeetingJoinURLDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-join-url", err)
 		}
 		return decodeResponse(resp)
 	}

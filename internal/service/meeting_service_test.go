@@ -193,6 +193,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 				mockBuilder.On("SendIndexMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
 				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
 				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendMeetingCreated", mock.Anything, mock.Anything).Return(nil)
 			},
 			wantErr: false,
 			validate: func(t *testing.T, result *models.MeetingFull) {

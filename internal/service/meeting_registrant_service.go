@@ -547,13 +547,6 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		recipientName = "" // If both names are empty, use empty string
 	}
 
-	// Construct join link if available
-	joinLink := meetingDB.PublicLink
-	if joinLink == "" && meetingDB.ZoomConfig != nil && meetingDB.ZoomConfig.MeetingID != "" {
-		// Construct Zoom link if meeting ID is available
-		joinLink = fmt.Sprintf("https://zoom.us/j/%s", meetingDB.ZoomConfig.MeetingID)
-	}
-
 	// Extract meeting ID and passcode for ICS generation
 	var meetingID, passcode string
 	if meetingDB.ZoomConfig != nil {
@@ -571,7 +564,7 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		Duration:       meetingDB.Duration,
 		Timezone:       meetingDB.Timezone,
 		Description:    meetingDB.Description,
-		JoinLink:       joinLink,
+		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password),
 		ProjectName:    "", // TODO: Add project name once project service integration is available
 		MeetingID:      meetingID,
 		Passcode:       passcode,

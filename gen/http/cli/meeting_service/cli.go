@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|readyz|livez)
 `
 }
 
@@ -62,6 +62,11 @@ func ParseEndpoint(
 		meetingServiceGetMeetingSettingsUIDFlag         = meetingServiceGetMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceGetMeetingSettingsVersionFlag     = meetingServiceGetMeetingSettingsFlags.String("version", "", "")
 		meetingServiceGetMeetingSettingsBearerTokenFlag = meetingServiceGetMeetingSettingsFlags.String("bearer-token", "", "")
+
+		meetingServiceGetMeetingJoinURLFlags           = flag.NewFlagSet("get-meeting-join-url", flag.ExitOnError)
+		meetingServiceGetMeetingJoinURLUIDFlag         = meetingServiceGetMeetingJoinURLFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceGetMeetingJoinURLVersionFlag     = meetingServiceGetMeetingJoinURLFlags.String("version", "", "")
+		meetingServiceGetMeetingJoinURLBearerTokenFlag = meetingServiceGetMeetingJoinURLFlags.String("bearer-token", "", "")
 
 		meetingServiceUpdateMeetingBaseFlags           = flag.NewFlagSet("update-meeting-base", flag.ExitOnError)
 		meetingServiceUpdateMeetingBaseBodyFlag        = meetingServiceUpdateMeetingBaseFlags.String("body", "REQUIRED", "")
@@ -181,6 +186,7 @@ func ParseEndpoint(
 	meetingServiceCreateMeetingFlags.Usage = meetingServiceCreateMeetingUsage
 	meetingServiceGetMeetingBaseFlags.Usage = meetingServiceGetMeetingBaseUsage
 	meetingServiceGetMeetingSettingsFlags.Usage = meetingServiceGetMeetingSettingsUsage
+	meetingServiceGetMeetingJoinURLFlags.Usage = meetingServiceGetMeetingJoinURLUsage
 	meetingServiceUpdateMeetingBaseFlags.Usage = meetingServiceUpdateMeetingBaseUsage
 	meetingServiceUpdateMeetingSettingsFlags.Usage = meetingServiceUpdateMeetingSettingsUsage
 	meetingServiceDeleteMeetingFlags.Usage = meetingServiceDeleteMeetingUsage
@@ -247,6 +253,9 @@ func ParseEndpoint(
 
 			case "get-meeting-settings":
 				epf = meetingServiceGetMeetingSettingsFlags
+
+			case "get-meeting-join-url":
+				epf = meetingServiceGetMeetingJoinURLFlags
 
 			case "update-meeting-base":
 				epf = meetingServiceUpdateMeetingBaseFlags
@@ -345,6 +354,9 @@ func ParseEndpoint(
 			case "get-meeting-settings":
 				endpoint = c.GetMeetingSettings()
 				data, err = meetingservicec.BuildGetMeetingSettingsPayload(*meetingServiceGetMeetingSettingsUIDFlag, *meetingServiceGetMeetingSettingsVersionFlag, *meetingServiceGetMeetingSettingsBearerTokenFlag)
+			case "get-meeting-join-url":
+				endpoint = c.GetMeetingJoinURL()
+				data, err = meetingservicec.BuildGetMeetingJoinURLPayload(*meetingServiceGetMeetingJoinURLUIDFlag, *meetingServiceGetMeetingJoinURLVersionFlag, *meetingServiceGetMeetingJoinURLBearerTokenFlag)
 			case "update-meeting-base":
 				endpoint = c.UpdateMeetingBase()
 				data, err = meetingservicec.BuildUpdateMeetingBasePayload(*meetingServiceUpdateMeetingBaseBodyFlag, *meetingServiceUpdateMeetingBaseUIDFlag, *meetingServiceUpdateMeetingBaseVersionFlag, *meetingServiceUpdateMeetingBaseBearerTokenFlag, *meetingServiceUpdateMeetingBaseIfMatchFlag)
@@ -426,6 +438,7 @@ COMMAND:
 			this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.
     get-meeting-base: Get a meeting by ID
     get-meeting-settings: Get a single meeting's settings.
+    get-meeting-join-url: Get the join URL for a meeting. Requires the user to be either a participant or organizer of the meeting.
     update-meeting-base: Update an existing meeting base.
     update-meeting-settings: Update an existing meeting's settings.
     delete-meeting: Delete an existing meeting.
@@ -474,70 +487,67 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
-            ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
+            "uid": "Ut ut voluptatem."
          }
       ],
-      "description": "Exercitationem rem unde.",
-      "duration": 311,
-      "early_join_time_minutes": 14,
-      "meeting_type": "Maintainers",
+      "description": "Et nemo.",
+      "duration": 63,
+      "early_join_time_minutes": 57,
+      "meeting_type": "Technical",
       "organizers": [
-         "Repudiandae voluptas.",
-         "Ut earum vel quasi praesentium perferendis.",
-         "Dignissimos fuga ratione.",
-         "Architecto consequatur perferendis quis."
+         "Libero enim ut quae.",
+         "Facere consectetur quod voluptatibus in necessitatibus rerum."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1972-01-29T09:24:35Z",
-         "end_times": 2368020361800503641,
-         "monthly_day": 24,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320148,
-         "type": 1,
+         "end_date_time": "1993-04-10T19:30:34Z",
+         "end_times": 3732607533624244863,
+         "monthly_day": 13,
+         "monthly_week": 4,
+         "monthly_week_day": 2,
+         "repeat_interval": 6620790648848392796,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Debitis possimus qui est.",
-      "title": "Molestias quis sit quia quasi dolor.",
+      "timezone": "Dolores et doloremque et voluptatem vel voluptates.",
+      "title": "Deleniti omnis.",
       "transcript_enabled": true,
-      "visibility": "private",
-      "youtube_upload_enabled": false,
+      "visibility": "public",
+      "youtube_upload_enabled": true,
       "zoom_config": {
-         "ai_companion_enabled": false,
-         "ai_summary_require_approval": true
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": false
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -569,6 +579,19 @@ Example:
 `, os.Args[0])
 }
 
+func meetingServiceGetMeetingJoinURLUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meeting-join-url -uid STRING -version STRING -bearer-token STRING
+
+Get the join URL for a meeting. Requires the user to be either a participant or organizer of the meeting.
+    -uid STRING: The UID of the meeting
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-meeting-join-url --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
 func meetingServiceUpdateMeetingBaseUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-base -body JSON -uid STRING -version STRING -bearer-token STRING -if-match STRING
 
@@ -581,50 +604,54 @@ Update an existing meeting base.
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
+            "uid": "Ut ut voluptatem."
          }
       ],
-      "description": "Unde aut dicta quod.",
-      "duration": 361,
-      "early_join_time_minutes": 19,
-      "meeting_type": "Marketing",
+      "description": "Repellat totam officiis enim veritatis est.",
+      "duration": 135,
+      "early_join_time_minutes": 21,
+      "meeting_type": "Maintainers",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "recording_enabled": false,
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1972-01-29T09:24:35Z",
-         "end_times": 2368020361800503641,
-         "monthly_day": 24,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320148,
-         "type": 1,
+         "end_date_time": "1993-04-10T19:30:34Z",
+         "end_times": 3732607533624244863,
+         "monthly_day": 13,
+         "monthly_week": 4,
+         "monthly_week_day": 2,
+         "repeat_interval": 6620790648848392796,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
       "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Rerum quidem voluptatem est nobis optio.",
-      "title": "At occaecati reprehenderit.",
+      "timezone": "Maiores veniam dolore omnis.",
+      "title": "Repudiandae et.",
       "transcript_enabled": false,
       "visibility": "public",
       "youtube_upload_enabled": false,
       "zoom_config": {
-         "ai_companion_enabled": false,
-         "ai_summary_require_approval": true
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": false
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -643,8 +670,8 @@ Update an existing meeting's settings.
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
       "organizers": [
-         "Rerum a aut blanditiis illum praesentium magni.",
-         "Alias asperiores."
+         "Sed asperiores ipsa eveniet sed.",
+         "Molestiae et facilis."
       ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -695,8 +722,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Magnam dolor mollitia neque ducimus voluptate ullam.",
-      "username": "Et consequatur aut aut praesentium qui aliquam."
+      "org_name": "Debitis voluptas est ut possimus.",
+      "username": "Quo ipsum commodi vel."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -735,8 +762,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Temporibus eligendi laudantium et.",
-      "username": "Voluptatem ex sapiente laudantium ipsum velit quod."
+      "org_name": "Tenetur voluptas in veritatis.",
+      "username": "Est placeat."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
@@ -768,8 +795,8 @@ Example:
     %[1]s meeting-service zoom-webhook --body '{
       "event": "meeting.started",
       "event_ts": 1609459200000,
-      "payload": "Iste sed sunt."
-   }' --zoom-signature "Molestiae quam odio ut quae facilis sit." --zoom-timestamp "Voluptate qui ipsa."
+      "payload": "Rerum voluptas consequatur nisi ut accusantium quaerat."
+   }' --zoom-signature "Aperiam dolor voluptatem id amet est laboriosam." --zoom-timestamp "Sit autem consequatur."
 `, os.Args[0])
 }
 
@@ -795,56 +822,46 @@ Create a new past meeting record. This allows manual addition of past meetings t
 
 Example:
     %[1]s meeting-service create-past-meeting --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
-            ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Doloremque et.",
-               "Vel voluptates consequatur numquam."
-            ],
-            "uid": "Aspernatur enim doloremque sunt et et aut."
+            "uid": "Ut ut voluptatem."
          }
       ],
-      "description": "Voluptatem sapiente.",
-      "duration": 430,
-      "early_join_time_minutes": 48,
-      "meeting_type": "Technical",
+      "description": "Fugit architecto ea fugiat reiciendis omnis.",
+      "duration": 74,
+      "early_join_time_minutes": 34,
+      "meeting_type": "Other",
       "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "occurrence_id": "1640995200",
       "platform": "Zoom",
       "platform_meeting_id": "1234567890",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "http://howeohara.net/adelle",
-      "recording_enabled": false,
+      "public_link": "http://maggio.com/ressie_schuppe",
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1972-01-29T09:24:35Z",
-         "end_times": 2368020361800503641,
-         "monthly_day": 24,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 4711238312625320148,
-         "type": 1,
+         "end_date_time": "1993-04-10T19:30:34Z",
+         "end_times": 3732607533624244863,
+         "monthly_day": 13,
+         "monthly_week": 4,
+         "monthly_week_day": 2,
+         "repeat_interval": 6620790648848392796,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
@@ -862,11 +879,11 @@ Example:
             "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
          }
       ],
-      "timezone": "Quis tenetur voluptas in.",
-      "title": "Dicta est.",
+      "timezone": "Qui voluptas repellendus eos ut labore.",
+      "title": "Aut asperiores.",
       "transcript_enabled": false,
       "visibility": "public",
-      "youtube_upload_enabled": false,
+      "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": true,
          "ai_summary_require_approval": true,
@@ -936,9 +953,9 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Fugiat quis qui quam explicabo.",
+      "org_name": "Consectetur rerum expedita omnis dolorum.",
       "past_meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "username": "Porro iste non commodi sint sed est."
+      "username": "Qui repellat laborum nesciunt."
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -978,8 +995,8 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Voluptatem inventore in officia tempore necessitatibus deleniti.",
-      "username": "Possimus ea id."
+      "org_name": "Quo vel tempore aliquid iure.",
+      "username": "Autem corrupti iusto quaerat a cupiditate incidunt."
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }

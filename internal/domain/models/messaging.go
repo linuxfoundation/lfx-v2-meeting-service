@@ -3,6 +3,8 @@
 
 package models
 
+import "time"
+
 // NATS subjects that the meeting service sends messages about.
 const (
 	// IndexMeetingSubject is the subject for the meeting indexing.
@@ -62,6 +64,25 @@ const (
 	RemoveParticipantPastMeetingSubject = "lfx.remove_participant.past_meeting"
 )
 
+// NATS subjects that external services handle and that the meeting service requests.
+const (
+	// CommitteeGetNameSubject is the subject for committee name validation.
+	// The subject is of the form: lfx.committee-api.get_name
+	CommitteeGetNameSubject = "lfx.committee-api.get_name"
+
+	// CommitteeListMembersSubject is the subject for fetching committee members.
+	// The subject is of the form: lfx.committee-api.list_members
+	CommitteeListMembersSubject = "lfx.committee-api.list_members"
+
+	// CommitteeMemberCreatedSubject is the subject for committee member creation events.
+	// The subject is of the form: lfx.committee-api.committee_member.created
+	CommitteeMemberCreatedSubject = "lfx.committee-api.committee_member.created"
+
+	// CommitteeMemberDeletedSubject is the subject for committee member deletion events.
+	// The subject is of the form: lfx.committee-api.committee_member.deleted
+	CommitteeMemberDeletedSubject = "lfx.committee-api.committee_member.deleted"
+)
+
 // NATS wildcard subjects that the meeting service handles messages about.
 const (
 	// MeetingsAPIQueue is the subject name for the meetings API.
@@ -78,6 +99,10 @@ const (
 	// MeetingDeletedSubject is the subject for meeting deletion events.
 	// The subject is of the form: lfx.meetings-api.meeting_deleted
 	MeetingDeletedSubject = "lfx.meetings-api.meeting_deleted"
+
+	// MeetingCreatedSubject is the subject for meeting creation events.
+	// The subject is of the form: lfx.meetings-api.meeting_created
+	MeetingCreatedSubject = "lfx.meetings-api.meeting_created"
 
 	// MeetingUpdatedSubject is the subject for meeting update events.
 	// The subject is of the form: lfx.meetings-api.meeting_updated
@@ -141,11 +166,77 @@ type MeetingDeletedMessage struct {
 	MeetingUID string `json:"meeting_uid"`
 }
 
+// MeetingCreatedMessage is the schema for the message sent when a meeting is created.
+// This message is used internally to trigger post-creation tasks like committee member sync.
+type MeetingCreatedMessage struct {
+	MeetingUID string           `json:"meeting_uid"`
+	Base       *MeetingBase     `json:"base"`
+	Settings   *MeetingSettings `json:"settings"`
+}
+
 // MeetingUpdatedMessage is the schema for the message sent when a meeting is updated.
-// This message is used internally to notify registrants about meeting changes.
+// This message is used internally to trigger post-update tasks like committee member sync changes.
 type MeetingUpdatedMessage struct {
-	MeetingUID string         `json:"meeting_uid"`
-	Changes    map[string]any `json:"changes"` // Map of field names to their new values
+	MeetingUID   string           `json:"meeting_uid"`
+	UpdatedBase  *MeetingBase     `json:"updated_base"`
+	PreviousBase *MeetingBase     `json:"previous_base"`
+	Settings     *MeetingSettings `json:"settings"`
+	Changes      map[string]any   `json:"changes"` // Map of field names to their new values
+}
+
+// CommitteeEvent represents a generic event emitted for committee service operations
+type CommitteeEvent struct {
+	// EventType identifies the type of event (e.g., committee_member.created)
+	EventType string `json:"event_type"`
+	// Subject is the subject of the event (e.g. lfx.committee-api.committee_member.created)
+	Subject string `json:"subject"`
+	// Timestamp is when the event occurred
+	Timestamp time.Time `json:"timestamp"`
+	// Version is the event schema version
+	Version string `json:"version"`
+	// Data contains the event data
+	Data any `json:"data,omitempty"`
+}
+
+// CommitteeMemberBase represents the base committee member attributes
+type CommitteeMember struct {
+	UID           string                      `json:"uid"`
+	Username      string                      `json:"username"`
+	Email         string                      `json:"email"`
+	FirstName     string                      `json:"first_name"`
+	LastName      string                      `json:"last_name"`
+	JobTitle      string                      `json:"job_title,omitempty"`
+	Role          CommitteeMemberRole         `json:"role"`
+	AppointedBy   string                      `json:"appointed_by"`
+	Status        string                      `json:"status"`
+	Voting        CommitteeMemberVotingInfo   `json:"voting"`
+	Agency        string                      `json:"agency,omitempty"`
+	Country       string                      `json:"country,omitempty"`
+	Organization  CommitteeMemberOrganization `json:"organization"`
+	CommitteeUID  string                      `json:"committee_uid"`
+	CommitteeName string                      `json:"committee_name"`
+	CreatedAt     time.Time                   `json:"created_at"`
+	UpdatedAt     time.Time                   `json:"updated_at"`
+}
+
+// Role represents committee role information
+type CommitteeMemberRole struct {
+	Name      string `json:"name"`
+	StartDate string `json:"start_date,omitempty"`
+	EndDate   string `json:"end_date,omitempty"`
+}
+
+// VotingInfo represents voting information for the committee member
+type CommitteeMemberVotingInfo struct {
+	Status    string `json:"status"`
+	StartDate string `json:"start_date,omitempty"`
+	EndDate   string `json:"end_date,omitempty"`
+}
+
+// Organization represents organization information for the committee member
+type CommitteeMemberOrganization struct {
+	Name    string `json:"name"`
+	Website string `json:"website,omitempty"`
 }
 
 // PastMeetingAccessMessage is the schema for the data in the message sent to the fga-sync service.

@@ -46,12 +46,20 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 		Config:               config,
 	}
 
+	// Create a committee sync service for testing
+	committeeSyncService := service.NewCommitteeSyncService(
+		mockRegistrantRepo,
+		registrantService, // registrant service is needed for ServiceReady check
+		mockMessageBuilder,
+	)
+
 	// For now, using nil for services that aren't tested in this file
 	handler := NewMeetingHandler(
 		meetingService,
 		registrantService,
 		nil, // pastMeetingService
 		nil, // pastMeetingParticipantService
+		committeeSyncService,
 	)
 
 	return handler, mockMeetingRepo, mockRegistrantRepo, mockMessageBuilder, mockEmailService

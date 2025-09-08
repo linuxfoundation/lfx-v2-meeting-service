@@ -19,6 +19,7 @@ type Client struct {
 	CreateMeetingEndpoint                goa.Endpoint
 	GetMeetingBaseEndpoint               goa.Endpoint
 	GetMeetingSettingsEndpoint           goa.Endpoint
+	GetMeetingJoinURLEndpoint            goa.Endpoint
 	UpdateMeetingBaseEndpoint            goa.Endpoint
 	UpdateMeetingSettingsEndpoint        goa.Endpoint
 	DeleteMeetingEndpoint                goa.Endpoint
@@ -42,12 +43,13 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                  getMeetings,
 		CreateMeetingEndpoint:                createMeeting,
 		GetMeetingBaseEndpoint:               getMeetingBase,
 		GetMeetingSettingsEndpoint:           getMeetingSettings,
+		GetMeetingJoinURLEndpoint:            getMeetingJoinURL,
 		UpdateMeetingBaseEndpoint:            updateMeetingBase,
 		UpdateMeetingSettingsEndpoint:        updateMeetingSettings,
 		DeleteMeetingEndpoint:                deleteMeeting,
@@ -134,6 +136,23 @@ func (c *Client) GetMeetingSettings(ctx context.Context, p *GetMeetingSettingsPa
 		return
 	}
 	return ires.(*GetMeetingSettingsResult), nil
+}
+
+// GetMeetingJoinURL calls the "get-meeting-join-url" endpoint of the "Meeting
+// Service" service.
+// GetMeetingJoinURL may return the following errors:
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "Unauthorized" (type *UnauthorizedError): User is not authorized to access the join URL
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetMeetingJoinURL(ctx context.Context, p *GetMeetingJoinURLPayload) (res *GetMeetingJoinURLResult, err error) {
+	var ires any
+	ires, err = c.GetMeetingJoinURLEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*GetMeetingJoinURLResult), nil
 }
 
 // UpdateMeetingBase calls the "update-meeting-base" endpoint of the "Meeting

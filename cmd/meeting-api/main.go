@@ -106,6 +106,11 @@ func main() {
 		messageBuilder,
 		serviceConfig,
 	)
+	committeeSyncService := service.NewCommitteeSyncService(
+		repos.Registrant,
+		registrantService,
+		messageBuilder,
+	)
 
 	// Initialize handlers
 	meetingHandler := handlers.NewMeetingHandler(
@@ -113,6 +118,7 @@ func main() {
 		registrantService,
 		pastMeetingService,
 		pastMeetingParticipantService,
+		committeeSyncService,
 	)
 
 	zoomWebhookHandler := handlers.NewZoomWebhookHandler(
@@ -125,6 +131,13 @@ func main() {
 		platformConfigs.Zoom.Validator,
 	)
 
+	committeeHandler := handlers.NewCommitteeHandlers(
+		meetingService,
+		registrantService,
+		committeeSyncService,
+		messageBuilder,
+	)
+
 	svc := NewMeetingsAPI(
 		authService,
 		meetingService,
@@ -133,6 +146,7 @@ func main() {
 		pastMeetingParticipantService,
 		zoomWebhookHandler,
 		meetingHandler,
+		committeeHandler,
 	)
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)
