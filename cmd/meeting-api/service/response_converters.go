@@ -316,6 +316,8 @@ func ConvertDomainToRegistrantResponse(domainRegistrant *models.Registrant) *mee
 		Email:              domainRegistrant.Email,
 		FirstName:          utils.StringPtr(domainRegistrant.FirstName),
 		LastName:           utils.StringPtr(domainRegistrant.LastName),
+		Type:               string(domainRegistrant.Type),
+		CommitteeUID:       domainRegistrant.CommitteeUID,
 		Host:               utils.BoolPtr(domainRegistrant.Host),
 		OrgIsMember:        utils.BoolPtr(domainRegistrant.OrgIsMember),
 		OrgIsProjectMember: utils.BoolPtr(domainRegistrant.OrgIsProjectMember),

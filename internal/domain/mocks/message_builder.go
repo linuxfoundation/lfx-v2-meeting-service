@@ -76,6 +76,16 @@ func (m *MockMessageBuilder) SendMeetingDeleted(ctx context.Context, data models
 	return args.Error(0)
 }
 
+func (m *MockMessageBuilder) SendMeetingCreated(ctx context.Context, data models.MeetingCreatedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendMeetingUpdated(ctx context.Context, data models.MeetingUpdatedMessage) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
 func (m *MockMessageBuilder) SendIndexPastMeeting(ctx context.Context, action models.MessageAction, data models.PastMeeting) error {
 	args := m.Called(ctx, action, data)
 	return args.Error(0)
@@ -116,7 +126,15 @@ func (m *MockMessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.
 	return args.Error(0)
 }
 
-func (m *MockMessageBuilder) SendMeetingUpdated(ctx context.Context, data models.MeetingUpdatedMessage) error {
-	args := m.Called(ctx, data)
-	return args.Error(0)
+func (m *MockMessageBuilder) GetCommitteeName(ctx context.Context, committeeUID string) (string, error) {
+	args := m.Called(ctx, committeeUID)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockMessageBuilder) GetCommitteeMembers(ctx context.Context, committeeUID string) ([]models.CommitteeMember, error) {
+	args := m.Called(ctx, committeeUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.CommitteeMember), args.Error(1)
 }

@@ -493,6 +493,10 @@ type CreateMeetingRegistrantResponseBody struct {
 	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Type of registrant
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// The UID of the committee if registrant is a committee member
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
@@ -536,6 +540,10 @@ type UpdateMeetingRegistrantResponseBody struct {
 	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Type of registrant
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// The UID of the committee if registrant is a committee member
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
@@ -1983,6 +1991,10 @@ type RegistrantResponseBody struct {
 	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// If user should have access as a meeting host
 	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Type of registrant
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// The UID of the committee if registrant is a committee member
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// User's job title
 	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
 	// The ID of the specific occurrence the user should be invited to. If blank,
@@ -3001,6 +3013,8 @@ func NewCreateMeetingRegistrantRegistrantCreated(body *CreateMeetingRegistrantRe
 		FirstName:          body.FirstName,
 		LastName:           body.LastName,
 		Host:               body.Host,
+		Type:               *body.Type,
+		CommitteeUID:       body.CommitteeUID,
 		JobTitle:           body.JobTitle,
 		OccurrenceID:       body.OccurrenceID,
 		OrgName:            body.OrgName,
@@ -3080,6 +3094,8 @@ func NewGetMeetingRegistrantResultOK(body *GetMeetingRegistrantResponseBody, eta
 		FirstName:          body.FirstName,
 		LastName:           body.LastName,
 		Host:               body.Host,
+		Type:               *body.Type,
+		CommitteeUID:       body.CommitteeUID,
 		JobTitle:           body.JobTitle,
 		OccurrenceID:       body.OccurrenceID,
 		OrgName:            body.OrgName,
@@ -3141,6 +3157,8 @@ func NewUpdateMeetingRegistrantRegistrantOK(body *UpdateMeetingRegistrantRespons
 		FirstName:          body.FirstName,
 		LastName:           body.LastName,
 		Host:               body.Host,
+		Type:               *body.Type,
+		CommitteeUID:       body.CommitteeUID,
 		JobTitle:           body.JobTitle,
 		OccurrenceID:       body.OccurrenceID,
 		OrgName:            body.OrgName,
@@ -4274,6 +4292,9 @@ func ValidateCreateMeetingRegistrantResponseBody(body *CreateMeetingRegistrantRe
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -4302,6 +4323,14 @@ func ValidateCreateMeetingRegistrantResponseBody(body *CreateMeetingRegistrantRe
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
+	}
+	if body.Type != nil {
+		if !(*body.Type == "direct" || *body.Type == "committee") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
+		}
+	}
+	if body.CommitteeUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.committee_uid", *body.CommitteeUID, goa.FormatUUID))
 	}
 	if body.OccurrenceID != nil {
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
@@ -4330,6 +4359,9 @@ func ValidateGetMeetingRegistrantResponseBody(body *GetMeetingRegistrantResponse
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -4358,6 +4390,14 @@ func ValidateGetMeetingRegistrantResponseBody(body *GetMeetingRegistrantResponse
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
+	}
+	if body.Type != nil {
+		if !(*body.Type == "direct" || *body.Type == "committee") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
+		}
+	}
+	if body.CommitteeUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.committee_uid", *body.CommitteeUID, goa.FormatUUID))
 	}
 	if body.OccurrenceID != nil {
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
@@ -4386,6 +4426,9 @@ func ValidateUpdateMeetingRegistrantResponseBody(body *UpdateMeetingRegistrantRe
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -4414,6 +4457,14 @@ func ValidateUpdateMeetingRegistrantResponseBody(body *UpdateMeetingRegistrantRe
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
+	}
+	if body.Type != nil {
+		if !(*body.Type == "direct" || *body.Type == "committee") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
+		}
+	}
+	if body.CommitteeUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.committee_uid", *body.CommitteeUID, goa.FormatUUID))
 	}
 	if body.OccurrenceID != nil {
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
@@ -6300,6 +6351,9 @@ func ValidateRegistrantResponseBody(body *RegistrantResponseBody) (err error) {
 	if body.Email == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
 	}
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
@@ -6328,6 +6382,14 @@ func ValidateRegistrantResponseBody(body *RegistrantResponseBody) (err error) {
 		if utf8.RuneCountInString(*body.LastName) > 100 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.last_name", *body.LastName, utf8.RuneCountInString(*body.LastName), 100, false))
 		}
+	}
+	if body.Type != nil {
+		if !(*body.Type == "direct" || *body.Type == "committee") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
+		}
+	}
+	if body.CommitteeUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.committee_uid", *body.CommitteeUID, goa.FormatUUID))
 	}
 	if body.OccurrenceID != nil {
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))

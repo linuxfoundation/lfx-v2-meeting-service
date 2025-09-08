@@ -180,6 +180,7 @@ paths:
                             - uid
                             - meeting_uid
                             - email
+                            - type
                 "400":
                     description: Bad Request response.
                     schema:
@@ -260,6 +261,7 @@ paths:
                             - uid
                             - meeting_uid
                             - email
+                            - type
                     headers:
                         ETag:
                             description: ETag header value
@@ -341,6 +343,7 @@ paths:
                             - uid
                             - meeting_uid
                             - email
+                            - type
                 "400":
                     description: Bad Request response.
                     schema:
@@ -2908,6 +2911,7 @@ definitions:
                 description: Meeting registrants
                 example:
                     - avatar_url: https://example.com/avatar.jpg
+                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
                       first_name: John
@@ -2919,10 +2923,12 @@ definitions:
                       org_is_member: true
                       org_is_project_member: true
                       org_name: Maxime molestias.
+                      type: direct
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Voluptatibus laudantium et harum omnis voluptate asperiores.
                     - avatar_url: https://example.com/avatar.jpg
+                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
                       first_name: John
@@ -2934,10 +2940,12 @@ definitions:
                       org_is_member: true
                       org_is_project_member: true
                       org_name: Maxime molestias.
+                      type: direct
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Voluptatibus laudantium et harum omnis voluptate asperiores.
                     - avatar_url: https://example.com/avatar.jpg
+                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
                       email: user@example.com
                       first_name: John
@@ -2949,12 +2957,14 @@ definitions:
                       org_is_member: true
                       org_is_project_member: true
                       org_name: Maxime molestias.
+                      type: direct
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Voluptatibus laudantium et harum omnis voluptate asperiores.
         example:
             registrants:
                 - avatar_url: https://example.com/avatar.jpg
+                  committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   created_at: "2021-01-01T00:00:00Z"
                   email: user@example.com
                   first_name: John
@@ -2966,10 +2976,12 @@ definitions:
                   org_is_member: true
                   org_is_project_member: true
                   org_name: Maxime molestias.
+                  type: direct
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   username: Voluptatibus laudantium et harum omnis voluptate asperiores.
                 - avatar_url: https://example.com/avatar.jpg
+                  committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   created_at: "2021-01-01T00:00:00Z"
                   email: user@example.com
                   first_name: John
@@ -2981,10 +2993,12 @@ definitions:
                   org_is_member: true
                   org_is_project_member: true
                   org_name: Maxime molestias.
+                  type: direct
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   username: Voluptatibus laudantium et harum omnis voluptate asperiores.
                 - avatar_url: https://example.com/avatar.jpg
+                  committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   created_at: "2021-01-01T00:00:00Z"
                   email: user@example.com
                   first_name: John
@@ -2996,6 +3010,7 @@ definitions:
                   org_is_member: true
                   org_is_project_member: true
                   org_name: Maxime molestias.
+                  type: direct
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   username: Voluptatibus laudantium et harum omnis voluptate asperiores.
@@ -4952,6 +4967,11 @@ definitions:
                 description: User's avatar URL
                 example: https://example.com/avatar.jpg
                 format: uri
+            committee_uid:
+                type: string
+                description: The UID of the committee if registrant is a committee member
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -5004,6 +5024,13 @@ definitions:
                 type: string
                 description: User's organization
                 example: Qui vel fugiat est deleniti asperiores eum.
+            type:
+                type: string
+                description: Type of registrant
+                example: direct
+                enum:
+                    - direct
+                    - committee
             uid:
                 type: string
                 description: The UID of the registrant
@@ -5021,6 +5048,7 @@ definitions:
         description: Meeting registrant object
         example:
             avatar_url: https://example.com/avatar.jpg
+            committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             created_at: "2021-01-01T00:00:00Z"
             email: user@example.com
             first_name: John
@@ -5032,6 +5060,7 @@ definitions:
             org_is_member: true
             org_is_project_member: true
             org_name: Fuga eum exercitationem quidem ea.
+            type: direct
             uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             updated_at: "2021-01-01T00:00:00Z"
             username: Sed ut ullam pariatur repudiandae.
@@ -5039,6 +5068,7 @@ definitions:
             - uid
             - meeting_uid
             - email
+            - type
     ServiceUnavailableError:
         title: ServiceUnavailableError
         type: object

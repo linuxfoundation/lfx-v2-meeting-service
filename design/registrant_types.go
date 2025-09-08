@@ -46,6 +46,8 @@ var Registrant = Type("Registrant", func() {
 	RegistrantFirstNameAttribute()
 	RegistrantLastNameAttribute()
 	RegistrantHostAttribute()
+	RegistrantTypeAttribute()
+	RegistrantCommitteeUIDAttribute()
 	RegistrantJobTitleAttribute()
 	RegistrantOccurrenceIDAttribute()
 	RegistrantOrgNameAttribute()
@@ -55,7 +57,7 @@ var Registrant = Type("Registrant", func() {
 	RegistrantUsernameAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
-	Required("uid", "meeting_uid", "email")
+	Required("uid", "meeting_uid", "email", "type")
 })
 
 //
@@ -155,4 +157,20 @@ func RegistrantAvatarURLAttribute() {
 // RegistrantUsernameAttribute is the DSL attribute for registrant username (LFID).
 func RegistrantUsernameAttribute() {
 	Attribute("username", String, "User's LF ID")
+}
+
+// RegistrantTypeAttribute is the DSL attribute for registrant type.
+func RegistrantTypeAttribute() {
+	Attribute("type", String, "Type of registrant", func() {
+		Enum("direct", "committee")
+		Example("direct")
+	})
+}
+
+// RegistrantCommitteeUIDAttribute is the DSL attribute for registrant committee UID.
+func RegistrantCommitteeUIDAttribute() {
+	Attribute("committee_uid", String, "The UID of the committee if registrant is a committee member", func() {
+		Format(FormatUUID)
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+	})
 }
