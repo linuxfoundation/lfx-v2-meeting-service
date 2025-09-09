@@ -101,6 +101,11 @@ func main() {
 		messageBuilder,
 		serviceConfig,
 	)
+	pastMeetingRecordingService := service.NewPastMeetingRecordingService(
+		repos.PastMeetingRecording,
+		messageBuilder,
+		serviceConfig,
+	)
 	committeeSyncService := service.NewCommitteeSyncService(
 		repos.Registrant,
 		registrantService,
@@ -121,6 +126,7 @@ func main() {
 		registrantService,
 		pastMeetingService,
 		pastMeetingParticipantService,
+		pastMeetingRecordingService,
 		occurrenceService,
 		platformConfigs.Zoom.Validator,
 	)
