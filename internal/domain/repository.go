@@ -52,6 +52,7 @@ type RegistrantRepository interface {
 	// Bulk operations
 	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.Registrant, error)
 	ListByEmail(ctx context.Context, email string) ([]*models.Registrant, error)
+	GetByMeetingAndEmail(ctx context.Context, meetingUID, email string) (*models.Registrant, uint64, error)
 }
 
 // PastMeetingRepository defines the interface for past meeting storage operations.

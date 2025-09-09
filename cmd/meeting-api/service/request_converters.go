@@ -203,6 +203,7 @@ func ConvertCreateRegistrantPayloadToDomain(goaRegistrant *meetingservice.Create
 		FirstName:          utils.StringValue(goaRegistrant.FirstName),
 		LastName:           utils.StringValue(goaRegistrant.LastName),
 		Host:               utils.BoolValue(goaRegistrant.Host),
+		Type:               models.RegistrantTypeDirect, // Creating a registrant via the API must be direct type
 		JobTitle:           utils.StringValue(goaRegistrant.JobTitle),
 		OccurrenceID:       utils.StringValue(goaRegistrant.OccurrenceID),
 		OrgName:            utils.StringValue(goaRegistrant.OrgName),
@@ -227,6 +228,7 @@ func ConvertUpdateRegistrantPayloadToDomain(payload *meetingservice.UpdateMeetin
 		FirstName:          utils.StringValue(payload.FirstName),
 		LastName:           utils.StringValue(payload.LastName),
 		Host:               utils.BoolValue(payload.Host),
+		Type:               "", // This will be populated by the service because it depends on the existing value for the registrant
 		JobTitle:           utils.StringValue(payload.JobTitle),
 		OccurrenceID:       utils.StringValue(payload.OccurrenceID),
 		OrgName:            utils.StringValue(payload.OrgName),
