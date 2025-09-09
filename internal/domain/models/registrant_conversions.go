@@ -33,6 +33,7 @@ func MergeUpdateRegistrantRequest(reqRegistrant *Registrant, existingRegistrant 
 		FirstName:    utils.CoalesceString(reqRegistrant.FirstName, existingRegistrant.FirstName),
 		LastName:     utils.CoalesceString(reqRegistrant.LastName, existingRegistrant.LastName),
 		Host:         reqRegistrant.Host,
+		Type:         existingRegistrant.Type, // Preserve existing type
 		JobTitle:     utils.CoalesceString(reqRegistrant.JobTitle, existingRegistrant.JobTitle),
 		OccurrenceID: utils.CoalesceString(reqRegistrant.OccurrenceID, existingRegistrant.OccurrenceID),
 		OrgName:      utils.CoalesceString(reqRegistrant.OrgName, existingRegistrant.OrgName),

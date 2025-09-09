@@ -73,6 +73,14 @@ func (m *MockRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, 
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockRegistrantRepository) GetByMeetingAndEmail(ctx context.Context, meetingUID, email string) (*models.Registrant, uint64, error) {
+	args := m.Called(ctx, meetingUID, email)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(uint64), args.Error(2)
+	}
+	return args.Get(0).(*models.Registrant), args.Get(1).(uint64), args.Error(2)
+}
+
 // NewMockRegistrantRepository creates a new mock registrant repository for testing
 func NewMockRegistrantRepository(t interface{ Cleanup(func()) }) *MockRegistrantRepository {
 	return &MockRegistrantRepository{}

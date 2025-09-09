@@ -308,6 +308,48 @@ func (s *CommitteeSyncService) AddCommitteeMembersAsRegistrants(
 	return nil
 }
 
+// updateRegistrantToCommitteeType updates an existing registrant to committee type
+func (s *CommitteeSyncService) updateRegistrantToCommitteeType(
+	ctx context.Context,
+	existingRegistrant *models.Registrant,
+	revision uint64,
+	committeeUID string,
+) error {
+	// Check if registrant is already a committee type
+	if existingRegistrant.Type == models.RegistrantTypeCommittee {
+		slog.DebugContext(ctx, "registrant already has committee type",
+			"meeting_uid", existingRegistrant.MeetingUID,
+			"registrant_uid", existingRegistrant.UID,
+			"email", existingRegistrant.Email,
+			"committee_uid", committeeUID)
+		return nil
+	}
+
+	// Update only the type and committee UID
+	existingRegistrant.Type = models.RegistrantTypeCommittee
+	existingRegistrant.CommitteeUID = &committeeUID
+
+	// Update the registrant in the repository
+	err := s.registrantRepository.Update(ctx, existingRegistrant, revision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update registrant to committee type",
+			"meeting_uid", existingRegistrant.MeetingUID,
+			"registrant_uid", existingRegistrant.UID,
+			"email", existingRegistrant.Email,
+			"committee_uid", committeeUID,
+			logging.ErrKey, err)
+		return fmt.Errorf("failed to update registrant to committee type: %w", err)
+	}
+
+	slog.InfoContext(ctx, "updated registrant to committee type",
+		"meeting_uid", existingRegistrant.MeetingUID,
+		"registrant_uid", existingRegistrant.UID,
+		"email", existingRegistrant.Email,
+		"committee_uid", committeeUID)
+
+	return nil
+}
+
 // createRegistrantForCommitteeMember creates a registrant record for a committee member
 func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 	ctx context.Context,
@@ -315,22 +357,19 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 	committeeUID string,
 	member models.CommitteeMember,
 ) error {
-	// Check if registrant already exists by email to avoid duplicates
-	exists, err := s.registrantRepository.ExistsByMeetingAndEmail(ctx, meetingUID, member.Email)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to check registrant existence",
+	// Check if registrant already exists by email
+	existingRegistrant, revision, err := s.registrantRepository.GetByMeetingAndEmail(ctx, meetingUID, member.Email)
+	if err != nil && err != domain.ErrRegistrantNotFound {
+		slog.ErrorContext(ctx, "failed to check for existing registrant",
 			"meeting_uid", meetingUID,
 			"email", member.Email,
 			logging.ErrKey, err)
-		return fmt.Errorf("failed to check registrant existence: %w", err)
+		return fmt.Errorf("failed to check for existing registrant: %w", err)
 	}
 
-	if exists {
-		slog.DebugContext(ctx, "registrant already exists, skipping committee member",
-			"meeting_uid", meetingUID,
-			"email", member.Email,
-			"committee_uid", committeeUID)
-		return nil
+	if existingRegistrant != nil {
+		// Update existing registrant to committee type if needed
+		return s.updateRegistrantToCommitteeType(ctx, existingRegistrant, revision, committeeUID)
 	}
 
 	// Create registrant for committee member using registrant service (includes email invitations)
