@@ -42,6 +42,16 @@ func MergeUpdateRegistrantRequest(reqRegistrant *Registrant, existingRegistrant 
 		UpdatedAt:    &now,
 	}
 
+	// Set optional fields
+	registrant.Type = existingRegistrant.Type
+	if reqRegistrant.Type != "" {
+		registrant.Type = reqRegistrant.Type
+	}
+	registrant.CommitteeUID = existingRegistrant.CommitteeUID
+	if reqRegistrant.CommitteeUID != nil {
+		registrant.CommitteeUID = reqRegistrant.CommitteeUID
+	}
+
 	// TODO: get the actual values from the system once there is an org service
 	// because the org name could be changing and thus need to be recalculated
 	registrant.OrgIsProjectMember = existingRegistrant.OrgIsProjectMember

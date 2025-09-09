@@ -315,6 +315,29 @@ func (s *NatsRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, 
 	return false, nil
 }
 
+// GetByMeetingAndEmail gets a registrant by meeting UID and email with its revision.
+func (s *NatsRegistrantRepository) GetByMeetingAndEmail(ctx context.Context, meetingUID, email string) (*models.Registrant, uint64, error) {
+	if !s.IsReady(ctx) {
+		return nil, 0, domain.ErrServiceUnavailable
+	}
+
+	// List all registrants for the meeting
+	registrants, err := s.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Find the registrant with the given email
+	for _, registrant := range registrants {
+		if registrant.Email == email {
+			// Get the registrant with revision
+			return s.GetWithRevision(ctx, registrant.UID)
+		}
+	}
+
+	return nil, 0, domain.ErrRegistrantNotFound
+}
+
 // Get gets a registrant by its UID.
 func (s *NatsRegistrantRepository) Get(ctx context.Context, registrantUID string) (*models.Registrant, error) {
 	registrant, _, err := s.GetWithRevision(ctx, registrantUID)
