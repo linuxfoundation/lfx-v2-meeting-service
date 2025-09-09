@@ -405,6 +405,37 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 		return fmt.Errorf("failed to update past meeting with new session: %w", err)
 	}
 
+	// Send indexing and FGA sync messages for the updated past meeting
+	// Use WorkerPool for concurrent message sending
+	pool := concurrent.NewWorkerPool(2)
+	messages := []func() error{
+		func() error {
+			// Send indexing message
+			return s.pastMeetingService.MessageBuilder.SendIndexPastMeeting(ctx, models.ActionUpdated, *pastMeeting)
+		},
+		func() error {
+			// Send FGA sync message for permissions
+			committees := make([]string, len(pastMeeting.Committees))
+			for i, committee := range pastMeeting.Committees {
+				committees[i] = committee.UID
+			}
+			isPublic := pastMeeting.Visibility == "public"
+
+			return s.pastMeetingService.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+				UID:        pastMeeting.UID,
+				MeetingUID: pastMeeting.MeetingUID,
+				Public:     isPublic,
+				ProjectUID: pastMeeting.ProjectUID,
+				Committees: committees,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages for past meeting update", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
+	}
+
 	slog.DebugContext(ctx, "successfully updated past meeting with new session",
 		"past_meeting_uid", pastMeeting.UID,
 		"session_uid", newSession.UID,
@@ -1069,6 +1100,25 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 
 			err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.Create(ctx, participant)
 
+			// Attempt to send indexing and access control messages.
+			// We should just log a warning if they fail, but continue with the rest of the processing.
+			errIndex := s.pastMeetingParticipantService.MessageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant)
+			if errIndex != nil {
+				slog.WarnContext(ctx, "failed to send index past meeting participant message", logging.ErrKey, errIndex)
+			}
+
+			errAccess := s.pastMeetingParticipantService.MessageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+				UID:            participant.UID,
+				PastMeetingUID: participant.PastMeetingUID,
+				Username:       participant.Username,
+				Host:           participant.Host,
+				IsInvited:      participant.IsInvited,
+				IsAttended:     participant.IsAttended,
+			})
+			if errAccess != nil {
+				slog.WarnContext(ctx, "failed to send put past meeting participant access message", logging.ErrKey, errAccess)
+			}
+
 			// Use mutex to protect shared counters
 			mu.Lock()
 			defer mu.Unlock()
@@ -1176,6 +1226,37 @@ func (s *ZoomWebhookHandler) updatePastMeetingSessionEndTime(ctx context.Context
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update past meeting with session end time", logging.ErrKey, err)
 		return fmt.Errorf("failed to update past meeting: %w", err)
+	}
+
+	// Send indexing and FGA sync messages for the updated past meeting
+	// Use WorkerPool for concurrent message sending
+	pool := concurrent.NewWorkerPool(2)
+	messages := []func() error{
+		func() error {
+			// Send indexing message
+			return s.pastMeetingService.MessageBuilder.SendIndexPastMeeting(ctx, models.ActionUpdated, *pastMeeting)
+		},
+		func() error {
+			// Send FGA sync message for permissions
+			committees := make([]string, len(pastMeeting.Committees))
+			for i, committee := range pastMeeting.Committees {
+				committees[i] = committee.UID
+			}
+			isPublic := pastMeeting.Visibility == "public"
+
+			return s.pastMeetingService.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+				UID:        pastMeeting.UID,
+				MeetingUID: pastMeeting.MeetingUID,
+				Public:     isPublic,
+				ProjectUID: pastMeeting.ProjectUID,
+				Committees: committees,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages for past meeting session update", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
 	}
 
 	slog.InfoContext(ctx, "successfully updated past meeting session end time",
@@ -1353,6 +1434,37 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		return nil, fmt.Errorf("failed to create past meeting record: %w", err)
 	}
 
+	// Send indexing and FGA sync messages for the newly created past meeting
+	// Use WorkerPool for concurrent message sending
+	pool := concurrent.NewWorkerPool(2)
+	messages := []func() error{
+		func() error {
+			// Send indexing message
+			return s.pastMeetingService.MessageBuilder.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeeting)
+		},
+		func() error {
+			// Send FGA sync message for permissions
+			committees := make([]string, len(pastMeeting.Committees))
+			for i, committee := range pastMeeting.Committees {
+				committees[i] = committee.UID
+			}
+			isPublic := pastMeeting.Visibility == "public"
+
+			return s.pastMeetingService.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+				UID:        pastMeeting.UID,
+				MeetingUID: pastMeeting.MeetingUID,
+				Public:     isPublic,
+				ProjectUID: pastMeeting.ProjectUID,
+				Committees: committees,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages for past meeting creation", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
+	}
+
 	successLogFields := []any{
 		"past_meeting_uid", pastMeeting.UID,
 		"meeting_uid", meeting.UID,
@@ -1419,6 +1531,29 @@ func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, pa
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update participant attendance", logging.ErrKey, err)
 		return fmt.Errorf("failed to update participant: %w", err)
+	}
+
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.pastMeetingParticipantService.MessageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionUpdated, *participant)
+		},
+		func() error {
+			return s.pastMeetingParticipantService.MessageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+				UID:            participant.UID,
+				PastMeetingUID: participant.PastMeetingUID,
+				Username:       participant.Username,
+				Host:           participant.Host,
+				IsInvited:      participant.IsInvited,
+				IsAttended:     participant.IsAttended,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
 	}
 
 	slog.DebugContext(ctx, "successfully updated participant attendance and session",
@@ -1537,6 +1672,29 @@ func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(
 		return fmt.Errorf("failed to update participant: %w", err)
 	}
 
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.pastMeetingParticipantService.MessageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant)
+		},
+		func() error {
+			return s.pastMeetingParticipantService.MessageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+				UID:            participant.UID,
+				PastMeetingUID: participant.PastMeetingUID,
+				Username:       participant.Username,
+				Host:           participant.Host,
+				IsInvited:      participant.IsInvited,
+				IsAttended:     participant.IsAttended,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
+	}
+
 	slog.DebugContext(ctx, "successfully updated participant session leave time",
 		"participant_uid", participant.UID,
 		"session_uid", sessionUID,
@@ -1647,6 +1805,29 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 			logging.ErrKey, err,
 		)
 		return nil, fmt.Errorf("failed to create participant: %w", err)
+	}
+
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.pastMeetingParticipantService.MessageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *newParticipant)
+		},
+		func() error {
+			return s.pastMeetingParticipantService.MessageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+				UID:            newParticipant.UID,
+				PastMeetingUID: newParticipant.PastMeetingUID,
+				Username:       newParticipant.Username,
+				Host:           newParticipant.Host,
+				IsInvited:      newParticipant.IsInvited,
+				IsAttended:     newParticipant.IsAttended,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
 	}
 
 	// Log success with appropriate details
