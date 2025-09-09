@@ -325,12 +325,17 @@ func (s *CommitteeSyncService) updateRegistrantToCommitteeType(
 		return nil
 	}
 
-	// Update only the type and committee UID
-	existingRegistrant.Type = models.RegistrantTypeCommittee
-	existingRegistrant.CommitteeUID = &committeeUID
+	// Create update request with only the fields we want to change
+	updateRequest := &models.Registrant{
+		UID:          existingRegistrant.UID,
+		MeetingUID:   existingRegistrant.MeetingUID,
+		Email:        existingRegistrant.Email,
+		Type:         models.RegistrantTypeCommittee,
+		CommitteeUID: &committeeUID,
+	}
 
-	// Update the registrant in the repository
-	err := s.registrantRepository.Update(ctx, existingRegistrant, revision)
+	// Use the registrant service to update, which handles NATS messages and FGA sync
+	_, err := s.registrantService.UpdateMeetingRegistrant(ctx, updateRequest, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update registrant to committee type",
 			"meeting_uid", existingRegistrant.MeetingUID,

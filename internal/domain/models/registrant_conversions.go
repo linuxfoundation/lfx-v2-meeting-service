@@ -33,7 +33,6 @@ func MergeUpdateRegistrantRequest(reqRegistrant *Registrant, existingRegistrant 
 		FirstName:    utils.CoalesceString(reqRegistrant.FirstName, existingRegistrant.FirstName),
 		LastName:     utils.CoalesceString(reqRegistrant.LastName, existingRegistrant.LastName),
 		Host:         reqRegistrant.Host,
-		Type:         existingRegistrant.Type, // Preserve existing type
 		JobTitle:     utils.CoalesceString(reqRegistrant.JobTitle, existingRegistrant.JobTitle),
 		OccurrenceID: utils.CoalesceString(reqRegistrant.OccurrenceID, existingRegistrant.OccurrenceID),
 		OrgName:      utils.CoalesceString(reqRegistrant.OrgName, existingRegistrant.OrgName),
@@ -41,6 +40,16 @@ func MergeUpdateRegistrantRequest(reqRegistrant *Registrant, existingRegistrant 
 		Username:     utils.CoalesceString(reqRegistrant.Username, existingRegistrant.Username),
 		CreatedAt:    existingRegistrant.CreatedAt,
 		UpdatedAt:    &now,
+	}
+
+	// Set optional fields
+	registrant.Type = existingRegistrant.Type
+	if reqRegistrant.Type != "" {
+		registrant.Type = reqRegistrant.Type
+	}
+	registrant.CommitteeUID = existingRegistrant.CommitteeUID
+	if reqRegistrant.CommitteeUID != nil {
+		registrant.CommitteeUID = reqRegistrant.CommitteeUID
 	}
 
 	// TODO: get the actual values from the system once there is an org service
