@@ -915,16 +915,16 @@ var _ = Service("Meeting Service", func() {
 	})
 
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
-	Files("/openapi.json", "gen/http/openapi.json", func() {
+	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")
 	})
-	Files("/openapi.yaml", "gen/http/openapi.yaml", func() {
+	Files("/_meetings/openapi.yaml", "gen/http/openapi.yaml", func() {
 		Meta("swagger:generate", "false")
 	})
-	Files("/openapi3.json", "gen/http/openapi3.json", func() {
+	Files("/_meetings/openapi3.json", "gen/http/openapi3.json", func() {
 		Meta("swagger:generate", "false")
 	})
-	Files("/openapi3.yaml", "gen/http/openapi3.yaml", func() {
+	Files("/_meetings/openapi3.yaml", "gen/http/openapi3.yaml", func() {
 		Meta("swagger:generate", "false")
 	})
 })
