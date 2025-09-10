@@ -108,3 +108,17 @@ type PastMeetingRecordingRepository interface {
 	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingRecording, error)
 	ListAll(ctx context.Context) ([]*models.PastMeetingRecording, error)
 }
+
+// PastMeetingSummaryRepository defines the interface for past meeting summary storage operations.
+// This interface can be implemented by different storage backends (NATS, PostgreSQL, etc.)
+type PastMeetingSummaryRepository interface {
+	Create(ctx context.Context, summary *models.PastMeetingSummary) error
+	Exists(ctx context.Context, summaryUID string) (bool, error)
+	Delete(ctx context.Context, summaryUID string, revision uint64) error
+	Get(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, error)
+	GetWithRevision(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, uint64, error)
+	Update(ctx context.Context, summary *models.PastMeetingSummary, revision uint64) error
+	GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingSummary, error)
+	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingSummary, error)
+	ListAll(ctx context.Context) ([]*models.PastMeetingSummary, error)
+}

@@ -121,6 +121,7 @@ type Repositories struct {
 	PastMeeting            *store.NatsPastMeetingRepository
 	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
 	PastMeetingRecording   *store.NatsPastMeetingRecordingRepository
+	PastMeetingSummary     *store.NatsPastMeetingSummaryRepository
 }
 
 // getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.
@@ -167,12 +168,19 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		return nil, err
 	}
 
+	pastMeetingSummariesKV, err := js.KeyValue(ctx, store.KVStoreNamePastMeetingSummaries)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.KVStoreNamePastMeetingSummaries)
+		return nil, err
+	}
+
 	repos := &Repositories{
 		Meeting:                store.NewNatsMeetingRepository(meetingsKV, meetingSettingsKV),
 		Registrant:             store.NewNatsRegistrantRepository(meetingRegistrantsKV),
 		PastMeeting:            store.NewNatsPastMeetingRepository(pastMeetingsKV),
 		PastMeetingParticipant: store.NewNatsPastMeetingParticipantRepository(pastMeetingParticipantsKV),
 		PastMeetingRecording:   store.NewNatsPastMeetingRecordingRepository(pastMeetingRecordingsKV),
+		PastMeetingSummary:     store.NewNatsPastMeetingSummaryRepository(pastMeetingSummariesKV),
 	}
 
 	return repos, nil

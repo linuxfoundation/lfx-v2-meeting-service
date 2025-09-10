@@ -112,6 +112,8 @@ func handleError(err error) error {
 		return createResponse(http.StatusNotFound, domain.ErrPastMeetingNotFound)
 	case domain.ErrPastMeetingParticipantNotFound:
 		return createResponse(http.StatusNotFound, domain.ErrPastMeetingParticipantNotFound)
+	case domain.ErrPastMeetingSummaryNotFound:
+		return createResponse(http.StatusNotFound, domain.ErrPastMeetingSummaryNotFound)
 	case domain.ErrInternal, domain.ErrUnmarshal:
 		return createResponse(http.StatusInternalServerError, domain.ErrInternal)
 	}
