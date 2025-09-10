@@ -5,6 +5,9 @@ package main
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,6 +17,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/webhook"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/middleware"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
@@ -200,6 +204,40 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 
 	eventType := payload.Event
 
+	// Handle endpoint.url_validation event specially
+	if eventType == "endpoint.url_validation" {
+		// Extract plainToken from payload
+		payloadMap, ok := payload.Payload.(map[string]interface{})
+		if !ok {
+			logger.ErrorContext(ctx, "Webhook payload is not a valid map for validation", "payload_type", fmt.Sprintf("%T", payload.Payload))
+			return nil, createResponse(http.StatusBadRequest, fmt.Errorf("invalid validation payload format"))
+		}
+
+		plainToken, ok := payloadMap["plainToken"].(string)
+		if !ok || plainToken == "" {
+			logger.ErrorContext(ctx, "Missing plainToken in validation payload")
+			return nil, createResponse(http.StatusBadRequest, fmt.Errorf("missing plainToken in validation payload"))
+		}
+
+		// Generate encrypted token using HMAC SHA-256
+		// Cast to ZoomWebhookValidator to get the secret token
+		zoomValidator, ok := s.zoomWebhookHandler.WebhookValidator.(*webhook.ZoomWebhookValidator)
+		if !ok || zoomValidator.SecretToken == "" {
+			logger.ErrorContext(ctx, "Zoom webhook validator not properly configured")
+			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("webhook validation not configured"))
+		}
+
+		h := hmac.New(sha256.New, []byte(zoomValidator.SecretToken))
+		h.Write([]byte(plainToken))
+		encryptedToken := hex.EncodeToString(h.Sum(nil))
+
+		// Return validation response
+		return &meetingsvc.ZoomWebhookResponse{
+			PlainToken:     utils.StringPtr(plainToken),
+			EncryptedToken: utils.StringPtr(encryptedToken),
+		}, nil
+	}
+
 	// Map event type to NATS subject
 	subject := getZoomWebhookSubject(eventType)
 	if subject == "" {
@@ -229,7 +267,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 	logger.InfoContext(ctx, "Zoom webhook event published to NATS successfully", "event_type", eventType, "subject", subject)
 
 	return &meetingsvc.ZoomWebhookResponse{
-		Status:  "success",
+		Status:  utils.StringPtr("success"),
 		Message: utils.StringPtr(fmt.Sprintf("Event %s queued for processing", eventType)),
 	}, nil
 }

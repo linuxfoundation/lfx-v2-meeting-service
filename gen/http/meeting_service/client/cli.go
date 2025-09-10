@@ -856,8 +856,8 @@ func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServic
 		if body.Payload == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("payload", "body"))
 		}
-		if !(body.Event == "meeting.started" || body.Event == "meeting.ended" || body.Event == "meeting.deleted" || body.Event == "meeting.participant_joined" || body.Event == "meeting.participant_left" || body.Event == "recording.completed" || body.Event == "recording.transcript_completed" || body.Event == "meeting.summary_completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.event", body.Event, []any{"meeting.started", "meeting.ended", "meeting.deleted", "meeting.participant_joined", "meeting.participant_left", "recording.completed", "recording.transcript_completed", "meeting.summary_completed"}))
+		if !(body.Event == "meeting.started" || body.Event == "meeting.ended" || body.Event == "meeting.deleted" || body.Event == "meeting.participant_joined" || body.Event == "meeting.participant_left" || body.Event == "recording.completed" || body.Event == "recording.transcript_completed" || body.Event == "meeting.summary_completed" || body.Event == "endpoint.url_validation") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.event", body.Event, []any{"meeting.started", "meeting.ended", "meeting.deleted", "meeting.participant_joined", "meeting.participant_left", "recording.completed", "recording.transcript_completed", "meeting.summary_completed", "endpoint.url_validation"}))
 		}
 		if err != nil {
 			return nil, err

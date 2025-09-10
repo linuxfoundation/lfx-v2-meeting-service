@@ -1586,8 +1586,6 @@ paths:
                     description: OK response.
                     schema:
                         $ref: '#/definitions/ZoomWebhookResponse'
-                        required:
-                            - status
                 "400":
                     description: Bad Request response.
                     schema:
@@ -5199,6 +5197,7 @@ definitions:
                     - recording.completed
                     - recording.transcript_completed
                     - meeting.summary_completed
+                    - endpoint.url_validation
             event_ts:
                 type: integer
                 description: Event timestamp in milliseconds
@@ -5219,19 +5218,27 @@ definitions:
         title: ZoomWebhookResponse
         type: object
         properties:
+            encryptedToken:
+                type: string
+                description: The HMAC SHA-256 hash of the plain token
+                example: b2e92a9dffc3c9116a64cfdccf0a0ffdcaa89e86affa09a26e008a2e0e9f92a0
             message:
                 type: string
                 description: Optional message
                 example: Event processed successfully
+            plainToken:
+                type: string
+                description: The plain token received in the validation request
+                example: vLbBnxzIJx4L8xRndWdW2g
             status:
                 type: string
                 description: Processing status
                 example: success
         example:
+            encryptedToken: b2e92a9dffc3c9116a64cfdccf0a0ffdcaa89e86affa09a26e008a2e0e9f92a0
             message: Event processed successfully
+            plainToken: vLbBnxzIJx4L8xRndWdW2g
             status: success
-        required:
-            - status
 securityDefinitions:
     jwt_header_Authorization:
         type: apiKey
