@@ -51,7 +51,7 @@ func TestRegistrant_Tags(t *testing.T) {
 				FirstName: "Jane",
 			},
 			expected: []string{
-				"Jane",
+				"first_name:Jane",
 			},
 		},
 		{
@@ -60,7 +60,7 @@ func TestRegistrant_Tags(t *testing.T) {
 				LastName: "Smith",
 			},
 			expected: []string{
-				"Smith",
+				"last_name:Smith",
 			},
 		},
 		{
@@ -69,7 +69,7 @@ func TestRegistrant_Tags(t *testing.T) {
 				Email: "jane.smith@example.com",
 			},
 			expected: []string{
-				"jane.smith@example.com",
+				"email:jane.smith@example.com",
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func TestRegistrant_Tags(t *testing.T) {
 				Username: "janesmith",
 			},
 			expected: []string{
-				"janesmith",
+				"username:janesmith",
 			},
 		},
 		{
@@ -104,10 +104,10 @@ func TestRegistrant_Tags(t *testing.T) {
 				"registrant-123",
 				"registrant_uid:registrant-123",
 				"meeting_uid:meeting-456",
-				"Jane",
-				"Smith",
-				"jane.smith@example.com",
-				"janesmith",
+				"first_name:Jane",
+				"last_name:Smith",
+				"email:jane.smith@example.com",
+				"username:janesmith",
 			},
 		},
 		{
@@ -137,8 +137,8 @@ func TestRegistrant_Tags(t *testing.T) {
 				"registrant-123",
 				"registrant_uid:registrant-123",
 				"meeting_uid:meeting-456",
-				"Jane",
-				"Smith",
+				"first_name:Jane",
+				"last_name:Smith",
 			},
 		},
 		{
@@ -153,10 +153,10 @@ func TestRegistrant_Tags(t *testing.T) {
 			expected: []string{
 				"registrant-123",
 				"registrant_uid:registrant-123",
-				"   ",
-				"\t\n",
-				" test@example.com ",
-				"  user123  ",
+				"first_name:   ",
+				"last_name:\t\n",
+				"email: test@example.com ",
+				"username:  user123  ",
 			},
 		},
 		{
@@ -171,10 +171,10 @@ func TestRegistrant_Tags(t *testing.T) {
 			expected: []string{
 				"registrant-123",
 				"registrant_uid:registrant-123",
-				"María",
-				"González-Hernández",
-				"maría.gonzález+work@example.com",
-				"maria.gonzalez@2024",
+				"first_name:María",
+				"last_name:González-Hernández",
+				"email:maría.gonzález+work@example.com",
+				"username:maria.gonzalez@2024",
 			},
 		},
 		{
@@ -187,7 +187,7 @@ func TestRegistrant_Tags(t *testing.T) {
 			expected: []string{
 				"registrant-123",
 				"registrant_uid:registrant-123",
-				"Host",
+				"first_name:Host",
 			},
 		},
 		{
@@ -202,10 +202,10 @@ func TestRegistrant_Tags(t *testing.T) {
 			expected: []string{
 				"registrant-123",
 				"registrant_uid:registrant-123",
-				"VeryLongFirstNameThatExceedsNormalLength",
-				"EquallyLongLastNameWithManyCharacters",
-				"very.long.email.address.with.many.dots@very-long-domain-name.example.com",
-				"very_long_username_with_underscores_and_numbers_123456789",
+				"first_name:VeryLongFirstNameThatExceedsNormalLength",
+				"last_name:EquallyLongLastNameWithManyCharacters",
+				"email:very.long.email.address.with.many.dots@very-long-domain-name.example.com",
+				"username:very_long_username_with_underscores_and_numbers_123456789",
 			},
 		},
 	}

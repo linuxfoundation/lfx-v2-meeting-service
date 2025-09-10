@@ -60,7 +60,7 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 				FirstName: "John",
 			},
 			expected: []string{
-				"John",
+				"first_name:John",
 			},
 		},
 		{
@@ -69,7 +69,7 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 				LastName: "Doe",
 			},
 			expected: []string{
-				"Doe",
+				"last_name:Doe",
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 				Username: "johndoe",
 			},
 			expected: []string{
-				"johndoe",
+				"username:johndoe",
 			},
 		},
 		{
@@ -87,7 +87,7 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 				Email: "john.doe@example.com",
 			},
 			expected: []string{
-				"john.doe@example.com",
+				"email:john.doe@example.com",
 			},
 		},
 		{
@@ -116,10 +116,10 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 				"past_meeting_participant_uid:participant-123",
 				"past_meeting_uid:past-meeting-456",
 				"meeting_uid:meeting-789",
-				"John",
-				"Doe",
-				"johndoe",
-				"john.doe@example.com",
+				"first_name:John",
+				"last_name:Doe",
+				"username:johndoe",
+				"email:john.doe@example.com",
 			},
 		},
 		{
@@ -151,9 +151,9 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 				"participant-123",
 				"past_meeting_participant_uid:participant-123",
 				"past_meeting_uid:past-meeting-456",
-				"John",
-				"johndoe",
-				"john.doe@example.com",
+				"first_name:John",
+				"username:johndoe",
+				"email:john.doe@example.com",
 			},
 		},
 		{
@@ -168,10 +168,10 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 			expected: []string{
 				"participant-123",
 				"past_meeting_participant_uid:participant-123",
-				"   ",
-				"\t",
-				" \n ",
-				"  test@example.com  ",
+				"first_name:   ",
+				"last_name:\t",
+				"username: \n ",
+				"email:  test@example.com  ",
 			},
 		},
 		{
@@ -186,10 +186,10 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 			expected: []string{
 				"participant-123",
 				"past_meeting_participant_uid:participant-123",
-				"José",
-				"García-López",
-				"jose.garcia@123",
-				"josé.garcía+test@example.com",
+				"first_name:José",
+				"last_name:García-López",
+				"username:jose.garcia@123",
+				"email:josé.garcía+test@example.com",
 			},
 		},
 	}
