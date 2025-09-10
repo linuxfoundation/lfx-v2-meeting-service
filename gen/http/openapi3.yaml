@@ -7472,6 +7472,7 @@ components:
                         - recording.completed
                         - recording.transcript_completed
                         - meeting.summary_completed
+                        - endpoint.url_validation
                 event_ts:
                     type: integer
                     description: Event timestamp in milliseconds
@@ -7515,6 +7516,7 @@ components:
                         - recording.completed
                         - recording.transcript_completed
                         - meeting.summary_completed
+                        - endpoint.url_validation
                 event_ts:
                     type: integer
                     description: Event timestamp in milliseconds

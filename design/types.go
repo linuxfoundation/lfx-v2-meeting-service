@@ -130,10 +130,17 @@ var ZoomWebhookPayload = Type("ZoomWebhookPayload", func() {
 	Description("Zoom webhook event payload")
 	Attribute("event", String, "The type of event", func() {
 		Example("meeting.started")
-		Enum("meeting.started", "meeting.ended", "meeting.deleted",
-			"meeting.participant_joined", "meeting.participant_left",
-			"recording.completed", "recording.transcript_completed",
-			"meeting.summary_completed")
+		Enum(
+			"meeting.started",
+			"meeting.ended",
+			"meeting.deleted",
+			"meeting.participant_joined",
+			"meeting.participant_left",
+			"recording.completed",
+			"recording.transcript_completed",
+			"meeting.summary_completed",
+			"endpoint.url_validation",
+		)
 	})
 	Attribute("event_ts", Int64, "Event timestamp in milliseconds", func() {
 		Example(1609459200000)
