@@ -71,7 +71,6 @@ func (m *MessageBuilder) sendIndexerMessage(ctx context.Context, subject string,
 	if principal, ok := ctx.Value(constants.PrincipalContextID).(string); ok {
 		headers[constants.XOnBehalfOfHeader] = principal
 	}
-
 	var payload any
 	switch action {
 	case models.ActionCreated, models.ActionUpdated:
@@ -227,6 +226,24 @@ func (m *MessageBuilder) SendIndexPastMeetingParticipant(ctx context.Context, ac
 // SendDeleteIndexPastMeetingParticipant sends the message to the NATS server for the past meeting participant indexing.
 func (m *MessageBuilder) SendDeleteIndexPastMeetingParticipant(ctx context.Context, data string) error {
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingParticipantSubject, models.ActionDeleted, []byte(data), nil)
+}
+
+// SendIndexPastMeetingRecording sends the message to the NATS server for the past meeting recording indexing.
+func (m *MessageBuilder) SendIndexPastMeetingRecording(ctx context.Context, action models.MessageAction, data models.PastMeetingRecording) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.Tags()...)
+
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingRecordingSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexPastMeetingRecording sends the message to the NATS server for the past meeting recording indexing.
+func (m *MessageBuilder) SendDeleteIndexPastMeetingRecording(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingRecordingSubject, models.ActionDeleted, []byte(data), nil)
 }
 
 // SendUpdateAccessPastMeeting sends the message to the NATS server for the past meeting access control updates.

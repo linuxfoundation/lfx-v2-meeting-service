@@ -126,6 +126,16 @@ func (m *MockMessageBuilder) SendRemovePastMeetingParticipantAccess(ctx context.
 	return args.Error(0)
 }
 
+func (m *MockMessageBuilder) SendIndexPastMeetingRecording(ctx context.Context, action models.MessageAction, data models.PastMeetingRecording) error {
+	args := m.Called(ctx, action, data)
+	return args.Error(0)
+}
+
+func (m *MockMessageBuilder) SendDeleteIndexPastMeetingRecording(ctx context.Context, data string) error {
+	args := m.Called(ctx, data)
+	return args.Error(0)
+}
+
 func (m *MockMessageBuilder) GetCommitteeName(ctx context.Context, committeeUID string) (string, error) {
 	args := m.Called(ctx, committeeUID)
 	return args.String(0), args.Error(1)

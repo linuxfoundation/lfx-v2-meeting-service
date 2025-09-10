@@ -107,6 +107,7 @@ type ZoomRecordingCompletedPayload struct {
 		Timezone       string          `json:"timezone"`
 		Duration       int             `json:"duration"`
 		TotalSize      int64           `json:"total_size"`
+		ShareURL       string          `json:"share_url"`
 		RecordingCount int             `json:"recording_count"`
 		RecordingFiles []RecordingFile `json:"recording_files"`
 	} `json:"object"`
@@ -123,6 +124,9 @@ type ZoomTranscriptCompletedPayload struct {
 		StartTime      time.Time       `json:"start_time"`
 		Timezone       string          `json:"timezone"`
 		Duration       int             `json:"duration"`
+		TotalSize      int64           `json:"total_size"`
+		ShareURL       string          `json:"share_url"`
+		RecordingCount int             `json:"recording_count"`
 		RecordingFiles []RecordingFile `json:"recording_files"`
 	} `json:"object"`
 }
