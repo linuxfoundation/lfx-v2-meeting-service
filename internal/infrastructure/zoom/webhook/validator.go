@@ -13,19 +13,19 @@ import (
 
 // ZoomWebhookValidator handles validation of Zoom webhook signatures
 type ZoomWebhookValidator struct {
-	secretToken string
+	SecretToken string
 }
 
 // NewZoomWebhookValidator creates a new Zoom webhook validator
 func NewZoomWebhookValidator(secretToken string) *ZoomWebhookValidator {
 	return &ZoomWebhookValidator{
-		secretToken: secretToken,
+		SecretToken: secretToken,
 	}
 }
 
 // ValidateSignature validates the Zoom webhook signature
 func (v *ZoomWebhookValidator) ValidateSignature(body []byte, signature, timestamp string) error {
-	if v.secretToken == "" {
+	if v.SecretToken == "" {
 		return fmt.Errorf("webhook secret token not configured")
 	}
 
@@ -41,7 +41,7 @@ func (v *ZoomWebhookValidator) ValidateSignature(body []byte, signature, timesta
 	message := fmt.Sprintf("v0:%s:%s", timestamp, body)
 
 	// Calculate HMAC-SHA256
-	h := hmac.New(sha256.New, []byte(v.secretToken))
+	h := hmac.New(sha256.New, []byte(v.SecretToken))
 	h.Write([]byte(message))
 	expectedSignature := "v0=" + hex.EncodeToString(h.Sum(nil))
 
@@ -65,6 +65,7 @@ func (v *ZoomWebhookValidator) IsValidEvent(eventType string) bool {
 		"recording.completed":            true,
 		"recording.transcript_completed": true,
 		"meeting.summary_completed":      true,
+		"endpoint.url_validation":        true,
 	}
 
 	return validEvents[eventType]

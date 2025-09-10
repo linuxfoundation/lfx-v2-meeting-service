@@ -166,5 +166,13 @@ var ZoomWebhookResponse = Type("ZoomWebhookResponse", func() {
 	Attribute("message", String, "Optional message", func() {
 		Example("Event processed successfully")
 	})
-	Required("status")
+	Attribute("plainToken", String, "Plain token for endpoint validation", func() {
+		Description("The plain token received in the validation request")
+		Example("vLbBnxzIJx4L8xRndWdW2g")
+	})
+	Attribute("encryptedToken", String, "Encrypted token for endpoint validation", func() {
+		Description("The HMAC SHA-256 hash of the plain token")
+		Example("b2e92a9dffc3c9116a64cfdccf0a0ffdcaa89e86affa09a26e008a2e0e9f92a0")
+	})
+	// No required fields - all fields are optional to support different response types
 })

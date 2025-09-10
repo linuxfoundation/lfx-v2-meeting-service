@@ -572,9 +572,13 @@ type UpdateMeetingRegistrantResponseBody struct {
 // "zoom-webhook" endpoint HTTP response body.
 type ZoomWebhookResponseBody struct {
 	// Processing status
-	Status string `form:"status" json:"status" xml:"status"`
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// Optional message
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// The plain token received in the validation request
+	PlainToken *string `form:"plainToken,omitempty" json:"plainToken,omitempty" xml:"plainToken,omitempty"`
+	// The HMAC SHA-256 hash of the plain token
+	EncryptedToken *string `form:"encryptedToken,omitempty" json:"encryptedToken,omitempty" xml:"encryptedToken,omitempty"`
 }
 
 // GetPastMeetingsResponseBody is the type of the "Meeting Service" service
@@ -2492,8 +2496,10 @@ func NewUpdateMeetingRegistrantResponseBody(res *meetingservice.Registrant) *Upd
 // the "zoom-webhook" endpoint of the "Meeting Service" service.
 func NewZoomWebhookResponseBody(res *meetingservice.ZoomWebhookResponse) *ZoomWebhookResponseBody {
 	body := &ZoomWebhookResponseBody{
-		Status:  res.Status,
-		Message: res.Message,
+		Status:         res.Status,
+		Message:        res.Message,
+		PlainToken:     res.PlainToken,
+		EncryptedToken: res.EncryptedToken,
 	}
 	return body
 }
