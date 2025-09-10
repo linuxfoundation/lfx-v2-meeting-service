@@ -87,13 +87,13 @@ func (p *PastMeeting) Tags() []string {
 	}
 
 	if p.Title != "" {
-		// without prefix
-		tags = append(tags, p.Title)
+		tag := fmt.Sprintf("title:%s", p.Title)
+		tags = append(tags, tag)
 	}
 
 	if p.Description != "" {
-		// without prefix
-		tags = append(tags, p.Description)
+		tag := fmt.Sprintf("description:%s", p.Description)
+		tags = append(tags, tag)
 	}
 
 	return tags

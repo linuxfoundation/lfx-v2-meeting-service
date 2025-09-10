@@ -63,23 +63,23 @@ func (r *Registrant) Tags() []string {
 	}
 
 	if r.FirstName != "" {
-		// without prefix
-		tags = append(tags, r.FirstName)
+		tag := fmt.Sprintf("first_name:%s", r.FirstName)
+		tags = append(tags, tag)
 	}
 
 	if r.LastName != "" {
-		// without prefix
-		tags = append(tags, r.LastName)
+		tag := fmt.Sprintf("last_name:%s", r.LastName)
+		tags = append(tags, tag)
 	}
 
 	if r.Email != "" {
-		// without prefix
-		tags = append(tags, r.Email)
+		tag := fmt.Sprintf("email:%s", r.Email)
+		tags = append(tags, tag)
 	}
 
 	if r.Username != "" {
-		// without prefix
-		tags = append(tags, r.Username)
+		tag := fmt.Sprintf("username:%s", r.Username)
+		tags = append(tags, tag)
 	}
 
 	return tags

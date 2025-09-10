@@ -51,7 +51,7 @@ func TestMeetingBase_Tags(t *testing.T) {
 				Title: "Weekly Standup",
 			},
 			expected: []string{
-				"Weekly Standup",
+				"title:Weekly Standup",
 			},
 		},
 		{
@@ -60,7 +60,7 @@ func TestMeetingBase_Tags(t *testing.T) {
 				Description: "Team sync meeting",
 			},
 			expected: []string{
-				"Team sync meeting",
+				"description:Team sync meeting",
 			},
 		},
 		{
@@ -109,8 +109,8 @@ func TestMeetingBase_Tags(t *testing.T) {
 				"project_uid:project-456",
 				"committee_uid:committee-789",
 				"committee_uid:committee-101",
-				"Weekly Standup",
-				"Team sync meeting",
+				"title:Weekly Standup",
+				"description:Team sync meeting",
 			},
 		},
 		{

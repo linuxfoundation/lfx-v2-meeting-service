@@ -69,7 +69,7 @@ func TestPastMeeting_Tags(t *testing.T) {
 				Title: "Weekly Standup - Past",
 			},
 			expected: []string{
-				"Weekly Standup - Past",
+				"title:Weekly Standup - Past",
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func TestPastMeeting_Tags(t *testing.T) {
 				Description: "Past team sync meeting",
 			},
 			expected: []string{
-				"Past team sync meeting",
+				"description:Past team sync meeting",
 			},
 		},
 		{
@@ -106,8 +106,8 @@ func TestPastMeeting_Tags(t *testing.T) {
 				"project_uid:project-789",
 				"occurrence_id:occurrence-101",
 				"committee_uid:committee-111",
-				"Weekly Standup - Past",
-				"Past team sync meeting",
+				"title:Weekly Standup - Past",
+				"description:Past team sync meeting",
 			},
 		},
 		{
@@ -136,7 +136,7 @@ func TestPastMeeting_Tags(t *testing.T) {
 				"past-meeting-123",
 				"past_meeting_uid:past-meeting-123",
 				"meeting_uid:meeting-456",
-				"Weekly Standup",
+				"title:Weekly Standup",
 			},
 		},
 		{
@@ -149,8 +149,8 @@ func TestPastMeeting_Tags(t *testing.T) {
 			expected: []string{
 				"past-meeting-123",
 				"past_meeting_uid:past-meeting-123",
-				"   ",
-				"\t\n",
+				"title:   ",
+				"description:\t\n",
 			},
 		},
 	}

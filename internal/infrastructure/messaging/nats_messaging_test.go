@@ -683,8 +683,8 @@ func TestMessageBuilder_SendIndexMeeting_TagsGeneration(t *testing.T) {
 		"project_uid:project-456",
 		"committee_uid:committee-789",
 		"committee_uid:committee-101",
-		"Weekly Standup",
-		"Team sync meeting",
+		"title:Weekly Standup",
+		"description:Team sync meeting",
 	}
 
 	if len(indexerMsg.Tags) != len(expectedTags) {
@@ -792,10 +792,10 @@ func TestMessageBuilder_SendIndexMeetingRegistrant_TagsGeneration(t *testing.T) 
 		"registrant-123",
 		"registrant_uid:registrant-123",
 		"meeting_uid:meeting-456",
-		"John",
-		"Doe",
-		"john.doe@example.com",
-		"johndoe",
+		"first_name:John",
+		"last_name:Doe",
+		"email:john.doe@example.com",
+		"username:johndoe",
 	}
 
 	if len(indexerMsg.Tags) != len(expectedTags) {
@@ -854,8 +854,8 @@ func TestMessageBuilder_SendIndexPastMeeting_TagsGeneration(t *testing.T) {
 		"meeting_uid:meeting-456",
 		"project_uid:project-789",
 		"occurrence_id:occurrence-101",
-		"Past Weekly Standup",
-		"Past team sync meeting",
+		"title:Past Weekly Standup",
+		"description:Past team sync meeting",
 	}
 
 	if len(indexerMsg.Tags) != len(expectedTags) {
@@ -914,10 +914,10 @@ func TestMessageBuilder_SendIndexPastMeetingParticipant_TagsGeneration(t *testin
 		"past_meeting_participant_uid:participant-123",
 		"past_meeting_uid:past-meeting-456",
 		"meeting_uid:meeting-789",
-		"Jane",
-		"Smith",
-		"janesmith",
-		"jane.smith@example.com",
+		"first_name:Jane",
+		"last_name:Smith",
+		"username:janesmith",
+		"email:jane.smith@example.com",
 	}
 
 	if len(indexerMsg.Tags) != len(expectedTags) {

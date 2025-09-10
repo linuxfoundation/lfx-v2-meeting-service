@@ -152,13 +152,13 @@ func (m *MeetingBase) Tags() []string {
 	}
 
 	if m.Title != "" {
-		// without prefix
-		tags = append(tags, m.Title)
+		tag := fmt.Sprintf("title:%s", m.Title)
+		tags = append(tags, tag)
 	}
 
 	if m.Description != "" {
-		// without prefix
-		tags = append(tags, m.Description)
+		tag := fmt.Sprintf("description:%s", m.Description)
+		tags = append(tags, tag)
 	}
 
 	return tags
