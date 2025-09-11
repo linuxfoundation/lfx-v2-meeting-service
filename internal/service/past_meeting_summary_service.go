@@ -167,50 +167,74 @@ func (s *PastMeetingSummaryService) GetSummaryByPastMeetingUID(ctx context.Conte
 // UpdateSummary updates an existing summary.
 func (s *PastMeetingSummaryService) UpdateSummary(
 	ctx context.Context,
-	summaryUID string,
-	updatedSummary *models.PastMeetingSummary,
+	updateRequest *models.PastMeetingSummary,
+	revision uint64,
 ) (*models.PastMeetingSummary, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
 	}
 
-	// Get current summary with revision
-	currentSummary, revision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, summaryUID)
+	// Get current summary
+	currentSummary, currentRevision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, updateRequest.UID)
 	if err != nil {
 		if err == domain.ErrPastMeetingSummaryNotFound {
-			slog.DebugContext(ctx, "summary not found for update", "summary_uid", summaryUID)
+			slog.DebugContext(ctx, "summary not found for update", "summary_uid", updateRequest.UID)
 			return nil, err
 		}
-		slog.ErrorContext(ctx, "error getting summary for update", logging.ErrKey, err, "summary_uid", summaryUID)
+		slog.ErrorContext(ctx, "error getting summary for update", logging.ErrKey, err, "summary_uid", updateRequest.UID)
 		return nil, domain.ErrInternal
 	}
 
-	// Update the summary with new data
-	updatedSummary.UID = currentSummary.UID
-	updatedSummary.CreatedAt = currentSummary.CreatedAt
+	// Verify revision matches
+	if revision != currentRevision {
+		slog.WarnContext(ctx, "revision mismatch during update",
+			"expected_revision", revision,
+			"current_revision", currentRevision,
+			"summary_uid", updateRequest.UID)
+		return nil, domain.ErrRevisionMismatch
+	}
+
+	// Merge the update fields with the current summary
+	updatedSummary := *currentSummary
 	updatedSummary.UpdatedAt = time.Now().UTC()
 
+	// Update only the editable fields from the request
+	if updateRequest.SummaryData.EditedOverview != "" {
+		updatedSummary.SummaryData.EditedOverview = updateRequest.SummaryData.EditedOverview
+	}
+
+	if updateRequest.SummaryData.EditedDetails != nil {
+		updatedSummary.SummaryData.EditedDetails = updateRequest.SummaryData.EditedDetails
+	}
+
+	if updateRequest.SummaryData.EditedNextSteps != nil {
+		updatedSummary.SummaryData.EditedNextSteps = updateRequest.SummaryData.EditedNextSteps
+	}
+
+	// Update approval status
+	updatedSummary.Approved = updateRequest.Approved
+
 	// Update in repository
-	err = s.PastMeetingSummaryRepository.Update(ctx, updatedSummary, revision)
+	err = s.PastMeetingSummaryRepository.Update(ctx, &updatedSummary, revision)
 	if err != nil {
-		slog.ErrorContext(ctx, "error updating summary", logging.ErrKey, err, "summary_uid", summaryUID)
+		slog.ErrorContext(ctx, "error updating summary", logging.ErrKey, err, "summary_uid", updateRequest.UID)
 		return nil, domain.ErrInternal
 	}
 
 	// Send indexing message for updated summary
-	err = s.MessageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, *updatedSummary)
+	err = s.MessageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
 	if err != nil {
-		slog.ErrorContext(ctx, "error sending index message for updated summary", logging.ErrKey, err, "summary_uid", summaryUID)
+		slog.ErrorContext(ctx, "error sending index message for updated summary", logging.ErrKey, err, "summary_uid", updateRequest.UID)
 		// Don't fail the operation if indexing fails
 	}
 
 	slog.InfoContext(ctx, "updated existing past meeting summary",
-		"summary_uid", summaryUID,
+		"summary_uid", updateRequest.UID,
 		"past_meeting_uid", updatedSummary.PastMeetingUID,
 	)
 
-	return updatedSummary, nil
+	return &updatedSummary, nil
 }
 
 // DeleteSummary deletes a summary.

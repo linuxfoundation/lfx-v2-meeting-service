@@ -566,11 +566,28 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 	if len(summary.SummaryData.NextSteps) > 0 {
 		result.SummaryData.NextSteps = summary.SummaryData.NextSteps
 	}
+	if len(summary.SummaryData.Details) > 0 {
+		details := make([]*meetingservice.SummaryDetail, len(summary.SummaryData.Details))
+		for i, detail := range summary.SummaryData.Details {
+			details[i] = &meetingservice.SummaryDetail{
+				Label:   detail.Label,
+				Summary: detail.Summary,
+			}
+		}
+		result.SummaryData.Details = details
+	}
 	if summary.SummaryData.EditedOverview != "" {
 		result.SummaryData.EditedOverview = utils.StringPtr(summary.SummaryData.EditedOverview)
 	}
-	if summary.SummaryData.EditedDetails != "" {
-		result.SummaryData.EditedDetails = utils.StringPtr(summary.SummaryData.EditedDetails)
+	if len(summary.SummaryData.EditedDetails) > 0 {
+		editedDetails := make([]*meetingservice.SummaryDetail, len(summary.SummaryData.EditedDetails))
+		for i, detail := range summary.SummaryData.EditedDetails {
+			editedDetails[i] = &meetingservice.SummaryDetail{
+				Label:   detail.Label,
+				Summary: detail.Summary,
+			}
+		}
+		result.SummaryData.EditedDetails = editedDetails
 	}
 	if len(summary.SummaryData.EditedNextSteps) > 0 {
 		result.SummaryData.EditedNextSteps = summary.SummaryData.EditedNextSteps

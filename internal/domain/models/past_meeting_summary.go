@@ -33,14 +33,15 @@ type PastMeetingSummaryZoomConfig struct {
 
 // SummaryData contains the actual AI-generated summary content
 type SummaryData struct {
-	StartTime       time.Time `json:"start_time"`
-	EndTime         time.Time `json:"end_time"`
-	Title           string    `json:"title"`
-	Overview        string    `json:"overview"`
-	NextSteps       []string  `json:"next_steps"`
-	EditedOverview  string    `json:"edited_overview"`
-	EditedDetails   string    `json:"edited_details"`
-	EditedNextSteps []string  `json:"edited_next_steps"`
+	StartTime       time.Time       `json:"start_time"`
+	EndTime         time.Time       `json:"end_time"`
+	Title           string          `json:"title"`
+	Overview        string          `json:"overview"`
+	NextSteps       []string        `json:"next_steps"`
+	Details         []SummaryDetail `json:"details"`
+	EditedOverview  string          `json:"edited_overview"`
+	EditedDetails   []SummaryDetail `json:"edited_details"`
+	EditedNextSteps []string        `json:"edited_next_steps"`
 }
 
 // Tags generates a consistent set of tags for the past meeting summary.
@@ -85,13 +86,9 @@ func (p *PastMeetingSummary) Tags() []string {
 		tags = append(tags, p.SummaryData.Overview)
 	}
 
-	// Add edited overview and details as searchable tags if present
+	// Add edited overview as searchable tags if present
 	if p.SummaryData.EditedOverview != "" {
 		tags = append(tags, p.SummaryData.EditedOverview)
-	}
-
-	if p.SummaryData.EditedDetails != "" {
-		tags = append(tags, p.SummaryData.EditedDetails)
 	}
 
 	// Add next steps as searchable tags (without prefix for full-text search)

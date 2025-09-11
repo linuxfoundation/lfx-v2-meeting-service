@@ -1548,3 +1548,79 @@ func BuildGetPastMeetingSummaryPayload(meetingServiceGetPastMeetingSummaryPastMe
 
 	return v, nil
 }
+
+// BuildUpdatePastMeetingSummaryPayload builds the payload for the Meeting
+// Service update-past-meeting-summary endpoint from CLI flags.
+func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummaryBody string, meetingServiceUpdatePastMeetingSummaryPastMeetingUID string, meetingServiceUpdatePastMeetingSummarySummaryUID string, meetingServiceUpdatePastMeetingSummaryVersion string, meetingServiceUpdatePastMeetingSummaryBearerToken string, meetingServiceUpdatePastMeetingSummaryIfMatch string) (*meetingservice.UpdatePastMeetingSummaryPayload, error) {
+	var err error
+	var body UpdatePastMeetingSummaryRequestBody
+	{
+		err = json.Unmarshal([]byte(meetingServiceUpdatePastMeetingSummaryBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"approved\": true,\n      \"edited_details\": [\n         {\n            \"label\": \"Meeting Summary Label\",\n            \"summary\": \"Meeting summary details\"\n         }\n      ],\n      \"edited_next_steps\": [\n         \"Complete updated API documentation\",\n         \"Review PR #456\"\n      ],\n      \"edited_overview\": \"Updated meeting overview\"\n   }'")
+		}
+	}
+	var pastMeetingUID string
+	{
+		pastMeetingUID = meetingServiceUpdatePastMeetingSummaryPastMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("past_meeting_uid", pastMeetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var summaryUID string
+	{
+		summaryUID = meetingServiceUpdatePastMeetingSummarySummaryUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("summary_uid", summaryUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceUpdatePastMeetingSummaryVersion != "" {
+			version = &meetingServiceUpdatePastMeetingSummaryVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceUpdatePastMeetingSummaryBearerToken != "" {
+			bearerToken = &meetingServiceUpdatePastMeetingSummaryBearerToken
+		}
+	}
+	var ifMatch *string
+	{
+		if meetingServiceUpdatePastMeetingSummaryIfMatch != "" {
+			ifMatch = &meetingServiceUpdatePastMeetingSummaryIfMatch
+		}
+	}
+	v := &meetingservice.UpdatePastMeetingSummaryPayload{
+		EditedOverview: body.EditedOverview,
+		Approved:       body.Approved,
+	}
+	if body.EditedDetails != nil {
+		v.EditedDetails = make([]*meetingservice.SummaryDetail, len(body.EditedDetails))
+		for i, val := range body.EditedDetails {
+			v.EditedDetails[i] = marshalSummaryDetailRequestBodyToMeetingserviceSummaryDetail(val)
+		}
+	}
+	if body.EditedNextSteps != nil {
+		v.EditedNextSteps = make([]string, len(body.EditedNextSteps))
+		for i, val := range body.EditedNextSteps {
+			v.EditedNextSteps[i] = val
+		}
+	}
+	v.PastMeetingUID = pastMeetingUID
+	v.SummaryUID = summaryUID
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.IfMatch = ifMatch
+
+	return v, nil
+}

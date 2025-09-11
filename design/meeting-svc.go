@@ -955,6 +955,52 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// PUT past meeting summary endpoint
+	Method("update-past-meeting-summary", func() {
+		Description("Update an existing past meeting summary")
+		Security(JWTAuth)
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			IfMatchAttribute()
+			PastMeetingSummaryPastMeetingUIDAttribute()
+			SummaryUIDAttribute()
+			Attribute("edited_overview", String, "Edited summary overview", func() {
+				Example("Updated meeting overview")
+			})
+			Attribute("edited_details", ArrayOf(SummaryDetail), "Edited structured summary details", func() {
+				Example([]map[string]interface{}{
+					{"label": "Meeting Summary Label", "summary": "Meeting summary details"},
+				})
+			})
+			Attribute("edited_next_steps", ArrayOf(String), "Edited next steps", func() {
+				Example([]string{"Complete updated API documentation", "Review PR #456"})
+			})
+			Attribute("approved", Boolean, "Whether the summary has been approved", func() {
+				Example(true)
+			})
+			Required("past_meeting_uid", "summary_uid")
+		})
+		Result(PastMeetingSummary)
+		Error("NotFound", NotFoundError, "Past meeting or summary not found")
+		Error("BadRequest", BadRequestError, "Invalid request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+		HTTP(func() {
+			PUT("/past_meetings/{past_meeting_uid}/summaries/{summary_uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("summary_uid")
+			Header("bearer_token:Authorization")
+			Header("if_match:If-Match")
+			Response(StatusOK)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
 		Meta("swagger:generate", "false")

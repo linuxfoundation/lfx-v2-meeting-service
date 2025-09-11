@@ -3838,6 +3838,170 @@ func DecodeGetPastMeetingSummaryResponse(decoder func(*http.Response) goahttp.De
 	}
 }
 
+// BuildUpdatePastMeetingSummaryRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "update-past-meeting-summary" endpoint
+func (c *Client) BuildUpdatePastMeetingSummaryRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		pastMeetingUID string
+		summaryUID     string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdatePastMeetingSummaryPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-past-meeting-summary", "*meetingservice.UpdatePastMeetingSummaryPayload", v)
+		}
+		pastMeetingUID = p.PastMeetingUID
+		summaryUID = p.SummaryUID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdatePastMeetingSummaryMeetingServicePath(pastMeetingUID, summaryUID)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-past-meeting-summary", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdatePastMeetingSummaryRequest returns an encoder for requests sent
+// to the Meeting Service update-past-meeting-summary server.
+func EncodeUpdatePastMeetingSummaryRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdatePastMeetingSummaryPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-past-meeting-summary", "*meetingservice.UpdatePastMeetingSummaryPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewUpdatePastMeetingSummaryRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-past-meeting-summary", err)
+		}
+		return nil
+	}
+}
+
+// DecodeUpdatePastMeetingSummaryResponse returns a decoder for responses
+// returned by the Meeting Service update-past-meeting-summary endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeUpdatePastMeetingSummaryResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeUpdatePastMeetingSummaryResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body UpdatePastMeetingSummaryResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			err = ValidateUpdatePastMeetingSummaryResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			res := NewUpdatePastMeetingSummaryPastMeetingSummaryOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdatePastMeetingSummaryBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			err = ValidateUpdatePastMeetingSummaryBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			return nil, NewUpdatePastMeetingSummaryBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdatePastMeetingSummaryInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			err = ValidateUpdatePastMeetingSummaryInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			return nil, NewUpdatePastMeetingSummaryInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body UpdatePastMeetingSummaryNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			err = ValidateUpdatePastMeetingSummaryNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			return nil, NewUpdatePastMeetingSummaryNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body UpdatePastMeetingSummaryServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			err = ValidateUpdatePastMeetingSummaryServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-past-meeting-summary", err)
+			}
+			return nil, NewUpdatePastMeetingSummaryServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-past-meeting-summary", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildReadyzRequest instantiates a HTTP request object with method and path
 // set to call the "Meeting Service" service "readyz" endpoint
 func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -4458,7 +4622,6 @@ func unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(v *SummaryDataR
 		Title:          v.Title,
 		Overview:       v.Overview,
 		EditedOverview: v.EditedOverview,
-		EditedDetails:  v.EditedDetails,
 	}
 	if v.NextSteps != nil {
 		res.NextSteps = make([]string, len(v.NextSteps))
@@ -4466,11 +4629,68 @@ func unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(v *SummaryDataR
 			res.NextSteps[i] = val
 		}
 	}
+	if v.Details != nil {
+		res.Details = make([]*meetingservice.SummaryDetail, len(v.Details))
+		for i, val := range v.Details {
+			res.Details[i] = unmarshalSummaryDetailResponseBodyToMeetingserviceSummaryDetail(val)
+		}
+	}
+	if v.EditedDetails != nil {
+		res.EditedDetails = make([]*meetingservice.SummaryDetail, len(v.EditedDetails))
+		for i, val := range v.EditedDetails {
+			res.EditedDetails[i] = unmarshalSummaryDetailResponseBodyToMeetingserviceSummaryDetail(val)
+		}
+	}
 	if v.EditedNextSteps != nil {
 		res.EditedNextSteps = make([]string, len(v.EditedNextSteps))
 		for i, val := range v.EditedNextSteps {
 			res.EditedNextSteps[i] = val
 		}
+	}
+
+	return res
+}
+
+// unmarshalSummaryDetailResponseBodyToMeetingserviceSummaryDetail builds a
+// value of type *meetingservice.SummaryDetail from a value of type
+// *SummaryDetailResponseBody.
+func unmarshalSummaryDetailResponseBodyToMeetingserviceSummaryDetail(v *SummaryDetailResponseBody) *meetingservice.SummaryDetail {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.SummaryDetail{
+		Label:   *v.Label,
+		Summary: *v.Summary,
+	}
+
+	return res
+}
+
+// marshalMeetingserviceSummaryDetailToSummaryDetailRequestBody builds a value
+// of type *SummaryDetailRequestBody from a value of type
+// *meetingservice.SummaryDetail.
+func marshalMeetingserviceSummaryDetailToSummaryDetailRequestBody(v *meetingservice.SummaryDetail) *SummaryDetailRequestBody {
+	if v == nil {
+		return nil
+	}
+	res := &SummaryDetailRequestBody{
+		Label:   v.Label,
+		Summary: v.Summary,
+	}
+
+	return res
+}
+
+// marshalSummaryDetailRequestBodyToMeetingserviceSummaryDetail builds a value
+// of type *meetingservice.SummaryDetail from a value of type
+// *SummaryDetailRequestBody.
+func marshalSummaryDetailRequestBodyToMeetingserviceSummaryDetail(v *SummaryDetailRequestBody) *meetingservice.SummaryDetail {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.SummaryDetail{
+		Label:   v.Label,
+		Summary: v.Summary,
 	}
 
 	return res

@@ -75,3 +75,24 @@ func (s *MeetingsAPI) GetPastMeetingSummary(ctx context.Context, payload *meetin
 		UpdatedAt:        summaryResponse.UpdatedAt,
 	}, nil
 }
+
+// UpdatePastMeetingSummary updates an existing past meeting summary
+func (s *MeetingsAPI) UpdatePastMeetingSummary(ctx context.Context, payload *meetingsvc.UpdatePastMeetingSummaryPayload) (*meetingsvc.PastMeetingSummary, error) {
+	if payload == nil || payload.PastMeetingUID == "" || payload.SummaryUID == "" {
+		return nil, handleError(domain.ErrValidationFailed)
+	}
+
+	etag, err := service.EtagValidator(payload.IfMatch)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	updateSummaryReq := service.ConvertUpdatePastMeetingSummaryPayloadToDomain(payload)
+
+	summary, err := s.pastMeetingSummaryService.UpdateSummary(ctx, updateSummaryReq, etag)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return service.ConvertDomainToPastMeetingSummaryResponse(summary), nil
+}

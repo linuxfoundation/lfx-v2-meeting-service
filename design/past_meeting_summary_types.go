@@ -23,6 +23,20 @@ func PastMeetingSummaryPastMeetingUIDAttribute() {
 	})
 }
 
+// SummaryDetail represents a detailed summary item with label and content
+var SummaryDetail = Type("SummaryDetail", func() {
+	Description("Detailed summary item with label and content")
+
+	Attribute("label", String, "Summary label", func() {
+		Example("Meeting Summary Label")
+	})
+	Attribute("summary", String, "Summary content", func() {
+		Example("Meeting summary details")
+	})
+
+	Required("label", "summary")
+})
+
 // PastMeetingSummaryZoomConfig represents Zoom-specific configuration for a past meeting summary
 var PastMeetingSummaryZoomConfig = Type("PastMeetingSummaryZoomConfig", func() {
 	Description("Zoom-specific configuration for a past meeting summary")
@@ -56,11 +70,18 @@ var SummaryData = Type("SummaryData", func() {
 	Attribute("next_steps", ArrayOf(String), "Next steps from the meeting", func() {
 		Example([]string{"Complete API documentation", "Review PR #123"})
 	})
+	Attribute("details", ArrayOf(SummaryDetail), "Structured summary details", func() {
+		Example([]map[string]interface{}{
+			{"label": "Discussion Points", "summary": "Key topics discussed during the meeting"},
+		})
+	})
 	Attribute("edited_overview", String, "Edited summary overview", func() {
 		Example("Updated discussion notes with action items")
 	})
-	Attribute("edited_details", String, "Edited summary details", func() {
-		Example("Additional context and clarifications")
+	Attribute("edited_details", ArrayOf(SummaryDetail), "Edited structured summary details", func() {
+		Example([]map[string]interface{}{
+			{"label": "Meeting Summary Label", "summary": "Meeting summary details"},
+		})
 	})
 	Attribute("edited_next_steps", ArrayOf(String), "Edited next steps", func() {
 		Example([]string{"Updated: Complete API documentation by Friday"})

@@ -402,3 +402,45 @@ func convertSessionsFullToDomain(sessions []*meetingservice.Session) []models.Se
 
 	return result
 }
+
+// ConvertUpdatePastMeetingSummaryPayloadToDomain converts an update past meeting summary payload to domain model.
+func ConvertUpdatePastMeetingSummaryPayloadToDomain(payload *meetingservice.UpdatePastMeetingSummaryPayload) *models.PastMeetingSummary {
+	if payload == nil {
+		return nil
+	}
+
+	summary := &models.PastMeetingSummary{
+		UID:            payload.SummaryUID,
+		PastMeetingUID: payload.PastMeetingUID,
+	}
+
+	// Set SummaryData with only the editable fields
+	summaryData := models.SummaryData{}
+
+	if payload.EditedOverview != nil {
+		summaryData.EditedOverview = *payload.EditedOverview
+	}
+
+	if payload.EditedDetails != nil {
+		editedDetails := make([]models.SummaryDetail, len(payload.EditedDetails))
+		for i, detail := range payload.EditedDetails {
+			editedDetails[i] = models.SummaryDetail{
+				Label:   detail.Label,
+				Summary: detail.Summary,
+			}
+		}
+		summaryData.EditedDetails = editedDetails
+	}
+
+	if payload.EditedNextSteps != nil {
+		summaryData.EditedNextSteps = payload.EditedNextSteps
+	}
+
+	summary.SummaryData = summaryData
+
+	if payload.Approved != nil {
+		summary.Approved = *payload.Approved
+	}
+
+	return summary
+}

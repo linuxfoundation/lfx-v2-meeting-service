@@ -1362,6 +1362,95 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
+        put:
+            tags:
+                - Meeting Service
+            summary: update-past-meeting-summary Meeting Service
+            description: Update an existing past meeting summary
+            operationId: Meeting Service#update-past-meeting-summary
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: past_meeting_uid
+                  in: path
+                  description: The unique identifier of the past meeting
+                  required: true
+                  type: string
+                  format: uuid
+                - name: summary_uid
+                  in: path
+                  description: The unique identifier of the summary
+                  required: true
+                  type: string
+                  format: uuid
+                - name: Authorization
+                  in: header
+                  description: JWT token issued by Heimdall
+                  required: false
+                  type: string
+                - name: If-Match
+                  in: header
+                  description: If-Match header value for conditional requests
+                  required: false
+                  type: string
+                - name: Update-Past-Meeting-SummaryRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/MeetingServiceUpdatePastMeetingSummaryRequestBody'
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/PastMeetingSummary'
+                        required:
+                            - uid
+                            - past_meeting_uid
+                            - meeting_uid
+                            - platform
+                            - summary_data
+                            - requires_approval
+                            - approved
+                            - email_sent
+                            - created_at
+                            - updated_at
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/BadRequestError'
+                        required:
+                            - code
+                            - message
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: Service Unavailable response.
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
     /past_meetings/{uid}:
         get:
             tags:
@@ -3801,7 +3890,12 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        edited_details: Additional context and clarifications
+                        details:
+                            - label: Discussion Points
+                              summary: Key topics discussed during the meeting
+                        edited_details:
+                            - label: Meeting Summary Label
+                              summary: Meeting summary details
                         edited_next_steps:
                             - 'Updated: Complete API documentation by Friday'
                         edited_overview: Updated discussion notes with action items
@@ -3826,7 +3920,12 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        edited_details: Additional context and clarifications
+                        details:
+                            - label: Discussion Points
+                              summary: Key topics discussed during the meeting
+                        edited_details:
+                            - label: Meeting Summary Label
+                              summary: Meeting summary details
                         edited_next_steps:
                             - 'Updated: Complete API documentation by Friday'
                         edited_overview: Updated discussion notes with action items
@@ -3851,7 +3950,12 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        edited_details: Additional context and clarifications
+                        details:
+                            - label: Discussion Points
+                              summary: Key topics discussed during the meeting
+                        edited_details:
+                            - label: Meeting Summary Label
+                              summary: Meeting summary details
                         edited_next_steps:
                             - 'Updated: Complete API documentation by Friday'
                         edited_overview: Updated discussion notes with action items
@@ -3876,7 +3980,12 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        edited_details: Additional context and clarifications
+                        details:
+                            - label: Discussion Points
+                              summary: Key topics discussed during the meeting
+                        edited_details:
+                            - label: Meeting Summary Label
+                              summary: Meeting summary details
                         edited_next_steps:
                             - 'Updated: Complete API documentation by Friday'
                         edited_overview: Updated discussion notes with action items
@@ -3903,7 +4012,12 @@ definitions:
                   platform: Zoom
                   requires_approval: false
                   summary_data:
-                    edited_details: Additional context and clarifications
+                    details:
+                        - label: Discussion Points
+                          summary: Key topics discussed during the meeting
+                    edited_details:
+                        - label: Meeting Summary Label
+                          summary: Meeting summary details
                     edited_next_steps:
                         - 'Updated: Complete API documentation by Friday'
                     edited_overview: Updated discussion notes with action items
@@ -3928,7 +4042,12 @@ definitions:
                   platform: Zoom
                   requires_approval: false
                   summary_data:
-                    edited_details: Additional context and clarifications
+                    details:
+                        - label: Discussion Points
+                          summary: Key topics discussed during the meeting
+                    edited_details:
+                        - label: Meeting Summary Label
+                          summary: Meeting summary details
                     edited_next_steps:
                         - 'Updated: Complete API documentation by Friday'
                     edited_overview: Updated discussion notes with action items
@@ -3953,7 +4072,12 @@ definitions:
                   platform: Zoom
                   requires_approval: false
                   summary_data:
-                    edited_details: Additional context and clarifications
+                    details:
+                        - label: Discussion Points
+                          summary: Key topics discussed during the meeting
+                    edited_details:
+                        - label: Meeting Summary Label
+                          summary: Meeting summary details
                     edited_next_steps:
                         - 'Updated: Complete API documentation by Friday'
                     edited_overview: Updated discussion notes with action items
@@ -3978,7 +4102,12 @@ definitions:
                   platform: Zoom
                   requires_approval: false
                   summary_data:
-                    edited_details: Additional context and clarifications
+                    details:
+                        - label: Discussion Points
+                          summary: Key topics discussed during the meeting
+                    edited_details:
+                        - label: Meeting Summary Label
+                          summary: Meeting summary details
                     edited_next_steps:
                         - 'Updated: Complete API documentation by Friday'
                     edited_overview: Updated discussion notes with action items
@@ -4063,7 +4192,12 @@ definitions:
             platform: Zoom
             requires_approval: false
             summary_data:
-                edited_details: Additional context and clarifications
+                details:
+                    - label: Discussion Points
+                      summary: Key topics discussed during the meeting
+                edited_details:
+                    - label: Meeting Summary Label
+                      summary: Meeting summary details
                 edited_next_steps:
                     - 'Updated: Complete API documentation by Friday'
                 edited_overview: Updated discussion notes with action items
@@ -4804,6 +4938,44 @@ definitions:
             username: Reprehenderit itaque corporis deserunt debitis aliquid delectus.
         required:
             - email
+    MeetingServiceUpdatePastMeetingSummaryRequestBody:
+        title: MeetingServiceUpdatePastMeetingSummaryRequestBody
+        type: object
+        properties:
+            approved:
+                type: boolean
+                description: Whether the summary has been approved
+                example: true
+            edited_details:
+                type: array
+                items:
+                    $ref: '#/definitions/SummaryDetail'
+                description: Edited structured summary details
+                example:
+                    - label: Meeting Summary Label
+                      summary: Meeting summary details
+            edited_next_steps:
+                type: array
+                items:
+                    type: string
+                    example: Deleniti quia ex sed.
+                description: Edited next steps
+                example:
+                    - Complete updated API documentation
+                    - 'Review PR #456'
+            edited_overview:
+                type: string
+                description: Edited summary overview
+                example: Updated meeting overview
+        example:
+            approved: true
+            edited_details:
+                - label: Meeting Summary Label
+                  summary: Meeting summary details
+            edited_next_steps:
+                - Complete updated API documentation
+                - 'Review PR #456'
+            edited_overview: Updated meeting overview
     MeetingSettings:
         title: MeetingSettings
         type: object
@@ -5395,7 +5567,12 @@ definitions:
             platform: Zoom
             requires_approval: false
             summary_data:
-                edited_details: Additional context and clarifications
+                details:
+                    - label: Discussion Points
+                      summary: Key topics discussed during the meeting
+                edited_details:
+                    - label: Meeting Summary Label
+                      summary: Meeting summary details
                 edited_next_steps:
                     - 'Updated: Complete API documentation by Friday'
                 edited_overview: Updated discussion notes with action items
@@ -5677,10 +5854,22 @@ definitions:
         title: SummaryData
         type: object
         properties:
+            details:
+                type: array
+                items:
+                    $ref: '#/definitions/SummaryDetail'
+                description: Structured summary details
+                example:
+                    - label: Discussion Points
+                      summary: Key topics discussed during the meeting
             edited_details:
-                type: string
-                description: Edited summary details
-                example: Additional context and clarifications
+                type: array
+                items:
+                    $ref: '#/definitions/SummaryDetail'
+                description: Edited structured summary details
+                example:
+                    - label: Meeting Summary Label
+                      summary: Meeting summary details
             edited_next_steps:
                 type: array
                 items:
@@ -5722,7 +5911,12 @@ definitions:
                 example: Weekly Team Standup Meeting
         description: AI-generated summary content for a past meeting
         example:
-            edited_details: Additional context and clarifications
+            details:
+                - label: Discussion Points
+                  summary: Key topics discussed during the meeting
+            edited_details:
+                - label: Meeting Summary Label
+                  summary: Meeting summary details
             edited_next_steps:
                 - 'Updated: Complete API documentation by Friday'
             edited_overview: Updated discussion notes with action items
@@ -5736,6 +5930,25 @@ definitions:
         required:
             - start_time
             - end_time
+    SummaryDetail:
+        title: SummaryDetail
+        type: object
+        properties:
+            label:
+                type: string
+                description: Summary label
+                example: Meeting Summary Label
+            summary:
+                type: string
+                description: Summary content
+                example: Meeting summary details
+        description: Detailed summary item with label and content
+        example:
+            label: Meeting Summary Label
+            summary: Meeting summary details
+        required:
+            - label
+            - summary
     UnauthorizedError:
         title: UnauthorizedError
         type: object

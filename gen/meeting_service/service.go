@@ -71,6 +71,8 @@ type Service interface {
 	GetPastMeetingSummaries(context.Context, *GetPastMeetingSummariesPayload) (res *GetPastMeetingSummariesResult, err error)
 	// Get a specific summary for a past meeting
 	GetPastMeetingSummary(context.Context, *GetPastMeetingSummaryPayload) (res *GetPastMeetingSummaryResult, err error)
+	// Update an existing past meeting summary
+	UpdatePastMeetingSummary(context.Context, *UpdatePastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -97,7 +99,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [27]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "readyz", "livez"}
+var MethodNames = [28]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -938,7 +940,8 @@ type PastMeetingParticipant struct {
 	UpdatedAt *string
 }
 
-// AI-generated summary for a past meeting occurrence
+// PastMeetingSummary is the result type of the Meeting Service service
+// update-past-meeting-summary method.
 type PastMeetingSummary struct {
 	// Unique identifier for the summary
 	UID string
@@ -1106,12 +1109,22 @@ type SummaryData struct {
 	Overview *string
 	// Next steps from the meeting
 	NextSteps []string
+	// Structured summary details
+	Details []*SummaryDetail
 	// Edited summary overview
 	EditedOverview *string
-	// Edited summary details
-	EditedDetails *string
+	// Edited structured summary details
+	EditedDetails []*SummaryDetail
 	// Edited next steps
 	EditedNextSteps []string
+}
+
+// Detailed summary item with label and content
+type SummaryDetail struct {
+	// Summary label
+	Label string
+	// Summary content
+	Summary string
 }
 
 type UnauthorizedError struct {
@@ -1257,6 +1270,29 @@ type UpdatePastMeetingParticipantPayload struct {
 	IsInvited *bool
 	// Whether the participant attended this past meeting
 	IsAttended *bool
+}
+
+// UpdatePastMeetingSummaryPayload is the payload type of the Meeting Service
+// service update-past-meeting-summary method.
+type UpdatePastMeetingSummaryPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// If-Match header value for conditional requests
+	IfMatch *string
+	// The unique identifier of the past meeting
+	PastMeetingUID string
+	// The unique identifier of the summary
+	SummaryUID string
+	// Edited summary overview
+	EditedOverview *string
+	// Edited structured summary details
+	EditedDetails []*SummaryDetail
+	// Edited next steps
+	EditedNextSteps []string
+	// Whether the summary has been approved
+	Approved *bool
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and

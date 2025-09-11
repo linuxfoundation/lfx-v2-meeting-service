@@ -1132,8 +1132,9 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 			Title:           payload.Object.SummaryTitle,
 			Overview:        payload.Object.SummaryOverview,
 			NextSteps:       payload.Object.NextSteps,
+			Details:         convertSummaryDetails(payload.Object.SummaryDetails), // Convert from webhook payload
 			EditedOverview:  "",
-			EditedDetails:   "",
+			EditedDetails:   []models.SummaryDetail{}, // Empty slice
 			EditedNextSteps: []string{},
 		},
 		RequiresApproval: pastMeeting.ZoomConfig.AISummaryRequireApproval,
@@ -1949,4 +1950,16 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 	slog.DebugContext(ctx, "successfully created participant record", logFields...)
 
 	return newParticipant, nil
+}
+
+// convertSummaryDetails converts zoom webhook SummaryDetail to domain model SummaryDetail
+func convertSummaryDetails(details []models.SummaryDetail) []models.SummaryDetail {
+	if details == nil {
+		return []models.SummaryDetail{}
+	}
+
+	// The types are the same, so we can just return a copy
+	result := make([]models.SummaryDetail, len(details))
+	copy(result, details)
+	return result
 }
