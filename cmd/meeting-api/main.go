@@ -126,7 +126,6 @@ func main() {
 		pastMeetingParticipantService,
 		committeeSyncService,
 	)
-
 	zoomWebhookHandler := handlers.NewZoomWebhookHandler(
 		meetingService,
 		registrantService,
@@ -137,7 +136,6 @@ func main() {
 		occurrenceService,
 		platformConfigs.Zoom.Validator,
 	)
-
 	committeeHandler := handlers.NewCommitteeHandlers(
 		meetingService,
 		registrantService,

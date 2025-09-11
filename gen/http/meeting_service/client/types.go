@@ -777,32 +777,7 @@ type GetPastMeetingSummariesResponseBody struct {
 
 // GetPastMeetingSummaryResponseBody is the type of the "Meeting Service"
 // service "get-past-meeting-summary" endpoint HTTP response body.
-type GetPastMeetingSummaryResponseBody struct {
-	// Unique identifier for the summary
-	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
-	// UID of the associated past meeting
-	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// UID of the original meeting
-	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
-	// Meeting platform
-	Platform *string `form:"platform,omitempty" json:"platform,omitempty" xml:"platform,omitempty"`
-	// Password for accessing the summary (if required)
-	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
-	// Zoom-specific configuration
-	ZoomConfig *PastMeetingSummaryZoomConfigResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
-	// The actual summary content
-	SummaryData *SummaryDataResponseBody `form:"summary_data,omitempty" json:"summary_data,omitempty" xml:"summary_data,omitempty"`
-	// Whether the summary requires approval
-	RequiresApproval *bool `form:"requires_approval,omitempty" json:"requires_approval,omitempty" xml:"requires_approval,omitempty"`
-	// Whether the summary has been approved
-	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
-	// Whether summary email has been sent
-	EmailSent *bool `form:"email_sent,omitempty" json:"email_sent,omitempty" xml:"email_sent,omitempty"`
-	// The date and time the resource was created
-	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
-	// The date and time the resource was last updated
-	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
-}
+type GetPastMeetingSummaryResponseBody PastMeetingSummaryResponseBody
 
 // UpdatePastMeetingSummaryResponseBody is the type of the "Meeting Service"
 // service "update-past-meeting-summary" endpoint HTTP response body.
@@ -4248,7 +4223,7 @@ func NewGetPastMeetingSummariesServiceUnavailable(body *GetPastMeetingSummariesS
 // NewGetPastMeetingSummaryResultOK builds a "Meeting Service" service
 // "get-past-meeting-summary" endpoint result from a HTTP "OK" response.
 func NewGetPastMeetingSummaryResultOK(body *GetPastMeetingSummaryResponseBody, etag *string) *meetingservice.GetPastMeetingSummaryResult {
-	v := &meetingservice.GetPastMeetingSummaryResult{
+	v := &meetingservice.PastMeetingSummary{
 		UID:              *body.UID,
 		PastMeetingUID:   *body.PastMeetingUID,
 		MeetingUID:       *body.MeetingUID,
@@ -4264,9 +4239,12 @@ func NewGetPastMeetingSummaryResultOK(body *GetPastMeetingSummaryResponseBody, e
 		v.ZoomConfig = unmarshalPastMeetingSummaryZoomConfigResponseBodyToMeetingservicePastMeetingSummaryZoomConfig(body.ZoomConfig)
 	}
 	v.SummaryData = unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(body.SummaryData)
-	v.Etag = etag
+	res := &meetingservice.GetPastMeetingSummaryResult{
+		Summary: v,
+	}
+	res.Etag = etag
 
-	return v
+	return res
 }
 
 // NewGetPastMeetingSummaryInternalServerError builds a Meeting Service service

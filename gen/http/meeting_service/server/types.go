@@ -777,32 +777,7 @@ type GetPastMeetingSummariesResponseBody struct {
 
 // GetPastMeetingSummaryResponseBody is the type of the "Meeting Service"
 // service "get-past-meeting-summary" endpoint HTTP response body.
-type GetPastMeetingSummaryResponseBody struct {
-	// Unique identifier for the summary
-	UID string `form:"uid" json:"uid" xml:"uid"`
-	// UID of the associated past meeting
-	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
-	// UID of the original meeting
-	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
-	// Meeting platform
-	Platform string `form:"platform" json:"platform" xml:"platform"`
-	// Password for accessing the summary (if required)
-	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
-	// Zoom-specific configuration
-	ZoomConfig *PastMeetingSummaryZoomConfigResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
-	// The actual summary content
-	SummaryData *SummaryDataResponseBody `form:"summary_data" json:"summary_data" xml:"summary_data"`
-	// Whether the summary requires approval
-	RequiresApproval bool `form:"requires_approval" json:"requires_approval" xml:"requires_approval"`
-	// Whether the summary has been approved
-	Approved bool `form:"approved" json:"approved" xml:"approved"`
-	// Whether summary email has been sent
-	EmailSent bool `form:"email_sent" json:"email_sent" xml:"email_sent"`
-	// The date and time the resource was created
-	CreatedAt string `form:"created_at" json:"created_at" xml:"created_at"`
-	// The date and time the resource was last updated
-	UpdatedAt string `form:"updated_at" json:"updated_at" xml:"updated_at"`
-}
+type GetPastMeetingSummaryResponseBody PastMeetingSummaryResponseBody
 
 // UpdatePastMeetingSummaryResponseBody is the type of the "Meeting Service"
 // service "update-past-meeting-summary" endpoint HTTP response body.
@@ -2999,22 +2974,22 @@ func NewGetPastMeetingSummariesResponseBody(res *meetingservice.GetPastMeetingSu
 // service.
 func NewGetPastMeetingSummaryResponseBody(res *meetingservice.GetPastMeetingSummaryResult) *GetPastMeetingSummaryResponseBody {
 	body := &GetPastMeetingSummaryResponseBody{
-		UID:              res.UID,
-		PastMeetingUID:   res.PastMeetingUID,
-		MeetingUID:       res.MeetingUID,
-		Platform:         res.Platform,
-		Password:         res.Password,
-		RequiresApproval: res.RequiresApproval,
-		Approved:         res.Approved,
-		EmailSent:        res.EmailSent,
-		CreatedAt:        res.CreatedAt,
-		UpdatedAt:        res.UpdatedAt,
+		UID:              res.Summary.UID,
+		PastMeetingUID:   res.Summary.PastMeetingUID,
+		MeetingUID:       res.Summary.MeetingUID,
+		Platform:         res.Summary.Platform,
+		Password:         res.Summary.Password,
+		RequiresApproval: res.Summary.RequiresApproval,
+		Approved:         res.Summary.Approved,
+		EmailSent:        res.Summary.EmailSent,
+		CreatedAt:        res.Summary.CreatedAt,
+		UpdatedAt:        res.Summary.UpdatedAt,
 	}
-	if res.ZoomConfig != nil {
-		body.ZoomConfig = marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody(res.ZoomConfig)
+	if res.Summary.ZoomConfig != nil {
+		body.ZoomConfig = marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody(res.Summary.ZoomConfig)
 	}
-	if res.SummaryData != nil {
-		body.SummaryData = marshalMeetingserviceSummaryDataToSummaryDataResponseBody(res.SummaryData)
+	if res.Summary.SummaryData != nil {
+		body.SummaryData = marshalMeetingserviceSummaryDataToSummaryDataResponseBody(res.Summary.SummaryData)
 	}
 	return body
 }

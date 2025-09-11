@@ -572,32 +572,9 @@ type GetPastMeetingSummaryPayload struct {
 // GetPastMeetingSummaryResult is the result type of the Meeting Service
 // service get-past-meeting-summary method.
 type GetPastMeetingSummaryResult struct {
+	Summary *PastMeetingSummary
 	// ETag header value
 	Etag *string
-	// Unique identifier for the summary
-	UID string
-	// UID of the associated past meeting
-	PastMeetingUID string
-	// UID of the original meeting
-	MeetingUID string
-	// Meeting platform
-	Platform string
-	// Password for accessing the summary (if required)
-	Password *string
-	// Zoom-specific configuration
-	ZoomConfig *PastMeetingSummaryZoomConfig
-	// The actual summary content
-	SummaryData *SummaryData
-	// Whether the summary requires approval
-	RequiresApproval bool
-	// Whether the summary has been approved
-	Approved bool
-	// Whether summary email has been sent
-	EmailSent bool
-	// The date and time the resource was created
-	CreatedAt string
-	// The date and time the resource was last updated
-	UpdatedAt string
 }
 
 // GetPastMeetingsPayload is the payload type of the Meeting Service service

@@ -14,27 +14,19 @@ import (
 
 // GetPastMeetingSummaries gets all summaries for a past meeting
 func (s *MeetingsAPI) GetPastMeetingSummaries(ctx context.Context, payload *meetingsvc.GetPastMeetingSummariesPayload) (*meetingsvc.GetPastMeetingSummariesResult, error) {
-	// Get all summaries for this past meeting using the service layer
-	// The service layer will handle validation and checking if the past meeting exists
 	summaries, err := s.pastMeetingSummaryService.ListSummariesByPastMeeting(ctx, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	// Convert domain models to API response format
 	var responseSummaries []*meetingsvc.PastMeetingSummary
 	for _, summary := range summaries {
 		responseSummaries = append(responseSummaries, service.ConvertDomainToPastMeetingSummaryResponse(summary))
 	}
 
-	// If no summaries exist, return empty array (not an error)
-	if responseSummaries == nil {
-		responseSummaries = []*meetingsvc.PastMeetingSummary{}
-	}
-
 	return &meetingsvc.GetPastMeetingSummariesResult{
 		Summaries:    responseSummaries,
-		CacheControl: nil, // Can be set if caching is desired
+		CacheControl: nil,
 	}, nil
 }
 
@@ -52,27 +44,8 @@ func (s *MeetingsAPI) GetPastMeetingSummary(ctx context.Context, payload *meetin
 	summaryResponse := service.ConvertDomainToPastMeetingSummaryResponse(summary)
 
 	return &meetingsvc.GetPastMeetingSummaryResult{
-		Etag:           utils.StringPtr(etag),
-		UID:            summaryResponse.UID,
-		PastMeetingUID: summaryResponse.PastMeetingUID,
-		MeetingUID:     summaryResponse.MeetingUID,
-		Platform:       summaryResponse.Platform,
-		Password:       summaryResponse.Password,
-		ZoomConfig: func() *meetingsvc.PastMeetingSummaryZoomConfig {
-			if summaryResponse.ZoomConfig == nil {
-				return nil
-			}
-			return &meetingsvc.PastMeetingSummaryZoomConfig{
-				MeetingID:   summaryResponse.ZoomConfig.MeetingID,
-				MeetingUUID: summaryResponse.ZoomConfig.MeetingUUID,
-			}
-		}(),
-		SummaryData:      summaryResponse.SummaryData,
-		RequiresApproval: summaryResponse.RequiresApproval,
-		Approved:         summaryResponse.Approved,
-		EmailSent:        summaryResponse.EmailSent,
-		CreatedAt:        summaryResponse.CreatedAt,
-		UpdatedAt:        summaryResponse.UpdatedAt,
+		Summary: summaryResponse,
+		Etag:    utils.StringPtr(etag),
 	}, nil
 }
 

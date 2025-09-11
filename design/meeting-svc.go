@@ -934,8 +934,9 @@ var _ = Service("Meeting Service", func() {
 			Required("past_meeting_uid", "summary_uid")
 		})
 		Result(func() {
-			Extend(PastMeetingSummary)
+			Attribute("summary", PastMeetingSummary)
 			EtagAttribute()
+			Required("summary")
 		})
 		Error("NotFound", NotFoundError, "Past meeting or summary not found")
 		Error("InternalServerError", InternalServerError, "Internal server error")
@@ -947,6 +948,7 @@ var _ = Service("Meeting Service", func() {
 			Param("summary_uid")
 			Header("bearer_token:Authorization")
 			Response(StatusOK, func() {
+				Body("summary")
 				Header("etag:ETag")
 			})
 			Response("NotFound", StatusNotFound)
