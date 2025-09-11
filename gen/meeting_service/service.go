@@ -920,13 +920,13 @@ type PastMeetingParticipant struct {
 // PastMeetingSummary is the result type of the Meeting Service service
 // update-past-meeting-summary method.
 type PastMeetingSummary struct {
-	// Unique identifier for the summary
+	// The unique identifier of the past meeting
 	UID string
-	// UID of the associated past meeting
+	// The unique identifier of the past meeting
 	PastMeetingUID string
-	// UID of the original meeting
+	// The UID of the original meeting
 	MeetingUID string
-	// Meeting platform
+	// The platform name of where the meeting is hosted
 	Platform string
 	// Password for accessing the summary (if required)
 	Password *string
@@ -948,7 +948,7 @@ type PastMeetingSummary struct {
 
 // Zoom-specific configuration for a past meeting summary
 type PastMeetingSummaryZoomConfig struct {
-	// Zoom meeting ID
+	// The ID of the created meeting in Zoom
 	MeetingID *string
 	// Zoom meeting UUID
 	MeetingUUID *string

@@ -782,13 +782,13 @@ type GetPastMeetingSummaryResponseBody PastMeetingSummaryResponseBody
 // UpdatePastMeetingSummaryResponseBody is the type of the "Meeting Service"
 // service "update-past-meeting-summary" endpoint HTTP response body.
 type UpdatePastMeetingSummaryResponseBody struct {
-	// Unique identifier for the summary
+	// The unique identifier of the past meeting
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
-	// UID of the associated past meeting
+	// The unique identifier of the past meeting
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// UID of the original meeting
+	// The UID of the original meeting
 	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
-	// Meeting platform
+	// The platform name of where the meeting is hosted
 	Platform *string `form:"platform,omitempty" json:"platform,omitempty" xml:"platform,omitempty"`
 	// Password for accessing the summary (if required)
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
@@ -2332,13 +2332,13 @@ type ParticipantSessionResponseBody struct {
 // PastMeetingSummaryResponseBody is used to define fields on response body
 // types.
 type PastMeetingSummaryResponseBody struct {
-	// Unique identifier for the summary
+	// The unique identifier of the past meeting
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
-	// UID of the associated past meeting
+	// The unique identifier of the past meeting
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// UID of the original meeting
+	// The UID of the original meeting
 	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
-	// Meeting platform
+	// The platform name of where the meeting is hosted
 	Platform *string `form:"platform,omitempty" json:"platform,omitempty" xml:"platform,omitempty"`
 	// Password for accessing the summary (if required)
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
@@ -2361,7 +2361,7 @@ type PastMeetingSummaryResponseBody struct {
 // PastMeetingSummaryZoomConfigResponseBody is used to define fields on
 // response body types.
 type PastMeetingSummaryZoomConfigResponseBody struct {
-	// Zoom meeting ID
+	// The ID of the created meeting in Zoom
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Zoom meeting UUID
 	MeetingUUID *string `form:"meeting_uuid,omitempty" json:"meeting_uuid,omitempty" xml:"meeting_uuid,omitempty"`
@@ -5393,8 +5393,13 @@ func ValidateGetPastMeetingSummaryResponseBody(body *GetPastMeetingSummaryRespon
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
 	}
 	if body.Platform != nil {
-		if !(*body.Platform == "Zoom" || *body.Platform == "Teams" || *body.Platform == "Webex") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom", "Teams", "Webex"}))
+		if !(*body.Platform == "Zoom") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom"}))
+		}
+	}
+	if body.ZoomConfig != nil {
+		if err2 := ValidatePastMeetingSummaryZoomConfigResponseBody(body.ZoomConfig); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.SummaryData != nil {
@@ -5454,8 +5459,13 @@ func ValidateUpdatePastMeetingSummaryResponseBody(body *UpdatePastMeetingSummary
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
 	}
 	if body.Platform != nil {
-		if !(*body.Platform == "Zoom" || *body.Platform == "Teams" || *body.Platform == "Webex") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom", "Teams", "Webex"}))
+		if !(*body.Platform == "Zoom") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom"}))
+		}
+	}
+	if body.ZoomConfig != nil {
+		if err2 := ValidatePastMeetingSummaryZoomConfigResponseBody(body.ZoomConfig); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.SummaryData != nil {
@@ -7380,8 +7390,13 @@ func ValidatePastMeetingSummaryResponseBody(body *PastMeetingSummaryResponseBody
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
 	}
 	if body.Platform != nil {
-		if !(*body.Platform == "Zoom" || *body.Platform == "Teams" || *body.Platform == "Webex") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom", "Teams", "Webex"}))
+		if !(*body.Platform == "Zoom") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom"}))
+		}
+	}
+	if body.ZoomConfig != nil {
+		if err2 := ValidatePastMeetingSummaryZoomConfigResponseBody(body.ZoomConfig); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.SummaryData != nil {
@@ -7394,6 +7409,25 @@ func ValidatePastMeetingSummaryResponseBody(body *PastMeetingSummaryResponseBody
 	}
 	if body.UpdatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidatePastMeetingSummaryZoomConfigResponseBody runs the validations
+// defined on PastMeetingSummaryZoomConfigResponseBody
+func ValidatePastMeetingSummaryZoomConfigResponseBody(body *PastMeetingSummaryZoomConfigResponseBody) (err error) {
+	if body.MeetingID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.meeting_id", *body.MeetingID, "^\\d{9,11}$"))
+	}
+	if body.MeetingID != nil {
+		if utf8.RuneCountInString(*body.MeetingID) < 9 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.meeting_id", *body.MeetingID, utf8.RuneCountInString(*body.MeetingID), 9, true))
+		}
+	}
+	if body.MeetingID != nil {
+		if utf8.RuneCountInString(*body.MeetingID) > 11 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.meeting_id", *body.MeetingID, utf8.RuneCountInString(*body.MeetingID), 11, false))
+		}
 	}
 	return
 }

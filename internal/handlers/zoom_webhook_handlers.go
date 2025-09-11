@@ -326,21 +326,11 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 		return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
 	}
 
-	// // Handle session management for this meeting started event
-	// newPastMeeting, err := s.handleMeetingStartedSession(ctx, meeting, payload)
-	// if err != nil {
-	// 	slog.ErrorContext(ctx, "failed to handle meeting started session",
-	// 		logging.ErrKey, err,
-	// 		logging.PriorityCritical(),
-	// 	)
-	// 	return fmt.Errorf("failed to handle meeting started session: %w", err)
-	// }
-
 	// Calculate the closest occurrence ID based on the actual start time
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Check if a past meeting already exists for this occurrence
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil && !errors.Is(err, domain.ErrPastMeetingNotFound) {
 		slog.ErrorContext(ctx, "failed to check for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to check for existing past meeting: %w", err)
@@ -502,7 +492,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Try to find existing PastMeeting record by platform meeting ID and occurrence ID
-	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil && err != domain.ErrPastMeetingNotFound {
 		slog.ErrorContext(ctx, "error searching for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing past meeting: %w", err)
@@ -620,7 +610,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID and occurrence ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
@@ -720,7 +710,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID and occurrence ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
@@ -1077,7 +1067,7 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.MeetingStartTime)
 
 	// Find the past meeting by platform meeting ID AND occurrence ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", zoomMeetingID, occurrenceID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, zoomMeetingID, occurrenceID)
 	if err != nil {
 		if errors.Is(err, domain.ErrPastMeetingNotFound) {
 			slog.WarnContext(ctx, "no past meeting found for summary",
@@ -1106,7 +1096,7 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 
 	// Check if any existing summary has the same Zoom UUID
 	for _, existingSummary := range existingSummaries {
-		if existingSummary.ZoomConfig != nil && existingSummary.ZoomConfig.UUID == payload.Object.MeetingUUID {
+		if existingSummary.ZoomConfig != nil && existingSummary.ZoomConfig.MeetingUUID == payload.Object.MeetingUUID {
 			slog.InfoContext(ctx, "summary already exists for this Zoom meeting UUID",
 				"existing_summary_uid", existingSummary.UID,
 				"zoom_meeting_uuid", payload.Object.MeetingUUID,
@@ -1123,8 +1113,8 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 		Platform:       models.PlatformZoom,
 		Password:       uuid.NewString(),
 		ZoomConfig: &models.PastMeetingSummaryZoomConfig{
-			MeetingID: zoomMeetingID,
-			UUID:      payload.Object.MeetingUUID,
+			MeetingID:   zoomMeetingID,
+			MeetingUUID: payload.Object.MeetingUUID,
 		},
 		SummaryData: models.SummaryData{
 			StartTime:       payload.Object.SummaryStartTime,
@@ -1132,7 +1122,7 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 			Title:           payload.Object.SummaryTitle,
 			Overview:        payload.Object.SummaryOverview,
 			NextSteps:       payload.Object.NextSteps,
-			Details:         convertSummaryDetails(payload.Object.SummaryDetails), // Convert from webhook payload
+			Details:         payload.Object.SummaryDetails,
 			EditedOverview:  "",
 			EditedDetails:   []models.SummaryDetail{}, // Empty slice
 			EditedNextSteps: []string{},
@@ -1950,16 +1940,4 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 	slog.DebugContext(ctx, "successfully created participant record", logFields...)
 
 	return newParticipant, nil
-}
-
-// convertSummaryDetails converts zoom webhook SummaryDetail to domain model SummaryDetail
-func convertSummaryDetails(details []models.SummaryDetail) []models.SummaryDetail {
-	if details == nil {
-		return []models.SummaryDetail{}
-	}
-
-	// The types are the same, so we can just return a copy
-	result := make([]models.SummaryDetail, len(details))
-	copy(result, details)
-	return result
 }

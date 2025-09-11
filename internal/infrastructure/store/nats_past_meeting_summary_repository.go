@@ -71,19 +71,6 @@ func (s *NatsPastMeetingSummaryRepository) Create(ctx context.Context, summary *
 	return nil
 }
 
-// Exists checks if a past meeting summary exists in the NATS KV store.
-func (s *NatsPastMeetingSummaryRepository) Exists(ctx context.Context, summaryUID string) (bool, error) {
-	_, err := s.get(ctx, summaryUID)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return false, nil
-		}
-		slog.ErrorContext(ctx, "error checking summary existence", logging.ErrKey, err, "summary_uid", summaryUID)
-		return false, domain.ErrInternal
-	}
-	return true, nil
-}
-
 // Delete removes a past meeting summary from the NATS KV store.
 func (s *NatsPastMeetingSummaryRepository) Delete(ctx context.Context, summaryUID string, revision uint64) error {
 	err := s.PastMeetingSummaries.Delete(ctx, summaryUID)
@@ -189,29 +176,6 @@ func (s *NatsPastMeetingSummaryRepository) ListByPastMeeting(ctx context.Context
 		if summary.PastMeetingUID == pastMeetingUID {
 			summaries = append(summaries, summary)
 		}
-	}
-
-	return summaries, nil
-}
-
-// ListAll retrieves all past meeting summaries from the NATS KV store.
-func (s *NatsPastMeetingSummaryRepository) ListAll(ctx context.Context) ([]*models.PastMeetingSummary, error) {
-	keys, err := s.PastMeetingSummaries.ListKeys(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "error listing keys from KV store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
-	}
-
-	var summaries []*models.PastMeetingSummary
-	for key := range keys.Keys() {
-		summary, err := s.Get(ctx, key)
-		if err != nil {
-			// Skip entries that can't be read but continue processing others
-			slog.WarnContext(ctx, "failed to get summary during list operation", logging.ErrKey, err, "summary_uid", key)
-			continue
-		}
-
-		summaries = append(summaries, summary)
 	}
 
 	return summaries, nil

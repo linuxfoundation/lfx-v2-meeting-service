@@ -530,67 +530,72 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "meeting_hosts",
+      "artifact_visibility": "public",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Et et consectetur nihil.",
-               "Consequatur perspiciatis sed est laudantium quasi.",
-               "Fuga sit ad maiores id velit ratione.",
-               "Nam et."
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
             ],
-            "uid": "Ut ut voluptatem."
+            "uid": "Ab nobis libero nihil aliquam."
          },
          {
             "allowed_voting_statuses": [
-               "Et et consectetur nihil.",
-               "Consequatur perspiciatis sed est laudantium quasi.",
-               "Fuga sit ad maiores id velit ratione.",
-               "Nam et."
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
             ],
-            "uid": "Ut ut voluptatem."
+            "uid": "Ab nobis libero nihil aliquam."
          },
          {
             "allowed_voting_statuses": [
-               "Et et consectetur nihil.",
-               "Consequatur perspiciatis sed est laudantium quasi.",
-               "Fuga sit ad maiores id velit ratione.",
-               "Nam et."
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
             ],
-            "uid": "Ut ut voluptatem."
+            "uid": "Ab nobis libero nihil aliquam."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
+            ],
+            "uid": "Ab nobis libero nihil aliquam."
          }
       ],
-      "description": "Et nemo.",
-      "duration": 63,
-      "early_join_time_minutes": 57,
-      "meeting_type": "Technical",
+      "description": "Quis est est molestias eligendi nulla porro.",
+      "duration": 254,
+      "early_join_time_minutes": 55,
+      "meeting_type": "Other",
       "organizers": [
-         "Libero enim ut quae.",
-         "Facere consectetur quod voluptatibus in necessitatibus rerum."
+         "Sit ad maiores id velit ratione et.",
+         "Et illo similique qui est."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "recording_enabled": false,
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1993-04-10T19:30:34Z",
-         "end_times": 3732607533624244863,
-         "monthly_day": 13,
-         "monthly_week": 4,
-         "monthly_week_day": 2,
-         "repeat_interval": 6620790648848392796,
+         "end_date_time": "1982-02-16T02:33:37Z",
+         "end_times": 748992484864519505,
+         "monthly_day": 26,
+         "monthly_week": -1,
+         "monthly_week_day": 6,
+         "repeat_interval": 7700406239905879971,
          "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Dolores et doloremque et voluptatem vel voluptates.",
-      "title": "Deleniti omnis.",
-      "transcript_enabled": true,
-      "visibility": "public",
+      "timezone": "Quasi dolor facilis exercitationem rem.",
+      "title": "Et dolor.",
+      "transcript_enabled": false,
+      "visibility": "private",
       "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": false
+         "ai_summary_require_approval": true
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -647,54 +652,60 @@ Update an existing meeting base.
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
-      "artifact_visibility": "meeting_hosts",
+      "artifact_visibility": "public",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Et et consectetur nihil.",
-               "Consequatur perspiciatis sed est laudantium quasi.",
-               "Fuga sit ad maiores id velit ratione.",
-               "Nam et."
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
             ],
-            "uid": "Ut ut voluptatem."
+            "uid": "Ab nobis libero nihil aliquam."
          },
          {
             "allowed_voting_statuses": [
-               "Et et consectetur nihil.",
-               "Consequatur perspiciatis sed est laudantium quasi.",
-               "Fuga sit ad maiores id velit ratione.",
-               "Nam et."
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
             ],
-            "uid": "Ut ut voluptatem."
+            "uid": "Ab nobis libero nihil aliquam."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
+            ],
+            "uid": "Ab nobis libero nihil aliquam."
          }
       ],
-      "description": "Repellat totam officiis enim veritatis est.",
-      "duration": 135,
-      "early_join_time_minutes": 21,
+      "description": "Et nihil repellat totam officiis enim veritatis.",
+      "duration": 507,
+      "early_join_time_minutes": 44,
       "meeting_type": "Maintainers",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1993-04-10T19:30:34Z",
-         "end_times": 3732607533624244863,
-         "monthly_day": 13,
-         "monthly_week": 4,
-         "monthly_week_day": 2,
-         "repeat_interval": 6620790648848392796,
+         "end_date_time": "1982-02-16T02:33:37Z",
+         "end_times": 748992484864519505,
+         "monthly_day": 26,
+         "monthly_week": -1,
+         "monthly_week_day": 6,
+         "repeat_interval": 7700406239905879971,
          "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Maiores veniam dolore omnis.",
-      "title": "Repudiandae et.",
-      "transcript_enabled": false,
-      "visibility": "public",
+      "timezone": "Laboriosam ea qui quia maiores.",
+      "title": "Dolore omnis fugiat.",
+      "transcript_enabled": true,
+      "visibility": "private",
       "youtube_upload_enabled": false,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": false
+         "ai_summary_require_approval": true
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -869,21 +880,19 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Et et consectetur nihil.",
-               "Consequatur perspiciatis sed est laudantium quasi.",
-               "Fuga sit ad maiores id velit ratione.",
-               "Nam et."
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
             ],
-            "uid": "Ut ut voluptatem."
+            "uid": "Ab nobis libero nihil aliquam."
          },
          {
             "allowed_voting_statuses": [
-               "Et et consectetur nihil.",
-               "Consequatur perspiciatis sed est laudantium quasi.",
-               "Fuga sit ad maiores id velit ratione.",
-               "Nam et."
+               "Earum et nemo omnis.",
+               "Ut ut voluptatem.",
+               "Debitis et et."
             ],
-            "uid": "Ut ut voluptatem."
+            "uid": "Ab nobis libero nihil aliquam."
          }
       ],
       "description": "Fugit architecto ea fugiat reiciendis omnis.",
@@ -898,12 +907,12 @@ Example:
       "public_link": "http://maggio.com/ressie_schuppe",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1993-04-10T19:30:34Z",
-         "end_times": 3732607533624244863,
-         "monthly_day": 13,
-         "monthly_week": 4,
-         "monthly_week_day": 2,
-         "repeat_interval": 6620790648848392796,
+         "end_date_time": "1982-02-16T02:33:37Z",
+         "end_times": 748992484864519505,
+         "monthly_day": 26,
+         "monthly_week": -1,
+         "monthly_week_day": 6,
+         "repeat_interval": 7700406239905879971,
          "type": 3,
          "weekly_days": "1,3,5"
       },

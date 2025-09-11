@@ -412,6 +412,9 @@ func ConvertUpdatePastMeetingSummaryPayloadToDomain(payload *meetingservice.Upda
 	summary := &models.PastMeetingSummary{
 		UID:            payload.SummaryUID,
 		PastMeetingUID: payload.PastMeetingUID,
+		MeetingUID:     "", // This will get populated by the service
+		Platform:       "", // This will get populated by the service
+		Password:       "", // This will get populated by the service
 	}
 
 	// Set SummaryData with only the editable fields
@@ -438,6 +441,7 @@ func ConvertUpdatePastMeetingSummaryPayloadToDomain(payload *meetingservice.Upda
 
 	summary.SummaryData = summaryData
 
+	// Set the editable approved field
 	if payload.Approved != nil {
 		summary.Approved = *payload.Approved
 	}

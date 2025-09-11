@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// PastMeetingSummary represents an AI-generated summary for a past meeting occurrence
+// PastMeetingSummary represents a summary for a past meeting occurrence
 // It captures summary data from platform providers (e.g., Zoom AI summary)
 type PastMeetingSummary struct {
 	UID              string                        `json:"uid"`
@@ -27,8 +27,8 @@ type PastMeetingSummary struct {
 
 // PastMeetingSummaryZoomConfig contains Zoom-specific summary configuration and metadata
 type PastMeetingSummaryZoomConfig struct {
-	MeetingID string `json:"meeting_id"` // Zoom meeting ID
-	UUID      string `json:"uuid"`       // Zoom meeting UUID
+	MeetingID   string `json:"meeting_id"`   // Zoom meeting ID
+	MeetingUUID string `json:"meeting_uuid"` // Zoom meeting UUID (specific meeting instance)
 }
 
 // SummaryData contains the actual AI-generated summary content
@@ -77,32 +77,9 @@ func (p *PastMeetingSummary) Tags() []string {
 		tags = append(tags, tag)
 	}
 
-	// Add summary title and overview as searchable tags (without prefix for full-text search)
 	if p.SummaryData.Title != "" {
-		tags = append(tags, p.SummaryData.Title)
-	}
-
-	if p.SummaryData.Overview != "" {
-		tags = append(tags, p.SummaryData.Overview)
-	}
-
-	// Add edited overview as searchable tags if present
-	if p.SummaryData.EditedOverview != "" {
-		tags = append(tags, p.SummaryData.EditedOverview)
-	}
-
-	// Add next steps as searchable tags (without prefix for full-text search)
-	for _, nextStep := range p.SummaryData.NextSteps {
-		if nextStep != "" {
-			tags = append(tags, nextStep)
-		}
-	}
-
-	// Add edited next steps as searchable tags if present
-	for _, editedNextStep := range p.SummaryData.EditedNextSteps {
-		if editedNextStep != "" {
-			tags = append(tags, editedNextStep)
-		}
+		tag := fmt.Sprintf("title:%s", p.SummaryData.Title)
+		tags = append(tags, tag)
 	}
 
 	return tags

@@ -782,13 +782,13 @@ type GetPastMeetingSummaryResponseBody PastMeetingSummaryResponseBody
 // UpdatePastMeetingSummaryResponseBody is the type of the "Meeting Service"
 // service "update-past-meeting-summary" endpoint HTTP response body.
 type UpdatePastMeetingSummaryResponseBody struct {
-	// Unique identifier for the summary
+	// The unique identifier of the past meeting
 	UID string `form:"uid" json:"uid" xml:"uid"`
-	// UID of the associated past meeting
+	// The unique identifier of the past meeting
 	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
-	// UID of the original meeting
+	// The UID of the original meeting
 	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
-	// Meeting platform
+	// The platform name of where the meeting is hosted
 	Platform string `form:"platform" json:"platform" xml:"platform"`
 	// Password for accessing the summary (if required)
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
@@ -2231,13 +2231,13 @@ type ParticipantSessionResponseBody struct {
 // PastMeetingSummaryResponseBody is used to define fields on response body
 // types.
 type PastMeetingSummaryResponseBody struct {
-	// Unique identifier for the summary
+	// The unique identifier of the past meeting
 	UID string `form:"uid" json:"uid" xml:"uid"`
-	// UID of the associated past meeting
+	// The unique identifier of the past meeting
 	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
-	// UID of the original meeting
+	// The UID of the original meeting
 	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
-	// Meeting platform
+	// The platform name of where the meeting is hosted
 	Platform string `form:"platform" json:"platform" xml:"platform"`
 	// Password for accessing the summary (if required)
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
@@ -2260,7 +2260,7 @@ type PastMeetingSummaryResponseBody struct {
 // PastMeetingSummaryZoomConfigResponseBody is used to define fields on
 // response body types.
 type PastMeetingSummaryZoomConfigResponseBody struct {
-	// Zoom meeting ID
+	// The ID of the created meeting in Zoom
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Zoom meeting UUID
 	MeetingUUID *string `form:"meeting_uuid,omitempty" json:"meeting_uuid,omitempty" xml:"meeting_uuid,omitempty"`
