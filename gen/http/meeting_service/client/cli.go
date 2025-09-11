@@ -1557,7 +1557,7 @@ func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummary
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdatePastMeetingSummaryBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"approved\": true,\n      \"edited_details\": [\n         {\n            \"label\": \"Meeting Summary Label\",\n            \"summary\": \"Meeting summary details\"\n         }\n      ],\n      \"edited_next_steps\": [\n         \"Complete updated API documentation\",\n         \"Review PR #456\"\n      ],\n      \"edited_overview\": \"Updated meeting overview\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"approved\": true,\n      \"edited_content\": \"Updated meeting summary with additional details and action items.\"\n   }'")
 		}
 	}
 	var pastMeetingUID string
@@ -1601,20 +1601,8 @@ func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummary
 		}
 	}
 	v := &meetingservice.UpdatePastMeetingSummaryPayload{
-		EditedOverview: body.EditedOverview,
-		Approved:       body.Approved,
-	}
-	if body.EditedDetails != nil {
-		v.EditedDetails = make([]*meetingservice.SummaryDetail, len(body.EditedDetails))
-		for i, val := range body.EditedDetails {
-			v.EditedDetails[i] = marshalSummaryDetailRequestBodyToMeetingserviceSummaryDetail(val)
-		}
-	}
-	if body.EditedNextSteps != nil {
-		v.EditedNextSteps = make([]string, len(body.EditedNextSteps))
-		for i, val := range body.EditedNextSteps {
-			v.EditedNextSteps[i] = val
-		}
+		EditedContent: body.EditedContent,
+		Approved:      body.Approved,
 	}
 	v.PastMeetingUID = pastMeetingUID
 	v.SummaryUID = summaryUID

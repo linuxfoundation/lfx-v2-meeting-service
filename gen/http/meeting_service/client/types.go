@@ -289,12 +289,8 @@ type UpdatePastMeetingParticipantRequestBody struct {
 // UpdatePastMeetingSummaryRequestBody is the type of the "Meeting Service"
 // service "update-past-meeting-summary" endpoint HTTP request body.
 type UpdatePastMeetingSummaryRequestBody struct {
-	// Edited summary overview
-	EditedOverview *string `form:"edited_overview,omitempty" json:"edited_overview,omitempty" xml:"edited_overview,omitempty"`
-	// Edited structured summary details
-	EditedDetails []*SummaryDetailRequestBody `form:"edited_details,omitempty" json:"edited_details,omitempty" xml:"edited_details,omitempty"`
-	// Edited next steps
-	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
+	// User-edited summary content
+	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 	// Whether the summary has been approved
 	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
 }
@@ -2375,34 +2371,12 @@ type SummaryDataResponseBody struct {
 	EndTime *string `form:"end_time,omitempty" json:"end_time,omitempty" xml:"end_time,omitempty"`
 	// Summary title
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
-	// Summary overview
-	Overview *string `form:"overview,omitempty" json:"overview,omitempty" xml:"overview,omitempty"`
-	// Next steps from the meeting
-	NextSteps []string `form:"next_steps,omitempty" json:"next_steps,omitempty" xml:"next_steps,omitempty"`
-	// Structured summary details
-	Details []*SummaryDetailResponseBody `form:"details,omitempty" json:"details,omitempty" xml:"details,omitempty"`
-	// Edited summary overview
-	EditedOverview *string `form:"edited_overview,omitempty" json:"edited_overview,omitempty" xml:"edited_overview,omitempty"`
-	// Edited structured summary details
-	EditedDetails []*SummaryDetailResponseBody `form:"edited_details,omitempty" json:"edited_details,omitempty" xml:"edited_details,omitempty"`
-	// Edited next steps
-	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
-}
-
-// SummaryDetailResponseBody is used to define fields on response body types.
-type SummaryDetailResponseBody struct {
-	// Summary label
-	Label *string `form:"label,omitempty" json:"label,omitempty" xml:"label,omitempty"`
-	// Summary content
-	Summary *string `form:"summary,omitempty" json:"summary,omitempty" xml:"summary,omitempty"`
-}
-
-// SummaryDetailRequestBody is used to define fields on request body types.
-type SummaryDetailRequestBody struct {
-	// Summary label
-	Label string `form:"label" json:"label" xml:"label"`
-	// Summary content
-	Summary string `form:"summary" json:"summary" xml:"summary"`
+	// The main AI-generated summary content
+	Content *string `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
+	// URL to the full summary document
+	DocURL *string `form:"doc_url,omitempty" json:"doc_url,omitempty" xml:"doc_url,omitempty"`
+	// User-edited summary content
+	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 }
 
 // NewCreateMeetingRequestBody builds the HTTP request body from the payload of
@@ -2634,20 +2608,8 @@ func NewUpdatePastMeetingParticipantRequestBody(p *meetingservice.UpdatePastMeet
 // Service" service.
 func NewUpdatePastMeetingSummaryRequestBody(p *meetingservice.UpdatePastMeetingSummaryPayload) *UpdatePastMeetingSummaryRequestBody {
 	body := &UpdatePastMeetingSummaryRequestBody{
-		EditedOverview: p.EditedOverview,
-		Approved:       p.Approved,
-	}
-	if p.EditedDetails != nil {
-		body.EditedDetails = make([]*SummaryDetailRequestBody, len(p.EditedDetails))
-		for i, val := range p.EditedDetails {
-			body.EditedDetails[i] = marshalMeetingserviceSummaryDetailToSummaryDetailRequestBody(val)
-		}
-	}
-	if p.EditedNextSteps != nil {
-		body.EditedNextSteps = make([]string, len(p.EditedNextSteps))
-		for i, val := range p.EditedNextSteps {
-			body.EditedNextSteps[i] = val
-		}
+		EditedContent: p.EditedContent,
+		Approved:      p.Approved,
 	}
 	return body
 }
@@ -7446,32 +7408,6 @@ func ValidateSummaryDataResponseBody(body *SummaryDataResponseBody) (err error) 
 	}
 	if body.EndTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.end_time", *body.EndTime, goa.FormatDateTime))
-	}
-	for _, e := range body.Details {
-		if e != nil {
-			if err2 := ValidateSummaryDetailResponseBody(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	for _, e := range body.EditedDetails {
-		if e != nil {
-			if err2 := ValidateSummaryDetailResponseBody(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	return
-}
-
-// ValidateSummaryDetailResponseBody runs the validations defined on
-// SummaryDetailResponseBody
-func ValidateSummaryDetailResponseBody(body *SummaryDetailResponseBody) (err error) {
-	if body.Label == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("label", "body"))
-	}
-	if body.Summary == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("summary", "body"))
 	}
 	return
 }

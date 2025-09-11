@@ -1109,17 +1109,7 @@ Update an existing past meeting summary
 Example:
     %[1]s meeting-service update-past-meeting-summary --body '{
       "approved": true,
-      "edited_details": [
-         {
-            "label": "Meeting Summary Label",
-            "summary": "Meeting summary details"
-         }
-      ],
-      "edited_next_steps": [
-         "Complete updated API documentation",
-         "Review PR #456"
-      ],
-      "edited_overview": "Updated meeting overview"
+      "edited_content": "Updated meeting summary with additional details and action items."
    }' --past-meeting-uid "123e4567-e89b-12d3-a456-426614174000" --summary-uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }

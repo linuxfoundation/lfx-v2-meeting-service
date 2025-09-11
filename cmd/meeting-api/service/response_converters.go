@@ -536,40 +536,15 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 			MeetingUUID: utils.StringPtr(summary.ZoomConfig.MeetingUUID),
 		},
 		SummaryData: &meetingservice.SummaryData{
-			StartTime:       summary.SummaryData.StartTime.Format(time.RFC3339),
-			EndTime:         summary.SummaryData.EndTime.Format(time.RFC3339),
-			Title:           &summary.SummaryData.Title,
-			Overview:        &summary.SummaryData.Overview,
-			NextSteps:       summary.SummaryData.NextSteps,
-			Details:         []*meetingservice.SummaryDetail{},
-			EditedOverview:  &summary.SummaryData.EditedOverview,
-			EditedDetails:   []*meetingservice.SummaryDetail{},
-			EditedNextSteps: summary.SummaryData.EditedNextSteps,
+			StartTime:     summary.SummaryData.StartTime.Format(time.RFC3339),
+			EndTime:       summary.SummaryData.EndTime.Format(time.RFC3339),
+			Title:         &summary.SummaryData.Title,
+			Content:       &summary.SummaryData.Content,
+			DocURL:        &summary.SummaryData.DocURL,
+			EditedContent: &summary.SummaryData.EditedContent,
 		},
 		CreatedAt: summary.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: summary.UpdatedAt.Format(time.RFC3339),
-	}
-
-	// Set the summary data details
-	if len(summary.SummaryData.Details) > 0 {
-		details := make([]*meetingservice.SummaryDetail, len(summary.SummaryData.Details))
-		for i, detail := range summary.SummaryData.Details {
-			details[i] = &meetingservice.SummaryDetail{
-				Label:   detail.Label,
-				Summary: detail.Summary,
-			}
-		}
-		result.SummaryData.Details = details
-	}
-	if len(summary.SummaryData.EditedDetails) > 0 {
-		editedDetails := make([]*meetingservice.SummaryDetail, len(summary.SummaryData.EditedDetails))
-		for i, detail := range summary.SummaryData.EditedDetails {
-			editedDetails[i] = &meetingservice.SummaryDetail{
-				Label:   detail.Label,
-				Summary: detail.Summary,
-			}
-		}
-		result.SummaryData.EditedDetails = editedDetails
 	}
 
 	return result

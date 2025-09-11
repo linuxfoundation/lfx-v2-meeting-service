@@ -45,3 +45,12 @@ func (s *NoOpService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	slog.DebugContext(ctx, "email service disabled, skipping update notification email")
 	return nil
 }
+
+// SendSummaryNotification logs the summary notification but doesn't send an email
+func (s *NoOpService) SendSummaryNotification(ctx context.Context, notification domain.EmailSummaryNotification) error {
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", notification.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", notification.MeetingTitle))
+
+	slog.DebugContext(ctx, "email service disabled, skipping summary notification email")
+	return nil
+}

@@ -109,6 +109,9 @@ func main() {
 	pastMeetingSummaryService := service.NewPastMeetingSummaryService(
 		repos.PastMeetingSummary,
 		repos.PastMeeting,
+		repos.Registrant,
+		repos.Meeting,
+		emailService,
 		messageBuilder,
 		serviceConfig,
 	)

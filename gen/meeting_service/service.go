@@ -1082,26 +1082,12 @@ type SummaryData struct {
 	EndTime string
 	// Summary title
 	Title *string
-	// Summary overview
-	Overview *string
-	// Next steps from the meeting
-	NextSteps []string
-	// Structured summary details
-	Details []*SummaryDetail
-	// Edited summary overview
-	EditedOverview *string
-	// Edited structured summary details
-	EditedDetails []*SummaryDetail
-	// Edited next steps
-	EditedNextSteps []string
-}
-
-// Detailed summary item with label and content
-type SummaryDetail struct {
-	// Summary label
-	Label string
-	// Summary content
-	Summary string
+	// The main AI-generated summary content
+	Content *string
+	// URL to the full summary document
+	DocURL *string
+	// User-edited summary content
+	EditedContent *string
 }
 
 type UnauthorizedError struct {
@@ -1262,12 +1248,8 @@ type UpdatePastMeetingSummaryPayload struct {
 	PastMeetingUID string
 	// The unique identifier of the summary
 	SummaryUID string
-	// Edited summary overview
-	EditedOverview *string
-	// Edited structured summary details
-	EditedDetails []*SummaryDetail
-	// Edited next steps
-	EditedNextSteps []string
+	// User-edited summary content
+	EditedContent *string
 	// Whether the summary has been approved
 	Approved *bool
 }

@@ -30,3 +30,8 @@ func (m *MockEmailService) SendRegistrantUpdatedInvitation(ctx context.Context, 
 	args := m.Called(ctx, updatedInvitation)
 	return args.Error(0)
 }
+
+func (m *MockEmailService) SendSummaryNotification(ctx context.Context, notification domain.EmailSummaryNotification) error {
+	args := m.Called(ctx, notification)
+	return args.Error(0)
+}

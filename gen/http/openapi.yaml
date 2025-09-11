@@ -4045,20 +4045,10 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        details:
-                            - label: Discussion Points
-                              summary: Key topics discussed during the meeting
-                        edited_details:
-                            - label: Meeting Summary Label
-                              summary: Meeting summary details
-                        edited_next_steps:
-                            - 'Updated: Complete API documentation by Friday'
-                        edited_overview: Updated discussion notes with action items
+                        content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                        doc_url: https://zoom.us/rec/summary/abc123
+                        edited_content: Updated meeting summary with additional details and action items.
                         end_time: "2024-01-15T11:00:00Z"
-                        next_steps:
-                            - Complete API documentation
-                            - 'Review PR #123'
-                        overview: Discussion of sprint progress and blockers
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -4075,20 +4065,10 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        details:
-                            - label: Discussion Points
-                              summary: Key topics discussed during the meeting
-                        edited_details:
-                            - label: Meeting Summary Label
-                              summary: Meeting summary details
-                        edited_next_steps:
-                            - 'Updated: Complete API documentation by Friday'
-                        edited_overview: Updated discussion notes with action items
+                        content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                        doc_url: https://zoom.us/rec/summary/abc123
+                        edited_content: Updated meeting summary with additional details and action items.
                         end_time: "2024-01-15T11:00:00Z"
-                        next_steps:
-                            - Complete API documentation
-                            - 'Review PR #123'
-                        overview: Discussion of sprint progress and blockers
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -4105,20 +4085,10 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        details:
-                            - label: Discussion Points
-                              summary: Key topics discussed during the meeting
-                        edited_details:
-                            - label: Meeting Summary Label
-                              summary: Meeting summary details
-                        edited_next_steps:
-                            - 'Updated: Complete API documentation by Friday'
-                        edited_overview: Updated discussion notes with action items
+                        content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                        doc_url: https://zoom.us/rec/summary/abc123
+                        edited_content: Updated meeting summary with additional details and action items.
                         end_time: "2024-01-15T11:00:00Z"
-                        next_steps:
-                            - Complete API documentation
-                            - 'Review PR #123'
-                        overview: Discussion of sprint progress and blockers
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -4135,20 +4105,10 @@ definitions:
                       platform: Zoom
                       requires_approval: false
                       summary_data:
-                        details:
-                            - label: Discussion Points
-                              summary: Key topics discussed during the meeting
-                        edited_details:
-                            - label: Meeting Summary Label
-                              summary: Meeting summary details
-                        edited_next_steps:
-                            - 'Updated: Complete API documentation by Friday'
-                        edited_overview: Updated discussion notes with action items
+                        content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                        doc_url: https://zoom.us/rec/summary/abc123
+                        edited_content: Updated meeting summary with additional details and action items.
                         end_time: "2024-01-15T11:00:00Z"
-                        next_steps:
-                            - Complete API documentation
-                            - 'Review PR #123'
-                        overview: Discussion of sprint progress and blockers
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -4167,20 +4127,10 @@ definitions:
                   platform: Zoom
                   requires_approval: false
                   summary_data:
-                    details:
-                        - label: Discussion Points
-                          summary: Key topics discussed during the meeting
-                    edited_details:
-                        - label: Meeting Summary Label
-                          summary: Meeting summary details
-                    edited_next_steps:
-                        - 'Updated: Complete API documentation by Friday'
-                    edited_overview: Updated discussion notes with action items
+                    content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                    doc_url: https://zoom.us/rec/summary/abc123
+                    edited_content: Updated meeting summary with additional details and action items.
                     end_time: "2024-01-15T11:00:00Z"
-                    next_steps:
-                        - Complete API documentation
-                        - 'Review PR #123'
-                    overview: Discussion of sprint progress and blockers
                     start_time: "2024-01-15T10:00:00Z"
                     title: Weekly Team Standup Meeting
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -4197,20 +4147,50 @@ definitions:
                   platform: Zoom
                   requires_approval: false
                   summary_data:
-                    details:
-                        - label: Discussion Points
-                          summary: Key topics discussed during the meeting
-                    edited_details:
-                        - label: Meeting Summary Label
-                          summary: Meeting summary details
-                    edited_next_steps:
-                        - 'Updated: Complete API documentation by Friday'
-                    edited_overview: Updated discussion notes with action items
+                    content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                    doc_url: https://zoom.us/rec/summary/abc123
+                    edited_content: Updated meeting summary with additional details and action items.
                     end_time: "2024-01-15T11:00:00Z"
-                    next_steps:
-                        - Complete API documentation
-                        - 'Review PR #123'
-                    overview: Discussion of sprint progress and blockers
+                    start_time: "2024-01-15T10:00:00Z"
+                    title: Weekly Team Standup Meeting
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  updated_at: "2021-01-01T00:00:00Z"
+                  zoom_config:
+                    meeting_id: "1234567890"
+                    meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                - approved: true
+                  created_at: "2021-01-01T00:00:00Z"
+                  email_sent: true
+                  meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  password: abc123
+                  past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  platform: Zoom
+                  requires_approval: false
+                  summary_data:
+                    content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                    doc_url: https://zoom.us/rec/summary/abc123
+                    edited_content: Updated meeting summary with additional details and action items.
+                    end_time: "2024-01-15T11:00:00Z"
+                    start_time: "2024-01-15T10:00:00Z"
+                    title: Weekly Team Standup Meeting
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  updated_at: "2021-01-01T00:00:00Z"
+                  zoom_config:
+                    meeting_id: "1234567890"
+                    meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                - approved: true
+                  created_at: "2021-01-01T00:00:00Z"
+                  email_sent: true
+                  meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  password: abc123
+                  past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  platform: Zoom
+                  requires_approval: false
+                  summary_data:
+                    content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                    doc_url: https://zoom.us/rec/summary/abc123
+                    edited_content: Updated meeting summary with additional details and action items.
+                    end_time: "2024-01-15T11:00:00Z"
                     start_time: "2024-01-15T10:00:00Z"
                     title: Weekly Team Standup Meeting
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -4779,36 +4759,13 @@ definitions:
                 type: boolean
                 description: Whether the summary has been approved
                 example: true
-            edited_details:
-                type: array
-                items:
-                    $ref: '#/definitions/SummaryDetail'
-                description: Edited structured summary details
-                example:
-                    - label: Meeting Summary Label
-                      summary: Meeting summary details
-            edited_next_steps:
-                type: array
-                items:
-                    type: string
-                    example: Quo ut non sunt quos et.
-                description: Edited next steps
-                example:
-                    - Complete updated API documentation
-                    - 'Review PR #456'
-            edited_overview:
+            edited_content:
                 type: string
-                description: Edited summary overview
-                example: Updated meeting overview
+                description: User-edited summary content
+                example: Updated meeting summary with additional details and action items.
         example:
             approved: true
-            edited_details:
-                - label: Meeting Summary Label
-                  summary: Meeting summary details
-            edited_next_steps:
-                - Complete updated API documentation
-                - 'Review PR #456'
-            edited_overview: Updated meeting overview
+            edited_content: Updated meeting summary with additional details and action items.
     MeetingSettings:
         title: MeetingSettings
         type: object
@@ -5410,20 +5367,10 @@ definitions:
             platform: Zoom
             requires_approval: false
             summary_data:
-                details:
-                    - label: Discussion Points
-                      summary: Key topics discussed during the meeting
-                edited_details:
-                    - label: Meeting Summary Label
-                      summary: Meeting summary details
-                edited_next_steps:
-                    - 'Updated: Complete API documentation by Friday'
-                edited_overview: Updated discussion notes with action items
+                content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                doc_url: https://zoom.us/rec/summary/abc123
+                edited_content: Updated meeting summary with additional details and action items.
                 end_time: "2024-01-15T11:00:00Z"
-                next_steps:
-                    - Complete API documentation
-                    - 'Review PR #123'
-                overview: Discussion of sprint progress and blockers
                 start_time: "2024-01-15T10:00:00Z"
                 title: Weekly Team Standup Meeting
             uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -5700,52 +5647,23 @@ definitions:
         title: SummaryData
         type: object
         properties:
-            details:
-                type: array
-                items:
-                    $ref: '#/definitions/SummaryDetail'
-                description: Structured summary details
-                example:
-                    - label: Discussion Points
-                      summary: Key topics discussed during the meeting
-            edited_details:
-                type: array
-                items:
-                    $ref: '#/definitions/SummaryDetail'
-                description: Edited structured summary details
-                example:
-                    - label: Meeting Summary Label
-                      summary: Meeting summary details
-            edited_next_steps:
-                type: array
-                items:
-                    type: string
-                    example: Deleniti quia ex sed.
-                description: Edited next steps
-                example:
-                    - 'Updated: Complete API documentation by Friday'
-            edited_overview:
+            content:
                 type: string
-                description: Edited summary overview
-                example: Updated discussion notes with action items
+                description: The main AI-generated summary content
+                example: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+            doc_url:
+                type: string
+                description: URL to the full summary document
+                example: https://zoom.us/rec/summary/abc123
+            edited_content:
+                type: string
+                description: User-edited summary content
+                example: Updated meeting summary with additional details and action items.
             end_time:
                 type: string
                 description: Summary end time
                 example: "2024-01-15T11:00:00Z"
                 format: date-time
-            next_steps:
-                type: array
-                items:
-                    type: string
-                    example: Aut aliquam ratione non laborum quas.
-                description: Next steps from the meeting
-                example:
-                    - Complete API documentation
-                    - 'Review PR #123'
-            overview:
-                type: string
-                description: Summary overview
-                example: Discussion of sprint progress and blockers
             start_time:
                 type: string
                 description: Summary start time
@@ -5757,44 +5675,15 @@ definitions:
                 example: Weekly Team Standup Meeting
         description: AI-generated summary content for a past meeting
         example:
-            details:
-                - label: Discussion Points
-                  summary: Key topics discussed during the meeting
-            edited_details:
-                - label: Meeting Summary Label
-                  summary: Meeting summary details
-            edited_next_steps:
-                - 'Updated: Complete API documentation by Friday'
-            edited_overview: Updated discussion notes with action items
+            content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+            doc_url: https://zoom.us/rec/summary/abc123
+            edited_content: Updated meeting summary with additional details and action items.
             end_time: "2024-01-15T11:00:00Z"
-            next_steps:
-                - Complete API documentation
-                - 'Review PR #123'
-            overview: Discussion of sprint progress and blockers
             start_time: "2024-01-15T10:00:00Z"
             title: Weekly Team Standup Meeting
         required:
             - start_time
             - end_time
-    SummaryDetail:
-        title: SummaryDetail
-        type: object
-        properties:
-            label:
-                type: string
-                description: Summary label
-                example: Meeting Summary Label
-            summary:
-                type: string
-                description: Summary content
-                example: Meeting summary details
-        description: Detailed summary item with label and content
-        example:
-            label: Meeting Summary Label
-            summary: Meeting summary details
-        required:
-            - label
-            - summary
     UnauthorizedError:
         title: UnauthorizedError
         type: object

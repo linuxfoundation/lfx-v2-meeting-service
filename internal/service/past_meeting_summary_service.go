@@ -20,6 +20,9 @@ import (
 type PastMeetingSummaryService struct {
 	PastMeetingSummaryRepository domain.PastMeetingSummaryRepository
 	PastMeetingRepository        domain.PastMeetingRepository
+	RegistrantRepository         domain.RegistrantRepository
+	MeetingRepository            domain.MeetingRepository
+	EmailService                 domain.EmailService
 	MessageBuilder               domain.MessageBuilder
 	ServiceConfig                ServiceConfig
 }
@@ -28,12 +31,18 @@ type PastMeetingSummaryService struct {
 func NewPastMeetingSummaryService(
 	pastMeetingSummaryRepository domain.PastMeetingSummaryRepository,
 	pastMeetingRepository domain.PastMeetingRepository,
+	registrantRepository domain.RegistrantRepository,
+	meetingRepository domain.MeetingRepository,
+	emailService domain.EmailService,
 	messageBuilder domain.MessageBuilder,
 	serviceConfig ServiceConfig,
 ) *PastMeetingSummaryService {
 	return &PastMeetingSummaryService{
 		PastMeetingSummaryRepository: pastMeetingSummaryRepository,
 		PastMeetingRepository:        pastMeetingRepository,
+		RegistrantRepository:         registrantRepository,
+		MeetingRepository:            meetingRepository,
+		EmailService:                 emailService,
 		MessageBuilder:               messageBuilder,
 		ServiceConfig:                serviceConfig,
 	}
@@ -99,6 +108,13 @@ func (s *PastMeetingSummaryService) CreateSummary(
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for new summary", logging.ErrKey, err, "summary_uid", summary.UID)
 		// Don't fail the operation if indexing fails
+	}
+
+	// Send email notifications to meeting hosts
+	err = s.sendSummaryNotificationEmails(ctx, summary)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending summary notification emails", logging.ErrKey, err, "summary_uid", summary.UID)
+		// Don't fail the operation if email notifications fail
 	}
 
 	slog.InfoContext(ctx, "created new past meeting summary",
@@ -180,16 +196,8 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 	updatedSummary.UpdatedAt = time.Now().UTC()
 
 	// Update only the editable fields from the request
-	if summary.SummaryData.EditedOverview != "" {
-		updatedSummary.SummaryData.EditedOverview = summary.SummaryData.EditedOverview
-	}
-
-	if summary.SummaryData.EditedDetails != nil {
-		updatedSummary.SummaryData.EditedDetails = summary.SummaryData.EditedDetails
-	}
-
-	if summary.SummaryData.EditedNextSteps != nil {
-		updatedSummary.SummaryData.EditedNextSteps = summary.SummaryData.EditedNextSteps
+	if summary.SummaryData.EditedContent != "" {
+		updatedSummary.SummaryData.EditedContent = summary.SummaryData.EditedContent
 	}
 
 	// Update approval status
@@ -250,5 +258,87 @@ func (s *PastMeetingSummaryService) DeleteSummary(ctx context.Context, summaryUI
 	}
 
 	slog.InfoContext(ctx, "deleted past meeting summary", "summary_uid", summaryUID)
+	return nil
+}
+
+// sendSummaryNotificationEmails sends email notifications to meeting host registrants
+func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Context, summary *models.PastMeetingSummary) error {
+	// Get the past meeting to retrieve meeting details
+	pastMeeting, err := s.PastMeetingRepository.Get(ctx, summary.PastMeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get past meeting for summary notification", logging.ErrKey, err, "past_meeting_uid", summary.PastMeetingUID)
+		return err
+	}
+
+	// Get the original meeting to get project context
+	meetingBase, err := s.MeetingRepository.GetBase(ctx, summary.MeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get meeting base for summary notification", logging.ErrKey, err, "meeting_uid", summary.MeetingUID)
+		return err
+	}
+
+	// Get all registrants for the meeting
+	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, summary.MeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get registrants for summary notification", logging.ErrKey, err, "meeting_uid", summary.MeetingUID)
+		return err
+	}
+
+	// Filter to only host registrants
+	hostRegistrants := make([]*models.Registrant, 0)
+	for _, registrant := range registrants {
+		if registrant.Host {
+			hostRegistrants = append(hostRegistrants, registrant)
+		}
+	}
+
+	if len(hostRegistrants) == 0 {
+		slog.InfoContext(ctx, "no host registrants found for summary notification", "meeting_uid", summary.MeetingUID)
+		return nil
+	}
+
+	// Send email to each host
+	successCount := 0
+	for _, registrant := range hostRegistrants {
+		notification := domain.EmailSummaryNotification{
+			RecipientEmail: registrant.Email,
+			RecipientName:  registrant.FirstName + " " + registrant.LastName,
+			MeetingTitle:   pastMeeting.Title,
+			MeetingDate:    pastMeeting.ScheduledStartTime,
+			ProjectName:    meetingBase.ProjectUID, // Using ProjectUID as project context
+			SummaryContent: summary.SummaryData.Content,
+			SummaryDocURL:  summary.SummaryData.DocURL,
+			SummaryTitle:   summary.SummaryData.Title,
+		}
+
+		err := s.EmailService.SendSummaryNotification(ctx, notification)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to send summary notification email",
+				logging.ErrKey, err,
+				"registrant_uid", registrant.UID,
+				"email", registrant.Email,
+				"meeting_uid", summary.MeetingUID,
+			)
+			// Continue with other recipients even if one fails
+		} else {
+			successCount++
+			slog.DebugContext(ctx, "summary notification email sent successfully",
+				"registrant_uid", registrant.UID,
+				"email", registrant.Email,
+			)
+		}
+	}
+
+	slog.InfoContext(ctx, "summary notification emails sent",
+		"total_hosts", len(hostRegistrants),
+		"successful_sends", successCount,
+		"summary_uid", summary.UID,
+	)
+
+	// Return error only if no emails were sent successfully
+	if successCount == 0 && len(hostRegistrants) > 0 {
+		return domain.ErrInternal
+	}
+
 	return nil
 }

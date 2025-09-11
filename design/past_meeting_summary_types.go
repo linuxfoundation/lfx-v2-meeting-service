@@ -92,49 +92,24 @@ func SummaryTitleAttribute() {
 	})
 }
 
-// SummaryOverviewAttribute is the DSL attribute for summary overview.
-func SummaryOverviewAttribute() {
-	Attribute("overview", String, "Summary overview", func() {
-		Example("Discussion of sprint progress and blockers")
+// ContentAttribute is the DSL attribute for the main summary content.
+func ContentAttribute() {
+	Attribute("content", String, "The main AI-generated summary content", func() {
+		Example("This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.")
 	})
 }
 
-// SummaryNextStepsAttribute is the DSL attribute for next steps.
-func SummaryNextStepsAttribute() {
-	Attribute("next_steps", ArrayOf(String), "Next steps from the meeting", func() {
-		Example([]string{"Complete API documentation", "Review PR #123"})
+// DocURLAttribute is the DSL attribute for the summary document URL.
+func DocURLAttribute() {
+	Attribute("doc_url", String, "URL to the full summary document", func() {
+		Example("https://zoom.us/rec/summary/abc123")
 	})
 }
 
-// SummaryDetailsAttribute is the DSL attribute for structured summary details.
-func SummaryDetailsAttribute() {
-	Attribute("details", ArrayOf(SummaryDetail), "Structured summary details", func() {
-		Example([]map[string]any{
-			{"label": "Discussion Points", "summary": "Key topics discussed during the meeting"},
-		})
-	})
-}
-
-// EditedOverviewAttribute is the DSL attribute for edited overview.
-func EditedOverviewAttribute() {
-	Attribute("edited_overview", String, "Edited summary overview", func() {
-		Example("Updated discussion notes with action items")
-	})
-}
-
-// EditedDetailsAttribute is the DSL attribute for edited structured details.
-func EditedDetailsAttribute() {
-	Attribute("edited_details", ArrayOf(SummaryDetail), "Edited structured summary details", func() {
-		Example([]map[string]any{
-			{"label": "Meeting Summary Label", "summary": "Meeting summary details"},
-		})
-	})
-}
-
-// EditedNextStepsAttribute is the DSL attribute for edited next steps.
-func EditedNextStepsAttribute() {
-	Attribute("edited_next_steps", ArrayOf(String), "Edited next steps", func() {
-		Example([]string{"Updated: Complete API documentation by Friday"})
+// EditedContentAttribute is the DSL attribute for edited summary content.
+func EditedContentAttribute() {
+	Attribute("edited_content", String, "User-edited summary content", func() {
+		Example("Updated meeting summary with additional details and action items.")
 	})
 }
 
@@ -182,12 +157,9 @@ var SummaryData = Type("SummaryData", func() {
 	SummaryStartTimeAttribute()
 	SummaryEndTimeAttribute()
 	SummaryTitleAttribute()
-	SummaryOverviewAttribute()
-	SummaryNextStepsAttribute()
-	SummaryDetailsAttribute()
-	EditedOverviewAttribute()
-	EditedDetailsAttribute()
-	EditedNextStepsAttribute()
+	ContentAttribute()
+	DocURLAttribute()
+	EditedContentAttribute()
 
 	Required("start_time", "end_time")
 })

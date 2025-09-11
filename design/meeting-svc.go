@@ -967,20 +967,8 @@ var _ = Service("Meeting Service", func() {
 			IfMatchAttribute()
 			PastMeetingSummaryPastMeetingUIDAttribute()
 			SummaryUIDAttribute()
-			Attribute("edited_overview", String, "Edited summary overview", func() {
-				Example("Updated meeting overview")
-			})
-			Attribute("edited_details", ArrayOf(SummaryDetail), "Edited structured summary details", func() {
-				Example([]map[string]interface{}{
-					{"label": "Meeting Summary Label", "summary": "Meeting summary details"},
-				})
-			})
-			Attribute("edited_next_steps", ArrayOf(String), "Edited next steps", func() {
-				Example([]string{"Complete updated API documentation", "Review PR #456"})
-			})
-			Attribute("approved", Boolean, "Whether the summary has been approved", func() {
-				Example(true)
-			})
+			EditedContentAttribute()
+			ApprovedAttribute()
 			Required("past_meeting_uid", "summary_uid")
 		})
 		Result(PastMeetingSummary)

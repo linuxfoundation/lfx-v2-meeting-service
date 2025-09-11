@@ -33,15 +33,12 @@ type PastMeetingSummaryZoomConfig struct {
 
 // SummaryData contains the actual AI-generated summary content
 type SummaryData struct {
-	StartTime       time.Time       `json:"start_time"`
-	EndTime         time.Time       `json:"end_time"`
-	Title           string          `json:"title"`
-	Overview        string          `json:"overview"`
-	NextSteps       []string        `json:"next_steps"`
-	Details         []SummaryDetail `json:"details"`
-	EditedOverview  string          `json:"edited_overview"`
-	EditedDetails   []SummaryDetail `json:"edited_details"`
-	EditedNextSteps []string        `json:"edited_next_steps"`
+	StartTime     time.Time `json:"start_time"`
+	EndTime       time.Time `json:"end_time"`
+	Title         string    `json:"title"`
+	Content       string    `json:"content"`
+	DocURL        string    `json:"doc_url"`
+	EditedContent string    `json:"edited_content"`
 }
 
 // Tags generates a consistent set of tags for the past meeting summary.

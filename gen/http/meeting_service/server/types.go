@@ -289,12 +289,8 @@ type UpdatePastMeetingParticipantRequestBody struct {
 // UpdatePastMeetingSummaryRequestBody is the type of the "Meeting Service"
 // service "update-past-meeting-summary" endpoint HTTP request body.
 type UpdatePastMeetingSummaryRequestBody struct {
-	// Edited summary overview
-	EditedOverview *string `form:"edited_overview,omitempty" json:"edited_overview,omitempty" xml:"edited_overview,omitempty"`
-	// Edited structured summary details
-	EditedDetails []*SummaryDetailRequestBody `form:"edited_details,omitempty" json:"edited_details,omitempty" xml:"edited_details,omitempty"`
-	// Edited next steps
-	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
+	// User-edited summary content
+	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 	// Whether the summary has been approved
 	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
 }
@@ -2274,26 +2270,12 @@ type SummaryDataResponseBody struct {
 	EndTime string `form:"end_time" json:"end_time" xml:"end_time"`
 	// Summary title
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
-	// Summary overview
-	Overview *string `form:"overview,omitempty" json:"overview,omitempty" xml:"overview,omitempty"`
-	// Next steps from the meeting
-	NextSteps []string `form:"next_steps,omitempty" json:"next_steps,omitempty" xml:"next_steps,omitempty"`
-	// Structured summary details
-	Details []*SummaryDetailResponseBody `form:"details,omitempty" json:"details,omitempty" xml:"details,omitempty"`
-	// Edited summary overview
-	EditedOverview *string `form:"edited_overview,omitempty" json:"edited_overview,omitempty" xml:"edited_overview,omitempty"`
-	// Edited structured summary details
-	EditedDetails []*SummaryDetailResponseBody `form:"edited_details,omitempty" json:"edited_details,omitempty" xml:"edited_details,omitempty"`
-	// Edited next steps
-	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
-}
-
-// SummaryDetailResponseBody is used to define fields on response body types.
-type SummaryDetailResponseBody struct {
-	// Summary label
-	Label string `form:"label" json:"label" xml:"label"`
-	// Summary content
-	Summary string `form:"summary" json:"summary" xml:"summary"`
+	// The main AI-generated summary content
+	Content *string `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
+	// URL to the full summary document
+	DocURL *string `form:"doc_url,omitempty" json:"doc_url,omitempty" xml:"doc_url,omitempty"`
+	// User-edited summary content
+	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -2395,14 +2377,6 @@ type SessionRequestBody struct {
 	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
 	// The end time of the session (may be null if session is ongoing)
 	EndTime *string `form:"end_time,omitempty" json:"end_time,omitempty" xml:"end_time,omitempty"`
-}
-
-// SummaryDetailRequestBody is used to define fields on request body types.
-type SummaryDetailRequestBody struct {
-	// Summary label
-	Label *string `form:"label,omitempty" json:"label,omitempty" xml:"label,omitempty"`
-	// Summary content
-	Summary *string `form:"summary,omitempty" json:"summary,omitempty" xml:"summary,omitempty"`
 }
 
 // NewGetMeetingsResponseBody builds the HTTP response body from the result of
@@ -4530,20 +4504,8 @@ func NewGetPastMeetingSummaryPayload(pastMeetingUID string, summaryUID string, v
 // update-past-meeting-summary endpoint payload.
 func NewUpdatePastMeetingSummaryPayload(body *UpdatePastMeetingSummaryRequestBody, pastMeetingUID string, summaryUID string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdatePastMeetingSummaryPayload {
 	v := &meetingservice.UpdatePastMeetingSummaryPayload{
-		EditedOverview: body.EditedOverview,
-		Approved:       body.Approved,
-	}
-	if body.EditedDetails != nil {
-		v.EditedDetails = make([]*meetingservice.SummaryDetail, len(body.EditedDetails))
-		for i, val := range body.EditedDetails {
-			v.EditedDetails[i] = unmarshalSummaryDetailRequestBodyToMeetingserviceSummaryDetail(val)
-		}
-	}
-	if body.EditedNextSteps != nil {
-		v.EditedNextSteps = make([]string, len(body.EditedNextSteps))
-		for i, val := range body.EditedNextSteps {
-			v.EditedNextSteps[i] = val
-		}
+		EditedContent: body.EditedContent,
+		Approved:      body.Approved,
 	}
 	v.PastMeetingUID = pastMeetingUID
 	v.SummaryUID = summaryUID
@@ -5002,19 +4964,6 @@ func ValidateUpdatePastMeetingParticipantRequestBody(body *UpdatePastMeetingPart
 	return
 }
 
-// ValidateUpdatePastMeetingSummaryRequestBody runs the validations defined on
-// Update-Past-Meeting-SummaryRequestBody
-func ValidateUpdatePastMeetingSummaryRequestBody(body *UpdatePastMeetingSummaryRequestBody) (err error) {
-	for _, e := range body.EditedDetails {
-		if e != nil {
-			if err2 := ValidateSummaryDetailRequestBody(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	return
-}
-
 // ValidateRecurrenceRequestBody runs the validations defined on
 // RecurrenceRequestBody
 func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
@@ -5123,18 +5072,6 @@ func ValidateSessionRequestBody(body *SessionRequestBody) (err error) {
 	}
 	if body.EndTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.end_time", *body.EndTime, goa.FormatDateTime))
-	}
-	return
-}
-
-// ValidateSummaryDetailRequestBody runs the validations defined on
-// SummaryDetailRequestBody
-func ValidateSummaryDetailRequestBody(body *SummaryDetailRequestBody) (err error) {
-	if body.Label == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("label", "body"))
-	}
-	if body.Summary == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("summary", "body"))
 	}
 	return
 }

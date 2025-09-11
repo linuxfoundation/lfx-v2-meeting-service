@@ -420,23 +420,8 @@ func ConvertUpdatePastMeetingSummaryPayloadToDomain(payload *meetingservice.Upda
 	// Set SummaryData with only the editable fields
 	summaryData := models.SummaryData{}
 
-	if payload.EditedOverview != nil {
-		summaryData.EditedOverview = *payload.EditedOverview
-	}
-
-	if payload.EditedDetails != nil {
-		editedDetails := make([]models.SummaryDetail, len(payload.EditedDetails))
-		for i, detail := range payload.EditedDetails {
-			editedDetails[i] = models.SummaryDetail{
-				Label:   detail.Label,
-				Summary: detail.Summary,
-			}
-		}
-		summaryData.EditedDetails = editedDetails
-	}
-
-	if payload.EditedNextSteps != nil {
-		summaryData.EditedNextSteps = payload.EditedNextSteps
+	if payload.EditedContent != nil {
+		summaryData.EditedContent = *payload.EditedContent
 	}
 
 	summary.SummaryData = summaryData

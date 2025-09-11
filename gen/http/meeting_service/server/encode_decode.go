@@ -3243,10 +3243,6 @@ func DecodeUpdatePastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
-		err = ValidateUpdatePastMeetingSummaryRequestBody(&body)
-		if err != nil {
-			return nil, err
-		}
 
 		var (
 			pastMeetingUID string
@@ -3829,65 +3825,12 @@ func marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomCo
 // *meetingservice.SummaryData.
 func marshalMeetingserviceSummaryDataToSummaryDataResponseBody(v *meetingservice.SummaryData) *SummaryDataResponseBody {
 	res := &SummaryDataResponseBody{
-		StartTime:      v.StartTime,
-		EndTime:        v.EndTime,
-		Title:          v.Title,
-		Overview:       v.Overview,
-		EditedOverview: v.EditedOverview,
-	}
-	if v.NextSteps != nil {
-		res.NextSteps = make([]string, len(v.NextSteps))
-		for i, val := range v.NextSteps {
-			res.NextSteps[i] = val
-		}
-	}
-	if v.Details != nil {
-		res.Details = make([]*SummaryDetailResponseBody, len(v.Details))
-		for i, val := range v.Details {
-			res.Details[i] = marshalMeetingserviceSummaryDetailToSummaryDetailResponseBody(val)
-		}
-	}
-	if v.EditedDetails != nil {
-		res.EditedDetails = make([]*SummaryDetailResponseBody, len(v.EditedDetails))
-		for i, val := range v.EditedDetails {
-			res.EditedDetails[i] = marshalMeetingserviceSummaryDetailToSummaryDetailResponseBody(val)
-		}
-	}
-	if v.EditedNextSteps != nil {
-		res.EditedNextSteps = make([]string, len(v.EditedNextSteps))
-		for i, val := range v.EditedNextSteps {
-			res.EditedNextSteps[i] = val
-		}
-	}
-
-	return res
-}
-
-// marshalMeetingserviceSummaryDetailToSummaryDetailResponseBody builds a value
-// of type *SummaryDetailResponseBody from a value of type
-// *meetingservice.SummaryDetail.
-func marshalMeetingserviceSummaryDetailToSummaryDetailResponseBody(v *meetingservice.SummaryDetail) *SummaryDetailResponseBody {
-	if v == nil {
-		return nil
-	}
-	res := &SummaryDetailResponseBody{
-		Label:   v.Label,
-		Summary: v.Summary,
-	}
-
-	return res
-}
-
-// unmarshalSummaryDetailRequestBodyToMeetingserviceSummaryDetail builds a
-// value of type *meetingservice.SummaryDetail from a value of type
-// *SummaryDetailRequestBody.
-func unmarshalSummaryDetailRequestBodyToMeetingserviceSummaryDetail(v *SummaryDetailRequestBody) *meetingservice.SummaryDetail {
-	if v == nil {
-		return nil
-	}
-	res := &meetingservice.SummaryDetail{
-		Label:   *v.Label,
-		Summary: *v.Summary,
+		StartTime:     v.StartTime,
+		EndTime:       v.EndTime,
+		Title:         v.Title,
+		Content:       v.Content,
+		DocURL:        v.DocURL,
+		EditedContent: v.EditedContent,
 	}
 
 	return res

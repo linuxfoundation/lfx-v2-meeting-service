@@ -1117,15 +1117,12 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 			MeetingUUID: payload.Object.MeetingUUID,
 		},
 		SummaryData: models.SummaryData{
-			StartTime:       payload.Object.SummaryStartTime,
-			EndTime:         payload.Object.SummaryEndTime,
-			Title:           payload.Object.SummaryTitle,
-			Overview:        payload.Object.SummaryOverview,
-			NextSteps:       payload.Object.NextSteps,
-			Details:         payload.Object.SummaryDetails,
-			EditedOverview:  "",
-			EditedDetails:   []models.SummaryDetail{}, // Empty slice
-			EditedNextSteps: []string{},
+			StartTime:     payload.Object.SummaryStartTime,
+			EndTime:       payload.Object.SummaryEndTime,
+			Title:         payload.Object.SummaryTitle,
+			Content:       payload.Object.SummaryContent,
+			DocURL:        payload.Object.SummaryDocURL,
+			EditedContent: "", // Empty until user edits
 		},
 		RequiresApproval: pastMeeting.ZoomConfig.AISummaryRequireApproval,
 		Approved:         false, // Default to false until manually approved
