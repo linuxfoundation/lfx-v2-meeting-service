@@ -1501,3 +1501,50 @@ func BuildGetPastMeetingSummariesPayload(meetingServiceGetPastMeetingSummariesUI
 
 	return v, nil
 }
+
+// BuildGetPastMeetingSummaryPayload builds the payload for the Meeting Service
+// get-past-meeting-summary endpoint from CLI flags.
+func BuildGetPastMeetingSummaryPayload(meetingServiceGetPastMeetingSummaryPastMeetingUID string, meetingServiceGetPastMeetingSummarySummaryUID string, meetingServiceGetPastMeetingSummaryVersion string, meetingServiceGetPastMeetingSummaryBearerToken string) (*meetingservice.GetPastMeetingSummaryPayload, error) {
+	var err error
+	var pastMeetingUID string
+	{
+		pastMeetingUID = meetingServiceGetPastMeetingSummaryPastMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("past_meeting_uid", pastMeetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var summaryUID string
+	{
+		summaryUID = meetingServiceGetPastMeetingSummarySummaryUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("summary_uid", summaryUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceGetPastMeetingSummaryVersion != "" {
+			version = &meetingServiceGetPastMeetingSummaryVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetPastMeetingSummaryBearerToken != "" {
+			bearerToken = &meetingServiceGetPastMeetingSummaryBearerToken
+		}
+	}
+	v := &meetingservice.GetPastMeetingSummaryPayload{}
+	v.PastMeetingUID = pastMeetingUID
+	v.SummaryUID = summaryUID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}

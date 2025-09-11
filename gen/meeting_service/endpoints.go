@@ -40,6 +40,7 @@ type Endpoints struct {
 	UpdatePastMeetingParticipant goa.Endpoint
 	DeletePastMeetingParticipant goa.Endpoint
 	GetPastMeetingSummaries      goa.Endpoint
+	GetPastMeetingSummary        goa.Endpoint
 	Readyz                       goa.Endpoint
 	Livez                        goa.Endpoint
 }
@@ -74,6 +75,7 @@ func NewEndpoints(s Service) *Endpoints {
 		UpdatePastMeetingParticipant: NewUpdatePastMeetingParticipantEndpoint(s, a.JWTAuth),
 		DeletePastMeetingParticipant: NewDeletePastMeetingParticipantEndpoint(s, a.JWTAuth),
 		GetPastMeetingSummaries:      NewGetPastMeetingSummariesEndpoint(s, a.JWTAuth),
+		GetPastMeetingSummary:        NewGetPastMeetingSummaryEndpoint(s, a.JWTAuth),
 		Readyz:                       NewReadyzEndpoint(s),
 		Livez:                        NewLivezEndpoint(s),
 	}
@@ -106,6 +108,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UpdatePastMeetingParticipant = m(e.UpdatePastMeetingParticipant)
 	e.DeletePastMeetingParticipant = m(e.DeletePastMeetingParticipant)
 	e.GetPastMeetingSummaries = m(e.GetPastMeetingSummaries)
+	e.GetPastMeetingSummary = m(e.GetPastMeetingSummary)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
 }
@@ -649,6 +652,29 @@ func NewGetPastMeetingSummariesEndpoint(s Service, authJWTFn security.AuthJWTFun
 			return nil, err
 		}
 		return s.GetPastMeetingSummaries(ctx, p)
+	}
+}
+
+// NewGetPastMeetingSummaryEndpoint returns an endpoint function that calls the
+// method "get-past-meeting-summary" of service "Meeting Service".
+func NewGetPastMeetingSummaryEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetPastMeetingSummaryPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetPastMeetingSummary(ctx, p)
 	}
 }
 

@@ -762,6 +762,35 @@ type GetPastMeetingSummariesResponseBody struct {
 	Summaries []*PastMeetingSummaryResponseBody `form:"summaries,omitempty" json:"summaries,omitempty" xml:"summaries,omitempty"`
 }
 
+// GetPastMeetingSummaryResponseBody is the type of the "Meeting Service"
+// service "get-past-meeting-summary" endpoint HTTP response body.
+type GetPastMeetingSummaryResponseBody struct {
+	// Unique identifier for the summary
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// UID of the associated past meeting
+	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
+	// UID of the original meeting
+	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
+	// Meeting platform
+	Platform *string `form:"platform,omitempty" json:"platform,omitempty" xml:"platform,omitempty"`
+	// Password for accessing the summary (if required)
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
+	// Zoom-specific configuration
+	ZoomConfig *PastMeetingSummaryZoomConfigResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+	// The actual summary content
+	SummaryData *SummaryDataResponseBody `form:"summary_data,omitempty" json:"summary_data,omitempty" xml:"summary_data,omitempty"`
+	// Whether the summary requires approval
+	RequiresApproval *bool `form:"requires_approval,omitempty" json:"requires_approval,omitempty" xml:"requires_approval,omitempty"`
+	// Whether the summary has been approved
+	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
+	// Whether summary email has been sent
+	EmailSent *bool `form:"email_sent,omitempty" json:"email_sent,omitempty" xml:"email_sent,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -1656,6 +1685,36 @@ type GetPastMeetingSummariesNotFoundResponseBody struct {
 // "Meeting Service" service "get-past-meeting-summaries" endpoint HTTP
 // response body for the "ServiceUnavailable" error.
 type GetPastMeetingSummariesServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetPastMeetingSummaryInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-summary" endpoint HTTP response
+// body for the "InternalServerError" error.
+type GetPastMeetingSummaryInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetPastMeetingSummaryNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-past-meeting-summary" endpoint HTTP response body for
+// the "NotFound" error.
+type GetPastMeetingSummaryNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetPastMeetingSummaryServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-summary" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type GetPastMeetingSummaryServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -4063,6 +4122,63 @@ func NewGetPastMeetingSummariesServiceUnavailable(body *GetPastMeetingSummariesS
 	return v
 }
 
+// NewGetPastMeetingSummaryResultOK builds a "Meeting Service" service
+// "get-past-meeting-summary" endpoint result from a HTTP "OK" response.
+func NewGetPastMeetingSummaryResultOK(body *GetPastMeetingSummaryResponseBody, etag *string) *meetingservice.GetPastMeetingSummaryResult {
+	v := &meetingservice.GetPastMeetingSummaryResult{
+		UID:              *body.UID,
+		PastMeetingUID:   *body.PastMeetingUID,
+		MeetingUID:       *body.MeetingUID,
+		Platform:         *body.Platform,
+		Password:         body.Password,
+		RequiresApproval: *body.RequiresApproval,
+		Approved:         *body.Approved,
+		EmailSent:        *body.EmailSent,
+		CreatedAt:        *body.CreatedAt,
+		UpdatedAt:        *body.UpdatedAt,
+	}
+	if body.ZoomConfig != nil {
+		v.ZoomConfig = unmarshalPastMeetingSummaryZoomConfigResponseBodyToMeetingservicePastMeetingSummaryZoomConfig(body.ZoomConfig)
+	}
+	v.SummaryData = unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(body.SummaryData)
+	v.Etag = etag
+
+	return v
+}
+
+// NewGetPastMeetingSummaryInternalServerError builds a Meeting Service service
+// get-past-meeting-summary endpoint InternalServerError error.
+func NewGetPastMeetingSummaryInternalServerError(body *GetPastMeetingSummaryInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetPastMeetingSummaryNotFound builds a Meeting Service service
+// get-past-meeting-summary endpoint NotFound error.
+func NewGetPastMeetingSummaryNotFound(body *GetPastMeetingSummaryNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetPastMeetingSummaryServiceUnavailable builds a Meeting Service service
+// get-past-meeting-summary endpoint ServiceUnavailable error.
+func NewGetPastMeetingSummaryServiceUnavailable(body *GetPastMeetingSummaryServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewReadyzServiceUnavailable builds a Meeting Service service readyz endpoint
 // ServiceUnavailable error.
 func NewReadyzServiceUnavailable(body *ReadyzServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
@@ -5061,6 +5177,67 @@ func ValidateGetPastMeetingSummariesResponseBody(body *GetPastMeetingSummariesRe
 				err = goa.MergeErrors(err, err2)
 			}
 		}
+	}
+	return
+}
+
+// ValidateGetPastMeetingSummaryResponseBody runs the validations defined on
+// Get-Past-Meeting-SummaryResponseBody
+func ValidateGetPastMeetingSummaryResponseBody(body *GetPastMeetingSummaryResponseBody) (err error) {
+	if body.UID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
+	}
+	if body.PastMeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
+	}
+	if body.MeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
+	}
+	if body.Platform == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("platform", "body"))
+	}
+	if body.SummaryData == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("summary_data", "body"))
+	}
+	if body.RequiresApproval == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("requires_approval", "body"))
+	}
+	if body.Approved == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("approved", "body"))
+	}
+	if body.EmailSent == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("email_sent", "body"))
+	}
+	if body.CreatedAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("created_at", "body"))
+	}
+	if body.UpdatedAt == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("updated_at", "body"))
+	}
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
+	}
+	if body.PastMeetingUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", *body.PastMeetingUID, goa.FormatUUID))
+	}
+	if body.MeetingUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
+	}
+	if body.Platform != nil {
+		if !(*body.Platform == "Zoom" || *body.Platform == "Teams" || *body.Platform == "Webex") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.platform", *body.Platform, []any{"Zoom", "Teams", "Webex"}))
+		}
+	}
+	if body.SummaryData != nil {
+		if err2 := ValidateSummaryDataResponseBody(body.SummaryData); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.CreatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
+	}
+	if body.UpdatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	return
 }
@@ -6163,6 +6340,44 @@ func ValidateGetPastMeetingSummariesNotFoundResponseBody(body *GetPastMeetingSum
 // validations defined on
 // get-past-meeting-summaries_ServiceUnavailable_response_body
 func ValidateGetPastMeetingSummariesServiceUnavailableResponseBody(body *GetPastMeetingSummariesServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetPastMeetingSummaryInternalServerErrorResponseBody runs the
+// validations defined on
+// get-past-meeting-summary_InternalServerError_response_body
+func ValidateGetPastMeetingSummaryInternalServerErrorResponseBody(body *GetPastMeetingSummaryInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetPastMeetingSummaryNotFoundResponseBody runs the validations
+// defined on get-past-meeting-summary_NotFound_response_body
+func ValidateGetPastMeetingSummaryNotFoundResponseBody(body *GetPastMeetingSummaryNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetPastMeetingSummaryServiceUnavailableResponseBody runs the
+// validations defined on
+// get-past-meeting-summary_ServiceUnavailable_response_body
+func ValidateGetPastMeetingSummaryServiceUnavailableResponseBody(body *GetPastMeetingSummaryServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

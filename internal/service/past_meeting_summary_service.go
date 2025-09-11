@@ -6,12 +6,14 @@ package service
 import (
 	"context"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 // PastMeetingSummaryService implements the business logic for past meeting summaries.
@@ -108,24 +110,38 @@ func (s *PastMeetingSummaryService) CreateSummary(
 	return summary, nil
 }
 
-// GetSummary retrieves a summary by UID.
-func (s *PastMeetingSummaryService) GetSummary(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, error) {
+// GetSummary retrieves a summary by UID with ETag support.
+func (s *PastMeetingSummaryService) GetSummary(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, "", domain.ErrServiceUnavailable
 	}
 
-	summary, err := s.PastMeetingSummaryRepository.Get(ctx, summaryUID)
+	if summaryUID == "" {
+		slog.WarnContext(ctx, "summary UID is required")
+		return nil, "", domain.ErrValidationFailed
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("summary_uid", summaryUID))
+
+	// Get the summary with revision
+	summary, revision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, summaryUID)
 	if err != nil {
 		if err == domain.ErrPastMeetingSummaryNotFound {
 			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
-			return nil, err
+			return nil, "", err
 		}
-		slog.ErrorContext(ctx, "error getting summary", logging.ErrKey, err, "summary_uid", summaryUID)
-		return nil, domain.ErrInternal
+		slog.ErrorContext(ctx, "error getting summary with revision", logging.ErrKey, err, "summary_uid", summaryUID)
+		return nil, "", domain.ErrInternal
 	}
 
-	return summary, nil
+	// Convert revision to string for ETag
+	revisionStr := strconv.FormatUint(revision, 10)
+	ctx = context.WithValue(ctx, constants.ETagContextID, revisionStr)
+
+	slog.DebugContext(ctx, "returning summary", "summary_uid", summary.UID, "revision", revision)
+
+	return summary, revisionStr, nil
 }
 
 // GetSummaryByPastMeetingUID retrieves a summary by past meeting UID.

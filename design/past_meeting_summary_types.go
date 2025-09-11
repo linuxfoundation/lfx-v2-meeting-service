@@ -7,6 +7,22 @@ import (
 	. "goa.design/goa/v3/dsl" //nolint:staticcheck // ST1001: the recommended way of using the goa DSL package is with the . import
 )
 
+// SummaryUIDAttribute is the DSL attribute for the summary UID.
+func SummaryUIDAttribute() {
+	Attribute("summary_uid", String, "The unique identifier of the summary", func() {
+		Example("456e7890-e89b-12d3-a456-426614174000")
+		Format(FormatUUID)
+	})
+}
+
+// PastMeetingSummaryPastMeetingUIDAttribute is the DSL attribute for the past meeting UID in the context of summaries.
+func PastMeetingSummaryPastMeetingUIDAttribute() {
+	Attribute("past_meeting_uid", String, "The unique identifier of the past meeting", func() {
+		Example("123e4567-e89b-12d3-a456-426614174000")
+		Format(FormatUUID)
+	})
+}
+
 // PastMeetingSummaryZoomConfig represents Zoom-specific configuration for a past meeting summary
 var PastMeetingSummaryZoomConfig = Type("PastMeetingSummaryZoomConfig", func() {
 	Description("Zoom-specific configuration for a past meeting summary")

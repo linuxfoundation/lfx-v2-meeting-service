@@ -113,6 +113,10 @@ type Client struct {
 	// get-past-meeting-summaries endpoint.
 	GetPastMeetingSummariesDoer goahttp.Doer
 
+	// GetPastMeetingSummary Doer is the HTTP client used to make requests to the
+	// get-past-meeting-summary endpoint.
+	GetPastMeetingSummaryDoer goahttp.Doer
+
 	// Readyz Doer is the HTTP client used to make requests to the readyz endpoint.
 	ReadyzDoer goahttp.Doer
 
@@ -164,6 +168,7 @@ func NewClient(
 		UpdatePastMeetingParticipantDoer: doer,
 		DeletePastMeetingParticipantDoer: doer,
 		GetPastMeetingSummariesDoer:      doer,
+		GetPastMeetingSummaryDoer:        doer,
 		ReadyzDoer:                       doer,
 		LivezDoer:                        doer,
 		RestoreResponseBody:              restoreBody,
@@ -745,6 +750,30 @@ func (c *Client) GetPastMeetingSummaries() goa.Endpoint {
 		resp, err := c.GetPastMeetingSummariesDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "get-past-meeting-summaries", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetPastMeetingSummary returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-past-meeting-summary server.
+func (c *Client) GetPastMeetingSummary() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetPastMeetingSummaryRequest(c.encoder)
+		decodeResponse = DecodeGetPastMeetingSummaryResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetPastMeetingSummaryRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetPastMeetingSummaryDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-past-meeting-summary", err)
 		}
 		return decodeResponse(resp)
 	}

@@ -69,6 +69,8 @@ type Service interface {
 	DeletePastMeetingParticipant(context.Context, *DeletePastMeetingParticipantPayload) (err error)
 	// Get all summaries for a past meeting
 	GetPastMeetingSummaries(context.Context, *GetPastMeetingSummariesPayload) (res *GetPastMeetingSummariesResult, err error)
+	// Get a specific summary for a past meeting
+	GetPastMeetingSummary(context.Context, *GetPastMeetingSummaryPayload) (res *GetPastMeetingSummaryResult, err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -95,7 +97,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [26]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "readyz", "livez"}
+var MethodNames = [27]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -550,6 +552,50 @@ type GetPastMeetingSummariesResult struct {
 	Summaries []*PastMeetingSummary
 	// Cache control header
 	CacheControl *string
+}
+
+// GetPastMeetingSummaryPayload is the payload type of the Meeting Service
+// service get-past-meeting-summary method.
+type GetPastMeetingSummaryPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	PastMeetingUID string
+	// The unique identifier of the summary
+	SummaryUID string
+}
+
+// GetPastMeetingSummaryResult is the result type of the Meeting Service
+// service get-past-meeting-summary method.
+type GetPastMeetingSummaryResult struct {
+	// ETag header value
+	Etag *string
+	// Unique identifier for the summary
+	UID string
+	// UID of the associated past meeting
+	PastMeetingUID string
+	// UID of the original meeting
+	MeetingUID string
+	// Meeting platform
+	Platform string
+	// Password for accessing the summary (if required)
+	Password *string
+	// Zoom-specific configuration
+	ZoomConfig *PastMeetingSummaryZoomConfig
+	// The actual summary content
+	SummaryData *SummaryData
+	// Whether the summary requires approval
+	RequiresApproval bool
+	// Whether the summary has been approved
+	Approved bool
+	// Whether summary email has been sent
+	EmailSent bool
+	// The date and time the resource was created
+	CreatedAt string
+	// The date and time the resource was last updated
+	UpdatedAt string
 }
 
 // GetPastMeetingsPayload is the payload type of the Meeting Service service

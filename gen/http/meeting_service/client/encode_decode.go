@@ -3691,6 +3691,153 @@ func DecodeGetPastMeetingSummariesResponse(decoder func(*http.Response) goahttp.
 	}
 }
 
+// BuildGetPastMeetingSummaryRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "get-past-meeting-summary" endpoint
+func (c *Client) BuildGetPastMeetingSummaryRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		pastMeetingUID string
+		summaryUID     string
+	)
+	{
+		p, ok := v.(*meetingservice.GetPastMeetingSummaryPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-summary", "*meetingservice.GetPastMeetingSummaryPayload", v)
+		}
+		pastMeetingUID = p.PastMeetingUID
+		summaryUID = p.SummaryUID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetPastMeetingSummaryMeetingServicePath(pastMeetingUID, summaryUID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-past-meeting-summary", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetPastMeetingSummaryRequest returns an encoder for requests sent to
+// the Meeting Service get-past-meeting-summary server.
+func EncodeGetPastMeetingSummaryRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetPastMeetingSummaryPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-summary", "*meetingservice.GetPastMeetingSummaryPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetPastMeetingSummaryResponse returns a decoder for responses returned
+// by the Meeting Service get-past-meeting-summary endpoint. restoreBody
+// controls whether the response body should be restored after having been read.
+// DecodeGetPastMeetingSummaryResponse may return the following errors:
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetPastMeetingSummaryResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetPastMeetingSummaryResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			err = ValidateGetPastMeetingSummaryResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			var (
+				etag *string
+			)
+			etagRaw := resp.Header.Get("Etag")
+			if etagRaw != "" {
+				etag = &etagRaw
+			}
+			res := NewGetPastMeetingSummaryResultOK(&body, etag)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetPastMeetingSummaryInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			err = ValidateGetPastMeetingSummaryInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			return nil, NewGetPastMeetingSummaryInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetPastMeetingSummaryNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			err = ValidateGetPastMeetingSummaryNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			return nil, NewGetPastMeetingSummaryNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetPastMeetingSummaryServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			err = ValidateGetPastMeetingSummaryServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summary", err)
+			}
+			return nil, NewGetPastMeetingSummaryServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-past-meeting-summary", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildReadyzRequest instantiates a HTTP request object with method and path
 // set to call the "Meeting Service" service "readyz" endpoint
 func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, error) {

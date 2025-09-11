@@ -922,6 +922,39 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// GET a single past meeting summary endpoint
+	Method("get-past-meeting-summary", func() {
+		Description("Get a specific summary for a past meeting")
+		Security(JWTAuth)
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingSummaryPastMeetingUIDAttribute()
+			SummaryUIDAttribute()
+			Required("past_meeting_uid", "summary_uid")
+		})
+		Result(func() {
+			Extend(PastMeetingSummary)
+			EtagAttribute()
+		})
+		Error("NotFound", NotFoundError, "Past meeting or summary not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+		HTTP(func() {
+			GET("/past_meetings/{past_meeting_uid}/summaries/{summary_uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("summary_uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Header("etag:ETag")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
 		Meta("swagger:generate", "false")

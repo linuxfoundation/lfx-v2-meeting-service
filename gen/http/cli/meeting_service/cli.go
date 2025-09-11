@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|readyz|livez)
 `
 }
 
@@ -182,6 +182,12 @@ func ParseEndpoint(
 		meetingServiceGetPastMeetingSummariesVersionFlag     = meetingServiceGetPastMeetingSummariesFlags.String("version", "", "")
 		meetingServiceGetPastMeetingSummariesBearerTokenFlag = meetingServiceGetPastMeetingSummariesFlags.String("bearer-token", "", "")
 
+		meetingServiceGetPastMeetingSummaryFlags              = flag.NewFlagSet("get-past-meeting-summary", flag.ExitOnError)
+		meetingServiceGetPastMeetingSummaryPastMeetingUIDFlag = meetingServiceGetPastMeetingSummaryFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
+		meetingServiceGetPastMeetingSummarySummaryUIDFlag     = meetingServiceGetPastMeetingSummaryFlags.String("summary-uid", "REQUIRED", "The unique identifier of the summary")
+		meetingServiceGetPastMeetingSummaryVersionFlag        = meetingServiceGetPastMeetingSummaryFlags.String("version", "", "")
+		meetingServiceGetPastMeetingSummaryBearerTokenFlag    = meetingServiceGetPastMeetingSummaryFlags.String("bearer-token", "", "")
+
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
@@ -211,6 +217,7 @@ func ParseEndpoint(
 	meetingServiceUpdatePastMeetingParticipantFlags.Usage = meetingServiceUpdatePastMeetingParticipantUsage
 	meetingServiceDeletePastMeetingParticipantFlags.Usage = meetingServiceDeletePastMeetingParticipantUsage
 	meetingServiceGetPastMeetingSummariesFlags.Usage = meetingServiceGetPastMeetingSummariesUsage
+	meetingServiceGetPastMeetingSummaryFlags.Usage = meetingServiceGetPastMeetingSummaryUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -320,6 +327,9 @@ func ParseEndpoint(
 			case "get-past-meeting-summaries":
 				epf = meetingServiceGetPastMeetingSummariesFlags
 
+			case "get-past-meeting-summary":
+				epf = meetingServiceGetPastMeetingSummaryFlags
+
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
@@ -423,6 +433,9 @@ func ParseEndpoint(
 			case "get-past-meeting-summaries":
 				endpoint = c.GetPastMeetingSummaries()
 				data, err = meetingservicec.BuildGetPastMeetingSummariesPayload(*meetingServiceGetPastMeetingSummariesUIDFlag, *meetingServiceGetPastMeetingSummariesVersionFlag, *meetingServiceGetPastMeetingSummariesBearerTokenFlag)
+			case "get-past-meeting-summary":
+				endpoint = c.GetPastMeetingSummary()
+				data, err = meetingservicec.BuildGetPastMeetingSummaryPayload(*meetingServiceGetPastMeetingSummaryPastMeetingUIDFlag, *meetingServiceGetPastMeetingSummarySummaryUIDFlag, *meetingServiceGetPastMeetingSummaryVersionFlag, *meetingServiceGetPastMeetingSummaryBearerTokenFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -470,6 +483,7 @@ COMMAND:
     update-past-meeting-participant: Update an existing participant for a past meeting
     delete-past-meeting-participant: Delete a participant from a past meeting
     get-past-meeting-summaries: Get all summaries for a past meeting
+    get-past-meeting-summary: Get a specific summary for a past meeting
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -1039,6 +1053,20 @@ Get all summaries for a past meeting
 
 Example:
     %[1]s meeting-service get-past-meeting-summaries --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceGetPastMeetingSummaryUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting-summary -past-meeting-uid STRING -summary-uid STRING -version STRING -bearer-token STRING
+
+Get a specific summary for a past meeting
+    -past-meeting-uid STRING: The unique identifier of the past meeting
+    -summary-uid STRING: The unique identifier of the summary
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-past-meeting-summary --past-meeting-uid "123e4567-e89b-12d3-a456-426614174000" --summary-uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
