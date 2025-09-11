@@ -39,6 +39,7 @@ type Endpoints struct {
 	GetPastMeetingParticipant    goa.Endpoint
 	UpdatePastMeetingParticipant goa.Endpoint
 	DeletePastMeetingParticipant goa.Endpoint
+	GetPastMeetingSummaries      goa.Endpoint
 	Readyz                       goa.Endpoint
 	Livez                        goa.Endpoint
 }
@@ -72,6 +73,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetPastMeetingParticipant:    NewGetPastMeetingParticipantEndpoint(s, a.JWTAuth),
 		UpdatePastMeetingParticipant: NewUpdatePastMeetingParticipantEndpoint(s, a.JWTAuth),
 		DeletePastMeetingParticipant: NewDeletePastMeetingParticipantEndpoint(s, a.JWTAuth),
+		GetPastMeetingSummaries:      NewGetPastMeetingSummariesEndpoint(s, a.JWTAuth),
 		Readyz:                       NewReadyzEndpoint(s),
 		Livez:                        NewLivezEndpoint(s),
 	}
@@ -103,6 +105,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetPastMeetingParticipant = m(e.GetPastMeetingParticipant)
 	e.UpdatePastMeetingParticipant = m(e.UpdatePastMeetingParticipant)
 	e.DeletePastMeetingParticipant = m(e.DeletePastMeetingParticipant)
+	e.GetPastMeetingSummaries = m(e.GetPastMeetingSummaries)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
 }
@@ -623,6 +626,29 @@ func NewDeletePastMeetingParticipantEndpoint(s Service, authJWTFn security.AuthJ
 			return nil, err
 		}
 		return nil, s.DeletePastMeetingParticipant(ctx, p)
+	}
+}
+
+// NewGetPastMeetingSummariesEndpoint returns an endpoint function that calls
+// the method "get-past-meeting-summaries" of service "Meeting Service".
+func NewGetPastMeetingSummariesEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetPastMeetingSummariesPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetPastMeetingSummaries(ctx, p)
 	}
 }
 

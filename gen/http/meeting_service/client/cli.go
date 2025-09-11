@@ -1463,3 +1463,41 @@ func BuildDeletePastMeetingParticipantPayload(meetingServiceDeletePastMeetingPar
 
 	return v, nil
 }
+
+// BuildGetPastMeetingSummariesPayload builds the payload for the Meeting
+// Service get-past-meeting-summaries endpoint from CLI flags.
+func BuildGetPastMeetingSummariesPayload(meetingServiceGetPastMeetingSummariesUID string, meetingServiceGetPastMeetingSummariesVersion string, meetingServiceGetPastMeetingSummariesBearerToken string) (*meetingservice.GetPastMeetingSummariesPayload, error) {
+	var err error
+	var uid string
+	{
+		uid = meetingServiceGetPastMeetingSummariesUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceGetPastMeetingSummariesVersion != "" {
+			version = &meetingServiceGetPastMeetingSummariesVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetPastMeetingSummariesBearerToken != "" {
+			bearerToken = &meetingServiceGetPastMeetingSummariesBearerToken
+		}
+	}
+	v := &meetingservice.GetPastMeetingSummariesPayload{}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}

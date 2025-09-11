@@ -3543,6 +3543,154 @@ func DecodeDeletePastMeetingParticipantResponse(decoder func(*http.Response) goa
 	}
 }
 
+// BuildGetPastMeetingSummariesRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "get-past-meeting-summaries" endpoint
+func (c *Client) BuildGetPastMeetingSummariesRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid string
+	)
+	{
+		p, ok := v.(*meetingservice.GetPastMeetingSummariesPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-summaries", "*meetingservice.GetPastMeetingSummariesPayload", v)
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetPastMeetingSummariesMeetingServicePath(uid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-past-meeting-summaries", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetPastMeetingSummariesRequest returns an encoder for requests sent to
+// the Meeting Service get-past-meeting-summaries server.
+func EncodeGetPastMeetingSummariesRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetPastMeetingSummariesPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-summaries", "*meetingservice.GetPastMeetingSummariesPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetPastMeetingSummariesResponse returns a decoder for responses
+// returned by the Meeting Service get-past-meeting-summaries endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeGetPastMeetingSummariesResponse may return the following errors:
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetPastMeetingSummariesResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetPastMeetingSummariesResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			err = ValidateGetPastMeetingSummariesResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			var (
+				cacheControl *string
+			)
+			cacheControlRaw := resp.Header.Get("Cache-Control")
+			if cacheControlRaw != "" {
+				cacheControl = &cacheControlRaw
+			}
+			res := NewGetPastMeetingSummariesResultOK(&body, cacheControl)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetPastMeetingSummariesInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			err = ValidateGetPastMeetingSummariesInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			return nil, NewGetPastMeetingSummariesInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetPastMeetingSummariesNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			err = ValidateGetPastMeetingSummariesNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			return nil, NewGetPastMeetingSummariesNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetPastMeetingSummariesServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			err = ValidateGetPastMeetingSummariesServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-summaries", err)
+			}
+			return nil, NewGetPastMeetingSummariesServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-past-meeting-summaries", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildReadyzRequest instantiates a HTTP request object with method and path
 // set to call the "Meeting Service" service "readyz" endpoint
 func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -4109,6 +4257,73 @@ func unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(v
 		JoinTime:    *v.JoinTime,
 		LeaveTime:   v.LeaveTime,
 		LeaveReason: v.LeaveReason,
+	}
+
+	return res
+}
+
+// unmarshalPastMeetingSummaryResponseBodyToMeetingservicePastMeetingSummary
+// builds a value of type *meetingservice.PastMeetingSummary from a value of
+// type *PastMeetingSummaryResponseBody.
+func unmarshalPastMeetingSummaryResponseBodyToMeetingservicePastMeetingSummary(v *PastMeetingSummaryResponseBody) *meetingservice.PastMeetingSummary {
+	res := &meetingservice.PastMeetingSummary{
+		UID:              *v.UID,
+		PastMeetingUID:   *v.PastMeetingUID,
+		MeetingUID:       *v.MeetingUID,
+		Platform:         *v.Platform,
+		Password:         v.Password,
+		RequiresApproval: *v.RequiresApproval,
+		Approved:         *v.Approved,
+		EmailSent:        *v.EmailSent,
+		CreatedAt:        *v.CreatedAt,
+		UpdatedAt:        *v.UpdatedAt,
+	}
+	if v.ZoomConfig != nil {
+		res.ZoomConfig = unmarshalPastMeetingSummaryZoomConfigResponseBodyToMeetingservicePastMeetingSummaryZoomConfig(v.ZoomConfig)
+	}
+	res.SummaryData = unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(v.SummaryData)
+
+	return res
+}
+
+// unmarshalPastMeetingSummaryZoomConfigResponseBodyToMeetingservicePastMeetingSummaryZoomConfig
+// builds a value of type *meetingservice.PastMeetingSummaryZoomConfig from a
+// value of type *PastMeetingSummaryZoomConfigResponseBody.
+func unmarshalPastMeetingSummaryZoomConfigResponseBodyToMeetingservicePastMeetingSummaryZoomConfig(v *PastMeetingSummaryZoomConfigResponseBody) *meetingservice.PastMeetingSummaryZoomConfig {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.PastMeetingSummaryZoomConfig{
+		MeetingID:   v.MeetingID,
+		MeetingUUID: v.MeetingUUID,
+	}
+
+	return res
+}
+
+// unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData builds a value
+// of type *meetingservice.SummaryData from a value of type
+// *SummaryDataResponseBody.
+func unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(v *SummaryDataResponseBody) *meetingservice.SummaryData {
+	res := &meetingservice.SummaryData{
+		StartTime:      *v.StartTime,
+		EndTime:        *v.EndTime,
+		Title:          v.Title,
+		Overview:       v.Overview,
+		EditedOverview: v.EditedOverview,
+		EditedDetails:  v.EditedDetails,
+	}
+	if v.NextSteps != nil {
+		res.NextSteps = make([]string, len(v.NextSteps))
+		for i, val := range v.NextSteps {
+			res.NextSteps[i] = val
+		}
+	}
+	if v.EditedNextSteps != nil {
+		res.EditedNextSteps = make([]string, len(v.EditedNextSteps))
+		for i, val := range v.EditedNextSteps {
+			res.EditedNextSteps[i] = val
+		}
 	}
 
 	return res

@@ -17,6 +17,7 @@ import (
 // PastMeetingSummaryService implements the business logic for past meeting summaries.
 type PastMeetingSummaryService struct {
 	PastMeetingSummaryRepository domain.PastMeetingSummaryRepository
+	PastMeetingRepository        domain.PastMeetingRepository
 	MessageBuilder               domain.MessageBuilder
 	ServiceConfig                ServiceConfig
 }
@@ -24,11 +25,13 @@ type PastMeetingSummaryService struct {
 // NewPastMeetingSummaryService creates a new PastMeetingSummaryService.
 func NewPastMeetingSummaryService(
 	pastMeetingSummaryRepository domain.PastMeetingSummaryRepository,
+	pastMeetingRepository domain.PastMeetingRepository,
 	messageBuilder domain.MessageBuilder,
 	serviceConfig ServiceConfig,
 ) *PastMeetingSummaryService {
 	return &PastMeetingSummaryService{
 		PastMeetingSummaryRepository: pastMeetingSummaryRepository,
+		PastMeetingRepository:        pastMeetingRepository,
 		MessageBuilder:               messageBuilder,
 		ServiceConfig:                serviceConfig,
 	}
@@ -44,6 +47,17 @@ func (s *PastMeetingSummaryService) ListSummariesByPastMeeting(ctx context.Conte
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.ErrServiceUnavailable
+	}
+
+	// Validate that the past meeting exists
+	_, err := s.PastMeetingRepository.Get(ctx, pastMeetingUID)
+	if err != nil {
+		if err == domain.ErrPastMeetingNotFound {
+			slog.WarnContext(ctx, "past meeting not found", "past_meeting_uid", pastMeetingUID)
+			return nil, domain.ErrPastMeetingNotFound
+		}
+		slog.ErrorContext(ctx, "error checking past meeting existence", logging.ErrKey, err, "past_meeting_uid", pastMeetingUID)
+		return nil, domain.ErrInternal
 	}
 
 	summaries, err := s.PastMeetingSummaryRepository.ListByPastMeeting(ctx, pastMeetingUID)

@@ -515,3 +515,66 @@ func ConvertDomainToPastMeetingParticipantResponse(domainParticipant *models.Pas
 
 	return participant
 }
+
+// ConvertDomainToPastMeetingSummaryResponse converts a domain past meeting summary model to an API response
+func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummary) *meetingservice.PastMeetingSummary {
+	if summary == nil {
+		return nil
+	}
+
+	result := &meetingservice.PastMeetingSummary{
+		UID:              summary.UID,
+		PastMeetingUID:   summary.PastMeetingUID,
+		MeetingUID:       summary.MeetingUID,
+		Platform:         summary.Platform,
+		RequiresApproval: summary.RequiresApproval,
+		Approved:         summary.Approved,
+		EmailSent:        summary.EmailSent,
+		CreatedAt:        summary.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:        summary.UpdatedAt.Format(time.RFC3339),
+	}
+
+	// Set optional password field
+	if summary.Password != "" {
+		result.Password = utils.StringPtr(summary.Password)
+	}
+
+	// Convert Zoom config if present
+	if summary.ZoomConfig != nil {
+		result.ZoomConfig = &meetingservice.PastMeetingSummaryZoomConfig{}
+		if summary.ZoomConfig.MeetingID != "" {
+			result.ZoomConfig.MeetingID = utils.StringPtr(summary.ZoomConfig.MeetingID)
+		}
+		if summary.ZoomConfig.UUID != "" {
+			result.ZoomConfig.MeetingUUID = utils.StringPtr(summary.ZoomConfig.UUID)
+		}
+	}
+
+	// Convert summary data
+	result.SummaryData = &meetingservice.SummaryData{
+		StartTime: summary.SummaryData.StartTime.Format(time.RFC3339),
+		EndTime:   summary.SummaryData.EndTime.Format(time.RFC3339),
+	}
+
+	// Set optional summary data fields
+	if summary.SummaryData.Title != "" {
+		result.SummaryData.Title = utils.StringPtr(summary.SummaryData.Title)
+	}
+	if summary.SummaryData.Overview != "" {
+		result.SummaryData.Overview = utils.StringPtr(summary.SummaryData.Overview)
+	}
+	if len(summary.SummaryData.NextSteps) > 0 {
+		result.SummaryData.NextSteps = summary.SummaryData.NextSteps
+	}
+	if summary.SummaryData.EditedOverview != "" {
+		result.SummaryData.EditedOverview = utils.StringPtr(summary.SummaryData.EditedOverview)
+	}
+	if summary.SummaryData.EditedDetails != "" {
+		result.SummaryData.EditedDetails = utils.StringPtr(summary.SummaryData.EditedDetails)
+	}
+	if len(summary.SummaryData.EditedNextSteps) > 0 {
+		result.SummaryData.EditedNextSteps = summary.SummaryData.EditedNextSteps
+	}
+
+	return result
+}

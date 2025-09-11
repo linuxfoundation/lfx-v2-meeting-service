@@ -43,6 +43,7 @@ type Server struct {
 	GetPastMeetingParticipant    http.Handler
 	UpdatePastMeetingParticipant http.Handler
 	DeletePastMeetingParticipant http.Handler
+	GetPastMeetingSummaries      http.Handler
 	Readyz                       http.Handler
 	Livez                        http.Handler
 	GenHTTPOpenapiJSON           http.Handler
@@ -121,6 +122,7 @@ func New(
 			{"GetPastMeetingParticipant", "GET", "/past_meetings/{past_meeting_uid}/participants/{uid}"},
 			{"UpdatePastMeetingParticipant", "PUT", "/past_meetings/{past_meeting_uid}/participants/{uid}"},
 			{"DeletePastMeetingParticipant", "DELETE", "/past_meetings/{past_meeting_uid}/participants/{uid}"},
+			{"GetPastMeetingSummaries", "GET", "/past_meetings/{uid}/summaries"},
 			{"Readyz", "GET", "/readyz"},
 			{"Livez", "GET", "/livez"},
 			{"Serve gen/http/openapi.json", "GET", "/_meetings/openapi.json"},
@@ -151,6 +153,7 @@ func New(
 		GetPastMeetingParticipant:    NewGetPastMeetingParticipantHandler(e.GetPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
 		UpdatePastMeetingParticipant: NewUpdatePastMeetingParticipantHandler(e.UpdatePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
 		DeletePastMeetingParticipant: NewDeletePastMeetingParticipantHandler(e.DeletePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		GetPastMeetingSummaries:      NewGetPastMeetingSummariesHandler(e.GetPastMeetingSummaries, mux, decoder, encoder, errhandler, formatter),
 		Readyz:                       NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
 		Livez:                        NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
 		GenHTTPOpenapiJSON:           http.FileServer(fileSystemGenHTTPOpenapiJSON),
@@ -188,6 +191,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.GetPastMeetingParticipant = m(s.GetPastMeetingParticipant)
 	s.UpdatePastMeetingParticipant = m(s.UpdatePastMeetingParticipant)
 	s.DeletePastMeetingParticipant = m(s.DeletePastMeetingParticipant)
+	s.GetPastMeetingSummaries = m(s.GetPastMeetingSummaries)
 	s.Readyz = m(s.Readyz)
 	s.Livez = m(s.Livez)
 }
@@ -220,6 +224,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetPastMeetingParticipantHandler(mux, h.GetPastMeetingParticipant)
 	MountUpdatePastMeetingParticipantHandler(mux, h.UpdatePastMeetingParticipant)
 	MountDeletePastMeetingParticipantHandler(mux, h.DeletePastMeetingParticipant)
+	MountGetPastMeetingSummariesHandler(mux, h.GetPastMeetingSummaries)
 	MountReadyzHandler(mux, h.Readyz)
 	MountLivezHandler(mux, h.Livez)
 	MountGenHTTPOpenapiJSON(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapiJSON))
@@ -1401,6 +1406,58 @@ func NewDeletePastMeetingParticipantHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "delete-past-meeting-participant")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetPastMeetingSummariesHandler configures the mux to serve the "Meeting
+// Service" service "get-past-meeting-summaries" endpoint.
+func MountGetPastMeetingSummariesHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/past_meetings/{uid}/summaries", f)
+}
+
+// NewGetPastMeetingSummariesHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "get-past-meeting-summaries" endpoint.
+func NewGetPastMeetingSummariesHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetPastMeetingSummariesRequest(mux, decoder)
+		encodeResponse = EncodeGetPastMeetingSummariesResponse(encoder)
+		encodeError    = EncodeGetPastMeetingSummariesError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-past-meeting-summaries")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

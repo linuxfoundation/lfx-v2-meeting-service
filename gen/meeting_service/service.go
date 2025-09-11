@@ -67,6 +67,8 @@ type Service interface {
 	UpdatePastMeetingParticipant(context.Context, *UpdatePastMeetingParticipantPayload) (res *PastMeetingParticipant, err error)
 	// Delete a participant from a past meeting
 	DeletePastMeetingParticipant(context.Context, *DeletePastMeetingParticipantPayload) (err error)
+	// Get all summaries for a past meeting
+	GetPastMeetingSummaries(context.Context, *GetPastMeetingSummariesPayload) (res *GetPastMeetingSummariesResult, err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -93,7 +95,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [25]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "readyz", "livez"}
+var MethodNames = [26]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -530,6 +532,26 @@ type GetPastMeetingResult struct {
 	Etag *string
 }
 
+// GetPastMeetingSummariesPayload is the payload type of the Meeting Service
+// service get-past-meeting-summaries method.
+type GetPastMeetingSummariesPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	UID *string
+}
+
+// GetPastMeetingSummariesResult is the result type of the Meeting Service
+// service get-past-meeting-summaries method.
+type GetPastMeetingSummariesResult struct {
+	// Past meeting summaries
+	Summaries []*PastMeetingSummary
+	// Cache control header
+	CacheControl *string
+}
+
 // GetPastMeetingsPayload is the payload type of the Meeting Service service
 // get-past-meetings method.
 type GetPastMeetingsPayload struct {
@@ -870,6 +892,42 @@ type PastMeetingParticipant struct {
 	UpdatedAt *string
 }
 
+// AI-generated summary for a past meeting occurrence
+type PastMeetingSummary struct {
+	// Unique identifier for the summary
+	UID string
+	// UID of the associated past meeting
+	PastMeetingUID string
+	// UID of the original meeting
+	MeetingUID string
+	// Meeting platform
+	Platform string
+	// Password for accessing the summary (if required)
+	Password *string
+	// Zoom-specific configuration
+	ZoomConfig *PastMeetingSummaryZoomConfig
+	// The actual summary content
+	SummaryData *SummaryData
+	// Whether the summary requires approval
+	RequiresApproval bool
+	// Whether the summary has been approved
+	Approved bool
+	// Whether summary email has been sent
+	EmailSent bool
+	// The date and time the resource was created
+	CreatedAt string
+	// The date and time the resource was last updated
+	UpdatedAt string
+}
+
+// Zoom-specific configuration for a past meeting summary
+type PastMeetingSummaryZoomConfig struct {
+	// Zoom meeting ID
+	MeetingID *string
+	// Zoom meeting UUID
+	MeetingUUID *string
+}
+
 // Meeting recurrence object
 type Recurrence struct {
 	// The recurrence type
@@ -988,6 +1046,26 @@ type Session struct {
 	StartTime string
 	// The end time of the session (may be null if session is ongoing)
 	EndTime *string
+}
+
+// AI-generated summary content for a past meeting
+type SummaryData struct {
+	// Summary start time
+	StartTime string
+	// Summary end time
+	EndTime string
+	// Summary title
+	Title *string
+	// Summary overview
+	Overview *string
+	// Next steps from the meeting
+	NextSteps []string
+	// Edited summary overview
+	EditedOverview *string
+	// Edited summary details
+	EditedDetails *string
+	// Edited next steps
+	EditedNextSteps []string
 }
 
 type UnauthorizedError struct {

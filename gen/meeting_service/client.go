@@ -38,12 +38,13 @@ type Client struct {
 	GetPastMeetingParticipantEndpoint    goa.Endpoint
 	UpdatePastMeetingParticipantEndpoint goa.Endpoint
 	DeletePastMeetingParticipantEndpoint goa.Endpoint
+	GetPastMeetingSummariesEndpoint      goa.Endpoint
 	ReadyzEndpoint                       goa.Endpoint
 	LivezEndpoint                        goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                  getMeetings,
 		CreateMeetingEndpoint:                createMeeting,
@@ -68,6 +69,7 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		GetPastMeetingParticipantEndpoint:    getPastMeetingParticipant,
 		UpdatePastMeetingParticipantEndpoint: updatePastMeetingParticipant,
 		DeletePastMeetingParticipantEndpoint: deletePastMeetingParticipant,
+		GetPastMeetingSummariesEndpoint:      getPastMeetingSummaries,
 		ReadyzEndpoint:                       readyz,
 		LivezEndpoint:                        livez,
 	}
@@ -441,6 +443,22 @@ func (c *Client) UpdatePastMeetingParticipant(ctx context.Context, p *UpdatePast
 func (c *Client) DeletePastMeetingParticipant(ctx context.Context, p *DeletePastMeetingParticipantPayload) (err error) {
 	_, err = c.DeletePastMeetingParticipantEndpoint(ctx, p)
 	return
+}
+
+// GetPastMeetingSummaries calls the "get-past-meeting-summaries" endpoint of
+// the "Meeting Service" service.
+// GetPastMeetingSummaries may return the following errors:
+//   - "NotFound" (type *NotFoundError): Past meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetPastMeetingSummaries(ctx context.Context, p *GetPastMeetingSummariesPayload) (res *GetPastMeetingSummariesResult, err error) {
+	var ires any
+	ires, err = c.GetPastMeetingSummariesEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*GetPastMeetingSummariesResult), nil
 }
 
 // Readyz calls the "readyz" endpoint of the "Meeting Service" service.

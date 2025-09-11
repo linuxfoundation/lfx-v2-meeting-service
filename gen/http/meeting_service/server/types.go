@@ -755,6 +755,13 @@ type UpdatePastMeetingParticipantResponseBody struct {
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
+// GetPastMeetingSummariesResponseBody is the type of the "Meeting Service"
+// service "get-past-meeting-summaries" endpoint HTTP response body.
+type GetPastMeetingSummariesResponseBody struct {
+	// Past meeting summaries
+	Summaries []*PastMeetingSummaryResponseBody `form:"summaries" json:"summaries" xml:"summaries"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -1625,6 +1632,36 @@ type DeletePastMeetingParticipantServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// GetPastMeetingSummariesInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-summaries" endpoint HTTP
+// response body for the "InternalServerError" error.
+type GetPastMeetingSummariesInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingSummariesNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-past-meeting-summaries" endpoint HTTP response body
+// for the "NotFound" error.
+type GetPastMeetingSummariesNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingSummariesServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-summaries" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetPastMeetingSummariesServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
 // service "readyz" endpoint HTTP response body for the "ServiceUnavailable"
 // error.
@@ -2073,6 +2110,64 @@ type ParticipantSessionResponseBody struct {
 	LeaveTime *string `form:"leave_time,omitempty" json:"leave_time,omitempty" xml:"leave_time,omitempty"`
 	// Reason provided by the meeting platform for leaving
 	LeaveReason *string `form:"leave_reason,omitempty" json:"leave_reason,omitempty" xml:"leave_reason,omitempty"`
+}
+
+// PastMeetingSummaryResponseBody is used to define fields on response body
+// types.
+type PastMeetingSummaryResponseBody struct {
+	// Unique identifier for the summary
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// UID of the associated past meeting
+	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
+	// UID of the original meeting
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
+	// Meeting platform
+	Platform string `form:"platform" json:"platform" xml:"platform"`
+	// Password for accessing the summary (if required)
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
+	// Zoom-specific configuration
+	ZoomConfig *PastMeetingSummaryZoomConfigResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+	// The actual summary content
+	SummaryData *SummaryDataResponseBody `form:"summary_data" json:"summary_data" xml:"summary_data"`
+	// Whether the summary requires approval
+	RequiresApproval bool `form:"requires_approval" json:"requires_approval" xml:"requires_approval"`
+	// Whether the summary has been approved
+	Approved bool `form:"approved" json:"approved" xml:"approved"`
+	// Whether summary email has been sent
+	EmailSent bool `form:"email_sent" json:"email_sent" xml:"email_sent"`
+	// The date and time the resource was created
+	CreatedAt string `form:"created_at" json:"created_at" xml:"created_at"`
+	// The date and time the resource was last updated
+	UpdatedAt string `form:"updated_at" json:"updated_at" xml:"updated_at"`
+}
+
+// PastMeetingSummaryZoomConfigResponseBody is used to define fields on
+// response body types.
+type PastMeetingSummaryZoomConfigResponseBody struct {
+	// Zoom meeting ID
+	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Zoom meeting UUID
+	MeetingUUID *string `form:"meeting_uuid,omitempty" json:"meeting_uuid,omitempty" xml:"meeting_uuid,omitempty"`
+}
+
+// SummaryDataResponseBody is used to define fields on response body types.
+type SummaryDataResponseBody struct {
+	// Summary start time
+	StartTime string `form:"start_time" json:"start_time" xml:"start_time"`
+	// Summary end time
+	EndTime string `form:"end_time" json:"end_time" xml:"end_time"`
+	// Summary title
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// Summary overview
+	Overview *string `form:"overview,omitempty" json:"overview,omitempty" xml:"overview,omitempty"`
+	// Next steps from the meeting
+	NextSteps []string `form:"next_steps,omitempty" json:"next_steps,omitempty" xml:"next_steps,omitempty"`
+	// Edited summary overview
+	EditedOverview *string `form:"edited_overview,omitempty" json:"edited_overview,omitempty" xml:"edited_overview,omitempty"`
+	// Edited summary details
+	EditedDetails *string `form:"edited_details,omitempty" json:"edited_details,omitempty" xml:"edited_details,omitempty"`
+	// Edited next steps
+	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -2720,6 +2815,22 @@ func NewUpdatePastMeetingParticipantResponseBody(res *meetingservice.PastMeeting
 		for i, val := range res.Sessions {
 			body.Sessions[i] = marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(val)
 		}
+	}
+	return body
+}
+
+// NewGetPastMeetingSummariesResponseBody builds the HTTP response body from
+// the result of the "get-past-meeting-summaries" endpoint of the "Meeting
+// Service" service.
+func NewGetPastMeetingSummariesResponseBody(res *meetingservice.GetPastMeetingSummariesResult) *GetPastMeetingSummariesResponseBody {
+	body := &GetPastMeetingSummariesResponseBody{}
+	if res.Summaries != nil {
+		body.Summaries = make([]*PastMeetingSummaryResponseBody, len(res.Summaries))
+		for i, val := range res.Summaries {
+			body.Summaries[i] = marshalMeetingservicePastMeetingSummaryToPastMeetingSummaryResponseBody(val)
+		}
+	} else {
+		body.Summaries = []*PastMeetingSummaryResponseBody{}
 	}
 	return body
 }
@@ -3672,6 +3783,39 @@ func NewDeletePastMeetingParticipantServiceUnavailableResponseBody(res *meetings
 	return body
 }
 
+// NewGetPastMeetingSummariesInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-summaries" endpoint
+// of the "Meeting Service" service.
+func NewGetPastMeetingSummariesInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetPastMeetingSummariesInternalServerErrorResponseBody {
+	body := &GetPastMeetingSummariesInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingSummariesNotFoundResponseBody builds the HTTP response body
+// from the result of the "get-past-meeting-summaries" endpoint of the "Meeting
+// Service" service.
+func NewGetPastMeetingSummariesNotFoundResponseBody(res *meetingservice.NotFoundError) *GetPastMeetingSummariesNotFoundResponseBody {
+	body := &GetPastMeetingSummariesNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingSummariesServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-summaries" endpoint
+// of the "Meeting Service" service.
+func NewGetPastMeetingSummariesServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetPastMeetingSummariesServiceUnavailableResponseBody {
+	body := &GetPastMeetingSummariesServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewReadyzServiceUnavailableResponseBody builds the HTTP response body from
 // the result of the "readyz" endpoint of the "Meeting Service" service.
 func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *ReadyzServiceUnavailableResponseBody {
@@ -4094,6 +4238,17 @@ func NewDeletePastMeetingParticipantPayload(pastMeetingUID string, uid string, v
 	v.Version = version
 	v.BearerToken = bearerToken
 	v.IfMatch = ifMatch
+
+	return v
+}
+
+// NewGetPastMeetingSummariesPayload builds a Meeting Service service
+// get-past-meeting-summaries endpoint payload.
+func NewGetPastMeetingSummariesPayload(uid string, version *string, bearerToken *string) *meetingservice.GetPastMeetingSummariesPayload {
+	v := &meetingservice.GetPastMeetingSummariesPayload{}
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
 
 	return v
 }

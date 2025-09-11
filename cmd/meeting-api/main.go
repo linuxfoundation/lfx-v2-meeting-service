@@ -108,6 +108,7 @@ func main() {
 	)
 	pastMeetingSummaryService := service.NewPastMeetingSummaryService(
 		repos.PastMeetingSummary,
+		repos.PastMeeting,
 		messageBuilder,
 		serviceConfig,
 	)
@@ -150,6 +151,7 @@ func main() {
 		registrantService,
 		pastMeetingService,
 		pastMeetingParticipantService,
+		pastMeetingSummaryService,
 		zoomWebhookHandler,
 		meetingHandler,
 		committeeHandler,

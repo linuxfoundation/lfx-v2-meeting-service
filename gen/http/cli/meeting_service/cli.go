@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|readyz|livez)
 `
 }
 
@@ -177,6 +177,11 @@ func ParseEndpoint(
 		meetingServiceDeletePastMeetingParticipantBearerTokenFlag    = meetingServiceDeletePastMeetingParticipantFlags.String("bearer-token", "", "")
 		meetingServiceDeletePastMeetingParticipantIfMatchFlag        = meetingServiceDeletePastMeetingParticipantFlags.String("if-match", "", "")
 
+		meetingServiceGetPastMeetingSummariesFlags           = flag.NewFlagSet("get-past-meeting-summaries", flag.ExitOnError)
+		meetingServiceGetPastMeetingSummariesUIDFlag         = meetingServiceGetPastMeetingSummariesFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
+		meetingServiceGetPastMeetingSummariesVersionFlag     = meetingServiceGetPastMeetingSummariesFlags.String("version", "", "")
+		meetingServiceGetPastMeetingSummariesBearerTokenFlag = meetingServiceGetPastMeetingSummariesFlags.String("bearer-token", "", "")
+
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
@@ -205,6 +210,7 @@ func ParseEndpoint(
 	meetingServiceGetPastMeetingParticipantFlags.Usage = meetingServiceGetPastMeetingParticipantUsage
 	meetingServiceUpdatePastMeetingParticipantFlags.Usage = meetingServiceUpdatePastMeetingParticipantUsage
 	meetingServiceDeletePastMeetingParticipantFlags.Usage = meetingServiceDeletePastMeetingParticipantUsage
+	meetingServiceGetPastMeetingSummariesFlags.Usage = meetingServiceGetPastMeetingSummariesUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -311,6 +317,9 @@ func ParseEndpoint(
 			case "delete-past-meeting-participant":
 				epf = meetingServiceDeletePastMeetingParticipantFlags
 
+			case "get-past-meeting-summaries":
+				epf = meetingServiceGetPastMeetingSummariesFlags
+
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
@@ -411,6 +420,9 @@ func ParseEndpoint(
 			case "delete-past-meeting-participant":
 				endpoint = c.DeletePastMeetingParticipant()
 				data, err = meetingservicec.BuildDeletePastMeetingParticipantPayload(*meetingServiceDeletePastMeetingParticipantPastMeetingUIDFlag, *meetingServiceDeletePastMeetingParticipantUIDFlag, *meetingServiceDeletePastMeetingParticipantVersionFlag, *meetingServiceDeletePastMeetingParticipantBearerTokenFlag, *meetingServiceDeletePastMeetingParticipantIfMatchFlag)
+			case "get-past-meeting-summaries":
+				endpoint = c.GetPastMeetingSummaries()
+				data, err = meetingservicec.BuildGetPastMeetingSummariesPayload(*meetingServiceGetPastMeetingSummariesUIDFlag, *meetingServiceGetPastMeetingSummariesVersionFlag, *meetingServiceGetPastMeetingSummariesBearerTokenFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -457,6 +469,7 @@ COMMAND:
     get-past-meeting-participant: Get a specific participant for a past meeting by UID
     update-past-meeting-participant: Update an existing participant for a past meeting
     delete-past-meeting-participant: Delete a participant from a past meeting
+    get-past-meeting-summaries: Get all summaries for a past meeting
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -1013,6 +1026,19 @@ Delete a participant from a past meeting
 
 Example:
     %[1]s meeting-service delete-past-meeting-participant --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+`, os.Args[0])
+}
+
+func meetingServiceGetPastMeetingSummariesUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting-summaries -uid STRING -version STRING -bearer-token STRING
+
+Get all summaries for a past meeting
+    -uid STRING: The unique identifier of the past meeting
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-past-meeting-summaries --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 

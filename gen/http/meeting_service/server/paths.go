@@ -126,6 +126,11 @@ func DeletePastMeetingParticipantMeetingServicePath(pastMeetingUID string, uid s
 	return fmt.Sprintf("/past_meetings/%v/participants/%v", pastMeetingUID, uid)
 }
 
+// GetPastMeetingSummariesMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-summaries HTTP endpoint.
+func GetPastMeetingSummariesMeetingServicePath(uid string) string {
+	return fmt.Sprintf("/past_meetings/%v/summaries", uid)
+}
+
 // ReadyzMeetingServicePath returns the URL path to the Meeting Service service readyz HTTP endpoint.
 func ReadyzMeetingServicePath() string {
 	return "/readyz"

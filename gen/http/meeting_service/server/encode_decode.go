@@ -2983,6 +2983,119 @@ func EncodeDeletePastMeetingParticipantError(encoder func(context.Context, http.
 	}
 }
 
+// EncodeGetPastMeetingSummariesResponse returns an encoder for responses
+// returned by the Meeting Service get-past-meeting-summaries endpoint.
+func EncodeGetPastMeetingSummariesResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*meetingservice.GetPastMeetingSummariesResult)
+		enc := encoder(ctx, w)
+		body := NewGetPastMeetingSummariesResponseBody(res)
+		if res.CacheControl != nil {
+			w.Header().Set("Cache-Control", *res.CacheControl)
+		}
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetPastMeetingSummariesRequest returns a decoder for requests sent to
+// the Meeting Service get-past-meeting-summaries endpoint.
+func DecodeGetPastMeetingSummariesRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			uid         string
+			version     *string
+			bearerToken *string
+			err         error
+
+			params = mux.Vars(r)
+		)
+		uid = params["uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		versionRaw := r.URL.Query().Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetPastMeetingSummariesPayload(uid, version, bearerToken)
+		if payload.BearerToken != nil {
+			if strings.Contains(*payload.BearerToken, " ") {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeGetPastMeetingSummariesError returns an encoder for errors returned by
+// the get-past-meeting-summaries Meeting Service endpoint.
+func EncodeGetPastMeetingSummariesError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetPastMeetingSummariesInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetPastMeetingSummariesNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetPastMeetingSummariesServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeReadyzResponse returns an encoder for responses returned by the
 // Meeting Service readyz endpoint.
 func EncodeReadyzResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
@@ -3399,6 +3512,75 @@ func marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(v *
 		JoinTime:    v.JoinTime,
 		LeaveTime:   v.LeaveTime,
 		LeaveReason: v.LeaveReason,
+	}
+
+	return res
+}
+
+// marshalMeetingservicePastMeetingSummaryToPastMeetingSummaryResponseBody
+// builds a value of type *PastMeetingSummaryResponseBody from a value of type
+// *meetingservice.PastMeetingSummary.
+func marshalMeetingservicePastMeetingSummaryToPastMeetingSummaryResponseBody(v *meetingservice.PastMeetingSummary) *PastMeetingSummaryResponseBody {
+	res := &PastMeetingSummaryResponseBody{
+		UID:              v.UID,
+		PastMeetingUID:   v.PastMeetingUID,
+		MeetingUID:       v.MeetingUID,
+		Platform:         v.Platform,
+		Password:         v.Password,
+		RequiresApproval: v.RequiresApproval,
+		Approved:         v.Approved,
+		EmailSent:        v.EmailSent,
+		CreatedAt:        v.CreatedAt,
+		UpdatedAt:        v.UpdatedAt,
+	}
+	if v.ZoomConfig != nil {
+		res.ZoomConfig = marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody(v.ZoomConfig)
+	}
+	if v.SummaryData != nil {
+		res.SummaryData = marshalMeetingserviceSummaryDataToSummaryDataResponseBody(v.SummaryData)
+	}
+
+	return res
+}
+
+// marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody
+// builds a value of type *PastMeetingSummaryZoomConfigResponseBody from a
+// value of type *meetingservice.PastMeetingSummaryZoomConfig.
+func marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody(v *meetingservice.PastMeetingSummaryZoomConfig) *PastMeetingSummaryZoomConfigResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &PastMeetingSummaryZoomConfigResponseBody{
+		MeetingID:   v.MeetingID,
+		MeetingUUID: v.MeetingUUID,
+	}
+
+	return res
+}
+
+// marshalMeetingserviceSummaryDataToSummaryDataResponseBody builds a value of
+// type *SummaryDataResponseBody from a value of type
+// *meetingservice.SummaryData.
+func marshalMeetingserviceSummaryDataToSummaryDataResponseBody(v *meetingservice.SummaryData) *SummaryDataResponseBody {
+	res := &SummaryDataResponseBody{
+		StartTime:      v.StartTime,
+		EndTime:        v.EndTime,
+		Title:          v.Title,
+		Overview:       v.Overview,
+		EditedOverview: v.EditedOverview,
+		EditedDetails:  v.EditedDetails,
+	}
+	if v.NextSteps != nil {
+		res.NextSteps = make([]string, len(v.NextSteps))
+		for i, val := range v.NextSteps {
+			res.NextSteps[i] = val
+		}
+	}
+	if v.EditedNextSteps != nil {
+		res.EditedNextSteps = make([]string, len(v.EditedNextSteps))
+		for i, val := range v.EditedNextSteps {
+			res.EditedNextSteps[i] = val
+		}
 	}
 
 	return res

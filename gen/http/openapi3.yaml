@@ -58,7 +58,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 200
+                                      duration: 22
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -68,13 +68,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -86,13 +86,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -104,13 +104,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -127,21 +127,21 @@ paths:
                                       public_link: http://mcdermott.info/fermin_shanahan
                                       recording_enabled: false
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       registrant_response_accepted_count: 6472152244165966278
                                       registrant_response_declined_count: 6527186480651577770
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Cumque eum.
-                                      title: Praesentium cumque velit recusandae voluptatem.
+                                      timezone: Eum modi in minus et.
+                                      title: Recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
@@ -168,7 +168,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 200
+                                      duration: 22
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -178,13 +178,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -196,13 +196,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -214,13 +214,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -237,21 +237,21 @@ paths:
                                       public_link: http://mcdermott.info/fermin_shanahan
                                       recording_enabled: false
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       registrant_response_accepted_count: 6472152244165966278
                                       registrant_response_declined_count: 6527186480651577770
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Cumque eum.
-                                      title: Praesentium cumque velit recusandae voluptatem.
+                                      timezone: Eum modi in minus et.
+                                      title: Recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
@@ -278,7 +278,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 200
+                                      duration: 22
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -288,13 +288,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -306,13 +306,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -324,13 +324,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -347,21 +347,21 @@ paths:
                                       public_link: http://mcdermott.info/fermin_shanahan
                                       recording_enabled: false
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       registrant_response_accepted_count: 6472152244165966278
                                       registrant_response_declined_count: 6527186480651577770
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Cumque eum.
-                                      title: Praesentium cumque velit recusandae voluptatem.
+                                      timezone: Eum modi in minus et.
+                                      title: Recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
@@ -388,7 +388,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 200
+                                      duration: 22
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -398,13 +398,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -416,13 +416,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -434,13 +434,13 @@ paths:
                                           is_cancelled: true
                                           occurrence_id: "1640995200"
                                           recurrence:
-                                            end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_date_time: "2003-06-23T10:57:09Z"
+                                            end_times: 898253545535169898
+                                            monthly_day: 21
+                                            monthly_week: 2
+                                            monthly_week_day: 3
+                                            repeat_interval: 6262370327954619118
+                                            type: 1
                                             weekly_days: 1,3,5
                                           registrant_count: 2349221354295471536
                                           response_count_no: 1699484973781406020
@@ -457,21 +457,21 @@ paths:
                                       public_link: http://mcdermott.info/fermin_shanahan
                                       recording_enabled: false
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       registrant_response_accepted_count: 6472152244165966278
                                       registrant_response_declined_count: 6527186480651577770
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Cumque eum.
-                                      title: Praesentium cumque velit recusandae voluptatem.
+                                      timezone: Eum modi in minus et.
+                                      title: Recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       updated_at: "2021-01-01T00:00:00Z"
@@ -621,13 +621,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -639,13 +639,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -657,13 +657,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -675,13 +675,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -698,13 +698,13 @@ paths:
                                 public_link: http://romagueraspinka.org/abe
                                 recording_enabled: false
                                 recurrence:
-                                    end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_date_time: "2003-06-23T10:57:09Z"
+                                    end_times: 898253545535169898
+                                    monthly_day: 21
+                                    monthly_week: 2
+                                    monthly_week_day: 3
+                                    repeat_interval: 6262370327954619118
+                                    type: 1
                                     weekly_days: 1,3,5
                                 registrant_count: 1334969469549675694
                                 registrant_response_accepted_count: 4847660993249269833
@@ -1363,13 +1363,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -1381,13 +1381,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -1400,13 +1400,13 @@ paths:
                                 public_link: http://gibson.com/jaunita
                                 recording_enabled: false
                                 recurrence:
-                                    end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_date_time: "2003-06-23T10:57:09Z"
+                                    end_times: 898253545535169898
+                                    monthly_day: 21
+                                    monthly_week: 2
+                                    monthly_week_day: 3
+                                    repeat_interval: 6262370327954619118
+                                    type: 1
                                     weekly_days: 1,3,5
                                 registrant_count: 4658033088367030994
                                 registrant_response_accepted_count: 1805676557411018715
@@ -1572,13 +1572,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -1590,13 +1590,13 @@ paths:
                                       is_cancelled: true
                                       occurrence_id: "1640995200"
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       registrant_count: 2349221354295471536
                                       response_count_no: 1699484973781406020
@@ -1609,13 +1609,13 @@ paths:
                                 public_link: http://hintz.biz/stuart
                                 recording_enabled: false
                                 recurrence:
-                                    end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_date_time: "2003-06-23T10:57:09Z"
+                                    end_times: 898253545535169898
+                                    monthly_day: 21
+                                    monthly_week: 2
+                                    monthly_week_day: 3
+                                    repeat_interval: 6262370327954619118
+                                    type: 1
                                     weekly_days: 1,3,5
                                 registrant_count: 4475915779356481425
                                 registrant_response_accepted_count: 192667369266000398
@@ -2126,13 +2126,13 @@ paths:
                                       public_link: http://goldner.info/amber.effertz
                                       recording_enabled: true
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       restricted: false
                                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -2183,13 +2183,13 @@ paths:
                                       public_link: http://goldner.info/amber.effertz
                                       recording_enabled: true
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       restricted: false
                                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -2240,13 +2240,13 @@ paths:
                                       public_link: http://goldner.info/amber.effertz
                                       recording_enabled: true
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       restricted: false
                                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -2297,13 +2297,13 @@ paths:
                                       public_link: http://goldner.info/amber.effertz
                                       recording_enabled: true
                                       recurrence:
-                                        end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_date_time: "2003-06-23T10:57:09Z"
+                                        end_times: 898253545535169898
+                                        monthly_day: 21
+                                        monthly_week: 2
+                                        monthly_week_day: 3
+                                        repeat_interval: 6262370327954619118
+                                        type: 1
                                         weekly_days: 1,3,5
                                       restricted: false
                                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -2482,13 +2482,13 @@ paths:
                                 public_link: http://runolfsdottirhalvorson.com/ceasar
                                 recording_enabled: false
                                 recurrence:
-                                    end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_date_time: "2003-06-23T10:57:09Z"
+                                    end_times: 898253545535169898
+                                    monthly_day: 21
+                                    monthly_week: 2
+                                    monthly_week_day: 3
+                                    repeat_interval: 6262370327954619118
+                                    type: 1
                                     weekly_days: 1,3,5
                                 restricted: false
                                 scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -3053,13 +3053,13 @@ paths:
                                 public_link: http://goldner.info/amber.effertz
                                 recording_enabled: true
                                 recurrence:
-                                    end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_date_time: "2003-06-23T10:57:09Z"
+                                    end_times: 898253545535169898
+                                    monthly_day: 21
+                                    monthly_week: 2
+                                    monthly_week_day: 3
+                                    repeat_interval: 6262370327954619118
+                                    type: 1
                                     weekly_days: 1,3,5
                                 restricted: false
                                 scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -3378,6 +3378,181 @@ paths:
                                 message: The service is unavailable.
             security:
                 - jwt_header_Authorization: []
+    /past_meetings/{uid}/summaries:
+        get:
+            tags:
+                - Meeting Service
+            summary: get-past-meeting-summaries Meeting Service
+            description: Get all summaries for a past meeting
+            operationId: Meeting Service#get-past-meeting-summaries
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: uid
+                  in: path
+                  description: The unique identifier of the past meeting
+                  required: true
+                  schema:
+                    type: string
+                    description: The unique identifier of the past meeting
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
+                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            responses:
+                "200":
+                    description: OK response.
+                    headers:
+                        Cache-Control:
+                            description: Cache control header
+                            schema:
+                                type: string
+                                description: Cache control header
+                                example: public, max-age=300
+                            example: public, max-age=300
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPastMeetingSummariesResponseBody'
+                            example:
+                                summaries:
+                                    - approved: true
+                                      created_at: "2021-01-01T00:00:00Z"
+                                      email_sent: true
+                                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                                      password: abc123
+                                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                                      platform: Zoom
+                                      requires_approval: false
+                                      summary_data:
+                                        edited_details: Additional context and clarifications
+                                        edited_next_steps:
+                                            - 'Updated: Complete API documentation by Friday'
+                                        edited_overview: Updated discussion notes with action items
+                                        end_time: "2024-01-15T11:00:00Z"
+                                        next_steps:
+                                            - Complete API documentation
+                                            - 'Review PR #123'
+                                        overview: Discussion of sprint progress and blockers
+                                        start_time: "2024-01-15T10:00:00Z"
+                                        title: Weekly Team Standup Meeting
+                                      uid: 123e4567-e89b-12d3-a456-426614174000
+                                      updated_at: "2021-01-01T00:00:00Z"
+                                      zoom_config:
+                                        meeting_id: "85072380123"
+                                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                                    - approved: true
+                                      created_at: "2021-01-01T00:00:00Z"
+                                      email_sent: true
+                                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                                      password: abc123
+                                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                                      platform: Zoom
+                                      requires_approval: false
+                                      summary_data:
+                                        edited_details: Additional context and clarifications
+                                        edited_next_steps:
+                                            - 'Updated: Complete API documentation by Friday'
+                                        edited_overview: Updated discussion notes with action items
+                                        end_time: "2024-01-15T11:00:00Z"
+                                        next_steps:
+                                            - Complete API documentation
+                                            - 'Review PR #123'
+                                        overview: Discussion of sprint progress and blockers
+                                        start_time: "2024-01-15T10:00:00Z"
+                                        title: Weekly Team Standup Meeting
+                                      uid: 123e4567-e89b-12d3-a456-426614174000
+                                      updated_at: "2021-01-01T00:00:00Z"
+                                      zoom_config:
+                                        meeting_id: "85072380123"
+                                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                                    - approved: true
+                                      created_at: "2021-01-01T00:00:00Z"
+                                      email_sent: true
+                                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                                      password: abc123
+                                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                                      platform: Zoom
+                                      requires_approval: false
+                                      summary_data:
+                                        edited_details: Additional context and clarifications
+                                        edited_next_steps:
+                                            - 'Updated: Complete API documentation by Friday'
+                                        edited_overview: Updated discussion notes with action items
+                                        end_time: "2024-01-15T11:00:00Z"
+                                        next_steps:
+                                            - Complete API documentation
+                                            - 'Review PR #123'
+                                        overview: Discussion of sprint progress and blockers
+                                        start_time: "2024-01-15T10:00:00Z"
+                                        title: Weekly Team Standup Meeting
+                                      uid: 123e4567-e89b-12d3-a456-426614174000
+                                      updated_at: "2021-01-01T00:00:00Z"
+                                      zoom_config:
+                                        meeting_id: "85072380123"
+                                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                                    - approved: true
+                                      created_at: "2021-01-01T00:00:00Z"
+                                      email_sent: true
+                                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                                      password: abc123
+                                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                                      platform: Zoom
+                                      requires_approval: false
+                                      summary_data:
+                                        edited_details: Additional context and clarifications
+                                        edited_next_steps:
+                                            - 'Updated: Complete API documentation by Friday'
+                                        edited_overview: Updated discussion notes with action items
+                                        end_time: "2024-01-15T11:00:00Z"
+                                        next_steps:
+                                            - Complete API documentation
+                                            - 'Review PR #123'
+                                        overview: Discussion of sprint progress and blockers
+                                        start_time: "2024-01-15T10:00:00Z"
+                                        title: Weekly Team Standup Meeting
+                                      uid: 123e4567-e89b-12d3-a456-426614174000
+                                      updated_at: "2021-01-01T00:00:00Z"
+                                      zoom_config:
+                                        meeting_id: "85072380123"
+                                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                "404":
+                    description: 'NotFound: Past meeting not found'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
     /webhooks/zoom:
         post:
             tags:
@@ -3393,8 +3568,8 @@ paths:
                   schema:
                     type: string
                     description: HMAC-SHA256 signature of the request body
-                    example: Ut ut enim esse quo est quod.
-                  example: Temporibus est debitis.
+                    example: Aut quas quasi incidunt.
+                  example: Commodi voluptate aut.
                 - name: x-zm-request-timestamp
                   in: header
                   description: Timestamp when the webhook was sent
@@ -3402,8 +3577,8 @@ paths:
                   schema:
                     type: string
                     description: Timestamp when the webhook was sent
-                    example: Ea ab ratione quo quos.
-                  example: Asperiores hic libero velit inventore sapiente.
+                    example: Sunt omnis cumque.
+                  example: Iure hic neque id.
             requestBody:
                 required: true
                 content:
@@ -3728,11 +3903,11 @@ components:
                 org_name:
                     type: string
                     description: User's organization
-                    example: Enim reprehenderit culpa.
+                    example: Ducimus exercitationem.
                 username:
                     type: string
                     description: User's LF ID
-                    example: In aliquam amet quas explicabo incidunt vero.
+                    example: A explicabo et unde.
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
@@ -3741,8 +3916,8 @@ components:
                 job_title: Software Engineer
                 last_name: Doe
                 occurrence_id: "1640995200"
-                org_name: Voluptas natus tempore atque.
-                username: In ducimus ducimus exercitationem molestiae.
+                org_name: Amet omnis odio debitis facilis.
+                username: Sint atque consequatur quasi consequatur voluptatem id.
             required:
                 - email
         CreatePastMeetingParticipantPayload:
@@ -3844,28 +4019,40 @@ components:
                             - Magnam suscipit a qui voluptatem delectus.
                             - Ut ut voluptas voluptates.
                           uid: Commodi laboriosam quasi ut sunt illo.
+                        - allowed_voting_statuses:
+                            - Et eligendi tempore ipsum consequatur ab.
+                            - Et eius.
+                            - Magnam suscipit a qui voluptatem delectus.
+                            - Ut ut voluptas voluptates.
+                          uid: Commodi laboriosam quasi ut sunt illo.
+                        - allowed_voting_statuses:
+                            - Et eligendi tempore ipsum consequatur ab.
+                            - Et eius.
+                            - Magnam suscipit a qui voluptatem delectus.
+                            - Ut ut voluptas voluptates.
+                          uid: Commodi laboriosam quasi ut sunt illo.
                 description:
                     type: string
                     description: The description of the meeting
-                    example: Qui quia.
+                    example: Ut vel non velit et.
                 duration:
                     type: integer
                     description: The duration of the meeting in minutes
-                    example: 44
+                    example: 515
                     format: int64
                     minimum: 0
                     maximum: 600
                 early_join_time_minutes:
                     type: integer
                     description: The number of minutes that users are allowed to join the meeting early without being kicked out
-                    example: 58
+                    example: 29
                     format: int64
                     minimum: 10
                     maximum: 60
                 meeting_type:
                     type: string
                     description: The type of meeting. This is usually dependent on the committee(s) associated with the meeting
-                    example: Other
+                    example: Maintainers
                     enum:
                         - Board
                         - Maintainers
@@ -3901,7 +4088,7 @@ components:
                 public_link:
                     type: string
                     description: The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-                    example: http://vonrodriguez.name/jessika.christiansen
+                    example: http://mccullough.net/german
                     format: uri
                 recording_enabled:
                     type: boolean
@@ -3935,14 +4122,17 @@ components:
                         - end_time: "2021-01-01T11:00:00Z"
                           start_time: "2021-01-01T10:00:00Z"
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                        - end_time: "2021-01-01T11:00:00Z"
+                          start_time: "2021-01-01T10:00:00Z"
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
-                    example: Maiores voluptatum animi ex harum nisi mollitia.
+                    example: Et et qui quia quis quibusdam possimus.
                 title:
                     type: string
                     description: The title of the meeting
-                    example: Ut reprehenderit culpa enim et.
+                    example: Nobis harum enim.
                 transcript_enabled:
                     type: boolean
                     description: Whether transcription is enabled for the meeting
@@ -3957,12 +4147,12 @@ components:
                 youtube_upload_enabled:
                     type: boolean
                     description: Whether automatic youtube uploading is enabled for the meeting
-                    example: true
+                    example: false
                 zoom_config:
                     $ref: '#/components/schemas/ZoomConfigFull'
             description: Payload for creating a new past meeting record
             example:
-                artifact_visibility: meeting_participants
+                artifact_visibility: meeting_hosts
                 committees:
                     - allowed_voting_statuses:
                         - Et eligendi tempore ipsum consequatur ab.
@@ -3976,16 +4166,16 @@ components:
                         - Magnam suscipit a qui voluptatem delectus.
                         - Ut ut voluptas voluptates.
                       uid: Commodi laboriosam quasi ut sunt illo.
-                description: Sint ex et quasi illo.
-                duration: 170
-                early_join_time_minutes: 18
-                meeting_type: Technical
+                description: Perspiciatis qui facilis maiores sit tempora quaerat.
+                duration: 323
+                early_join_time_minutes: 21
+                meeting_type: Other
                 meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 occurrence_id: "1640995200"
                 platform: Zoom
                 platform_meeting_id: "1234567890"
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                public_link: http://krajcik.biz/brenden
+                public_link: http://johnson.name/elfrieda_bailey
                 recording_enabled: false
                 recurrence:
                     end_date_time: "2015-09-30T12:28:08Z"
@@ -4006,11 +4196,17 @@ components:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                timezone: Ipsum cupiditate saepe hic qui.
-                title: Provident illum minima praesentium possimus impedit facilis.
-                transcript_enabled: false
-                visibility: public
-                youtube_upload_enabled: false
+                    - end_time: "2021-01-01T11:00:00Z"
+                      start_time: "2021-01-01T10:00:00Z"
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    - end_time: "2021-01-01T11:00:00Z"
+                      start_time: "2021-01-01T10:00:00Z"
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                timezone: Ex et.
+                title: Illo alias repudiandae iusto est autem aut.
+                transcript_enabled: true
+                visibility: private
+                youtube_upload_enabled: true
                 zoom_config:
                     ai_companion_enabled: true
                     ai_summary_require_approval: true
@@ -4048,7 +4244,7 @@ components:
                 host:
                     type: boolean
                     description: If user should have access as a meeting host
-                    example: true
+                    example: false
                 job_title:
                     type: string
                     description: User's job title
@@ -4067,22 +4263,22 @@ components:
                 org_name:
                     type: string
                     description: User's organization
-                    example: Illo inventore voluptas eum aperiam.
+                    example: Velit quasi a nisi error.
                 username:
                     type: string
                     description: User's LF ID
-                    example: Ex ut iure est nam consequuntur.
+                    example: Ipsa consequatur et animi quo eum beatae.
             description: Payload for creating a new meeting registrant
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
                 first_name: John
-                host: true
+                host: false
                 job_title: Software Engineer
                 last_name: Doe
                 occurrence_id: "1640995200"
-                org_name: Exercitationem veniam accusantium libero dolore.
-                username: Adipisci velit quasi a.
+                org_name: Magni dolorum aut commodi.
+                username: Saepe quasi ut.
             required:
                 - meeting_uid
                 - email
@@ -4092,10 +4288,10 @@ components:
                 join_url:
                     type: string
                     description: The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-                    example: http://larsonvolkman.com/lupe
+                    example: http://hudson.com/daija_beahan
                     format: uri
             example:
-                join_url: http://jaskolski.org/bridie.pollich
+                join_url: http://swift.net/clara.bartoletti
             required:
                 - join_url
         GetMeetingRegistrantsResponseBody:
@@ -4141,42 +4337,8 @@ components:
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
                           username: Voluptatibus laudantium et harum omnis voluptate asperiores.
-                        - avatar_url: https://example.com/avatar.jpg
-                          committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          created_at: "2021-01-01T00:00:00Z"
-                          email: user@example.com
-                          first_name: John
-                          host: true
-                          job_title: Software Engineer
-                          last_name: Doe
-                          meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          occurrence_id: "1640995200"
-                          org_is_member: true
-                          org_is_project_member: true
-                          org_name: Maxime molestias.
-                          type: direct
-                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          updated_at: "2021-01-01T00:00:00Z"
-                          username: Voluptatibus laudantium et harum omnis voluptate asperiores.
             example:
                 registrants:
-                    - avatar_url: https://example.com/avatar.jpg
-                      committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      created_at: "2021-01-01T00:00:00Z"
-                      email: user@example.com
-                      first_name: John
-                      host: true
-                      job_title: Software Engineer
-                      last_name: Doe
-                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      occurrence_id: "1640995200"
-                      org_is_member: true
-                      org_is_project_member: true
-                      org_name: Maxime molestias.
-                      type: direct
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      updated_at: "2021-01-01T00:00:00Z"
-                      username: Voluptatibus laudantium et harum omnis voluptate asperiores.
                     - avatar_url: https://example.com/avatar.jpg
                       committee_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       created_at: "2021-01-01T00:00:00Z"
@@ -4255,7 +4417,7 @@ components:
                               uid: Non et cupiditate a iure vero.
                           created_at: "2021-01-01T00:00:00Z"
                           description: Ut dolore et similique ut quaerat sunt.
-                          duration: 200
+                          duration: 22
                           early_join_time_minutes: 28
                           email_delivery_error_count: 9175101536347037250
                           meeting_type: Marketing
@@ -4265,13 +4427,13 @@ components:
                               is_cancelled: true
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_date_time: "2003-06-23T10:57:09Z"
+                                end_times: 898253545535169898
+                                monthly_day: 21
+                                monthly_week: 2
+                                monthly_week_day: 3
+                                repeat_interval: 6262370327954619118
+                                type: 1
                                 weekly_days: 1,3,5
                               registrant_count: 2349221354295471536
                               response_count_no: 1699484973781406020
@@ -4283,13 +4445,13 @@ components:
                               is_cancelled: true
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_date_time: "2003-06-23T10:57:09Z"
+                                end_times: 898253545535169898
+                                monthly_day: 21
+                                monthly_week: 2
+                                monthly_week_day: 3
+                                repeat_interval: 6262370327954619118
+                                type: 1
                                 weekly_days: 1,3,5
                               registrant_count: 2349221354295471536
                               response_count_no: 1699484973781406020
@@ -4301,13 +4463,13 @@ components:
                               is_cancelled: true
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_date_time: "2003-06-23T10:57:09Z"
+                                end_times: 898253545535169898
+                                monthly_day: 21
+                                monthly_week: 2
+                                monthly_week_day: 3
+                                repeat_interval: 6262370327954619118
+                                type: 1
                                 weekly_days: 1,3,5
                               registrant_count: 2349221354295471536
                               response_count_no: 1699484973781406020
@@ -4324,21 +4486,21 @@ components:
                           public_link: http://mcdermott.info/fermin_shanahan
                           recording_enabled: false
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 6899912874666998650
                           registrant_response_accepted_count: 6472152244165966278
                           registrant_response_declined_count: 6527186480651577770
                           restricted: true
                           start_time: "2021-01-01T00:00:00Z"
-                          timezone: Cumque eum.
-                          title: Praesentium cumque velit recusandae voluptatem.
+                          timezone: Eum modi in minus et.
+                          title: Recusandae voluptatem.
                           transcript_enabled: false
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
@@ -4365,7 +4527,7 @@ components:
                               uid: Non et cupiditate a iure vero.
                           created_at: "2021-01-01T00:00:00Z"
                           description: Ut dolore et similique ut quaerat sunt.
-                          duration: 200
+                          duration: 22
                           early_join_time_minutes: 28
                           email_delivery_error_count: 9175101536347037250
                           meeting_type: Marketing
@@ -4375,13 +4537,13 @@ components:
                               is_cancelled: true
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_date_time: "2003-06-23T10:57:09Z"
+                                end_times: 898253545535169898
+                                monthly_day: 21
+                                monthly_week: 2
+                                monthly_week_day: 3
+                                repeat_interval: 6262370327954619118
+                                type: 1
                                 weekly_days: 1,3,5
                               registrant_count: 2349221354295471536
                               response_count_no: 1699484973781406020
@@ -4393,13 +4555,13 @@ components:
                               is_cancelled: true
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_date_time: "2003-06-23T10:57:09Z"
+                                end_times: 898253545535169898
+                                monthly_day: 21
+                                monthly_week: 2
+                                monthly_week_day: 3
+                                repeat_interval: 6262370327954619118
+                                type: 1
                                 weekly_days: 1,3,5
                               registrant_count: 2349221354295471536
                               response_count_no: 1699484973781406020
@@ -4411,13 +4573,13 @@ components:
                               is_cancelled: true
                               occurrence_id: "1640995200"
                               recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_date_time: "2003-06-23T10:57:09Z"
+                                end_times: 898253545535169898
+                                monthly_day: 21
+                                monthly_week: 2
+                                monthly_week_day: 3
+                                repeat_interval: 6262370327954619118
+                                type: 1
                                 weekly_days: 1,3,5
                               registrant_count: 2349221354295471536
                               response_count_no: 1699484973781406020
@@ -4434,241 +4596,21 @@ components:
                           public_link: http://mcdermott.info/fermin_shanahan
                           recording_enabled: false
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 6899912874666998650
                           registrant_response_accepted_count: 6472152244165966278
                           registrant_response_declined_count: 6527186480651577770
                           restricted: true
                           start_time: "2021-01-01T00:00:00Z"
-                          timezone: Cumque eum.
-                          title: Praesentium cumque velit recusandae voluptatem.
-                          transcript_enabled: false
-                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          updated_at: "2021-01-01T00:00:00Z"
-                          visibility: private
-                          youtube_upload_enabled: true
-                          zoom_config:
-                            ai_companion_enabled: false
-                            ai_summary_require_approval: true
-                            meeting_id: "1234567890"
-                            passcode: "147258"
-                        - artifact_visibility: meeting_participants
-                          committees:
-                            - allowed_voting_statuses:
-                                - Sint et consequatur quod.
-                                - Ipsa esse repellat sunt eveniet.
-                                - Deleniti ea sunt nihil nam nesciunt earum.
-                                - Unde quis voluptate est qui.
-                              uid: Non et cupiditate a iure vero.
-                            - allowed_voting_statuses:
-                                - Sint et consequatur quod.
-                                - Ipsa esse repellat sunt eveniet.
-                                - Deleniti ea sunt nihil nam nesciunt earum.
-                                - Unde quis voluptate est qui.
-                              uid: Non et cupiditate a iure vero.
-                          created_at: "2021-01-01T00:00:00Z"
-                          description: Ut dolore et similique ut quaerat sunt.
-                          duration: 200
-                          early_join_time_minutes: 28
-                          email_delivery_error_count: 9175101536347037250
-                          meeting_type: Marketing
-                          occurrences:
-                            - description: Dolorem maxime nulla quam eaque ipsa.
-                              duration: 7501709844621677873
-                              is_cancelled: true
-                              occurrence_id: "1640995200"
-                              recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
-                                weekly_days: 1,3,5
-                              registrant_count: 2349221354295471536
-                              response_count_no: 1699484973781406020
-                              response_count_yes: 3366683520866107591
-                              start_time: "2021-01-01T10:00:00Z"
-                              title: Suscipit aliquid qui.
-                            - description: Dolorem maxime nulla quam eaque ipsa.
-                              duration: 7501709844621677873
-                              is_cancelled: true
-                              occurrence_id: "1640995200"
-                              recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
-                                weekly_days: 1,3,5
-                              registrant_count: 2349221354295471536
-                              response_count_no: 1699484973781406020
-                              response_count_yes: 3366683520866107591
-                              start_time: "2021-01-01T10:00:00Z"
-                              title: Suscipit aliquid qui.
-                            - description: Dolorem maxime nulla quam eaque ipsa.
-                              duration: 7501709844621677873
-                              is_cancelled: true
-                              occurrence_id: "1640995200"
-                              recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
-                                weekly_days: 1,3,5
-                              registrant_count: 2349221354295471536
-                              response_count_no: 1699484973781406020
-                              response_count_yes: 3366683520866107591
-                              start_time: "2021-01-01T10:00:00Z"
-                              title: Suscipit aliquid qui.
-                          organizers:
-                            - Soluta aut nesciunt quaerat et ut molestias.
-                            - Sit quia quasi dolor facilis exercitationem rem.
-                            - Dolorum sed aspernatur enim doloremque sunt.
-                          password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
-                          platform: Zoom
-                          project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          public_link: http://mcdermott.info/fermin_shanahan
-                          recording_enabled: false
-                          recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
-                            weekly_days: 1,3,5
-                          registrant_count: 6899912874666998650
-                          registrant_response_accepted_count: 6472152244165966278
-                          registrant_response_declined_count: 6527186480651577770
-                          restricted: true
-                          start_time: "2021-01-01T00:00:00Z"
-                          timezone: Cumque eum.
-                          title: Praesentium cumque velit recusandae voluptatem.
-                          transcript_enabled: false
-                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          updated_at: "2021-01-01T00:00:00Z"
-                          visibility: private
-                          youtube_upload_enabled: true
-                          zoom_config:
-                            ai_companion_enabled: false
-                            ai_summary_require_approval: true
-                            meeting_id: "1234567890"
-                            passcode: "147258"
-                        - artifact_visibility: meeting_participants
-                          committees:
-                            - allowed_voting_statuses:
-                                - Sint et consequatur quod.
-                                - Ipsa esse repellat sunt eveniet.
-                                - Deleniti ea sunt nihil nam nesciunt earum.
-                                - Unde quis voluptate est qui.
-                              uid: Non et cupiditate a iure vero.
-                            - allowed_voting_statuses:
-                                - Sint et consequatur quod.
-                                - Ipsa esse repellat sunt eveniet.
-                                - Deleniti ea sunt nihil nam nesciunt earum.
-                                - Unde quis voluptate est qui.
-                              uid: Non et cupiditate a iure vero.
-                          created_at: "2021-01-01T00:00:00Z"
-                          description: Ut dolore et similique ut quaerat sunt.
-                          duration: 200
-                          early_join_time_minutes: 28
-                          email_delivery_error_count: 9175101536347037250
-                          meeting_type: Marketing
-                          occurrences:
-                            - description: Dolorem maxime nulla quam eaque ipsa.
-                              duration: 7501709844621677873
-                              is_cancelled: true
-                              occurrence_id: "1640995200"
-                              recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
-                                weekly_days: 1,3,5
-                              registrant_count: 2349221354295471536
-                              response_count_no: 1699484973781406020
-                              response_count_yes: 3366683520866107591
-                              start_time: "2021-01-01T10:00:00Z"
-                              title: Suscipit aliquid qui.
-                            - description: Dolorem maxime nulla quam eaque ipsa.
-                              duration: 7501709844621677873
-                              is_cancelled: true
-                              occurrence_id: "1640995200"
-                              recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
-                                weekly_days: 1,3,5
-                              registrant_count: 2349221354295471536
-                              response_count_no: 1699484973781406020
-                              response_count_yes: 3366683520866107591
-                              start_time: "2021-01-01T10:00:00Z"
-                              title: Suscipit aliquid qui.
-                            - description: Dolorem maxime nulla quam eaque ipsa.
-                              duration: 7501709844621677873
-                              is_cancelled: true
-                              occurrence_id: "1640995200"
-                              recurrence:
-                                end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
-                                weekly_days: 1,3,5
-                              registrant_count: 2349221354295471536
-                              response_count_no: 1699484973781406020
-                              response_count_yes: 3366683520866107591
-                              start_time: "2021-01-01T10:00:00Z"
-                              title: Suscipit aliquid qui.
-                          organizers:
-                            - Soluta aut nesciunt quaerat et ut molestias.
-                            - Sit quia quasi dolor facilis exercitationem rem.
-                            - Dolorum sed aspernatur enim doloremque sunt.
-                          password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
-                          platform: Zoom
-                          project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                          public_link: http://mcdermott.info/fermin_shanahan
-                          recording_enabled: false
-                          recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
-                            weekly_days: 1,3,5
-                          registrant_count: 6899912874666998650
-                          registrant_response_accepted_count: 6472152244165966278
-                          registrant_response_declined_count: 6527186480651577770
-                          restricted: true
-                          start_time: "2021-01-01T00:00:00Z"
-                          timezone: Cumque eum.
-                          title: Praesentium cumque velit recusandae voluptatem.
+                          timezone: Eum modi in minus et.
+                          title: Recusandae voluptatem.
                           transcript_enabled: false
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           updated_at: "2021-01-01T00:00:00Z"
@@ -4697,7 +4639,7 @@ components:
                           uid: Non et cupiditate a iure vero.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Ut dolore et similique ut quaerat sunt.
-                      duration: 200
+                      duration: 22
                       early_join_time_minutes: 28
                       email_delivery_error_count: 9175101536347037250
                       meeting_type: Marketing
@@ -4707,13 +4649,13 @@ components:
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 2349221354295471536
                           response_count_no: 1699484973781406020
@@ -4725,13 +4667,13 @@ components:
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 2349221354295471536
                           response_count_no: 1699484973781406020
@@ -4743,13 +4685,13 @@ components:
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 2349221354295471536
                           response_count_no: 1699484973781406020
@@ -4766,21 +4708,21 @@ components:
                       public_link: http://mcdermott.info/fermin_shanahan
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_date_time: "2003-06-23T10:57:09Z"
+                        end_times: 898253545535169898
+                        monthly_day: 21
+                        monthly_week: 2
+                        monthly_week_day: 3
+                        repeat_interval: 6262370327954619118
+                        type: 1
                         weekly_days: 1,3,5
                       registrant_count: 6899912874666998650
                       registrant_response_accepted_count: 6472152244165966278
                       registrant_response_declined_count: 6527186480651577770
                       restricted: true
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Cumque eum.
-                      title: Praesentium cumque velit recusandae voluptatem.
+                      timezone: Eum modi in minus et.
+                      title: Recusandae voluptatem.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
@@ -4807,7 +4749,7 @@ components:
                           uid: Non et cupiditate a iure vero.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Ut dolore et similique ut quaerat sunt.
-                      duration: 200
+                      duration: 22
                       early_join_time_minutes: 28
                       email_delivery_error_count: 9175101536347037250
                       meeting_type: Marketing
@@ -4817,13 +4759,13 @@ components:
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 2349221354295471536
                           response_count_no: 1699484973781406020
@@ -4835,13 +4777,13 @@ components:
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 2349221354295471536
                           response_count_no: 1699484973781406020
@@ -4853,13 +4795,13 @@ components:
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           registrant_count: 2349221354295471536
                           response_count_no: 1699484973781406020
@@ -4876,21 +4818,21 @@ components:
                       public_link: http://mcdermott.info/fermin_shanahan
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_date_time: "2003-06-23T10:57:09Z"
+                        end_times: 898253545535169898
+                        monthly_day: 21
+                        monthly_week: 2
+                        monthly_week_day: 3
+                        repeat_interval: 6262370327954619118
+                        type: 1
                         weekly_days: 1,3,5
                       registrant_count: 6899912874666998650
                       registrant_response_accepted_count: 6472152244165966278
                       registrant_response_declined_count: 6527186480651577770
                       restricted: true
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Cumque eum.
-                      title: Praesentium cumque velit recusandae voluptatem.
+                      timezone: Eum modi in minus et.
+                      title: Recusandae voluptatem.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
@@ -5064,38 +5006,196 @@ components:
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       username: Doloribus unde.
-                    - avatar_url: https://example.com/avatar.jpg
-                      created_at: "2021-01-01T00:00:00Z"
-                      email: user@example.com
-                      first_name: John
-                      host: false
-                      is_attended: true
-                      is_invited: true
-                      job_title: Software Engineer
-                      last_name: Doe
-                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      org_is_member: true
-                      org_is_project_member: false
-                      org_name: Eveniet voluptatum dolores ratione.
-                      past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      sessions:
-                        - join_time: "2024-01-15T10:30:00Z"
-                          leave_reason: left normally
-                          leave_time: "2024-01-15T11:15:00Z"
-                          uid: session-abc123
-                        - join_time: "2024-01-15T10:30:00Z"
-                          leave_reason: left normally
-                          leave_time: "2024-01-15T11:15:00Z"
-                          uid: session-abc123
-                        - join_time: "2024-01-15T10:30:00Z"
-                          leave_reason: left normally
-                          leave_time: "2024-01-15T11:15:00Z"
-                          uid: session-abc123
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      updated_at: "2021-01-01T00:00:00Z"
-                      username: Doloribus unde.
             required:
                 - participants
+        GetPastMeetingSummariesResponseBody:
+            type: object
+            properties:
+                summaries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PastMeetingSummary'
+                    description: Past meeting summaries
+                    example:
+                        - approved: true
+                          created_at: "2021-01-01T00:00:00Z"
+                          email_sent: true
+                          meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                          password: abc123
+                          past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                          platform: Zoom
+                          requires_approval: false
+                          summary_data:
+                            edited_details: Additional context and clarifications
+                            edited_next_steps:
+                                - 'Updated: Complete API documentation by Friday'
+                            edited_overview: Updated discussion notes with action items
+                            end_time: "2024-01-15T11:00:00Z"
+                            next_steps:
+                                - Complete API documentation
+                                - 'Review PR #123'
+                            overview: Discussion of sprint progress and blockers
+                            start_time: "2024-01-15T10:00:00Z"
+                            title: Weekly Team Standup Meeting
+                          uid: 123e4567-e89b-12d3-a456-426614174000
+                          updated_at: "2021-01-01T00:00:00Z"
+                          zoom_config:
+                            meeting_id: "85072380123"
+                            meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                        - approved: true
+                          created_at: "2021-01-01T00:00:00Z"
+                          email_sent: true
+                          meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                          password: abc123
+                          past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                          platform: Zoom
+                          requires_approval: false
+                          summary_data:
+                            edited_details: Additional context and clarifications
+                            edited_next_steps:
+                                - 'Updated: Complete API documentation by Friday'
+                            edited_overview: Updated discussion notes with action items
+                            end_time: "2024-01-15T11:00:00Z"
+                            next_steps:
+                                - Complete API documentation
+                                - 'Review PR #123'
+                            overview: Discussion of sprint progress and blockers
+                            start_time: "2024-01-15T10:00:00Z"
+                            title: Weekly Team Standup Meeting
+                          uid: 123e4567-e89b-12d3-a456-426614174000
+                          updated_at: "2021-01-01T00:00:00Z"
+                          zoom_config:
+                            meeting_id: "85072380123"
+                            meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                        - approved: true
+                          created_at: "2021-01-01T00:00:00Z"
+                          email_sent: true
+                          meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                          password: abc123
+                          past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                          platform: Zoom
+                          requires_approval: false
+                          summary_data:
+                            edited_details: Additional context and clarifications
+                            edited_next_steps:
+                                - 'Updated: Complete API documentation by Friday'
+                            edited_overview: Updated discussion notes with action items
+                            end_time: "2024-01-15T11:00:00Z"
+                            next_steps:
+                                - Complete API documentation
+                                - 'Review PR #123'
+                            overview: Discussion of sprint progress and blockers
+                            start_time: "2024-01-15T10:00:00Z"
+                            title: Weekly Team Standup Meeting
+                          uid: 123e4567-e89b-12d3-a456-426614174000
+                          updated_at: "2021-01-01T00:00:00Z"
+                          zoom_config:
+                            meeting_id: "85072380123"
+                            meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+            example:
+                summaries:
+                    - approved: true
+                      created_at: "2021-01-01T00:00:00Z"
+                      email_sent: true
+                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                      password: abc123
+                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                      platform: Zoom
+                      requires_approval: false
+                      summary_data:
+                        edited_details: Additional context and clarifications
+                        edited_next_steps:
+                            - 'Updated: Complete API documentation by Friday'
+                        edited_overview: Updated discussion notes with action items
+                        end_time: "2024-01-15T11:00:00Z"
+                        next_steps:
+                            - Complete API documentation
+                            - 'Review PR #123'
+                        overview: Discussion of sprint progress and blockers
+                        start_time: "2024-01-15T10:00:00Z"
+                        title: Weekly Team Standup Meeting
+                      uid: 123e4567-e89b-12d3-a456-426614174000
+                      updated_at: "2021-01-01T00:00:00Z"
+                      zoom_config:
+                        meeting_id: "85072380123"
+                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                    - approved: true
+                      created_at: "2021-01-01T00:00:00Z"
+                      email_sent: true
+                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                      password: abc123
+                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                      platform: Zoom
+                      requires_approval: false
+                      summary_data:
+                        edited_details: Additional context and clarifications
+                        edited_next_steps:
+                            - 'Updated: Complete API documentation by Friday'
+                        edited_overview: Updated discussion notes with action items
+                        end_time: "2024-01-15T11:00:00Z"
+                        next_steps:
+                            - Complete API documentation
+                            - 'Review PR #123'
+                        overview: Discussion of sprint progress and blockers
+                        start_time: "2024-01-15T10:00:00Z"
+                        title: Weekly Team Standup Meeting
+                      uid: 123e4567-e89b-12d3-a456-426614174000
+                      updated_at: "2021-01-01T00:00:00Z"
+                      zoom_config:
+                        meeting_id: "85072380123"
+                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                    - approved: true
+                      created_at: "2021-01-01T00:00:00Z"
+                      email_sent: true
+                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                      password: abc123
+                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                      platform: Zoom
+                      requires_approval: false
+                      summary_data:
+                        edited_details: Additional context and clarifications
+                        edited_next_steps:
+                            - 'Updated: Complete API documentation by Friday'
+                        edited_overview: Updated discussion notes with action items
+                        end_time: "2024-01-15T11:00:00Z"
+                        next_steps:
+                            - Complete API documentation
+                            - 'Review PR #123'
+                        overview: Discussion of sprint progress and blockers
+                        start_time: "2024-01-15T10:00:00Z"
+                        title: Weekly Team Standup Meeting
+                      uid: 123e4567-e89b-12d3-a456-426614174000
+                      updated_at: "2021-01-01T00:00:00Z"
+                      zoom_config:
+                        meeting_id: "85072380123"
+                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+                    - approved: true
+                      created_at: "2021-01-01T00:00:00Z"
+                      email_sent: true
+                      meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                      password: abc123
+                      past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                      platform: Zoom
+                      requires_approval: false
+                      summary_data:
+                        edited_details: Additional context and clarifications
+                        edited_next_steps:
+                            - 'Updated: Complete API documentation by Friday'
+                        edited_overview: Updated discussion notes with action items
+                        end_time: "2024-01-15T11:00:00Z"
+                        next_steps:
+                            - Complete API documentation
+                            - 'Review PR #123'
+                        overview: Discussion of sprint progress and blockers
+                        start_time: "2024-01-15T10:00:00Z"
+                        title: Weekly Team Standup Meeting
+                      uid: 123e4567-e89b-12d3-a456-426614174000
+                      updated_at: "2021-01-01T00:00:00Z"
+                      zoom_config:
+                        meeting_id: "85072380123"
+                        meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+            required:
+                - summaries
         GetPastMeetingsResponseBody:
             type: object
             properties:
@@ -5132,13 +5232,13 @@ components:
                           public_link: http://goldner.info/amber.effertz
                           recording_enabled: true
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           restricted: false
                           scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5189,13 +5289,127 @@ components:
                           public_link: http://goldner.info/amber.effertz
                           recording_enabled: true
                           recurrence:
-                            end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
+                            weekly_days: 1,3,5
+                          restricted: false
+                          scheduled_end_time: "2021-01-01T11:00:00Z"
+                          scheduled_start_time: "2021-01-01T10:00:00Z"
+                          sessions:
+                            - end_time: "2021-01-01T11:00:00Z"
+                              start_time: "2021-01-01T10:00:00Z"
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                            - end_time: "2021-01-01T11:00:00Z"
+                              start_time: "2021-01-01T10:00:00Z"
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          timezone: Dolor maxime id labore consequatur.
+                          title: Alias voluptates veritatis praesentium deserunt.
+                          transcript_enabled: false
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          updated_at: "2021-01-01T00:00:00Z"
+                          visibility: public
+                          youtube_upload_enabled: false
+                          zoom_config:
+                            ai_companion_enabled: false
+                            ai_summary_require_approval: true
+                            meeting_id: "1234567890"
+                            passcode: "147258"
+                        - artifact_visibility: public
+                          committees:
+                            - allowed_voting_statuses:
+                                - Sint et consequatur quod.
+                                - Ipsa esse repellat sunt eveniet.
+                                - Deleniti ea sunt nihil nam nesciunt earum.
+                                - Unde quis voluptate est qui.
+                              uid: Non et cupiditate a iure vero.
+                            - allowed_voting_statuses:
+                                - Sint et consequatur quod.
+                                - Ipsa esse repellat sunt eveniet.
+                                - Deleniti ea sunt nihil nam nesciunt earum.
+                                - Unde quis voluptate est qui.
+                              uid: Non et cupiditate a iure vero.
+                          created_at: "2021-01-01T00:00:00Z"
+                          description: Magnam sed et.
+                          duration: 65
+                          early_join_time_minutes: 42
+                          meeting_type: Technical
+                          meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          occurrence_id: "1640995200"
+                          platform: Zoom
+                          platform_meeting_id: "1234567890"
+                          project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          public_link: http://goldner.info/amber.effertz
+                          recording_enabled: true
+                          recurrence:
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
+                            weekly_days: 1,3,5
+                          restricted: false
+                          scheduled_end_time: "2021-01-01T11:00:00Z"
+                          scheduled_start_time: "2021-01-01T10:00:00Z"
+                          sessions:
+                            - end_time: "2021-01-01T11:00:00Z"
+                              start_time: "2021-01-01T10:00:00Z"
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                            - end_time: "2021-01-01T11:00:00Z"
+                              start_time: "2021-01-01T10:00:00Z"
+                              uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          timezone: Dolor maxime id labore consequatur.
+                          title: Alias voluptates veritatis praesentium deserunt.
+                          transcript_enabled: false
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          updated_at: "2021-01-01T00:00:00Z"
+                          visibility: public
+                          youtube_upload_enabled: false
+                          zoom_config:
+                            ai_companion_enabled: false
+                            ai_summary_require_approval: true
+                            meeting_id: "1234567890"
+                            passcode: "147258"
+                        - artifact_visibility: public
+                          committees:
+                            - allowed_voting_statuses:
+                                - Sint et consequatur quod.
+                                - Ipsa esse repellat sunt eveniet.
+                                - Deleniti ea sunt nihil nam nesciunt earum.
+                                - Unde quis voluptate est qui.
+                              uid: Non et cupiditate a iure vero.
+                            - allowed_voting_statuses:
+                                - Sint et consequatur quod.
+                                - Ipsa esse repellat sunt eveniet.
+                                - Deleniti ea sunt nihil nam nesciunt earum.
+                                - Unde quis voluptate est qui.
+                              uid: Non et cupiditate a iure vero.
+                          created_at: "2021-01-01T00:00:00Z"
+                          description: Magnam sed et.
+                          duration: 65
+                          early_join_time_minutes: 42
+                          meeting_type: Technical
+                          meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          occurrence_id: "1640995200"
+                          platform: Zoom
+                          platform_meeting_id: "1234567890"
+                          project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          public_link: http://goldner.info/amber.effertz
+                          recording_enabled: true
+                          recurrence:
+                            end_date_time: "2003-06-23T10:57:09Z"
+                            end_times: 898253545535169898
+                            monthly_day: 21
+                            monthly_week: 2
+                            monthly_week_day: 3
+                            repeat_interval: 6262370327954619118
+                            type: 1
                             weekly_days: 1,3,5
                           restricted: false
                           scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5248,13 +5462,13 @@ components:
                       public_link: http://goldner.info/amber.effertz
                       recording_enabled: true
                       recurrence:
-                        end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_date_time: "2003-06-23T10:57:09Z"
+                        end_times: 898253545535169898
+                        monthly_day: 21
+                        monthly_week: 2
+                        monthly_week_day: 3
+                        repeat_interval: 6262370327954619118
+                        type: 1
                         weekly_days: 1,3,5
                       restricted: false
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5305,13 +5519,70 @@ components:
                       public_link: http://goldner.info/amber.effertz
                       recording_enabled: true
                       recurrence:
-                        end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_date_time: "2003-06-23T10:57:09Z"
+                        end_times: 898253545535169898
+                        monthly_day: 21
+                        monthly_week: 2
+                        monthly_week_day: 3
+                        repeat_interval: 6262370327954619118
+                        type: 1
+                        weekly_days: 1,3,5
+                      restricted: false
+                      scheduled_end_time: "2021-01-01T11:00:00Z"
+                      scheduled_start_time: "2021-01-01T10:00:00Z"
+                      sessions:
+                        - end_time: "2021-01-01T11:00:00Z"
+                          start_time: "2021-01-01T10:00:00Z"
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                        - end_time: "2021-01-01T11:00:00Z"
+                          start_time: "2021-01-01T10:00:00Z"
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      timezone: Dolor maxime id labore consequatur.
+                      title: Alias voluptates veritatis praesentium deserunt.
+                      transcript_enabled: false
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      updated_at: "2021-01-01T00:00:00Z"
+                      visibility: public
+                      youtube_upload_enabled: false
+                      zoom_config:
+                        ai_companion_enabled: false
+                        ai_summary_require_approval: true
+                        meeting_id: "1234567890"
+                        passcode: "147258"
+                    - artifact_visibility: public
+                      committees:
+                        - allowed_voting_statuses:
+                            - Sint et consequatur quod.
+                            - Ipsa esse repellat sunt eveniet.
+                            - Deleniti ea sunt nihil nam nesciunt earum.
+                            - Unde quis voluptate est qui.
+                          uid: Non et cupiditate a iure vero.
+                        - allowed_voting_statuses:
+                            - Sint et consequatur quod.
+                            - Ipsa esse repellat sunt eveniet.
+                            - Deleniti ea sunt nihil nam nesciunt earum.
+                            - Unde quis voluptate est qui.
+                          uid: Non et cupiditate a iure vero.
+                      created_at: "2021-01-01T00:00:00Z"
+                      description: Magnam sed et.
+                      duration: 65
+                      early_join_time_minutes: 42
+                      meeting_type: Technical
+                      meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      occurrence_id: "1640995200"
+                      platform: Zoom
+                      platform_meeting_id: "1234567890"
+                      project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      public_link: http://goldner.info/amber.effertz
+                      recording_enabled: true
+                      recurrence:
+                        end_date_time: "2003-06-23T10:57:09Z"
+                        end_times: 898253545535169898
+                        monthly_day: 21
+                        monthly_week: 2
+                        monthly_week_day: 3
+                        repeat_interval: 6262370327954619118
+                        type: 1
                         weekly_days: 1,3,5
                       restricted: false
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -6082,13 +6353,13 @@ components:
                     type: array
                     items:
                         type: string
-                        example: Minus harum quia aut.
+                        example: Deleniti quia ex sed.
                     description: The organizers of the meeting. This is a list of LFIDs of the meeting organizers.
                     example:
-                        - Non laborum.
-                        - Itaque deleniti quia ex.
-                        - Fuga exercitationem ea ut quo ut.
-                        - Sunt quos et.
+                        - Ea ut quo.
+                        - Non sunt quos.
+                        - Veniam ut eos.
+                        - Aliquam et.
                 uid:
                     type: string
                     description: The UID of the meeting
@@ -6103,7 +6374,6 @@ components:
             example:
                 created_at: "2021-01-01T00:00:00Z"
                 organizers:
-                    - Eos ratione aliquam et minima.
                     - Sunt deleniti placeat quos iste in vero.
                     - Necessitatibus mollitia commodi qui quo.
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -6227,7 +6497,7 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: public
+                    example: meeting_participants
                     enum:
                         - meeting_hosts
                         - meeting_participants
@@ -6250,18 +6520,6 @@ components:
                             - Magnam suscipit a qui voluptatem delectus.
                             - Ut ut voluptas voluptates.
                           uid: Commodi laboriosam quasi ut sunt illo.
-                        - allowed_voting_statuses:
-                            - Et eligendi tempore ipsum consequatur ab.
-                            - Et eius.
-                            - Magnam suscipit a qui voluptatem delectus.
-                            - Ut ut voluptas voluptates.
-                          uid: Commodi laboriosam quasi ut sunt illo.
-                        - allowed_voting_statuses:
-                            - Et eligendi tempore ipsum consequatur ab.
-                            - Et eius.
-                            - Magnam suscipit a qui voluptatem delectus.
-                            - Ut ut voluptas voluptates.
-                          uid: Commodi laboriosam quasi ut sunt illo.
                 created_at:
                     type: string
                     description: The date and time the resource was created
@@ -6270,18 +6528,18 @@ components:
                 description:
                     type: string
                     description: The description of the meeting
-                    example: Pariatur enim ea.
+                    example: Molestiae sed temporibus error nisi aut incidunt.
                 duration:
                     type: integer
                     description: The duration of the meeting in minutes
-                    example: 336
+                    example: 499
                     format: int64
                     minimum: 0
                     maximum: 600
                 early_join_time_minutes:
                     type: integer
                     description: The number of minutes that users are allowed to join the meeting early without being kicked out
-                    example: 49
+                    example: 24
                     format: int64
                     minimum: 10
                     maximum: 60
@@ -6324,12 +6582,12 @@ components:
                 public_link:
                     type: string
                     description: The public join URL for participants to join the meeting via the LFX platform (e.g. 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-                    example: http://watersjones.com/ursula.pacocha
+                    example: http://heidenreichwalter.net/mossie_cummings
                     format: uri
                 recording_enabled:
                     type: boolean
                     description: Whether recording is enabled for the meeting
-                    example: true
+                    example: false
                 recurrence:
                     $ref: '#/components/schemas/Recurrence'
                 restricted:
@@ -6367,15 +6625,15 @@ components:
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
-                    example: Nesciunt vel dignissimos.
+                    example: Vel sit error.
                 title:
                     type: string
                     description: The title of the meeting
-                    example: Voluptas eius saepe consequatur.
+                    example: Aliquam eos laudantium ducimus est libero voluptatem.
                 transcript_enabled:
                     type: boolean
                     description: Whether transcription is enabled for the meeting
-                    example: false
+                    example: true
                 uid:
                     type: string
                     description: The unique identifier of the past meeting
@@ -6401,7 +6659,7 @@ components:
                     $ref: '#/components/schemas/ZoomConfigFull'
             description: A record of a meeting that has occurred in the past.
             example:
-                artifact_visibility: meeting_participants
+                artifact_visibility: meeting_hosts
                 committees:
                     - allowed_voting_statuses:
                         - Et eligendi tempore ipsum consequatur ab.
@@ -6415,17 +6673,29 @@ components:
                         - Magnam suscipit a qui voluptatem delectus.
                         - Ut ut voluptas voluptates.
                       uid: Commodi laboriosam quasi ut sunt illo.
+                    - allowed_voting_statuses:
+                        - Et eligendi tempore ipsum consequatur ab.
+                        - Et eius.
+                        - Magnam suscipit a qui voluptatem delectus.
+                        - Ut ut voluptas voluptates.
+                      uid: Commodi laboriosam quasi ut sunt illo.
+                    - allowed_voting_statuses:
+                        - Et eligendi tempore ipsum consequatur ab.
+                        - Et eius.
+                        - Magnam suscipit a qui voluptatem delectus.
+                        - Ut ut voluptas voluptates.
+                      uid: Commodi laboriosam quasi ut sunt illo.
                 created_at: "2021-01-01T00:00:00Z"
-                description: Dolore quia voluptatibus architecto aspernatur consectetur consectetur.
-                duration: 280
-                early_join_time_minutes: 22
-                meeting_type: Board
+                description: Consequatur quo sed.
+                duration: 3
+                early_join_time_minutes: 53
+                meeting_type: Other
                 meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 occurrence_id: "1640995200"
                 platform: Zoom
                 platform_meeting_id: "1234567890"
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                public_link: http://kuhic.info/wade
+                public_link: http://spinkahuel.biz/vesta_kiehn
                 recording_enabled: true
                 recurrence:
                     end_date_time: "2015-09-30T12:28:08Z"
@@ -6436,7 +6706,7 @@ components:
                     repeat_interval: 2817369812233191237
                     type: 1
                     weekly_days: 1,3,5
-                restricted: true
+                restricted: false
                 scheduled_end_time: "2021-01-01T11:00:00Z"
                 scheduled_start_time: "2021-01-01T10:00:00Z"
                 sessions:
@@ -6452,12 +6722,12 @@ components:
                     - end_time: "2021-01-01T11:00:00Z"
                       start_time: "2021-01-01T10:00:00Z"
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                timezone: Quia aperiam ut dicta.
-                title: Fugit dolorem cupiditate.
+                timezone: Dicta eius dolorem.
+                title: Ex porro veritatis tempora ab aut.
                 transcript_enabled: true
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "2021-01-01T00:00:00Z"
-                visibility: private
+                visibility: public
                 youtube_upload_enabled: true
                 zoom_config:
                     ai_companion_enabled: true
@@ -6605,6 +6875,115 @@ components:
                 - past_meeting_uid
                 - meeting_uid
                 - email
+        PastMeetingSummary:
+            type: object
+            properties:
+                approved:
+                    type: boolean
+                    description: Whether the summary has been approved
+                    example: true
+                created_at:
+                    type: string
+                    description: The date and time the resource was created
+                    example: "2021-01-01T00:00:00Z"
+                    format: date-time
+                email_sent:
+                    type: boolean
+                    description: Whether summary email has been sent
+                    example: true
+                meeting_uid:
+                    type: string
+                    description: UID of the original meeting
+                    example: 789e0123-e89b-12d3-a456-426614174000
+                    format: uuid
+                password:
+                    type: string
+                    description: Password for accessing the summary (if required)
+                    example: abc123
+                past_meeting_uid:
+                    type: string
+                    description: UID of the associated past meeting
+                    example: 456e7890-e89b-12d3-a456-426614174000
+                    format: uuid
+                platform:
+                    type: string
+                    description: Meeting platform
+                    example: Zoom
+                    enum:
+                        - Zoom
+                        - Teams
+                        - Webex
+                requires_approval:
+                    type: boolean
+                    description: Whether the summary requires approval
+                    example: false
+                summary_data:
+                    $ref: '#/components/schemas/SummaryData'
+                uid:
+                    type: string
+                    description: Unique identifier for the summary
+                    example: 123e4567-e89b-12d3-a456-426614174000
+                    format: uuid
+                updated_at:
+                    type: string
+                    description: The date and time the resource was last updated
+                    example: "2021-01-01T00:00:00Z"
+                    format: date-time
+                zoom_config:
+                    $ref: '#/components/schemas/PastMeetingSummaryZoomConfig'
+            description: AI-generated summary for a past meeting occurrence
+            example:
+                approved: true
+                created_at: "2021-01-01T00:00:00Z"
+                email_sent: true
+                meeting_uid: 789e0123-e89b-12d3-a456-426614174000
+                password: abc123
+                past_meeting_uid: 456e7890-e89b-12d3-a456-426614174000
+                platform: Zoom
+                requires_approval: false
+                summary_data:
+                    edited_details: Additional context and clarifications
+                    edited_next_steps:
+                        - 'Updated: Complete API documentation by Friday'
+                    edited_overview: Updated discussion notes with action items
+                    end_time: "2024-01-15T11:00:00Z"
+                    next_steps:
+                        - Complete API documentation
+                        - 'Review PR #123'
+                    overview: Discussion of sprint progress and blockers
+                    start_time: "2024-01-15T10:00:00Z"
+                    title: Weekly Team Standup Meeting
+                uid: 123e4567-e89b-12d3-a456-426614174000
+                updated_at: "2021-01-01T00:00:00Z"
+                zoom_config:
+                    meeting_id: "85072380123"
+                    meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
+            required:
+                - uid
+                - past_meeting_uid
+                - meeting_uid
+                - platform
+                - summary_data
+                - requires_approval
+                - approved
+                - email_sent
+                - created_at
+                - updated_at
+        PastMeetingSummaryZoomConfig:
+            type: object
+            properties:
+                meeting_id:
+                    type: string
+                    description: Zoom meeting ID
+                    example: "85072380123"
+                meeting_uuid:
+                    type: string
+                    description: Zoom meeting UUID
+                    example: aDYlohsHRtCd4ii1uC2+hA==
+            description: Zoom-specific configuration for a past meeting summary
+            example:
+                meeting_id: "85072380123"
+                meeting_uuid: aDYlohsHRtCd4ii1uC2+hA==
         Recurrence:
             type: object
             properties:
@@ -6742,11 +7121,11 @@ components:
                 org_is_project_member:
                     type: boolean
                     description: Whether the registrant is in an organization that has a membership with the project (of the meeting). If unknown, don't pass this field; the API will find the value by default
-                    example: false
+                    example: true
                 org_name:
                     type: string
                     description: User's organization
-                    example: Tenetur et.
+                    example: Voluptatum voluptatem ipsam.
                 type:
                     type: string
                     description: Type of registrant
@@ -6767,7 +7146,7 @@ components:
                 username:
                     type: string
                     description: User's LF ID
-                    example: Deleniti omnis animi minus.
+                    example: Qui error commodi.
             description: Meeting registrant object
             example:
                 avatar_url: https://example.com/avatar.jpg
@@ -6782,11 +7161,11 @@ components:
                 occurrence_id: "1640995200"
                 org_is_member: false
                 org_is_project_member: false
-                org_name: Dolore ut iure quia molestiae est ut.
+                org_name: Aut sunt.
                 type: direct
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "2021-01-01T00:00:00Z"
-                username: Ipsam omnis officiis.
+                username: Veniam occaecati voluptas id.
             required:
                 - uid
                 - meeting_uid
@@ -6835,6 +7214,68 @@ components:
             required:
                 - uid
                 - start_time
+        SummaryData:
+            type: object
+            properties:
+                edited_details:
+                    type: string
+                    description: Edited summary details
+                    example: Additional context and clarifications
+                edited_next_steps:
+                    type: array
+                    items:
+                        type: string
+                        example: Ex harum nisi mollitia deserunt ut reprehenderit.
+                    description: Edited next steps
+                    example:
+                        - 'Updated: Complete API documentation by Friday'
+                edited_overview:
+                    type: string
+                    description: Edited summary overview
+                    example: Updated discussion notes with action items
+                end_time:
+                    type: string
+                    description: Summary end time
+                    example: "2024-01-15T11:00:00Z"
+                    format: date-time
+                next_steps:
+                    type: array
+                    items:
+                        type: string
+                        example: Ad maiores voluptatum.
+                    description: Next steps from the meeting
+                    example:
+                        - Complete API documentation
+                        - 'Review PR #123'
+                overview:
+                    type: string
+                    description: Summary overview
+                    example: Discussion of sprint progress and blockers
+                start_time:
+                    type: string
+                    description: Summary start time
+                    example: "2024-01-15T10:00:00Z"
+                    format: date-time
+                title:
+                    type: string
+                    description: Summary title
+                    example: Weekly Team Standup Meeting
+            description: AI-generated summary content for a past meeting
+            example:
+                edited_details: Additional context and clarifications
+                edited_next_steps:
+                    - 'Updated: Complete API documentation by Friday'
+                edited_overview: Updated discussion notes with action items
+                end_time: "2024-01-15T11:00:00Z"
+                next_steps:
+                    - Complete API documentation
+                    - 'Review PR #123'
+                overview: Discussion of sprint progress and blockers
+                start_time: "2024-01-15T10:00:00Z"
+                title: Weekly Team Standup Meeting
+            required:
+                - start_time
+                - end_time
         UnauthorizedError:
             type: object
             properties:
@@ -6858,7 +7299,7 @@ components:
                 artifact_visibility:
                     type: string
                     description: The visibility of artifacts to users (e.g. public, only for registrants, only for hosts)
-                    example: meeting_participants
+                    example: meeting_hosts
                     enum:
                         - meeting_hosts
                         - meeting_participants
@@ -6896,25 +7337,25 @@ components:
                 description:
                     type: string
                     description: The description of the meeting
-                    example: Quis quia aut vitae velit.
+                    example: Ipsum soluta deleniti cumque.
                 duration:
                     type: integer
                     description: The duration of the meeting in minutes
-                    example: 252
+                    example: 314
                     format: int64
                     minimum: 0
                     maximum: 600
                 early_join_time_minutes:
                     type: integer
                     description: The number of minutes that users are allowed to join the meeting early without being kicked out
-                    example: 32
+                    example: 28
                     format: int64
                     minimum: 10
                     maximum: 60
                 meeting_type:
                     type: string
                     description: The type of meeting. This is usually dependent on the committee(s) associated with the meeting
-                    example: Maintainers
+                    example: Other
                     enum:
                         - Board
                         - Maintainers
@@ -6952,11 +7393,11 @@ components:
                 timezone:
                     type: string
                     description: The timezone of the meeting (e.g. 'America/New_York')
-                    example: Illo magnam sit ut repellat.
+                    example: Ea sunt nihil officia numquam quis eum.
                 title:
                     type: string
                     description: The title of the meeting
-                    example: Saepe dolores et aut enim ut.
+                    example: Facilis est tenetur nisi doloribus qui cumque.
                 transcript_enabled:
                     type: boolean
                     description: Whether transcription is enabled for the meeting
@@ -6964,7 +7405,7 @@ components:
                 visibility:
                     type: string
                     description: The visibility of the meeting's existence to other users
-                    example: public
+                    example: private
                     enum:
                         - public
                         - private
@@ -6989,19 +7430,13 @@ components:
                         - Fuga sit ad maiores id velit ratione.
                         - Nam et.
                       uid: Ut ut voluptatem.
-                    - allowed_voting_statuses:
-                        - Et et consectetur nihil.
-                        - Consequatur perspiciatis sed est laudantium quasi.
-                        - Fuga sit ad maiores id velit ratione.
-                        - Nam et.
-                      uid: Ut ut voluptatem.
-                description: Facere blanditiis.
-                duration: 324
-                early_join_time_minutes: 59
-                meeting_type: None
+                description: Odit aut modi nesciunt est sed fugit.
+                duration: 68
+                early_join_time_minutes: 42
+                meeting_type: Board
                 platform: Zoom
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                recording_enabled: false
+                recording_enabled: true
                 recurrence:
                     end_date_time: "1993-04-10T19:30:34Z"
                     end_times: 3732607533624244863
@@ -7011,13 +7446,13 @@ components:
                     repeat_interval: 6620790648848392796
                     type: 3
                     weekly_days: 1,3,5
-                restricted: true
+                restricted: false
                 start_time: "2021-01-01T00:00:00Z"
-                timezone: Nisi doloribus qui cumque in.
-                title: Soluta deleniti.
-                transcript_enabled: true
+                timezone: Quasi autem praesentium.
+                title: Veniam et.
+                transcript_enabled: false
                 visibility: private
-                youtube_upload_enabled: true
+                youtube_upload_enabled: false
                 zoom_config:
                     ai_companion_enabled: true
                     ai_summary_require_approval: false
@@ -7207,17 +7642,17 @@ components:
                     type: array
                     items:
                         type: string
-                        example: Autem praesentium architecto veniam et dignissimos odit.
+                        example: Qui quas iure.
                     description: The organizers of the meeting. This is a list of LFIDs of the meeting organizers.
                     example:
-                        - Nesciunt est sed.
-                        - Voluptatibus omnis exercitationem officia accusamus ut.
-                        - Explicabo officia modi consequatur.
-                        - Quas iure a libero amet non.
+                        - Amet non iure.
+                        - Maxime harum maiores aliquid et omnis sit.
+                        - Qui aperiam aut ex et ipsum.
+                        - Minus cupiditate ut enim.
             example:
                 organizers:
-                    - Maxime harum maiores aliquid et omnis sit.
-                    - Qui aperiam aut ex et ipsum.
+                    - Et in aliquam amet quas.
+                    - Incidunt vero expedita enim voluptas natus tempore.
         UpdatePastMeetingParticipantPayload:
             type: object
             properties:
@@ -7332,22 +7767,22 @@ components:
                 org_name:
                     type: string
                     description: User's organization
-                    example: Et possimus.
+                    example: Ut enim esse quo est quod facere.
                 username:
                     type: string
                     description: User's LF ID
-                    example: Aliquam consequuntur et.
+                    example: Est debitis deserunt ea ab ratione.
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
                 first_name: John
-                host: true
+                host: false
                 is_attended: true
                 is_invited: true
                 job_title: Software Engineer
                 last_name: Doe
-                org_name: Quia blanditiis.
-                username: Qui occaecati enim et enim quia.
+                org_name: Et asperiores hic libero.
+                username: Inventore sapiente accusamus et accusantium.
             required:
                 - email
         UpdateRegistrantPayload:
@@ -7372,7 +7807,7 @@ components:
                 host:
                     type: boolean
                     description: If user should have access as a meeting host
-                    example: false
+                    example: true
                 job_title:
                     type: string
                     description: User's job title
@@ -7391,22 +7826,22 @@ components:
                 org_name:
                     type: string
                     description: User's organization
-                    example: Repellat ipsa consequatur et.
+                    example: Qui iusto quis.
                 username:
                     type: string
                     description: User's LF ID
-                    example: Quo eum beatae quo et magni dolorum.
+                    example: Eligendi earum tenetur et modi.
             description: Payload for updating an existing meeting registrant
             example:
                 avatar_url: https://example.com/avatar.jpg
                 email: user@example.com
                 first_name: John
-                host: true
+                host: false
                 job_title: Software Engineer
                 last_name: Doe
                 occurrence_id: "1640995200"
-                org_name: Dolore saepe.
-                username: Ut ipsa voluptatibus qui iusto quis aut.
+                org_name: Deleniti omnis animi minus.
+                username: Repellat dolore ut iure quia molestiae est.
             required:
                 - meeting_uid
                 - email
@@ -7479,22 +7914,22 @@ components:
                     format: int64
                 payload:
                     description: Contains meeting, participant, or recording data depending on event type
-                    example: Qui error commodi.
+                    example: Sit aut numquam quidem cum nulla quidem.
                 zoom_signature:
                     type: string
                     description: HMAC-SHA256 signature of the request body
-                    example: Minima aut.
+                    example: Reprehenderit ex iusto vel iste eius aut.
                 zoom_timestamp:
                     type: string
                     description: Timestamp when the webhook was sent
-                    example: Consequatur ratione et veniam occaecati voluptas.
+                    example: Ut corrupti dolor.
             description: Zoom webhook event payload
             example:
                 event: meeting.started
                 event_ts: 1609459200000
-                payload: Itaque sit aut numquam quidem.
-                zoom_signature: Nulla quidem.
-                zoom_timestamp: Reprehenderit ex iusto vel iste eius aut.
+                payload: Veniam eum.
+                zoom_signature: Sit quasi quod aut impedit.
+                zoom_timestamp: Sunt velit distinctio.
             required:
                 - event
                 - event_ts
@@ -7522,11 +7957,11 @@ components:
                     format: int64
                 payload:
                     description: Contains meeting, participant, or recording data depending on event type
-                    example: Explicabo et unde odio provident amet.
+                    example: Et et possimus ipsa aliquam consequuntur et.
             example:
                 event: meeting.started
                 event_ts: 1609459200000
-                payload: Odio debitis facilis aut sint atque consequatur.
+                payload: Atque quia blanditiis qui qui occaecati.
             required:
                 - event
                 - event_ts
