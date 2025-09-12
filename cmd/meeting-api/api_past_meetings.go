@@ -15,7 +15,7 @@ import (
 // GetPastMeetings implements the Goa service interface for listing past meetings
 func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.GetPastMeetingsPayload) (*meetingsvc.GetPastMeetingsResult, error) {
 	if payload == nil {
-		return nil, handleError(domain.ErrValidationFailed)
+		return nil, handleError(domain.NewValidationError("validation failed", nil))
 	}
 
 	pastMeetings, err := s.pastMeetingService.GetPastMeetings(ctx)
@@ -39,12 +39,12 @@ func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.G
 // CreatePastMeeting implements the Goa service interface for creating past meetings
 func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc.CreatePastMeetingPayload) (*meetingsvc.PastMeeting, error) {
 	if payload == nil {
-		return nil, handleError(domain.ErrValidationFailed)
+		return nil, handleError(domain.NewValidationError("validation failed", nil))
 	}
 
 	createPastMeetingReq := service.ConvertCreatePastMeetingPayloadToDomain(payload)
 	if createPastMeetingReq == nil {
-		return nil, handleError(domain.ErrValidationFailed)
+		return nil, handleError(domain.NewValidationError("validation failed", nil))
 	}
 
 	pastMeeting, err := s.pastMeetingService.CreatePastMeeting(ctx, createPastMeetingReq)
@@ -58,7 +58,7 @@ func (s *MeetingsAPI) CreatePastMeeting(ctx context.Context, payload *meetingsvc
 // GetPastMeeting implements the Goa service interface for getting a single past meeting
 func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.GetPastMeetingPayload) (*meetingsvc.GetPastMeetingResult, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, handleError(domain.ErrValidationFailed)
+		return nil, handleError(domain.NewValidationError("validation failed", nil))
 	}
 
 	pastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, *payload.UID)
@@ -77,7 +77,7 @@ func (s *MeetingsAPI) GetPastMeeting(ctx context.Context, payload *meetingsvc.Ge
 // DeletePastMeeting implements the Goa service interface for deleting past meetings
 func (s *MeetingsAPI) DeletePastMeeting(ctx context.Context, payload *meetingsvc.DeletePastMeetingPayload) error {
 	if payload == nil || payload.UID == nil {
-		return handleError(domain.ErrValidationFailed)
+		return handleError(domain.NewValidationError("validation failed", nil))
 	}
 
 	revision, err := service.EtagValidator(payload.IfMatch)

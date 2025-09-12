@@ -111,41 +111,7 @@ func handleError(err error) error {
 	case domain.ErrorTypeInternal:
 		return createResponse(http.StatusInternalServerError, err)
 	default:
-		// Fallback for legacy errors that don't use the new system yet
-		return handleLegacyError(err)
-	}
-}
-
-// handleLegacyError provides backwards compatibility for existing errors
-// TODO: Remove this once all errors are migrated to the new DomainError system
-func handleLegacyError(err error) error {
-	switch err {
-	case domain.ErrServiceUnavailable:
-		return createResponse(http.StatusServiceUnavailable, err)
-	case domain.ErrValidationFailed:
-		return createResponse(http.StatusBadRequest, err)
-	case domain.ErrRevisionMismatch:
-		return createResponse(http.StatusBadRequest, err)
-	case domain.ErrRegistrantAlreadyExists:
-		return createResponse(http.StatusConflict, err)
-	case domain.ErrPastMeetingParticipantAlreadyExists:
-		return createResponse(http.StatusConflict, err)
-	case domain.ErrProjectNotFound:
-		return createResponse(http.StatusBadRequest, err)
-	case domain.ErrCommitteeNotFound:
-		return createResponse(http.StatusBadRequest, err)
-	case domain.ErrMeetingNotFound:
-		return createResponse(http.StatusNotFound, err)
-	case domain.ErrRegistrantNotFound:
-		return createResponse(http.StatusNotFound, err)
-	case domain.ErrPastMeetingNotFound:
-		return createResponse(http.StatusNotFound, err)
-	case domain.ErrPastMeetingParticipantNotFound:
-		return createResponse(http.StatusNotFound, err)
-	case domain.ErrInternal, domain.ErrUnmarshal:
 		return createResponse(http.StatusInternalServerError, err)
-	default:
-		return createResponse(http.StatusInternalServerError, domain.NewInternalError("unexpected error", err))
 	}
 }
 
@@ -156,7 +122,7 @@ func (s *MeetingsAPI) Readyz(_ context.Context) ([]byte, error) {
 		!s.pastMeetingService.ServiceReady() ||
 		!s.zoomWebhookHandler.HandlerReady() ||
 		!s.meetingHandler.HandlerReady() {
-		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
 	}
 	return []byte("OK\n"), nil
 }
@@ -173,7 +139,7 @@ func (s *MeetingsAPI) Livez(_ context.Context) ([]byte, error) {
 // JWTAuth implements Auther interface for the JWT security scheme.
 func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *security.JWTScheme) (context.Context, error) {
 	if !s.authService.ServiceReady() {
-		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
 	}
 
 	// Parse the Heimdall-authorized principal from the token.
@@ -194,7 +160,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 
 	if !s.zoomWebhookHandler.HandlerReady() {
 		logger.ErrorContext(ctx, "Service not ready")
-		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
 	}
 
 	// Validate Zoom webhook signature if provided

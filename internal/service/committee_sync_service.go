@@ -364,7 +364,7 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 ) error {
 	// Check if registrant already exists by email
 	existingRegistrant, revision, err := s.registrantRepository.GetByMeetingAndEmail(ctx, meetingUID, member.Email)
-	if err != nil && err != domain.ErrRegistrantNotFound {
+	if err != nil && err != domain.NewNotFoundError("registrant not found", nil) {
 		slog.ErrorContext(ctx, "failed to check for existing registrant",
 			"meeting_uid", meetingUID,
 			"email", member.Email,
@@ -392,7 +392,7 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 
 	createdRegistrant, err := s.registrantService.CreateMeetingRegistrant(ctx, registrant)
 	if err != nil {
-		if errors.Is(err, domain.ErrRegistrantAlreadyExists) {
+		if errors.Is(err, domain.NewConflictError("registrant already exists", nil)) {
 			// This shouldn't happen since we check ExistsByMeetingAndEmail above,
 			// but handle gracefully if it does
 			slog.DebugContext(ctx, "registrant already exists (race condition), skipping committee member",
