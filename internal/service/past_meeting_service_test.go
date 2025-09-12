@@ -120,8 +120,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
-				Visibility:         "public",
+				Platform:           models.PlatformZoom,
+				Visibility:         models.VisibilityPublic,
 				Committees: []models.Committee{
 					{
 						UID:                   "committee-1",
@@ -152,8 +152,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 						pm.ProjectUID == "project-123" &&
 						pm.Title == "Test Past Meeting" &&
 						pm.Description == "Test Description" &&
-						pm.Platform == "Zoom" &&
-						pm.Visibility == "public" &&
+						pm.Platform == models.PlatformZoom &&
+						pm.Visibility == models.VisibilityPublic &&
 						len(pm.Committees) == 1 &&
 						pm.ZoomConfig != nil &&
 						len(pm.Sessions) == 1
@@ -170,8 +170,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				assert.Equal(t, "project-123", pm.ProjectUID)
 				assert.Equal(t, "Test Past Meeting", pm.Title)
 				assert.Equal(t, "Test Description", pm.Description)
-				assert.Equal(t, "Zoom", pm.Platform)
-				assert.Equal(t, "public", pm.Visibility)
+				assert.Equal(t, models.PlatformZoom, pm.Platform)
+				assert.Equal(t, models.VisibilityPublic, pm.Visibility)
 				assert.Len(t, pm.Committees, 1)
 				assert.NotNil(t, pm.ZoomConfig)
 				assert.Len(t, pm.Sessions, 1)
@@ -186,7 +186,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Make service not ready by not setting up mocks
@@ -220,7 +220,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledStartTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
 			wantErr:     true,
@@ -235,7 +235,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
@@ -253,7 +253,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Meeting doesn't exist
@@ -277,7 +277,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 					Title:              "Recurring Meeting",
 					Description:        "Test Description",
-					Platform:           "Zoom",
+					Platform:           models.PlatformZoom,
 					Recurrence: &models.Recurrence{
 						Type:           2, // weekly
 						RepeatInterval: 1,
@@ -312,7 +312,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Committee Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 				Committees: []models.Committee{
 					{
 						UID:                   "committee-1",
@@ -353,7 +353,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 					Title:              "Multi-session Meeting",
 					Description:        "Test Description",
-					Platform:           "Zoom",
+					Platform:           models.PlatformZoom,
 					Sessions: []models.Session{
 						{
 							UID:       "session-1",
@@ -392,7 +392,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
@@ -795,7 +795,7 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			wantErr: false,
 		},
@@ -814,7 +814,7 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrValidationFailed,
@@ -828,7 +828,7 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrValidationFailed,
@@ -842,7 +842,7 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrValidationFailed,
@@ -856,7 +856,7 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrValidationFailed,
@@ -884,7 +884,7 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledStartTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			wantErr:     true,
 			expectedErr: domain.ErrValidationFailed,

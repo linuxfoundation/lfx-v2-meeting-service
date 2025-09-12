@@ -170,7 +170,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 					StartTime:   time.Now().Add(time.Hour * 24),
 					ProjectUID:  "project-123",
 					Description: "Test Description",
-					Platform:    "Zoom",
+					Platform:    models.PlatformZoom,
 				},
 				Settings: &models.MeetingSettings{
 					Organizers: []string{"org1"},
@@ -186,7 +186,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 					Passcode:          "test-pass",
 				}, nil)
 				mockProvider.On("StorePlatformData", mock.Anything, mock.Anything)
-				mockPlatformRegistry.On("GetProvider", "Zoom").Return(mockProvider, nil)
+				mockPlatformRegistry.On("GetProvider", models.PlatformZoom).Return(mockProvider, nil)
 
 				// Set up repository and message builder mocks
 				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(nil)
@@ -210,7 +210,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 					StartTime:   time.Now().Add(time.Hour * 24),
 					ProjectUID:  "project-123",
 					Description: "Test Description",
-					Platform:    "Zoom",
+					Platform:    models.PlatformZoom,
 				},
 				Settings: &models.MeetingSettings{
 					Organizers: []string{"org1"},
@@ -230,7 +230,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 					StartTime:   time.Now().Add(time.Hour * 24),
 					ProjectUID:  "project-123",
 					Description: "Test Description",
-					Platform:    "Zoom",
+					Platform:    models.PlatformZoom,
 				},
 				Settings: &models.MeetingSettings{
 					Organizers: []string{"org1"},
@@ -248,7 +248,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 				mockProvider.On("StorePlatformData", mock.Anything, mock.Anything)
 				mockProvider.On("GetPlatformMeetingID", mock.Anything).Return("zoom-meeting-123")
 				mockProvider.On("DeleteMeeting", mock.Anything, mock.Anything).Return(nil)
-				mockPlatformRegistry.On("GetProvider", "Zoom").Return(mockProvider, nil)
+				mockPlatformRegistry.On("GetProvider", models.PlatformZoom).Return(mockProvider, nil)
 
 				// Repository returns error to test cleanup
 				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(domain.ErrInternal)
@@ -514,7 +514,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 					UID:        "meeting-123",
 					Title:      "Test Meeting",
 					ProjectUID: "project-123",
-					Visibility: "public",
+					Visibility: models.VisibilityPublic,
 					Committees: []models.Committee{{UID: "committee-123"}},
 				}, nil)
 

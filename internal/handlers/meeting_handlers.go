@@ -210,13 +210,15 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 
 	// Execute all cleanup operations concurrently using WorkerPool
 	pool := concurrent.NewWorkerPool(10) // Use 10 workers, same concurrency as before
-	err = pool.Run(ctx, tasks...)
-	if err != nil {
+	errors := pool.RunAll(ctx, tasks...)
+	if len(errors) > 0 {
 		slog.ErrorContext(ctx, "some registrant cleanup operations failed",
+			"meeting_uid", meetingUID,
 			"total_registrants", len(registrants),
-			logging.ErrKey, err,
+			"errors_count", len(errors),
+			"errors", errors,
 			logging.PriorityCritical())
-		return nil, fmt.Errorf("failed to clean up registrants: %w", err)
+		return nil, fmt.Errorf("failed to clean up registrants: %w", errors)
 	}
 
 	slog.InfoContext(ctx, "successfully cleaned up all registrants for deleted meeting", "registrant_count", len(registrants))
@@ -254,7 +256,7 @@ func (s *MeetingHandler) HandleMeetingCreated(ctx context.Context, msg domain.Me
 
 		// Use the new CommitteeSyncService to handle committee member sync
 		// For meeting creation, we sync from empty committees to new committees
-		isPublicMeeting := meetingCreatedMsg.Base.Visibility == "public"
+		isPublicMeeting := meetingCreatedMsg.Base.IsPublic()
 		err := s.committeeSyncService.SyncCommittees(
 			ctx,
 			meetingCreatedMsg.MeetingUID,
@@ -311,7 +313,7 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 
 	// Handle committee changes using the new CommitteeSyncService (only if we have the required fields)
 	if meetingUpdatedMsg.UpdatedBase != nil && meetingUpdatedMsg.PreviousBase != nil {
-		isPublicMeeting := meetingUpdatedMsg.UpdatedBase.Visibility == "public"
+		isPublicMeeting := meetingUpdatedMsg.UpdatedBase.IsPublic()
 		err = s.committeeSyncService.SyncCommittees(
 			ctx,
 			meetingUpdatedMsg.MeetingUID,
@@ -400,13 +402,15 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 
 	// Execute all notification operations concurrently using WorkerPool
 	pool := concurrent.NewWorkerPool(10) // Use 10 workers for concurrent processing
-	err = pool.Run(ctx, tasks...)
-	if err != nil {
+	errors := pool.RunAll(ctx, tasks...)
+	if len(errors) > 0 {
 		slog.ErrorContext(ctx, "some notification operations failed",
+			"meeting_uid", msg.MeetingUID,
 			"total_registrants", len(registrants),
-			logging.ErrKey, err,
+			"errors_count", len(errors),
+			"errors", errors,
 			logging.PriorityCritical())
-		return fmt.Errorf("failed to send update notifications: %w", err)
+		return fmt.Errorf("failed to send update notifications: %w", errors)
 	}
 
 	slog.InfoContext(ctx, "successfully sent update notifications to all registrants", "registrant_count", len(registrants))

@@ -336,7 +336,7 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Check if a past meeting already exists for this occurrence
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil && !errors.Is(err, domain.ErrPastMeetingNotFound) {
 		slog.ErrorContext(ctx, "failed to check for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to check for existing past meeting: %w", err)
@@ -419,7 +419,7 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 			for i, committee := range pastMeeting.Committees {
 				committees[i] = committee.UID
 			}
-			isPublic := pastMeeting.Visibility == "public"
+			isPublic := pastMeeting.IsPublic()
 
 			return s.pastMeetingService.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeeting.UID,
@@ -498,7 +498,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Try to find existing PastMeeting record by platform meeting ID and occurrence ID
-	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	existingPastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil && err != domain.ErrPastMeetingNotFound {
 		slog.ErrorContext(ctx, "error searching for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to search for existing past meeting: %w", err)
@@ -616,7 +616,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID and occurrence ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
@@ -716,7 +716,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID and occurrence ID
-	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, "Zoom", meetingObj.ID, occurrenceID)
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
 	if err != nil {
 		if err == domain.ErrPastMeetingNotFound {
 			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
@@ -1140,10 +1140,11 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 		})
 	}
 
-	errWorkerPool := concurrent.NewWorkerPool(10).Run(ctx, tasks...)
-	if errWorkerPool != nil {
+	errorsWorkerPool := concurrent.NewWorkerPool(10).RunAll(ctx, tasks...)
+	if len(errorsWorkerPool) > 0 {
 		slog.ErrorContext(ctx, "failed to create some past meeting participant records",
-			logging.ErrKey, errWorkerPool,
+			"errors_count", len(errorsWorkerPool),
+			"errors", errorsWorkerPool,
 			"meeting_uid", meeting.UID,
 			"past_meeting_uid", pastMeeting.UID,
 		)
@@ -1242,7 +1243,7 @@ func (s *ZoomWebhookHandler) updatePastMeetingSessionEndTime(ctx context.Context
 			for i, committee := range pastMeeting.Committees {
 				committees[i] = committee.UID
 			}
-			isPublic := pastMeeting.Visibility == "public"
+			isPublic := pastMeeting.IsPublic()
 
 			return s.pastMeetingService.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeeting.UID,
@@ -1448,7 +1449,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 			for i, committee := range pastMeeting.Committees {
 				committees[i] = committee.UID
 			}
-			isPublic := pastMeeting.Visibility == "public"
+			isPublic := pastMeeting.IsPublic()
 
 			return s.pastMeetingService.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeeting.UID,

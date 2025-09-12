@@ -133,13 +133,11 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 			for i, committee := range pastMeetingReq.Committees {
 				committees[i] = committee.UID
 			}
-			// Determine if the meeting is public based on visibility
-			isPublic := pastMeetingReq.Visibility == "public"
 
 			return s.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeetingReq.UID,
 				MeetingUID: pastMeetingReq.MeetingUID,
-				Public:     isPublic,
+				Public:     pastMeetingReq.IsPublic(),
 				ProjectUID: pastMeetingReq.ProjectUID,
 				Committees: committees,
 			})

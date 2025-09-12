@@ -444,7 +444,7 @@ func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeet
 
 	// Find the meeting with matching Zoom ID
 	for _, meeting := range meetings {
-		if meeting.Platform == "Zoom" && meeting.ZoomConfig != nil && meeting.ZoomConfig.MeetingID == zoomMeetingID {
+		if meeting.Platform == models.PlatformZoom && meeting.ZoomConfig != nil && meeting.ZoomConfig.MeetingID == zoomMeetingID {
 			return meeting, nil
 		}
 	}

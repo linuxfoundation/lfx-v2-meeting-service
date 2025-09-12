@@ -48,6 +48,10 @@ type Session struct {
 	EndTime   *time.Time `json:"end_time,omitempty"`
 }
 
+func (p *PastMeeting) IsPublic() bool {
+	return p.Visibility == VisibilityPublic
+}
+
 // Tags generates a consistent set of tags for the past meeting.
 // IMPORTANT: If you modify this method, please update the Meeting Tags documentation in the README.md
 // to ensure consumers understand how to use these tags for searching.

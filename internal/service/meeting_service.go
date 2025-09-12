@@ -301,7 +301,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 
 			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        reqMeeting.Base.UID,
-				Public:     reqMeeting.Base.Visibility == "public",
+				Public:     reqMeeting.Base.IsPublic(),
 				ProjectUID: reqMeeting.Base.ProjectUID,
 				Organizers: reqMeeting.Settings.Organizers,
 				Committees: committees,
@@ -549,7 +549,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 
 			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        reqMeeting.UID,
-				Public:     reqMeeting.Visibility == "public",
+				Public:     reqMeeting.IsPublic(),
 				ProjectUID: reqMeeting.ProjectUID,
 				Organizers: settingsDB.Organizers,
 				Committees: committees,
@@ -661,7 +661,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 
 			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        meetingDB.UID,
-				Public:     meetingDB.Visibility == "public",
+				Public:     meetingDB.IsPublic(),
 				ProjectUID: meetingDB.ProjectUID,
 				Organizers: reqSettings.Organizers,
 				Committees: committees,

@@ -94,7 +94,7 @@ func TestPastMeeting_Tags(t *testing.T) {
 				ScheduledEndTime:   time.Now(),
 				Duration:           60,
 				Timezone:           "UTC",
-				Platform:           "Zoom",
+				Platform:           PlatformZoom,
 				Committees: []Committee{
 					{UID: "committee-111"},
 				},
@@ -119,7 +119,7 @@ func TestPastMeeting_Tags(t *testing.T) {
 				ProjectUID:   "",
 				Title:        "",
 				Description:  "",
-				Platform:     "Zoom",
+				Platform:     PlatformZoom,
 			},
 			expected: []string{},
 		},
