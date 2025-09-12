@@ -94,36 +94,59 @@ func createResponse(code int, err error) error {
 }
 
 // handleError converts domain errors to HTTP errors.
-// TODO: figure out solution where we don't need to update this function when new errors are added.
-// Resolved once
+// handleError maps domain error types to appropriate HTTP responses
+// This function no longer needs updates when new domain errors are added
 func handleError(err error) error {
+	errorType := domain.GetErrorType(err)
+
+	switch errorType {
+	case domain.ErrorTypeValidation:
+		return createResponse(http.StatusBadRequest, err)
+	case domain.ErrorTypeNotFound:
+		return createResponse(http.StatusNotFound, err)
+	case domain.ErrorTypeConflict:
+		return createResponse(http.StatusConflict, err)
+	case domain.ErrorTypeUnavailable:
+		return createResponse(http.StatusServiceUnavailable, err)
+	case domain.ErrorTypeInternal:
+		return createResponse(http.StatusInternalServerError, err)
+	default:
+		// Fallback for legacy errors that don't use the new system yet
+		return handleLegacyError(err)
+	}
+}
+
+// handleLegacyError provides backwards compatibility for existing errors
+// TODO: Remove this once all errors are migrated to the new DomainError system
+func handleLegacyError(err error) error {
 	switch err {
 	case domain.ErrServiceUnavailable:
-		return createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+		return createResponse(http.StatusServiceUnavailable, err)
 	case domain.ErrValidationFailed:
-		return createResponse(http.StatusBadRequest, domain.ErrValidationFailed)
+		return createResponse(http.StatusBadRequest, err)
 	case domain.ErrRevisionMismatch:
-		return createResponse(http.StatusBadRequest, domain.ErrRevisionMismatch)
+		return createResponse(http.StatusBadRequest, err)
 	case domain.ErrRegistrantAlreadyExists:
-		return createResponse(http.StatusConflict, domain.ErrRegistrantAlreadyExists)
+		return createResponse(http.StatusConflict, err)
 	case domain.ErrPastMeetingParticipantAlreadyExists:
-		return createResponse(http.StatusConflict, domain.ErrPastMeetingParticipantAlreadyExists)
+		return createResponse(http.StatusConflict, err)
 	case domain.ErrProjectNotFound:
-		return createResponse(http.StatusBadRequest, domain.ErrProjectNotFound)
+		return createResponse(http.StatusBadRequest, err)
 	case domain.ErrCommitteeNotFound:
-		return createResponse(http.StatusBadRequest, domain.ErrCommitteeNotFound)
+		return createResponse(http.StatusBadRequest, err)
 	case domain.ErrMeetingNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
+		return createResponse(http.StatusNotFound, err)
 	case domain.ErrRegistrantNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrRegistrantNotFound)
+		return createResponse(http.StatusNotFound, err)
 	case domain.ErrPastMeetingNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrPastMeetingNotFound)
+		return createResponse(http.StatusNotFound, err)
 	case domain.ErrPastMeetingParticipantNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrPastMeetingParticipantNotFound)
+		return createResponse(http.StatusNotFound, err)
 	case domain.ErrInternal, domain.ErrUnmarshal:
-		return createResponse(http.StatusInternalServerError, domain.ErrInternal)
+		return createResponse(http.StatusInternalServerError, err)
+	default:
+		return createResponse(http.StatusInternalServerError, domain.NewInternalError("unexpected error", err))
 	}
-	return err
 }
 
 // Readyz checks if the service is able to take inbound requests.

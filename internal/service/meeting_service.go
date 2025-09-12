@@ -195,7 +195,7 @@ func (s *MeetingService) validateCommittees(ctx context.Context, committees []mo
 
 	if len(invalidCommittees) > 0 {
 		slog.WarnContext(ctx, "invalid committees provided", "invalid_committee_uids", strings.Join(invalidCommittees, ", "))
-		return domain.ErrCommitteeNotFound
+		return domain.NewValidationError("one or more committees do not exist: "+strings.Join(invalidCommittees, ", "), nil)
 	}
 
 	return nil
@@ -212,10 +212,10 @@ func (s *MeetingService) validateProject(ctx context.Context, projectUID string)
 		var projectNotFoundErr *messaging.ProjectNotFoundError
 		if errors.As(err, &projectNotFoundErr) {
 			slog.WarnContext(ctx, "invalid project provided", "project_uid", projectUID)
-			return domain.ErrProjectNotFound
+			return domain.NewValidationError("project does not exist", err)
 		} else {
 			slog.ErrorContext(ctx, "error getting project name", "project_uid", projectUID, logging.ErrKey, err)
-			return domain.ErrInternal
+			return domain.NewInternalError("failed to validate project", err)
 		}
 	}
 
