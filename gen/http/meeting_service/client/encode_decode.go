@@ -2106,10 +2106,6 @@ func DecodeZoomWebhookResponse(decoder func(*http.Response) goahttp.Decoder, res
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("Meeting Service", "zoom-webhook", err)
 			}
-			err = ValidateZoomWebhookResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "zoom-webhook", err)
-			}
 			res := NewZoomWebhookResponseOK(&body)
 			return res, nil
 		case http.StatusBadRequest:

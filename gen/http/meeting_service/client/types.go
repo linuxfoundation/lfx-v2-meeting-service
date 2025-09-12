@@ -584,6 +584,10 @@ type ZoomWebhookResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// Optional message
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// The plain token received in the validation request
+	PlainToken *string `form:"plainToken,omitempty" json:"plainToken,omitempty" xml:"plainToken,omitempty"`
+	// The HMAC SHA-256 hash of the plain token
+	EncryptedToken *string `form:"encryptedToken,omitempty" json:"encryptedToken,omitempty" xml:"encryptedToken,omitempty"`
 }
 
 // GetPastMeetingsResponseBody is the type of the "Meeting Service" service
@@ -3490,8 +3494,10 @@ func NewDeleteMeetingRegistrantServiceUnavailable(body *DeleteMeetingRegistrantS
 // endpoint result from a HTTP "OK" response.
 func NewZoomWebhookResponseOK(body *ZoomWebhookResponseBody) *meetingservice.ZoomWebhookResponse {
 	v := &meetingservice.ZoomWebhookResponse{
-		Status:  *body.Status,
-		Message: body.Message,
+		Status:         body.Status,
+		Message:        body.Message,
+		PlainToken:     body.PlainToken,
+		EncryptedToken: body.EncryptedToken,
 	}
 
 	return v
@@ -4865,15 +4871,6 @@ func ValidateUpdateMeetingRegistrantResponseBody(body *UpdateMeetingRegistrantRe
 	}
 	if body.UpdatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
-	}
-	return
-}
-
-// ValidateZoomWebhookResponseBody runs the validations defined on
-// Zoom-WebhookResponseBody
-func ValidateZoomWebhookResponseBody(body *ZoomWebhookResponseBody) (err error) {
-	if body.Status == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	return
 }

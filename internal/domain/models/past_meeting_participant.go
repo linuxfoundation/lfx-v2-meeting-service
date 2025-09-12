@@ -68,23 +68,23 @@ func (p *PastMeetingParticipant) Tags() []string {
 	}
 
 	if p.FirstName != "" {
-		// without prefix
-		tags = append(tags, p.FirstName)
+		tag := fmt.Sprintf("first_name:%s", p.FirstName)
+		tags = append(tags, tag)
 	}
 
 	if p.LastName != "" {
-		// without prefix
-		tags = append(tags, p.LastName)
+		tag := fmt.Sprintf("last_name:%s", p.LastName)
+		tags = append(tags, tag)
 	}
 
 	if p.Username != "" {
-		// without prefix
-		tags = append(tags, p.Username)
+		tag := fmt.Sprintf("username:%s", p.Username)
+		tags = append(tags, tag)
 	}
 
 	if p.Email != "" {
-		// without prefix
-		tags = append(tags, p.Email)
+		tag := fmt.Sprintf("email:%s", p.Email)
+		tags = append(tags, tag)
 	}
 
 	return tags

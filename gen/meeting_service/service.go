@@ -1296,9 +1296,13 @@ type ZoomWebhookPayload struct {
 // zoom-webhook method.
 type ZoomWebhookResponse struct {
 	// Processing status
-	Status string
+	Status *string
 	// Optional message
 	Message *string
+	// The plain token received in the validation request
+	PlainToken *string
+	// The HMAC SHA-256 hash of the plain token
+	EncryptedToken *string
 }
 
 // Error returns an error description.
