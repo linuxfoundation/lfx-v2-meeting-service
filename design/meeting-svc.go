@@ -893,7 +893,7 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			BearerTokenAttribute()
 			VersionAttribute()
-			PastMeetingUIDAttribute()
+			UIDAttribute()
 		})
 
 		Result(func() {

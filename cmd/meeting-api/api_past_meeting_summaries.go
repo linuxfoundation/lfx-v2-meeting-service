@@ -14,6 +14,10 @@ import (
 
 // GetPastMeetingSummaries gets all summaries for a past meeting
 func (s *MeetingsAPI) GetPastMeetingSummaries(ctx context.Context, payload *meetingsvc.GetPastMeetingSummariesPayload) (*meetingsvc.GetPastMeetingSummariesResult, error) {
+	if payload == nil || payload.UID == nil {
+		return nil, handleError(domain.ErrValidationFailed)
+	}
+
 	summaries, err := s.pastMeetingSummaryService.ListSummariesByPastMeeting(ctx, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)

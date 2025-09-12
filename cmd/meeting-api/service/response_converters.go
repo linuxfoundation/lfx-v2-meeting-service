@@ -531,10 +531,6 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 		Approved:         summary.Approved,
 		EmailSent:        summary.EmailSent,
 		Password:         utils.StringPtr(summary.Password),
-		ZoomConfig: &meetingservice.PastMeetingSummaryZoomConfig{
-			MeetingID:   utils.StringPtr(summary.ZoomConfig.MeetingID),
-			MeetingUUID: utils.StringPtr(summary.ZoomConfig.MeetingUUID),
-		},
 		SummaryData: &meetingservice.SummaryData{
 			StartTime:     summary.SummaryData.StartTime.Format(time.RFC3339),
 			EndTime:       summary.SummaryData.EndTime.Format(time.RFC3339),
@@ -545,6 +541,13 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 		},
 		CreatedAt: summary.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: summary.UpdatedAt.Format(time.RFC3339),
+	}
+
+	if summary.ZoomConfig != nil {
+		result.ZoomConfig = &meetingservice.PastMeetingSummaryZoomConfig{
+			MeetingID:   utils.StringPtr(summary.ZoomConfig.MeetingID),
+			MeetingUUID: utils.StringPtr(summary.ZoomConfig.MeetingUUID),
+		}
 	}
 
 	return result

@@ -1124,7 +1124,7 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 			DocURL:        payload.Object.SummaryDocURL,
 			EditedContent: "", // Empty until user edits
 		},
-		RequiresApproval: pastMeeting.ZoomConfig.AISummaryRequireApproval,
+		RequiresApproval: pastMeeting.ZoomConfig != nil && pastMeeting.ZoomConfig.AISummaryRequireApproval,
 		Approved:         false, // Default to false until manually approved
 		EmailSent:        false, // Default to false until emails are sent
 	}

@@ -782,7 +782,7 @@ type GetPastMeetingSummaryResponseBody PastMeetingSummaryResponseBody
 // UpdatePastMeetingSummaryResponseBody is the type of the "Meeting Service"
 // service "update-past-meeting-summary" endpoint HTTP response body.
 type UpdatePastMeetingSummaryResponseBody struct {
-	// The unique identifier of the past meeting
+	// The unique identifier of the resource
 	UID string `form:"uid" json:"uid" xml:"uid"`
 	// The unique identifier of the past meeting
 	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
@@ -2231,7 +2231,7 @@ type ParticipantSessionResponseBody struct {
 // PastMeetingSummaryResponseBody is used to define fields on response body
 // types.
 type PastMeetingSummaryResponseBody struct {
-	// The unique identifier of the past meeting
+	// The unique identifier of the resource
 	UID string `form:"uid" json:"uid" xml:"uid"`
 	// The unique identifier of the past meeting
 	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`

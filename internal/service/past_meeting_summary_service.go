@@ -7,6 +7,7 @@ import (
 	"context"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,7 +51,12 @@ func NewPastMeetingSummaryService(
 
 // ServiceReady checks if the service is ready to serve requests.
 func (s *PastMeetingSummaryService) ServiceReady() bool {
-	return s.PastMeetingSummaryRepository != nil && s.MessageBuilder != nil
+	return s.PastMeetingSummaryRepository != nil &&
+		s.MessageBuilder != nil &&
+		s.PastMeetingRepository != nil &&
+		s.MeetingRepository != nil &&
+		s.RegistrantRepository != nil &&
+		s.EmailService != nil
 }
 
 // ListSummariesByPastMeeting returns all summaries for a given past meeting.
@@ -96,8 +102,17 @@ func (s *PastMeetingSummaryService) CreateSummary(
 	summary.CreatedAt = now
 	summary.UpdatedAt = now
 
-	// Create in repository
-	err := s.PastMeetingSummaryRepository.Create(ctx, summary)
+	// Send email notifications first to determine EmailSent status
+	err := s.sendSummaryNotificationEmails(ctx, summary)
+	if err != nil {
+		slog.ErrorContext(ctx, "error sending summary notification emails", logging.ErrKey, err, "summary_uid", summary.UID)
+		summary.EmailSent = false
+	} else {
+		summary.EmailSent = true
+	}
+
+	// Create in repository with correct EmailSent status
+	err = s.PastMeetingSummaryRepository.Create(ctx, summary)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating summary", logging.ErrKey, err, "summary_uid", summary.UID)
 		return nil, domain.ErrInternal
@@ -110,17 +125,11 @@ func (s *PastMeetingSummaryService) CreateSummary(
 		// Don't fail the operation if indexing fails
 	}
 
-	// Send email notifications to meeting hosts
-	err = s.sendSummaryNotificationEmails(ctx, summary)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending summary notification emails", logging.ErrKey, err, "summary_uid", summary.UID)
-		// Don't fail the operation if email notifications fail
-	}
-
 	slog.InfoContext(ctx, "created new past meeting summary",
 		"summary_uid", summary.UID,
 		"past_meeting_uid", summary.PastMeetingUID,
 		"platform", summary.Platform,
+		"email_sent", summary.EmailSent,
 	)
 
 	return summary, nil
@@ -225,42 +234,6 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 	return &updatedSummary, nil
 }
 
-// DeleteSummary deletes a summary.
-func (s *PastMeetingSummaryService) DeleteSummary(ctx context.Context, summaryUID string) error {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.ErrServiceUnavailable
-	}
-
-	// Get the summary first to send delete message
-	summary, revision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, summaryUID)
-	if err != nil {
-		if err == domain.ErrPastMeetingSummaryNotFound {
-			slog.DebugContext(ctx, "summary not found for deletion", "summary_uid", summaryUID)
-			return err
-		}
-		slog.ErrorContext(ctx, "error getting summary for deletion", logging.ErrKey, err, "summary_uid", summaryUID)
-		return domain.ErrInternal
-	}
-
-	// Delete from repository
-	err = s.PastMeetingSummaryRepository.Delete(ctx, summaryUID, revision)
-	if err != nil {
-		slog.ErrorContext(ctx, "error deleting summary", logging.ErrKey, err, "summary_uid", summaryUID)
-		return domain.ErrInternal
-	}
-
-	// Send indexing message for deleted summary
-	err = s.MessageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionDeleted, *summary)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending index message for deleted summary", logging.ErrKey, err, "summary_uid", summaryUID)
-		// Don't fail the operation if indexing fails
-	}
-
-	slog.InfoContext(ctx, "deleted past meeting summary", "summary_uid", summaryUID)
-	return nil
-}
-
 // sendSummaryNotificationEmails sends email notifications to meeting host registrants
 func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Context, summary *models.PastMeetingSummary) error {
 	// Get the past meeting to retrieve meeting details
@@ -302,7 +275,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 	for _, registrant := range hostRegistrants {
 		notification := domain.EmailSummaryNotification{
 			RecipientEmail: registrant.Email,
-			RecipientName:  registrant.FirstName + " " + registrant.LastName,
+			RecipientName:  strings.TrimSpace(strings.Join([]string{registrant.FirstName, registrant.LastName}, " ")),
 			MeetingTitle:   pastMeeting.Title,
 			MeetingDate:    pastMeeting.ScheduledStartTime,
 			ProjectName:    meetingBase.ProjectUID, // Using ProjectUID as project context

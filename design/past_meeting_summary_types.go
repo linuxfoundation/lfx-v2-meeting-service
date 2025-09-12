@@ -168,7 +168,7 @@ var SummaryData = Type("SummaryData", func() {
 var PastMeetingSummary = Type("PastMeetingSummary", func() {
 	Description("AI-generated summary for a past meeting occurrence")
 
-	PastMeetingUIDAttribute()                       // Reuse existing - defines "uid" field
+	UIDAttribute()
 	PastMeetingParticipantPastMeetingUIDAttribute() // Reuse existing - defines "past_meeting_uid" field
 	PastMeetingMeetingUIDAttribute()                // Reuse existing - defines "meeting_uid" field
 	PlatformAttribute()                             // Reuse existing

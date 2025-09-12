@@ -71,18 +71,6 @@ func (s *NatsPastMeetingSummaryRepository) Create(ctx context.Context, summary *
 	return nil
 }
 
-// Delete removes a past meeting summary from the NATS KV store.
-func (s *NatsPastMeetingSummaryRepository) Delete(ctx context.Context, summaryUID string, revision uint64) error {
-	err := s.PastMeetingSummaries.Delete(ctx, summaryUID)
-	if err != nil {
-		slog.ErrorContext(ctx, "error deleting summary from KV store", logging.ErrKey, err, "summary_uid", summaryUID)
-		return domain.ErrInternal
-	}
-
-	slog.DebugContext(ctx, "deleted past meeting summary", "summary_uid", summaryUID)
-	return nil
-}
-
 // Get retrieves a past meeting summary from the NATS KV store.
 func (s *NatsPastMeetingSummaryRepository) Get(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, error) {
 	entry, err := s.get(ctx, summaryUID)
@@ -95,7 +83,12 @@ func (s *NatsPastMeetingSummaryRepository) Get(ctx context.Context, summaryUID s
 		return nil, domain.ErrInternal
 	}
 
-	return s.unmarshal(ctx, entry)
+	summary, err := s.unmarshal(ctx, entry)
+	if err != nil {
+		return nil, domain.ErrUnmarshal
+	}
+
+	return summary, nil
 }
 
 // GetWithRevision retrieves a past meeting summary with its revision from the NATS KV store.

@@ -178,7 +178,7 @@ func ParseEndpoint(
 		meetingServiceDeletePastMeetingParticipantIfMatchFlag        = meetingServiceDeletePastMeetingParticipantFlags.String("if-match", "", "")
 
 		meetingServiceGetPastMeetingSummariesFlags           = flag.NewFlagSet("get-past-meeting-summaries", flag.ExitOnError)
-		meetingServiceGetPastMeetingSummariesUIDFlag         = meetingServiceGetPastMeetingSummariesFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
+		meetingServiceGetPastMeetingSummariesUIDFlag         = meetingServiceGetPastMeetingSummariesFlags.String("uid", "REQUIRED", "The unique identifier of the resource")
 		meetingServiceGetPastMeetingSummariesVersionFlag     = meetingServiceGetPastMeetingSummariesFlags.String("version", "", "")
 		meetingServiceGetPastMeetingSummariesBearerTokenFlag = meetingServiceGetPastMeetingSummariesFlags.String("bearer-token", "", "")
 
@@ -1072,12 +1072,12 @@ func meetingServiceGetPastMeetingSummariesUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting-summaries -uid STRING -version STRING -bearer-token STRING
 
 Get all summaries for a past meeting
-    -uid STRING: The unique identifier of the past meeting
+    -uid STRING: The unique identifier of the resource
     -version STRING: 
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-past-meeting-summaries --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-past-meeting-summaries --uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 

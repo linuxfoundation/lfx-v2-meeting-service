@@ -112,7 +112,6 @@ type PastMeetingRecordingRepository interface {
 // PastMeetingSummaryRepository defines the interface for past meeting summary storage operations.
 type PastMeetingSummaryRepository interface {
 	Create(ctx context.Context, summary *models.PastMeetingSummary) error
-	Delete(ctx context.Context, summaryUID string, revision uint64) error
 	Get(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, error)
 	GetWithRevision(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, uint64, error)
 	Update(ctx context.Context, summary *models.PastMeetingSummary, revision uint64) error

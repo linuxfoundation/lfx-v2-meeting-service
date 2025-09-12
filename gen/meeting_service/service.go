@@ -543,7 +543,7 @@ type GetPastMeetingSummariesPayload struct {
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The unique identifier of the past meeting
+	// The unique identifier of the resource
 	UID *string
 }
 
@@ -920,7 +920,7 @@ type PastMeetingParticipant struct {
 // PastMeetingSummary is the result type of the Meeting Service service
 // update-past-meeting-summary method.
 type PastMeetingSummary struct {
-	// The unique identifier of the past meeting
+	// The unique identifier of the resource
 	UID string
 	// The unique identifier of the past meeting
 	PastMeetingUID string

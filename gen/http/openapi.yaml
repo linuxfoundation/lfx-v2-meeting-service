@@ -1737,7 +1737,7 @@ paths:
                     - "1"
                 - name: uid
                   in: path
-                  description: The unique identifier of the past meeting
+                  description: The unique identifier of the resource
                   required: true
                   type: string
                   format: uuid
@@ -4049,7 +4049,7 @@ definitions:
                         end_time: "2024-01-15T11:00:00Z"
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uid: 456e7890-e89b-12d3-a456-426614174000
                       updated_at: "2021-01-01T00:00:00Z"
                       zoom_config:
                         meeting_id: "1234567890"
@@ -4069,7 +4069,7 @@ definitions:
                         end_time: "2024-01-15T11:00:00Z"
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uid: 456e7890-e89b-12d3-a456-426614174000
                       updated_at: "2021-01-01T00:00:00Z"
                       zoom_config:
                         meeting_id: "1234567890"
@@ -4089,7 +4089,7 @@ definitions:
                         end_time: "2024-01-15T11:00:00Z"
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uid: 456e7890-e89b-12d3-a456-426614174000
                       updated_at: "2021-01-01T00:00:00Z"
                       zoom_config:
                         meeting_id: "1234567890"
@@ -4109,7 +4109,7 @@ definitions:
                         end_time: "2024-01-15T11:00:00Z"
                         start_time: "2024-01-15T10:00:00Z"
                         title: Weekly Team Standup Meeting
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uid: 456e7890-e89b-12d3-a456-426614174000
                       updated_at: "2021-01-01T00:00:00Z"
                       zoom_config:
                         meeting_id: "1234567890"
@@ -4131,7 +4131,7 @@ definitions:
                     end_time: "2024-01-15T11:00:00Z"
                     start_time: "2024-01-15T10:00:00Z"
                     title: Weekly Team Standup Meeting
-                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uid: 456e7890-e89b-12d3-a456-426614174000
                   updated_at: "2021-01-01T00:00:00Z"
                   zoom_config:
                     meeting_id: "1234567890"
@@ -4151,7 +4151,7 @@ definitions:
                     end_time: "2024-01-15T11:00:00Z"
                     start_time: "2024-01-15T10:00:00Z"
                     title: Weekly Team Standup Meeting
-                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uid: 456e7890-e89b-12d3-a456-426614174000
                   updated_at: "2021-01-01T00:00:00Z"
                   zoom_config:
                     meeting_id: "1234567890"
@@ -4171,7 +4171,7 @@ definitions:
                     end_time: "2024-01-15T11:00:00Z"
                     start_time: "2024-01-15T10:00:00Z"
                     title: Weekly Team Standup Meeting
-                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uid: 456e7890-e89b-12d3-a456-426614174000
                   updated_at: "2021-01-01T00:00:00Z"
                   zoom_config:
                     meeting_id: "1234567890"
@@ -4191,7 +4191,7 @@ definitions:
                     end_time: "2024-01-15T11:00:00Z"
                     start_time: "2024-01-15T10:00:00Z"
                     title: Weekly Team Standup Meeting
-                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uid: 456e7890-e89b-12d3-a456-426614174000
                   updated_at: "2021-01-01T00:00:00Z"
                   zoom_config:
                     meeting_id: "1234567890"
@@ -5344,8 +5344,8 @@ definitions:
                 $ref: '#/definitions/SummaryData'
             uid:
                 type: string
-                description: The unique identifier of the past meeting
-                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                description: The unique identifier of the resource
+                example: 456e7890-e89b-12d3-a456-426614174000
                 format: uuid
             updated_at:
                 type: string
@@ -5371,7 +5371,7 @@ definitions:
                 end_time: "2024-01-15T11:00:00Z"
                 start_time: "2024-01-15T10:00:00Z"
                 title: Weekly Team Standup Meeting
-            uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            uid: 456e7890-e89b-12d3-a456-426614174000
             updated_at: "2021-01-01T00:00:00Z"
             zoom_config:
                 meeting_id: "1234567890"
