@@ -397,6 +397,9 @@ func (s *NatsRegistrantRepository) Update(ctx context.Context, registrant *model
 		if strings.Contains(err.Error(), "wrong last sequence") {
 			return domain.NewConflictError("registrant has been modified by another process", err)
 		}
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return domain.NewNotFoundError("registrant not found", err)
+		}
 		slog.ErrorContext(ctx, "error updating registrant in NATS KV store", logging.ErrKey, err)
 		return domain.NewInternalError("failed to update registrant in store", err)
 	}

@@ -200,9 +200,7 @@ func TestPastMeetingParticipantService_GetPastMeetingParticipants(t *testing.T) 
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErrType != 0 {
-					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
-				}
+				assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 			} else {
 				assert.NoError(t, err)
 				assert.Len(t, result, tt.expectedLen)
@@ -380,9 +378,7 @@ func TestPastMeetingParticipantService_CreatePastMeetingParticipant(t *testing.T
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErrType != 0 {
-					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
-				}
+				assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
@@ -502,9 +498,7 @@ func TestPastMeetingParticipantService_GetPastMeetingParticipant(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErrType != 0 {
-					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
-				}
+				assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
@@ -641,9 +635,7 @@ func TestPastMeetingParticipantService_UpdatePastMeetingParticipant(t *testing.T
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErrType != 0 {
-					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
-				}
+				assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
@@ -802,9 +794,7 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErrType != 0 {
-					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
-				}
+				assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 			} else {
 				assert.NoError(t, err)
 			}

@@ -19,7 +19,7 @@ func ConvertCreateMeetingPayloadToDomain(payload *meetingservice.CreateMeetingPa
 	// Convert payload to domain - split into Base and Settings
 	base, err := convertCreateMeetingBasePayloadToDomain(payload)
 	if err != nil {
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed", err)
 	}
 	settings := convertCreateMeetingSettingsPayloadToDomain(payload)
 
@@ -41,7 +41,7 @@ func convertCreateMeetingBasePayloadToDomain(payload *meetingservice.CreateMeeti
 		slog.Error("failed to parse start time", logging.ErrKey, err,
 			"start_time", payload.StartTime,
 		)
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed", err)
 	}
 
 	now := time.Now().UTC()
@@ -147,7 +147,7 @@ func ConvertMeetingUpdatePayloadToDomain(payload *meetingservice.UpdateMeetingBa
 		slog.Error("failed to parse start time", logging.ErrKey, err,
 			"start_time", payload.StartTime,
 		)
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed", err)
 	}
 
 	now := time.Now().UTC()

@@ -137,7 +137,7 @@ type CreateMeetingRequest struct {
 }
 
 func (m *MeetingBase) IsPublic() bool {
-	return m.Visibility == VisibilityPublic
+	return m != nil && m.Visibility == VisibilityPublic
 }
 
 // Tags generates a consistent set of tags for the meeting.

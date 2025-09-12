@@ -6,7 +6,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -337,7 +336,7 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 
 	// Check if a past meeting already exists for this occurrence
 	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
-	if err != nil && !errors.Is(err, domain.NewNotFoundError("past meeting not found", nil)) {
+	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 		slog.ErrorContext(ctx, "failed to check for existing past meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to check for existing past meeting: %w", err)
 	}
@@ -484,7 +483,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 	// First, get the meeting from database to calculate the correct occurrence ID
 	meeting, err := s.meetingService.MeetingRepository.GetByZoomMeetingID(ctx, meetingObj.ID)
 	if err != nil {
-		if err == domain.NewNotFoundError("meeting not found", nil) {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "meeting not found in database for ended event, skipping",
 				"zoom_meeting_id", meetingObj.ID,
 			)

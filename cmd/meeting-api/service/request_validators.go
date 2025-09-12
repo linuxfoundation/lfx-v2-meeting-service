@@ -30,7 +30,7 @@ func EtagValidator(etag *string) (uint64, error) {
 
 	parsedRevision, errParse := strconv.ParseUint(raw, 10, 64)
 	if errParse != nil {
-		return 0, domain.NewValidationError("validation failed", nil)
+		return 0, domain.NewValidationError("validation failed", errParse)
 	}
 
 	return parsedRevision, nil

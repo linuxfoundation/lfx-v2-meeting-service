@@ -228,7 +228,8 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 	mu := sync.Mutex{}
 
 	tasks := make([]func() error, len(meetings))
-	for _, meeting := range meetings {
+	for i := range meetings {
+		meeting := meetings[i]
 		tasks = append(tasks, func() error {
 			err := h.tryAddMemberToMeeting(ctx, meeting, &committeeMember)
 			if err != nil {
@@ -348,7 +349,8 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 	mu := sync.Mutex{}
 
 	tasks := make([]func() error, len(meetings))
-	for _, meeting := range meetings {
+	for i := range meetings {
+		meeting := meetings[i]
 		tasks = append(tasks, func() error {
 			err := h.tryRemoveMemberFromMeeting(ctx, meeting, member)
 			if err != nil {

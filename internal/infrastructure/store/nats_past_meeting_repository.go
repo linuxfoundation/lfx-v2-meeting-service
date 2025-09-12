@@ -120,7 +120,7 @@ func (s *NatsPastMeetingRepository) Create(ctx context.Context, pastMeeting *mod
 	_, err = s.PastMeetings.Put(ctx, pastMeeting.UID, pastMeetingBytes)
 	if err != nil {
 		slog.ErrorContext(ctx, "error storing past meeting in NATS KV", logging.ErrKey, err)
-		return domain.NewInternalError("failed to marshal past meeting data", err)
+		return domain.NewInternalError("failed to store past meeting in store", err)
 	}
 
 	return nil

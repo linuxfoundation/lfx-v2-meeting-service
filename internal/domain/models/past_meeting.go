@@ -49,7 +49,7 @@ type Session struct {
 }
 
 func (p *PastMeeting) IsPublic() bool {
-	return p.Visibility == VisibilityPublic
+	return p != nil && p.Visibility == VisibilityPublic
 }
 
 // Tags generates a consistent set of tags for the past meeting.
