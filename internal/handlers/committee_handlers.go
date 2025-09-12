@@ -9,11 +9,13 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"sync"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
 // CommitteeHandlers handles committee-related messages and events.
@@ -222,63 +224,34 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 	}
 
 	// Process each meeting that contains this committee
-	var allErrors []error
 	successCount := 0
+	mu := sync.Mutex{}
 
-	for _, meeting := range meetings {
-		if meeting == nil {
-			continue
-		}
-
-		// Find the committee configuration for this meeting
-		var committeeConfig *models.Committee
-		for i, committee := range meeting.Committees {
-			if committee.UID == memberMsg.CommitteeUID {
-				committeeConfig = &meeting.Committees[i]
-				break
+	tasks := make([]func() error, len(meetings))
+	for i := range meetings {
+		meeting := meetings[i]
+		tasks = append(tasks, func() error {
+			err := h.tryAddMemberToMeeting(ctx, meeting, &committeeMember)
+			if err != nil {
+				return err
 			}
-		}
-
-		if committeeConfig == nil {
-			// This shouldn't happen since we filtered by committee UID
-			slog.WarnContext(ctx, "committee not found in meeting",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID)
-			continue
-		}
-
-		// Check if member's voting status matches allowed statuses
-		if len(committeeConfig.AllowedVotingStatuses) > 0 &&
-			!slices.Contains(committeeConfig.AllowedVotingStatuses, memberMsg.Voting.Status) {
-			slog.DebugContext(ctx, "member voting status not allowed for meeting",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID,
-				"member_voting_status", memberMsg.Voting.Status,
-				"allowed_voting_statuses", committeeConfig.AllowedVotingStatuses)
-			continue
-		}
-
-		// Add the member to this meeting using the committee sync service
-		err := h.committeeSyncService.AddCommitteeMembersAsRegistrants(
-			ctx,
-			meeting.UID,
-			memberMsg.CommitteeUID,
-			[]models.CommitteeMember{committeeMember},
-		)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to add committee member to meeting",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID,
-				"member_email", memberMsg.Email,
-				logging.ErrKey, err)
-			allErrors = append(allErrors, fmt.Errorf("failed to add member to meeting %s: %w", meeting.UID, err))
-		} else {
+			mu.Lock()
 			successCount++
-			slog.InfoContext(ctx, "successfully added committee member to meeting",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID,
-				"member_email", memberMsg.Email)
-		}
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	workerPool := concurrent.NewWorkerPool(10)
+	errors := workerPool.RunAll(ctx, tasks...)
+	if len(errors) > 0 {
+		// Log the errors but don't fail the entire operation
+		slog.ErrorContext(ctx, "failed to add committee member to meetings",
+			"committee_uid", memberMsg.CommitteeUID,
+			"member_email", memberMsg.Email,
+			"errors", errors,
+			"errors_count", len(errors),
+		)
 	}
 
 	slog.InfoContext(ctx, "completed committee member addition to meetings",
@@ -286,10 +259,63 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 		"member_email", memberMsg.Email,
 		"total_meetings", len(meetings),
 		"successful_additions", successCount,
-		"failed_additions", len(allErrors))
+		"failed_additions", len(errors))
 
-	if len(allErrors) > 0 {
-		return fmt.Errorf("failed to add committee member to %d meetings: %v", len(allErrors), allErrors)
+	return nil
+}
+
+func (h *CommitteeHandlers) tryAddMemberToMeeting(ctx context.Context, meeting *models.MeetingBase, member *models.CommitteeMember) error {
+	if meeting == nil {
+		return nil
+	}
+
+	// Find the committee configuration for this meeting
+	var committeeConfig *models.Committee
+	for i, committee := range meeting.Committees {
+		if committee.UID == member.CommitteeUID {
+			committeeConfig = &meeting.Committees[i]
+			break
+		}
+	}
+
+	if committeeConfig == nil {
+		// This shouldn't happen since we filtered by committee UID
+		slog.WarnContext(ctx, "committee not found in meeting",
+			"meeting_uid", meeting.UID,
+			"committee_uid", member.CommitteeUID)
+		return nil
+	}
+
+	// Check if member's voting status matches allowed statuses
+	if len(committeeConfig.AllowedVotingStatuses) > 0 &&
+		!slices.Contains(committeeConfig.AllowedVotingStatuses, member.Voting.Status) {
+		slog.DebugContext(ctx, "member voting status not allowed for meeting",
+			"meeting_uid", meeting.UID,
+			"committee_uid", member.CommitteeUID,
+			"member_voting_status", member.Voting.Status,
+			"allowed_voting_statuses", committeeConfig.AllowedVotingStatuses)
+		return nil
+	}
+
+	// Add the member to this meeting using the committee sync service
+	err := h.committeeSyncService.AddCommitteeMembersAsRegistrants(
+		ctx,
+		meeting.UID,
+		member.CommitteeUID,
+		[]models.CommitteeMember{*member},
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to add committee member to meeting",
+			"meeting_uid", meeting.UID,
+			"committee_uid", member.CommitteeUID,
+			"member_email", member.Email,
+			logging.ErrKey, err)
+		return fmt.Errorf("failed to add member to meeting %s: %w", meeting.UID, err)
+	} else {
+		slog.InfoContext(ctx, "successfully added committee member to meeting",
+			"meeting_uid", meeting.UID,
+			"committee_uid", member.CommitteeUID,
+			"member_email", member.Email)
 	}
 
 	return nil
@@ -297,9 +323,9 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 
 // removeMemberFromRelevantMeetings finds all meetings that include the specified committee
 // and removes or converts the member's registrant based on meeting visibility.
-func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context, memberMsg *models.CommitteeMember) error {
+func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context, member *models.CommitteeMember) error {
 	// Get meetings that contain this committee
-	meetings, _, err := h.meetingService.MeetingRepository.ListByCommittee(ctx, memberMsg.CommitteeUID)
+	meetings, _, err := h.meetingService.MeetingRepository.ListByCommittee(ctx, member.CommitteeUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list meetings by committee", logging.ErrKey, err)
 		return fmt.Errorf("failed to list meetings by committee: %w", err)
@@ -307,90 +333,113 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 
 	if len(meetings) == 0 {
 		slog.InfoContext(ctx, "no meetings found for committee",
-			"committee_uid", memberMsg.CommitteeUID,
-			"member_email", memberMsg.Email)
+			"committee_uid", member.CommitteeUID,
+			"member_email", member.Email)
 		return nil
 	}
 
 	slog.InfoContext(ctx, "found meetings for committee member removal",
-		"committee_uid", memberMsg.CommitteeUID,
-		"member_email", memberMsg.Email,
-		"voting_status", memberMsg.Voting.Status,
+		"committee_uid", member.CommitteeUID,
+		"member_email", member.Email,
+		"voting_status", member.Voting.Status,
 		"meetings_count", len(meetings))
 
 	// Process each meeting that contains this committee
-	var allErrors []error
 	successCount := 0
+	mu := sync.Mutex{}
 
-	for _, meeting := range meetings {
-		if meeting == nil {
-			continue
-		}
-
-		// Find the committee configuration for this meeting to get voting status requirements
-		var committeeConfig *models.Committee
-		for i, committee := range meeting.Committees {
-			if committee.UID == memberMsg.CommitteeUID {
-				committeeConfig = &meeting.Committees[i]
-				break
+	tasks := make([]func() error, len(meetings))
+	for i := range meetings {
+		meeting := meetings[i]
+		tasks = append(tasks, func() error {
+			err := h.tryRemoveMemberFromMeeting(ctx, meeting, member)
+			if err != nil {
+				return err
 			}
-		}
-
-		if committeeConfig == nil {
-			// This shouldn't happen since we filtered by committee UID
-			slog.WarnContext(ctx, "committee not found in meeting",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID)
-			continue
-		}
-
-		// Check if this member would have been eligible (had the right voting status)
-		// If they weren't eligible, they wouldn't be registered, so skip
-		if len(committeeConfig.AllowedVotingStatuses) > 0 &&
-			!slices.Contains(committeeConfig.AllowedVotingStatuses, memberMsg.Voting.Status) {
-			slog.DebugContext(ctx, "member voting status was not allowed for meeting, skipping",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID,
-				"member_voting_status", memberMsg.Voting.Status,
-				"allowed_voting_statuses", committeeConfig.AllowedVotingStatuses)
-			continue
-		}
-
-		// Find and remove/convert registrants for this committee member
-		isPublicMeeting := meeting.Visibility == "public"
-		err := h.committeeSyncService.RemoveCommitteeMemberFromMeeting(
-			ctx,
-			meeting.UID,
-			memberMsg.CommitteeUID,
-			memberMsg.Email,
-			isPublicMeeting,
-		)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to remove committee member from meeting",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID,
-				"member_email", memberMsg.Email,
-				logging.ErrKey, err)
-			allErrors = append(allErrors, fmt.Errorf("failed to remove committee member from meeting %s: %w", meeting.UID, err))
-		} else {
+			mu.Lock()
 			successCount++
-			slog.InfoContext(ctx, "successfully processed committee member removal from meeting",
-				"meeting_uid", meeting.UID,
-				"committee_uid", memberMsg.CommitteeUID,
-				"member_email", memberMsg.Email)
-		}
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	workerPool := concurrent.NewWorkerPool(10)
+	errors := workerPool.RunAll(ctx, tasks...)
+	if len(errors) > 0 {
+		// Log the errors but don't fail the entire operation
+		slog.ErrorContext(ctx, "failed to remove committee member from meetings",
+			"committee_uid", member.CommitteeUID,
+			"member_email", member.Email,
+			"errors", errors,
+			"errors_count", len(errors),
+		)
 	}
 
 	slog.InfoContext(ctx, "completed committee member removal from meetings",
-		"committee_uid", memberMsg.CommitteeUID,
-		"member_email", memberMsg.Email,
+		"committee_uid", member.CommitteeUID,
+		"member_email", member.Email,
 		"total_meetings", len(meetings),
 		"successful_removals", successCount,
-		"failed_removals", len(allErrors))
+		"failed_removals", len(errors))
 
-	if len(allErrors) > 0 {
-		return fmt.Errorf("failed to remove committee member from %d meetings: %v", len(allErrors), allErrors)
+	return nil
+}
+
+func (h *CommitteeHandlers) tryRemoveMemberFromMeeting(ctx context.Context, meeting *models.MeetingBase, member *models.CommitteeMember) error {
+	if meeting == nil {
+		return nil
 	}
 
+	// Find the committee configuration for this meeting to get voting status requirements
+	var committeeConfig *models.Committee
+	for i, committee := range meeting.Committees {
+		if committee.UID == member.CommitteeUID {
+			committeeConfig = &meeting.Committees[i]
+			break
+		}
+	}
+
+	if committeeConfig == nil {
+		// This shouldn't happen since we filtered by committee UID
+		slog.WarnContext(ctx, "committee not found in meeting",
+			"meeting_uid", meeting.UID,
+			"committee_uid", member.CommitteeUID)
+		return nil
+	}
+
+	// Check if this member would have been eligible (had the right voting status)
+	// If they weren't eligible, they wouldn't be registered, so skip
+	if len(committeeConfig.AllowedVotingStatuses) > 0 &&
+		!slices.Contains(committeeConfig.AllowedVotingStatuses, member.Voting.Status) {
+		slog.DebugContext(ctx, "member voting status was not allowed for meeting, skipping",
+			"meeting_uid", meeting.UID,
+			"committee_uid", member.CommitteeUID,
+			"member_voting_status", member.Voting.Status,
+			"allowed_voting_statuses", committeeConfig.AllowedVotingStatuses)
+		return nil
+	}
+
+	// Find and remove/convert registrants for this committee member
+	isPublicMeeting := meeting.IsPublic()
+	err := h.committeeSyncService.RemoveCommitteeMemberFromMeeting(
+		ctx,
+		meeting.UID,
+		member.CommitteeUID,
+		member.Email,
+		isPublicMeeting,
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to remove committee member from meeting",
+			"meeting_uid", meeting.UID,
+			"committee_uid", member.CommitteeUID,
+			"member_email", member.Email,
+			logging.ErrKey, err)
+		return fmt.Errorf("failed to remove committee member from meeting %s: %w", meeting.UID, err)
+	}
+
+	slog.InfoContext(ctx, "successfully processed committee member removal from meeting",
+		"meeting_uid", meeting.UID,
+		"committee_uid", member.CommitteeUID,
+		"member_email", member.Email)
 	return nil
 }

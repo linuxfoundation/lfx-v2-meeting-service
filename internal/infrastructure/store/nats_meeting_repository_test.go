@@ -117,8 +117,8 @@ func TestNatsMeetingRepository_Create_Error(t *testing.T) {
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
-	if err != domain.ErrInternal {
-		t.Errorf("expected ErrInternal, got %v", err)
+	if domain.GetErrorType(err) != domain.ErrorTypeInternal {
+		t.Errorf("expected Internal error, got %v", err)
 	}
 }
 
@@ -279,8 +279,8 @@ func TestNatsMeetingRepository_Update_RevisionMismatch(t *testing.T) {
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
-	if err != domain.ErrRevisionMismatch {
-		t.Errorf("expected ErrRevisionMismatch, got %v", err)
+	if domain.GetErrorType(err) != domain.ErrorTypeConflict {
+		t.Errorf("expected Conflict error, got %v", err)
 	}
 }
 
@@ -336,8 +336,8 @@ func TestNatsMeetingRepository_Delete_RevisionMismatch(t *testing.T) {
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
-	if err != domain.ErrRevisionMismatch {
-		t.Errorf("expected ErrRevisionMismatch, got %v", err)
+	if domain.GetErrorType(err) != domain.ErrorTypeConflict {
+		t.Errorf("expected Conflict error, got %v", err)
 	}
 }
 

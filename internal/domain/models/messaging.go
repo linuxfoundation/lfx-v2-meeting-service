@@ -81,6 +81,10 @@ const (
 	// CommitteeMemberDeletedSubject is the subject for committee member deletion events.
 	// The subject is of the form: lfx.committee-api.committee_member.deleted
 	CommitteeMemberDeletedSubject = "lfx.committee-api.committee_member.deleted"
+
+	// ProjectGetNameSubject is the subject for project name validation.
+	// The subject is of the form: lfx.projects-api.get_name
+	ProjectGetNameSubject = "lfx.projects-api.get_name"
 )
 
 // NATS wildcard subjects that the meeting service handles messages about.

@@ -48,7 +48,7 @@ func TestPastMeetingRecording_Tags(t *testing.T) {
 		{
 			name: "recording with Platform only",
 			recording: &PastMeetingRecording{
-				Platform: "Zoom",
+				Platform: PlatformZoom,
 			},
 			expected: []string{
 				"platform:Zoom",
@@ -68,7 +68,7 @@ func TestPastMeetingRecording_Tags(t *testing.T) {
 			recording: &PastMeetingRecording{
 				UID:               "recording-123",
 				PastMeetingUID:    "past-meeting-456",
-				Platform:          "Zoom",
+				Platform:          PlatformZoom,
 				PlatformMeetingID: "123456789",
 				TotalSize:         1024000,
 				RecordingCount:    3,

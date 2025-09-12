@@ -5,7 +5,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"strconv"
 
@@ -54,12 +53,12 @@ func (s *PastMeetingParticipantService) ServiceReady() bool {
 func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	if pastMeetingUID == "" {
 		slog.WarnContext(ctx, "past meeting UID is required")
-		return nil, domain.ErrValidationFailed
+		return nil, domain.NewValidationError("past meeting UID is required", nil)
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", pastMeetingUID))
@@ -68,18 +67,18 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.C
 	exists, err := s.PastMeetingRepository.Exists(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return nil, domain.ErrPastMeetingNotFound
+		return nil, domain.NewNotFoundError("past meeting not found", nil)
 	}
 
 	// Get all participants for the past meeting
 	participants, err := s.PastMeetingParticipantRepository.ListByPastMeeting(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting past meeting participants", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	slog.DebugContext(ctx, "returning past meeting participants", "count", len(participants))
@@ -90,31 +89,30 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.C
 func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx context.Context, participant *models.PastMeetingParticipant) error {
 	if participant == nil || participant.PastMeetingUID == "" {
 		slog.WarnContext(ctx, "participant and past meeting UID are required")
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("participant and past meeting UID are required", nil)
 	}
 
 	// Check if the past meeting exists
 	exists, err := s.PastMeetingRepository.Exists(ctx, participant.PastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found", "past_meeting_uid", participant.PastMeetingUID)
-		return domain.ErrPastMeetingNotFound
+		return domain.NewNotFoundError("past meeting not found", nil)
 	}
 
 	// Check that there isn't already a participant with the same email address for this past meeting.
 	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, participant.PastMeetingUID, participant.Email)
-	if err != nil && !errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
+	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 		slog.ErrorContext(ctx, "error checking for existing participant", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 	if existingParticipant != nil {
 		slog.WarnContext(ctx, "participant already exists for past meeting with same email address",
-			"email", participant.Email,
-			logging.ErrKey, domain.ErrPastMeetingParticipantAlreadyExists)
-		return domain.ErrPastMeetingParticipantAlreadyExists
+			"email", participant.Email)
+		return domain.NewConflictError("participant already exists for past meeting with same email address", nil)
 	}
 
 	return nil
@@ -124,12 +122,12 @@ func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx con
 func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context.Context, participant *models.PastMeetingParticipant) (*models.PastMeetingParticipant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	if participant == nil {
 		slog.WarnContext(ctx, "participant is required")
-		return nil, domain.ErrValidationFailed
+		return nil, domain.NewValidationError("participant is required", nil)
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", participant.PastMeetingUID))
@@ -143,12 +141,8 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	// Get the past meeting to populate the MeetingUID
 	pastMeeting, err := s.PastMeetingRepository.Get(ctx, participant.PastMeetingUID)
 	if err != nil {
-		if errors.Is(err, domain.ErrPastMeetingNotFound) {
-			slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, err)
-			return nil, domain.ErrPastMeetingNotFound
-		}
 		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 	participant.MeetingUID = pastMeeting.MeetingUID
 
@@ -160,12 +154,8 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	// Create the participant
 	err = s.PastMeetingParticipantRepository.Create(ctx, participant)
 	if err != nil {
-		if errors.Is(err, domain.ErrPastMeetingParticipantAlreadyExists) {
-			slog.WarnContext(ctx, "participant already exists", logging.ErrKey, err)
-			return nil, domain.ErrPastMeetingParticipantAlreadyExists
-		}
 		slog.ErrorContext(ctx, "error creating participant", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	slog.DebugContext(ctx, "created past meeting participant",
@@ -202,12 +192,12 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Context, pastMeetingUID, participantUID string) (*models.PastMeetingParticipant, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.ErrServiceUnavailable
+		return nil, "", domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	if pastMeetingUID == "" || participantUID == "" {
 		slog.WarnContext(ctx, "past meeting UID and participant UID are required")
-		return nil, "", domain.ErrValidationFailed
+		return nil, "", domain.NewValidationError("past meeting UID and participant UID are required", nil)
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", pastMeetingUID))
@@ -217,22 +207,18 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Co
 	exists, err := s.PastMeetingRepository.Exists(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
-		return nil, "", domain.ErrInternal
+		return nil, "", err
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return nil, "", domain.ErrPastMeetingNotFound
+		return nil, "", domain.NewNotFoundError("past meeting not found", nil)
 	}
 
 	// Get the participant with revision
 	participant, revision, err := s.PastMeetingParticipantRepository.GetWithRevision(ctx, participantUID)
 	if err != nil {
-		if errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
-			slog.WarnContext(ctx, "participant not found", logging.ErrKey, err)
-			return nil, "", domain.ErrPastMeetingParticipantNotFound
-		}
 		slog.ErrorContext(ctx, "error getting participant from store", logging.ErrKey, err)
-		return nil, "", domain.ErrInternal
+		return nil, "", err
 	}
 
 	// Verify the participant belongs to the specified past meeting
@@ -240,7 +226,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Co
 		slog.WarnContext(ctx, "participant does not belong to the specified past meeting",
 			"expected_past_meeting_uid", pastMeetingUID,
 			"actual_past_meeting_uid", participant.PastMeetingUID)
-		return nil, "", domain.ErrPastMeetingParticipantNotFound
+		return nil, "", domain.NewNotFoundError("participant not found", nil)
 	}
 
 	// Convert revision to string for ETag
@@ -257,25 +243,24 @@ func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx con
 	exists, err := s.PastMeetingRepository.Exists(ctx, participant.PastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return domain.ErrPastMeetingNotFound
+		return domain.NewNotFoundError("past meeting not found", nil)
 	}
 
 	// Check that there isn't already another participant with the same email address for this past meeting
 	// (unless it's the same participant being updated)
 	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, participant.PastMeetingUID, participant.Email)
-	if err != nil && !errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
+	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 		slog.ErrorContext(ctx, "error checking for existing participant", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 	if existingParticipant != nil && existingParticipant.UID != participant.UID {
 		slog.WarnContext(ctx, "another participant already exists for past meeting with same email address",
-			"email", participant.Email,
-			logging.ErrKey, domain.ErrPastMeetingParticipantAlreadyExists)
-		return domain.ErrPastMeetingParticipantAlreadyExists
+			"email", participant.Email)
+		return domain.NewConflictError("participant already exists for past meeting with same email address", nil)
 	}
 
 	return nil
@@ -285,12 +270,12 @@ func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx con
 func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context.Context, participant *models.PastMeetingParticipant, revision uint64) (*models.PastMeetingParticipant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	if participant == nil || participant.UID == "" {
 		slog.WarnContext(ctx, "participant and participant UID are required")
-		return nil, domain.ErrValidationFailed
+		return nil, domain.NewValidationError("participant and participant UID are required", nil)
 	}
 
 	var err error
@@ -298,12 +283,8 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
 		_, revision, err = s.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
 		if err != nil {
-			if errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
-				slog.WarnContext(ctx, "participant not found", logging.ErrKey, err)
-				return nil, domain.ErrPastMeetingParticipantNotFound
-			}
 			slog.ErrorContext(ctx, "error getting participant from store", logging.ErrKey, err)
-			return nil, domain.ErrInternal
+			return nil, err
 		}
 	}
 
@@ -314,12 +295,8 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	// Check if the participant exists and get existing data
 	existingParticipant, err := s.PastMeetingParticipantRepository.Get(ctx, participant.UID)
 	if err != nil {
-		if errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
-			slog.WarnContext(ctx, "participant not found", logging.ErrKey, err)
-			return nil, domain.ErrPastMeetingParticipantNotFound
-		}
 		slog.ErrorContext(ctx, "error checking if participant exists", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	// Preserve fields that shouldn't be changed
@@ -336,16 +313,8 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	// Update the participant
 	err = s.PastMeetingParticipantRepository.Update(ctx, participant, revision)
 	if err != nil {
-		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
-			return nil, domain.ErrRevisionMismatch
-		}
-		if errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
-			slog.WarnContext(ctx, "participant not found", logging.ErrKey, err)
-			return nil, domain.ErrPastMeetingParticipantNotFound
-		}
 		slog.ErrorContext(ctx, "error updating participant", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	slog.DebugContext(ctx, "updated past meeting participant", "participant_uid", participant.UID)
@@ -380,12 +349,12 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context.Context, pastMeetingUID, participantUID string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.ErrServiceUnavailable
+		return domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	if pastMeetingUID == "" || participantUID == "" {
 		slog.WarnContext(ctx, "past meeting UID and participant UID are required")
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("past meeting UID and participant UID are required", nil)
 	}
 
 	var err error
@@ -393,12 +362,8 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
 		_, revision, err = s.PastMeetingParticipantRepository.GetWithRevision(ctx, participantUID)
 		if err != nil {
-			if errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
-				slog.WarnContext(ctx, "participant not found", logging.ErrKey, err)
-				return domain.ErrPastMeetingParticipantNotFound
-			}
 			slog.ErrorContext(ctx, "error getting participant from store", logging.ErrKey, err)
-			return domain.ErrInternal
+			return err
 		}
 	}
 
@@ -410,22 +375,18 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	exists, err := s.PastMeetingRepository.Exists(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return domain.ErrPastMeetingNotFound
+		return domain.NewNotFoundError("past meeting not found", nil)
 	}
 
 	// Check if the participant exists and belongs to the specified past meeting
 	participant, err := s.PastMeetingParticipantRepository.Get(ctx, participantUID)
 	if err != nil {
-		if errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
-			slog.WarnContext(ctx, "participant not found", logging.ErrKey, err)
-			return domain.ErrPastMeetingParticipantNotFound
-		}
 		slog.ErrorContext(ctx, "error getting participant", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 
 	// Verify the participant belongs to the specified past meeting
@@ -433,22 +394,14 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 		slog.WarnContext(ctx, "participant does not belong to the specified past meeting",
 			"expected_past_meeting_uid", pastMeetingUID,
 			"actual_past_meeting_uid", participant.PastMeetingUID)
-		return domain.ErrPastMeetingParticipantNotFound
+		return domain.NewNotFoundError("participant not found", nil)
 	}
 
 	// Delete the participant
 	err = s.PastMeetingParticipantRepository.Delete(ctx, participantUID, revision)
 	if err != nil {
-		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
-		}
-		if errors.Is(err, domain.ErrPastMeetingParticipantNotFound) {
-			slog.WarnContext(ctx, "participant not found", logging.ErrKey, err)
-			return domain.ErrPastMeetingParticipantNotFound
-		}
 		slog.ErrorContext(ctx, "error deleting participant from store", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 
 	slog.DebugContext(ctx, "deleted past meeting participant", "participant_uid", participantUID)

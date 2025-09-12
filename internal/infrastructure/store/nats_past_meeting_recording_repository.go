@@ -38,19 +38,19 @@ func NewNatsPastMeetingRecordingRepository(kv jetstream.KeyValue) *NatsPastMeeti
 // Create creates a new past meeting recording in the NATS KV store.
 func (r *NatsPastMeetingRecordingRepository) Create(ctx context.Context, recording *models.PastMeetingRecording) error {
 	if recording.UID == "" {
-		return fmt.Errorf("recording UID is required")
+		return domain.NewValidationError("recording UID is required", nil)
 	}
 
 	data, err := json.Marshal(recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshalling recording", logging.ErrKey, err, "recording_uid", recording.UID)
-		return domain.ErrMarshal
+		return domain.NewInternalError("failed to marshal past meeting recording data", err)
 	}
 
 	_, err = r.kv.Create(ctx, recording.UID, data)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating recording in KV store", logging.ErrKey, err, "recording_uid", recording.UID)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to create past meeting recording in NATS key-value store", err)
 	}
 
 	slog.DebugContext(ctx, "created past meeting recording", "recording_uid", recording.UID, "past_meeting_uid", recording.PastMeetingUID)
@@ -65,7 +65,7 @@ func (r *NatsPastMeetingRecordingRepository) Exists(ctx context.Context, recordi
 			return false, nil
 		}
 		slog.ErrorContext(ctx, "error checking recording existence", logging.ErrKey, err, "recording_uid", recordingUID)
-		return false, domain.ErrInternal
+		return false, domain.NewInternalError("failed to check if past meeting recording exists in NATS key-value store", err)
 	}
 	return true, nil
 }
@@ -75,7 +75,7 @@ func (r *NatsPastMeetingRecordingRepository) Delete(ctx context.Context, recordi
 	err := r.kv.Delete(ctx, recordingUID, jetstream.LastRevision(revision))
 	if err != nil {
 		slog.ErrorContext(ctx, "error deleting recording from KV store", logging.ErrKey, err, "recording_uid", recordingUID, "revision", revision)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to delete past meeting recording from NATS key-value store", err)
 	}
 
 	slog.DebugContext(ctx, "deleted past meeting recording", "recording_uid", recordingUID, "revision", revision)
@@ -88,17 +88,17 @@ func (r *NatsPastMeetingRecordingRepository) Get(ctx context.Context, recordingU
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			slog.DebugContext(ctx, "recording not found", "recording_uid", recordingUID)
-			return nil, domain.ErrPastMeetingRecordingNotFound
+			return nil, domain.NewNotFoundError(fmt.Sprintf("past meeting recording with UID '%s' not found", recordingUID), err)
 		}
 		slog.ErrorContext(ctx, "error getting recording from KV store", logging.ErrKey, err, "recording_uid", recordingUID)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("failed to retrieve past meeting recording from NATS key-value store", err)
 	}
 
 	var recording models.PastMeetingRecording
 	err = json.Unmarshal(entry.Value(), &recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshalling recording", logging.ErrKey, err, "recording_uid", recordingUID)
-		return nil, domain.ErrUnmarshal
+		return nil, domain.NewInternalError("failed to unmarshal past meeting recording data", err)
 	}
 
 	return &recording, nil
@@ -110,17 +110,17 @@ func (r *NatsPastMeetingRecordingRepository) GetWithRevision(ctx context.Context
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			slog.DebugContext(ctx, "recording not found", "recording_uid", recordingUID)
-			return nil, 0, domain.ErrPastMeetingRecordingNotFound
+			return nil, 0, domain.NewNotFoundError(fmt.Sprintf("past meeting recording with UID '%s' not found", recordingUID), err)
 		}
 		slog.ErrorContext(ctx, "error getting recording from KV store", logging.ErrKey, err, "recording_uid", recordingUID)
-		return nil, 0, domain.ErrInternal
+		return nil, 0, domain.NewInternalError("failed to retrieve past meeting recording from NATS key-value store", err)
 	}
 
 	var recording models.PastMeetingRecording
 	err = json.Unmarshal(entry.Value(), &recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshalling recording", logging.ErrKey, err, "recording_uid", recordingUID)
-		return nil, 0, domain.ErrUnmarshal
+		return nil, 0, domain.NewInternalError("failed to unmarshal past meeting recording data", err)
 	}
 
 	return &recording, entry.Revision(), nil
@@ -129,19 +129,19 @@ func (r *NatsPastMeetingRecordingRepository) GetWithRevision(ctx context.Context
 // Update updates a past meeting recording in the NATS KV store.
 func (r *NatsPastMeetingRecordingRepository) Update(ctx context.Context, recording *models.PastMeetingRecording, revision uint64) error {
 	if recording.UID == "" {
-		return fmt.Errorf("recording UID is required")
+		return domain.NewValidationError("recording UID is required", nil)
 	}
 
 	data, err := json.Marshal(recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshalling recording", logging.ErrKey, err, "recording_uid", recording.UID)
-		return domain.ErrMarshal
+		return domain.NewInternalError("failed to marshal past meeting recording data", err)
 	}
 
 	_, err = r.kv.Update(ctx, recording.UID, data, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error updating recording in KV store", logging.ErrKey, err, "recording_uid", recording.UID, "revision", revision)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to update past meeting recording in NATS key-value store", err)
 	}
 
 	slog.DebugContext(ctx, "updated past meeting recording", "recording_uid", recording.UID, "past_meeting_uid", recording.PastMeetingUID, "revision", revision)
@@ -154,7 +154,7 @@ func (r *NatsPastMeetingRecordingRepository) GetByPastMeetingUID(ctx context.Con
 	// This could be optimized with secondary indexes in the future
 	recordings, err := r.ListAll(ctx)
 	if err != nil {
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("failed to list past meeting recordings from NATS key-value store", err)
 	}
 
 	for _, recording := range recordings {
@@ -163,7 +163,7 @@ func (r *NatsPastMeetingRecordingRepository) GetByPastMeetingUID(ctx context.Con
 		}
 	}
 
-	return nil, domain.ErrPastMeetingRecordingNotFound
+	return nil, domain.NewNotFoundError(fmt.Sprintf("no past meeting recording found for past meeting '%s'", pastMeetingUID), nil)
 }
 
 // ListByPastMeeting returns all recordings for a given past meeting.
@@ -188,14 +188,14 @@ func (r *NatsPastMeetingRecordingRepository) ListAll(ctx context.Context) ([]*mo
 	keysLister, err := r.kv.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing recording keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("failed to list past meeting recording keys from NATS key-value store", err)
 	}
 
 	var recordings []*models.PastMeetingRecording
 	for key := range keysLister.Keys() {
 		recording, err := r.Get(ctx, key)
 		if err != nil {
-			if !errors.Is(err, domain.ErrPastMeetingRecordingNotFound) {
+			if domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 				slog.ErrorContext(ctx, "error getting recording from NATS KV store", logging.ErrKey, err, "key", key)
 			}
 			continue

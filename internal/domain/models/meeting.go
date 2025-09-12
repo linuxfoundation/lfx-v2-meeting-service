@@ -13,6 +13,19 @@ const (
 	PlatformZoom = "Zoom"
 )
 
+// Visibility constants for meeting visibility
+const (
+	VisibilityPublic  = "public"
+	VisibilityPrivate = "private"
+)
+
+// ArtifactVisibility constants for meeting artifact visibility
+const (
+	ArtifactVisibilityMeetingHosts        = "meeting_hosts"
+	ArtifactVisibilityMeetingParticipants = "meeting_participants"
+	ArtifactVisibilityPublic              = "public"
+)
+
 // MeetingBase is the key-value store representation of a meeting base.
 type MeetingBase struct {
 	UID                             string       `json:"uid"`
@@ -121,6 +134,10 @@ type CreateMeetingRequest struct {
 	YoutubeUploadEnabled bool        `json:"youtube_upload_enabled"`
 	ZoomConfig           *ZoomConfig `json:"zoom_config,omitempty"`
 	Organizers           []string    `json:"organizers"`
+}
+
+func (m *MeetingBase) IsPublic() bool {
+	return m != nil && m.Visibility == VisibilityPublic
 }
 
 // Tags generates a consistent set of tags for the meeting.

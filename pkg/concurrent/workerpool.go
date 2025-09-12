@@ -46,6 +46,58 @@ func (wp *WorkerPool) Run(ctx context.Context, functions ...func() error) error 
 	return g.Wait()
 }
 
+// RunAll executes all functions without cancellation on error
+// Returns a slice containing only the non-nil errors that occurred
+func (wp *WorkerPool) RunAll(ctx context.Context, functions ...func() error) []error {
+	if len(functions) == 0 {
+		return nil
+	}
+
+	// Use a channel to collect errors safely from concurrent goroutines
+	type indexedError struct {
+		index int
+		err   error
+	}
+	errorChan := make(chan indexedError, len(functions))
+
+	// Use errgroup without context cancellation
+	g := new(errgroup.Group)
+	g.SetLimit(wp.workerCount)
+
+	// Submit all functions to the errgroup
+	for i, fn := range functions {
+		fn := fn // capture loop variable
+		i := i   // capture loop variable
+		g.Go(func() error {
+			// Check if the original context was cancelled
+			select {
+			case <-ctx.Done():
+				errorChan <- indexedError{index: i, err: ctx.Err()}
+				return nil // Return nil to errgroup so it continues
+			default:
+			}
+
+			// Execute the function and send any error to the channel
+			if err := fn(); err != nil {
+				errorChan <- indexedError{index: i, err: err}
+			}
+			return nil // Always return nil to prevent errgroup from cancelling
+		})
+	}
+
+	// Wait for all functions to complete
+	_ = g.Wait() // This will always return nil since we never return errors to errgroup
+	close(errorChan)
+
+	// Collect all errors from the channel
+	var errors []error
+	for ie := range errorChan {
+		errors = append(errors, ie.err)
+	}
+
+	return errors
+}
+
 // NewWorkerPool creates a new worker pool with the specified number of workers
 func NewWorkerPool(workerCount int) *WorkerPool {
 	if workerCount <= 0 {

@@ -104,12 +104,12 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 	scheduledEndTime := now.Add(-time.Hour).Format(time.RFC3339)
 
 	tests := []struct {
-		name        string
-		payload     *models.PastMeeting
-		setupMocks  func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder)
-		wantErr     bool
-		expectedErr error
-		validate    func(*testing.T, *models.PastMeeting)
+		name            string
+		payload         *models.PastMeeting
+		setupMocks      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder)
+		wantErr         bool
+		expectedErrType domain.ErrorType
+		validate        func(*testing.T, *models.PastMeeting)
 	}{
 		{
 			name: "successful creation",
@@ -120,8 +120,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
-				Visibility:         "public",
+				Platform:           models.PlatformZoom,
+				Visibility:         models.VisibilityPublic,
 				Committees: []models.Committee{
 					{
 						UID:                   "committee-1",
@@ -152,8 +152,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 						pm.ProjectUID == "project-123" &&
 						pm.Title == "Test Past Meeting" &&
 						pm.Description == "Test Description" &&
-						pm.Platform == "Zoom" &&
-						pm.Visibility == "public" &&
+						pm.Platform == models.PlatformZoom &&
+						pm.Visibility == models.VisibilityPublic &&
 						len(pm.Committees) == 1 &&
 						pm.ZoomConfig != nil &&
 						len(pm.Sessions) == 1
@@ -170,8 +170,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				assert.Equal(t, "project-123", pm.ProjectUID)
 				assert.Equal(t, "Test Past Meeting", pm.Title)
 				assert.Equal(t, "Test Description", pm.Description)
-				assert.Equal(t, "Zoom", pm.Platform)
-				assert.Equal(t, "public", pm.Visibility)
+				assert.Equal(t, models.PlatformZoom, pm.Platform)
+				assert.Equal(t, models.VisibilityPublic, pm.Visibility)
 				assert.Len(t, pm.Committees, 1)
 				assert.NotNil(t, pm.ZoomConfig)
 				assert.Len(t, pm.Sessions, 1)
@@ -186,20 +186,20 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Make service not ready by not setting up mocks
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrServiceUnavailable,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeUnavailable,
 		},
 		{
-			name:        "nil payload",
-			payload:     nil,
-			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			name:            "nil payload",
+			payload:         nil,
+			setupMocks:      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "missing required fields",
@@ -207,9 +207,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				MeetingUID: "",
 				ProjectUID: "project-123",
 			},
-			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			setupMocks:      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "end time before start time",
@@ -220,11 +220,11 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledStartTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
-			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			setupMocks:      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "repository create error",
@@ -235,14 +235,14 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
-				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(errors.New("database error"))
+				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(domain.NewInternalError("database error", nil))
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrInternal,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeInternal,
 		},
 		{
 			name: "meeting doesn't exist but creation continues",
@@ -253,7 +253,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Meeting doesn't exist
@@ -277,7 +277,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 					Title:              "Recurring Meeting",
 					Description:        "Test Description",
-					Platform:           "Zoom",
+					Platform:           models.PlatformZoom,
 					Recurrence: &models.Recurrence{
 						Type:           2, // weekly
 						RepeatInterval: 1,
@@ -312,7 +312,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Committee Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 				Committees: []models.Committee{
 					{
 						UID:                   "committee-1",
@@ -353,7 +353,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 					Title:              "Multi-session Meeting",
 					Description:        "Test Description",
-					Platform:           "Zoom",
+					Platform:           models.PlatformZoom,
 					Sessions: []models.Session{
 						{
 							UID:       "session-1",
@@ -392,7 +392,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Past Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
@@ -424,8 +424,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErr != nil {
-					assert.True(t, errors.Is(err, tt.expectedErr))
+				if tt.expectedErrType != 0 {
+					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 				}
 			} else {
 				assert.NoError(t, err)
@@ -447,11 +447,11 @@ func TestPastMeetingService_GetPastMeetings(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name        string
-		setupMocks  func(*mocks.MockPastMeetingRepository)
-		wantErr     bool
-		expectedErr error
-		expectedLen int
+		name            string
+		setupMocks      func(*mocks.MockPastMeetingRepository)
+		wantErr         bool
+		expectedErrType domain.ErrorType
+		expectedLen     int
 	}{
 		{
 			name: "successful get all past meetings",
@@ -479,16 +479,16 @@ func TestPastMeetingService_GetPastMeetings(t *testing.T) {
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
 				// Don't set up mocks
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrServiceUnavailable,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeUnavailable,
 		},
 		{
 			name: "repository error",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("ListAll", mock.Anything).Return(nil, errors.New("database error"))
+				mockRepo.On("ListAll", mock.Anything).Return(nil, domain.NewInternalError("database error", nil))
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrInternal,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeInternal,
 		},
 		{
 			name: "empty list",
@@ -517,8 +517,8 @@ func TestPastMeetingService_GetPastMeetings(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErr != nil {
-					assert.True(t, errors.Is(err, tt.expectedErr))
+				if tt.expectedErrType != 0 {
+					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 				}
 			} else {
 				assert.NoError(t, err)
@@ -535,13 +535,13 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name         string
-		uid          string
-		setupMocks   func(*mocks.MockPastMeetingRepository)
-		wantErr      bool
-		expectedErr  error
-		expectedUID  string
-		expectedETag string
+		name            string
+		uid             string
+		setupMocks      func(*mocks.MockPastMeetingRepository)
+		wantErr         bool
+		expectedErrType domain.ErrorType
+		expectedUID     string
+		expectedETag    string
 	}{
 		{
 			name: "successful get",
@@ -564,35 +564,35 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
 				// Don't set up mocks
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrServiceUnavailable,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeUnavailable,
 		},
 		{
 			name: "empty UID",
 			uid:  "",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("GetWithRevision", mock.Anything, "").Return(nil, uint64(0), domain.ErrPastMeetingNotFound)
+				mockRepo.On("GetWithRevision", mock.Anything, "").Return(nil, uint64(0), domain.NewNotFoundError("past meeting not found", nil))
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrPastMeetingNotFound,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeNotFound,
 		},
 		{
 			name: "past meeting not found",
 			uid:  "past-meeting-123",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), domain.ErrPastMeetingNotFound)
+				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), domain.NewNotFoundError("past meeting not found", nil))
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrPastMeetingNotFound,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeNotFound,
 		},
 		{
 			name: "repository error",
 			uid:  "past-meeting-123",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), errors.New("database error"))
+				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), domain.NewInternalError("database error", nil))
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrInternal,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeInternal,
 		},
 	}
 
@@ -613,8 +613,8 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErr != nil {
-					assert.True(t, errors.Is(err, tt.expectedErr))
+				if tt.expectedErrType != 0 {
+					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 				}
 			} else {
 				assert.NoError(t, err)
@@ -632,13 +632,13 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name        string
-		uid         string
-		revision    uint64
-		setupMocks  func(*mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder, bool)
-		skipEtag    bool
-		wantErr     bool
-		expectedErr error
+		name            string
+		uid             string
+		revision        uint64
+		setupMocks      func(*mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder, bool)
+		skipEtag        bool
+		wantErr         bool
+		expectedErrType domain.ErrorType
 	}{
 		{
 			name:     "successful delete",
@@ -661,8 +661,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder, skipEtag bool) {
 				// Don't set up mocks
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrServiceUnavailable,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeUnavailable,
 		},
 		{
 			name:     "empty UID",
@@ -671,8 +671,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder, skipEtag bool) {
 				mockRepo.On("Exists", mock.Anything, "").Return(false, nil)
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrPastMeetingNotFound,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeNotFound,
 		},
 		{
 			name:     "past meeting not found",
@@ -681,8 +681,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder, skipEtag bool) {
 				mockRepo.On("Exists", mock.Anything, "past-meeting-123").Return(false, nil)
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrPastMeetingNotFound,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeNotFound,
 		},
 		{
 			name:     "revision mismatch",
@@ -690,10 +690,10 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			revision: 42,
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder, skipEtag bool) {
 				mockRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(domain.ErrRevisionMismatch)
+				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(domain.NewConflictError("revision mismatch", nil))
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrRevisionMismatch,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeConflict,
 		},
 		{
 			name:     "skip etag validation",
@@ -719,10 +719,10 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			revision: 42,
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder, skipEtag bool) {
 				mockRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(errors.New("database error"))
+				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(domain.NewInternalError("database error", nil))
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrInternal,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeInternal,
 		},
 		{
 			name:     "messaging failure doesn't fail operation",
@@ -761,8 +761,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErr != nil {
-					assert.True(t, errors.Is(err, tt.expectedErr))
+				if tt.expectedErrType != 0 {
+					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 				}
 			} else {
 				assert.NoError(t, err)
@@ -781,10 +781,10 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 	scheduledEndTime := now.Add(-time.Hour).Format(time.RFC3339)
 
 	tests := []struct {
-		name        string
-		payload     *models.PastMeeting
-		wantErr     bool
-		expectedErr error
+		name            string
+		payload         *models.PastMeeting
+		wantErr         bool
+		expectedErrType domain.ErrorType
 	}{
 		{
 			name: "valid payload",
@@ -795,15 +795,15 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
 			wantErr: false,
 		},
 		{
-			name:        "nil payload",
-			payload:     nil,
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			name:            "nil payload",
+			payload:         nil,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "empty meeting UID",
@@ -814,10 +814,10 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "empty project UID",
@@ -828,10 +828,10 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "empty title",
@@ -842,10 +842,10 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "empty description",
@@ -856,10 +856,10 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledEndTime),
 				Title:              "Test Meeting",
 				Description:        "",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "empty platform",
@@ -872,8 +872,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				Description:        "Test Description",
 				Platform:           "",
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 		{
 			name: "end time before start time",
@@ -884,10 +884,10 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 				ScheduledEndTime:   mustParseTimeForTest(scheduledStartTime),
 				Title:              "Test Meeting",
 				Description:        "Test Description",
-				Platform:           "Zoom",
+				Platform:           models.PlatformZoom,
 			},
-			wantErr:     true,
-			expectedErr: domain.ErrValidationFailed,
+			wantErr:         true,
+			expectedErrType: domain.ErrorTypeValidation,
 		},
 	}
 
@@ -899,8 +899,8 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
-				if tt.expectedErr != nil {
-					assert.True(t, errors.Is(err, tt.expectedErr))
+				if tt.expectedErrType != 0 {
+					assert.Equal(t, tt.expectedErrType, domain.GetErrorType(err))
 				}
 			} else {
 				assert.NoError(t, err)
