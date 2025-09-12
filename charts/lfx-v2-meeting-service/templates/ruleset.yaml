@@ -101,12 +101,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: participant
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
+              relation: viewer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         # When OpenFGA is disabled, allow all requests
