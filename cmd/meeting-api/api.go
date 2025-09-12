@@ -108,6 +108,10 @@ func handleError(err error) error {
 		return createResponse(http.StatusConflict, domain.ErrRegistrantAlreadyExists)
 	case domain.ErrPastMeetingParticipantAlreadyExists:
 		return createResponse(http.StatusConflict, domain.ErrPastMeetingParticipantAlreadyExists)
+	case domain.ErrProjectNotFound:
+		return createResponse(http.StatusBadRequest, domain.ErrProjectNotFound)
+	case domain.ErrCommitteeNotFound:
+		return createResponse(http.StatusBadRequest, domain.ErrCommitteeNotFound)
 	case domain.ErrMeetingNotFound:
 		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
 	case domain.ErrRegistrantNotFound:

@@ -190,6 +190,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 
 				// Set up repository and message builder mocks
 				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(nil)
+				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil)
 				mockBuilder.On("SendIndexMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
 				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
 				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.Anything).Return(nil)
@@ -251,6 +252,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 				mockPlatformRegistry.On("GetProvider", models.PlatformZoom).Return(mockProvider, nil)
 
 				// Repository returns error to test cleanup
+				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil)
 				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(domain.ErrInternal)
 			},
 			wantErr:     true,

@@ -7,6 +7,10 @@ import "errors"
 
 // Domain errors
 var (
+	// ErrProjectNotFound is returned when a project is not found.
+	ErrProjectNotFound = errors.New("project not found")
+	// ErrCommitteeNotFound is returned when a committee is not found.
+	ErrCommitteeNotFound = errors.New("committee not found")
 	// ErrMeetingNotFound is returned when a meeting is not found.
 	ErrMeetingNotFound = errors.New("meeting not found")
 	// ErrPastMeetingNotFound is returned when a past meeting is not found.
@@ -25,7 +29,7 @@ var (
 	ErrUnmarshal = errors.New("unmarshal error")
 	// ErrServiceUnavailable is returned when a service is unavailable.
 	ErrServiceUnavailable = errors.New("service unavailable")
-	// ErrValidationFailed is returned when a validation failed.
+	// ErrValidationFailed is returned when a generic validation failed.
 	ErrValidationFailed = errors.New("validation failed")
 	// ErrRegistrantNotFound is returned when a registrant is not found.
 	ErrRegistrantNotFound = errors.New("registrant not found")

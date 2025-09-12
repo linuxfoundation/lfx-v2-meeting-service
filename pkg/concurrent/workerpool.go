@@ -58,7 +58,7 @@ func (wp *WorkerPool) RunAll(ctx context.Context, functions ...func() error) []e
 		err   error
 	}
 	errorChan := make(chan indexedError, len(functions))
-	
+
 	// Use errgroup without context cancellation
 	g := new(errgroup.Group)
 	g.SetLimit(wp.workerCount)
@@ -83,15 +83,15 @@ func (wp *WorkerPool) RunAll(ctx context.Context, functions ...func() error) []e
 	}
 
 	// Wait for all functions to complete
-	g.Wait() // This will always return nil since we never return errors to errgroup
+	_ = g.Wait() // This will always return nil since we never return errors to errgroup
 	close(errorChan)
-	
+
 	// Collect all errors from the channel
 	var errors []error
 	for ie := range errorChan {
 		errors = append(errors, ie.err)
 	}
-	
+
 	return errors
 }
 

@@ -174,12 +174,6 @@ func (s *MeetingService) validateCommittees(ctx context.Context, committees []mo
 		return nil
 	}
 
-	messageBuilder, ok := s.MessageBuilder.(*messaging.MessageBuilder)
-	if !ok {
-		slog.ErrorContext(ctx, "message builder is not of expected type for committee validation")
-		return domain.ErrInternal
-	}
-
 	var invalidCommittees []string
 
 	for _, committee := range committees {
@@ -187,7 +181,7 @@ func (s *MeetingService) validateCommittees(ctx context.Context, committees []mo
 			continue
 		}
 
-		_, err := messageBuilder.GetCommitteeName(ctx, committee.UID)
+		_, err := s.MessageBuilder.GetCommitteeName(ctx, committee.UID)
 		if err != nil {
 			var committeNotFoundErr *messaging.CommitteeNotFoundError
 			if errors.As(err, &committeNotFoundErr) {
@@ -201,7 +195,28 @@ func (s *MeetingService) validateCommittees(ctx context.Context, committees []mo
 
 	if len(invalidCommittees) > 0 {
 		slog.WarnContext(ctx, "invalid committees provided", "invalid_committee_uids", strings.Join(invalidCommittees, ", "))
-		return domain.ErrValidationFailed
+		return domain.ErrCommitteeNotFound
+	}
+
+	return nil
+}
+
+// validateProject validates that the project exists
+func (s *MeetingService) validateProject(ctx context.Context, projectUID string) error {
+	if projectUID == "" {
+		return nil
+	}
+
+	_, err := s.MessageBuilder.GetProjectName(ctx, projectUID)
+	if err != nil {
+		var projectNotFoundErr *messaging.ProjectNotFoundError
+		if errors.As(err, &projectNotFoundErr) {
+			slog.WarnContext(ctx, "invalid project provided", "project_uid", projectUID)
+			return domain.ErrProjectNotFound
+		} else {
+			slog.ErrorContext(ctx, "error getting project name", "project_uid", projectUID, logging.ErrKey, err)
+			return domain.ErrInternal
+		}
 	}
 
 	return nil
@@ -218,7 +233,10 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 		return nil, err
 	}
 
-	// TODO: Check if project exists - integrate with project service
+	// Validate project exists
+	if err := s.validateProject(ctx, reqMeeting.Base.ProjectUID); err != nil {
+		return nil, err
+	}
 
 	// Validate committees exist
 	if err := s.validateCommittees(ctx, reqMeeting.Base.Committees); err != nil {
@@ -469,7 +487,10 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 
 	reqMeeting = models.MergeUpdateMeetingRequest(reqMeeting, existingMeetingDB)
 
-	// TODO: Check if project exists - integrate with project service
+	// Validate project exists
+	if err := s.validateProject(ctx, reqMeeting.ProjectUID); err != nil {
+		return nil, err
+	}
 
 	// Validate committees exist
 	if err := s.validateCommittees(ctx, reqMeeting.Committees); err != nil {

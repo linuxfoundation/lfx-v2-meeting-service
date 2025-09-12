@@ -218,7 +218,7 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 			"errors_count", len(errors),
 			"errors", errors,
 			logging.PriorityCritical())
-		return nil, fmt.Errorf("failed to clean up registrants: %w", errors)
+		return nil, fmt.Errorf("failed to clean up registrants: %v", errors)
 	}
 
 	slog.InfoContext(ctx, "successfully cleaned up all registrants for deleted meeting", "registrant_count", len(registrants))
@@ -410,7 +410,7 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 			"errors_count", len(errors),
 			"errors", errors,
 			logging.PriorityCritical())
-		return fmt.Errorf("failed to send update notifications: %w", errors)
+		return fmt.Errorf("failed to send update notifications: %v", errors)
 	}
 
 	slog.InfoContext(ctx, "successfully sent update notifications to all registrants", "registrant_count", len(registrants))

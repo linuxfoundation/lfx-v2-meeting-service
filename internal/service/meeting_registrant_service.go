@@ -554,6 +554,9 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		passcode = meetingDB.ZoomConfig.Passcode
 	}
 
+	// Get project name
+	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+
 	// Create email invitation
 	invitation := domain.EmailInvitation{
 		MeetingUID:     meetingDB.UID,
@@ -565,7 +568,7 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		Timezone:       meetingDB.Timezone,
 		Description:    meetingDB.Description,
 		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password),
-		ProjectName:    "", // TODO: Add project name once project service integration is available
+		ProjectName:    projectName,
 		MeetingID:      meetingID,
 		Passcode:       passcode,
 		Recurrence:     meetingDB.Recurrence,
@@ -589,6 +592,9 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 		recipientName = "" // If both names are empty, use empty string
 	}
 
+	// Get project name
+	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+
 	// Create email cancellation
 	cancellation := domain.EmailCancellation{
 		MeetingUID:     meetingDB.UID,
@@ -599,7 +605,7 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 		Duration:       meetingDB.Duration,
 		Timezone:       meetingDB.Timezone,
 		Description:    meetingDB.Description,
-		ProjectName:    "", // TODO: Add project name once project service integration is available
+		ProjectName:    projectName,
 		Reason:         "Your registration has been removed from this meeting.",
 		Recurrence:     meetingDB.Recurrence,
 	}

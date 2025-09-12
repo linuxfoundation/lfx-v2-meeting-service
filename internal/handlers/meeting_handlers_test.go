@@ -118,12 +118,15 @@ func TestMeetingHandler_HandleMessage(t *testing.T) {
 				// Mock GetBase for cancellation email (called in goroutine)
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-to-delete").Return(&models.MeetingBase{
 					UID:         "meeting-to-delete",
+					ProjectUID:  "project-123",
 					Title:       "Test Meeting",
 					StartTime:   now,
 					Duration:    60,
 					Timezone:    "UTC",
 					Description: "Test meeting description",
 				}, nil).Maybe() // Maybe() because it's called in a goroutine
+				// Mock GetProjectName for cancellation email (called in goroutine)
+				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil).Maybe()
 				// Mock email service for cancellation
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
@@ -320,12 +323,14 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				// Mock for cancellation email (called in goroutine)
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-123").Return(&models.MeetingBase{
 					UID:         "meeting-123",
+					ProjectUID:  "project-123",
 					Title:       "Test Meeting",
 					StartTime:   now,
 					Duration:    60,
 					Timezone:    "UTC",
 					Description: "Test meeting description",
 				}, nil).Maybe()
+				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: false,
@@ -362,12 +367,14 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				// Mock for cancellation emails (called in goroutines)
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-456").Return(&models.MeetingBase{
 					UID:         "meeting-456",
+					ProjectUID:  "project-456",
 					Title:       "Team Sync",
 					StartTime:   now,
 					Duration:    30,
 					Timezone:    "America/New_York",
 					Description: "Weekly team sync",
 				}, nil).Maybe()
+				mockBuilder.On("GetProjectName", mock.Anything, "project-456").Return("Team Project", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: false,
@@ -435,9 +442,11 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				})).Return(nil).Maybe()
 				// Email sending might be attempted for successful deletion
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-partial").Return(&models.MeetingBase{
-					UID:   "meeting-partial",
-					Title: "Test",
+					UID:        "meeting-partial",
+					ProjectUID: "project-partial",
+					Title:      "Test",
 				}, nil).Maybe()
+				mockBuilder.On("GetProjectName", mock.Anything, "project-partial").Return("Test Project", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: true, // Handler fails when any deletion fails due to WorkerPool fail-fast behavior
