@@ -515,3 +515,40 @@ func ConvertDomainToPastMeetingParticipantResponse(domainParticipant *models.Pas
 
 	return participant
 }
+
+// ConvertDomainToPastMeetingSummaryResponse converts a domain past meeting summary model to an API response
+func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummary) *meetingservice.PastMeetingSummary {
+	if summary == nil {
+		return nil
+	}
+
+	result := &meetingservice.PastMeetingSummary{
+		UID:              summary.UID,
+		PastMeetingUID:   summary.PastMeetingUID,
+		MeetingUID:       summary.MeetingUID,
+		Platform:         summary.Platform,
+		RequiresApproval: summary.RequiresApproval,
+		Approved:         summary.Approved,
+		EmailSent:        summary.EmailSent,
+		Password:         utils.StringPtr(summary.Password),
+		SummaryData: &meetingservice.SummaryData{
+			StartTime:     summary.SummaryData.StartTime.Format(time.RFC3339),
+			EndTime:       summary.SummaryData.EndTime.Format(time.RFC3339),
+			Title:         &summary.SummaryData.Title,
+			Content:       &summary.SummaryData.Content,
+			DocURL:        &summary.SummaryData.DocURL,
+			EditedContent: &summary.SummaryData.EditedContent,
+		},
+		CreatedAt: summary.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: summary.UpdatedAt.Format(time.RFC3339),
+	}
+
+	if summary.ZoomConfig != nil {
+		result.ZoomConfig = &meetingservice.PastMeetingSummaryZoomConfig{
+			MeetingID:   utils.StringPtr(summary.ZoomConfig.MeetingID),
+			MeetingUUID: utils.StringPtr(summary.ZoomConfig.MeetingUUID),
+		}
+	}
+
+	return result
+}

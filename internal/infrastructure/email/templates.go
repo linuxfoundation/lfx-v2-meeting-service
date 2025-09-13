@@ -25,9 +25,10 @@ type TemplateSet struct {
 
 // MeetingTemplates holds all meeting-related templates
 type MeetingTemplates struct {
-	Invitation        TemplateSet
-	Cancellation      TemplateSet
-	UpdatedInvitation TemplateSet
+	Invitation          TemplateSet
+	Cancellation        TemplateSet
+	UpdatedInvitation   TemplateSet
+	SummaryNotification TemplateSet
 }
 
 // Templates holds all template categories

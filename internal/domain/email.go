@@ -15,6 +15,7 @@ type EmailService interface {
 	SendRegistrantInvitation(ctx context.Context, invitation EmailInvitation) error
 	SendRegistrantCancellation(ctx context.Context, cancellation EmailCancellation) error
 	SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation EmailUpdatedInvitation) error
+	SendSummaryNotification(ctx context.Context, notification EmailSummaryNotification) error
 }
 
 // EmailInvitation contains the data needed to send a meeting invitation email
@@ -68,6 +69,18 @@ type EmailUpdatedInvitation struct {
 	Recurrence     *models.Recurrence // Recurrence pattern for ICS
 	Changes        map[string]any     // Map of what changed (field names to new values)
 	ICSAttachment  *EmailAttachment   // Updated ICS calendar attachment
+}
+
+// EmailSummaryNotification contains the data needed to send a meeting summary notification email
+type EmailSummaryNotification struct {
+	RecipientEmail string    // Email address of the recipient
+	RecipientName  string    // Name of the recipient
+	MeetingTitle   string    // Title of the meeting
+	MeetingDate    time.Time // Date when the meeting occurred
+	ProjectName    string    // Optional project name for context
+	SummaryContent string    // The summary content
+	SummaryDocURL  string    // Optional URL to the full summary document
+	SummaryTitle   string    // Title of the summary (if different from meeting title)
 }
 
 // EmailAttachment represents a file attachment for an email

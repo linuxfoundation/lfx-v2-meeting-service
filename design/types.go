@@ -55,6 +55,14 @@ func UpdatedAtAttribute() {
 	})
 }
 
+// UIDAttribute is the DSL attribute for the UID.
+func UIDAttribute() {
+	Attribute("uid", String, "The unique identifier of the resource", func() {
+		Example("456e7890-e89b-12d3-a456-426614174000")
+		Format(FormatUUID)
+	})
+}
+
 //
 // Error types
 //

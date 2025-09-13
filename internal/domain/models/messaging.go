@@ -31,6 +31,10 @@ const (
 	// The subject is of the form: lfx.index.past_meeting_recording
 	IndexPastMeetingRecordingSubject = "lfx.index.past_meeting_recording"
 
+	// IndexPastMeetingSummarySubject is the subject for the past meeting summary indexing.
+	// The subject is of the form: lfx.index.past_meeting_summary
+	IndexPastMeetingSummarySubject = "lfx.index.past_meeting_summary"
+
 	// UpdateAccessMeetingSubject is the subject for the meeting access control updates.
 	// The subject is of the form: lfx.update_access.meeting
 	UpdateAccessMeetingSubject = "lfx.update_access.meeting"

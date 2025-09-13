@@ -67,6 +67,12 @@ type Service interface {
 	UpdatePastMeetingParticipant(context.Context, *UpdatePastMeetingParticipantPayload) (res *PastMeetingParticipant, err error)
 	// Delete a participant from a past meeting
 	DeletePastMeetingParticipant(context.Context, *DeletePastMeetingParticipantPayload) (err error)
+	// Get all summaries for a past meeting
+	GetPastMeetingSummaries(context.Context, *GetPastMeetingSummariesPayload) (res *GetPastMeetingSummariesResult, err error)
+	// Get a specific summary for a past meeting
+	GetPastMeetingSummary(context.Context, *GetPastMeetingSummaryPayload) (res *GetPastMeetingSummaryResult, err error)
+	// Update an existing past meeting summary
+	UpdatePastMeetingSummary(context.Context, *UpdatePastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -93,7 +99,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [25]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "readyz", "livez"}
+var MethodNames = [28]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -530,6 +536,47 @@ type GetPastMeetingResult struct {
 	Etag *string
 }
 
+// GetPastMeetingSummariesPayload is the payload type of the Meeting Service
+// service get-past-meeting-summaries method.
+type GetPastMeetingSummariesPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the resource
+	UID *string
+}
+
+// GetPastMeetingSummariesResult is the result type of the Meeting Service
+// service get-past-meeting-summaries method.
+type GetPastMeetingSummariesResult struct {
+	// Past meeting summaries
+	Summaries []*PastMeetingSummary
+	// Cache control header
+	CacheControl *string
+}
+
+// GetPastMeetingSummaryPayload is the payload type of the Meeting Service
+// service get-past-meeting-summary method.
+type GetPastMeetingSummaryPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The unique identifier of the past meeting
+	PastMeetingUID string
+	// The unique identifier of the summary
+	SummaryUID string
+}
+
+// GetPastMeetingSummaryResult is the result type of the Meeting Service
+// service get-past-meeting-summary method.
+type GetPastMeetingSummaryResult struct {
+	Summary *PastMeetingSummary
+	// ETag header value
+	Etag *string
+}
+
 // GetPastMeetingsPayload is the payload type of the Meeting Service service
 // get-past-meetings method.
 type GetPastMeetingsPayload struct {
@@ -870,6 +917,43 @@ type PastMeetingParticipant struct {
 	UpdatedAt *string
 }
 
+// PastMeetingSummary is the result type of the Meeting Service service
+// update-past-meeting-summary method.
+type PastMeetingSummary struct {
+	// The unique identifier of the resource
+	UID string
+	// The unique identifier of the past meeting
+	PastMeetingUID string
+	// The UID of the original meeting
+	MeetingUID string
+	// The platform name of where the meeting is hosted
+	Platform string
+	// Password for accessing the summary (if required)
+	Password *string
+	// Zoom-specific configuration
+	ZoomConfig *PastMeetingSummaryZoomConfig
+	// The actual summary content
+	SummaryData *SummaryData
+	// Whether the summary requires approval
+	RequiresApproval bool
+	// Whether the summary has been approved
+	Approved bool
+	// Whether summary email has been sent
+	EmailSent bool
+	// The date and time the resource was created
+	CreatedAt string
+	// The date and time the resource was last updated
+	UpdatedAt string
+}
+
+// Zoom-specific configuration for a past meeting summary
+type PastMeetingSummaryZoomConfig struct {
+	// The ID of the created meeting in Zoom
+	MeetingID *string
+	// Zoom meeting UUID
+	MeetingUUID *string
+}
+
 // Meeting recurrence object
 type Recurrence struct {
 	// The recurrence type
@@ -988,6 +1072,22 @@ type Session struct {
 	StartTime string
 	// The end time of the session (may be null if session is ongoing)
 	EndTime *string
+}
+
+// AI-generated summary content for a past meeting
+type SummaryData struct {
+	// Summary start time
+	StartTime string
+	// Summary end time
+	EndTime string
+	// Summary title
+	Title *string
+	// The main AI-generated summary content
+	Content *string
+	// URL to the full summary document
+	DocURL *string
+	// User-edited summary content
+	EditedContent *string
 }
 
 type UnauthorizedError struct {
@@ -1133,6 +1233,25 @@ type UpdatePastMeetingParticipantPayload struct {
 	IsInvited *bool
 	// Whether the participant attended this past meeting
 	IsAttended *bool
+}
+
+// UpdatePastMeetingSummaryPayload is the payload type of the Meeting Service
+// service update-past-meeting-summary method.
+type UpdatePastMeetingSummaryPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// If-Match header value for conditional requests
+	IfMatch *string
+	// The unique identifier of the past meeting
+	PastMeetingUID string
+	// The unique identifier of the summary
+	SummaryUID string
+	// User-edited summary content
+	EditedContent *string
+	// Whether the summary has been approved
+	Approved *bool
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and
