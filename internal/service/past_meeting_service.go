@@ -5,7 +5,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"strconv"
 	"time"
@@ -50,40 +49,40 @@ func (s *PastMeetingService) ServiceReady() bool {
 func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Context, pastMeeting *models.PastMeeting) error {
 	// Validate that required fields are present
 	if pastMeeting == nil {
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("past meeting payload is required", nil)
 	}
 	if pastMeeting.MeetingUID == "" {
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("meeting UID is required", nil)
 	}
 	if pastMeeting.ProjectUID == "" {
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("project UID is required", nil)
 	}
 	if pastMeeting.Title == "" {
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("title is required", nil)
 	}
 	if pastMeeting.Description == "" {
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("description is required", nil)
 	}
 	if pastMeeting.Platform == "" {
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("platform is required", nil)
 	}
 
 	// Validate that the meeting has started in the past (UTC)
 	if !pastMeeting.ScheduledStartTime.Before(time.Now().UTC()) {
 		slog.WarnContext(ctx, "scheduled start time must be in the past")
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("scheduled start time must be in the past", nil)
 	}
 
 	// Validate that the meeting has ended in the past (UTC)
 	if !pastMeeting.ScheduledEndTime.Before(time.Now().UTC()) {
 		slog.WarnContext(ctx, "scheduled end time must be in the past")
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("scheduled end time must be in the past", nil)
 	}
 
 	// Validate that end time is after start time
 	if pastMeeting.ScheduledEndTime.Before(pastMeeting.ScheduledStartTime) {
 		slog.WarnContext(ctx, "scheduled end time cannot be before start time")
-		return domain.ErrValidationFailed
+		return domain.NewValidationError("scheduled end time cannot be before start time", nil)
 	}
 
 	return nil
@@ -93,7 +92,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	// Check if service is ready
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	// Validate the payload
@@ -105,7 +104,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	exists, err := s.MeetingRepository.Exists(ctx, pastMeetingReq.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if meeting exists", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 	if !exists {
 		slog.WarnContext(ctx, "referenced meeting does not exist", "meeting_uid", pastMeetingReq.MeetingUID)
@@ -118,7 +117,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	// Save to repository
 	if err := s.PastMeetingRepository.Create(ctx, pastMeetingReq); err != nil {
 		slog.ErrorContext(ctx, "error creating past meeting", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	// Use WorkerPool for concurrent NATS message sending
@@ -133,13 +132,11 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 			for i, committee := range pastMeetingReq.Committees {
 				committees[i] = committee.UID
 			}
-			// Determine if the meeting is public based on visibility
-			isPublic := pastMeetingReq.Visibility == "public"
 
 			return s.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeetingReq.UID,
 				MeetingUID: pastMeetingReq.MeetingUID,
-				Public:     isPublic,
+				Public:     pastMeetingReq.IsPublic(),
 				ProjectUID: pastMeetingReq.ProjectUID,
 				Committees: committees,
 			})
@@ -157,13 +154,13 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	pastMeetings, err := s.PastMeetingRepository.ListAll(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing past meetings", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, err
 	}
 
 	return pastMeetings, nil
@@ -172,17 +169,13 @@ func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.Pas
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.ErrServiceUnavailable
+		return nil, "", domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	pastMeeting, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, uid)
 	if err != nil {
-		if errors.Is(err, domain.ErrPastMeetingNotFound) {
-			slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, err)
-			return nil, "", domain.ErrPastMeetingNotFound
-		}
 		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
-		return nil, "", domain.ErrInternal
+		return nil, "", err
 	}
 
 	return pastMeeting, strconv.FormatUint(revision, 10), nil
@@ -191,7 +184,7 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*m
 func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.ErrServiceUnavailable
+		return domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	var err error
@@ -199,12 +192,8 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
 		_, revision, err = s.PastMeetingRepository.GetWithRevision(ctx, uid)
 		if err != nil {
-			if errors.Is(err, domain.ErrPastMeetingNotFound) {
-				slog.WarnContext(ctx, "past meeting not found", logging.ErrKey, err)
-				return domain.ErrPastMeetingNotFound
-			}
 			slog.ErrorContext(ctx, "error getting meeting from store", logging.ErrKey, err)
-			return domain.ErrInternal
+			return err
 		}
 	}
 
@@ -212,25 +201,17 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	exists, err := s.PastMeetingRepository.Exists(ctx, uid)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found", "uid", uid)
-		return domain.ErrPastMeetingNotFound
+		return domain.NewNotFoundError("past meeting not found", nil)
 	}
 
 	// Delete the past meeting
 	if err := s.PastMeetingRepository.Delete(ctx, uid, revision); err != nil {
-		if errors.Is(err, domain.ErrRevisionMismatch) {
-			slog.WarnContext(ctx, "If-Match header is invalid", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
-		}
-		if errors.Is(err, domain.ErrPastMeetingNotFound) {
-			slog.WarnContext(ctx, "past meeting not found during deletion", logging.ErrKey, err)
-			return domain.ErrPastMeetingNotFound
-		}
 		slog.ErrorContext(ctx, "error deleting past meeting", logging.ErrKey, err)
-		return domain.ErrInternal
+		return err
 	}
 
 	// Use WorkerPool for concurrent NATS deletion message sending

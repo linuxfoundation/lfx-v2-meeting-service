@@ -148,3 +148,8 @@ func (m *MockMessageBuilder) GetCommitteeMembers(ctx context.Context, committeeU
 	}
 	return args.Get(0).([]models.CommitteeMember), args.Error(1)
 }
+
+func (m *MockMessageBuilder) GetProjectName(ctx context.Context, projectUID string) (string, error) {
+	args := m.Called(ctx, projectUID)
+	return args.String(0), args.Error(1)
+}

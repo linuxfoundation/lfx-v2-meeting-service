@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -66,16 +67,16 @@ func (s *NatsMeetingRepository) GetBaseWithRevision(ctx context.Context, meeting
 	entry, err := s.getBase(ctx, meetingUID)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, domain.ErrMeetingNotFound)
-			return nil, 0, domain.ErrMeetingNotFound
+			slog.WarnContext(ctx, "meeting not found", logging.ErrKey, err)
+			return nil, 0, domain.NewNotFoundError(fmt.Sprintf("meeting with UID '%s' not found", meetingUID), err)
 		}
 		slog.ErrorContext(ctx, "error getting meeting from NATS KV", logging.ErrKey, err)
-		return nil, 0, domain.ErrInternal
+		return nil, 0, domain.NewInternalError("failed to retrieve meeting from NATS key-value store", err)
 	}
 
 	meeting, err := s.getBaseUnmarshal(ctx, entry)
 	if err != nil {
-		return nil, 0, domain.ErrUnmarshal
+		return nil, 0, domain.NewInternalError("failed to unmarshal meeting data", err)
 	}
 
 	return meeting, entry.Revision(), nil
@@ -108,16 +109,16 @@ func (s *NatsMeetingRepository) GetSettingsWithRevision(ctx context.Context, mee
 	entry, err := s.getSettings(ctx, meetingUID)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, domain.ErrMeetingNotFound)
-			return nil, 0, domain.ErrMeetingNotFound
+			slog.WarnContext(ctx, "meeting settings not found", logging.ErrKey, err)
+			return nil, 0, domain.NewNotFoundError(fmt.Sprintf("meeting settings for UID '%s' not found", meetingUID), err)
 		}
 		slog.ErrorContext(ctx, "error getting meeting settings from NATS KV", logging.ErrKey, err)
-		return nil, 0, domain.ErrInternal
+		return nil, 0, domain.NewInternalError("failed to retrieve meeting settings from NATS key-value store", err)
 	}
 
 	meeting, err := s.getSettingsUnmarshal(ctx, entry)
 	if err != nil {
-		return nil, 0, domain.ErrUnmarshal
+		return nil, 0, domain.NewInternalError("failed to unmarshal meeting settings data", err)
 	}
 
 	return meeting, entry.Revision(), nil
@@ -129,20 +130,20 @@ func (s *NatsMeetingRepository) Exists(ctx context.Context, meetingUID string) (
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return false, nil
 		}
-		return false, domain.ErrInternal
+		return false, domain.NewInternalError("failed to check if meeting exists in NATS key-value store", err)
 	}
 	return true, nil
 }
 
 func (s *NatsMeetingRepository) ListAllBase(ctx context.Context) ([]*models.MeetingBase, error) {
 	if s.Meetings == nil {
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("meeting repository is not available", nil)
 	}
 
 	keysLister, err := s.Meetings.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing meeting keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("failed to list meeting keys from NATS key-value store", err)
 	}
 
 	meetingsBase := []*models.MeetingBase{}
@@ -150,13 +151,13 @@ func (s *NatsMeetingRepository) ListAllBase(ctx context.Context) ([]*models.Meet
 		entry, err := s.getBase(ctx, key)
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting meeting from NATS KV store", logging.ErrKey, err, "meeting_uid", key)
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError(fmt.Sprintf("failed to retrieve meeting '%s' from NATS key-value store", key), err)
 		}
 
 		meetingDB, err := s.getBaseUnmarshal(ctx, entry)
 		if err != nil {
 			slog.ErrorContext(ctx, "error unmarshalling meeting from NATS KV store", logging.ErrKey, err, "meeting_uid", key)
-			return nil, domain.ErrUnmarshal
+			return nil, domain.NewInternalError(fmt.Sprintf("failed to unmarshal meeting '%s' data", key), err)
 		}
 
 		meetingsBase = append(meetingsBase, meetingDB)
@@ -168,13 +169,13 @@ func (s *NatsMeetingRepository) ListAllBase(ctx context.Context) ([]*models.Meet
 // ListAllSettings lists all meeting settings data from the NATS KV stores.
 func (s *NatsMeetingRepository) ListAllSettings(ctx context.Context) ([]*models.MeetingSettings, error) {
 	if s.MeetingSettings == nil {
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("meeting settings repository is not available", nil)
 	}
 
 	keysLister, err := s.MeetingSettings.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing meeting settings keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("failed to list meeting settings keys from NATS key-value store", err)
 	}
 
 	meetingSettings := []*models.MeetingSettings{}
@@ -182,14 +183,14 @@ func (s *NatsMeetingRepository) ListAllSettings(ctx context.Context) ([]*models.
 		entry, err := s.MeetingSettings.Get(ctx, key)
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting meeting settings from NATS KV store", logging.ErrKey, err, "meeting_uid", key)
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError(fmt.Sprintf("failed to retrieve meeting settings '%s' from NATS key-value store", key), err)
 		}
 
 		meetingSettingsDB := &models.MeetingSettings{}
 		err = json.Unmarshal(entry.Value(), meetingSettingsDB)
 		if err != nil {
 			slog.ErrorContext(ctx, "error unmarshalling meeting settings from NATS KV store", logging.ErrKey, err, "meeting_uid", key)
-			return nil, domain.ErrUnmarshal
+			return nil, domain.NewInternalError(fmt.Sprintf("failed to unmarshal meeting settings '%s' data", key), err)
 		}
 
 		meetingSettings = append(meetingSettings, meetingSettingsDB)
@@ -318,12 +319,12 @@ func (s *NatsMeetingRepository) putSettings(ctx context.Context, meetingSettings
 func (s *NatsMeetingRepository) Create(ctx context.Context, meetingBase *models.MeetingBase, meetingSettings *models.MeetingSettings) error {
 	_, err := s.putBase(ctx, meetingBase)
 	if err != nil {
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to create meeting in NATS key-value store", err)
 	}
 
 	_, err = s.putSettings(ctx, meetingSettings)
 	if err != nil {
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to create meeting settings in NATS key-value store", err)
 	}
 
 	return nil
@@ -350,9 +351,9 @@ func (s *NatsMeetingRepository) UpdateBase(ctx context.Context, meetingBase *mod
 	if err != nil {
 		if strings.Contains(err.Error(), "wrong last sequence") {
 			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
+			return domain.NewConflictError("meeting has been modified by another process", err)
 		}
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to update meeting in NATS key-value store", err)
 	}
 
 	return nil
@@ -378,9 +379,9 @@ func (s *NatsMeetingRepository) UpdateSettings(ctx context.Context, meetingSetti
 	if err != nil {
 		if strings.Contains(err.Error(), "wrong last sequence") {
 			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
+			return domain.NewConflictError("meeting settings have been modified by another process", err)
 		}
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to update meeting settings in NATS key-value store", err)
 	}
 
 	return nil
@@ -406,23 +407,23 @@ func (s *NatsMeetingRepository) deleteSettings(ctx context.Context, meetingUID s
 
 func (s *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, revision uint64) error {
 	if s.Meetings == nil {
-		return domain.ErrServiceUnavailable
+		return domain.NewUnavailableError("meeting repository is not available", nil)
 	}
 
 	err := s.deleteBase(ctx, meetingUID, revision)
 	if err != nil {
 		if strings.Contains(err.Error(), "wrong last sequence") {
 			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
+			return domain.NewConflictError("meeting has been modified by another process", err)
 		}
 		slog.ErrorContext(ctx, "error deleting meeting from NATS KV store", logging.ErrKey, err)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to delete meeting from NATS key-value store", err)
 	}
 
 	err = s.deleteSettings(ctx, meetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error deleting meeting settings from NATS KV store", logging.ErrKey, err)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to delete meeting settings from NATS key-value store", err)
 	}
 
 	return nil
@@ -431,7 +432,7 @@ func (s *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, r
 // GetByZoomMeetingID retrieves a meeting by its Zoom meeting ID
 func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeetingID string) (*models.MeetingBase, error) {
 	if s.Meetings == nil {
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("meeting repository is not available", nil)
 	}
 
 	start := time.Now()
@@ -444,7 +445,7 @@ func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeet
 
 	// Find the meeting with matching Zoom ID
 	for _, meeting := range meetings {
-		if meeting.Platform == "Zoom" && meeting.ZoomConfig != nil && meeting.ZoomConfig.MeetingID == zoomMeetingID {
+		if meeting.Platform == models.PlatformZoom && meeting.ZoomConfig != nil && meeting.ZoomConfig.MeetingID == zoomMeetingID {
 			return meeting, nil
 		}
 	}
@@ -456,5 +457,5 @@ func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeet
 		"meetings_count", len(meetings),
 	)
 
-	return nil, domain.ErrMeetingNotFound
+	return nil, domain.NewNotFoundError(fmt.Sprintf("meeting with Zoom meeting ID '%s' not found", zoomMeetingID), nil)
 }

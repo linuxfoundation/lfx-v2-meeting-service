@@ -51,4 +51,5 @@ type MessageBuilder interface {
 	PublishZoomWebhookEvent(ctx context.Context, subject string, message models.ZoomWebhookEventMessage) error
 	GetCommitteeName(ctx context.Context, committeeUID string) (string, error)
 	GetCommitteeMembers(ctx context.Context, committeeUID string) ([]models.CommitteeMember, error)
+	GetProjectName(ctx context.Context, projectUID string) (string, error)
 }

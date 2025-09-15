@@ -66,7 +66,7 @@ func (s *NatsRegistrantRepository) getRegistrantKey(registrantUID string) string
 // ListByMeeting lists all registrants for a given meeting.
 func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.Registrant, error) {
 	if !s.IsReady(ctx) {
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	// Use the meeting index to efficiently find registrants for this meeting
@@ -74,7 +74,7 @@ func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID
 	lister, err := s.MeetingRegistrants.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing registrant index keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("failed to list registrant keys from store", err)
 	}
 
 	var registrants []*models.Registrant
@@ -98,7 +98,7 @@ func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID
 
 		registrant, err := s.Get(ctx, registrantUID)
 		if err != nil {
-			if errors.Is(err, domain.ErrRegistrantNotFound) {
+			if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 				slog.WarnContext(ctx, "stale index entry found, registrant no longer exists", "registrantUID", registrantUID)
 			} else {
 				slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
@@ -115,7 +115,7 @@ func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID
 // ListByEmail lists all registrants for a given email address.
 func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
 	if !s.IsReady(ctx) {
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	// Use the meeting index to efficiently find registrants for this meeting
@@ -123,7 +123,7 @@ func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string
 	lister, err := s.MeetingRegistrants.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing registrant index keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("failed to list registrant keys from store", err)
 	}
 
 	var registrants []*models.Registrant
@@ -147,7 +147,7 @@ func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string
 
 		registrant, err := s.Get(ctx, registrantUID)
 		if err != nil {
-			if errors.Is(err, domain.ErrRegistrantNotFound) {
+			if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 				slog.WarnContext(ctx, "stale index entry found, registrant no longer exists", "registrantUID", registrantUID)
 			} else {
 				slog.ErrorContext(ctx, "error getting registrant", "registrantUID", registrantUID, logging.ErrKey, err)
@@ -165,14 +165,14 @@ func (s *NatsRegistrantRepository) put(ctx context.Context, registrant *models.R
 	jsonData, err := json.Marshal(registrant)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling registrant", logging.ErrKey, err)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to marshal registrant data", err)
 	}
 
 	key := s.getRegistrantKey(registrant.UID)
 	_, err = s.MeetingRegistrants.Put(ctx, key, jsonData)
 	if err != nil {
 		slog.ErrorContext(ctx, "error putting registrant into NATS KV store", logging.ErrKey, err)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to save registrant to store", err)
 	}
 
 	return nil
@@ -182,7 +182,7 @@ func (s *NatsRegistrantRepository) putIndex(ctx context.Context, indexKey string
 	encodedKey, err := encodeKey(indexKey)
 	if err != nil {
 		slog.ErrorContext(ctx, "error encoding index key", logging.ErrKey, err, "key", indexKey)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to encode registrant index key", err)
 	}
 	_, err = s.MeetingRegistrants.Put(ctx, encodedKey, []byte{})
 	if err != nil {
@@ -190,7 +190,7 @@ func (s *NatsRegistrantRepository) putIndex(ctx context.Context, indexKey string
 			"indexKey", indexKey,
 			"encodedKey", encodedKey,
 		)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to save registrant index to store", err)
 	}
 
 	return nil
@@ -250,7 +250,7 @@ func (s *NatsRegistrantRepository) createIndices(ctx context.Context, registrant
 // Create creates a new registrant.
 func (s *NatsRegistrantRepository) Create(ctx context.Context, registrant *models.Registrant) error {
 	if !s.IsReady(ctx) {
-		return domain.ErrServiceUnavailable
+		return domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	// Check if registrant already exists
@@ -259,7 +259,7 @@ func (s *NatsRegistrantRepository) Create(ctx context.Context, registrant *model
 		return err
 	}
 	if exists {
-		return domain.ErrRegistrantAlreadyExists
+		return domain.NewConflictError("registrant with same email already exists for this meeting", nil)
 	}
 
 	// TODO: handle atomicity of the put and index operations.
@@ -279,7 +279,7 @@ func (s *NatsRegistrantRepository) Create(ctx context.Context, registrant *model
 // RegistrantExists checks if a registrant exists.
 func (s *NatsRegistrantRepository) Exists(ctx context.Context, registrantUID string) (bool, error) {
 	if !s.IsReady(ctx) {
-		return false, domain.ErrServiceUnavailable
+		return false, domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	key := s.getRegistrantKey(registrantUID)
@@ -296,7 +296,7 @@ func (s *NatsRegistrantRepository) Exists(ctx context.Context, registrantUID str
 // ExistsByMeetingAndEmail checks if a registrant exists for a given meeting and email.
 func (s *NatsRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, meetingUID, email string) (bool, error) {
 	if !s.IsReady(ctx) {
-		return false, domain.ErrServiceUnavailable
+		return false, domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	// List all registrants for the meeting
@@ -318,7 +318,7 @@ func (s *NatsRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, 
 // GetByMeetingAndEmail gets a registrant by meeting UID and email with its revision.
 func (s *NatsRegistrantRepository) GetByMeetingAndEmail(ctx context.Context, meetingUID, email string) (*models.Registrant, uint64, error) {
 	if !s.IsReady(ctx) {
-		return nil, 0, domain.ErrServiceUnavailable
+		return nil, 0, domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	// List all registrants for the meeting
@@ -335,7 +335,7 @@ func (s *NatsRegistrantRepository) GetByMeetingAndEmail(ctx context.Context, mee
 		}
 	}
 
-	return nil, 0, domain.ErrRegistrantNotFound
+	return nil, 0, domain.NewNotFoundError(fmt.Sprintf("no registrant found for meeting '%s' with email '%s'", meetingUID, email), nil)
 }
 
 // Get gets a registrant by its UID.
@@ -350,15 +350,14 @@ func (s *NatsRegistrantRepository) Get(ctx context.Context, registrantUID string
 // GetWithRevision gets a registrant by its UID and returns the revision.
 func (s *NatsRegistrantRepository) GetWithRevision(ctx context.Context, registrantUID string) (*models.Registrant, uint64, error) {
 	if !s.IsReady(ctx) {
-		return nil, 0, domain.ErrServiceUnavailable
+		return nil, 0, domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	key := s.getRegistrantKey(registrantUID)
 	entry, err := s.MeetingRegistrants.Get(ctx, key)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			slog.WarnContext(ctx, "registrant not found", logging.ErrKey, domain.ErrRegistrantNotFound)
-			return nil, 0, domain.ErrRegistrantNotFound
+			return nil, 0, domain.NewNotFoundError(fmt.Sprintf("registrant with UID '%s' not found", registrantUID), err)
 		}
 		slog.ErrorContext(ctx, "error getting registrant from NATS KV", logging.ErrKey, err)
 		return nil, 0, err
@@ -368,7 +367,7 @@ func (s *NatsRegistrantRepository) GetWithRevision(ctx context.Context, registra
 	err = json.Unmarshal(entry.Value(), &registrant)
 	if err != nil {
 		slog.ErrorContext(ctx, "error unmarshaling registrant", logging.ErrKey, err)
-		return nil, 0, domain.ErrUnmarshal
+		return nil, 0, domain.NewInternalError("failed to unmarshal registrant data", err)
 	}
 
 	return &registrant, entry.Revision(), nil
@@ -377,7 +376,7 @@ func (s *NatsRegistrantRepository) GetWithRevision(ctx context.Context, registra
 // Update updates a registrant.
 func (s *NatsRegistrantRepository) Update(ctx context.Context, registrant *models.Registrant, revision uint64) error {
 	if !s.IsReady(ctx) {
-		return domain.ErrServiceUnavailable
+		return domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	// Get the old registrant to check if indexes need updating
@@ -389,18 +388,20 @@ func (s *NatsRegistrantRepository) Update(ctx context.Context, registrant *model
 	jsonData, err := json.Marshal(registrant)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling registrant", logging.ErrKey, err)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to marshal registrant data", err)
 	}
 
 	key := s.getRegistrantKey(registrant.UID)
 	_, err = s.MeetingRegistrants.Update(ctx, key, jsonData, revision)
 	if err != nil {
 		if strings.Contains(err.Error(), "wrong last sequence") {
-			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
+			return domain.NewConflictError("registrant has been modified by another process", err)
+		}
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return domain.NewNotFoundError("registrant not found", err)
 		}
 		slog.ErrorContext(ctx, "error updating registrant in NATS KV store", logging.ErrKey, err)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to update registrant in store", err)
 	}
 
 	// Update indexes if email or meeting changed
@@ -428,7 +429,7 @@ func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant
 	encodedMeetingIndexKey, err := encodeKey(meetingIndexKey)
 	if err != nil {
 		slog.ErrorContext(ctx, "error encoding meeting index key", logging.ErrKey, err, "raw_key", meetingIndexKey)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to encode meeting index key", err)
 	}
 
 	err = s.MeetingRegistrants.Delete(ctx, encodedMeetingIndexKey)
@@ -438,7 +439,7 @@ func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant
 			"raw_key", meetingIndexKey,
 			"encoded_key", encodedMeetingIndexKey,
 		)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to delete meeting index", err)
 	}
 
 	// Only delete email index if email is not empty
@@ -447,7 +448,7 @@ func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant
 		encodedEmailIndexKey, err := encodeKey(emailIndexKey)
 		if err != nil {
 			slog.ErrorContext(ctx, "error encoding email index key", logging.ErrKey, err, "raw_key", emailIndexKey)
-			return domain.ErrInternal
+			return domain.NewInternalError("failed to encode email index key", err)
 		}
 
 		err = s.MeetingRegistrants.Delete(ctx, encodedEmailIndexKey)
@@ -457,7 +458,7 @@ func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant
 				"raw_key", emailIndexKey,
 				"encoded_key", encodedEmailIndexKey,
 			)
-			return domain.ErrInternal
+			return domain.NewInternalError("failed to delete registrant email index from NATS key-value store", err)
 		}
 	} else {
 		slog.DebugContext(ctx, "skipping email index deletion for registrant with empty email", "registrant_uid", registrant.UID)
@@ -469,7 +470,7 @@ func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant
 // Delete deletes a registrant.
 func (s *NatsRegistrantRepository) Delete(ctx context.Context, registrantUID string, revision uint64) error {
 	if !s.IsReady(ctx) {
-		return domain.ErrServiceUnavailable
+		return domain.NewUnavailableError("registrant repository is not available", nil)
 	}
 
 	// Get registrant first to clean up indexes
@@ -482,11 +483,10 @@ func (s *NatsRegistrantRepository) Delete(ctx context.Context, registrantUID str
 	err = s.MeetingRegistrants.Delete(ctx, key, jetstream.LastRevision(revision))
 	if err != nil {
 		if strings.Contains(err.Error(), "wrong last sequence") {
-			slog.WarnContext(ctx, "revision mismatch", logging.ErrKey, err)
-			return domain.ErrRevisionMismatch
+			return domain.NewConflictError("registrant has been modified by another process", err)
 		}
 		slog.ErrorContext(ctx, "error deleting registrant from NATS KV store", logging.ErrKey, err)
-		return domain.ErrInternal
+		return domain.NewInternalError("failed to delete registrant from store", err)
 	}
 
 	// Clean up indexes
