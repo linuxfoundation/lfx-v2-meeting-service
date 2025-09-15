@@ -129,6 +129,12 @@
                 <span class="detail-label">Time Zone:</span>
                 {{.Timezone}}
             </div>
+            {{if .Recurrence}}
+            <div class="detail-row">
+                <span class="detail-label">Recurrence:</span>
+                {{formatRecurrence .Recurrence}}
+            </div>
+            {{end}}
         </div>
 
         {{if .Description}}
