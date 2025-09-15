@@ -41,12 +41,14 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 
 	// Define all templates to load
 	templateConfigs := map[string]templateConfig{
-		"invitationHTML":        {"meeting_invitation.html", "templates/meeting_invitation.html"},
-		"invitationText":        {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
-		"cancellationHTML":      {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
-		"cancellationText":      {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
-		"updatedInvitationHTML": {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
-		"updatedInvitationText": {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},
+		"invitationHTML":          {"meeting_invitation.html", "templates/meeting_invitation.html"},
+		"invitationText":          {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
+		"cancellationHTML":        {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
+		"cancellationText":        {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
+		"updatedInvitationHTML":   {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
+		"updatedInvitationText":   {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},
+		"summaryNotificationHTML": {"meeting_summary_notification.html", "templates/meeting_summary_notification.html"},
+		"summaryNotificationText": {"meeting_summary_notification.txt", "templates/meeting_summary_notification.txt"},
 	}
 
 	// Load all templates
@@ -73,6 +75,10 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 			UpdatedInvitation: TemplateSet{
 				HTML: loadedTemplates["updatedInvitationHTML"],
 				Text: loadedTemplates["updatedInvitationText"],
+			},
+			SummaryNotification: TemplateSet{
+				HTML: loadedTemplates["summaryNotificationHTML"],
+				Text: loadedTemplates["summaryNotificationText"],
 			},
 		},
 	}
@@ -288,5 +294,44 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	if attachment != nil {
 		slog.InfoContext(ctx, "ICS update attachment included")
 	}
+	return nil
+}
+
+// SendSummaryNotification sends a meeting summary notification email to a meeting host
+func (s *SMTPService) SendSummaryNotification(ctx context.Context, notification domain.EmailSummaryNotification) error {
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", notification.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", notification.MeetingTitle))
+
+	// Generate email content from templates
+	htmlContent, err := renderTemplate(s.templates.Meeting.SummaryNotification.HTML, notification)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to render summary notification HTML template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render summary notification HTML template: %w", err)
+	}
+
+	textContent, err := renderTemplate(s.templates.Meeting.SummaryNotification.Text, notification)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to render summary notification text template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render summary notification text template: %w", err)
+	}
+
+	// Build and send the email
+	subject := fmt.Sprintf("Meeting Summary Available: %s", notification.MeetingTitle)
+	message := buildEmailMessageWithParams(EmailMessageParams{
+		Recipient:   notification.RecipientEmail,
+		Subject:     subject,
+		HTMLContent: htmlContent,
+		TextContent: textContent,
+		Attachment:  nil, // No attachments for summary notifications
+		Config:      s.config,
+	})
+
+	err = sendEmailMessage(notification.RecipientEmail, message, s.config)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send summary notification email", logging.ErrKey, err)
+		return err
+	}
+
+	slog.InfoContext(ctx, "summary notification email sent successfully")
 	return nil
 }

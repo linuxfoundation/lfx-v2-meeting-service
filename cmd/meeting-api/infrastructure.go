@@ -121,6 +121,7 @@ type Repositories struct {
 	PastMeeting            *store.NatsPastMeetingRepository
 	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
 	PastMeetingRecording   *store.NatsPastMeetingRecordingRepository
+	PastMeetingSummary     *store.NatsPastMeetingSummaryRepository
 }
 
 // getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.
@@ -131,48 +132,34 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		return nil, err
 	}
 
-	meetingsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetings)
-	if err != nil {
-		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.KVStoreNameMeetings)
-		return nil, err
+	// Initialize all KV stores
+	kvStores := make(map[string]jetstream.KeyValue)
+	storeNames := []string{
+		store.KVStoreNameMeetings,
+		store.KVStoreNameMeetingSettings,
+		store.KVStoreNameMeetingRegistrants,
+		store.KVStoreNamePastMeetings,
+		store.KVStoreNamePastMeetingParticipants,
+		store.KVStoreNamePastMeetingRecordings,
+		store.KVStoreNamePastMeetingSummaries,
 	}
 
-	meetingSettingsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetingSettings)
-	if err != nil {
-		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.KVStoreNameMeetingSettings)
-		return nil, err
-	}
-
-	meetingRegistrantsKV, err := js.KeyValue(ctx, store.KVStoreNameMeetingRegistrants)
-	if err != nil {
-		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.KVStoreNameMeetingRegistrants)
-		return nil, err
-	}
-
-	pastMeetingsKV, err := js.KeyValue(ctx, store.KVStoreNamePastMeetings)
-	if err != nil {
-		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.KVStoreNamePastMeetings)
-		return nil, err
-	}
-
-	pastMeetingParticipantsKV, err := js.KeyValue(ctx, store.KVStoreNamePastMeetingParticipants)
-	if err != nil {
-		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.KVStoreNamePastMeetingParticipants)
-		return nil, err
-	}
-
-	pastMeetingRecordingsKV, err := js.KeyValue(ctx, store.KVStoreNamePastMeetingRecordings)
-	if err != nil {
-		slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.KVStoreNamePastMeetingRecordings)
-		return nil, err
+	for _, storeName := range storeNames {
+		kv, err := js.KeyValue(ctx, storeName)
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", storeName)
+			return nil, err
+		}
+		kvStores[storeName] = kv
 	}
 
 	repos := &Repositories{
-		Meeting:                store.NewNatsMeetingRepository(meetingsKV, meetingSettingsKV),
-		Registrant:             store.NewNatsRegistrantRepository(meetingRegistrantsKV),
-		PastMeeting:            store.NewNatsPastMeetingRepository(pastMeetingsKV),
-		PastMeetingParticipant: store.NewNatsPastMeetingParticipantRepository(pastMeetingParticipantsKV),
-		PastMeetingRecording:   store.NewNatsPastMeetingRecordingRepository(pastMeetingRecordingsKV),
+		Meeting:                store.NewNatsMeetingRepository(kvStores[store.KVStoreNameMeetings], kvStores[store.KVStoreNameMeetingSettings]),
+		Registrant:             store.NewNatsRegistrantRepository(kvStores[store.KVStoreNameMeetingRegistrants]),
+		PastMeeting:            store.NewNatsPastMeetingRepository(kvStores[store.KVStoreNamePastMeetings]),
+		PastMeetingParticipant: store.NewNatsPastMeetingParticipantRepository(kvStores[store.KVStoreNamePastMeetingParticipants]),
+		PastMeetingRecording:   store.NewNatsPastMeetingRecordingRepository(kvStores[store.KVStoreNamePastMeetingRecordings]),
+		PastMeetingSummary:     store.NewNatsPastMeetingSummaryRepository(kvStores[store.KVStoreNamePastMeetingSummaries]),
 	}
 
 	return repos, nil

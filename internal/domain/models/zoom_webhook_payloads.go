@@ -134,22 +134,30 @@ type ZoomTranscriptCompletedPayload struct {
 // ZoomSummaryCompletedPayload represents the payload for meeting.summary_completed webhook events
 type ZoomSummaryCompletedPayload struct {
 	Object struct {
-		UUID      string    `json:"uuid"`
-		ID        int64     `json:"id"`
-		HostID    string    `json:"host_id"`
-		Topic     string    `json:"topic"`
-		Type      int       `json:"type"`
-		StartTime time.Time `json:"start_time"`
-		EndTime   time.Time `json:"end_time"`
-		Duration  int       `json:"duration"`
-		Timezone  string    `json:"timezone"`
-		Summary   struct {
-			SummaryStartTime time.Time `json:"summary_start_time"`
-			SummaryEndTime   time.Time `json:"summary_end_time"`
-			NextSteps        []string  `json:"next_steps"`
-			KeyPoints        []string  `json:"key_points"`
-		} `json:"summary"`
+		MeetingHostID           string          `json:"meeting_host_id"`
+		MeetingHostEmail        string          `json:"meeting_host_email"`
+		MeetingUUID             string          `json:"meeting_uuid"`
+		MeetingID               int64           `json:"meeting_id"`
+		MeetingTopic            string          `json:"meeting_topic"`
+		MeetingStartTime        time.Time       `json:"meeting_start_time"`
+		MeetingEndTime          time.Time       `json:"meeting_end_time"`
+		SummaryStartTime        time.Time       `json:"summary_start_time"`
+		SummaryEndTime          time.Time       `json:"summary_end_time"`
+		SummaryCreatedTime      time.Time       `json:"summary_created_time"`
+		SummaryLastModifiedTime time.Time       `json:"summary_last_modified_time"`
+		SummaryTitle            string          `json:"summary_title"`
+		SummaryOverview         string          `json:"summary_overview"`
+		SummaryDetails          []SummaryDetail `json:"summary_details"`
+		NextSteps               []string        `json:"next_steps"`
+		SummaryContent          string          `json:"summary_content"`
+		SummaryDocURL           string          `json:"summary_doc_url"`
 	} `json:"object"`
+}
+
+// SummaryDetail represents a detail item in the summary
+type SummaryDetail struct {
+	Label   string `json:"label"`
+	Summary string `json:"summary"`
 }
 
 // RecordingFile represents a recording file in webhook payloads

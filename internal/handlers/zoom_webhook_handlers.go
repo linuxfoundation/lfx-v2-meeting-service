@@ -29,6 +29,7 @@ type ZoomWebhookHandler struct {
 	pastMeetingService            *service.PastMeetingService
 	pastMeetingParticipantService *service.PastMeetingParticipantService
 	pastMeetingRecordingService   *service.PastMeetingRecordingService
+	pastMeetingSummaryService     *service.PastMeetingSummaryService
 	occurrenceService             domain.OccurrenceService
 	WebhookValidator              domain.WebhookValidator
 }
@@ -39,6 +40,7 @@ func NewZoomWebhookHandler(
 	pastMeetingService *service.PastMeetingService,
 	pastMeetingParticipantService *service.PastMeetingParticipantService,
 	pastMeetingRecordingService *service.PastMeetingRecordingService,
+	pastMeetingSummaryService *service.PastMeetingSummaryService,
 	occurrenceService domain.OccurrenceService,
 	webhookValidator domain.WebhookValidator,
 ) *ZoomWebhookHandler {
@@ -48,6 +50,7 @@ func NewZoomWebhookHandler(
 		pastMeetingService:            pastMeetingService,
 		pastMeetingParticipantService: pastMeetingParticipantService,
 		pastMeetingRecordingService:   pastMeetingRecordingService,
+		pastMeetingSummaryService:     pastMeetingSummaryService,
 		occurrenceService:             occurrenceService,
 		WebhookValidator:              webhookValidator,
 	}
@@ -58,7 +61,8 @@ func (s *ZoomWebhookHandler) HandlerReady() bool {
 		s.registrantService.ServiceReady() &&
 		s.pastMeetingService.ServiceReady() &&
 		s.pastMeetingParticipantService.ServiceReady() &&
-		s.pastMeetingRecordingService.ServiceReady()
+		s.pastMeetingRecordingService.ServiceReady() &&
+		s.pastMeetingSummaryService.ServiceReady()
 }
 
 // ZoomPayloadForPastMeeting contains the essential Zoom webhook data for creating PastMeeting records
@@ -320,16 +324,6 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 		slog.ErrorContext(ctx, "failed to find meeting by Zoom ID", logging.ErrKey, err)
 		return fmt.Errorf("meeting not found for Zoom ID %s: %w", meetingObj.ID, err)
 	}
-
-	// // Handle session management for this meeting started event
-	// newPastMeeting, err := s.handleMeetingStartedSession(ctx, meeting, payload)
-	// if err != nil {
-	// 	slog.ErrorContext(ctx, "failed to handle meeting started session",
-	// 		logging.ErrKey, err,
-	// 		logging.PriorityCritical(),
-	// 	)
-	// 	return fmt.Errorf("failed to handle meeting started session: %w", err)
-	// }
 
 	// Calculate the closest occurrence ID based on the actual start time
 	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
@@ -1048,12 +1042,109 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 	}
 
 	slog.DebugContext(ctx, "processing summary completed event",
-		"zoom_meeting_uuid", payload.Object.UUID,
-		"zoom_meeting_id", payload.Object.ID,
-		"topic", payload.Object.Topic,
-		"start_time", payload.Object.StartTime,
-		"end_time", payload.Object.EndTime,
-		"duration", payload.Object.Duration,
+		"zoom_meeting_uuid", payload.Object.MeetingUUID,
+		"zoom_meeting_id", payload.Object.MeetingID,
+		"topic", payload.Object.MeetingTopic,
+		"start_time", payload.Object.MeetingStartTime,
+		"end_time", payload.Object.MeetingEndTime,
+	)
+
+	// Find the meeting by Zoom meeting ID first to get occurrence information
+	zoomMeetingID := fmt.Sprintf("%d", payload.Object.MeetingID)
+	meeting, err := s.meetingService.MeetingRepository.GetByZoomMeetingID(ctx, zoomMeetingID)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to find meeting by Zoom ID for summary",
+			"zoom_meeting_id", zoomMeetingID,
+			"zoom_meeting_uuid", payload.Object.MeetingUUID,
+			"error", err,
+		)
+		// Don't fail the webhook if no meeting is found - it might have been deleted
+		return nil
+	}
+
+	// Calculate the closest occurrence ID based on the meeting start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.MeetingStartTime)
+
+	// Find the past meeting by platform meeting ID AND occurrence ID
+	pastMeeting, err := s.pastMeetingService.PastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, zoomMeetingID, occurrenceID)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.WarnContext(ctx, "no past meeting found for summary",
+				"zoom_meeting_id", zoomMeetingID,
+				"zoom_meeting_uuid", payload.Object.MeetingUUID,
+				"occurrence_id", occurrenceID,
+			)
+			return nil // Don't fail the webhook if no past meeting is found
+		}
+		slog.ErrorContext(ctx, "error finding past meeting for summary", logging.ErrKey, err,
+			"zoom_meeting_id", zoomMeetingID,
+			"occurrence_id", occurrenceID,
+		)
+		return fmt.Errorf("failed to find past meeting: %w", err)
+	}
+
+	// Check if a summary already exists for this Zoom meeting UUID
+	// We need to check all summaries for this past meeting and see if any have the same Zoom UUID
+	existingSummaries, err := s.pastMeetingSummaryService.ListSummariesByPastMeeting(ctx, pastMeeting.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error checking for existing summaries", logging.ErrKey, err,
+			"past_meeting_uid", pastMeeting.UID,
+		)
+		return fmt.Errorf("failed to check existing summaries: %w", err)
+	}
+
+	// Check if any existing summary has the same Zoom UUID
+	for _, existingSummary := range existingSummaries {
+		if existingSummary.ZoomConfig != nil && existingSummary.ZoomConfig.MeetingUUID == payload.Object.MeetingUUID {
+			slog.InfoContext(ctx, "summary already exists for this Zoom meeting UUID",
+				"existing_summary_uid", existingSummary.UID,
+				"zoom_meeting_uuid", payload.Object.MeetingUUID,
+				"past_meeting_uid", pastMeeting.UID,
+			)
+			return nil // Summary already exists, nothing to do
+		}
+	}
+
+	// Create the summary record since none exists for this UUID
+	summary := &models.PastMeetingSummary{
+		PastMeetingUID: pastMeeting.UID,
+		MeetingUID:     pastMeeting.MeetingUID,
+		Platform:       models.PlatformZoom,
+		Password:       uuid.NewString(),
+		ZoomConfig: &models.PastMeetingSummaryZoomConfig{
+			MeetingID:   zoomMeetingID,
+			MeetingUUID: payload.Object.MeetingUUID,
+		},
+		SummaryData: models.SummaryData{
+			StartTime:     payload.Object.SummaryStartTime,
+			EndTime:       payload.Object.SummaryEndTime,
+			Title:         payload.Object.SummaryTitle,
+			Content:       payload.Object.SummaryContent,
+			DocURL:        payload.Object.SummaryDocURL,
+			EditedContent: "", // Empty until user edits
+		},
+		RequiresApproval: pastMeeting.ZoomConfig != nil && pastMeeting.ZoomConfig.AISummaryRequireApproval,
+		Approved:         false, // Default to false until manually approved
+		EmailSent:        false, // Default to false until emails are sent
+	}
+
+	// Create the summary using the service
+	createdSummary, err := s.pastMeetingSummaryService.CreateSummary(ctx, summary)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create past meeting summary", logging.ErrKey, err,
+			"past_meeting_uid", pastMeeting.UID,
+			"zoom_meeting_id", zoomMeetingID,
+		)
+		return fmt.Errorf("failed to create summary: %w", err)
+	}
+
+	slog.InfoContext(ctx, "successfully created past meeting summary",
+		"summary_uid", createdSummary.UID,
+		"past_meeting_uid", pastMeeting.UID,
+		"meeting_uid", pastMeeting.MeetingUID,
+		"occurrence_id", occurrenceID,
+		"zoom_meeting_id", zoomMeetingID,
+		"zoom_meeting_uuid", payload.Object.MeetingUUID,
 	)
 
 	return nil

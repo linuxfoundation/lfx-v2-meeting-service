@@ -246,6 +246,24 @@ func (m *MessageBuilder) SendDeleteIndexPastMeetingRecording(ctx context.Context
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingRecordingSubject, models.ActionDeleted, []byte(data), nil)
 }
 
+// SendIndexPastMeetingSummary sends the message to the NATS server for the past meeting summary indexing.
+func (m *MessageBuilder) SendIndexPastMeetingSummary(ctx context.Context, action models.MessageAction, data models.PastMeetingSummary) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.Tags()...)
+
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingSummarySubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexPastMeetingSummary sends the message to the NATS server for the past meeting summary indexing.
+func (m *MessageBuilder) SendDeleteIndexPastMeetingSummary(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingSummarySubject, models.ActionDeleted, []byte(data), nil)
+}
+
 // SendUpdateAccessPastMeeting sends the message to the NATS server for the past meeting access control updates.
 func (m *MessageBuilder) SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error {
 	dataBytes, err := json.Marshal(data)
