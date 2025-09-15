@@ -103,6 +103,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		MeetingID:      invitation.MeetingID,
 		Passcode:       invitation.Passcode,
 		RecipientEmail: invitation.RecipientEmail,
+		ProjectName:    invitation.ProjectName,
 		Recurrence:     invitation.Recurrence,
 	})
 	if err != nil {
@@ -241,6 +242,7 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 			MeetingID:      updatedInvitation.MeetingID,
 			Passcode:       updatedInvitation.Passcode,
 			RecipientEmail: updatedInvitation.RecipientEmail,
+			ProjectName:    updatedInvitation.ProjectName,
 			Recurrence:     updatedInvitation.Recurrence,
 			Sequence:       1, // Incremented sequence for updates
 		})

@@ -72,6 +72,9 @@ app:
     # ZOOM_WEBHOOK_SECRET_TOKEN is optional
     ZOOM_WEBHOOK_SECRET_TOKEN:
       value: null
+    # LFX_ENVIRONMENT is optional (dev, staging, prod) - defaults to prod if not set
+    LFX_ENVIRONMENT:
+      value: prod
 
 # traefik is the configuration for Traefik Gateway API routing
 traefik:
