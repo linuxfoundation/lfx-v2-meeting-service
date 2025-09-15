@@ -159,48 +159,104 @@ func TestContextMappingConsistency(t *testing.T) {
 func TestGenerateLFXMeetingURL(t *testing.T) {
 	tests := []struct {
 		name        string
+		envValue    string
 		meetingUID  string
 		password    string
 		expectedURL string
 	}{
 		{
-			name:        "valid meeting URL",
+			name:        "valid meeting URL production",
+			envValue:    "prod",
 			meetingUID:  "123e4567-e89b-12d3-a456-426614174000",
 			password:    "456e7890-e89b-12d3-a456-426614174001",
-			expectedURL: "https://app.lfx.dev/meetings/123e4567-e89b-12d3-a456-426614174000?password=456e7890-e89b-12d3-a456-426614174001",
+			expectedURL: "https://" + LFXDomainProd + "/meetings/123e4567-e89b-12d3-a456-426614174000?password=456e7890-e89b-12d3-a456-426614174001",
+		},
+		{
+			name:        "valid meeting URL development",
+			envValue:    "dev",
+			meetingUID:  "123e4567-e89b-12d3-a456-426614174000",
+			password:    "456e7890-e89b-12d3-a456-426614174001",
+			expectedURL: "https://" + LFXDomainDev + "/meetings/123e4567-e89b-12d3-a456-426614174000?password=456e7890-e89b-12d3-a456-426614174001",
+		},
+		{
+			name:        "valid meeting URL staging",
+			envValue:    "staging",
+			meetingUID:  "123e4567-e89b-12d3-a456-426614174000",
+			password:    "456e7890-e89b-12d3-a456-426614174001",
+			expectedURL: "https://" + LFXDomainStaging + "/meetings/123e4567-e89b-12d3-a456-426614174000?password=456e7890-e89b-12d3-a456-426614174001",
 		},
 		{
 			name:        "empty values",
+			envValue:    "",
 			meetingUID:  "",
 			password:    "",
-			expectedURL: "https://app.lfx.dev/meetings/?password=",
+			expectedURL: "https://" + LFXDomainProd + "/meetings/?password=",
 		},
 		{
 			name:        "special characters in password",
+			envValue:    "",
 			meetingUID:  "meeting-123",
 			password:    "pass@#$%",
-			expectedURL: "https://app.lfx.dev/meetings/meeting-123?password=pass%40%23%24%25",
+			expectedURL: "https://" + LFXDomainProd + "/meetings/meeting-123?password=pass%40%23%24%25",
 		},
 		{
 			name:        "password with spaces",
+			envValue:    "",
 			meetingUID:  "meeting-456",
 			password:    "password with spaces",
-			expectedURL: "https://app.lfx.dev/meetings/meeting-456?password=password+with+spaces",
+			expectedURL: "https://" + LFXDomainProd + "/meetings/meeting-456?password=password+with+spaces",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := GenerateLFXMeetingURL(tt.meetingUID, tt.password)
+			result := GenerateLFXMeetingURL(tt.meetingUID, tt.password, tt.envValue)
 			if result != tt.expectedURL {
-				t.Errorf("GenerateLFXMeetingURL() = %q, expected %q", result, tt.expectedURL)
+				t.Errorf("GenerateLFXMeetingURL(%q, %q, %q) = %q, expected %q", tt.meetingUID, tt.password, tt.envValue, result, tt.expectedURL)
 			}
 		})
 	}
 }
 
-func TestLFXAppDomainConstant(t *testing.T) {
-	if LFXAppDomain != "app.lfx.dev" {
-		t.Errorf("LFXAppDomain should be 'app.lfx.dev', got %q", LFXAppDomain)
+func TestGetLFXAppDomain(t *testing.T) {
+	tests := []struct {
+		name        string
+		envValue    string
+		expectedURL string
+	}{
+		{
+			name:        "development environment",
+			envValue:    "dev",
+			expectedURL: LFXDomainDev,
+		},
+		{
+			name:        "staging environment",
+			envValue:    "staging",
+			expectedURL: LFXDomainStaging,
+		},
+		{
+			name:        "production environment",
+			envValue:    "prod",
+			expectedURL: LFXDomainProd,
+		},
+		{
+			name:        "empty environment defaults to production",
+			envValue:    "",
+			expectedURL: LFXDomainProd,
+		},
+		{
+			name:        "unknown environment defaults to production",
+			envValue:    "unknown",
+			expectedURL: LFXDomainProd,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetLFXAppDomain(tt.envValue)
+			if result != tt.expectedURL {
+				t.Errorf("GetLFXAppDomain(%q) = %q, expected %q", tt.envValue, result, tt.expectedURL)
+			}
+		})
 	}
 }

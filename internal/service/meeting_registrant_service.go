@@ -499,7 +499,7 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		Duration:       meetingDB.Duration,
 		Timezone:       meetingDB.Timezone,
 		Description:    meetingDB.Description,
-		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password),
+		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.Config.LFXEnvironment),
 		ProjectName:    projectName,
 		Platform:       meetingDB.Platform,
 		MeetingID:      meetingID,

@@ -11,4 +11,6 @@ type Service interface {
 type ServiceConfig struct {
 	// SkipEtagValidation is a flag to skip the Etag validation - only meant for local development.
 	SkipEtagValidation bool
+	// LFXEnvironment is the environment name for LFX app domain generation.
+	LFXEnvironment string
 }
