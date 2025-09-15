@@ -24,6 +24,7 @@ type environment struct {
 	NatsURL            string
 	Port               string
 	SkipEtagValidation bool
+	LFXEnvironment     string
 	EmailConfig        emailConfig
 }
 
@@ -81,10 +82,24 @@ func parseEnv() environment {
 		skipEtagValidation = true
 	}
 
+	lfxEnvironmentRaw := os.Getenv("LFX_ENVIRONMENT")
+	var lfxEnvironment string
+	switch lfxEnvironmentRaw {
+	case "dev", "development":
+		lfxEnvironment = "dev"
+	case "staging", "stg", "stage":
+		lfxEnvironment = "staging"
+	case "prod", "production":
+		lfxEnvironment = "prod"
+	default:
+		lfxEnvironment = "prod" // Default to production
+	}
+
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,
 		SkipEtagValidation: skipEtagValidation,
+		LFXEnvironment:     lfxEnvironment,
 		EmailConfig:        parseEmailConfig(),
 	}
 }

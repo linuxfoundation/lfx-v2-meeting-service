@@ -29,6 +29,7 @@ type EmailInvitation struct {
 	Description    string
 	JoinLink       string
 	ProjectName    string             // Optional project name for context
+	Platform       string             // Meeting platform (e.g., "Zoom")
 	MeetingID      string             // Zoom meeting ID for dial-in
 	Passcode       string             // Zoom passcode
 	Recurrence     *models.Recurrence // Recurrence pattern for ICS
@@ -63,6 +64,7 @@ type EmailUpdatedInvitation struct {
 	Description    string
 	JoinLink       string
 	ProjectName    string             // Optional project name for context
+	Platform       string             // Meeting platform (e.g., "Zoom")
 	MeetingID      string             // Zoom meeting ID for dial-in
 	Passcode       string             // Zoom passcode
 	Recurrence     *models.Recurrence // Recurrence pattern for ICS

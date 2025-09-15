@@ -31,6 +31,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			MeetingID:      "123456789",
 			Passcode:       "abc123",
 			RecipientEmail: "user@example.com",
+			ProjectName:    "Test Project",
 			Recurrence:     nil,
 		})
 
@@ -69,6 +70,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			MeetingID:      "987654321",
 			Passcode:       "xyz789",
 			RecipientEmail: "team@example.com",
+			ProjectName:    "",
 			Recurrence:     recurrence,
 		})
 
@@ -96,6 +98,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			MeetingID:      "555555555",
 			Passcode:       "",
 			RecipientEmail: "group@example.com",
+			ProjectName:    "",
 			Recurrence:     recurrence,
 		})
 
@@ -122,6 +125,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			MeetingID:      "",
 			Passcode:       "",
 			RecipientEmail: "manager@example.com",
+			ProjectName:    "",
 			Recurrence:     recurrence,
 		})
 
@@ -150,6 +154,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			MeetingID:      "111111111",
 			Passcode:       "secure",
 			RecipientEmail: "board@example.com",
+			ProjectName:    "",
 			Recurrence:     recurrence,
 		})
 
@@ -169,6 +174,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			MeetingID:      "",
 			Passcode:       "",
 			RecipientEmail: "office@example.com",
+			ProjectName:    "",
 			Recurrence:     nil,
 		})
 
@@ -335,12 +341,14 @@ func TestBuildDescription(t *testing.T) {
 			"123456789",
 			"abc123",
 			"https://zoom.us/j/123456789",
+			"Test Project",
 			startTime,
 			60,
 			"America/New_York",
 			recurrence,
 		)
 
+		assert.Contains(t, desc, "Project: Test Project")
 		assert.Contains(t, desc, "Original description")
 		assert.Contains(t, desc, "Meeting ID: 123456789")
 		assert.Contains(t, desc, "Passcode: abc123")
@@ -358,6 +366,7 @@ func TestBuildDescription(t *testing.T) {
 			"987654321",
 			"",
 			"https://zoom.us/j/987654321",
+			"",
 			startTime,
 			30,
 			"UTC",
@@ -374,6 +383,7 @@ func TestBuildDescription(t *testing.T) {
 	t.Run("without meeting details", func(t *testing.T) {
 		desc := buildDescription(
 			"Simple meeting",
+			"",
 			"",
 			"",
 			"",

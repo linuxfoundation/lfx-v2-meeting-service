@@ -562,6 +562,7 @@ The service can be configured via environment variables:
 | `JWT_AUDIENCE` | JWT token audience | `lfx-v2-meeting-service` |
 | `SKIP_ETAG_VALIDATION` | Skip ETag validation (dev only) | `false` |
 | `JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL` | Mock principal for local dev (dev only) | `""` |
+| `LFX_ENVIRONMENT` | LFX app domain environment (dev, staging, prod) | `prod` |
 
 ### Zoom Integration Configuration
 

@@ -46,13 +46,34 @@ type contextEtag string
 // ETagContextID is the context ID for the ETag
 const ETagContextID contextEtag = "etag"
 
-// LFX Application URLs
+// LFX app domain constants
 const (
-	// LFXAppDomain is the base domain for the LFX web application
-	LFXAppDomain string = "app.lfx.dev"
+	// LFXDomainDev is the development domain
+	LFXDomainDev = "app.dev.lfx.dev"
+	// LFXDomainStaging is the staging domain
+	LFXDomainStaging = "app.staging.lfx.dev"
+	// LFXDomainProd is the production domain
+	LFXDomainProd = "app.lfx.dev"
 )
 
+// GetLFXAppDomain returns the appropriate LFX app domain based on the environment
+// Environment should be one of: "dev", "staging", "prod"
+func GetLFXAppDomain(environment string) string {
+	switch environment {
+	case "dev":
+		return LFXDomainDev
+	case "staging":
+		return LFXDomainStaging
+	case "prod":
+		return LFXDomainProd
+	default:
+		// Default to production domain if environment is not one of the expected values
+		return LFXDomainProd
+	}
+}
+
 // GenerateLFXMeetingURL generates the LFX app meeting URL with the given meeting UID and password
-func GenerateLFXMeetingURL(meetingUID, password string) string {
-	return fmt.Sprintf("https://%s/meetings/%s?password=%s", LFXAppDomain, meetingUID, url.QueryEscape(password))
+func GenerateLFXMeetingURL(meetingUID, password, environment string) string {
+	domain := GetLFXAppDomain(environment)
+	return fmt.Sprintf("https://%s/meetings/%s?password=%s", domain, meetingUID, url.QueryEscape(password))
 }
