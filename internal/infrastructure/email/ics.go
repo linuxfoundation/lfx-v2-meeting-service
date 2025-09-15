@@ -469,7 +469,7 @@ func buildDescription(description, meetingID, passcode, joinLink string, startTi
 		desc.WriteString("Dial-in Options:\n")
 		desc.WriteString("=========================\n\n")
 		desc.WriteString("Find your local number:\n")
-		desc.WriteString("https://zoom.us/u/abcdefg\n\n")
+		desc.WriteString("https://zoom.us/zoomconference\n\n")
 		desc.WriteString("After dialing, enter Meeting ID: ")
 		desc.WriteString(meetingID)
 		desc.WriteString("#\n")

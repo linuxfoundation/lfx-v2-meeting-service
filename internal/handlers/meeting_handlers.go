@@ -382,6 +382,7 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 				Timezone:       meeting.Timezone,
 				Description:    meeting.Description,
 				JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password),
+				Platform:       meeting.Platform,
 				MeetingID:      meetingID,
 				Passcode:       passcode,
 				Recurrence:     meeting.Recurrence,

@@ -501,6 +501,7 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		Description:    meetingDB.Description,
 		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password),
 		ProjectName:    projectName,
+		Platform:       meetingDB.Platform,
 		MeetingID:      meetingID,
 		Passcode:       passcode,
 		Recurrence:     meetingDB.Recurrence,

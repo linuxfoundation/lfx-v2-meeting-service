@@ -23,6 +23,13 @@ Time Zone: {{.Timezone}}
 {{if .MeetingID}}
 Meeting ID: {{.MeetingID}}{{if .Passcode}}
 Passcode: {{.Passcode}}{{end}}
+{{if eq .Platform "Zoom"}}
+
+📞 Zoom Dial-in Options:
+Find your local number: https://zoom.us/zoomconference
+After dialing: Enter Meeting ID: {{.MeetingID}}#{{if .Passcode}}
+Then enter: Passcode: {{.Passcode}}#{{end}}
+{{end}}
 {{end}}{{else}}Meeting link will be provided closer to the meeting time.
 {{end}}
 {{if .ICSAttachment}}
