@@ -96,8 +96,8 @@ func TestNatsRegistrantRepository_Create_AlreadyExists(t *testing.T) {
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
-	if err != domain.ErrRegistrantAlreadyExists {
-		t.Errorf("expected ErrRegistrantAlreadyExists, got %v", err)
+	if domain.GetErrorType(err) != domain.ErrorTypeConflict {
+		t.Errorf("expected ErrorTypeConflict, got %v", err)
 	}
 }
 
@@ -144,8 +144,8 @@ func TestNatsRegistrantRepository_Get_NotFound(t *testing.T) {
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
-	if err != domain.ErrRegistrantNotFound {
-		t.Errorf("expected ErrRegistrantNotFound, got %v", err)
+	if domain.GetErrorType(err) != domain.ErrorTypeNotFound {
+		t.Errorf("expected ErrorTypeNotFound, got %v", err)
 	}
 }
 
@@ -259,8 +259,8 @@ func TestNatsRegistrantRepository_Update_RevisionMismatch(t *testing.T) {
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
-	if err != domain.ErrRevisionMismatch {
-		t.Errorf("expected ErrRevisionMismatch, got %v", err)
+	if domain.GetErrorType(err) != domain.ErrorTypeConflict {
+		t.Errorf("expected ErrorTypeConflict, got %v", err)
 	}
 }
 
@@ -308,8 +308,8 @@ func TestNatsRegistrantRepository_Delete_RevisionMismatch(t *testing.T) {
 	if err == nil {
 		t.Error("expected error but got nil")
 	}
-	if err != domain.ErrRevisionMismatch {
-		t.Errorf("expected ErrRevisionMismatch, got %v", err)
+	if domain.GetErrorType(err) != domain.ErrorTypeConflict {
+		t.Errorf("expected ErrorTypeConflict, got %v", err)
 	}
 }
 

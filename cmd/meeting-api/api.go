@@ -97,34 +97,25 @@ func createResponse(code int, err error) error {
 }
 
 // handleError converts domain errors to HTTP errors.
-// TODO: figure out solution where we don't need to update this function when new errors are added.
-// Resolved once
+// handleError maps domain error types to appropriate HTTP responses
+// This function no longer needs updates when new domain errors are added
 func handleError(err error) error {
-	switch err {
-	case domain.ErrServiceUnavailable:
-		return createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
-	case domain.ErrValidationFailed:
-		return createResponse(http.StatusBadRequest, domain.ErrValidationFailed)
-	case domain.ErrRevisionMismatch:
-		return createResponse(http.StatusBadRequest, domain.ErrRevisionMismatch)
-	case domain.ErrRegistrantAlreadyExists:
-		return createResponse(http.StatusConflict, domain.ErrRegistrantAlreadyExists)
-	case domain.ErrPastMeetingParticipantAlreadyExists:
-		return createResponse(http.StatusConflict, domain.ErrPastMeetingParticipantAlreadyExists)
-	case domain.ErrMeetingNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrMeetingNotFound)
-	case domain.ErrRegistrantNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrRegistrantNotFound)
-	case domain.ErrPastMeetingNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrPastMeetingNotFound)
-	case domain.ErrPastMeetingParticipantNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrPastMeetingParticipantNotFound)
-	case domain.ErrPastMeetingSummaryNotFound:
-		return createResponse(http.StatusNotFound, domain.ErrPastMeetingSummaryNotFound)
-	case domain.ErrInternal, domain.ErrUnmarshal:
-		return createResponse(http.StatusInternalServerError, domain.ErrInternal)
+	errorType := domain.GetErrorType(err)
+
+	switch errorType {
+	case domain.ErrorTypeValidation:
+		return createResponse(http.StatusBadRequest, err)
+	case domain.ErrorTypeNotFound:
+		return createResponse(http.StatusNotFound, err)
+	case domain.ErrorTypeConflict:
+		return createResponse(http.StatusConflict, err)
+	case domain.ErrorTypeUnavailable:
+		return createResponse(http.StatusServiceUnavailable, err)
+	case domain.ErrorTypeInternal:
+		return createResponse(http.StatusInternalServerError, err)
+	default:
+		return createResponse(http.StatusInternalServerError, err)
 	}
-	return err
 }
 
 // Readyz checks if the service is able to take inbound requests.
@@ -134,7 +125,7 @@ func (s *MeetingsAPI) Readyz(_ context.Context) ([]byte, error) {
 		!s.pastMeetingService.ServiceReady() ||
 		!s.zoomWebhookHandler.HandlerReady() ||
 		!s.meetingHandler.HandlerReady() {
-		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
 	}
 	return []byte("OK\n"), nil
 }
@@ -151,7 +142,7 @@ func (s *MeetingsAPI) Livez(_ context.Context) ([]byte, error) {
 // JWTAuth implements Auther interface for the JWT security scheme.
 func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *security.JWTScheme) (context.Context, error) {
 	if !s.authService.ServiceReady() {
-		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
 	}
 
 	// Parse the Heimdall-authorized principal from the token.
@@ -172,7 +163,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 
 	if !s.zoomWebhookHandler.HandlerReady() {
 		logger.ErrorContext(ctx, "Service not ready")
-		return nil, createResponse(http.StatusServiceUnavailable, domain.ErrServiceUnavailable)
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
 	}
 
 	// Validate Zoom webhook signature if provided

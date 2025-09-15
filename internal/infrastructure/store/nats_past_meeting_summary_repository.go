@@ -58,13 +58,13 @@ func (s *NatsPastMeetingSummaryRepository) Create(ctx context.Context, summary *
 	data, err := json.Marshal(summary)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		return domain.ErrMarshal
+		return domain.NewInternalError("error marshaling summary", err)
 	}
 
 	_, err = s.PastMeetingSummaries.Put(ctx, summary.UID, data)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating summary in KV store", logging.ErrKey, err, "summary_uid", summary.UID)
-		return domain.ErrInternal
+		return domain.NewInternalError("error creating summary in KV store", err)
 	}
 
 	slog.DebugContext(ctx, "created past meeting summary", "summary_uid", summary.UID, "past_meeting_uid", summary.PastMeetingUID)
@@ -77,15 +77,15 @@ func (s *NatsPastMeetingSummaryRepository) Get(ctx context.Context, summaryUID s
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
-			return nil, domain.ErrPastMeetingSummaryNotFound
+			return nil, domain.NewNotFoundError("summary not found", nil)
 		}
 		slog.ErrorContext(ctx, "error getting summary from KV store", logging.ErrKey, err, "summary_uid", summaryUID)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("error getting summary from KV store", err)
 	}
 
 	summary, err := s.unmarshal(ctx, entry)
 	if err != nil {
-		return nil, domain.ErrUnmarshal
+		return nil, domain.NewInternalError("error unmarshaling summary", err)
 	}
 
 	return summary, nil
@@ -97,15 +97,15 @@ func (s *NatsPastMeetingSummaryRepository) GetWithRevision(ctx context.Context, 
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
-			return nil, 0, domain.ErrPastMeetingSummaryNotFound
+			return nil, 0, domain.NewNotFoundError("summary not found", nil)
 		}
 		slog.ErrorContext(ctx, "error getting summary from KV store", logging.ErrKey, err, "summary_uid", summaryUID)
-		return nil, 0, domain.ErrInternal
+		return nil, 0, domain.NewInternalError("error getting summary from KV store", err)
 	}
 
 	summary, err := s.unmarshal(ctx, entry)
 	if err != nil {
-		return nil, 0, domain.ErrUnmarshal
+		return nil, 0, domain.NewInternalError("error unmarshaling summary", err)
 	}
 
 	return summary, entry.Revision(), nil
@@ -120,13 +120,13 @@ func (s *NatsPastMeetingSummaryRepository) Update(ctx context.Context, summary *
 	data, err := json.Marshal(summary)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		return domain.ErrMarshal
+		return domain.NewInternalError("error marshaling summary", err)
 	}
 
 	_, err = s.PastMeetingSummaries.Update(ctx, summary.UID, data, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error updating summary in KV store", logging.ErrKey, err, "summary_uid", summary.UID, "revision", revision)
-		return domain.ErrInternal
+		return domain.NewInternalError("error updating summary in KV store", err)
 	}
 
 	slog.DebugContext(ctx, "updated past meeting summary", "summary_uid", summary.UID, "past_meeting_uid", summary.PastMeetingUID, "revision", revision)
@@ -142,7 +142,7 @@ func (s *NatsPastMeetingSummaryRepository) GetByPastMeetingUID(ctx context.Conte
 
 	if len(summaries) == 0 {
 		slog.DebugContext(ctx, "no summaries found for past meeting", "past_meeting_uid", pastMeetingUID)
-		return nil, domain.ErrPastMeetingSummaryNotFound
+		return nil, domain.NewNotFoundError("summary not found", nil)
 	}
 
 	// Return the first summary found (there could be multiple summaries per past meeting)
@@ -154,7 +154,7 @@ func (s *NatsPastMeetingSummaryRepository) ListByPastMeeting(ctx context.Context
 	keys, err := s.PastMeetingSummaries.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing keys from KV store", logging.ErrKey, err)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("error listing keys from KV store", err)
 	}
 
 	var summaries []*models.PastMeetingSummary

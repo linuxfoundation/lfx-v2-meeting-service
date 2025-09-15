@@ -63,24 +63,24 @@ func (s *PastMeetingSummaryService) ServiceReady() bool {
 func (s *PastMeetingSummaryService) ListSummariesByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingSummary, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	// Validate that the past meeting exists
 	_, err := s.PastMeetingRepository.Get(ctx, pastMeetingUID)
 	if err != nil {
-		if err == domain.ErrPastMeetingNotFound {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "past meeting not found", "past_meeting_uid", pastMeetingUID)
-			return nil, domain.ErrPastMeetingNotFound
+			return nil, domain.NewNotFoundError("past meeting not found", nil)
 		}
 		slog.ErrorContext(ctx, "error checking past meeting existence", logging.ErrKey, err, "past_meeting_uid", pastMeetingUID)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("error checking past meeting existence", err)
 	}
 
 	summaries, err := s.PastMeetingSummaryRepository.ListByPastMeeting(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing summaries", logging.ErrKey, err, "past_meeting_uid", pastMeetingUID)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("error listing summaries", err)
 	}
 
 	return summaries, nil
@@ -93,7 +93,7 @@ func (s *PastMeetingSummaryService) CreateSummary(
 ) (*models.PastMeetingSummary, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	// Set system-generated fields
@@ -115,7 +115,7 @@ func (s *PastMeetingSummaryService) CreateSummary(
 	err = s.PastMeetingSummaryRepository.Create(ctx, summary)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("error creating summary", err)
 	}
 
 	// Send indexing message for new summary
@@ -139,12 +139,12 @@ func (s *PastMeetingSummaryService) CreateSummary(
 func (s *PastMeetingSummaryService) GetSummary(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.ErrServiceUnavailable
+		return nil, "", domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	if summaryUID == "" {
 		slog.WarnContext(ctx, "summary UID is required")
-		return nil, "", domain.ErrValidationFailed
+		return nil, "", domain.NewValidationError("summary UID is required", nil)
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("summary_uid", summaryUID))
@@ -152,12 +152,12 @@ func (s *PastMeetingSummaryService) GetSummary(ctx context.Context, summaryUID s
 	// Get the summary with revision
 	summary, revision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, summaryUID)
 	if err != nil {
-		if err == domain.ErrPastMeetingSummaryNotFound {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
 			return nil, "", err
 		}
 		slog.ErrorContext(ctx, "error getting summary with revision", logging.ErrKey, err, "summary_uid", summaryUID)
-		return nil, "", domain.ErrInternal
+		return nil, "", domain.NewInternalError("error getting summary with revision", err)
 	}
 
 	// Convert revision to string for ETag
@@ -177,18 +177,18 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 ) (*models.PastMeetingSummary, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.ErrServiceUnavailable
+		return nil, domain.NewUnavailableError("service not initialized", nil)
 	}
 
 	// Get current summary
 	currentSummary, currentRevision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, summary.UID)
 	if err != nil {
-		if err == domain.ErrPastMeetingSummaryNotFound {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "summary not found for update", "summary_uid", summary.UID)
 			return nil, err
 		}
 		slog.ErrorContext(ctx, "error getting summary for update", logging.ErrKey, err, "summary_uid", summary.UID)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("error getting summary for update", err)
 	}
 
 	// Verify revision matches
@@ -197,7 +197,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 			"expected_revision", revision,
 			"current_revision", currentRevision,
 			"summary_uid", summary.UID)
-		return nil, domain.ErrRevisionMismatch
+		return nil, domain.NewValidationError("revision mismatch", nil)
 	}
 
 	// Merge the update fields with the current summary
@@ -216,7 +216,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 	err = s.PastMeetingSummaryRepository.Update(ctx, &updatedSummary, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error updating summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError("error updating summary", err)
 	}
 
 	// Send indexing message for updated summary
@@ -310,7 +310,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 
 	// Return error only if no emails were sent successfully
 	if successCount == 0 && len(hostRegistrants) > 0 {
-		return domain.ErrInternal
+		return domain.NewInternalError("error sending summary notification emails", nil)
 	}
 
 	return nil

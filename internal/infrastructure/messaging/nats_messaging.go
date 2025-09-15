@@ -416,6 +416,28 @@ func (m *MessageBuilder) GetCommitteeName(ctx context.Context, committeeUID stri
 	return committeeName, nil
 }
 
+// GetProjectName fetches project name from projects-api.
+// Returns the project name if it exists, or an error if it doesn't exist or there's a communication error.
+func (m *MessageBuilder) GetProjectName(ctx context.Context, projectUID string) (string, error) {
+	// Send request with 5 second timeout
+	msg, err := m.request(ctx, models.ProjectGetNameSubject, []byte(projectUID), 5*time.Second)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse response
+	projectName := string(msg.Data)
+
+	// If response is empty, project doesn't exist
+	if projectName == "" {
+		slog.WarnContext(ctx, "project not found", "project_uid", projectUID)
+		return "", &ProjectNotFoundError{UID: projectUID, Details: "project does not exist"}
+	}
+
+	slog.DebugContext(ctx, "project name retrieved successfully", "project_uid", projectUID, "name", projectName)
+	return projectName, nil
+}
+
 // CommitteeNotFoundError represents an error when a committee is not found.
 type CommitteeNotFoundError struct {
 	UID     string
@@ -424,6 +446,16 @@ type CommitteeNotFoundError struct {
 
 func (e *CommitteeNotFoundError) Error() string {
 	return "committee not found: " + e.UID
+}
+
+// ProjectNotFoundError represents an error when a project is not found.
+type ProjectNotFoundError struct {
+	UID     string
+	Details string
+}
+
+func (e *ProjectNotFoundError) Error() string {
+	return "project not found: " + e.UID
 }
 
 // GetCommitteeMembers fetches committee members from committee-api.
