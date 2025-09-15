@@ -52,6 +52,7 @@ type ICSMeetingInvitationParams struct {
 	MeetingID      string
 	Passcode       string
 	RecipientEmail string
+	ProjectName    string
 	Recurrence     *models.Recurrence
 }
 
@@ -108,7 +109,7 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	ics.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICSText(param.MeetingTitle)))
 
 	// Build enhanced description with meeting details
-	descriptionText := buildDescription(param.Description, param.MeetingID, param.Passcode, param.JoinLink, param.StartTime, param.Duration, param.Timezone, param.Recurrence)
+	descriptionText := buildDescription(param.Description, param.MeetingID, param.Passcode, param.JoinLink, param.ProjectName, param.StartTime, param.Duration, param.Timezone, param.Recurrence)
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
 	// Location (Zoom URL) - only add if join link exists
@@ -167,6 +168,7 @@ type ICSMeetingUpdateParams struct {
 	MeetingID      string
 	Passcode       string
 	RecipientEmail string
+	ProjectName    string
 	Recurrence     *models.Recurrence
 	Sequence       int // Incremented sequence number for updates
 }
@@ -224,7 +226,7 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 	ics.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICSText(params.MeetingTitle)))
 
 	// Build enhanced description with meeting details
-	descriptionText := buildDescription(params.Description, params.MeetingID, params.Passcode, params.JoinLink, params.StartTime, params.Duration, params.Timezone, params.Recurrence)
+	descriptionText := buildDescription(params.Description, params.MeetingID, params.Passcode, params.JoinLink, params.ProjectName, params.StartTime, params.Duration, params.Timezone, params.Recurrence)
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
 	// Location (Zoom URL) - only add if join link exists
@@ -413,8 +415,15 @@ func getWeekdayName(weekday int) string {
 }
 
 // buildDescription builds the enhanced description with meeting details
-func buildDescription(description, meetingID, passcode, joinLink string, startTime time.Time, duration int, timezone string, recurrence *models.Recurrence) string {
+func buildDescription(description, meetingID, passcode, joinLink, projectName string, startTime time.Time, duration int, timezone string, recurrence *models.Recurrence) string {
 	var desc strings.Builder
+
+	// Add project information if available
+	if projectName != "" {
+		desc.WriteString("Project: ")
+		desc.WriteString(projectName)
+		desc.WriteString("\n\n")
+	}
 
 	// Add original description
 	if description != "" {
