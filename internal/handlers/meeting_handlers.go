@@ -390,7 +390,7 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 				Changes:        msg.Changes,
 			}
 
-			err = s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
+			err := s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
 			if err != nil {
 				slog.ErrorContext(ctx, "error sending update notification email",
 					"registrant_uid", reg.UID,
