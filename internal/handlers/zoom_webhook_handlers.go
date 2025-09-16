@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -1166,7 +1167,7 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 	}
 
 	// Track successful and failed creations with thread-safe counters
-	var successCount, failedCount int
+	var successCount, failedCount int64
 	var mu sync.Mutex
 	var failedEmails []string
 
@@ -1210,10 +1211,6 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 				slog.WarnContext(ctx, "failed to send put past meeting participant access message", logging.ErrKey, errAccess)
 			}
 
-			// Use mutex to protect shared counters
-			mu.Lock()
-			defer mu.Unlock()
-
 			if err != nil {
 				slog.ErrorContext(ctx, "failed to create past meeting participant record",
 					logging.ErrKey, err,
@@ -1221,11 +1218,14 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 					"meeting_uid", meeting.UID,
 					"email", redaction.RedactEmail(r.Email),
 				)
-				failedCount++
+				atomic.AddInt64(&failedCount, 1)
+				// Use mutex only for slice access
+				mu.Lock()
 				failedEmails = append(failedEmails, r.Email)
+				mu.Unlock()
 				// Continue creating other participants even if one fails
 			} else {
-				successCount++
+				atomic.AddInt64(&successCount, 1)
 			}
 			return nil
 		})
@@ -1245,13 +1245,13 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 		"past_meeting_uid", pastMeeting.UID,
 		"meeting_uid", meeting.UID,
 		"total_registrants", len(registrants),
-		"successful", successCount,
-		"failed", failedCount,
+		"successful", atomic.LoadInt64(&successCount),
+		"failed", atomic.LoadInt64(&failedCount),
 		"failed_emails", failedEmails,
 	)
 
 	// Return error if all creations failed
-	if failedCount > 0 && successCount == 0 {
+	if atomic.LoadInt64(&failedCount) > 0 && atomic.LoadInt64(&successCount) == 0 {
 		return fmt.Errorf("failed to create any participant records")
 	}
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // SMTPService implements the EmailService interface using SMTP
@@ -88,7 +89,7 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 
 // SendRegistrantInvitation sends an invitation email to a meeting registrant
 func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation domain.EmailInvitation) error {
-	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", invitation.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(invitation.RecipientEmail)))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", invitation.MeetingTitle))
 
 	// Generate ICS file content
@@ -157,7 +158,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 
 // SendRegistrantCancellation sends a cancellation email to a meeting registrant
 func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellation domain.EmailCancellation) error {
-	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", cancellation.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(cancellation.RecipientEmail)))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", cancellation.MeetingTitle))
 
 	// Generate ICS cancellation file if the meeting series is not completed yet.
@@ -225,7 +226,7 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 
 // SendRegistrantUpdatedInvitation sends an update notification email to a meeting registrant
 func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation domain.EmailUpdatedInvitation) error {
-	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", updatedInvitation.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(updatedInvitation.RecipientEmail)))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", updatedInvitation.MeetingTitle))
 
 	// Generate ICS update file if we have the necessary data and it's a future meeting
@@ -299,7 +300,7 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 
 // SendSummaryNotification sends a meeting summary notification email to a meeting host
 func (s *SMTPService) SendSummaryNotification(ctx context.Context, notification domain.EmailSummaryNotification) error {
-	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", notification.RecipientEmail))
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(notification.RecipientEmail)))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", notification.MeetingTitle))
 
 	// Generate email content from templates
