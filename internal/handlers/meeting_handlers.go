@@ -17,6 +17,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -392,11 +393,15 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 			err = s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
 			if err != nil {
 				slog.ErrorContext(ctx, "error sending update notification email",
-					"registrant_uid", reg.UID, "email", reg.Email, logging.ErrKey, err)
+					"registrant_uid", reg.UID,
+					"email", redaction.RedactEmail(reg.Email),
+					logging.ErrKey, err)
 				return err
 			}
 
-			slog.DebugContext(ctx, "update notification sent successfully", "registrant_uid", reg.UID, "email", reg.Email)
+			slog.DebugContext(ctx, "update notification sent successfully",
+				"registrant_uid", reg.UID,
+				"email", redaction.RedactEmail(reg.Email))
 			return nil
 		})
 	}

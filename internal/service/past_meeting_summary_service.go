@@ -15,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // PastMeetingSummaryService implements the business logic for past meeting summaries.
@@ -289,7 +290,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 			slog.ErrorContext(ctx, "failed to send summary notification email",
 				logging.ErrKey, err,
 				"registrant_uid", registrant.UID,
-				"email", registrant.Email,
+				"email", redaction.RedactEmail(registrant.Email),
 				"meeting_uid", summary.MeetingUID,
 			)
 			// Continue with other recipients even if one fails
@@ -297,7 +298,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 			successCount++
 			slog.DebugContext(ctx, "summary notification email sent successfully",
 				"registrant_uid", registrant.UID,
-				"email", registrant.Email,
+				"email", redaction.RedactEmail(registrant.Email),
 			)
 		}
 	}

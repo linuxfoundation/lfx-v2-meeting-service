@@ -14,6 +14,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // PastMeetingParticipantService implements the meetingsvc.Service interface and domain.MessageHandler
@@ -111,7 +112,7 @@ func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx con
 	}
 	if existingParticipant != nil {
 		slog.WarnContext(ctx, "participant already exists for past meeting with same email address",
-			"email", participant.Email)
+			"email", redaction.RedactEmail(participant.Email))
 		return domain.NewConflictError("participant already exists for past meeting with same email address", nil)
 	}
 
@@ -160,7 +161,7 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 
 	slog.DebugContext(ctx, "created past meeting participant",
 		"participant_uid", participant.UID,
-		"email", participant.Email)
+		"email", redaction.RedactEmail(participant.Email))
 
 	// Use WorkerPool for concurrent NATS message sending
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
@@ -259,7 +260,7 @@ func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx con
 	}
 	if existingParticipant != nil && existingParticipant.UID != participant.UID {
 		slog.WarnContext(ctx, "another participant already exists for past meeting with same email address",
-			"email", participant.Email)
+			"email", redaction.RedactEmail(participant.Email))
 		return domain.NewConflictError("participant already exists for past meeting with same email address", nil)
 	}
 

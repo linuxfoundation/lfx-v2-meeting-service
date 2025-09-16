@@ -14,6 +14,7 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 const (
@@ -169,7 +170,7 @@ func (j *JWTAuth) ParsePrincipal(ctx context.Context, token string, logger *slog
 
 	logger.DebugContext(ctx, "JWT principal parsed",
 		"principal", customClaims.Principal,
-		"email", customClaims.Email,
+		"email", redaction.RedactEmail(customClaims.Email),
 	)
 
 	return customClaims.Principal, nil

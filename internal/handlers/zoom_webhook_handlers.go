@@ -20,6 +20,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // ZoomWebhookHandler handles Zoom webhook events.
@@ -588,7 +589,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 		"zoom_meeting_id", meetingObj.ID,
 		"participant_id", participant.ParticipantUUID,
 		"participant_name", participant.UserName,
-		"participant_email", participant.Email,
+		"participant_email", redaction.RedactEmail(participant.Email),
 		"join_time", participant.JoinTime,
 	)
 
@@ -614,7 +615,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 		if err == domain.NewNotFoundError("past meeting not found", nil) {
 			slog.WarnContext(ctx, "no past meeting found for participant joined event, skipping",
 				"zoom_meeting_id", meetingObj.ID,
-				"participant_email", participant.Email,
+				"participant_email", redaction.RedactEmail(participant.Email),
 			)
 			return nil // Don't fail the webhook processing
 		}
@@ -638,7 +639,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 		slog.InfoContext(ctx, "updated existing participant attendance",
 			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", existingParticipant.UID,
-			"email", participant.Email,
+			"email", redaction.RedactEmail(participant.Email),
 			"session_uid", participant.ParticipantUUID,
 		)
 	} else {
@@ -662,7 +663,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 		slog.InfoContext(ctx, "created new participant from joined event",
 			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", newParticipant.UID,
-			"email", participant.Email,
+			"email", redaction.RedactEmail(participant.Email),
 			"is_invited", newParticipant.IsInvited,
 		)
 	}
@@ -687,7 +688,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 		"zoom_meeting_id", meetingObj.ID,
 		"participant_id", participant.ParticipantUUID,
 		"participant_name", participant.UserName,
-		"participant_email", participant.Email,
+		"participant_email", redaction.RedactEmail(participant.Email),
 		"leave_time", participant.LeaveTime,
 		"duration", participant.Duration,
 	)
@@ -714,7 +715,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 		if err == domain.NewNotFoundError("past meeting not found", nil) {
 			slog.WarnContext(ctx, "no past meeting found for participant left event, skipping",
 				"zoom_meeting_id", meetingObj.ID,
-				"participant_email", participant.Email,
+				"participant_email", redaction.RedactEmail(participant.Email),
 			)
 			return nil // Don't fail the webhook processing
 		}
@@ -739,14 +740,14 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 		slog.InfoContext(ctx, "updated participant session leave time",
 			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", existingParticipant.UID,
-			"email", participant.Email,
+			"email", redaction.RedactEmail(participant.Email),
 			"session_uid", participant.ParticipantUUID,
 			"duration", participant.Duration,
 		)
 	} else {
 		// Create new participant record with completed session (they joined and left but we missed the joined event)
 		slog.WarnContext(ctx, "no existing participant found for left event, creating new record",
-			"participant_email", participant.Email,
+			"participant_email", redaction.RedactEmail(participant.Email),
 			"zoom_meeting_id", meetingObj.ID,
 		)
 
@@ -772,7 +773,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 		slog.InfoContext(ctx, "created participant record from left event",
 			"past_meeting_uid", pastMeeting.UID,
 			"participant_uid", newParticipant.UID,
-			"email", participant.Email,
+			"email", redaction.RedactEmail(participant.Email),
 			"calculated_join_time", zoomParticipant.JoinTime,
 			"leave_time", participant.LeaveTime,
 		)
@@ -1218,7 +1219,7 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 					logging.ErrKey, err,
 					"past_meeting_uid", pastMeeting.UID,
 					"meeting_uid", meeting.UID,
-					"email", r.Email,
+					"email", redaction.RedactEmail(r.Email),
 				)
 				failedCount++
 				failedEmails = append(failedEmails, r.Email)
@@ -1573,7 +1574,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, participant *models.PastMeetingParticipant, sessionUID string, joinTime time.Time) error {
 	slog.DebugContext(ctx, "updating participant attendance and adding session",
 		"participant_uid", participant.UID,
-		"email", participant.Email,
+		"email", redaction.RedactEmail(participant.Email),
 		"session_uid", sessionUID,
 		"join_time", joinTime,
 	)
@@ -1649,7 +1650,7 @@ func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, pa
 
 	slog.DebugContext(ctx, "successfully updated participant attendance and session",
 		"participant_uid", participant.UID,
-		"email", participant.Email,
+		"email", redaction.RedactEmail(participant.Email),
 		"session_uid", sessionUID,
 	)
 
@@ -1660,7 +1661,7 @@ func (s *ZoomWebhookHandler) updateParticipantAttendance(ctx context.Context, pa
 func (s *ZoomWebhookHandler) createParticipantFromJoinedEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
 	slog.DebugContext(ctx, "creating participant from joined event",
 		"past_meeting_uid", pastMeeting.UID,
-		"participant_email", participant.Email,
+		"participant_email", redaction.RedactEmail(participant.Email),
 		"participant_name", participant.UserName,
 	)
 
@@ -1706,7 +1707,7 @@ func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(
 ) error {
 	slog.DebugContext(ctx, "updating participant session leave time",
 		"participant_uid", participant.UID,
-		"email", participant.Email,
+		"email", redaction.RedactEmail(participant.Email),
 		"session_uid", sessionUID,
 		"leave_time", leaveTime,
 	)
@@ -1798,7 +1799,7 @@ func (s *ZoomWebhookHandler) updateParticipantSessionLeaveTime(
 func (s *ZoomWebhookHandler) createParticipantFromLeftEvent(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant) (*models.PastMeetingParticipant, error) {
 	slog.DebugContext(ctx, "creating participant from left event",
 		"past_meeting_uid", pastMeeting.UID,
-		"participant_email", participant.Email,
+		"participant_email", redaction.RedactEmail(participant.Email),
 		"participant_name", participant.UserName,
 		"join_time", participant.JoinTime,
 		"leave_time", participant.LeaveTime,
@@ -1822,7 +1823,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 	if err != nil {
 		slog.WarnContext(ctx, "could not check registrant records for participant",
 			logging.ErrKey, err,
-			"participant_email", participant.Email,
+			"participant_email", redaction.RedactEmail(participant.Email),
 		)
 		// Continue without failing - we'll treat as non-invited
 	} else {
@@ -1831,7 +1832,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 			if registrant.MeetingUID == pastMeeting.MeetingUID {
 				matchingRegistrant = registrant
 				slog.DebugContext(ctx, "participant was invited (found registrant record)",
-					"participant_email", participant.Email,
+					"participant_email", redaction.RedactEmail(participant.Email),
 					"registrant_uid", registrant.UID,
 				)
 				break
@@ -1846,7 +1847,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 		// Use registrant information for accurate data
 		slog.DebugContext(ctx, "creating participant from registrant data",
 			"registrant_uid", matchingRegistrant.UID,
-			"email", matchingRegistrant.Email,
+			"email", redaction.RedactEmail(matchingRegistrant.Email),
 		)
 
 		newParticipant = &models.PastMeetingParticipant{
@@ -1924,7 +1925,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 	// Log success with appropriate details
 	logFields := []any{
 		"participant_uid", newParticipant.UID,
-		"email", participant.Email,
+		"email", redaction.RedactEmail(participant.Email),
 		"is_invited", newParticipant.IsInvited,
 	}
 

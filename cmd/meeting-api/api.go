@@ -155,7 +155,13 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 // ZoomWebhook handles Zoom webhook events by delegating to the service layer
 func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomWebhookPayload) (*meetingsvc.ZoomWebhookResponse, error) {
 	logger := slog.With("component", "meetings_api", "method", "ZoomWebhook")
-	slog.InfoContext(ctx, "Zoom webhook payload", "payload", payload)
+
+	// Log webhook info with redacted payload to protect PII
+	slog.InfoContext(ctx, "Zoom webhook received",
+		"event_type", payload.Event,
+		"event_ts", payload.EventTs,
+		"payload", payload.Payload,
+	)
 
 	// Check service readiness
 	if !s.zoomWebhookService.ServiceReady() {

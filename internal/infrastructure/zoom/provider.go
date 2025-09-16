@@ -13,6 +13,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/api"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // ZoomProvider implements the PlatformProvider interface for Zoom
@@ -224,8 +225,8 @@ func (p *ZoomProvider) fetchAndCacheUsers(ctx context.Context) (*api.ZoomUser, e
 
 	slog.InfoContext(ctx, "selected Zoom user for meeting creation",
 		"user_id", user.ID,
-		"email", user.Email,
-		"name", fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+		"email", redaction.RedactEmail(user.Email),
+		"name", redaction.Redact(fmt.Sprintf("%s %s", user.FirstName, user.LastName)),
 		"type", user.Type)
 
 	return user, nil
