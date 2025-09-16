@@ -122,8 +122,8 @@ func ParseEndpoint(
 
 		meetingServiceZoomWebhookFlags             = flag.NewFlagSet("zoom-webhook", flag.ExitOnError)
 		meetingServiceZoomWebhookBodyFlag          = meetingServiceZoomWebhookFlags.String("body", "REQUIRED", "")
-		meetingServiceZoomWebhookZoomSignatureFlag = meetingServiceZoomWebhookFlags.String("zoom-signature", "", "")
-		meetingServiceZoomWebhookZoomTimestampFlag = meetingServiceZoomWebhookFlags.String("zoom-timestamp", "", "")
+		meetingServiceZoomWebhookZoomSignatureFlag = meetingServiceZoomWebhookFlags.String("zoom-signature", "REQUIRED", "")
+		meetingServiceZoomWebhookZoomTimestampFlag = meetingServiceZoomWebhookFlags.String("zoom-timestamp", "REQUIRED", "")
 
 		meetingServiceGetPastMeetingsFlags           = flag.NewFlagSet("get-past-meetings", flag.ExitOnError)
 		meetingServiceGetPastMeetingsVersionFlag     = meetingServiceGetPastMeetingsFlags.String("version", "", "")

@@ -1753,16 +1753,19 @@ func DecodeZoomWebhookRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 		}
 
 		var (
-			zoomSignature *string
-			zoomTimestamp *string
+			zoomSignature string
+			zoomTimestamp string
 		)
-		zoomSignatureRaw := r.Header.Get("x-zm-signature")
-		if zoomSignatureRaw != "" {
-			zoomSignature = &zoomSignatureRaw
+		zoomSignature = r.Header.Get("x-zm-signature")
+		if zoomSignature == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("zoom_signature", "header"))
 		}
-		zoomTimestampRaw := r.Header.Get("x-zm-request-timestamp")
-		if zoomTimestampRaw != "" {
-			zoomTimestamp = &zoomTimestampRaw
+		zoomTimestamp = r.Header.Get("x-zm-request-timestamp")
+		if zoomTimestamp == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("zoom_timestamp", "header"))
+		}
+		if err != nil {
+			return nil, err
 		}
 		payload := NewZoomWebhookPayload(&body, zoomSignature, zoomTimestamp)
 

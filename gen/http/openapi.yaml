@@ -1793,12 +1793,12 @@ paths:
                 - name: x-zm-signature
                   in: header
                   description: HMAC-SHA256 signature of the request body
-                  required: false
+                  required: true
                   type: string
                 - name: x-zm-request-timestamp
                   in: header
                   description: Timestamp when the webhook was sent
-                  required: false
+                  required: true
                   type: string
                 - name: Zoom-WebhookRequestBody
                   in: body

@@ -166,31 +166,39 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
 	}
 
-	// Validate Zoom webhook signature if provided
-	if payload.ZoomSignature != nil && payload.ZoomTimestamp != nil {
-		// Check if Zoom webhook validator is configured
-		if s.zoomWebhookHandler.WebhookValidator == nil {
-			logger.ErrorContext(ctx, "Zoom webhook validator not configured")
-			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("zoom webhook validation not configured"))
-		}
-
-		// Get the raw request body from context for signature validation
-		bodyBytes, ok := middleware.GetRawBodyFromContext(ctx)
-		if !ok {
-			logger.ErrorContext(ctx, "Raw request body not available in context")
-			return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("raw body not captured"))
-		}
-
-		if err := s.zoomWebhookHandler.WebhookValidator.ValidateSignature(bodyBytes, *payload.ZoomSignature, *payload.ZoomTimestamp); err != nil {
-			logger.WarnContext(ctx, "Zoom webhook signature validation failed", "error", err)
-			return nil, &meetingsvc.UnauthorizedError{
-				Code:    "401",
-				Message: "Invalid webhook signature",
-			}
-		}
-
-		logger.DebugContext(ctx, "Zoom webhook signature validation passed")
+	// Check if Zoom webhook validator is configured
+	if s.zoomWebhookHandler.WebhookValidator == nil {
+		logger.ErrorContext(ctx, "Zoom webhook validator not configured")
+		return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("zoom webhook validation not configured"))
 	}
+
+	// Check that the signature and timestamp are not empty before we then validate it.
+	// They are required to ensure that the request is coming from Zoom.
+	if payload.ZoomSignature == "" || payload.ZoomTimestamp == "" {
+		logger.WarnContext(ctx, "Zoom webhook signature headers are empty")
+		return nil, &meetingsvc.UnauthorizedError{
+			Code:    "401",
+			Message: "Invalid webhook signature headers",
+		}
+	}
+
+	// Get the raw request body from context for signature validation
+	bodyBytes, ok := middleware.GetRawBodyFromContext(ctx)
+	if !ok {
+		logger.ErrorContext(ctx, "Raw request body not available in context")
+		return nil, createResponse(http.StatusInternalServerError, fmt.Errorf("raw body not captured"))
+	}
+
+	// Validate the signature
+	if err := s.zoomWebhookHandler.WebhookValidator.ValidateSignature(bodyBytes, payload.ZoomSignature, payload.ZoomTimestamp); err != nil {
+		logger.WarnContext(ctx, "Zoom webhook signature validation failed", "error", err)
+		return nil, &meetingsvc.UnauthorizedError{
+			Code:    "401",
+			Message: "Invalid webhook signature",
+		}
+	}
+
+	logger.DebugContext(ctx, "Zoom webhook signature validation passed")
 
 	// Validate event type and payload
 	if payload.Payload == nil || payload.Event == "" {

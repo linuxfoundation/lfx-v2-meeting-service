@@ -3822,6 +3822,7 @@ paths:
                   in: header
                   description: HMAC-SHA256 signature of the request body
                   allowEmptyValue: true
+                  required: true
                   schema:
                     type: string
                     description: HMAC-SHA256 signature of the request body
@@ -3831,6 +3832,7 @@ paths:
                   in: header
                   description: Timestamp when the webhook was sent
                   allowEmptyValue: true
+                  required: true
                   schema:
                     type: string
                     description: Timestamp when the webhook was sent
@@ -8353,6 +8355,8 @@ components:
                 - event
                 - event_ts
                 - payload
+                - zoom_signature
+                - zoom_timestamp
         ZoomWebhookPayload2:
             type: object
             properties:
