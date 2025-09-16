@@ -20,6 +20,7 @@ type ZoomConfig struct {
 	ClientID           string
 	ClientSecret       string
 	WebhookSecretToken string
+	MockWebhook        bool // When true, bypasses webhook signature validation for testing
 	PlatformProvider   domain.PlatformProvider
 	Validator          domain.WebhookValidator
 }
@@ -31,6 +32,7 @@ func NewZoomConfigFromEnv() ZoomConfig {
 		ClientID:           os.Getenv("ZOOM_CLIENT_ID"),
 		ClientSecret:       os.Getenv("ZOOM_CLIENT_SECRET"),
 		WebhookSecretToken: os.Getenv("ZOOM_WEBHOOK_SECRET_TOKEN"),
+		MockWebhook:        os.Getenv("MOCK_ZOOM_WEBHOOK") == "true",
 	}
 }
 
@@ -66,12 +68,16 @@ func SetupZoom(config ZoomConfig) ZoomConfig {
 			"has_client_secret", config.ClientSecret != "")
 	}
 
-	// Setup Zoom webhook validator if webhook secret is configured
-	if config.WebhookSecretToken != "" {
+	// Setup Zoom webhook validator
+	switch {
+	case config.MockWebhook:
+		slog.Warn("MOCK_ZOOM_WEBHOOK is enabled - webhook signature validation will be bypassed")
+		config.Validator = webhook.NewMockWebhookValidator()
+	case config.WebhookSecretToken != "":
 		validator := webhook.NewZoomWebhookValidator(config.WebhookSecretToken)
 		slog.Info("Zoom webhook validation configured")
 		config.Validator = validator
-	} else {
+	default:
 		slog.Warn("Zoom webhook validation not configured", logging.PriorityCritical())
 	}
 
