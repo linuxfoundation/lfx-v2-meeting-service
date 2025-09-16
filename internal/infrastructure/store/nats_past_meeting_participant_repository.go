@@ -91,7 +91,7 @@ func (s *NatsPastMeetingParticipantRepository) Exists(ctx context.Context, parti
 
 func (s *NatsPastMeetingParticipantRepository) Create(ctx context.Context, participant *models.PastMeetingParticipant) error {
 	if s.PastMeetingParticipants == nil {
-		return domain.NewUnavailableError("past meeting participant repository is not available", nil)
+		return domain.NewUnavailableError("past meeting participant repository is not available")
 	}
 
 	// Generate a new UID if not provided
@@ -123,7 +123,7 @@ func (s *NatsPastMeetingParticipantRepository) Create(ctx context.Context, parti
 
 func (s *NatsPastMeetingParticipantRepository) Update(ctx context.Context, participant *models.PastMeetingParticipant, revision uint64) error {
 	if s.PastMeetingParticipants == nil {
-		return domain.NewUnavailableError("past meeting participant repository is not available", nil)
+		return domain.NewUnavailableError("past meeting participant repository is not available")
 	}
 
 	// Update timestamp
@@ -155,7 +155,7 @@ func (s *NatsPastMeetingParticipantRepository) Update(ctx context.Context, parti
 
 func (s *NatsPastMeetingParticipantRepository) Delete(ctx context.Context, participantUID string, revision uint64) error {
 	if s.PastMeetingParticipants == nil {
-		return domain.NewUnavailableError("past meeting participant repository is not available", nil)
+		return domain.NewUnavailableError("past meeting participant repository is not available")
 	}
 
 	err := s.PastMeetingParticipants.Delete(ctx, participantUID, jetstream.LastRevision(revision))
@@ -175,7 +175,7 @@ func (s *NatsPastMeetingParticipantRepository) Delete(ctx context.Context, parti
 
 func (s *NatsPastMeetingParticipantRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
 	if s.PastMeetingParticipants == nil {
-		return nil, domain.NewUnavailableError("past meeting participant repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting participant repository is not available")
 	}
 
 	keysLister, err := s.PastMeetingParticipants.ListKeys(ctx)
@@ -210,7 +210,7 @@ func (s *NatsPastMeetingParticipantRepository) ListByPastMeeting(ctx context.Con
 
 func (s *NatsPastMeetingParticipantRepository) ListByEmail(ctx context.Context, email string) ([]*models.PastMeetingParticipant, error) {
 	if s.PastMeetingParticipants == nil {
-		return nil, domain.NewUnavailableError("past meeting participant repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting participant repository is not available")
 	}
 
 	keysLister, err := s.PastMeetingParticipants.ListKeys(ctx)
@@ -247,7 +247,7 @@ func (s *NatsPastMeetingParticipantRepository) ListByEmail(ctx context.Context, 
 
 func (s *NatsPastMeetingParticipantRepository) GetByPastMeetingAndEmail(ctx context.Context, pastMeetingUID, email string) (*models.PastMeetingParticipant, error) {
 	if s.PastMeetingParticipants == nil {
-		return nil, domain.NewUnavailableError("past meeting participant repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting participant repository is not available")
 	}
 
 	keysLister, err := s.PastMeetingParticipants.ListKeys(ctx)

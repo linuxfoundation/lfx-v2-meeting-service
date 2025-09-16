@@ -49,40 +49,40 @@ func (s *PastMeetingService) ServiceReady() bool {
 func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Context, pastMeeting *models.PastMeeting) error {
 	// Validate that required fields are present
 	if pastMeeting == nil {
-		return domain.NewValidationError("past meeting payload is required", nil)
+		return domain.NewValidationError("past meeting payload is required")
 	}
 	if pastMeeting.MeetingUID == "" {
-		return domain.NewValidationError("meeting UID is required", nil)
+		return domain.NewValidationError("meeting UID is required")
 	}
 	if pastMeeting.ProjectUID == "" {
-		return domain.NewValidationError("project UID is required", nil)
+		return domain.NewValidationError("project UID is required")
 	}
 	if pastMeeting.Title == "" {
-		return domain.NewValidationError("title is required", nil)
+		return domain.NewValidationError("title is required")
 	}
 	if pastMeeting.Description == "" {
-		return domain.NewValidationError("description is required", nil)
+		return domain.NewValidationError("description is required")
 	}
 	if pastMeeting.Platform == "" {
-		return domain.NewValidationError("platform is required", nil)
+		return domain.NewValidationError("platform is required")
 	}
 
 	// Validate that the meeting has started in the past (UTC)
 	if !pastMeeting.ScheduledStartTime.Before(time.Now().UTC()) {
 		slog.WarnContext(ctx, "scheduled start time must be in the past")
-		return domain.NewValidationError("scheduled start time must be in the past", nil)
+		return domain.NewValidationError("scheduled start time must be in the past")
 	}
 
 	// Validate that the meeting has ended in the past (UTC)
 	if !pastMeeting.ScheduledEndTime.Before(time.Now().UTC()) {
 		slog.WarnContext(ctx, "scheduled end time must be in the past")
-		return domain.NewValidationError("scheduled end time must be in the past", nil)
+		return domain.NewValidationError("scheduled end time must be in the past")
 	}
 
 	// Validate that end time is after start time
 	if pastMeeting.ScheduledEndTime.Before(pastMeeting.ScheduledStartTime) {
 		slog.WarnContext(ctx, "scheduled end time cannot be before start time")
-		return domain.NewValidationError("scheduled end time cannot be before start time", nil)
+		return domain.NewValidationError("scheduled end time cannot be before start time")
 	}
 
 	return nil
@@ -92,7 +92,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	// Check if service is ready
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	// Validate the payload
@@ -154,7 +154,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	pastMeetings, err := s.PastMeetingRepository.ListAll(ctx)
@@ -169,7 +169,7 @@ func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.Pas
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.NewUnavailableError("service not initialized", nil)
+		return nil, "", domain.NewUnavailableError("service not initialized")
 	}
 
 	pastMeeting, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, uid)
@@ -184,7 +184,7 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*m
 func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.NewUnavailableError("service not initialized", nil)
+		return domain.NewUnavailableError("service not initialized")
 	}
 
 	var err error
@@ -205,7 +205,7 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found", "uid", uid)
-		return domain.NewNotFoundError("past meeting not found", nil)
+		return domain.NewNotFoundError("past meeting not found")
 	}
 
 	// Delete the past meeting

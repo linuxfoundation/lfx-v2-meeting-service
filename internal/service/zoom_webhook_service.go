@@ -81,15 +81,15 @@ func (s *ZoomWebhookService) ProcessWebhookEvent(ctx context.Context, req Webhoo
 // validateRequest validates the webhook request structure
 func (s *ZoomWebhookService) validateRequest(req WebhookRequest) error {
 	if req.Event == "" {
-		return domain.NewValidationError("missing event field", nil)
+		return domain.NewValidationError("missing event field")
 	}
 
 	if req.Payload == nil {
-		return domain.NewValidationError("missing payload field", nil)
+		return domain.NewValidationError("missing payload field")
 	}
 
 	if req.Signature == "" || req.Timestamp == "" {
-		return domain.NewValidationError("missing signature headers", nil)
+		return domain.NewValidationError("missing signature headers")
 	}
 
 	return nil
@@ -111,13 +111,13 @@ func (s *ZoomWebhookService) handleEndpointValidation(ctx context.Context, req W
 	payloadMap, ok := req.Payload.(map[string]any)
 	if !ok {
 		logger.ErrorContext(ctx, "Webhook payload is not a valid map for validation", "payload_type", fmt.Sprintf("%T", req.Payload))
-		return nil, domain.NewValidationError("invalid validation payload format", nil)
+		return nil, domain.NewValidationError("invalid validation payload format")
 	}
 
 	plainToken, ok := payloadMap["plainToken"].(string)
 	if !ok || plainToken == "" {
 		logger.ErrorContext(ctx, "Missing plainToken in validation payload")
-		return nil, domain.NewValidationError("missing plainToken in validation payload", nil)
+		return nil, domain.NewValidationError("missing plainToken in validation payload")
 	}
 
 	// Generate encrypted token using HMAC SHA-256
@@ -125,7 +125,7 @@ func (s *ZoomWebhookService) handleEndpointValidation(ctx context.Context, req W
 	zoomValidator, ok := s.WebhookValidator.(*webhook.ZoomWebhookValidator)
 	if !ok || zoomValidator.SecretToken == "" {
 		logger.ErrorContext(ctx, "Zoom webhook validator not properly configured")
-		return nil, domain.NewInternalError("webhook validation not configured", nil)
+		return nil, domain.NewInternalError("webhook validation not configured")
 	}
 
 	h := hmac.New(sha256.New, []byte(zoomValidator.SecretToken))
@@ -155,7 +155,7 @@ func (s *ZoomWebhookService) processRegularEvent(ctx context.Context, req Webhoo
 	payloadMap, ok := req.Payload.(map[string]any)
 	if !ok {
 		logger.ErrorContext(ctx, "Webhook payload is not a valid map", "payload_type", fmt.Sprintf("%T", req.Payload))
-		return nil, domain.NewValidationError("invalid webhook payload format", nil)
+		return nil, domain.NewValidationError("invalid webhook payload format")
 	}
 
 	webhookMessage := models.ZoomWebhookEventMessage{

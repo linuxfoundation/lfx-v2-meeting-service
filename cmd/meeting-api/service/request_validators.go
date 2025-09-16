@@ -15,7 +15,7 @@ import (
 func EtagValidator(etag *string) (uint64, error) {
 	// Parse ETag to get revision for optimistic locking
 	if etag == nil || *etag == "" {
-		return 0, domain.NewValidationError("validation failed", nil)
+		return 0, domain.NewValidationError("validation failed")
 	}
 
 	raw := strings.TrimSpace(*etag)

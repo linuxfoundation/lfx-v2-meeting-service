@@ -156,7 +156,7 @@ func TestPastMeetingParticipantService_GetPastMeetingParticipants(t *testing.T) 
 			name:           "past meeting exists check error",
 			pastMeetingUID: "past-meeting-123",
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository) {
-				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(false, domain.NewInternalError("database error", nil))
+				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(false, domain.NewInternalError("database error"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeInternal,
@@ -166,7 +166,7 @@ func TestPastMeetingParticipantService_GetPastMeetingParticipants(t *testing.T) 
 			pastMeetingUID: "past-meeting-123",
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository) {
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockParticipantRepo.On("ListByPastMeeting", mock.Anything, "past-meeting-123").Return(nil, domain.NewInternalError("database error", nil))
+				mockParticipantRepo.On("ListByPastMeeting", mock.Anything, "past-meeting-123").Return(nil, domain.NewInternalError("database error"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeInternal,
@@ -247,7 +247,7 @@ func TestPastMeetingParticipantService_CreatePastMeetingParticipant(t *testing.T
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
 
 				// Check for existing participant
-				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "user@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found", nil))
+				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "user@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 
 				// Get past meeting to populate MeetingUID
 				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
@@ -328,12 +328,12 @@ func TestPastMeetingParticipantService_CreatePastMeetingParticipant(t *testing.T
 			},
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "user@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found", nil))
+				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "user@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
 					UID:        "past-meeting-123",
 					MeetingUID: "meeting-123",
 				}, nil)
-				mockParticipantRepo.On("Create", mock.Anything, mock.Anything).Return(domain.NewInternalError("database error", nil))
+				mockParticipantRepo.On("Create", mock.Anything, mock.Anything).Return(domain.NewInternalError("database error"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeInternal,
@@ -346,7 +346,7 @@ func TestPastMeetingParticipantService_CreatePastMeetingParticipant(t *testing.T
 			},
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "user@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found", nil))
+				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "user@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
 					UID:        "past-meeting-123",
 					MeetingUID: "meeting-123",
@@ -459,7 +459,7 @@ func TestPastMeetingParticipantService_GetPastMeetingParticipant(t *testing.T) {
 			participantUID: "participant-123",
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository) {
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockParticipantRepo.On("GetWithRevision", mock.Anything, "participant-123").Return(nil, uint64(0), domain.NewNotFoundError("past meeting participant not found", nil))
+				mockParticipantRepo.On("GetWithRevision", mock.Anything, "participant-123").Return(nil, uint64(0), domain.NewNotFoundError("past meeting participant not found"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeNotFound,
@@ -546,7 +546,7 @@ func TestPastMeetingParticipantService_UpdatePastMeetingParticipant(t *testing.T
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
 
 				// Check for duplicate email
-				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "updated@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found", nil))
+				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "updated@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 
 				// Update participant
 				mockParticipantRepo.On("Update", mock.Anything, mock.MatchedBy(func(p *models.PastMeetingParticipant) bool {
@@ -589,7 +589,7 @@ func TestPastMeetingParticipantService_UpdatePastMeetingParticipant(t *testing.T
 			},
 			revision: 42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(nil, domain.NewNotFoundError("past meeting participant not found", nil))
+				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeNotFound,
@@ -610,8 +610,8 @@ func TestPastMeetingParticipantService_UpdatePastMeetingParticipant(t *testing.T
 					Email:          "old@example.com",
 				}, nil)
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "updated@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found", nil))
-				mockParticipantRepo.On("Update", mock.Anything, mock.Anything, uint64(42)).Return(domain.NewConflictError("revision mismatch", nil))
+				mockParticipantRepo.On("GetByPastMeetingAndEmail", mock.Anything, "past-meeting-123", "updated@example.com").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
+				mockParticipantRepo.On("Update", mock.Anything, mock.Anything, uint64(42)).Return(domain.NewConflictError("revision mismatch"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeConflict,
@@ -719,7 +719,7 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 			revision:       42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(nil, domain.NewNotFoundError("past meeting participant not found", nil))
+				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeNotFound,
@@ -750,7 +750,7 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 					UID:            "participant-123",
 					PastMeetingUID: "past-meeting-123",
 				}, nil)
-				mockParticipantRepo.On("Delete", mock.Anything, "participant-123", uint64(42)).Return(domain.NewConflictError("revision mismatch", nil))
+				mockParticipantRepo.On("Delete", mock.Anything, "participant-123", uint64(42)).Return(domain.NewConflictError("revision mismatch"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeConflict,

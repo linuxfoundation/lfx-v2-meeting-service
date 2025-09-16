@@ -14,7 +14,7 @@ import (
 // GetMeetingRegistrants gets all meeting registrants for a meeting.
 func (s *MeetingsAPI) GetMeetingRegistrants(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantsPayload) (*meetingsvc.GetMeetingRegistrantsResult, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed")
 	}
 
 	registrants, err := s.registrantService.GetMeetingRegistrants(ctx, *payload.UID)
@@ -36,7 +36,7 @@ func (s *MeetingsAPI) GetMeetingRegistrants(ctx context.Context, payload *meetin
 // CreateMeetingRegistrant creates a new meeting registrant.
 func (s *MeetingsAPI) CreateMeetingRegistrant(ctx context.Context, payload *meetingsvc.CreateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
 	if payload == nil || payload.MeetingUID == "" {
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed")
 	}
 
 	createRegistrantReq := service.ConvertCreateRegistrantPayloadToDomain(payload)
@@ -52,7 +52,7 @@ func (s *MeetingsAPI) CreateMeetingRegistrant(ctx context.Context, payload *meet
 // GetMeetingRegistrant gets a single meeting registrant.
 func (s *MeetingsAPI) GetMeetingRegistrant(ctx context.Context, payload *meetingsvc.GetMeetingRegistrantPayload) (*meetingsvc.GetMeetingRegistrantResult, error) {
 	if payload == nil || payload.MeetingUID == nil || payload.UID == nil {
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed")
 	}
 
 	registrant, etag, err := s.registrantService.GetMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID)
@@ -69,7 +69,7 @@ func (s *MeetingsAPI) GetMeetingRegistrant(ctx context.Context, payload *meeting
 // UpdateMeetingRegistrant updates a meeting registrant.
 func (s *MeetingsAPI) UpdateMeetingRegistrant(ctx context.Context, payload *meetingsvc.UpdateMeetingRegistrantPayload) (*meetingsvc.Registrant, error) {
 	if payload == nil || payload.MeetingUID == "" || payload.UID == nil {
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed")
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)
@@ -90,7 +90,7 @@ func (s *MeetingsAPI) UpdateMeetingRegistrant(ctx context.Context, payload *meet
 // DeleteMeetingRegistrant deletes a meeting registrant.
 func (s *MeetingsAPI) DeleteMeetingRegistrant(ctx context.Context, payload *meetingsvc.DeleteMeetingRegistrantPayload) error {
 	if payload == nil || payload.MeetingUID == nil || payload.UID == nil {
-		return domain.NewValidationError("validation failed", nil)
+		return domain.NewValidationError("validation failed")
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)

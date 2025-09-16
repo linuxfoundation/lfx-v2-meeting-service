@@ -43,7 +43,7 @@ func (s *PastMeetingRecordingService) ServiceReady() bool {
 func (s *PastMeetingRecordingService) ListRecordingsByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingRecording, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	recordings, err := s.PastMeetingRecordingRepository.ListByPastMeeting(ctx, pastMeetingUID)
@@ -62,7 +62,7 @@ func (s *PastMeetingRecordingService) CreateRecording(
 ) (*models.PastMeetingRecording, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	// Set system-generated fields
@@ -99,7 +99,7 @@ func (s *PastMeetingRecordingService) CreateRecording(
 func (s *PastMeetingRecordingService) GetRecording(ctx context.Context, recordingUID string) (*models.PastMeetingRecording, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	recording, err := s.PastMeetingRecordingRepository.Get(ctx, recordingUID)
@@ -119,7 +119,7 @@ func (s *PastMeetingRecordingService) GetRecording(ctx context.Context, recordin
 func (s *PastMeetingRecordingService) GetRecordingByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingRecording, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	recording, err := s.PastMeetingRecordingRepository.GetByPastMeetingUID(ctx, pastMeetingUID)
@@ -143,7 +143,7 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 ) (*models.PastMeetingRecording, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	// Get current recording with revision
@@ -196,7 +196,7 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 func (s *PastMeetingRecordingService) DeleteRecording(ctx context.Context, recordingUID string) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.NewUnavailableError("service not initialized", nil)
+		return domain.NewUnavailableError("service not initialized")
 	}
 
 	// Get the recording first to send delete message

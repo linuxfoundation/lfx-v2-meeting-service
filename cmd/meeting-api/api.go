@@ -123,7 +123,7 @@ func (s *MeetingsAPI) Readyz(_ context.Context) ([]byte, error) {
 		!s.zoomWebhookService.ServiceReady() ||
 		!s.zoomWebhookHandler.HandlerReady() ||
 		!s.meetingHandler.HandlerReady() {
-		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable"))
 	}
 	return []byte("OK\n"), nil
 }
@@ -140,7 +140,7 @@ func (s *MeetingsAPI) Livez(_ context.Context) ([]byte, error) {
 // JWTAuth implements Auther interface for the JWT security scheme.
 func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *security.JWTScheme) (context.Context, error) {
 	if !s.authService.ServiceReady() {
-		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable"))
 	}
 
 	// Parse the Heimdall-authorized principal from the token.
@@ -166,7 +166,7 @@ func (s *MeetingsAPI) ZoomWebhook(ctx context.Context, payload *meetingsvc.ZoomW
 	// Check service readiness
 	if !s.zoomWebhookService.ServiceReady() {
 		logger.ErrorContext(ctx, "Zoom webhook service not ready")
-		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable", nil))
+		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable"))
 	}
 
 	// Get the raw request body from context for signature validation

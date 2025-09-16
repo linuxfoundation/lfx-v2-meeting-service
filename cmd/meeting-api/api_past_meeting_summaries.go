@@ -15,7 +15,7 @@ import (
 // GetPastMeetingSummaries gets all summaries for a past meeting
 func (s *MeetingsAPI) GetPastMeetingSummaries(ctx context.Context, payload *meetingsvc.GetPastMeetingSummariesPayload) (*meetingsvc.GetPastMeetingSummariesResult, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, handleError(domain.NewValidationError("validation failed", nil))
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	summaries, err := s.pastMeetingSummaryService.ListSummariesByPastMeeting(ctx, *payload.UID)
@@ -37,7 +37,7 @@ func (s *MeetingsAPI) GetPastMeetingSummaries(ctx context.Context, payload *meet
 // GetPastMeetingSummary gets a specific summary for a past meeting by UID
 func (s *MeetingsAPI) GetPastMeetingSummary(ctx context.Context, payload *meetingsvc.GetPastMeetingSummaryPayload) (*meetingsvc.GetPastMeetingSummaryResult, error) {
 	if payload == nil || payload.PastMeetingUID == "" || payload.SummaryUID == "" {
-		return nil, handleError(domain.NewValidationError("validation failed", nil))
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	summary, etag, err := s.pastMeetingSummaryService.GetSummary(ctx, payload.SummaryUID)
@@ -56,7 +56,7 @@ func (s *MeetingsAPI) GetPastMeetingSummary(ctx context.Context, payload *meetin
 // UpdatePastMeetingSummary updates an existing past meeting summary
 func (s *MeetingsAPI) UpdatePastMeetingSummary(ctx context.Context, payload *meetingsvc.UpdatePastMeetingSummaryPayload) (*meetingsvc.PastMeetingSummary, error) {
 	if payload == nil || payload.PastMeetingUID == "" || payload.SummaryUID == "" {
-		return nil, handleError(domain.NewValidationError("validation failed", nil))
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)
