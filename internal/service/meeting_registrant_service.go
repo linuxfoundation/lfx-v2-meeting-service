@@ -23,6 +23,7 @@ type MeetingRegistrantService struct {
 	RegistrantRepository domain.RegistrantRepository
 	EmailService         domain.EmailService
 	MessageBuilder       domain.MessageBuilder
+	OccurrenceService    *OccurrenceService
 	Config               ServiceConfig
 }
 
@@ -32,6 +33,7 @@ func NewMeetingRegistrantService(
 	registrantRepository domain.RegistrantRepository,
 	emailService domain.EmailService,
 	messageBuilder domain.MessageBuilder,
+	occurrenceService *OccurrenceService,
 	config ServiceConfig,
 ) *MeetingRegistrantService {
 	return &MeetingRegistrantService{
@@ -40,6 +42,7 @@ func NewMeetingRegistrantService(
 		RegistrantRepository: registrantRepository,
 		EmailService:         emailService,
 		MessageBuilder:       messageBuilder,
+		OccurrenceService:    occurrenceService,
 	}
 }
 
@@ -48,12 +51,13 @@ func (s *MeetingRegistrantService) ServiceReady() bool {
 	return s.MeetingRepository != nil &&
 		s.RegistrantRepository != nil &&
 		s.MessageBuilder != nil &&
-		s.EmailService != nil
+		s.EmailService != nil &&
+		s.OccurrenceService != nil
 }
 
 func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant) error {
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
+	meeting, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
 	if err != nil {
 		return err
 	}
@@ -69,7 +73,12 @@ func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx co
 		}
 	}
 
-	// TODO: add validation about occurrence ID once we occurrences calculated for meetings
+	// Validate occurrence ID if provided
+	if reqRegistrant.OccurrenceID != "" {
+		if err := s.OccurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -231,13 +240,10 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 }
 
 func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant, existingRegistrant *models.Registrant) error {
-	// Check that the meeting exists
-	exists, err := s.MeetingRepository.Exists(ctx, existingRegistrant.MeetingUID)
+	// Check that the meeting exists and get it for occurrence validation
+	meeting, err := s.MeetingRepository.GetBase(ctx, existingRegistrant.MeetingUID)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return domain.NewNotFoundError("meeting not found")
 	}
 
 	if existingRegistrant.Email != reqRegistrant.Email {
@@ -253,7 +259,12 @@ func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx co
 		}
 	}
 
-	// TODO: add validation about occurrence ID once we occurrences calculated for meetings
+	// Validate occurrence ID if provided and different from existing
+	if reqRegistrant.OccurrenceID != "" && reqRegistrant.OccurrenceID != existingRegistrant.OccurrenceID {
+		if err := s.OccurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

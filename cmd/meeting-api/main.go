@@ -87,6 +87,7 @@ func main() {
 		repos.Registrant,
 		emailService,
 		messageBuilder,
+		occurrenceService,
 		serviceConfig,
 	)
 	pastMeetingService := service.NewPastMeetingService(

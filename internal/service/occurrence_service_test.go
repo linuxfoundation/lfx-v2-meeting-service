@@ -4,6 +4,7 @@
 package service
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -161,6 +162,29 @@ func TestOccurrenceService_CalculateOccurrences(t *testing.T) {
 				time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC),  // Monday
 				time.Date(2024, 6, 17, 10, 0, 0, 0, time.UTC), // 2 weeks later
 				time.Date(2024, 7, 1, 10, 0, 0, 0, time.UTC),  // 4 weeks later
+			},
+		},
+		{
+			name: "weekly start Thursday recur Monday",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2026, 1, 2, 15, 4, 5, 0, time.UTC), // Thursday January 2nd, 2026
+				Duration:  10,
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           2, // Weekly
+					RepeatInterval: 1,
+					WeeklyDays:     "2", // Monday (2 in 1-7 system where 1=Sunday)
+					EndTimes:       5,
+				},
+			},
+			limit:         5,
+			expectedCount: 5,
+			validateDates: []time.Time{
+				time.Date(2026, 1, 5, 15, 4, 5, 0, time.UTC),  // Monday January 5th (first Monday after Thursday start)
+				time.Date(2026, 1, 12, 15, 4, 5, 0, time.UTC), // Monday January 12th
+				time.Date(2026, 1, 19, 15, 4, 5, 0, time.UTC), // Monday January 19th
+				time.Date(2026, 1, 26, 15, 4, 5, 0, time.UTC), // Monday January 26th
+				time.Date(2026, 2, 2, 15, 4, 5, 0, time.UTC),  // Monday February 2nd
 			},
 		},
 		{
@@ -532,6 +556,115 @@ func TestOccurrenceService_parseWeeklyDays(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := service.parseWeeklyDays(tt.input)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestOccurrenceService_ValidateFutureOccurrenceID(t *testing.T) {
+	service := NewOccurrenceService()
+	now := time.Now()
+	futureTime := now.Add(24 * time.Hour)
+	pastTime := now.Add(-24 * time.Hour)
+
+	// Test meeting with future occurrences
+	futureMeeting := &models.MeetingBase{
+		UID:       "meeting-future",
+		Title:     "Future Meeting",
+		StartTime: futureTime,
+		Duration:  60,
+		Timezone:  "UTC",
+	}
+
+	// Test meeting with past occurrences
+	pastMeeting := &models.MeetingBase{
+		UID:       "meeting-past",
+		Title:     "Past Meeting",
+		StartTime: pastTime,
+		Duration:  60,
+		Timezone:  "UTC",
+	}
+
+	// Generate valid occurrence IDs based on the actual calculation
+	futureOccurrenceID := strconv.FormatInt(futureTime.Unix(), 10)
+	pastOccurrenceID := strconv.FormatInt(pastTime.Unix(), 10)
+
+	tests := []struct {
+		name                  string
+		meeting               *models.MeetingBase
+		occurrenceID          string
+		maxOccurrencesToCheck int
+		expectError           bool
+		errorMessage          string
+	}{
+		{
+			name:                  "nil meeting",
+			meeting:               nil,
+			occurrenceID:          "test-occurrence",
+			maxOccurrencesToCheck: 10,
+			expectError:           true,
+			errorMessage:          "meeting and occurrence ID are required",
+		},
+		{
+			name:                  "empty occurrence ID",
+			meeting:               futureMeeting,
+			occurrenceID:          "",
+			maxOccurrencesToCheck: 10,
+			expectError:           true,
+			errorMessage:          "meeting and occurrence ID are required",
+		},
+		{
+			name:                  "zero max occurrences",
+			meeting:               futureMeeting,
+			occurrenceID:          "test-occurrence",
+			maxOccurrencesToCheck: 0,
+			expectError:           true,
+			errorMessage:          "maxOccurrencesToCheck must be greater than 0",
+		},
+		{
+			name:                  "negative max occurrences",
+			meeting:               futureMeeting,
+			occurrenceID:          "test-occurrence",
+			maxOccurrencesToCheck: -1,
+			expectError:           true,
+			errorMessage:          "maxOccurrencesToCheck must be greater than 0",
+		},
+		{
+			name:                  "valid future occurrence",
+			meeting:               futureMeeting,
+			occurrenceID:          futureOccurrenceID,
+			maxOccurrencesToCheck: 10,
+			expectError:           false,
+		},
+		{
+			name:                  "past occurrence should fail",
+			meeting:               pastMeeting,
+			occurrenceID:          pastOccurrenceID,
+			maxOccurrencesToCheck: 10,
+			expectError:           true,
+			errorMessage:          "cannot register for past occurrences",
+		},
+		{
+			name:                  "nonexistent occurrence ID",
+			meeting:               futureMeeting,
+			occurrenceID:          "nonexistent-occurrence",
+			maxOccurrencesToCheck: 10,
+			expectError:           true,
+			errorMessage:          "occurrence not found for this meeting",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := service.ValidateFutureOccurrenceID(tt.meeting, tt.occurrenceID, tt.maxOccurrencesToCheck)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				if tt.errorMessage != "" {
+					assert.Contains(t, err.Error(), tt.errorMessage)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
