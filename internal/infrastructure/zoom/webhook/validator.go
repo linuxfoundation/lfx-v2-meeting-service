@@ -54,6 +54,11 @@ func (v *ZoomWebhookValidator) ValidateSignature(body []byte, signature, timesta
 	return nil
 }
 
+// GetSecretToken returns the secret token used for webhook validation
+func (v *ZoomWebhookValidator) GetSecretToken() string {
+	return v.SecretToken
+}
+
 // IsValidEvent checks if the event type is supported
 func (v *ZoomWebhookValidator) IsValidEvent(eventType string) bool {
 	validEvents := map[string]bool{

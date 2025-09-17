@@ -13,7 +13,6 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/zoom/webhook"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -121,14 +120,13 @@ func (s *ZoomWebhookService) handleEndpointValidation(ctx context.Context, req W
 	}
 
 	// Generate encrypted token using HMAC SHA-256
-	// Cast to ZoomWebhookValidator to get the secret token
-	zoomValidator, ok := s.WebhookValidator.(*webhook.ZoomWebhookValidator)
-	if !ok || zoomValidator.SecretToken == "" {
+	secretToken := s.WebhookValidator.GetSecretToken()
+	if secretToken == "" {
 		logger.ErrorContext(ctx, "Zoom webhook validator not properly configured")
 		return nil, domain.NewInternalError("webhook validation not configured")
 	}
 
-	h := hmac.New(sha256.New, []byte(zoomValidator.SecretToken))
+	h := hmac.New(sha256.New, []byte(secretToken))
 	h.Write([]byte(plainToken))
 	encryptedToken := hex.EncodeToString(h.Sum(nil))
 

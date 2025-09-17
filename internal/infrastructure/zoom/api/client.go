@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -133,13 +134,13 @@ func (c *Client) getAuthenticatedClient(ctx context.Context) *http.Client {
 
 // shouldRetry determines if an error or HTTP status code should be retried
 func shouldRetry(statusCode int, err error) bool {
-	// Don't retry if context was cancelled
+	// Don't retry if the request context was cancelled or deadline exceeded
 	if err != nil {
-		if ctx, ok := err.(interface{ Err() error }); ok {
-			if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
-				return false
-			}
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return false
 		}
+		// Retry on network/connection errors
+		return true
 	}
 
 	// Retry on network/connection errors
@@ -299,7 +300,7 @@ func (c *Client) isRequestSuccessful(err error, resp *http.Response) bool {
 
 // closeAndReplaceResponse closes the old response if it exists and returns the new one
 func (c *Client) closeAndReplaceResponse(oldResp, newResp *http.Response) *http.Response {
-	if oldResp != nil && newResp != nil {
+	if oldResp != nil {
 		_ = oldResp.Body.Close()
 	}
 	return newResp

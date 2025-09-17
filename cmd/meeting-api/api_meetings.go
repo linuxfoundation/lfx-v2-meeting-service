@@ -47,7 +47,7 @@ func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.Cre
 // GetMeetingBase gets a single meeting's base information.
 func (s *MeetingsAPI) GetMeetingBase(ctx context.Context, payload *meetingsvc.GetMeetingBasePayload) (*meetingsvc.GetMeetingBaseResult, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, domain.NewValidationError("validation failed")
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	meeting, revision, err := s.meetingService.GetMeetingBase(ctx, *payload.UID)
@@ -64,7 +64,7 @@ func (s *MeetingsAPI) GetMeetingBase(ctx context.Context, payload *meetingsvc.Ge
 // GetMeetingSettings gets settings for a specific meeting
 func (s *MeetingsAPI) GetMeetingSettings(ctx context.Context, payload *meetingsvc.GetMeetingSettingsPayload) (*meetingsvc.GetMeetingSettingsResult, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, domain.NewValidationError("validation failed")
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	settings, etag, err := s.meetingService.GetMeetingSettings(ctx, *payload.UID)
@@ -81,7 +81,7 @@ func (s *MeetingsAPI) GetMeetingSettings(ctx context.Context, payload *meetingsv
 // GetMeetingJoinURL gets the join URL for a specific meeting
 func (s *MeetingsAPI) GetMeetingJoinURL(ctx context.Context, payload *meetingsvc.GetMeetingJoinURLPayload) (*meetingsvc.GetMeetingJoinURLResult, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, domain.NewValidationError("validation failed")
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	joinURL, err := s.meetingService.GetMeetingJoinURL(ctx, *payload.UID)
@@ -97,7 +97,7 @@ func (s *MeetingsAPI) GetMeetingJoinURL(ctx context.Context, payload *meetingsvc
 // UpdateMeetingBase updates a meeting's base information.
 func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc.UpdateMeetingBasePayload) (*meetingsvc.MeetingBase, error) {
 	if payload == nil || payload.UID == "" {
-		return nil, domain.NewValidationError("validation failed")
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)
@@ -120,7 +120,7 @@ func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc
 // UpdateMeetingSettings updates a meeting's settings.
 func (s *MeetingsAPI) UpdateMeetingSettings(ctx context.Context, payload *meetingsvc.UpdateMeetingSettingsPayload) (*meetingsvc.MeetingSettings, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, domain.NewValidationError("validation failed")
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)
@@ -139,7 +139,7 @@ func (s *MeetingsAPI) UpdateMeetingSettings(ctx context.Context, payload *meetin
 // DeleteMeeting deletes a meeting.
 func (s *MeetingsAPI) DeleteMeeting(ctx context.Context, payload *meetingsvc.DeleteMeetingPayload) error {
 	if payload == nil || payload.UID == nil {
-		return domain.NewValidationError("validation failed")
+		return handleError(domain.NewValidationError("validation failed"))
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)

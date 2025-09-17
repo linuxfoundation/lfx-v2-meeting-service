@@ -20,3 +20,8 @@ func (m *MockWebhookValidator) ValidateSignature(body []byte, signature, timesta
 	slog.Debug("Mock webhook validator - bypassing signature validation")
 	return nil
 }
+
+// GetSecretToken returns a mock secret token for testing
+func (m *MockWebhookValidator) GetSecretToken() string {
+	return "mock-secret-token"
+}
