@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -520,6 +521,11 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(
 	registrant *models.Registrant,
 	meeting *models.MeetingBase,
 ) error {
+	if meeting == nil {
+		slog.WarnContext(ctx, "meeting object missing; unable to send cancellation email")
+		return errors.New("meeting object missing")
+	}
+
 	// Format recipient name
 	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
 	if recipientName == " " {
