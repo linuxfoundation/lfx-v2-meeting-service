@@ -423,7 +423,7 @@ func (h *CommitteeHandlers) tryRemoveMemberFromMeeting(ctx context.Context, meet
 	isPublicMeeting := meeting.IsPublic()
 	err := h.committeeSyncService.RemoveCommitteeMemberFromMeeting(
 		ctx,
-		meeting.UID,
+		meeting,
 		member.CommitteeUID,
 		member.Email,
 		isPublicMeeting,
