@@ -171,7 +171,8 @@ type MeetingRegistrantAccessMessage struct {
 // MeetingDeletedMessage is the schema for the message sent when a meeting is deleted.
 // This message is used internally to trigger cleanup of all associated registrants.
 type MeetingDeletedMessage struct {
-	MeetingUID string `json:"meeting_uid"`
+	MeetingUID string       `json:"meeting_uid"`
+	Meeting    *MeetingBase `json:"meeting"`
 }
 
 // MeetingCreatedMessage is the schema for the message sent when a meeting is created.
