@@ -471,6 +471,7 @@ func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, 
 
 // SendRegistrantEmailChangeNotifications sends notification emails when a registrant's email changes
 // It sends a cancellation email to the old address and an invitation email to the new address
+// Returns an error if either email fails to send, allowing the caller to decide how to handle failures
 func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	ctx context.Context,
 	meeting *models.MeetingBase,
@@ -479,6 +480,8 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	oldEmail string,
 	newEmail string,
 ) error {
+	var errors []error
+
 	// Send cancellation email to old email address
 	oldEmailRegistrant := *oldRegistrant
 	oldEmailRegistrant.Email = oldEmail
@@ -487,7 +490,7 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 		slog.ErrorContext(ctx, "failed to send cancellation email to old address",
 			"old_email", oldEmail,
 			logging.ErrKey, err)
-		// Don't fail the entire operation for email errors
+		errors = append(errors, fmt.Errorf("failed to send cancellation email to %s: %w", oldEmail, err))
 	}
 
 	// Send invitation email to new email address
@@ -498,7 +501,11 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 		slog.ErrorContext(ctx, "failed to send invitation email to new address",
 			"new_email", newEmail,
 			logging.ErrKey, err)
-		// Don't fail the entire operation for email errors
+		errors = append(errors, fmt.Errorf("failed to send invitation email to %s: %w", newEmail, err))
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("email notification errors: %v", errors)
 	}
 
 	slog.InfoContext(ctx, "sent email change notifications",

@@ -68,6 +68,14 @@ func (m *MockRegistrantRepository) ListByEmail(ctx context.Context, email string
 	return args.Get(0).([]*models.Registrant), args.Error(1)
 }
 
+func (m *MockRegistrantRepository) ListByEmailAndCommittee(ctx context.Context, email string, committeeUID string) ([]*models.Registrant, error) {
+	args := m.Called(ctx, email, committeeUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.Registrant), args.Error(1)
+}
+
 func (m *MockRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, meetingUID, email string) (bool, error) {
 	args := m.Called(ctx, meetingUID, email)
 	return args.Bool(0), args.Error(1)
