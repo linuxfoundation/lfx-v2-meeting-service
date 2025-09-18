@@ -86,6 +86,10 @@ const (
 	// The subject is of the form: lfx.committee-api.committee_member.deleted
 	CommitteeMemberDeletedSubject = "lfx.committee-api.committee_member.deleted"
 
+	// CommitteeMemberUpdatedSubject is the subject for committee member update events.
+	// The subject is of the form: lfx.committee-api.committee_member.updated
+	CommitteeMemberUpdatedSubject = "lfx.committee-api.committee_member.updated"
+
 	// ProjectGetNameSubject is the subject for project name validation.
 	// The subject is of the form: lfx.projects-api.get_name
 	ProjectGetNameSubject = "lfx.projects-api.get_name"
@@ -226,6 +230,13 @@ type CommitteeMember struct {
 	CommitteeName string                      `json:"committee_name"`
 	CreatedAt     time.Time                   `json:"created_at"`
 	UpdatedAt     time.Time                   `json:"updated_at"`
+}
+
+// CommitteeMemberUpdateEventData represents the data structure for committee member update events
+type CommitteeMemberUpdateEventData struct {
+	MemberUID string           `json:"member_uid"`
+	OldMember *CommitteeMember `json:"old_member"`
+	Member    *CommitteeMember `json:"member"`
 }
 
 // Role represents committee role information

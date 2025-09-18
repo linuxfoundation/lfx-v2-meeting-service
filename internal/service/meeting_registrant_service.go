@@ -469,6 +469,47 @@ func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, 
 	return s.DeleteRegistrantWithCleanup(ctx, registrant, meeting, revision, false)
 }
 
+// SendRegistrantEmailChangeNotifications sends notification emails when a registrant's email changes
+// It sends a cancellation email to the old address and an invitation email to the new address
+func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
+	ctx context.Context,
+	meeting *models.MeetingBase,
+	oldRegistrant *models.Registrant,
+	newRegistrant *models.Registrant,
+	oldEmail string,
+	newEmail string,
+) error {
+	// Send cancellation email to old email address
+	oldEmailRegistrant := *oldRegistrant
+	oldEmailRegistrant.Email = oldEmail
+	err := s.sendRegistrantCancellationEmail(ctx, &oldEmailRegistrant, meeting)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send cancellation email to old address",
+			"old_email", oldEmail,
+			logging.ErrKey, err)
+		// Don't fail the entire operation for email errors
+	}
+
+	// Send invitation email to new email address
+	newEmailRegistrant := *newRegistrant
+	newEmailRegistrant.Email = newEmail
+	err = s.sendRegistrantInvitationEmail(ctx, &newEmailRegistrant)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send invitation email to new address",
+			"new_email", newEmail,
+			logging.ErrKey, err)
+		// Don't fail the entire operation for email errors
+	}
+
+	slog.InfoContext(ctx, "sent email change notifications",
+		"meeting_uid", meeting.UID,
+		"registrant_uid", oldRegistrant.UID,
+		"old_email", oldEmail,
+		"new_email", newEmail)
+
+	return nil
+}
+
 // sendRegistrantInvitationEmail sends an invitation email to a newly created registrant
 func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
 	// Get meeting details for the email

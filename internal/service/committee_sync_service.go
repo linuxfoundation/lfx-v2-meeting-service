@@ -759,3 +759,184 @@ func (s *CommitteeSyncService) RemoveCommitteeMemberFromMeeting(
 
 	return nil
 }
+
+// HandleCommitteeMemberEmailChange handles email changes for a committee member in a specific meeting
+// by updating their registration and sending appropriate notification emails.
+func (s *CommitteeSyncService) HandleCommitteeMemberEmailChange(
+	ctx context.Context,
+	meeting *models.MeetingBase,
+	oldEmail string,
+	newEmail string,
+	committeeUID string,
+	member *models.CommitteeMember,
+) error {
+	// Get all registrants for this meeting
+	registrants, err := s.registrantRepository.ListByMeeting(ctx, meeting.UID)
+	if err != nil {
+		return fmt.Errorf("failed to list registrants for meeting %s: %w", meeting.UID, err)
+	}
+
+	// Find registrant that matches this committee member with the old email
+	var matchingRegistrant *models.Registrant
+	var registrantRevision uint64
+	for _, registrant := range registrants {
+		if registrant.Type == models.RegistrantTypeCommittee &&
+			registrant.CommitteeUID != nil &&
+			*registrant.CommitteeUID == committeeUID &&
+			registrant.Email == oldEmail {
+			matchingRegistrant = registrant
+			// Get the revision for this registrant
+			_, rev, err := s.registrantRepository.GetWithRevision(ctx, registrant.UID)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to get registrant revision",
+					"registrant_uid", registrant.UID,
+					logging.ErrKey, err)
+				return fmt.Errorf("failed to get registrant revision: %w", err)
+			}
+			registrantRevision = rev
+			break
+		}
+	}
+
+	if matchingRegistrant == nil {
+		slog.DebugContext(ctx, "no matching committee registrant found for email change",
+			"meeting_uid", meeting.UID,
+			"committee_uid", committeeUID,
+			"old_email", oldEmail)
+		return nil
+	}
+
+	slog.InfoContext(ctx, "found committee registrant for email change",
+		"meeting_uid", meeting.UID,
+		"committee_uid", committeeUID,
+		"registrant_uid", matchingRegistrant.UID,
+		"old_email", oldEmail,
+		"new_email", newEmail)
+
+	// Update the registrant with the new email and member info
+	updatedRegistrant := &models.Registrant{
+		UID:          matchingRegistrant.UID,
+		MeetingUID:   matchingRegistrant.MeetingUID,
+		Email:        newEmail,
+		FirstName:    member.FirstName,
+		LastName:     member.LastName,
+		Username:     member.Username,
+		Type:         models.RegistrantTypeCommittee,
+		CommitteeUID: &committeeUID,
+		OrgName:      member.Organization.Name,
+		JobTitle:     member.JobTitle,
+		Host:         matchingRegistrant.Host,
+	}
+
+	// Use the registrant service to update, which handles NATS messages and FGA sync
+	_, err = s.registrantService.UpdateMeetingRegistrant(ctx, updatedRegistrant, registrantRevision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update registrant email",
+			"meeting_uid", matchingRegistrant.MeetingUID,
+			"registrant_uid", matchingRegistrant.UID,
+			"old_email", oldEmail,
+			"new_email", newEmail,
+			logging.ErrKey, err)
+		return fmt.Errorf("failed to update registrant email: %w", err)
+	}
+
+	// Send notification emails (cancellation to old email, invitation to new email)
+	err = s.sendEmailChangeNotifications(ctx, meeting, matchingRegistrant, updatedRegistrant, oldEmail, newEmail)
+	if err != nil {
+		// Log error but don't fail the operation - emails are non-critical
+		slog.ErrorContext(ctx, "failed to send email change notifications",
+			"meeting_uid", meeting.UID,
+			"registrant_uid", matchingRegistrant.UID,
+			"old_email", oldEmail,
+			"new_email", newEmail,
+			logging.ErrKey, err)
+	}
+
+	slog.InfoContext(ctx, "successfully updated committee registrant email",
+		"meeting_uid", meeting.UID,
+		"registrant_uid", matchingRegistrant.UID,
+		"old_email", oldEmail,
+		"new_email", newEmail)
+
+	return nil
+}
+
+// HandleCommitteeMemberEmailChangeForAll handles email changes for committee members across all meetings
+// by finding all their registrations and updating them efficiently.
+func (s *CommitteeSyncService) HandleCommitteeMemberEmailChangeForAll(
+	ctx context.Context,
+	oldEmail string,
+	newEmail string,
+	committeeUID string,
+	member *models.CommitteeMember,
+) error {
+	// Get ALL registrants across all meetings (this would ideally have a method like ListByEmailAndCommittee)
+	// For now, we need to get all meetings with this committee and check registrants
+	// This is where we'd want a more efficient repository method
+
+	// TODO: Add a repository method like ListByEmailAndCommittee for better performance
+	// For now, this implementation shows what we need but uses the existing repository methods
+
+	meetings, _, err := s.registrantService.MeetingRepository.ListByCommittee(ctx, committeeUID)
+	if err != nil {
+		return fmt.Errorf("failed to list meetings by committee: %w", err)
+	}
+
+	if len(meetings) == 0 {
+		slog.InfoContext(ctx, "no meetings found for committee member email change",
+			"committee_uid", committeeUID,
+			"old_email", oldEmail,
+			"new_email", newEmail)
+		return nil
+	}
+
+	var errors []error
+	updateCount := 0
+
+	for _, meeting := range meetings {
+		err := s.HandleCommitteeMemberEmailChange(ctx, meeting, oldEmail, newEmail, committeeUID, member)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("meeting %s: %w", meeting.UID, err))
+		} else {
+			updateCount++
+		}
+	}
+
+	if len(errors) > 0 {
+		slog.ErrorContext(ctx, "some email updates failed",
+			"committee_uid", committeeUID,
+			"old_email", oldEmail,
+			"new_email", newEmail,
+			"total_meetings", len(meetings),
+			"successful_updates", updateCount,
+			"failed_updates", len(errors))
+		// Return first error but log all
+		return errors[0]
+	}
+
+	slog.InfoContext(ctx, "successfully updated all committee member emails",
+		"committee_uid", committeeUID,
+		"old_email", oldEmail,
+		"new_email", newEmail,
+		"total_meetings", len(meetings),
+		"updated_count", updateCount)
+
+	return nil
+}
+
+// sendEmailChangeNotifications sends cancellation email to old address and invitation email to new address
+func (s *CommitteeSyncService) sendEmailChangeNotifications(
+	ctx context.Context,
+	meeting *models.MeetingBase,
+	oldRegistrant *models.Registrant,
+	newRegistrant *models.Registrant,
+	oldEmail string,
+	newEmail string,
+) error {
+	// Send cancellation email to the old email address
+	err := s.registrantService.SendRegistrantEmailChangeNotifications(ctx, meeting, oldRegistrant, newRegistrant, oldEmail, newEmail)
+	if err != nil {
+		return fmt.Errorf("failed to send email change notifications: %w", err)
+	}
+	return nil
+}
