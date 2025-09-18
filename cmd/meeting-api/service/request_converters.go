@@ -33,7 +33,7 @@ func ConvertCreateMeetingPayloadToDomain(payload *meetingservice.CreateMeetingPa
 
 func convertCreateMeetingBasePayloadToDomain(payload *meetingservice.CreateMeetingPayload) (*models.MeetingBase, error) {
 	if payload == nil {
-		return nil, domain.NewValidationError("validation failed", nil)
+		return nil, domain.NewValidationError("validation failed")
 	}
 
 	startTime, err := time.Parse(time.RFC3339, payload.StartTime)

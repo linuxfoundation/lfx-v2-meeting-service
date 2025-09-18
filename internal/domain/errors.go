@@ -44,22 +44,22 @@ func GetErrorType(err error) ErrorType {
 }
 
 // Error constructors for different types
-func NewValidationError(message string, err error) *DomainError {
-	return &DomainError{Type: ErrorTypeValidation, Message: message, Err: err}
+func NewValidationError(message string, err ...error) *DomainError {
+	return &DomainError{Type: ErrorTypeValidation, Message: message, Err: errors.Join(err...)}
 }
 
-func NewNotFoundError(message string, err error) *DomainError {
-	return &DomainError{Type: ErrorTypeNotFound, Message: message, Err: err}
+func NewNotFoundError(message string, err ...error) *DomainError {
+	return &DomainError{Type: ErrorTypeNotFound, Message: message, Err: errors.Join(err...)}
 }
 
-func NewConflictError(message string, err error) *DomainError {
-	return &DomainError{Type: ErrorTypeConflict, Message: message, Err: err}
+func NewConflictError(message string, err ...error) *DomainError {
+	return &DomainError{Type: ErrorTypeConflict, Message: message, Err: errors.Join(err...)}
 }
 
-func NewInternalError(message string, err error) *DomainError {
-	return &DomainError{Type: ErrorTypeInternal, Message: message, Err: err}
+func NewInternalError(message string, err ...error) *DomainError {
+	return &DomainError{Type: ErrorTypeInternal, Message: message, Err: errors.Join(err...)}
 }
 
-func NewUnavailableError(message string, err error) *DomainError {
-	return &DomainError{Type: ErrorTypeUnavailable, Message: message, Err: err}
+func NewUnavailableError(message string, err ...error) *DomainError {
+	return &DomainError{Type: ErrorTypeUnavailable, Message: message, Err: errors.Join(err...)}
 }

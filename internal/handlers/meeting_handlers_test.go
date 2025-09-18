@@ -227,7 +227,7 @@ func TestMeetingHandler_HandleGetTitleMessage(t *testing.T) {
 			messageData: []byte("01234567-89ab-cdef-0123-456789abcdef"),
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository) {
 				mockRepo.On("GetBase", mock.Anything, "01234567-89ab-cdef-0123-456789abcdef").Return(
-					nil, domain.NewInternalError("internal error", nil),
+					nil, domain.NewInternalError("internal error"),
 				)
 			},
 			expectError:   true,
@@ -238,7 +238,7 @@ func TestMeetingHandler_HandleGetTitleMessage(t *testing.T) {
 			messageData: []byte("00000000-0000-0000-0000-000000000000"),
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository) {
 				mockRepo.On("GetBase", mock.Anything, "00000000-0000-0000-0000-000000000000").Return(
-					nil, domain.NewNotFoundError("meeting not found", nil),
+					nil, domain.NewNotFoundError("meeting not found"),
 				)
 			},
 			expectError:   true,
@@ -416,7 +416,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 			messageData: []byte(`{"meeting_uid":"meeting-error","meeting":{"uid":"meeting-error","project_uid":"project-error","title":"Error Meeting","start_time":"2023-12-01T10:00:00Z","duration":60,"timezone":"UTC","description":"Error meeting description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-error").Return(
-					nil, domain.NewInternalError("internal error", nil),
+					nil, domain.NewInternalError("internal error"),
 				)
 			},
 			expectError: true,
@@ -442,7 +442,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-partial").Return(registrants, nil)
 				// Both deletions may be attempted concurrently, but at least one will fail
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil).Maybe()
-				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(domain.NewInternalError("internal error", nil))
+				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(domain.NewInternalError("internal error"))
 				// Messaging calls may or may not happen due to concurrent execution and fail-fast behavior
 				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil).Maybe()
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
@@ -583,7 +583,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 			name:        "handle repository error when listing registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-repo-error","changes":{"Title":"Updated"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
-				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-repo-error").Return([]*models.Registrant{}, domain.NewInternalError("internal error", nil))
+				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-repo-error").Return([]*models.Registrant{}, domain.NewInternalError("internal error"))
 			},
 			expectError: true,
 		},
@@ -625,7 +625,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 
 				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {
 					return invitation.RecipientEmail == "fail@example.com"
-				})).Return(domain.NewInternalError("internal error", nil)).Maybe()
+				})).Return(domain.NewInternalError("internal error")).Maybe()
 			},
 			expectError: true, // WorkerPool fails fast on errors
 		},

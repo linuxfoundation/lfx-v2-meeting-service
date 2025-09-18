@@ -66,7 +66,7 @@ func (s *NatsRegistrantRepository) getRegistrantKey(registrantUID string) string
 // ListByMeeting lists all registrants for a given meeting.
 func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.Registrant, error) {
 	if !s.IsReady(ctx) {
-		return nil, domain.NewUnavailableError("registrant repository is not available", nil)
+		return nil, domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	// Use the meeting index to efficiently find registrants for this meeting
@@ -115,7 +115,7 @@ func (s *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID
 // ListByEmail lists all registrants for a given email address.
 func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
 	if !s.IsReady(ctx) {
-		return nil, domain.NewUnavailableError("registrant repository is not available", nil)
+		return nil, domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	// Use the meeting index to efficiently find registrants for this meeting
@@ -276,7 +276,7 @@ func (s *NatsRegistrantRepository) createIndices(ctx context.Context, registrant
 // Create creates a new registrant.
 func (s *NatsRegistrantRepository) Create(ctx context.Context, registrant *models.Registrant) error {
 	if !s.IsReady(ctx) {
-		return domain.NewUnavailableError("registrant repository is not available", nil)
+		return domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	// Check if registrant already exists
@@ -285,7 +285,7 @@ func (s *NatsRegistrantRepository) Create(ctx context.Context, registrant *model
 		return err
 	}
 	if exists {
-		return domain.NewConflictError("registrant with same email already exists for this meeting", nil)
+		return domain.NewConflictError("registrant with same email already exists for this meeting")
 	}
 
 	// TODO: handle atomicity of the put and index operations.
@@ -305,7 +305,7 @@ func (s *NatsRegistrantRepository) Create(ctx context.Context, registrant *model
 // RegistrantExists checks if a registrant exists.
 func (s *NatsRegistrantRepository) Exists(ctx context.Context, registrantUID string) (bool, error) {
 	if !s.IsReady(ctx) {
-		return false, domain.NewUnavailableError("registrant repository is not available", nil)
+		return false, domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	key := s.getRegistrantKey(registrantUID)
@@ -322,7 +322,7 @@ func (s *NatsRegistrantRepository) Exists(ctx context.Context, registrantUID str
 // ExistsByMeetingAndEmail checks if a registrant exists for a given meeting and email.
 func (s *NatsRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, meetingUID, email string) (bool, error) {
 	if !s.IsReady(ctx) {
-		return false, domain.NewUnavailableError("registrant repository is not available", nil)
+		return false, domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	// List all registrants for the meeting
@@ -344,7 +344,7 @@ func (s *NatsRegistrantRepository) ExistsByMeetingAndEmail(ctx context.Context, 
 // GetByMeetingAndEmail gets a registrant by meeting UID and email with its revision.
 func (s *NatsRegistrantRepository) GetByMeetingAndEmail(ctx context.Context, meetingUID, email string) (*models.Registrant, uint64, error) {
 	if !s.IsReady(ctx) {
-		return nil, 0, domain.NewUnavailableError("registrant repository is not available", nil)
+		return nil, 0, domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	// List all registrants for the meeting
@@ -376,7 +376,7 @@ func (s *NatsRegistrantRepository) Get(ctx context.Context, registrantUID string
 // GetWithRevision gets a registrant by its UID and returns the revision.
 func (s *NatsRegistrantRepository) GetWithRevision(ctx context.Context, registrantUID string) (*models.Registrant, uint64, error) {
 	if !s.IsReady(ctx) {
-		return nil, 0, domain.NewUnavailableError("registrant repository is not available", nil)
+		return nil, 0, domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	key := s.getRegistrantKey(registrantUID)
@@ -402,7 +402,7 @@ func (s *NatsRegistrantRepository) GetWithRevision(ctx context.Context, registra
 // Update updates a registrant.
 func (s *NatsRegistrantRepository) Update(ctx context.Context, registrant *models.Registrant, revision uint64) error {
 	if !s.IsReady(ctx) {
-		return domain.NewUnavailableError("registrant repository is not available", nil)
+		return domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	// Get the old registrant to check if indexes need updating
@@ -496,7 +496,7 @@ func (s *NatsRegistrantRepository) deleteIndices(ctx context.Context, registrant
 // Delete deletes a registrant.
 func (s *NatsRegistrantRepository) Delete(ctx context.Context, registrantUID string, revision uint64) error {
 	if !s.IsReady(ctx) {
-		return domain.NewUnavailableError("registrant repository is not available", nil)
+		return domain.NewUnavailableError("registrant repository is not available")
 	}
 
 	// Get registrant first to clean up indexes

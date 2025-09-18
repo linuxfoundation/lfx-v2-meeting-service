@@ -2058,12 +2058,12 @@ func EncodeZoomWebhookRequest(encoder func(*http.Request) goahttp.Encoder) func(
 		if !ok {
 			return goahttp.ErrInvalidType("Meeting Service", "zoom-webhook", "*meetingservice.ZoomWebhookPayload", v)
 		}
-		if p.ZoomSignature != nil {
-			head := *p.ZoomSignature
+		{
+			head := p.ZoomSignature
 			req.Header.Set("x-zm-signature", head)
 		}
-		if p.ZoomTimestamp != nil {
-			head := *p.ZoomTimestamp
+		{
+			head := p.ZoomTimestamp
 			req.Header.Set("x-zm-request-timestamp", head)
 		}
 		body := NewZoomWebhookRequestBody(p)

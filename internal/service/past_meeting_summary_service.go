@@ -15,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // PastMeetingSummaryService implements the business logic for past meeting summaries.
@@ -63,7 +64,7 @@ func (s *PastMeetingSummaryService) ServiceReady() bool {
 func (s *PastMeetingSummaryService) ListSummariesByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingSummary, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	// Validate that the past meeting exists
@@ -71,7 +72,7 @@ func (s *PastMeetingSummaryService) ListSummariesByPastMeeting(ctx context.Conte
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "past meeting not found", "past_meeting_uid", pastMeetingUID)
-			return nil, domain.NewNotFoundError("past meeting not found", nil)
+			return nil, domain.NewNotFoundError("past meeting not found")
 		}
 		slog.ErrorContext(ctx, "error checking past meeting existence", logging.ErrKey, err, "past_meeting_uid", pastMeetingUID)
 		return nil, domain.NewInternalError("error checking past meeting existence", err)
@@ -93,7 +94,7 @@ func (s *PastMeetingSummaryService) CreateSummary(
 ) (*models.PastMeetingSummary, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	// Set system-generated fields
@@ -139,12 +140,12 @@ func (s *PastMeetingSummaryService) CreateSummary(
 func (s *PastMeetingSummaryService) GetSummary(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.NewUnavailableError("service not initialized", nil)
+		return nil, "", domain.NewUnavailableError("service not initialized")
 	}
 
 	if summaryUID == "" {
 		slog.WarnContext(ctx, "summary UID is required")
-		return nil, "", domain.NewValidationError("summary UID is required", nil)
+		return nil, "", domain.NewValidationError("summary UID is required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("summary_uid", summaryUID))
@@ -177,7 +178,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 ) (*models.PastMeetingSummary, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	// Get current summary
@@ -197,7 +198,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 			"expected_revision", revision,
 			"current_revision", currentRevision,
 			"summary_uid", summary.UID)
-		return nil, domain.NewValidationError("revision mismatch", nil)
+		return nil, domain.NewValidationError("revision mismatch")
 	}
 
 	// Merge the update fields with the current summary
@@ -289,7 +290,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 			slog.ErrorContext(ctx, "failed to send summary notification email",
 				logging.ErrKey, err,
 				"registrant_uid", registrant.UID,
-				"email", registrant.Email,
+				"email", redaction.RedactEmail(registrant.Email),
 				"meeting_uid", summary.MeetingUID,
 			)
 			// Continue with other recipients even if one fails
@@ -297,7 +298,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 			successCount++
 			slog.DebugContext(ctx, "summary notification email sent successfully",
 				"registrant_uid", registrant.UID,
-				"email", registrant.Email,
+				"email", redaction.RedactEmail(registrant.Email),
 			)
 		}
 	}
@@ -310,7 +311,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 
 	// Return error only if no emails were sent successfully
 	if successCount == 0 && len(hostRegistrants) > 0 {
-		return domain.NewInternalError("error sending summary notification emails", nil)
+		return domain.NewInternalError("error sending summary notification emails")
 	}
 
 	return nil

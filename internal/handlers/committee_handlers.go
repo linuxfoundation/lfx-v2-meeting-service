@@ -9,13 +9,14 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
-	"sync"
+	"sync/atomic"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // CommitteeHandlers handles committee-related messages and events.
@@ -114,7 +115,7 @@ func (h *CommitteeHandlers) HandleCommitteeMemberCreated(ctx context.Context, ms
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", committeeMemberMsgData.CommitteeUID))
-	ctx = logging.AppendCtx(ctx, slog.String("member_email", committeeMemberMsgData.Email))
+	ctx = logging.AppendCtx(ctx, slog.String("member_email", redaction.RedactEmail(committeeMemberMsgData.Email)))
 	ctx = logging.AppendCtx(ctx, slog.String("voting_status", committeeMemberMsgData.Voting.Status))
 
 	slog.InfoContext(ctx, "processing new committee member, checking for relevant meetings")
@@ -243,7 +244,7 @@ func (h *CommitteeHandlers) HandleCommitteeMemberDeleted(ctx context.Context, ms
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", committeeMemberMsgData.CommitteeUID))
-	ctx = logging.AppendCtx(ctx, slog.String("member_email", committeeMemberMsgData.Email))
+	ctx = logging.AppendCtx(ctx, slog.String("member_email", redaction.RedactEmail(committeeMemberMsgData.Email)))
 	ctx = logging.AppendCtx(ctx, slog.String("voting_status", committeeMemberMsgData.Voting.Status))
 
 	slog.InfoContext(ctx, "processing deleted committee member, checking for relevant meetings")
@@ -298,8 +299,7 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 	}
 
 	// Process each meeting that contains this committee
-	successCount := 0
-	mu := sync.Mutex{}
+	var successCount int64
 
 	tasks := make([]func() error, len(meetings))
 	for i := range meetings {
@@ -309,9 +309,7 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 			if err != nil {
 				return err
 			}
-			mu.Lock()
-			successCount++
-			mu.Unlock()
+			atomic.AddInt64(&successCount, 1)
 			return nil
 		})
 	}
@@ -332,7 +330,7 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 		"committee_uid", memberMsg.CommitteeUID,
 		"member_email", memberMsg.Email,
 		"total_meetings", len(meetings),
-		"successful_additions", successCount,
+		"successful_additions", atomic.LoadInt64(&successCount),
 		"failed_additions", len(errors))
 
 	return nil
@@ -419,8 +417,7 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 		"meetings_count", len(meetings))
 
 	// Process each meeting that contains this committee
-	successCount := 0
-	mu := sync.Mutex{}
+	var successCount int64
 
 	tasks := make([]func() error, len(meetings))
 	for i := range meetings {
@@ -430,9 +427,7 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 			if err != nil {
 				return err
 			}
-			mu.Lock()
-			successCount++
-			mu.Unlock()
+			atomic.AddInt64(&successCount, 1)
 			return nil
 		})
 	}
@@ -453,7 +448,7 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 		"committee_uid", member.CommitteeUID,
 		"member_email", member.Email,
 		"total_meetings", len(meetings),
-		"successful_removals", successCount,
+		"successful_removals", atomic.LoadInt64(&successCount),
 		"failed_removals", len(errors))
 
 	return nil

@@ -176,6 +176,7 @@ For Zoom meeting platform support, configure these environment variables:
 For local webhook development, you'll need to expose your local service to receive webhook events from Zoom:
 
 - `ZOOM_WEBHOOK_SECRET_TOKEN`: Webhook secret token for signature validation
+- `MOCK_ZOOM_WEBHOOK`: Set to `true` to bypass webhook signature validation for testing (default: `false`)
 
 #### Local Webhook Testing with ngrok
 

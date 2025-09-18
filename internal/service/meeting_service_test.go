@@ -97,18 +97,18 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 			},
 			expectedLen: 0,
 			wantErr:     true,
-			expectedErr: domain.NewUnavailableError("test", nil),
+			expectedErr: domain.NewUnavailableError("test"),
 		},
 		{
 			name: "repository error",
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockRepo.On("ListAll", mock.Anything).Return(
-					nil, nil, domain.NewInternalError("database error", nil),
+					nil, nil, domain.NewInternalError("database error"),
 				)
 			},
 			expectedLen: 0,
 			wantErr:     true,
-			expectedErr: domain.NewInternalError("database error", nil),
+			expectedErr: domain.NewInternalError("database error"),
 		},
 		{
 			name: "empty meetings list",
@@ -223,7 +223,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 				// Service will not be ready - no mocks needed
 			},
 			wantErr:     true,
-			expectedErr: domain.NewUnavailableError("test", nil),
+			expectedErr: domain.NewUnavailableError("test"),
 		},
 		{
 			name: "repository creation error",
@@ -255,10 +255,10 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 
 				// Repository returns error to test cleanup
 				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil)
-				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(domain.NewInternalError("database error", nil))
+				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(domain.NewInternalError("database error"))
 			},
 			wantErr:     true,
-			expectedErr: domain.NewInternalError("database error", nil),
+			expectedErr: domain.NewInternalError("database error"),
 		},
 	}
 
@@ -341,11 +341,11 @@ func TestMeetingsService_GetMeetingBase(t *testing.T) {
 			uid:  "non-existent-uid",
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockRepo.On("GetBaseWithRevision", mock.Anything, "non-existent-uid").Return(
-					nil, uint64(0), domain.NewNotFoundError("meeting not found", nil),
+					nil, uint64(0), domain.NewNotFoundError("meeting not found"),
 				)
 			},
 			wantErr:     true,
-			expectedErr: domain.NewNotFoundError("meeting not found", nil),
+			expectedErr: domain.NewNotFoundError("meeting not found"),
 		},
 		{
 			name: "empty UID",
@@ -353,11 +353,11 @@ func TestMeetingsService_GetMeetingBase(t *testing.T) {
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Repository is called even with empty UID, but returns error
 				mockRepo.On("GetBaseWithRevision", mock.Anything, "").Return(
-					nil, uint64(0), domain.NewValidationError("meeting UID cannot be empty", nil),
+					nil, uint64(0), domain.NewValidationError("meeting UID cannot be empty"),
 				)
 			},
 			wantErr:     true,
-			expectedErr: domain.NewValidationError("meeting UID cannot be empty", nil),
+			expectedErr: domain.NewValidationError("meeting UID cannot be empty"),
 		},
 	}
 
@@ -424,27 +424,27 @@ func TestMeetingsService_GetMeetingSettings(t *testing.T) {
 			name: "meeting settings not found",
 			uid:  "nonexistent-meeting",
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockRepo.On("GetSettingsWithRevision", mock.Anything, "nonexistent-meeting").Return(nil, uint64(0), domain.NewNotFoundError("meeting not found", nil))
+				mockRepo.On("GetSettingsWithRevision", mock.Anything, "nonexistent-meeting").Return(nil, uint64(0), domain.NewNotFoundError("meeting not found"))
 			},
 			wantErr:     true,
-			expectedErr: domain.NewNotFoundError("meeting not found", nil),
+			expectedErr: domain.NewNotFoundError("meeting not found"),
 		},
 		{
 			name: "empty UID",
 			uid:  "",
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Repository is called with empty UID but should return validation error
-				mockRepo.On("GetSettingsWithRevision", mock.Anything, "").Return(nil, uint64(0), domain.NewValidationError("meeting UID cannot be empty", nil))
+				mockRepo.On("GetSettingsWithRevision", mock.Anything, "").Return(nil, uint64(0), domain.NewValidationError("meeting UID cannot be empty"))
 			},
 			wantErr:     true,
-			expectedErr: domain.NewValidationError("meeting UID cannot be empty", nil),
+			expectedErr: domain.NewValidationError("meeting UID cannot be empty"),
 		},
 		{
 			name:        "service not ready",
 			uid:         "meeting-123",
 			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
 			wantErr:     true,
-			expectedErr: domain.NewUnavailableError("test", nil),
+			expectedErr: domain.NewUnavailableError("test"),
 		},
 	}
 
@@ -554,10 +554,10 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			},
 			revision: 1,
 			setupMocks: func(mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockRepo.On("GetSettings", mock.Anything, "nonexistent-meeting").Return(nil, domain.NewNotFoundError("meeting not found", nil))
+				mockRepo.On("GetSettings", mock.Anything, "nonexistent-meeting").Return(nil, domain.NewNotFoundError("meeting not found"))
 			},
 			wantErr:     true,
-			expectedErr: domain.NewNotFoundError("meeting not found", nil),
+			expectedErr: domain.NewNotFoundError("meeting not found"),
 		},
 		{
 			name:        "nil settings",
@@ -565,7 +565,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			revision:    1,
 			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
 			wantErr:     true,
-			expectedErr: domain.NewValidationError("test", nil),
+			expectedErr: domain.NewValidationError("test"),
 		},
 		{
 			name: "service not ready",
@@ -576,7 +576,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			revision:    1,
 			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
 			wantErr:     true,
-			expectedErr: domain.NewUnavailableError("test", nil),
+			expectedErr: domain.NewUnavailableError("test"),
 		},
 		{
 			name: "empty UID",
@@ -587,7 +587,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			revision:    1,
 			setupMocks:  func(*mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {},
 			wantErr:     true,
-			expectedErr: domain.NewValidationError("test", nil),
+			expectedErr: domain.NewValidationError("test"),
 		},
 	}
 

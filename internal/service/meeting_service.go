@@ -118,7 +118,7 @@ func (s *MeetingService) ServiceReady() bool {
 func (s *MeetingService) GetMeetings(ctx context.Context) ([]*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting service is not ready", nil)
+		return nil, domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	// Get all meetings from the store
@@ -158,12 +158,12 @@ func (s *MeetingService) GetMeetings(ctx context.Context) ([]*models.MeetingFull
 
 func (s *MeetingService) validateCreateMeetingPayload(ctx context.Context, payload *models.MeetingFull) error {
 	if payload == nil || payload.Base == nil {
-		return domain.NewValidationError("meeting payload is required", nil)
+		return domain.NewValidationError("meeting payload is required")
 	}
 
 	if payload.Base.StartTime.Before(time.Now().UTC()) {
 		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", payload.Base.StartTime)
-		return domain.NewValidationError("meeting start time cannot be in the past", nil)
+		return domain.NewValidationError("meeting start time cannot be in the past")
 	}
 
 	return nil
@@ -226,7 +226,7 @@ func (s *MeetingService) validateProject(ctx context.Context, projectUID string)
 func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.MeetingFull) (*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting service is not ready", nil)
+		return nil, domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	if err := s.validateCreateMeetingPayload(ctx, reqMeeting); err != nil {
@@ -347,7 +347,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*models.MeetingBase, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.NewUnavailableError("meeting service is not ready", nil)
+		return nil, "", domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
@@ -374,7 +374,7 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 func (s *MeetingService) GetMeetingSettings(ctx context.Context, uid string) (*models.MeetingSettings, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.NewUnavailableError("meeting service is not ready", nil)
+		return nil, "", domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
@@ -397,7 +397,7 @@ func (s *MeetingService) GetMeetingSettings(ctx context.Context, uid string) (*m
 func (s *MeetingService) GetMeetingJoinURL(ctx context.Context, uid string) (string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return "", domain.NewUnavailableError("meeting service is not ready", nil)
+		return "", domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
@@ -412,12 +412,12 @@ func (s *MeetingService) GetMeetingJoinURL(ctx context.Context, uid string) (str
 
 func (s *MeetingService) validateUpdateMeetingRequest(ctx context.Context, req *models.MeetingBase) error {
 	if req == nil {
-		return domain.NewValidationError("meeting update request is required", nil)
+		return domain.NewValidationError("meeting update request is required")
 	}
 
 	if req.StartTime.Before(time.Now().UTC()) {
 		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", req.StartTime)
-		return domain.NewValidationError("meeting start time cannot be in the past", nil)
+		return domain.NewValidationError("meeting start time cannot be in the past")
 	}
 
 	return nil
@@ -427,12 +427,12 @@ func (s *MeetingService) validateUpdateMeetingRequest(ctx context.Context, req *
 func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *models.MeetingBase, revision uint64) (*models.MeetingBase, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting service is not ready", nil)
+		return nil, domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	if reqMeeting == nil || reqMeeting.UID == "" {
 		slog.WarnContext(ctx, "meeting UID is required")
-		return nil, domain.NewValidationError("meeting UID is required for update", nil)
+		return nil, domain.NewValidationError("meeting UID is required for update")
 	}
 
 	var err error
@@ -568,12 +568,12 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings *models.MeetingSettings, revision uint64) (*models.MeetingSettings, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting service is not ready", nil)
+		return nil, domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	if reqSettings == nil || reqSettings.UID == "" {
 		slog.WarnContext(ctx, "meeting UID is required")
-		return nil, domain.NewValidationError("meeting UID is required for update", nil)
+		return nil, domain.NewValidationError("meeting UID is required for update")
 	}
 
 	var err error
@@ -649,7 +649,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.NewUnavailableError("meeting service is not ready", nil)
+		return domain.NewUnavailableError("meeting service is not ready")
 	}
 
 	var err error

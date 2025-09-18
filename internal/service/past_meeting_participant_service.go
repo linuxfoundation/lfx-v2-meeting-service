@@ -14,6 +14,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // PastMeetingParticipantService implements the meetingsvc.Service interface and domain.MessageHandler
@@ -53,12 +54,12 @@ func (s *PastMeetingParticipantService) ServiceReady() bool {
 func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	if pastMeetingUID == "" {
 		slog.WarnContext(ctx, "past meeting UID is required")
-		return nil, domain.NewValidationError("past meeting UID is required", nil)
+		return nil, domain.NewValidationError("past meeting UID is required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", pastMeetingUID))
@@ -71,7 +72,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.C
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return nil, domain.NewNotFoundError("past meeting not found", nil)
+		return nil, domain.NewNotFoundError("past meeting not found")
 	}
 
 	// Get all participants for the past meeting
@@ -89,7 +90,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.C
 func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx context.Context, participant *models.PastMeetingParticipant) error {
 	if participant == nil || participant.PastMeetingUID == "" {
 		slog.WarnContext(ctx, "participant and past meeting UID are required")
-		return domain.NewValidationError("participant and past meeting UID are required", nil)
+		return domain.NewValidationError("participant and past meeting UID are required")
 	}
 
 	// Check if the past meeting exists
@@ -100,7 +101,7 @@ func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx con
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found", "past_meeting_uid", participant.PastMeetingUID)
-		return domain.NewNotFoundError("past meeting not found", nil)
+		return domain.NewNotFoundError("past meeting not found")
 	}
 
 	// Check that there isn't already a participant with the same email address for this past meeting.
@@ -111,8 +112,8 @@ func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx con
 	}
 	if existingParticipant != nil {
 		slog.WarnContext(ctx, "participant already exists for past meeting with same email address",
-			"email", participant.Email)
-		return domain.NewConflictError("participant already exists for past meeting with same email address", nil)
+			"email", redaction.RedactEmail(participant.Email))
+		return domain.NewConflictError("participant already exists for past meeting with same email address")
 	}
 
 	return nil
@@ -122,12 +123,12 @@ func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx con
 func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context.Context, participant *models.PastMeetingParticipant) (*models.PastMeetingParticipant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	if participant == nil {
 		slog.WarnContext(ctx, "participant is required")
-		return nil, domain.NewValidationError("participant is required", nil)
+		return nil, domain.NewValidationError("participant is required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", participant.PastMeetingUID))
@@ -160,7 +161,7 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 
 	slog.DebugContext(ctx, "created past meeting participant",
 		"participant_uid", participant.UID,
-		"email", participant.Email)
+		"email", redaction.RedactEmail(participant.Email))
 
 	// Use WorkerPool for concurrent NATS message sending
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
@@ -192,12 +193,12 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Context, pastMeetingUID, participantUID string) (*models.PastMeetingParticipant, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.NewUnavailableError("service not initialized", nil)
+		return nil, "", domain.NewUnavailableError("service not initialized")
 	}
 
 	if pastMeetingUID == "" || participantUID == "" {
 		slog.WarnContext(ctx, "past meeting UID and participant UID are required")
-		return nil, "", domain.NewValidationError("past meeting UID and participant UID are required", nil)
+		return nil, "", domain.NewValidationError("past meeting UID and participant UID are required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", pastMeetingUID))
@@ -211,7 +212,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Co
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return nil, "", domain.NewNotFoundError("past meeting not found", nil)
+		return nil, "", domain.NewNotFoundError("past meeting not found")
 	}
 
 	// Get the participant with revision
@@ -226,7 +227,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Co
 		slog.WarnContext(ctx, "participant does not belong to the specified past meeting",
 			"expected_past_meeting_uid", pastMeetingUID,
 			"actual_past_meeting_uid", participant.PastMeetingUID)
-		return nil, "", domain.NewNotFoundError("participant not found", nil)
+		return nil, "", domain.NewNotFoundError("participant not found")
 	}
 
 	// Convert revision to string for ETag
@@ -247,7 +248,7 @@ func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx con
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return domain.NewNotFoundError("past meeting not found", nil)
+		return domain.NewNotFoundError("past meeting not found")
 	}
 
 	// Check that there isn't already another participant with the same email address for this past meeting
@@ -259,8 +260,8 @@ func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx con
 	}
 	if existingParticipant != nil && existingParticipant.UID != participant.UID {
 		slog.WarnContext(ctx, "another participant already exists for past meeting with same email address",
-			"email", participant.Email)
-		return domain.NewConflictError("participant already exists for past meeting with same email address", nil)
+			"email", redaction.RedactEmail(participant.Email))
+		return domain.NewConflictError("participant already exists for past meeting with same email address")
 	}
 
 	return nil
@@ -270,12 +271,12 @@ func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx con
 func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context.Context, participant *models.PastMeetingParticipant, revision uint64) (*models.PastMeetingParticipant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized", nil)
+		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
 	if participant == nil || participant.UID == "" {
 		slog.WarnContext(ctx, "participant and participant UID are required")
-		return nil, domain.NewValidationError("participant and participant UID are required", nil)
+		return nil, domain.NewValidationError("participant and participant UID are required")
 	}
 
 	var err error
@@ -349,12 +350,12 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context.Context, pastMeetingUID, participantUID string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.NewUnavailableError("service not initialized", nil)
+		return domain.NewUnavailableError("service not initialized")
 	}
 
 	if pastMeetingUID == "" || participantUID == "" {
 		slog.WarnContext(ctx, "past meeting UID and participant UID are required")
-		return domain.NewValidationError("past meeting UID and participant UID are required", nil)
+		return domain.NewValidationError("past meeting UID and participant UID are required")
 	}
 
 	var err error
@@ -379,7 +380,7 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	}
 	if !exists {
 		slog.WarnContext(ctx, "past meeting not found")
-		return domain.NewNotFoundError("past meeting not found", nil)
+		return domain.NewNotFoundError("past meeting not found")
 	}
 
 	// Check if the participant exists and belongs to the specified past meeting
@@ -394,7 +395,7 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 		slog.WarnContext(ctx, "participant does not belong to the specified past meeting",
 			"expected_past_meeting_uid", pastMeetingUID,
 			"actual_past_meeting_uid", participant.PastMeetingUID)
-		return domain.NewNotFoundError("participant not found", nil)
+		return domain.NewNotFoundError("participant not found")
 	}
 
 	// Delete the participant

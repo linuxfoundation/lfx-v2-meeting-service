@@ -15,7 +15,7 @@ import (
 // GetPastMeetingParticipants gets all participants for a past meeting
 func (s *MeetingsAPI) GetPastMeetingParticipants(ctx context.Context, payload *meetingsvc.GetPastMeetingParticipantsPayload) (*meetingsvc.GetPastMeetingParticipantsResult, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, handleError(domain.NewValidationError("validation failed", nil))
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	participants, err := s.pastMeetingParticipantService.GetPastMeetingParticipants(ctx, *payload.UID)
@@ -38,7 +38,7 @@ func (s *MeetingsAPI) GetPastMeetingParticipants(ctx context.Context, payload *m
 // CreatePastMeetingParticipant creates a new participant for a past meeting
 func (s *MeetingsAPI) CreatePastMeetingParticipant(ctx context.Context, payload *meetingsvc.CreatePastMeetingParticipantPayload) (*meetingsvc.PastMeetingParticipant, error) {
 	if payload == nil || payload.UID == nil {
-		return nil, handleError(domain.NewValidationError("validation failed", nil))
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	createParticipantReq := service.ConvertCreatePastMeetingParticipantPayloadToDomain(payload)
@@ -54,7 +54,7 @@ func (s *MeetingsAPI) CreatePastMeetingParticipant(ctx context.Context, payload 
 // GetPastMeetingParticipant gets a specific participant for a past meeting by UID
 func (s *MeetingsAPI) GetPastMeetingParticipant(ctx context.Context, payload *meetingsvc.GetPastMeetingParticipantPayload) (*meetingsvc.GetPastMeetingParticipantResult, error) {
 	if payload == nil || payload.PastMeetingUID == nil || payload.UID == nil {
-		return nil, handleError(domain.NewValidationError("validation failed", nil))
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	participant, etag, err := s.pastMeetingParticipantService.GetPastMeetingParticipant(ctx, *payload.PastMeetingUID, *payload.UID)
@@ -71,7 +71,7 @@ func (s *MeetingsAPI) GetPastMeetingParticipant(ctx context.Context, payload *me
 // UpdatePastMeetingParticipant updates an existing participant for a past meeting
 func (s *MeetingsAPI) UpdatePastMeetingParticipant(ctx context.Context, payload *meetingsvc.UpdatePastMeetingParticipantPayload) (*meetingsvc.PastMeetingParticipant, error) {
 	if payload == nil || payload.PastMeetingUID == "" || payload.UID == nil {
-		return nil, handleError(domain.NewValidationError("validation failed", nil))
+		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)
@@ -92,7 +92,7 @@ func (s *MeetingsAPI) UpdatePastMeetingParticipant(ctx context.Context, payload 
 // DeletePastMeetingParticipant deletes a participant from a past meeting
 func (s *MeetingsAPI) DeletePastMeetingParticipant(ctx context.Context, payload *meetingsvc.DeletePastMeetingParticipantPayload) error {
 	if payload == nil || payload.PastMeetingUID == nil || payload.UID == nil {
-		return handleError(domain.NewValidationError("validation failed", nil))
+		return handleError(domain.NewValidationError("validation failed"))
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)

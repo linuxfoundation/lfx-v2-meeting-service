@@ -863,17 +863,13 @@ func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServic
 			return nil, err
 		}
 	}
-	var zoomSignature *string
+	var zoomSignature string
 	{
-		if meetingServiceZoomWebhookZoomSignature != "" {
-			zoomSignature = &meetingServiceZoomWebhookZoomSignature
-		}
+		zoomSignature = meetingServiceZoomWebhookZoomSignature
 	}
-	var zoomTimestamp *string
+	var zoomTimestamp string
 	{
-		if meetingServiceZoomWebhookZoomTimestamp != "" {
-			zoomTimestamp = &meetingServiceZoomWebhookZoomTimestamp
-		}
+		zoomTimestamp = meetingServiceZoomWebhookZoomTimestamp
 	}
 	v := &meetingservice.ZoomWebhookPayload{
 		Event:   body.Event,
