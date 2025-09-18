@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -356,16 +357,22 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 
 // DeleteRegistrantWithCleanup is an internal helper that deletes a registrant and sends cleanup messages.
 // It can optionally skip revision checking when skipRevisionCheck is true (useful for bulk cleanup operations).
-func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Context, registrantDB *models.Registrant, revision uint64, skipRevisionCheck bool) error {
-	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantDB.UID))
+func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
+	ctx context.Context,
+	registrant *models.Registrant,
+	meeting *models.MeetingBase,
+	revision uint64,
+	skipRevisionCheck bool,
+) error {
+	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrant.UID))
 
 	// Delete the registrant from the database
 	var err error
 	if skipRevisionCheck {
 		// Use revision 0 to skip revision checking for bulk cleanup operations
-		err = s.RegistrantRepository.Delete(ctx, registrantDB.UID, 0)
+		err = s.RegistrantRepository.Delete(ctx, registrant.UID, 0)
 	} else {
-		err = s.RegistrantRepository.Delete(ctx, registrantDB.UID, revision)
+		err = s.RegistrantRepository.Delete(ctx, registrant.UID, revision)
 	}
 
 	if err != nil {
@@ -384,9 +391,9 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Conte
 
 	// Send indexing delete message for the registrant
 	functions = append(functions, func() error {
-		msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+		msgCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrantDB.UID)
+		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrant.UID)
 		if err != nil {
 			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
@@ -394,15 +401,15 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Conte
 	})
 
 	// Send access removal message if the registrant has a username
-	if registrantDB.Username != "" {
+	if registrant.Username != "" {
 		functions = append(functions, func() error {
-			msgCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+			msgCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
 			err := s.MessageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
-				UID:        registrantDB.UID,
-				Username:   registrantDB.Username,
-				MeetingUID: registrantDB.MeetingUID,
-				Host:       registrantDB.Host,
+				UID:        registrant.UID,
+				Username:   registrant.Username,
+				MeetingUID: registrant.MeetingUID,
+				Host:       registrant.Host,
 			})
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about deleted registrant", logging.ErrKey, err, logging.PriorityCritical())
@@ -416,9 +423,9 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(ctx context.Conte
 
 	// Send cancellation email to the registrant
 	functions = append(functions, func() error {
-		emailCtx := createRegistrantContext(ctx, registrantDB.UID, registrantDB.MeetingUID)
+		emailCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-		err := s.sendRegistrantCancellationEmail(emailCtx, registrantDB)
+		err := s.sendRegistrantCancellationEmail(emailCtx, registrant, meeting)
 		if err != nil {
 			slog.ErrorContext(emailCtx, "failed to send cancellation email", logging.ErrKey, err)
 		}
@@ -457,23 +464,20 @@ func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, 
 
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
-	// Check that meeting exists
-	exists, err := s.MeetingRepository.Exists(ctx, meetingUID)
+	// Get the meeting for cleanup process and to check for existence
+	meeting, err := s.MeetingRepository.GetBase(ctx, meetingUID)
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return domain.NewNotFoundError("meeting not found")
-	}
 
-	// Check that the registrant exists, but also get the registrant data for the access deletion message
-	registrantDB, err := s.RegistrantRepository.Get(ctx, registrantUID)
+	// Get the registrant for cleanup process and to check for existence
+	registrant, err := s.RegistrantRepository.Get(ctx, registrantUID)
 	if err != nil {
 		return err
 	}
 
 	// Use the helper to delete the registrant with cleanup
-	return s.DeleteRegistrantWithCleanup(ctx, registrantDB, revision, false)
+	return s.DeleteRegistrantWithCleanup(ctx, registrant, meeting, revision, false)
 }
 
 // sendRegistrantInvitationEmail sends an invitation email to a newly created registrant
@@ -523,11 +527,14 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 }
 
 // sendRegistrantCancellationEmail sends a cancellation email to a deleted registrant
-func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.Context, registrant *models.Registrant) error {
-	// Get meeting details for the email
-	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
-	if err != nil {
-		return fmt.Errorf("failed to get meeting details: %w", err)
+func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(
+	ctx context.Context,
+	registrant *models.Registrant,
+	meeting *models.MeetingBase,
+) error {
+	if meeting == nil {
+		slog.WarnContext(ctx, "meeting object missing; unable to send cancellation email")
+		return errors.New("meeting object missing")
 	}
 
 	// Format recipient name
@@ -537,21 +544,21 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(ctx context.C
 	}
 
 	// Get project name
-	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meeting.ProjectUID)
 
 	// Create email cancellation
 	cancellation := domain.EmailCancellation{
-		MeetingUID:     meetingDB.UID,
+		MeetingUID:     meeting.UID,
 		RecipientEmail: registrant.Email,
 		RecipientName:  recipientName,
-		MeetingTitle:   meetingDB.Title,
-		StartTime:      meetingDB.StartTime,
-		Duration:       meetingDB.Duration,
-		Timezone:       meetingDB.Timezone,
-		Description:    meetingDB.Description,
+		MeetingTitle:   meeting.Title,
+		StartTime:      meeting.StartTime,
+		Duration:       meeting.Duration,
+		Timezone:       meeting.Timezone,
+		Description:    meeting.Description,
 		ProjectName:    projectName,
 		Reason:         "Your registration has been removed from this meeting.",
-		Recurrence:     meetingDB.Recurrence,
+		Recurrence:     meeting.Recurrence,
 	}
 
 	// Send the email

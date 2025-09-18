@@ -706,6 +706,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	// Send meeting deletion message to trigger registrant cleanup
 	err = s.MessageBuilder.SendMeetingDeleted(ctx, models.MeetingDeletedMessage{
 		MeetingUID: uid,
+		Meeting:    meetingDB,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending meeting deleted message", logging.ErrKey, err, logging.PriorityCritical())

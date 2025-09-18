@@ -96,7 +96,7 @@ func TestMeetingHandler_HandleMessage(t *testing.T) {
 		{
 			name:        "handle meeting deleted message",
 			subject:     models.MeetingDeletedSubject,
-			messageData: []byte(`{"meeting_uid":"meeting-to-delete"}`),
+			messageData: []byte(`{"meeting_uid":"meeting-to-delete","meeting":{"uid":"meeting-to-delete","project_uid":"project-123","title":"Meeting to Delete","start_time":"2023-12-01T10:00:00Z","duration":60,"timezone":"UTC","description":"Meeting to be deleted"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				now := time.Now()
 				// Setup registrants for deletion
@@ -302,7 +302,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 		// Success cases
 		{
 			name:        "successfully delete single registrant",
-			messageData: []byte(`{"meeting_uid":"meeting-123"}`),
+			messageData: []byte(`{"meeting_uid":"meeting-123","meeting":{"uid":"meeting-123","project_uid":"project-123","title":"Test Meeting","start_time":"2023-12-01T10:00:00Z","duration":60,"timezone":"UTC","description":"Test meeting description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				now := time.Now()
 				registrants := []*models.Registrant{
@@ -337,7 +337,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 		},
 		{
 			name:        "successfully delete multiple registrants",
-			messageData: []byte(`{"meeting_uid":"meeting-456"}`),
+			messageData: []byte(`{"meeting_uid":"meeting-456","meeting":{"uid":"meeting-456","project_uid":"project-456","title":"Test Meeting 2","start_time":"2023-12-01T11:00:00Z","duration":60,"timezone":"UTC","description":"Test meeting 2 description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				now := time.Now()
 				registrants := []*models.Registrant{
@@ -381,7 +381,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 		},
 		{
 			name:        "successfully handle meeting with no registrants",
-			messageData: []byte(`{"meeting_uid":"meeting-789"}`),
+			messageData: []byte(`{"meeting_uid":"meeting-789","meeting":{"uid":"meeting-789","project_uid":"project-789","title":"Test Meeting 3","start_time":"2023-12-01T12:00:00Z","duration":60,"timezone":"UTC","description":"Test meeting 3 description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-789").Return([]*models.Registrant{}, nil)
 				// No further mocks needed - no registrants to delete
@@ -398,14 +398,21 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 		},
 		{
 			name:        "empty meeting UID",
-			messageData: []byte(`{"meeting_uid":""}`),
+			messageData: []byte(`{"meeting_uid":"","meeting":{"uid":"","project_uid":"project-123","title":"Test Meeting","start_time":"2023-12-01T10:00:00Z","duration":60,"timezone":"UTC","description":"Test meeting description"}}`),
+			setupMocks: func(*mocks.MockMeetingRepository, *mocks.MockRegistrantRepository, *mocks.MockMessageBuilder, *mocks.MockEmailService) {
+			},
+			expectError: true,
+		},
+		{
+			name:        "missing meeting object",
+			messageData: []byte(`{"meeting_uid":"meeting-123"}`),
 			setupMocks: func(*mocks.MockMeetingRepository, *mocks.MockRegistrantRepository, *mocks.MockMessageBuilder, *mocks.MockEmailService) {
 			},
 			expectError: true,
 		},
 		{
 			name:        "repository error when listing registrants",
-			messageData: []byte(`{"meeting_uid":"meeting-error"}`),
+			messageData: []byte(`{"meeting_uid":"meeting-error","meeting":{"uid":"meeting-error","project_uid":"project-error","title":"Error Meeting","start_time":"2023-12-01T10:00:00Z","duration":60,"timezone":"UTC","description":"Error meeting description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-error").Return(
 					nil, domain.NewInternalError("internal error"),
@@ -415,7 +422,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 		},
 		{
 			name:        "partial deletion failure returns error",
-			messageData: []byte(`{"meeting_uid":"meeting-partial"}`),
+			messageData: []byte(`{"meeting_uid":"meeting-partial","meeting":{"uid":"meeting-partial","project_uid":"project-partial","title":"Partial Meeting","start_time":"2023-12-01T10:00:00Z","duration":60,"timezone":"UTC","description":"Partial meeting description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				registrants := []*models.Registrant{
 					{

@@ -173,6 +173,12 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 		return nil, fmt.Errorf("meeting UID is required")
 	}
 
+	meeting := meetingDeletedMsg.Meeting
+	if meeting == nil {
+		slog.WarnContext(ctx, "meeting object is missing in deletion message")
+		return nil, fmt.Errorf("meeting object is required")
+	}
+
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
 	slog.InfoContext(ctx, "processing meeting deletion, cleaning up registrants")
 
@@ -196,7 +202,7 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 		reg := registrant // capture loop variable
 		tasks = append(tasks, func() error {
 			// Use the shared helper with skipRevisionCheck=true for bulk cleanup
-			err := s.registrantService.DeleteRegistrantWithCleanup(ctx, reg, 0, true)
+			err := s.registrantService.DeleteRegistrantWithCleanup(ctx, reg, meeting, 0, true)
 			if err != nil {
 				slog.ErrorContext(ctx, "error deleting registrant",
 					"registrant_uid", reg.UID,
@@ -260,7 +266,7 @@ func (s *MeetingHandler) HandleMeetingCreated(ctx context.Context, msg domain.Me
 		isPublicMeeting := meetingCreatedMsg.Base.IsPublic()
 		err := s.committeeSyncService.SyncCommittees(
 			ctx,
-			meetingCreatedMsg.MeetingUID,
+			meetingCreatedMsg.Base,
 			[]models.Committee{}, // No old committees for creation
 			meetingCreatedMsg.Base.Committees,
 			isPublicMeeting,
@@ -317,7 +323,7 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 		isPublicMeeting := meetingUpdatedMsg.UpdatedBase.IsPublic()
 		err = s.committeeSyncService.SyncCommittees(
 			ctx,
-			meetingUpdatedMsg.MeetingUID,
+			meetingUpdatedMsg.UpdatedBase,
 			meetingUpdatedMsg.PreviousBase.Committees,
 			meetingUpdatedMsg.UpdatedBase.Committees,
 			isPublicMeeting,
