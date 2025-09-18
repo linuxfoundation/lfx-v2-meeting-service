@@ -117,6 +117,7 @@ func main() {
 		serviceConfig,
 	)
 	committeeSyncService := service.NewCommitteeSyncService(
+		repos.Meeting,
 		repos.Registrant,
 		registrantService,
 		messageBuilder,

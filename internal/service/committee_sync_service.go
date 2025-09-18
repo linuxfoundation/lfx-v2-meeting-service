@@ -31,6 +31,7 @@ type CommitteeChange struct {
 
 // CommitteeSyncService handles committee member synchronization logic
 type CommitteeSyncService struct {
+	meetingRepository    domain.MeetingRepository
 	registrantRepository domain.RegistrantRepository
 	registrantService    *MeetingRegistrantService
 	messageBuilder       domain.MessageBuilder
@@ -38,11 +39,13 @@ type CommitteeSyncService struct {
 
 // NewCommitteeSyncService creates a new committee sync service
 func NewCommitteeSyncService(
+	meetingRepository domain.MeetingRepository,
 	registrantRepository domain.RegistrantRepository,
 	registrantService *MeetingRegistrantService,
 	messageBuilder domain.MessageBuilder,
 ) *CommitteeSyncService {
 	return &CommitteeSyncService{
+		meetingRepository:    meetingRepository,
 		registrantRepository: registrantRepository,
 		registrantService:    registrantService,
 		messageBuilder:       messageBuilder,
@@ -51,7 +54,8 @@ func NewCommitteeSyncService(
 
 // ServiceReady checks if the service is ready for use.
 func (s *CommitteeSyncService) ServiceReady() bool {
-	return s.registrantRepository != nil &&
+	return s.meetingRepository != nil &&
+		s.registrantRepository != nil &&
 		s.registrantService != nil &&
 		s.messageBuilder != nil
 }
@@ -872,8 +876,8 @@ func (s *CommitteeSyncService) HandleCommitteeMemberEmailChangeForMeetings(
 	for _, registrant := range registrants {
 		registrant := registrant // capture loop variable
 		tasks = append(tasks, func() error {
-			// Get the meeting for this registrant using the registrant service
-			meeting, err := s.registrantService.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
+			// Get the meeting for this registrant
+			meeting, err := s.meetingRepository.GetBase(ctx, registrant.MeetingUID)
 			if err != nil {
 				slog.ErrorContext(ctx, "failed to get meeting for registrant",
 					"registrant_uid", registrant.UID,
