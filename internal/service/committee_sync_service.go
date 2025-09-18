@@ -788,8 +788,8 @@ func (s *CommitteeSyncService) UpdateCommitteeMemberEmailForMeeting(
 	slog.InfoContext(ctx, "updating committee registrant email",
 		"meeting_uid", meeting.UID,
 		"registrant_uid", registrant.UID,
-		"old_email", oldEmail,
-		"new_email", newEmail)
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail))
 
 	// Update the registrant with the new email and member info
 	updatedRegistrant := &models.Registrant{
@@ -812,8 +812,8 @@ func (s *CommitteeSyncService) UpdateCommitteeMemberEmailForMeeting(
 		slog.ErrorContext(ctx, "failed to update registrant email",
 			"meeting_uid", registrant.MeetingUID,
 			"registrant_uid", registrant.UID,
-			"old_email", oldEmail,
-			"new_email", newEmail,
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail),
 			logging.ErrKey, err)
 		return fmt.Errorf("failed to update registrant email: %w", err)
 	}
@@ -825,16 +825,16 @@ func (s *CommitteeSyncService) UpdateCommitteeMemberEmailForMeeting(
 		slog.ErrorContext(ctx, "failed to send email change notifications",
 			"meeting_uid", meeting.UID,
 			"registrant_uid", registrant.UID,
-			"old_email", oldEmail,
-			"new_email", newEmail,
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail),
 			logging.ErrKey, err)
 	}
 
 	slog.InfoContext(ctx, "successfully updated committee registrant email",
 		"meeting_uid", meeting.UID,
 		"registrant_uid", registrant.UID,
-		"old_email", oldEmail,
-		"new_email", newEmail)
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail))
 
 	return nil
 }
@@ -858,15 +858,15 @@ func (s *CommitteeSyncService) HandleCommitteeMemberEmailChangeForMeetings(
 	if len(registrants) == 0 {
 		slog.InfoContext(ctx, "no registrants found for committee member email change",
 			"committee_uid", committeeUID,
-			"old_email", oldEmail,
-			"new_email", newEmail)
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail))
 		return nil
 	}
 
 	slog.InfoContext(ctx, "found registrants for committee member email change",
 		"committee_uid", committeeUID,
-		"old_email", oldEmail,
-		"new_email", newEmail,
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail),
 		"registrants_count", len(registrants))
 
 	// Process each registrant concurrently
@@ -906,16 +906,16 @@ func (s *CommitteeSyncService) HandleCommitteeMemberEmailChangeForMeetings(
 		// Log the errors but don't fail the entire operation
 		slog.ErrorContext(ctx, "failed to update some registrant emails",
 			"committee_uid", committeeUID,
-			"old_email", oldEmail,
-			"new_email", newEmail,
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail),
 			"errors", errors,
 			"errors_count", len(errors))
 	}
 
 	slog.InfoContext(ctx, "completed committee member email change processing",
 		"committee_uid", committeeUID,
-		"old_email", oldEmail,
-		"new_email", newEmail,
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail),
 		"total_registrants", len(registrants),
 		"successful_updates", successCount,
 		"failed_updates", len(errors))

@@ -183,14 +183,14 @@ func (h *CommitteeHandlers) HandleCommitteeMemberUpdated(ctx context.Context, ms
 	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", newMember.CommitteeUID))
 
 	slog.InfoContext(ctx, "processing updated committee member",
-		"old_email", oldMember.Email,
-		"new_email", newMember.Email)
+		"old_email", redaction.RedactEmail(oldMember.Email),
+		"new_email", redaction.RedactEmail(newMember.Email))
 
 	// Check if email changed
 	if oldMember.Email != newMember.Email {
 		slog.InfoContext(ctx, "committee member email changed, updating registrations",
-			"old_email", oldMember.Email,
-			"new_email", newMember.Email)
+			"old_email", redaction.RedactEmail(oldMember.Email),
+			"new_email", redaction.RedactEmail(newMember.Email))
 		err = h.handleMemberEmailChange(ctx, oldMember, newMember)
 		if err != nil {
 			// Log error but don't fail the entire handler - member update is non-critical for other services
@@ -526,16 +526,16 @@ func (h *CommitteeHandlers) handleMemberEmailChange(ctx context.Context, oldMemb
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to handle committee member email change",
 			"committee_uid", newMember.CommitteeUID,
-			"old_email", oldMember.Email,
-			"new_email", newMember.Email,
+			"old_email", redaction.RedactEmail(oldMember.Email),
+			"new_email", redaction.RedactEmail(newMember.Email),
 			logging.ErrKey, err)
 		return fmt.Errorf("failed to handle committee member email change: %w", err)
 	}
 
 	slog.InfoContext(ctx, "successfully processed committee member email change",
 		"committee_uid", newMember.CommitteeUID,
-		"old_email", oldMember.Email,
-		"new_email", newMember.Email)
+		"old_email", redaction.RedactEmail(oldMember.Email),
+		"new_email", redaction.RedactEmail(newMember.Email))
 
 	return nil
 }

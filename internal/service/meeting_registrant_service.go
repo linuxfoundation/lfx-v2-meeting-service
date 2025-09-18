@@ -16,6 +16,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // MeetingRegistrantService implements the meetingsvc.Service interface and domain.MessageHandler
@@ -499,7 +500,7 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	err := s.sendRegistrantCancellationEmail(ctx, &oldEmailRegistrant, meeting)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send cancellation email to old address",
-			"old_email", oldEmail,
+			"old_email", redaction.RedactEmail(oldEmail),
 			logging.ErrKey, err)
 		errors = append(errors, fmt.Errorf("failed to send cancellation email to %s: %w", oldEmail, err))
 	}
@@ -510,7 +511,7 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	err = s.sendRegistrantInvitationEmail(ctx, &newEmailRegistrant)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send invitation email to new address",
-			"new_email", newEmail,
+			"new_email", redaction.RedactEmail(newEmail),
 			logging.ErrKey, err)
 		errors = append(errors, fmt.Errorf("failed to send invitation email to %s: %w", newEmail, err))
 	}
@@ -522,8 +523,8 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	slog.InfoContext(ctx, "sent email change notifications",
 		"meeting_uid", meeting.UID,
 		"registrant_uid", oldRegistrant.UID,
-		"old_email", oldEmail,
-		"new_email", newEmail)
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail))
 
 	return nil
 }
