@@ -91,7 +91,7 @@ func (s *NatsPastMeetingRepository) Exists(ctx context.Context, pastMeetingUID s
 
 func (s *NatsPastMeetingRepository) Create(ctx context.Context, pastMeeting *models.PastMeeting) error {
 	if s.PastMeetings == nil {
-		return domain.NewUnavailableError("past meeting repository is not available", nil)
+		return domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	// Generate a new UID if not provided
@@ -128,7 +128,7 @@ func (s *NatsPastMeetingRepository) Create(ctx context.Context, pastMeeting *mod
 
 func (s *NatsPastMeetingRepository) Update(ctx context.Context, pastMeeting *models.PastMeeting, revision uint64) error {
 	if s.PastMeetings == nil {
-		return domain.NewUnavailableError("past meeting repository is not available", nil)
+		return domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	// Update timestamp
@@ -162,7 +162,7 @@ func (s *NatsPastMeetingRepository) Update(ctx context.Context, pastMeeting *mod
 
 func (s *NatsPastMeetingRepository) Delete(ctx context.Context, pastMeetingUID string, revision uint64) error {
 	if s.PastMeetings == nil {
-		return domain.NewUnavailableError("past meeting repository is not available", nil)
+		return domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	err := s.PastMeetings.Delete(ctx, pastMeetingUID, jetstream.LastRevision(revision))
@@ -182,7 +182,7 @@ func (s *NatsPastMeetingRepository) Delete(ctx context.Context, pastMeetingUID s
 
 func (s *NatsPastMeetingRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.PastMeeting, error) {
 	if s.PastMeetings == nil {
-		return nil, domain.NewUnavailableError("past meeting repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	keysLister, err := s.PastMeetings.ListKeys(ctx)
@@ -217,7 +217,7 @@ func (s *NatsPastMeetingRepository) ListByMeeting(ctx context.Context, meetingUI
 
 func (s *NatsPastMeetingRepository) ListAll(ctx context.Context) ([]*models.PastMeeting, error) {
 	if s.PastMeetings == nil {
-		return nil, domain.NewUnavailableError("past meeting repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	keysLister, err := s.PastMeetings.ListKeys(ctx)
@@ -250,7 +250,7 @@ func (s *NatsPastMeetingRepository) ListAll(ctx context.Context) ([]*models.Past
 
 func (s *NatsPastMeetingRepository) GetByMeetingAndOccurrence(ctx context.Context, meetingUID, occurrenceID string) (*models.PastMeeting, error) {
 	if s.PastMeetings == nil {
-		return nil, domain.NewUnavailableError("past meeting repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	keysLister, err := s.PastMeetings.ListKeys(ctx)
@@ -284,7 +284,7 @@ func (s *NatsPastMeetingRepository) GetByMeetingAndOccurrence(ctx context.Contex
 
 func (s *NatsPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error) {
 	if s.PastMeetings == nil {
-		return nil, domain.NewUnavailableError("past meeting repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	keysLister, err := s.PastMeetings.ListKeys(ctx)
@@ -320,7 +320,7 @@ func (s *NatsPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, 
 
 func (s *NatsPastMeetingRepository) GetByPlatformMeetingIDAndOccurrence(ctx context.Context, platform, platformMeetingID, occurrenceID string) (*models.PastMeeting, error) {
 	if s.PastMeetings == nil {
-		return nil, domain.NewUnavailableError("past meeting repository is not available", nil)
+		return nil, domain.NewUnavailableError("past meeting repository is not available")
 	}
 
 	keysLister, err := s.PastMeetings.ListKeys(ctx)

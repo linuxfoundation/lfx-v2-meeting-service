@@ -77,7 +77,7 @@ func (s *NatsPastMeetingSummaryRepository) Get(ctx context.Context, summaryUID s
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
-			return nil, domain.NewNotFoundError("summary not found", nil)
+			return nil, domain.NewNotFoundError("summary not found")
 		}
 		slog.ErrorContext(ctx, "error getting summary from KV store", logging.ErrKey, err, "summary_uid", summaryUID)
 		return nil, domain.NewInternalError("error getting summary from KV store", err)
@@ -97,7 +97,7 @@ func (s *NatsPastMeetingSummaryRepository) GetWithRevision(ctx context.Context, 
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
-			return nil, 0, domain.NewNotFoundError("summary not found", nil)
+			return nil, 0, domain.NewNotFoundError("summary not found")
 		}
 		slog.ErrorContext(ctx, "error getting summary from KV store", logging.ErrKey, err, "summary_uid", summaryUID)
 		return nil, 0, domain.NewInternalError("error getting summary from KV store", err)
@@ -142,7 +142,7 @@ func (s *NatsPastMeetingSummaryRepository) GetByPastMeetingUID(ctx context.Conte
 
 	if len(summaries) == 0 {
 		slog.DebugContext(ctx, "no summaries found for past meeting", "past_meeting_uid", pastMeetingUID)
-		return nil, domain.NewNotFoundError("summary not found", nil)
+		return nil, domain.NewNotFoundError("summary not found")
 	}
 
 	// Return the first summary found (there could be multiple summaries per past meeting)

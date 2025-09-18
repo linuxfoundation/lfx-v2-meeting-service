@@ -239,7 +239,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 			},
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
-				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(domain.NewInternalError("database error", nil))
+				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(domain.NewInternalError("database error"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeInternal,
@@ -485,7 +485,7 @@ func TestPastMeetingService_GetPastMeetings(t *testing.T) {
 		{
 			name: "repository error",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("ListAll", mock.Anything).Return(nil, domain.NewInternalError("database error", nil))
+				mockRepo.On("ListAll", mock.Anything).Return(nil, domain.NewInternalError("database error"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeInternal,
@@ -571,7 +571,7 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 			name: "empty UID",
 			uid:  "",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("GetWithRevision", mock.Anything, "").Return(nil, uint64(0), domain.NewNotFoundError("past meeting not found", nil))
+				mockRepo.On("GetWithRevision", mock.Anything, "").Return(nil, uint64(0), domain.NewNotFoundError("past meeting not found"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeNotFound,
@@ -580,7 +580,7 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 			name: "past meeting not found",
 			uid:  "past-meeting-123",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), domain.NewNotFoundError("past meeting not found", nil))
+				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), domain.NewNotFoundError("past meeting not found"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeNotFound,
@@ -589,7 +589,7 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 			name: "repository error",
 			uid:  "past-meeting-123",
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository) {
-				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), domain.NewInternalError("database error", nil))
+				mockRepo.On("GetWithRevision", mock.Anything, "past-meeting-123").Return(nil, uint64(0), domain.NewInternalError("database error"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeInternal,
@@ -690,7 +690,7 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			revision: 42,
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder, skipEtag bool) {
 				mockRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(domain.NewConflictError("revision mismatch", nil))
+				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(domain.NewConflictError("revision mismatch"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeConflict,
@@ -719,7 +719,7 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			revision: 42,
 			setupMocks: func(mockRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder, skipEtag bool) {
 				mockRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
-				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(domain.NewInternalError("database error", nil))
+				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(domain.NewInternalError("database error"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeInternal,

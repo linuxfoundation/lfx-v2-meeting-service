@@ -48,4 +48,7 @@ type PlatformRegistry interface {
 type WebhookValidator interface {
 	// ValidateSignature validates the webhook signature to ensure authenticity
 	ValidateSignature(body []byte, signature, timestamp string) error
+
+	// GetSecretToken returns the secret token used for webhook validation
+	GetSecretToken() string
 }

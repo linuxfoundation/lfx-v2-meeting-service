@@ -4306,7 +4306,7 @@ func NewDeleteMeetingRegistrantPayload(meetingUID string, uid string, version *s
 
 // NewZoomWebhookPayload builds a Meeting Service service zoom-webhook endpoint
 // payload.
-func NewZoomWebhookPayload(body *ZoomWebhookRequestBody, zoomSignature *string, zoomTimestamp *string) *meetingservice.ZoomWebhookPayload {
+func NewZoomWebhookPayload(body *ZoomWebhookRequestBody, zoomSignature string, zoomTimestamp string) *meetingservice.ZoomWebhookPayload {
 	v := &meetingservice.ZoomWebhookPayload{
 		Event:   *body.Event,
 		EventTs: *body.EventTs,

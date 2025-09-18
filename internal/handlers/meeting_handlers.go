@@ -17,6 +17,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -349,6 +350,20 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 		return nil
 	}
 
+	// Get meeting details once for all email notifications
+	meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, msg.MeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting meeting details for update notifications", logging.ErrKey, err)
+		return err
+	}
+
+	// Extract meeting ID and passcode from Zoom config once
+	var meetingID, passcode string
+	if meeting.ZoomConfig != nil {
+		meetingID = meeting.ZoomConfig.MeetingID
+		passcode = meeting.ZoomConfig.Passcode
+	}
+
 	slog.DebugContext(ctx, "sending update notifications to registrants", "registrant_count", len(registrants))
 
 	// Process registrants concurrently using WorkerPool
@@ -356,25 +371,11 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 	for _, registrant := range registrants {
 		reg := registrant // capture loop variable
 		tasks = append(tasks, func() error {
-			// Get meeting details for the email
-			meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, msg.MeetingUID)
-			if err != nil {
-				slog.ErrorContext(ctx, "error getting meeting details for update notification",
-					"registrant_uid", reg.UID, logging.ErrKey, err)
-				return err
-			}
 
 			// Build recipient name from first and last name
 			var recipientName string
 			if reg.FirstName != "" || reg.LastName != "" {
 				recipientName = strings.TrimSpace(fmt.Sprintf("%s %s", reg.FirstName, reg.LastName))
-			}
-
-			// Extract meeting ID and passcode from Zoom config
-			var meetingID, passcode string
-			if meeting.ZoomConfig != nil {
-				meetingID = meeting.ZoomConfig.MeetingID
-				passcode = meeting.ZoomConfig.Passcode
 			}
 
 			// Send update notification email to registrant
@@ -395,14 +396,18 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 				Changes:        msg.Changes,
 			}
 
-			err = s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
+			err := s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
 			if err != nil {
 				slog.ErrorContext(ctx, "error sending update notification email",
-					"registrant_uid", reg.UID, "email", reg.Email, logging.ErrKey, err)
+					"registrant_uid", reg.UID,
+					"email", redaction.RedactEmail(reg.Email),
+					logging.ErrKey, err)
 				return err
 			}
 
-			slog.DebugContext(ctx, "update notification sent successfully", "registrant_uid", reg.UID, "email", reg.Email)
+			slog.DebugContext(ctx, "update notification sent successfully",
+				"registrant_uid", reg.UID,
+				"email", redaction.RedactEmail(reg.Email))
 			return nil
 		})
 	}

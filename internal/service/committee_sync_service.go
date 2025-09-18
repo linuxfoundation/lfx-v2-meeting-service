@@ -13,6 +13,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // CommitteeChanges represents the differences between old and new committee configurations
@@ -319,7 +320,7 @@ func (s *CommitteeSyncService) updateRegistrantToCommitteeType(
 		slog.DebugContext(ctx, "registrant already has committee type",
 			"meeting_uid", existingRegistrant.MeetingUID,
 			"registrant_uid", existingRegistrant.UID,
-			"email", existingRegistrant.Email,
+			"email", redaction.RedactEmail(existingRegistrant.Email),
 			"committee_uid", committeeUID)
 		return nil
 	}
@@ -339,7 +340,7 @@ func (s *CommitteeSyncService) updateRegistrantToCommitteeType(
 		slog.ErrorContext(ctx, "failed to update registrant to committee type",
 			"meeting_uid", existingRegistrant.MeetingUID,
 			"registrant_uid", existingRegistrant.UID,
-			"email", existingRegistrant.Email,
+			"email", redaction.RedactEmail(existingRegistrant.Email),
 			"committee_uid", committeeUID,
 			logging.ErrKey, err)
 		return fmt.Errorf("failed to update registrant to committee type: %w", err)
@@ -348,7 +349,7 @@ func (s *CommitteeSyncService) updateRegistrantToCommitteeType(
 	slog.InfoContext(ctx, "updated registrant to committee type",
 		"meeting_uid", existingRegistrant.MeetingUID,
 		"registrant_uid", existingRegistrant.UID,
-		"email", existingRegistrant.Email,
+		"email", redaction.RedactEmail(existingRegistrant.Email),
 		"committee_uid", committeeUID)
 
 	return nil
@@ -366,7 +367,7 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 		slog.ErrorContext(ctx, "failed to check for existing registrant",
 			"meeting_uid", meetingUID,
-			"email", member.Email,
+			"email", redaction.RedactEmail(member.Email),
 			logging.ErrKey, err)
 		return fmt.Errorf("failed to check for existing registrant: %w", err)
 	}
@@ -396,13 +397,13 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 			// but handle gracefully if it does
 			slog.DebugContext(ctx, "registrant already exists (race condition), skipping committee member",
 				"meeting_uid", meetingUID,
-				"email", member.Email,
+				"email", redaction.RedactEmail(member.Email),
 				"committee_uid", committeeUID)
 			return nil
 		}
 		slog.ErrorContext(ctx, "failed to create registrant for committee member",
 			"meeting_uid", meetingUID,
-			"email", member.Email,
+			"email", redaction.RedactEmail(member.Email),
 			"committee_uid", committeeUID,
 			logging.ErrKey, err)
 		return fmt.Errorf("failed to create registrant: %w", err)
@@ -411,7 +412,7 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 	slog.DebugContext(ctx, "successfully created registrant for committee member",
 		"meeting_uid", meetingUID,
 		"registrant_uid", createdRegistrant.UID,
-		"email", member.Email,
+		"email", redaction.RedactEmail(member.Email),
 		"committee_uid", committeeUID)
 
 	return nil
@@ -559,7 +560,7 @@ func (s *CommitteeSyncService) convertRegistrantToDirect(
 
 	slog.DebugContext(ctx, "converted committee registrant to direct registrant",
 		"registrant_uid", registrant.UID,
-		"email", registrant.Email)
+		"email", redaction.RedactEmail(registrant.Email))
 
 	return nil
 }
@@ -700,7 +701,7 @@ func (s *CommitteeSyncService) removeSpecificCommitteeMembers(
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to remove specific committee member",
 				"registrant_uid", registrant.UID,
-				"email", registrant.Email,
+				"email", redaction.RedactEmail(registrant.Email),
 				logging.ErrKey, err)
 		}
 	}

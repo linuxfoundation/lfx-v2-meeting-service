@@ -162,7 +162,7 @@ var ZoomWebhookPayload = Type("ZoomWebhookPayload", func() {
 	Attribute("zoom_timestamp", String, "Zoom timestamp header for replay protection", func() {
 		Description("Timestamp when the webhook was sent")
 	})
-	Required("event", "event_ts", "payload")
+	Required("event", "event_ts", "payload", "zoom_signature", "zoom_timestamp")
 })
 
 // ZoomWebhookResponse represents the response for webhook processing

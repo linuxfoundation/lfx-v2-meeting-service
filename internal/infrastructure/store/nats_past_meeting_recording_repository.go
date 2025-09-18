@@ -38,7 +38,7 @@ func NewNatsPastMeetingRecordingRepository(kv jetstream.KeyValue) *NatsPastMeeti
 // Create creates a new past meeting recording in the NATS KV store.
 func (r *NatsPastMeetingRecordingRepository) Create(ctx context.Context, recording *models.PastMeetingRecording) error {
 	if recording.UID == "" {
-		return domain.NewValidationError("recording UID is required", nil)
+		return domain.NewValidationError("recording UID is required")
 	}
 
 	data, err := json.Marshal(recording)
@@ -129,7 +129,7 @@ func (r *NatsPastMeetingRecordingRepository) GetWithRevision(ctx context.Context
 // Update updates a past meeting recording in the NATS KV store.
 func (r *NatsPastMeetingRecordingRepository) Update(ctx context.Context, recording *models.PastMeetingRecording, revision uint64) error {
 	if recording.UID == "" {
-		return domain.NewValidationError("recording UID is required", nil)
+		return domain.NewValidationError("recording UID is required")
 	}
 
 	data, err := json.Marshal(recording)

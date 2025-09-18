@@ -137,7 +137,7 @@ func (s *NatsMeetingRepository) Exists(ctx context.Context, meetingUID string) (
 
 func (s *NatsMeetingRepository) ListAllBase(ctx context.Context) ([]*models.MeetingBase, error) {
 	if s.Meetings == nil {
-		return nil, domain.NewUnavailableError("meeting repository is not available", nil)
+		return nil, domain.NewUnavailableError("meeting repository is not available")
 	}
 
 	keysLister, err := s.Meetings.ListKeys(ctx)
@@ -169,7 +169,7 @@ func (s *NatsMeetingRepository) ListAllBase(ctx context.Context) ([]*models.Meet
 // ListAllSettings lists all meeting settings data from the NATS KV stores.
 func (s *NatsMeetingRepository) ListAllSettings(ctx context.Context) ([]*models.MeetingSettings, error) {
 	if s.MeetingSettings == nil {
-		return nil, domain.NewUnavailableError("meeting settings repository is not available", nil)
+		return nil, domain.NewUnavailableError("meeting settings repository is not available")
 	}
 
 	keysLister, err := s.MeetingSettings.ListKeys(ctx)
@@ -407,7 +407,7 @@ func (s *NatsMeetingRepository) deleteSettings(ctx context.Context, meetingUID s
 
 func (s *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, revision uint64) error {
 	if s.Meetings == nil {
-		return domain.NewUnavailableError("meeting repository is not available", nil)
+		return domain.NewUnavailableError("meeting repository is not available")
 	}
 
 	err := s.deleteBase(ctx, meetingUID, revision)
@@ -432,7 +432,7 @@ func (s *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, r
 // GetByZoomMeetingID retrieves a meeting by its Zoom meeting ID
 func (s *NatsMeetingRepository) GetByZoomMeetingID(ctx context.Context, zoomMeetingID string) (*models.MeetingBase, error) {
 	if s.Meetings == nil {
-		return nil, domain.NewUnavailableError("meeting repository is not available", nil)
+		return nil, domain.NewUnavailableError("meeting repository is not available")
 	}
 
 	start := time.Now()

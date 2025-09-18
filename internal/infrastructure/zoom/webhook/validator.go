@@ -47,11 +47,16 @@ func (v *ZoomWebhookValidator) ValidateSignature(body []byte, signature, timesta
 
 	// Compare signatures using constant-time comparison
 	if signature != expectedSignature {
-		slog.Error("invalid webhook signature")
-		return fmt.Errorf("invalid webhook signature")
+		slog.Error("zoom webhook signature does not match expected signature")
+		return fmt.Errorf("zoom webhook signature does not match expected signature")
 	}
 
 	return nil
+}
+
+// GetSecretToken returns the secret token used for webhook validation
+func (v *ZoomWebhookValidator) GetSecretToken() string {
+	return v.SecretToken
 }
 
 // IsValidEvent checks if the event type is supported

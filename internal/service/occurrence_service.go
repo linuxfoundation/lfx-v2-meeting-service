@@ -4,6 +4,7 @@
 package service
 
 import (
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +33,41 @@ func (s *OccurrenceService) CalculateOccurrences(meeting *models.MeetingBase, li
 	}
 
 	return s.CalculateOccurrencesFromDate(meeting, meeting.StartTime, limit)
+}
+
+// ValidateFutureOccurrenceID validates that an occurrence ID exists for a meeting and is in the future
+func (s *OccurrenceService) ValidateFutureOccurrenceID(meeting *models.MeetingBase, occurrenceID string, maxOccurrencesToCheck int) error {
+	if meeting == nil || occurrenceID == "" {
+		return domain.NewValidationError("meeting and occurrence ID are required")
+	}
+
+	if maxOccurrencesToCheck <= 0 {
+		return domain.NewValidationError("maxOccurrencesToCheck must be greater than 0")
+	}
+
+	// Calculate occurrences for the meeting up to the specified limit
+	occurrences := s.CalculateOccurrences(meeting, maxOccurrencesToCheck)
+
+	// Check if the provided occurrence ID exists
+	var foundOccurrence *models.Occurrence
+	for i := range occurrences {
+		slog.Debug("checking occurrence", "occurrence_id", occurrences[i].OccurrenceID)
+		if occurrences[i].OccurrenceID == occurrenceID {
+			foundOccurrence = &occurrences[i]
+			break
+		}
+	}
+
+	if foundOccurrence == nil {
+		return domain.NewValidationError("invalid occurrence ID: occurrence not found for this meeting")
+	}
+
+	// Check if the occurrence is in the future
+	if foundOccurrence.StartTime != nil && foundOccurrence.StartTime.Before(time.Now()) {
+		return domain.NewValidationError("invalid occurrence ID: cannot register for past occurrences")
+	}
+
+	return nil
 }
 
 // CalculateOccurrencesFromDate calculates occurrences for a meeting starting from a specific date
@@ -110,8 +146,11 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 		weeklyDays = []int{int(startTime.Weekday())}
 	}
 
-	// Start from the beginning of the week containing startTime
-	weekStart := s.getStartOfWeek(startTime)
+	// Find the first valid occurrence date that's on or after startTime
+	firstOccurrence := s.findFirstWeeklyOccurrence(startTime, weeklyDays, loc)
+
+	// Start from the week containing the first valid occurrence
+	weekStart := s.getStartOfWeek(firstOccurrence)
 
 	weekCount := 0
 	for len(occurrences) < limit {
@@ -139,8 +178,10 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 				continue
 			}
 
-			// If this occurrence is on or after the fromDate, include it
-			if !occurrenceDate.Before(fromDate) && len(occurrences) < limit {
+			// Only include occurrences that are:
+			// 1. On or after the meeting start time
+			// 2. On or after the fromDate
+			if !occurrenceDate.Before(startTime) && !occurrenceDate.Before(fromDate) && len(occurrences) < limit {
 				occurrences = append(occurrences, s.createOccurrence(meeting, occurrenceDate))
 			}
 		}
@@ -293,6 +334,33 @@ func (s *OccurrenceService) parseWeeklyDays(weeklyDays string) []int {
 func (s *OccurrenceService) getStartOfWeek(date time.Time) time.Time {
 	weekday := int(date.Weekday())
 	return date.AddDate(0, 0, -weekday)
+}
+
+// findFirstWeeklyOccurrence finds the first occurrence date that's on or after startTime for the given weekly days
+func (s *OccurrenceService) findFirstWeeklyOccurrence(startTime time.Time, weeklyDays []int, loc *time.Location) time.Time {
+	// Start from the meeting start time
+	current := startTime.In(loc)
+
+	// Check up to 7 days ahead to find the first matching weekday
+	for i := 0; i < 7; i++ {
+		checkDate := current.AddDate(0, 0, i)
+		weekday := int(checkDate.Weekday())
+
+		// Check if this weekday is in our list of weekly days
+		for _, targetDay := range weeklyDays {
+			if weekday == targetDay {
+				// Found a matching day, return the time with the original hour/minute/second
+				return time.Date(
+					checkDate.Year(), checkDate.Month(), checkDate.Day(),
+					startTime.Hour(), startTime.Minute(), startTime.Second(), startTime.Nanosecond(),
+					loc,
+				)
+			}
+		}
+	}
+
+	// Fallback to start time if no matching day found (shouldn't happen)
+	return startTime
 }
 
 // findLastWeekdayOfMonth finds the last occurrence of a weekday in a month

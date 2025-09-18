@@ -1287,9 +1287,9 @@ type ZoomWebhookPayload struct {
 	// Contains meeting, participant, or recording data depending on event type
 	Payload any
 	// HMAC-SHA256 signature of the request body
-	ZoomSignature *string
+	ZoomSignature string
 	// Timestamp when the webhook was sent
-	ZoomTimestamp *string
+	ZoomTimestamp string
 }
 
 // ZoomWebhookResponse is the result type of the Meeting Service service

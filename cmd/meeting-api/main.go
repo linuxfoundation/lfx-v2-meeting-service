@@ -87,6 +87,7 @@ func main() {
 		repos.Registrant,
 		emailService,
 		messageBuilder,
+		occurrenceService,
 		serviceConfig,
 	)
 	pastMeetingService := service.NewPastMeetingService(
@@ -121,6 +122,10 @@ func main() {
 		registrantService,
 		messageBuilder,
 	)
+	zoomWebhookService := service.NewZoomWebhookService(
+		messageBuilder,
+		platformConfigs.Zoom.Validator,
+	)
 
 	// Initialize handlers
 	meetingHandler := handlers.NewMeetingHandler(
@@ -154,6 +159,7 @@ func main() {
 		pastMeetingService,
 		pastMeetingParticipantService,
 		pastMeetingSummaryService,
+		zoomWebhookService,
 		zoomWebhookHandler,
 		meetingHandler,
 		committeeHandler,

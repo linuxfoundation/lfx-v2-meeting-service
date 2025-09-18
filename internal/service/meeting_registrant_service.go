@@ -24,6 +24,7 @@ type MeetingRegistrantService struct {
 	RegistrantRepository domain.RegistrantRepository
 	EmailService         domain.EmailService
 	MessageBuilder       domain.MessageBuilder
+	OccurrenceService    *OccurrenceService
 	Config               ServiceConfig
 }
 
@@ -33,6 +34,7 @@ func NewMeetingRegistrantService(
 	registrantRepository domain.RegistrantRepository,
 	emailService domain.EmailService,
 	messageBuilder domain.MessageBuilder,
+	occurrenceService *OccurrenceService,
 	config ServiceConfig,
 ) *MeetingRegistrantService {
 	return &MeetingRegistrantService{
@@ -41,6 +43,7 @@ func NewMeetingRegistrantService(
 		RegistrantRepository: registrantRepository,
 		EmailService:         emailService,
 		MessageBuilder:       messageBuilder,
+		OccurrenceService:    occurrenceService,
 	}
 }
 
@@ -49,12 +52,13 @@ func (s *MeetingRegistrantService) ServiceReady() bool {
 	return s.MeetingRepository != nil &&
 		s.RegistrantRepository != nil &&
 		s.MessageBuilder != nil &&
-		s.EmailService != nil
+		s.EmailService != nil &&
+		s.OccurrenceService != nil
 }
 
 func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant) error {
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
+	meeting, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
 	if err != nil {
 		return err
 	}
@@ -66,11 +70,16 @@ func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx co
 	}
 	for _, registrant := range registrants {
 		if registrant.Email == reqRegistrant.Email && registrant.MeetingUID == reqRegistrant.MeetingUID {
-			return domain.NewConflictError("registrant with same email already exists for this meeting", nil)
+			return domain.NewConflictError("registrant with same email already exists for this meeting")
 		}
 	}
 
-	// TODO: add validation about occurrence ID once we occurrences calculated for meetings
+	// Validate occurrence ID if provided
+	if reqRegistrant.OccurrenceID != "" {
+		if err := s.OccurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -85,11 +94,11 @@ func createRegistrantContext(ctx context.Context, registrantUID, meetingUID stri
 func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant) (*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting registrant service is not ready", nil)
+		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
 	}
 
 	if reqRegistrant == nil {
-		return nil, domain.NewValidationError("registrant payload is required", nil)
+		return nil, domain.NewValidationError("registrant payload is required")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", reqRegistrant.MeetingUID))
@@ -168,7 +177,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, uid string) ([]*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting registrant service is not ready", nil)
+		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
@@ -196,7 +205,7 @@ func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, ui
 func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string) (*models.Registrant, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, "", domain.NewUnavailableError("meeting registrant service is not ready", nil)
+		return nil, "", domain.NewUnavailableError("meeting registrant service is not ready")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
@@ -208,7 +217,7 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 		return nil, "", err
 	}
 	if !exists {
-		return nil, "", domain.NewNotFoundError("meeting not found", nil)
+		return nil, "", domain.NewNotFoundError("meeting not found")
 	}
 
 	// Get registrant with revision from store
@@ -219,7 +228,7 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 
 	// Ensure the registrant belongs to the requested meeting
 	if registrant.MeetingUID != meetingUID {
-		return nil, "", domain.NewNotFoundError("registrant does not belong to the specified meeting", nil)
+		return nil, "", domain.NewNotFoundError("registrant does not belong to the specified meeting")
 	}
 
 	// Store the revision in context for the custom encoder to use
@@ -232,13 +241,10 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 }
 
 func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant, existingRegistrant *models.Registrant) error {
-	// Check that the meeting exists
-	exists, err := s.MeetingRepository.Exists(ctx, existingRegistrant.MeetingUID)
+	// Check that the meeting exists and get it for occurrence validation
+	meeting, err := s.MeetingRepository.GetBase(ctx, existingRegistrant.MeetingUID)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		return domain.NewNotFoundError("meeting not found", nil)
 	}
 
 	if existingRegistrant.Email != reqRegistrant.Email {
@@ -249,12 +255,17 @@ func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx co
 		}
 		for _, registrant := range registrants {
 			if registrant.Email == reqRegistrant.Email && registrant.MeetingUID == existingRegistrant.MeetingUID {
-				return domain.NewConflictError("registrant with same email already exists for this meeting", nil)
+				return domain.NewConflictError("registrant with same email already exists for this meeting")
 			}
 		}
 	}
 
-	// TODO: add validation about occurrence ID once we occurrences calculated for meetings
+	// Validate occurrence ID if provided and different from existing
+	if reqRegistrant.OccurrenceID != "" && reqRegistrant.OccurrenceID != existingRegistrant.OccurrenceID {
+		if err := s.OccurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -263,7 +274,7 @@ func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx co
 func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, revision uint64) (*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting registrant service is not ready", nil)
+		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", reqRegistrant.MeetingUID))
@@ -436,7 +447,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string, revision uint64) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return domain.NewUnavailableError("meeting registrant service is not ready", nil)
+		return domain.NewUnavailableError("meeting registrant service is not ready")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))

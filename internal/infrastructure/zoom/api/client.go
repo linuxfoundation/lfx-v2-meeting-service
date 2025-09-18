@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -133,13 +134,13 @@ func (c *Client) getAuthenticatedClient(ctx context.Context) *http.Client {
 
 // shouldRetry determines if an error or HTTP status code should be retried
 func shouldRetry(statusCode int, err error) bool {
-	// Don't retry if context was cancelled
+	// Don't retry if the request context was cancelled or deadline exceeded
 	if err != nil {
-		if ctx, ok := err.(interface{ Err() error }); ok {
-			if ctx.Err() == context.Canceled || ctx.Err() == context.DeadlineExceeded {
-				return false
-			}
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return false
 		}
+		// Retry on network/connection errors
+		return true
 	}
 
 	// Retry on network/connection errors
@@ -189,15 +190,9 @@ func (c *Client) calculateBackoff(attempt int) time.Duration {
 
 // doRequest performs an authenticated HTTP request to the Zoom API with retry logic
 func (c *Client) doRequest(ctx context.Context, method, path string, body any) (*http.Response, error) {
-	var jsonBody []byte
-	var err error
-
-	// Marshal request body once to avoid re-marshalling on retries
-	if body != nil {
-		jsonBody, err = json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal request body: %w", err)
-		}
+	jsonBody, err := c.marshalRequestBody(body)
+	if err != nil {
+		return nil, err
 	}
 
 	url := c.config.BaseURL + path
@@ -205,154 +200,214 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 	var lastResp *http.Response
 
 	for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
-		// Create a new request for each attempt (body reader gets consumed)
-		var bodyReader io.Reader
-		if jsonBody != nil {
-			bodyReader = bytes.NewReader(jsonBody)
-		}
-
-		req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+		req, err := c.createRequest(ctx, method, url, jsonBody)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create request: %w", err)
-		}
-		req.Header.Set("Content-Type", "application/json")
-
-		// Log initial request (not retries to avoid spam)
-		if attempt == 0 {
-			slog.DebugContext(ctx, "making Zoom API request",
-				"method", method,
-				"path", path,
-				"body", body,
-				"max_retries", c.config.MaxRetries,
-			)
-		} else {
-			slog.DebugContext(ctx, "retrying Zoom API request",
-				"method", method,
-				"path", path,
-				"attempt", attempt,
-				"max_retries", c.config.MaxRetries,
-			)
+			return nil, err
 		}
 
-		startTime := time.Now()
+		c.logRequestAttempt(ctx, method, path, body, attempt)
 
-		// Use OAuth2 authenticated client which automatically handles token management
-		authenticatedClient := c.getAuthenticatedClient(ctx)
-		resp, err := authenticatedClient.Do(req)
+		// Execute and handle the request
+		resp, duration, err := c.executeRequestWithTiming(ctx, req)
 
-		duration := time.Since(startTime)
-
-		// If request succeeded, log and return
-		if err == nil && resp.StatusCode < http.StatusInternalServerError && resp.StatusCode != http.StatusTooManyRequests {
-			// Log successful requests with duration
-			slog.InfoContext(ctx, "Zoom API request completed",
-				"method", method,
-				"path", path,
-				"status", resp.StatusCode,
-				"duration", duration.String(),
-				"attempt", attempt+1,
-			)
-
-			// Log error responses with additional details (but don't retry 4xx)
-			if resp.StatusCode >= http.StatusBadRequest {
-				body, _ := io.ReadAll(resp.Body)
-				_ = resp.Body.Close()
-				resp.Body = io.NopCloser(bytes.NewReader(body))
-				slog.ErrorContext(ctx, "Zoom API error response",
-					"method", method,
-					"path", path,
-					"status", resp.StatusCode,
-					"duration", duration.String(),
-					"body", string(body),
-					logging.ErrKey, fmt.Errorf("status: %d", resp.StatusCode))
-			}
-
+		// Check if request succeeded
+		if c.isRequestSuccessful(err, resp) {
+			c.logSuccessfulResponse(ctx, method, path, resp, duration, attempt)
 			return resp, nil
 		}
 
-		// Store the error/response for potential retry
-		lastErr = err
-		if resp != nil {
-			if lastResp != nil {
-				_ = lastResp.Body.Close()
-			}
-			lastResp = resp
-		}
-
-		// Check if we should retry
-		statusCode := 0
-		if resp != nil {
-			statusCode = resp.StatusCode
-		}
+		// Update state and determine if we should retry
+		lastErr, lastResp = err, c.closeAndReplaceResponse(lastResp, resp)
+		statusCode := c.extractStatusCode(resp)
 
 		if !shouldRetry(statusCode, err) {
-			// Log non-retryable error
-			if err != nil {
-				slog.ErrorContext(ctx, "Zoom API request failed (not retryable)",
-					"method", method,
-					"path", path,
-					"duration", duration.String(),
-					"attempt", attempt+1,
-					logging.ErrKey, err)
-			} else {
-				slog.ErrorContext(ctx, "Zoom API request failed (not retryable)",
-					"method", method,
-					"path", path,
-					"status", statusCode,
-					"duration", duration.String(),
-					"attempt", attempt+1)
-			}
+			c.logNonRetryableError(ctx, method, path, statusCode, duration, attempt, err)
 			break
 		}
 
-		// Don't sleep after the last attempt
+		// Handle retry or final failure
 		if attempt < c.config.MaxRetries {
-			backoff := c.calculateBackoff(attempt)
-			slog.WarnContext(ctx, "Zoom API request failed, retrying",
-				"method", method,
-				"path", path,
-				"status", statusCode,
-				"duration", duration.String(),
-				"attempt", attempt+1,
-				"max_retries", c.config.MaxRetries,
-				"backoff", backoff.String(),
-				logging.ErrKey, err)
-
-			// Wait with backoff, but check for context cancellation
-			select {
-			case <-ctx.Done():
-				if lastResp != nil {
-					_ = lastResp.Body.Close()
-				}
-				return nil, ctx.Err()
-			case <-time.After(backoff):
-				// Continue with retry
+			if err := c.handleRetryDelay(ctx, method, path, statusCode, duration, attempt, err, lastResp); err != nil {
+				return nil, err
 			}
 		} else {
-			// Log final failure
-			if err != nil {
-				slog.ErrorContext(ctx, "Zoom API request failed after all retries",
-					"method", method,
-					"path", path,
-					"duration", duration.String(),
-					"attempts", attempt+1,
-					"max_retries", c.config.MaxRetries,
-					logging.ErrKey, err,
-					logging.PriorityCritical())
-			} else {
-				slog.ErrorContext(ctx, "Zoom API request failed after all retries",
-					"method", method,
-					"path", path,
-					"status", statusCode,
-					"duration", duration.String(),
-					"attempts", attempt+1,
-					"max_retries", c.config.MaxRetries,
-					logging.PriorityCritical())
-			}
+			c.logFinalFailure(ctx, method, path, statusCode, duration, attempt, err)
 		}
 	}
 
-	// Return the last error/response we got
+	return c.handleFinalResult(ctx, method, path, lastErr, lastResp)
+}
+
+// marshalRequestBody marshals the request body to JSON
+func (c *Client) marshalRequestBody(body any) ([]byte, error) {
+	if body == nil {
+		return nil, nil
+	}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+	return jsonBody, nil
+}
+
+// createRequest creates a new HTTP request with the given parameters
+func (c *Client) createRequest(ctx context.Context, method, url string, jsonBody []byte) (*http.Request, error) {
+	var bodyReader io.Reader
+	if jsonBody != nil {
+		bodyReader = bytes.NewReader(jsonBody)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
+
+// logRequestAttempt logs the request attempt
+func (c *Client) logRequestAttempt(ctx context.Context, method, path string, body any, attempt int) {
+	if attempt == 0 {
+		slog.DebugContext(ctx, "making Zoom API request",
+			"method", method,
+			"path", path,
+			"body", body,
+			"max_retries", c.config.MaxRetries,
+		)
+	} else {
+		slog.DebugContext(ctx, "retrying Zoom API request",
+			"method", method,
+			"path", path,
+			"attempt", attempt,
+			"max_retries", c.config.MaxRetries,
+		)
+	}
+}
+
+// executeRequestWithTiming executes the request and returns the response, duration, and error
+func (c *Client) executeRequestWithTiming(ctx context.Context, req *http.Request) (*http.Response, time.Duration, error) {
+	startTime := time.Now()
+	authenticatedClient := c.getAuthenticatedClient(ctx)
+	resp, err := authenticatedClient.Do(req)
+	duration := time.Since(startTime)
+	return resp, duration, err
+}
+
+// isRequestSuccessful checks if a request was successful (no error and not a server error/rate limit)
+func (c *Client) isRequestSuccessful(err error, resp *http.Response) bool {
+	return err == nil && resp != nil && resp.StatusCode < http.StatusInternalServerError && resp.StatusCode != http.StatusTooManyRequests
+}
+
+// closeAndReplaceResponse closes the old response if it exists and returns the new one
+func (c *Client) closeAndReplaceResponse(oldResp, newResp *http.Response) *http.Response {
+	if oldResp != nil {
+		_ = oldResp.Body.Close()
+	}
+	return newResp
+}
+
+// extractStatusCode safely extracts the status code from a response
+func (c *Client) extractStatusCode(resp *http.Response) int {
+	if resp != nil {
+		return resp.StatusCode
+	}
+	return 0
+}
+
+// logSuccessfulResponse logs successful responses
+func (c *Client) logSuccessfulResponse(ctx context.Context, method, path string, resp *http.Response, duration time.Duration, attempt int) {
+	slog.InfoContext(ctx, "Zoom API request completed",
+		"method", method,
+		"path", path,
+		"status", resp.StatusCode,
+		"duration", duration.String(),
+		"attempt", attempt+1,
+	)
+
+	// Log error responses with additional details (but don't retry 4xx)
+	if resp.StatusCode >= http.StatusBadRequest {
+		body, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		resp.Body = io.NopCloser(bytes.NewReader(body))
+		slog.ErrorContext(ctx, "Zoom API error response",
+			"method", method,
+			"path", path,
+			"status", resp.StatusCode,
+			"duration", duration.String(),
+			"body", string(body),
+			logging.ErrKey, fmt.Errorf("status: %d", resp.StatusCode))
+	}
+}
+
+// logNonRetryableError logs errors that should not be retried
+func (c *Client) logNonRetryableError(ctx context.Context, method, path string, statusCode int, duration time.Duration, attempt int, err error) {
+	if err != nil {
+		slog.ErrorContext(ctx, "Zoom API request failed (not retryable)",
+			"method", method,
+			"path", path,
+			"duration", duration.String(),
+			"attempt", attempt+1,
+			logging.ErrKey, err)
+	} else {
+		slog.ErrorContext(ctx, "Zoom API request failed (not retryable)",
+			"method", method,
+			"path", path,
+			"status", statusCode,
+			"duration", duration.String(),
+			"attempt", attempt+1)
+	}
+}
+
+// handleRetryDelay handles the delay between retry attempts
+func (c *Client) handleRetryDelay(ctx context.Context, method, path string, statusCode int, duration time.Duration, attempt int, err error, lastResp *http.Response) error {
+	backoff := c.calculateBackoff(attempt)
+	slog.WarnContext(ctx, "Zoom API request failed, retrying",
+		"method", method,
+		"path", path,
+		"status", statusCode,
+		"duration", duration.String(),
+		"attempt", attempt+1,
+		"max_retries", c.config.MaxRetries,
+		"backoff", backoff.String(),
+		logging.ErrKey, err)
+
+	// Wait with backoff, but check for context cancellation
+	select {
+	case <-ctx.Done():
+		if lastResp != nil {
+			_ = lastResp.Body.Close()
+		}
+		return ctx.Err()
+	case <-time.After(backoff):
+		return nil
+	}
+}
+
+// logFinalFailure logs the final failure after all retries
+func (c *Client) logFinalFailure(ctx context.Context, method, path string, statusCode int, duration time.Duration, attempt int, err error) {
+	if err != nil {
+		slog.ErrorContext(ctx, "Zoom API request failed after all retries",
+			"method", method,
+			"path", path,
+			"duration", duration.String(),
+			"attempts", attempt+1,
+			"max_retries", c.config.MaxRetries,
+			logging.ErrKey, err,
+			logging.PriorityCritical())
+	} else {
+		slog.ErrorContext(ctx, "Zoom API request failed after all retries",
+			"method", method,
+			"path", path,
+			"status", statusCode,
+			"duration", duration.String(),
+			"attempts", attempt+1,
+			"max_retries", c.config.MaxRetries,
+			logging.PriorityCritical())
+	}
+}
+
+// handleFinalResult handles the final result after all retry attempts
+func (c *Client) handleFinalResult(ctx context.Context, method, path string, lastErr error, lastResp *http.Response) (*http.Response, error) {
 	if lastErr != nil {
 		if lastResp != nil {
 			_ = lastResp.Body.Close()
