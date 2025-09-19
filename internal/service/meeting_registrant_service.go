@@ -16,6 +16,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // MeetingRegistrantService implements the meetingsvc.Service interface and domain.MessageHandler
@@ -478,6 +479,54 @@ func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, 
 
 	// Use the helper to delete the registrant with cleanup
 	return s.DeleteRegistrantWithCleanup(ctx, registrant, meeting, revision, false)
+}
+
+// SendRegistrantEmailChangeNotifications sends notification emails when a registrant's email changes
+// It sends a cancellation email to the old address and an invitation email to the new address
+// Returns an error if either email fails to send, allowing the caller to decide how to handle failures
+func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
+	ctx context.Context,
+	meeting *models.MeetingBase,
+	oldRegistrant *models.Registrant,
+	newRegistrant *models.Registrant,
+	oldEmail string,
+	newEmail string,
+) error {
+	var errors []error
+
+	// Send cancellation email to old email address
+	oldEmailRegistrant := *oldRegistrant
+	oldEmailRegistrant.Email = oldEmail
+	err := s.sendRegistrantCancellationEmail(ctx, &oldEmailRegistrant, meeting)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send cancellation email to old address",
+			"old_email", redaction.RedactEmail(oldEmail),
+			logging.ErrKey, err)
+		errors = append(errors, fmt.Errorf("failed to send cancellation email to %s: %w", oldEmail, err))
+	}
+
+	// Send invitation email to new email address
+	newEmailRegistrant := *newRegistrant
+	newEmailRegistrant.Email = newEmail
+	err = s.sendRegistrantInvitationEmail(ctx, &newEmailRegistrant)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send invitation email to new address",
+			"new_email", redaction.RedactEmail(newEmail),
+			logging.ErrKey, err)
+		errors = append(errors, fmt.Errorf("failed to send invitation email to %s: %w", newEmail, err))
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("email notification errors: %v", errors)
+	}
+
+	slog.InfoContext(ctx, "sent email change notifications",
+		"meeting_uid", meeting.UID,
+		"registrant_uid", oldRegistrant.UID,
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail))
+
+	return nil
 }
 
 // sendRegistrantInvitationEmail sends an invitation email to a newly created registrant

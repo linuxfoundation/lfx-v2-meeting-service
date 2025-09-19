@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"sync"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -31,6 +32,7 @@ type CommitteeChange struct {
 
 // CommitteeSyncService handles committee member synchronization logic
 type CommitteeSyncService struct {
+	meetingRepository    domain.MeetingRepository
 	registrantRepository domain.RegistrantRepository
 	registrantService    *MeetingRegistrantService
 	messageBuilder       domain.MessageBuilder
@@ -38,11 +40,13 @@ type CommitteeSyncService struct {
 
 // NewCommitteeSyncService creates a new committee sync service
 func NewCommitteeSyncService(
+	meetingRepository domain.MeetingRepository,
 	registrantRepository domain.RegistrantRepository,
 	registrantService *MeetingRegistrantService,
 	messageBuilder domain.MessageBuilder,
 ) *CommitteeSyncService {
 	return &CommitteeSyncService{
+		meetingRepository:    meetingRepository,
 		registrantRepository: registrantRepository,
 		registrantService:    registrantService,
 		messageBuilder:       messageBuilder,
@@ -51,7 +55,8 @@ func NewCommitteeSyncService(
 
 // ServiceReady checks if the service is ready for use.
 func (s *CommitteeSyncService) ServiceReady() bool {
-	return s.registrantRepository != nil &&
+	return s.meetingRepository != nil &&
+		s.registrantRepository != nil &&
 		s.registrantService != nil &&
 		s.messageBuilder != nil
 }
@@ -757,6 +762,163 @@ func (s *CommitteeSyncService) RemoveCommitteeMemberFromMeeting(
 			return fmt.Errorf("failed to process registrant removal for %s: %w", registrant.UID, err)
 		}
 	}
+
+	return nil
+}
+
+// UpdateCommitteeMemberEmailForMeeting handles updating email for a specific registrant
+// by updating their registration and sending appropriate notification emails.
+func (s *CommitteeSyncService) UpdateCommitteeMemberEmailForMeeting(
+	ctx context.Context,
+	registrant *models.Registrant,
+	meeting *models.MeetingBase,
+	oldEmail string,
+	newEmail string,
+	member *models.CommitteeMember,
+) error {
+	// Get the revision for this registrant
+	_, registrantRevision, err := s.registrantRepository.GetWithRevision(ctx, registrant.UID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get registrant revision",
+			"registrant_uid", registrant.UID,
+			logging.ErrKey, err)
+		return fmt.Errorf("failed to get registrant revision: %w", err)
+	}
+
+	slog.InfoContext(ctx, "updating committee registrant email",
+		"meeting_uid", meeting.UID,
+		"registrant_uid", registrant.UID,
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail))
+
+	// Update the registrant with the new email and member info
+	updatedRegistrant := &models.Registrant{
+		UID:          registrant.UID,
+		MeetingUID:   registrant.MeetingUID,
+		Email:        newEmail,
+		FirstName:    member.FirstName,
+		LastName:     member.LastName,
+		Username:     member.Username,
+		Type:         models.RegistrantTypeCommittee,
+		CommitteeUID: registrant.CommitteeUID,
+		OrgName:      member.Organization.Name,
+		JobTitle:     member.JobTitle,
+		Host:         registrant.Host,
+	}
+
+	// Use the registrant service to update, which handles NATS messages and FGA sync
+	_, err = s.registrantService.UpdateMeetingRegistrant(ctx, updatedRegistrant, registrantRevision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update registrant email",
+			"meeting_uid", registrant.MeetingUID,
+			"registrant_uid", registrant.UID,
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail),
+			logging.ErrKey, err)
+		return fmt.Errorf("failed to update registrant email: %w", err)
+	}
+
+	// Send notification emails (cancellation to old email, invitation to new email)
+	err = s.registrantService.SendRegistrantEmailChangeNotifications(ctx, meeting, registrant, updatedRegistrant, oldEmail, newEmail)
+	if err != nil {
+		// Log error but don't fail the operation - emails are non-critical
+		slog.ErrorContext(ctx, "failed to send email change notifications",
+			"meeting_uid", meeting.UID,
+			"registrant_uid", registrant.UID,
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail),
+			logging.ErrKey, err)
+	}
+
+	slog.InfoContext(ctx, "successfully updated committee registrant email",
+		"meeting_uid", meeting.UID,
+		"registrant_uid", registrant.UID,
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail))
+
+	return nil
+}
+
+// HandleCommitteeMemberEmailChangeForMeetings handles email changes for committee members across all meetings
+// by finding all their registrations and updating them efficiently using the email-first approach.
+func (s *CommitteeSyncService) HandleCommitteeMemberEmailChangeForMeetings(
+	ctx context.Context,
+	oldEmail string,
+	newEmail string,
+	committeeUID string,
+	member *models.CommitteeMember,
+) error {
+	// Use the efficient repository method to get registrants by email and committee
+	registrants, err := s.registrantRepository.ListByEmailAndCommittee(ctx, oldEmail, committeeUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to list registrants by email and committee", logging.ErrKey, err)
+		return fmt.Errorf("failed to list registrants by email and committee: %w", err)
+	}
+
+	if len(registrants) == 0 {
+		slog.InfoContext(ctx, "no registrants found for committee member email change",
+			"committee_uid", committeeUID,
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail))
+		return nil
+	}
+
+	slog.InfoContext(ctx, "found registrants for committee member email change",
+		"committee_uid", committeeUID,
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail),
+		"registrants_count", len(registrants))
+
+	// Process each registrant concurrently
+	successCount := 0
+	var mu sync.Mutex
+
+	tasks := make([]func() error, 0, len(registrants))
+	for _, registrant := range registrants {
+		registrant := registrant // capture loop variable
+		tasks = append(tasks, func() error {
+			// Get the meeting for this registrant
+			meeting, err := s.meetingRepository.GetBase(ctx, registrant.MeetingUID)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to get meeting for registrant",
+					"registrant_uid", registrant.UID,
+					"meeting_uid", registrant.MeetingUID,
+					logging.ErrKey, err)
+				return fmt.Errorf("failed to get meeting for registrant %s: %w", registrant.UID, err)
+			}
+
+			// Update the registrant email using existing method
+			err = s.UpdateCommitteeMemberEmailForMeeting(ctx, registrant, meeting, oldEmail, newEmail, member)
+			if err != nil {
+				return err
+			}
+
+			mu.Lock()
+			successCount++
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	workerPool := concurrent.NewWorkerPool(10)
+	errors := workerPool.RunAll(ctx, tasks...)
+	if len(errors) > 0 {
+		// Log the errors but don't fail the entire operation
+		slog.ErrorContext(ctx, "failed to update some registrant emails",
+			"committee_uid", committeeUID,
+			"old_email", redaction.RedactEmail(oldEmail),
+			"new_email", redaction.RedactEmail(newEmail),
+			"errors", errors,
+			"errors_count", len(errors))
+	}
+
+	slog.InfoContext(ctx, "completed committee member email change processing",
+		"committee_uid", committeeUID,
+		"old_email", redaction.RedactEmail(oldEmail),
+		"new_email", redaction.RedactEmail(newEmail),
+		"total_registrants", len(registrants),
+		"successful_updates", successCount,
+		"failed_updates", len(errors))
 
 	return nil
 }

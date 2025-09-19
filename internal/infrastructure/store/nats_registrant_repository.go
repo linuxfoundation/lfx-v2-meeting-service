@@ -161,6 +161,32 @@ func (s *NatsRegistrantRepository) ListByEmail(ctx context.Context, email string
 	return registrants, nil
 }
 
+// ListByEmailAndCommittee lists all registrants for a given email address that are committee members of the specified committee.
+// This is more efficient than getting all meetings by committee and then searching registrants for each meeting.
+func (s *NatsRegistrantRepository) ListByEmailAndCommittee(ctx context.Context, email string, committeeUID string) ([]*models.Registrant, error) {
+	if !s.IsReady(ctx) {
+		return nil, domain.NewUnavailableError("registrant repository is not available", nil)
+	}
+
+	// First get all registrants for this email using the existing efficient method
+	allRegistrants, err := s.ListByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter to only include committee registrants for the specified committee
+	var filteredRegistrants []*models.Registrant
+	for _, registrant := range allRegistrants {
+		if registrant.Type == models.RegistrantTypeCommittee &&
+			registrant.CommitteeUID != nil &&
+			*registrant.CommitteeUID == committeeUID {
+			filteredRegistrants = append(filteredRegistrants, registrant)
+		}
+	}
+
+	return filteredRegistrants, nil
+}
+
 func (s *NatsRegistrantRepository) put(ctx context.Context, registrant *models.Registrant) error {
 	jsonData, err := json.Marshal(registrant)
 	if err != nil {

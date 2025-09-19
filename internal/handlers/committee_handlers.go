@@ -59,6 +59,7 @@ func (h *CommitteeHandlers) HandleMessage(ctx context.Context, msg domain.Messag
 	handlers := map[string]func(ctx context.Context, msg domain.Message) ([]byte, error){
 		models.CommitteeMemberCreatedSubject: h.HandleCommitteeMemberCreated,
 		models.CommitteeMemberDeletedSubject: h.HandleCommitteeMemberDeleted,
+		models.CommitteeMemberUpdatedSubject: h.HandleCommitteeMemberUpdated,
 	}
 
 	handler, ok := handlers[subject]
@@ -126,6 +127,79 @@ func (h *CommitteeHandlers) HandleCommitteeMemberCreated(ctx context.Context, ms
 		slog.ErrorContext(ctx, "failed to add committee member to meetings", logging.ErrKey, err)
 	} else {
 		slog.InfoContext(ctx, "successfully processed new committee member for meetings")
+	}
+
+	return []byte("success"), nil
+}
+
+// HandleCommitteeMemberUpdated is the message handler for the committee-member-updated subject.
+// It processes updated committee members and handles email changes by updating registrations.
+func (h *CommitteeHandlers) HandleCommitteeMemberUpdated(ctx context.Context, msg domain.Message) ([]byte, error) {
+	if !h.meetingService.ServiceReady() {
+		slog.ErrorContext(ctx, "service not ready")
+		return nil, fmt.Errorf("service not ready")
+	}
+
+	slog.DebugContext(ctx, "handling committee member updated message", "message", string(msg.Data()))
+
+	// Parse the committee member updated message
+	var committeeMemberMsg models.CommitteeEvent
+	err := json.Unmarshal(msg.Data(), &committeeMemberMsg)
+	if err != nil {
+		slog.ErrorContext(ctx, "error unmarshaling committee member updated message", logging.ErrKey, err)
+		return nil, err
+	}
+
+	// The Data field comes as map[string]interface{} after JSON unmarshaling,
+	// so we need to marshal it back to JSON and then unmarshal into the proper struct
+	var updateEventData models.CommitteeMemberUpdateEventData
+	dataBytes, err := json.Marshal(committeeMemberMsg.Data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshaling committee member update data", logging.ErrKey, err)
+		return nil, fmt.Errorf("failed to marshal committee member update data: %w", err)
+	}
+
+	err = json.Unmarshal(dataBytes, &updateEventData)
+	if err != nil {
+		slog.ErrorContext(ctx, "error unmarshaling committee member update data", logging.ErrKey, err)
+		return nil, fmt.Errorf("failed to unmarshal committee member update data: %w", err)
+	}
+
+	// Validate required fields
+	if updateEventData.Member == nil || updateEventData.OldMember == nil {
+		slog.WarnContext(ctx, "invalid committee member updated message: missing member data")
+		return nil, fmt.Errorf("both old and new member data are required")
+	}
+
+	if updateEventData.Member.CommitteeUID == "" || updateEventData.Member.Email == "" {
+		slog.WarnContext(ctx, "invalid committee member updated message: missing required fields")
+		return nil, fmt.Errorf("committee UID and member email are required")
+	}
+
+	oldMember := updateEventData.OldMember
+	newMember := updateEventData.Member
+
+	ctx = logging.AppendCtx(ctx, slog.String("member_uid", updateEventData.MemberUID))
+	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", newMember.CommitteeUID))
+
+	slog.InfoContext(ctx, "processing updated committee member",
+		"old_email", redaction.RedactEmail(oldMember.Email),
+		"new_email", redaction.RedactEmail(newMember.Email))
+
+	// Check if email changed
+	if oldMember.Email != newMember.Email {
+		slog.InfoContext(ctx, "committee member email changed, updating registrations",
+			"old_email", redaction.RedactEmail(oldMember.Email),
+			"new_email", redaction.RedactEmail(newMember.Email))
+		err = h.handleMemberEmailChange(ctx, oldMember, newMember)
+		if err != nil {
+			// Log error but don't fail the entire handler - member update is non-critical for other services
+			slog.ErrorContext(ctx, "failed to handle committee member email change", logging.ErrKey, err)
+		} else {
+			slog.InfoContext(ctx, "successfully processed committee member email change")
+		}
+	} else {
+		slog.DebugContext(ctx, "no email change detected for committee member")
 	}
 
 	return []byte("success"), nil
@@ -436,5 +510,32 @@ func (h *CommitteeHandlers) tryRemoveMemberFromMeeting(ctx context.Context, meet
 		"meeting_uid", meeting.UID,
 		"committee_uid", member.CommitteeUID,
 		"member_email", member.Email)
+	return nil
+}
+
+// handleMemberEmailChange processes email changes for committee members across all relevant meetings
+func (h *CommitteeHandlers) handleMemberEmailChange(ctx context.Context, oldMember, newMember *models.CommitteeMember) error {
+	// Use the existing optimized method from committee sync service
+	err := h.committeeSyncService.HandleCommitteeMemberEmailChangeForMeetings(
+		ctx,
+		oldMember.Email,
+		newMember.Email,
+		newMember.CommitteeUID,
+		newMember,
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to handle committee member email change",
+			"committee_uid", newMember.CommitteeUID,
+			"old_email", redaction.RedactEmail(oldMember.Email),
+			"new_email", redaction.RedactEmail(newMember.Email),
+			logging.ErrKey, err)
+		return fmt.Errorf("failed to handle committee member email change: %w", err)
+	}
+
+	slog.InfoContext(ctx, "successfully processed committee member email change",
+		"committee_uid", newMember.CommitteeUID,
+		"old_email", redaction.RedactEmail(oldMember.Email),
+		"new_email", redaction.RedactEmail(newMember.Email))
+
 	return nil
 }
