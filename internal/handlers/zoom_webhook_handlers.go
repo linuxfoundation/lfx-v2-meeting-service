@@ -624,11 +624,10 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 		return fmt.Errorf("failed to search for past meeting: %w", err)
 	}
 
-	// Try to find existing PastMeetingParticipant record
-	existingParticipant, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
-	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
-		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
-		return fmt.Errorf("failed to search for existing participant: %w", err)
+	// Try to find existing participant by email first, then by name
+	existingParticipant, err := s.findExistingParticipant(ctx, pastMeeting.UID, participant.Email, participant.UserName)
+	if err != nil {
+		return fmt.Errorf("failed to find existing participant: %w", err)
 	}
 
 	if existingParticipant != nil {
@@ -643,31 +642,37 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 			"email", redaction.RedactEmail(participant.Email),
 			"session_uid", participant.ParticipantUUID,
 		)
-	} else {
-		// Create new participant record
-		zoomParticipant := ZoomPayloadForParticipant{
-			UserID:            participant.UserID,
-			UserName:          participant.UserName,
-			ParticipantUUID:   participant.ParticipantUUID,
-			JoinTime:          participant.JoinTime,
-			Email:             participant.Email,
-			ParticipantUserID: participant.ParticipantUserID,
-		}
-		newParticipant, err := s.createParticipantFromJoinedEvent(ctx, pastMeeting, zoomParticipant)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to create participant from joined event",
-				logging.ErrKey, err,
-				logging.PriorityCritical(),
-			)
-			return fmt.Errorf("failed to create participant from joined event: %w", err)
-		}
-		slog.InfoContext(ctx, "created new participant from joined event",
-			"past_meeting_uid", pastMeeting.UID,
-			"participant_uid", newParticipant.UID,
-			"email", redaction.RedactEmail(participant.Email),
-			"is_invited", newParticipant.IsInvited,
-		)
+		return nil
 	}
+
+	slog.DebugContext(ctx, "no existing participant found, creating new participant",
+		"participant_email", redaction.RedactEmail(participant.Email),
+		"zoom_meeting_id", meetingObj.ID,
+	)
+
+	// Create new participant record
+	zoomParticipant := ZoomPayloadForParticipant{
+		UserID:            participant.UserID,
+		UserName:          participant.UserName,
+		ParticipantUUID:   participant.ParticipantUUID,
+		JoinTime:          participant.JoinTime,
+		Email:             participant.Email,
+		ParticipantUserID: participant.ParticipantUserID,
+	}
+	newParticipant, err := s.createParticipantFromJoinedEvent(ctx, pastMeeting, zoomParticipant)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create participant from joined event",
+			logging.ErrKey, err,
+			logging.PriorityCritical(),
+		)
+		return fmt.Errorf("failed to create participant from joined event: %w", err)
+	}
+	slog.InfoContext(ctx, "created new participant from joined event",
+		"past_meeting_uid", pastMeeting.UID,
+		"participant_uid", newParticipant.UID,
+		"email", redaction.RedactEmail(participant.Email),
+		"is_invited", newParticipant.IsInvited,
+	)
 
 	return nil
 }
@@ -724,11 +729,10 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 		return fmt.Errorf("failed to search for past meeting: %w", err)
 	}
 
-	// Try to find existing PastMeetingParticipant record
-	existingParticipant, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, pastMeeting.UID, participant.Email)
-	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
-		slog.ErrorContext(ctx, "error searching for existing participant", logging.ErrKey, err)
-		return fmt.Errorf("failed to search for existing participant: %w", err)
+	// Try to find existing participant by email first, then by name
+	existingParticipant, err := s.findExistingParticipant(ctx, pastMeeting.UID, participant.Email, participant.UserName)
+	if err != nil {
+		return fmt.Errorf("failed to find existing participant: %w", err)
 	}
 
 	if existingParticipant != nil {
@@ -745,40 +749,41 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 			"session_uid", participant.ParticipantUUID,
 			"duration", participant.Duration,
 		)
-	} else {
-		// Create new participant record with completed session (they joined and left but we missed the joined event)
-		slog.WarnContext(ctx, "no existing participant found for left event, creating new record",
-			"participant_email", redaction.RedactEmail(participant.Email),
-			"zoom_meeting_id", meetingObj.ID,
-		)
-
-		zoomParticipant := ZoomPayloadForParticipant{
-			UserID:            participant.UserID,
-			UserName:          participant.UserName,
-			ParticipantUUID:   participant.ParticipantUUID,
-			JoinTime:          participant.LeaveTime.Add(-time.Duration(participant.Duration) * time.Second), // Calculate join time from leave time and duration
-			Email:             participant.Email,
-			ParticipantUserID: participant.ParticipantUserID,
-			LeaveTime:         participant.LeaveTime,
-			LeaveReason:       participant.LeaveReason,
-		}
-
-		newParticipant, err := s.createParticipantFromLeftEvent(ctx, pastMeeting, zoomParticipant)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to create participant from left event",
-				logging.ErrKey, err,
-				logging.PriorityCritical(),
-			)
-			return fmt.Errorf("failed to create participant from left event: %w", err)
-		}
-		slog.InfoContext(ctx, "created participant record from left event",
-			"past_meeting_uid", pastMeeting.UID,
-			"participant_uid", newParticipant.UID,
-			"email", redaction.RedactEmail(participant.Email),
-			"calculated_join_time", zoomParticipant.JoinTime,
-			"leave_time", participant.LeaveTime,
-		)
+		return nil
 	}
+
+	// Create new participant record with completed session (they joined and left but we missed the joined event)
+	slog.WarnContext(ctx, "no existing participant found for left event, creating new record",
+		"participant_email", redaction.RedactEmail(participant.Email),
+		"zoom_meeting_id", meetingObj.ID,
+	)
+
+	zoomParticipant := ZoomPayloadForParticipant{
+		UserID:            participant.UserID,
+		UserName:          participant.UserName,
+		ParticipantUUID:   participant.ParticipantUUID,
+		JoinTime:          participant.LeaveTime.Add(-time.Duration(participant.Duration) * time.Second), // Calculate join time from leave time and duration
+		Email:             participant.Email,
+		ParticipantUserID: participant.ParticipantUserID,
+		LeaveTime:         participant.LeaveTime,
+		LeaveReason:       participant.LeaveReason,
+	}
+
+	newParticipant, err := s.createParticipantFromLeftEvent(ctx, pastMeeting, zoomParticipant)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create participant from left event",
+			logging.ErrKey, err,
+			logging.PriorityCritical(),
+		)
+		return fmt.Errorf("failed to create participant from left event: %w", err)
+	}
+	slog.InfoContext(ctx, "created participant record from left event",
+		"past_meeting_uid", pastMeeting.UID,
+		"participant_uid", newParticipant.UID,
+		"email", redaction.RedactEmail(participant.Email),
+		"calculated_join_time", zoomParticipant.JoinTime,
+		"leave_time", participant.LeaveTime,
+	)
 
 	return nil
 }
@@ -1694,6 +1699,65 @@ func parseNameFromUserName(userName string) (firstName, lastName string) {
 	firstName = parts[0]
 	lastName = strings.Join(parts[1:], " ")
 	return firstName, lastName
+}
+
+// cleanZoomUserName removes organization information in parentheses from Zoom user names
+// e.g., "First Last (The Linux Foundation)" becomes "First Last"
+func cleanZoomUserName(userName string) string {
+	if userName == "" {
+		return ""
+	}
+
+	// Find the first opening parenthesis
+	if idx := strings.Index(userName, "("); idx != -1 {
+		// Remove everything from the opening parenthesis onwards
+		userName = userName[:idx]
+	}
+
+	// Trim any trailing whitespace
+	return strings.TrimSpace(userName)
+}
+
+// findExistingParticipant finds an existing participant by email first, then by name
+// Returns nil if not found (not an error), only returns errors for system failures
+func (s *ZoomWebhookHandler) findExistingParticipant(ctx context.Context, pastMeetingUID, email, userName string) (*models.PastMeetingParticipant, error) {
+	// Get all participants for this past meeting to search through
+	participants, err := s.pastMeetingParticipantService.PastMeetingParticipantRepository.ListByPastMeeting(ctx, pastMeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting participants for past meeting", logging.ErrKey, err)
+		return nil, fmt.Errorf("failed to get participants for past meeting: %w", err)
+	}
+
+	// Try to find existing PastMeetingParticipant record by email first
+	if email != "" {
+		for _, p := range participants {
+			if p.Email != "" && strings.EqualFold(email, p.Email) {
+				slog.DebugContext(ctx, "found existing participant by email match",
+					"participant_uid", p.UID,
+					"email", redaction.RedactEmail(p.Email))
+				return p, nil
+			}
+		}
+	}
+
+	// If no existing participant found by email, try to find by name
+	if userName != "" {
+		// Clean the Zoom name to remove organization info in parentheses
+		cleanedZoomName := cleanZoomUserName(userName)
+		for _, p := range participants {
+			existingFullName := strings.TrimSpace(p.FirstName + " " + p.LastName)
+			if existingFullName != "" && strings.EqualFold(cleanedZoomName, existingFullName) {
+				slog.DebugContext(ctx, "found existing participant by name match",
+					"participant_uid", p.UID,
+					"zoom_name", userName,
+					"cleaned_zoom_name", cleanedZoomName,
+					"existing_name", existingFullName)
+				return p, nil
+			}
+		}
+	}
+
+	return nil, nil // No existing participant found
 }
 
 // updateParticipantSessionLeaveTime updates a participant's session with the leave time and reason
