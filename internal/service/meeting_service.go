@@ -410,14 +410,17 @@ func (s *MeetingService) GetMeetingJoinURL(ctx context.Context, uid string) (str
 	return meetingDB.JoinURL, nil
 }
 
-func (s *MeetingService) validateUpdateMeetingRequest(ctx context.Context, req *models.MeetingBase) error {
+func (s *MeetingService) validateUpdateMeetingRequest(ctx context.Context, req *models.MeetingBase, existingMeeting *models.MeetingBase) error {
 	if req == nil {
 		return domain.NewValidationError("meeting update request is required")
 	}
 
-	if req.StartTime.Before(time.Now().UTC()) {
-		slog.WarnContext(ctx, "start time cannot be in the past", "start_time", req.StartTime)
-		return domain.NewValidationError("meeting start time cannot be in the past")
+	// Only validate start time is in the future if the start time is being changed
+	if existingMeeting != nil && !req.StartTime.Equal(existingMeeting.StartTime) {
+		if req.StartTime.Before(time.Now().UTC()) {
+			slog.WarnContext(ctx, "start time cannot be in the past", "start_time", req.StartTime)
+			return domain.NewValidationError("meeting start time cannot be in the past")
+		}
 	}
 
 	return nil
@@ -453,7 +456,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		return nil, err
 	}
 
-	if err := s.validateUpdateMeetingRequest(ctx, reqMeeting); err != nil {
+	if err := s.validateUpdateMeetingRequest(ctx, reqMeeting, existingMeetingDB); err != nil {
 		return nil, err
 	}
 
