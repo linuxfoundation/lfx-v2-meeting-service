@@ -512,6 +512,11 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		return nil, err
 	}
 
+	// Calculate occurrences for the updated meeting before sending NATS messages
+	// This ensures the indexer receives the meeting with updated occurrences
+	currentTime := time.Now()
+	reqMeeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(reqMeeting, currentTime, 50)
+
 	// Get the meeting settings to retrieve organizers for the updated message
 	settingsDB, err := s.MeetingRepository.GetSettings(ctx, reqMeeting.UID)
 	if err != nil {
@@ -557,10 +562,6 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		slog.ErrorContext(ctx, "failed to send NATS messages for updated meeting", logging.ErrKey, err)
 		return nil, domain.NewInternalError("failed to publish meeting update events", err)
 	}
-
-	// Calculate occurrences for the updated meeting
-	currentTime := time.Now()
-	reqMeeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(reqMeeting, currentTime, 50)
 
 	slog.DebugContext(ctx, "returning updated meeting", "meeting", reqMeeting)
 
