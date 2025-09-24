@@ -44,7 +44,7 @@ func TestBuildEmailMessage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			message := buildEmailMessage(tt.recipient, tt.subject, tt.htmlContent, tt.textContent, config)
 
-			assert.Contains(t, message, "From: noreply@example.com")
+			assert.Contains(t, message, "From: LFX One Meetings <noreply@example.com>")
 			assert.Contains(t, message, fmt.Sprintf("To: %s", tt.recipient))
 			assert.Contains(t, message, fmt.Sprintf("Subject: %s", tt.subject))
 			assert.Contains(t, message, "MIME-Version: 1.0")

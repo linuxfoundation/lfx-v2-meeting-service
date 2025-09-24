@@ -36,6 +36,11 @@ func generateMessageID(config SMTPConfig) string {
 	return fmt.Sprintf("<%x.%d@%s>", bytes, time.Now().UnixNano(), domain)
 }
 
+// EmailMetadata contains supplementary information for email customization
+type EmailMetadata struct {
+	ProjectName string // Optional project name for dynamic FROM display name
+}
+
 // EmailMessageParams contains all the information needed to build an email message
 type EmailMessageParams struct {
 	Recipient   string
@@ -44,6 +49,7 @@ type EmailMessageParams struct {
 	TextContent string
 	Attachment  *domain.EmailAttachment
 	Config      SMTPConfig
+	Metadata    *EmailMetadata // Optional metadata for email customization
 }
 
 // buildEmailMessage builds the complete email message with headers and multipart content
@@ -59,7 +65,7 @@ func buildEmailMessage(recipient, subject, htmlContent, textContent string, conf
 }
 
 // buildEmailMessageWithAttachment builds the complete email message with optional attachment
-func buildEmailMessageWithAttachment(recipient, subject, htmlContent, textContent string, attachment *domain.EmailAttachment, config SMTPConfig) string {
+func buildEmailMessageWithAttachment(recipient, subject, htmlContent, textContent string, attachment *domain.EmailAttachment, metadata *EmailMetadata, config SMTPConfig) string {
 	return buildEmailMessageWithParams(EmailMessageParams{
 		Recipient:   recipient,
 		Subject:     subject,
@@ -67,6 +73,7 @@ func buildEmailMessageWithAttachment(recipient, subject, htmlContent, textConten
 		TextContent: textContent,
 		Attachment:  attachment,
 		Config:      config,
+		Metadata:    metadata,
 	})
 }
 
@@ -76,7 +83,13 @@ func buildEmailMessageWithParams(params EmailMessageParams) string {
 	var message strings.Builder
 
 	// RFC 5322 required and recommended headers
-	message.WriteString(fmt.Sprintf("From: %s\r\n", params.Config.From))
+	// Determine the FROM display name based on project metadata
+	fromDisplayName := "LFX One Meetings" // Default fallback
+	if params.Metadata != nil && params.Metadata.ProjectName != "" {
+		fromDisplayName = fmt.Sprintf("%s Meetings", params.Metadata.ProjectName)
+	}
+
+	message.WriteString(fmt.Sprintf("From: %s <%s>\r\n", fromDisplayName, params.Config.From))
 	message.WriteString(fmt.Sprintf("To: %s\r\n", params.Recipient))
 	message.WriteString(fmt.Sprintf("Subject: %s\r\n", params.Subject))
 	message.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123Z)))

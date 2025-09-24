@@ -142,7 +142,10 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 
 	// Build and send the email with attachment
 	subject := fmt.Sprintf("Invitation: %s", invitation.MeetingTitle)
-	message := buildEmailMessageWithAttachment(invitation.RecipientEmail, subject, htmlContent, textContent, attachment, s.config)
+	metadata := &EmailMetadata{
+		ProjectName: invitation.ProjectName,
+	}
+	message := buildEmailMessageWithAttachment(invitation.RecipientEmail, subject, htmlContent, textContent, attachment, metadata, s.config)
 	err = sendEmailMessage(invitation.RecipientEmail, message, s.config)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send invitation email", logging.ErrKey, err)
@@ -210,6 +213,9 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 		TextContent: textContent,
 		Attachment:  attachment,
 		Config:      s.config,
+		Metadata: &EmailMetadata{
+			ProjectName: cancellation.ProjectName,
+		},
 	})
 	err = sendEmailMessage(cancellation.RecipientEmail, message, s.config)
 	if err != nil {
@@ -283,6 +289,9 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 		TextContent: textContent,
 		Attachment:  attachment,
 		Config:      s.config,
+		Metadata: &EmailMetadata{
+			ProjectName: updatedInvitation.ProjectName,
+		},
 	})
 
 	err = sendEmailMessage(updatedInvitation.RecipientEmail, message, s.config)
@@ -325,6 +334,9 @@ func (s *SMTPService) SendSummaryNotification(ctx context.Context, notification 
 		TextContent: textContent,
 		Attachment:  nil, // No attachments for summary notifications
 		Config:      s.config,
+		Metadata: &EmailMetadata{
+			ProjectName: notification.ProjectName,
+		},
 	})
 
 	err = sendEmailMessage(notification.RecipientEmail, message, s.config)
