@@ -230,6 +230,11 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeeting 
 		return domain.NewUnavailableError("service not initialized")
 	}
 
+	if pastMeeting == nil || pastMeeting.UID == "" {
+		slog.WarnContext(ctx, "past meeting UID is required")
+		return domain.NewValidationError("past meeting UID is required for update")
+	}
+
 	var err error
 	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.

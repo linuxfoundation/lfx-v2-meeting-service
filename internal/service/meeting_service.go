@@ -415,6 +415,11 @@ func (s *MeetingService) GetMeetingByPlatformMeetingID(ctx context.Context, plat
 			slog.ErrorContext(ctx, "failed to find meeting by Zoom meeting ID", logging.ErrKey, err)
 			return nil, err
 		}
+
+		// Calculate next 50 occurrences from current time
+		currentTime := time.Now()
+		meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+
 		slog.DebugContext(ctx, "returning meeting by Zoom meeting ID", "meeting_uid", meeting.UID)
 		return meeting, nil
 	default:
