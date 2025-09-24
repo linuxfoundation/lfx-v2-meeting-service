@@ -556,6 +556,9 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 				}
 				mockMeetingRepo.On("GetBaseWithRevision", mock.Anything, "meeting-updated").Return(meeting, uint64(0), nil)
 
+				// Mock GetProjectName for email notifications
+				mockBuilder.On("GetProjectName", mock.Anything, mock.AnythingOfType("string")).Return("Test Project", nil)
+
 				// Expect email notifications to be sent
 				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {
 					return invitation.MeetingUID == "meeting-updated" &&
@@ -641,6 +644,9 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 					Timezone:  "UTC",
 				}
 				mockMeetingRepo.On("GetBaseWithRevision", mock.Anything, "meeting-partial-email-fail").Return(meeting, uint64(0), nil)
+
+				// Mock GetProjectName for email notifications
+				mockBuilder.On("GetProjectName", mock.Anything, mock.AnythingOfType("string")).Return("Test Project", nil)
 
 				// First email succeeds, second fails
 				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {

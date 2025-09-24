@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -138,7 +137,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 		// Send invitation email to the registrant
 		func() error {
 			emailCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.sendRegistrantInvitationEmail(emailCtx, reqRegistrant)
+			err := s.SendRegistrantInvitationEmail(emailCtx, reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(emailCtx, "failed to send invitation email", logging.ErrKey, err)
 			}
@@ -199,6 +198,26 @@ func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, ui
 	}
 
 	slog.DebugContext(ctx, "returning meeting registrants", "count", len(registrants))
+
+	return registrants, nil
+}
+
+// GetRegistrantsByEmail gets all registrants with a specific email address
+func (s *MeetingRegistrantService) GetRegistrantsByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(email)))
+
+	// Get all registrants with this email
+	registrants, err := s.RegistrantRepository.ListByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "returning registrants by email", "count", len(registrants))
 
 	return registrants, nil
 }
@@ -427,7 +446,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 	functions = append(functions, func() error {
 		emailCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-		err := s.sendRegistrantCancellationEmail(emailCtx, registrant, meeting)
+		err := s.SendRegistrantCancellationEmail(emailCtx, registrant, meeting)
 		if err != nil {
 			slog.ErrorContext(emailCtx, "failed to send cancellation email", logging.ErrKey, err)
 		}
@@ -498,7 +517,7 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	// Send cancellation email to old email address
 	oldEmailRegistrant := *oldRegistrant
 	oldEmailRegistrant.Email = oldEmail
-	err := s.sendRegistrantCancellationEmail(ctx, &oldEmailRegistrant, meeting)
+	err := s.SendRegistrantCancellationEmail(ctx, &oldEmailRegistrant, meeting)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send cancellation email to old address",
 			"old_email", redaction.RedactEmail(oldEmail),
@@ -509,7 +528,7 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	// Send invitation email to new email address
 	newEmailRegistrant := *newRegistrant
 	newEmailRegistrant.Email = newEmail
-	err = s.sendRegistrantInvitationEmail(ctx, &newEmailRegistrant)
+	err = s.SendRegistrantInvitationEmail(ctx, &newEmailRegistrant)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send invitation email to new address",
 			"new_email", redaction.RedactEmail(newEmail),
@@ -530,31 +549,26 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 	return nil
 }
 
-// sendRegistrantInvitationEmail sends an invitation email to a newly created registrant
-func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
-	// Get meeting details for the email
+// SendRegistrantInvitationEmail sends an invitation email to a newly created registrant
+func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
 	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {
 		return fmt.Errorf("failed to get meeting details: %w", err)
 	}
 
-	// Format recipient name
 	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
 	if recipientName == " " {
-		recipientName = "" // If both names are empty, use empty string
+		recipientName = ""
 	}
 
-	// Extract meeting ID and passcode for ICS generation
 	var meetingID, passcode string
 	if meetingDB.ZoomConfig != nil {
 		meetingID = meetingDB.ZoomConfig.MeetingID
 		passcode = meetingDB.ZoomConfig.Passcode
 	}
 
-	// Get project name
 	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
 
-	// Create email invitation
 	invitation := domain.EmailInvitation{
 		MeetingUID:     meetingDB.UID,
 		RecipientEmail: registrant.Email,
@@ -572,67 +586,7 @@ func (s *MeetingRegistrantService) sendRegistrantInvitationEmail(ctx context.Con
 		Recurrence:     meetingDB.Recurrence,
 	}
 
-	// Send the email
 	return s.EmailService.SendRegistrantInvitation(ctx, invitation)
-}
-
-// sendRegistrantCancellationEmail sends a cancellation email to a deleted registrant
-func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(
-	ctx context.Context,
-	registrant *models.Registrant,
-	meeting *models.MeetingBase,
-) error {
-	if meeting == nil {
-		slog.WarnContext(ctx, "meeting object missing; unable to send cancellation email")
-		return errors.New("meeting object missing")
-	}
-
-	// Format recipient name
-	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
-	if recipientName == " " {
-		recipientName = "" // If both names are empty, use empty string
-	}
-
-	// Get project name
-	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meeting.ProjectUID)
-
-	// Create email cancellation
-	cancellation := domain.EmailCancellation{
-		MeetingUID:     meeting.UID,
-		RecipientEmail: registrant.Email,
-		RecipientName:  recipientName,
-		MeetingTitle:   meeting.Title,
-		StartTime:      meeting.StartTime,
-		Duration:       meeting.Duration,
-		Timezone:       meeting.Timezone,
-		Description:    meeting.Description,
-		ProjectName:    projectName,
-		Reason:         "Your registration has been removed from this meeting.",
-		Recurrence:     meeting.Recurrence,
-	}
-
-	// Send the email
-	return s.EmailService.SendRegistrantCancellation(ctx, cancellation)
-}
-
-// GetRegistrantsByEmail gets all registrants with a specific email address
-func (s *MeetingRegistrantService) GetRegistrantsByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
-	}
-
-	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(email)))
-
-	// Get all registrants with this email
-	registrants, err := s.RegistrantRepository.ListByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
-	slog.DebugContext(ctx, "returning registrants by email", "count", len(registrants))
-
-	return registrants, nil
 }
 
 // SendRegistrantUpdatedInvitation sends an updated invitation email to a registrant
@@ -646,15 +600,13 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meeting.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(registrant.Email)))
 
-	// Determine recipient name (use first/last name from registrant if available, otherwise extract from email)
-	recipientName := strings.TrimSpace(registrant.FirstName + " " + registrant.LastName)
-	if recipientName == "" {
-		if atIndex := strings.Index(registrant.Email, "@"); atIndex > 0 {
-			recipientName = registrant.Email[:atIndex]
-		}
+	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
+	if recipientName == " " {
+		recipientName = ""
 	}
 
-	// Build updated invitation email data
+	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+
 	updatedInvitation := domain.EmailUpdatedInvitation{
 		MeetingUID:     meeting.UID,
 		RecipientEmail: registrant.Email,
@@ -670,9 +622,43 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		Passcode:       passcode,
 		Recurrence:     meeting.Recurrence,
 		Changes:        changes,
-		ProjectName:    "",
+		ProjectName:    projectName,
 	}
 
-	// Send the email
 	return s.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
+}
+
+// SendRegistrantCancellationEmail sends a cancellation email to a deleted registrant
+func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
+	ctx context.Context,
+	registrant *models.Registrant,
+	meeting *models.MeetingBase,
+) error {
+	if meeting == nil {
+		slog.WarnContext(ctx, "meeting object missing; unable to send cancellation email")
+		return errors.New("meeting object missing")
+	}
+
+	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
+	if recipientName == " " {
+		recipientName = ""
+	}
+
+	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+
+	cancellation := domain.EmailCancellation{
+		MeetingUID:     meeting.UID,
+		RecipientEmail: registrant.Email,
+		RecipientName:  recipientName,
+		MeetingTitle:   meeting.Title,
+		StartTime:      meeting.StartTime,
+		Duration:       meeting.Duration,
+		Timezone:       meeting.Timezone,
+		Description:    meeting.Description,
+		ProjectName:    projectName,
+		Reason:         "Your registration has been removed from this meeting.",
+		Recurrence:     meeting.Recurrence,
+	}
+
+	return s.EmailService.SendRegistrantCancellation(ctx, cancellation)
 }
