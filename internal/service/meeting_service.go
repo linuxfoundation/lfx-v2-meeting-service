@@ -24,11 +24,11 @@ import (
 
 // MeetingsService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingService struct {
-	MeetingRepository domain.MeetingRepository
-	MessageBuilder    domain.MessageBuilder
-	PlatformRegistry  domain.PlatformRegistry
-	OccurrenceService domain.OccurrenceService
-	Config            ServiceConfig
+	meetingRepository domain.MeetingRepository
+	messageBuilder    domain.MessageBuilder
+	platformRegistry  domain.PlatformRegistry
+	occurrenceService domain.OccurrenceService
+	config            ServiceConfig
 }
 
 // NewMeetingsService creates a new MeetingsService.
@@ -40,11 +40,11 @@ func NewMeetingService(
 	config ServiceConfig,
 ) *MeetingService {
 	return &MeetingService{
-		MeetingRepository: meetingRepository,
-		MessageBuilder:    messageBuilder,
-		PlatformRegistry:  platformRegistry,
-		OccurrenceService: occurrenceService,
-		Config:            config,
+		meetingRepository: meetingRepository,
+		messageBuilder:    messageBuilder,
+		platformRegistry:  platformRegistry,
+		occurrenceService: occurrenceService,
+		config:            config,
 	}
 }
 
@@ -108,10 +108,10 @@ func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[st
 
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingService) ServiceReady() bool {
-	return s.MeetingRepository != nil &&
-		s.MessageBuilder != nil &&
-		s.PlatformRegistry != nil &&
-		s.OccurrenceService != nil
+	return s.meetingRepository != nil &&
+		s.messageBuilder != nil &&
+		s.platformRegistry != nil &&
+		s.occurrenceService != nil
 }
 
 // ListMeetings fetches all meetings
@@ -122,7 +122,7 @@ func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFul
 	}
 
 	// Get all meetings from the store
-	meetingsBase, meetingSettings, err := s.MeetingRepository.ListAll(ctx)
+	meetingsBase, meetingSettings, err := s.meetingRepository.ListAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFul
 		if meeting != nil {
 			settings = settingsByUID[meeting.UID]
 			// Calculate next 50 occurrences from current time
-			meeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+			meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
 		}
 		meetings[i] = &models.MeetingFull{
 			Base:     meeting,
@@ -166,7 +166,7 @@ func (s *MeetingService) ListMeetingsByCommittee(ctx context.Context, committeeU
 	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", committeeUID))
 
 	// Get meetings from repository
-	meetings, settings, err := s.MeetingRepository.ListByCommittee(ctx, committeeUID)
+	meetings, settings, err := s.meetingRepository.ListByCommittee(ctx, committeeUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting meetings by committee", logging.ErrKey, err)
 		return nil, nil, err
@@ -176,7 +176,7 @@ func (s *MeetingService) ListMeetingsByCommittee(ctx context.Context, committeeU
 	currentTime := time.Now()
 	for _, meeting := range meetings {
 		if meeting != nil {
-			meeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+			meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
 		}
 	}
 
@@ -210,7 +210,7 @@ func (s *MeetingService) validateCommittees(ctx context.Context, committees []mo
 			continue
 		}
 
-		_, err := s.MessageBuilder.GetCommitteeName(ctx, committee.UID)
+		_, err := s.messageBuilder.GetCommitteeName(ctx, committee.UID)
 		if err != nil {
 			var committeNotFoundErr *messaging.CommitteeNotFoundError
 			if errors.As(err, &committeNotFoundErr) {
@@ -236,7 +236,7 @@ func (s *MeetingService) validateProject(ctx context.Context, projectUID string)
 		return nil
 	}
 
-	_, err := s.MessageBuilder.GetProjectName(ctx, projectUID)
+	_, err := s.messageBuilder.GetProjectName(ctx, projectUID)
 	if err != nil {
 		var projectNotFoundErr *messaging.ProjectNotFoundError
 		if errors.As(err, &projectNotFoundErr) {
@@ -281,7 +281,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 
 	// Create meeting on external platform if configured
 	if reqMeeting.Base.Platform != "" {
-		provider, err := s.PlatformRegistry.GetProvider(reqMeeting.Base.Platform)
+		provider, err := s.platformRegistry.GetProvider(reqMeeting.Base.Platform)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to get platform provider",
 				"platform", reqMeeting.Base.Platform,
@@ -306,15 +306,15 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	}
 
 	// Calculate first 50 occurrences for the new meeting
-	reqMeeting.Base.Occurrences = s.OccurrenceService.CalculateOccurrences(reqMeeting.Base, 50)
+	reqMeeting.Base.Occurrences = s.occurrenceService.CalculateOccurrences(reqMeeting.Base, 50)
 
 	// Create the meeting in the repository
 	// TODO: handle rollbacks better
-	err := s.MeetingRepository.Create(ctx, reqMeeting.Base, reqMeeting.Settings)
+	err := s.meetingRepository.Create(ctx, reqMeeting.Base, reqMeeting.Settings)
 	if err != nil {
 		// If repository creation fails and we created a platform meeting, attempt to clean it up
 		if reqMeeting.Base.Platform != "" {
-			if provider, provErr := s.PlatformRegistry.GetProvider(reqMeeting.Base.Platform); provErr == nil {
+			if provider, provErr := s.platformRegistry.GetProvider(reqMeeting.Base.Platform); provErr == nil {
 				if platformMeetingID := provider.GetPlatformMeetingID(reqMeeting.Base); platformMeetingID != "" {
 					if delErr := provider.DeleteMeeting(ctx, platformMeetingID); delErr != nil {
 						slog.ErrorContext(ctx, "failed to cleanup platform meeting after repository error",
@@ -334,10 +334,10 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionCreated, *reqMeeting.Base)
+			return s.messageBuilder.SendIndexMeeting(ctx, models.ActionCreated, *reqMeeting.Base)
 		},
 		func() error {
-			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionCreated, *reqMeeting.Settings)
+			return s.messageBuilder.SendIndexMeetingSettings(ctx, models.ActionCreated, *reqMeeting.Settings)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -346,7 +346,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 				committees[i] = committee.UID
 			}
 
-			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+			return s.messageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        reqMeeting.Base.UID,
 				Public:     reqMeeting.Base.IsPublic(),
 				ProjectUID: reqMeeting.Base.ProjectUID,
@@ -355,7 +355,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 			})
 		},
 		func() error {
-			return s.MessageBuilder.SendMeetingCreated(ctx, models.MeetingCreatedMessage{
+			return s.messageBuilder.SendMeetingCreated(ctx, models.MeetingCreatedMessage{
 				MeetingUID: reqMeeting.Base.UID,
 				Base:       reqMeeting.Base,
 				Settings:   reqMeeting.Settings,
@@ -381,7 +381,7 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
-	meetingDB, revision, err := s.MeetingRepository.GetBaseWithRevision(ctx, uid)
+	meetingDB, revision, err := s.meetingRepository.GetBaseWithRevision(ctx, uid)
 	if err != nil {
 		return nil, "", err
 	}
@@ -392,11 +392,34 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 
 	// Calculate next 50 occurrences from current time
 	currentTime := time.Now()
-	meetingDB.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
+	meetingDB.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
 
 	slog.DebugContext(ctx, "returning meeting", "meeting", meetingDB, "revision", revision)
 
 	return meetingDB, revisionStr, nil
+}
+
+// GetMeetingByPlatformMeetingID gets a meeting by its platform meeting ID
+func (s *MeetingService) GetMeetingByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.MeetingBase, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("meeting service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("platform_meeting_id", platformMeetingID))
+
+	switch platform {
+	case models.PlatformZoom:
+		meeting, err := s.meetingRepository.GetByZoomMeetingID(ctx, platformMeetingID)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to find meeting by Zoom meeting ID", logging.ErrKey, err)
+			return nil, err
+		}
+		slog.DebugContext(ctx, "returning meeting by Zoom meeting ID", "meeting_uid", meeting.UID)
+		return meeting, nil
+	default:
+		return nil, domain.NewNotFoundError(fmt.Sprintf("meeting with platform '%s' and meeting ID '%s' not found", platform, platformMeetingID), nil)
+	}
 }
 
 // GetMeetingSettings fetches settings for a specific meeting by ID
@@ -408,7 +431,7 @@ func (s *MeetingService) GetMeetingSettings(ctx context.Context, uid string) (*m
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
-	settingsDB, revision, err := s.MeetingRepository.GetSettingsWithRevision(ctx, uid)
+	settingsDB, revision, err := s.meetingRepository.GetSettingsWithRevision(ctx, uid)
 	if err != nil {
 		return nil, "", err
 	}
@@ -431,7 +454,7 @@ func (s *MeetingService) GetMeetingJoinURL(ctx context.Context, uid string) (str
 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
-	meetingDB, _, err := s.MeetingRepository.GetBaseWithRevision(ctx, uid)
+	meetingDB, _, err := s.meetingRepository.GetBaseWithRevision(ctx, uid)
 	if err != nil {
 		return "", err
 	}
@@ -468,9 +491,9 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 	}
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetBaseWithRevision(ctx, reqMeeting.UID)
+		_, revision, err = s.meetingRepository.GetBaseWithRevision(ctx, reqMeeting.UID)
 		if err != nil {
 			return nil, err
 		}
@@ -480,7 +503,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the meeting exists and use some of the existing meeting data for the update.
-	existingMeetingDB, err := s.MeetingRepository.GetBase(ctx, reqMeeting.UID)
+	existingMeetingDB, err := s.meetingRepository.GetBase(ctx, reqMeeting.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -503,7 +526,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 
 	// Update meeting on external platform if configured
 	if reqMeeting.Platform != "" {
-		provider, err := s.PlatformRegistry.GetProvider(reqMeeting.Platform)
+		provider, err := s.platformRegistry.GetProvider(reqMeeting.Platform)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to get platform provider",
 				"platform", reqMeeting.Platform,
@@ -536,7 +559,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 	// Detect changes before updating
 	changes := detectMeetingBaseChanges(existingMeetingDB, reqMeeting)
 
-	err = s.MeetingRepository.UpdateBase(ctx, reqMeeting, revision)
+	err = s.meetingRepository.UpdateBase(ctx, reqMeeting, revision)
 	if err != nil {
 		return nil, err
 	}
@@ -544,10 +567,10 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 	// Calculate occurrences for the updated meeting before sending NATS messages
 	// This ensures the indexer receives the meeting with updated occurrences
 	currentTime := time.Now()
-	reqMeeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(reqMeeting, currentTime, 50)
+	reqMeeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(reqMeeting, currentTime, 50)
 
 	// Get the meeting settings to retrieve organizers for the updated message
-	settingsDB, err := s.MeetingRepository.GetSettings(ctx, reqMeeting.UID)
+	settingsDB, err := s.meetingRepository.GetSettings(ctx, reqMeeting.UID)
 	if err != nil {
 		// If we can't get settings, use empty organizers array rather than failing
 		slog.WarnContext(ctx, "could not retrieve meeting settings for messages", logging.ErrKey, err)
@@ -559,7 +582,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting)
+			return s.messageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -568,7 +591,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 				committees[i] = committee.UID
 			}
 
-			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+			return s.messageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        reqMeeting.UID,
 				Public:     reqMeeting.IsPublic(),
 				ProjectUID: reqMeeting.ProjectUID,
@@ -577,7 +600,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 			})
 		},
 		func() error {
-			return s.MessageBuilder.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
+			return s.messageBuilder.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
 				MeetingUID:   reqMeeting.UID,
 				UpdatedBase:  reqMeeting,
 				PreviousBase: existingMeetingDB,
@@ -610,9 +633,9 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 	}
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetSettingsWithRevision(ctx, reqSettings.UID)
+		_, revision, err = s.meetingRepository.GetSettingsWithRevision(ctx, reqSettings.UID)
 		if err != nil {
 			return nil, err
 		}
@@ -622,7 +645,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the meeting settings exist and use some of the existing data for the update.
-	existingSettingsDB, err := s.MeetingRepository.GetSettings(ctx, reqSettings.UID)
+	existingSettingsDB, err := s.meetingRepository.GetSettings(ctx, reqSettings.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -630,7 +653,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 	reqSettings = models.MergeUpdateMeetingSettingsRequest(reqSettings, existingSettingsDB)
 
 	// Update the meeting settings in the repository
-	err = s.MeetingRepository.UpdateSettings(ctx, reqSettings, revision)
+	err = s.meetingRepository.UpdateSettings(ctx, reqSettings, revision)
 	if err != nil {
 		return nil, err
 	}
@@ -640,11 +663,11 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *reqSettings)
+			return s.messageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *reqSettings)
 		},
 		func() error {
 			// Get the meeting base data to send access update message
-			meetingDB, err := s.MeetingRepository.GetBase(ctx, reqSettings.UID)
+			meetingDB, err := s.meetingRepository.GetBase(ctx, reqSettings.UID)
 			if err != nil {
 				// Don't fail the message if we can't get the meeting base data
 				// since the settings were already updated.
@@ -658,7 +681,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 				committees[i] = committee.UID
 			}
 
-			return s.MessageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+			return s.messageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        meetingDB.UID,
 				Public:     meetingDB.IsPublic(),
 				ProjectUID: meetingDB.ProjectUID,
@@ -686,9 +709,9 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	}
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.MeetingRepository.GetBaseWithRevision(ctx, uid)
+		_, revision, err = s.meetingRepository.GetBaseWithRevision(ctx, uid)
 		if err != nil {
 			return err
 		}
@@ -698,13 +721,13 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Get the meeting to check if it has a Zoom meeting ID
-	meetingDB, err := s.MeetingRepository.GetBase(ctx, uid)
+	meetingDB, err := s.meetingRepository.GetBase(ctx, uid)
 	if err != nil {
 		return err
 	}
 
 	// Delete the meeting using the store first
-	err = s.MeetingRepository.Delete(ctx, uid, revision)
+	err = s.meetingRepository.Delete(ctx, uid, revision)
 	if err != nil {
 		return err
 	}
@@ -712,7 +735,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	// Delete meeting from external platform if configured
 	// We do this after successfully deleting from repository to ensure consistency
 	if meetingDB.Platform != "" {
-		provider, err := s.PlatformRegistry.GetProvider(meetingDB.Platform)
+		provider, err := s.platformRegistry.GetProvider(meetingDB.Platform)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to get platform provider for deletion",
 				"platform", meetingDB.Platform,
@@ -737,7 +760,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	}
 
 	// Send meeting deletion message to trigger registrant cleanup
-	err = s.MessageBuilder.SendMeetingDeleted(ctx, models.MeetingDeletedMessage{
+	err = s.messageBuilder.SendMeetingDeleted(ctx, models.MeetingDeletedMessage{
 		MeetingUID: uid,
 		Meeting:    meetingDB,
 	})
@@ -751,13 +774,13 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendDeleteIndexMeeting(ctx, uid)
+			return s.messageBuilder.SendDeleteIndexMeeting(ctx, uid)
 		},
 		func() error {
-			return s.MessageBuilder.SendDeleteIndexMeetingSettings(ctx, uid)
+			return s.messageBuilder.SendDeleteIndexMeetingSettings(ctx, uid)
 		},
 		func() error {
-			return s.MessageBuilder.SendDeleteAllAccessMeeting(ctx, uid)
+			return s.messageBuilder.SendDeleteAllAccessMeeting(ctx, uid)
 		},
 	}
 

@@ -30,22 +30,22 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 	}
 
 	occurrenceService := service.NewOccurrenceService()
-	meetingService := &service.MeetingService{
-		MeetingRepository: mockMeetingRepo,
-		MessageBuilder:    mockMessageBuilder,
-		PlatformRegistry:  mockPlatformRegistry,
-		OccurrenceService: occurrenceService,
-		Config:            config,
-	}
+	meetingService := service.NewMeetingService(
+		mockMeetingRepo,
+		mockMessageBuilder,
+		mockPlatformRegistry,
+		occurrenceService,
+		config,
+	)
 
-	registrantService := &service.MeetingRegistrantService{
-		MeetingRepository:    mockMeetingRepo,
-		RegistrantRepository: mockRegistrantRepo,
-		MessageBuilder:       mockMessageBuilder,
-		EmailService:         mockEmailService,
-		OccurrenceService:    occurrenceService,
-		Config:               config,
-	}
+	registrantService := service.NewMeetingRegistrantService(
+		mockMeetingRepo,
+		mockRegistrantRepo,
+		mockEmailService,
+		mockMessageBuilder,
+		occurrenceService,
+		config,
+	)
 
 	// Create a committee sync service for testing
 	committeeSyncService := service.NewCommitteeSyncService(

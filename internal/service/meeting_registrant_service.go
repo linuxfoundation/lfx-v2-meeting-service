@@ -21,12 +21,12 @@ import (
 
 // MeetingRegistrantService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingRegistrantService struct {
-	MeetingRepository    domain.MeetingRepository
-	RegistrantRepository domain.RegistrantRepository
-	EmailService         domain.EmailService
-	MessageBuilder       domain.MessageBuilder
-	OccurrenceService    *OccurrenceService
-	Config               ServiceConfig
+	meetingRepository    domain.MeetingRepository
+	registrantRepository domain.RegistrantRepository
+	emailService         domain.EmailService
+	messageBuilder       domain.MessageBuilder
+	occurrenceService    *OccurrenceService
+	config               ServiceConfig
 }
 
 // NewMeetingRegistrantService creates a new MeetingRegistrantService.
@@ -39,22 +39,22 @@ func NewMeetingRegistrantService(
 	config ServiceConfig,
 ) *MeetingRegistrantService {
 	return &MeetingRegistrantService{
-		Config:               config,
-		MeetingRepository:    meetingRepository,
-		RegistrantRepository: registrantRepository,
-		EmailService:         emailService,
-		MessageBuilder:       messageBuilder,
-		OccurrenceService:    occurrenceService,
+		config:               config,
+		meetingRepository:    meetingRepository,
+		registrantRepository: registrantRepository,
+		emailService:         emailService,
+		messageBuilder:       messageBuilder,
+		occurrenceService:    occurrenceService,
 	}
 }
 
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingRegistrantService) ServiceReady() bool {
-	return s.MeetingRepository != nil &&
-		s.RegistrantRepository != nil &&
-		s.MessageBuilder != nil &&
-		s.EmailService != nil &&
-		s.OccurrenceService != nil
+	return s.meetingRepository != nil &&
+		s.registrantRepository != nil &&
+		s.messageBuilder != nil &&
+		s.emailService != nil &&
+		s.occurrenceService != nil
 }
 
 // ListMeetingRegistrants gets all registrants for a meeting
@@ -67,7 +67,7 @@ func (s *MeetingRegistrantService) ListMeetingRegistrants(ctx context.Context, u
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
 
 	// Check if the meeting exists
-	_, err := s.MeetingRepository.GetBase(ctx, uid)
+	_, err := s.meetingRepository.GetBase(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (s *MeetingRegistrantService) ListMeetingRegistrants(ctx context.Context, u
 	slog.DebugContext(ctx, "meeting found", "meeting_uid", uid)
 
 	// Get all registrants for the meeting
-	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, uid)
+	registrants, err := s.registrantRepository.ListByMeeting(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (s *MeetingRegistrantService) ListRegistrantsByEmail(ctx context.Context, e
 	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(email)))
 
 	// Get all registrants with this email
-	registrants, err := s.RegistrantRepository.ListByEmail(ctx, email)
+	registrants, err := s.registrantRepository.ListByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +107,13 @@ func (s *MeetingRegistrantService) ListRegistrantsByEmail(ctx context.Context, e
 
 func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant) error {
 	// Check if the meeting exists
-	meeting, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
+	meeting, err := s.meetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
 	if err != nil {
 		return err
 	}
 
 	// Check that there isn't already a registrant with the same email address for this meeting.
-	registrants, err := s.RegistrantRepository.ListByEmail(ctx, reqRegistrant.Email)
+	registrants, err := s.registrantRepository.ListByEmail(ctx, reqRegistrant.Email)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx co
 
 	// Validate occurrence ID if provided
 	if reqRegistrant.OccurrenceID != "" {
-		if err := s.OccurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
+		if err := s.occurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
 			return err
 		}
 	}
@@ -164,7 +164,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", reqRegistrant.UID))
 
 	// Create the registrant
-	err = s.RegistrantRepository.Create(ctx, reqRegistrant)
+	err = s.registrantRepository.Create(ctx, reqRegistrant)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 		// Send indexing message for the new registrant
 		func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *reqRegistrant)
+			err := s.messageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for new registrant", logging.ErrKey, err)
 			}
@@ -197,7 +197,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 	if reqRegistrant.Username != "" {
 		tasks = append(tasks, func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+			err := s.messageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        reqRegistrant.UID,
 				Username:   reqRegistrant.Username,
 				MeetingUID: reqRegistrant.MeetingUID,
@@ -233,7 +233,7 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantUID))
 
 	// Check that meeting exists
-	exists, err := s.MeetingRepository.Exists(ctx, meetingUID)
+	exists, err := s.meetingRepository.Exists(ctx, meetingUID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -242,7 +242,7 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 	}
 
 	// Get registrant with revision from store
-	registrant, revision, err := s.RegistrantRepository.GetWithRevision(ctx, registrantUID)
+	registrant, revision, err := s.registrantRepository.GetWithRevision(ctx, registrantUID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -263,14 +263,14 @@ func (s *MeetingRegistrantService) GetMeetingRegistrant(ctx context.Context, mee
 
 func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant, existingRegistrant *models.Registrant) error {
 	// Check that the meeting exists and get it for occurrence validation
-	meeting, err := s.MeetingRepository.GetBase(ctx, existingRegistrant.MeetingUID)
+	meeting, err := s.meetingRepository.GetBase(ctx, existingRegistrant.MeetingUID)
 	if err != nil {
 		return err
 	}
 
 	if existingRegistrant.Email != reqRegistrant.Email {
 		// If changing the email address, check that there isn't already a registrant for this meeting with the new email address.
-		registrants, err := s.RegistrantRepository.ListByEmail(ctx, reqRegistrant.Email)
+		registrants, err := s.registrantRepository.ListByEmail(ctx, reqRegistrant.Email)
 		if err != nil {
 			return err
 		}
@@ -283,7 +283,7 @@ func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx co
 
 	// Validate occurrence ID if provided and different from existing
 	if reqRegistrant.OccurrenceID != "" && reqRegistrant.OccurrenceID != existingRegistrant.OccurrenceID {
-		if err := s.OccurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
+		if err := s.occurrenceService.ValidateFutureOccurrenceID(meeting, reqRegistrant.OccurrenceID, 100); err != nil {
 			return err
 		}
 	}
@@ -302,9 +302,9 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", reqRegistrant.UID))
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.RegistrantRepository.GetWithRevision(ctx, reqRegistrant.UID)
+		_, revision, err = s.registrantRepository.GetWithRevision(ctx, reqRegistrant.UID)
 		if err != nil {
 			return nil, err
 		}
@@ -313,7 +313,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the registrant exists and get existing data for the update
-	existingRegistrant, err := s.RegistrantRepository.Get(ctx, reqRegistrant.UID)
+	existingRegistrant, err := s.registrantRepository.Get(ctx, reqRegistrant.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +327,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 	reqRegistrant = models.MergeUpdateRegistrantRequest(reqRegistrant, existingRegistrant)
 
 	// Update the registrant
-	err = s.RegistrantRepository.Update(ctx, reqRegistrant, revision)
+	err = s.registrantRepository.Update(ctx, reqRegistrant, revision)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +339,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 		// Send indexing message for the updated registrant
 		func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.MessageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *reqRegistrant)
+			err := s.messageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for updated registrant", logging.ErrKey, err)
 			}
@@ -351,7 +351,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 	if reqRegistrant.Username != "" {
 		tasks = append(tasks, func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.MessageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+			err := s.messageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        reqRegistrant.UID,
 				Username:   reqRegistrant.Username,
 				MeetingUID: reqRegistrant.MeetingUID,
@@ -391,9 +391,9 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 	var err error
 	if skipRevisionCheck {
 		// Use revision 0 to skip revision checking for bulk cleanup operations
-		err = s.RegistrantRepository.Delete(ctx, registrant.UID, 0)
+		err = s.registrantRepository.Delete(ctx, registrant.UID, 0)
 	} else {
-		err = s.RegistrantRepository.Delete(ctx, registrant.UID, revision)
+		err = s.registrantRepository.Delete(ctx, registrant.UID, revision)
 	}
 
 	if err != nil {
@@ -414,7 +414,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 	functions = append(functions, func() error {
 		msgCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-		err := s.MessageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrant.UID)
+		err := s.messageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrant.UID)
 		if err != nil {
 			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
@@ -426,7 +426,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 		functions = append(functions, func() error {
 			msgCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-			err := s.MessageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+			err := s.messageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        registrant.UID,
 				Username:   registrant.Username,
 				MeetingUID: registrant.MeetingUID,
@@ -475,9 +475,9 @@ func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, 
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrantUID))
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.RegistrantRepository.GetWithRevision(ctx, registrantUID)
+		_, revision, err = s.registrantRepository.GetWithRevision(ctx, registrantUID)
 		if err != nil {
 			return err
 		}
@@ -486,13 +486,13 @@ func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, 
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Get the meeting for cleanup process and to check for existence
-	meeting, err := s.MeetingRepository.GetBase(ctx, meetingUID)
+	meeting, err := s.meetingRepository.GetBase(ctx, meetingUID)
 	if err != nil {
 		return err
 	}
 
 	// Get the registrant for cleanup process and to check for existence
-	registrant, err := s.RegistrantRepository.Get(ctx, registrantUID)
+	registrant, err := s.registrantRepository.Get(ctx, registrantUID)
 	if err != nil {
 		return err
 	}
@@ -551,7 +551,7 @@ func (s *MeetingRegistrantService) SendRegistrantEmailChangeNotifications(
 
 // SendRegistrantInvitationEmail sends an invitation email to a newly created registrant
 func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Context, registrant *models.Registrant) error {
-	meetingDB, err := s.MeetingRepository.GetBase(ctx, registrant.MeetingUID)
+	meetingDB, err := s.meetingRepository.GetBase(ctx, registrant.MeetingUID)
 	if err != nil {
 		return fmt.Errorf("failed to get meeting details: %w", err)
 	}
@@ -567,7 +567,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		passcode = meetingDB.ZoomConfig.Passcode
 	}
 
-	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
 
 	invitation := domain.EmailInvitation{
 		MeetingUID:     meetingDB.UID,
@@ -578,7 +578,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		Duration:       meetingDB.Duration,
 		Timezone:       meetingDB.Timezone,
 		Description:    meetingDB.Description,
-		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.Config.LFXEnvironment),
+		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
 		ProjectName:    projectName,
 		Platform:       meetingDB.Platform,
 		MeetingID:      meetingID,
@@ -586,7 +586,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		Recurrence:     meetingDB.Recurrence,
 	}
 
-	return s.EmailService.SendRegistrantInvitation(ctx, invitation)
+	return s.emailService.SendRegistrantInvitation(ctx, invitation)
 }
 
 // SendRegistrantUpdatedInvitation sends an updated invitation email to a registrant
@@ -605,7 +605,7 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		recipientName = ""
 	}
 
-	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
 
 	updatedInvitation := domain.EmailUpdatedInvitation{
 		MeetingUID:     meeting.UID,
@@ -616,7 +616,7 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		Duration:       meeting.Duration,
 		Timezone:       meeting.Timezone,
 		Description:    meeting.Description,
-		JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.Config.LFXEnvironment),
+		JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
 		Platform:       meeting.Platform,
 		MeetingID:      meetingID,
 		Passcode:       passcode,
@@ -625,7 +625,7 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		ProjectName:    projectName,
 	}
 
-	return s.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
+	return s.emailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
 }
 
 // SendRegistrantCancellationEmail sends a cancellation email to a deleted registrant
@@ -644,7 +644,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 		recipientName = ""
 	}
 
-	projectName, _ := s.MessageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
 
 	cancellation := domain.EmailCancellation{
 		MeetingUID:     meeting.UID,
@@ -660,5 +660,5 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 		Recurrence:     meeting.Recurrence,
 	}
 
-	return s.EmailService.SendRegistrantCancellation(ctx, cancellation)
+	return s.emailService.SendRegistrantCancellation(ctx, cancellation)
 }

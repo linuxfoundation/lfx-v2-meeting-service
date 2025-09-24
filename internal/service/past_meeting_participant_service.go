@@ -19,11 +19,11 @@ import (
 
 // PastMeetingParticipantService implements the meetingsvc.Service interface and domain.MessageHandler
 type PastMeetingParticipantService struct {
-	MeetingRepository                domain.MeetingRepository
-	PastMeetingRepository            domain.PastMeetingRepository
-	PastMeetingParticipantRepository domain.PastMeetingParticipantRepository
-	MessageBuilder                   domain.MessageBuilder
-	Config                           ServiceConfig
+	meetingRepository                domain.MeetingRepository
+	pastMeetingRepository            domain.PastMeetingRepository
+	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository
+	messageBuilder                   domain.MessageBuilder
+	config                           ServiceConfig
 }
 
 // NewPastMeetingParticipantService creates a new PastMeetingParticipantService.
@@ -35,19 +35,19 @@ func NewPastMeetingParticipantService(
 	config ServiceConfig,
 ) *PastMeetingParticipantService {
 	return &PastMeetingParticipantService{
-		Config:                           config,
-		MeetingRepository:                meetingRepository,
-		PastMeetingRepository:            pastMeetingRepository,
-		PastMeetingParticipantRepository: pastMeetingParticipantRepository,
-		MessageBuilder:                   messageBuilder,
+		config:                           config,
+		meetingRepository:                meetingRepository,
+		pastMeetingRepository:            pastMeetingRepository,
+		pastMeetingParticipantRepository: pastMeetingParticipantRepository,
+		messageBuilder:                   messageBuilder,
 	}
 }
 
 // ServiceReady checks if the service is ready for use.
 func (s *PastMeetingParticipantService) ServiceReady() bool {
-	return s.PastMeetingRepository != nil &&
-		s.PastMeetingParticipantRepository != nil &&
-		s.MessageBuilder != nil
+	return s.pastMeetingRepository != nil &&
+		s.pastMeetingParticipantRepository != nil &&
+		s.messageBuilder != nil
 }
 
 // ListPastMeetingParticipants fetches all participants for a past meeting
@@ -65,7 +65,7 @@ func (s *PastMeetingParticipantService) ListPastMeetingParticipants(ctx context.
 	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", pastMeetingUID))
 
 	// Check if the past meeting exists
-	exists, err := s.PastMeetingRepository.Exists(ctx, pastMeetingUID)
+	exists, err := s.pastMeetingRepository.Exists(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
 		return nil, err
@@ -76,7 +76,7 @@ func (s *PastMeetingParticipantService) ListPastMeetingParticipants(ctx context.
 	}
 
 	// Get all participants for the past meeting
-	participants, err := s.PastMeetingParticipantRepository.ListByPastMeeting(ctx, pastMeetingUID)
+	participants, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting past meeting participants", logging.ErrKey, err)
 		return nil, err
@@ -94,7 +94,7 @@ func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx con
 	}
 
 	// Check if the past meeting exists
-	exists, err := s.PastMeetingRepository.Exists(ctx, participant.PastMeetingUID)
+	exists, err := s.pastMeetingRepository.Exists(ctx, participant.PastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
 		return err
@@ -105,7 +105,7 @@ func (s *PastMeetingParticipantService) validateCreateParticipantRequest(ctx con
 	}
 
 	// Check that there isn't already a participant with the same email address for this past meeting.
-	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, participant.PastMeetingUID, participant.Email)
+	existingParticipant, err := s.pastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, participant.PastMeetingUID, participant.Email)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 		slog.ErrorContext(ctx, "error checking for existing participant", logging.ErrKey, err)
 		return err
@@ -140,7 +140,7 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	}
 
 	// Get the past meeting to populate the MeetingUID
-	pastMeeting, err := s.PastMeetingRepository.Get(ctx, participant.PastMeetingUID)
+	pastMeeting, err := s.pastMeetingRepository.Get(ctx, participant.PastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
 		return nil, err
@@ -153,7 +153,7 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	ctx = logging.AppendCtx(ctx, slog.String("participant_uid", participant.UID))
 
 	// Create the participant
-	err = s.PastMeetingParticipantRepository.Create(ctx, participant)
+	err = s.pastMeetingParticipantRepository.Create(ctx, participant)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating participant", logging.ErrKey, err)
 		return nil, err
@@ -167,10 +167,10 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant)
+			return s.messageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant)
 		},
 		func() error {
-			return s.MessageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+			return s.messageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
 				UID:            participant.UID,
 				PastMeetingUID: participant.PastMeetingUID,
 				Username:       participant.Username,
@@ -205,7 +205,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Co
 	ctx = logging.AppendCtx(ctx, slog.String("participant_uid", participantUID))
 
 	// Check if the past meeting exists
-	exists, err := s.PastMeetingRepository.Exists(ctx, pastMeetingUID)
+	exists, err := s.pastMeetingRepository.Exists(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
 		return nil, "", err
@@ -216,7 +216,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Co
 	}
 
 	// Get the participant with revision
-	participant, revision, err := s.PastMeetingParticipantRepository.GetWithRevision(ctx, participantUID)
+	participant, revision, err := s.pastMeetingParticipantRepository.GetWithRevision(ctx, participantUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting participant from store", logging.ErrKey, err)
 		return nil, "", err
@@ -241,7 +241,7 @@ func (s *PastMeetingParticipantService) GetPastMeetingParticipant(ctx context.Co
 
 func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx context.Context, participant *models.PastMeetingParticipant) error {
 	// Check if the past meeting exists
-	exists, err := s.PastMeetingRepository.Exists(ctx, participant.PastMeetingUID)
+	exists, err := s.pastMeetingRepository.Exists(ctx, participant.PastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
 		return err
@@ -253,7 +253,7 @@ func (s *PastMeetingParticipantService) validateUpdateParticipantRequest(ctx con
 
 	// Check that there isn't already another participant with the same email address for this past meeting
 	// (unless it's the same participant being updated)
-	existingParticipant, err := s.PastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, participant.PastMeetingUID, participant.Email)
+	existingParticipant, err := s.pastMeetingParticipantRepository.GetByPastMeetingAndEmail(ctx, participant.PastMeetingUID, participant.Email)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 		slog.ErrorContext(ctx, "error checking for existing participant", logging.ErrKey, err)
 		return err
@@ -280,9 +280,9 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	}
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.PastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
+		_, revision, err = s.pastMeetingParticipantRepository.GetWithRevision(ctx, participant.UID)
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting participant from store", logging.ErrKey, err)
 			return nil, err
@@ -294,7 +294,7 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the participant exists and get existing data
-	existingParticipant, err := s.PastMeetingParticipantRepository.Get(ctx, participant.UID)
+	existingParticipant, err := s.pastMeetingParticipantRepository.Get(ctx, participant.UID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if participant exists", logging.ErrKey, err)
 		return nil, err
@@ -312,7 +312,7 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	}
 
 	// Update the participant
-	err = s.PastMeetingParticipantRepository.Update(ctx, participant, revision)
+	err = s.pastMeetingParticipantRepository.Update(ctx, participant, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error updating participant", logging.ErrKey, err)
 		return nil, err
@@ -324,10 +324,10 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionUpdated, *participant)
+			return s.messageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionUpdated, *participant)
 		},
 		func() error {
-			return s.MessageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+			return s.messageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
 				UID:            participant.UID,
 				PastMeetingUID: participant.PastMeetingUID,
 				Username:       participant.Username,
@@ -359,9 +359,9 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	}
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.PastMeetingParticipantRepository.GetWithRevision(ctx, participantUID)
+		_, revision, err = s.pastMeetingParticipantRepository.GetWithRevision(ctx, participantUID)
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting participant from store", logging.ErrKey, err)
 			return err
@@ -373,7 +373,7 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
 	// Check if the past meeting exists
-	exists, err := s.PastMeetingRepository.Exists(ctx, pastMeetingUID)
+	exists, err := s.pastMeetingRepository.Exists(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
 		return err
@@ -384,7 +384,7 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	}
 
 	// Check if the participant exists and belongs to the specified past meeting
-	participant, err := s.PastMeetingParticipantRepository.Get(ctx, participantUID)
+	participant, err := s.pastMeetingParticipantRepository.Get(ctx, participantUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting participant", logging.ErrKey, err)
 		return err
@@ -399,7 +399,7 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	}
 
 	// Delete the participant
-	err = s.PastMeetingParticipantRepository.Delete(ctx, participantUID, revision)
+	err = s.pastMeetingParticipantRepository.Delete(ctx, participantUID, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error deleting participant from store", logging.ErrKey, err)
 		return err
@@ -411,10 +411,10 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendDeleteIndexPastMeetingParticipant(ctx, participantUID)
+			return s.messageBuilder.SendDeleteIndexPastMeetingParticipant(ctx, participantUID)
 		},
 		func() error {
-			return s.MessageBuilder.SendRemovePastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+			return s.messageBuilder.SendRemovePastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
 				UID:            participantUID,
 				PastMeetingUID: participant.PastMeetingUID,
 				Username:       participant.Username,
