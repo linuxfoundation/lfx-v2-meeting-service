@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -612,4 +613,66 @@ func (s *MeetingRegistrantService) sendRegistrantCancellationEmail(
 
 	// Send the email
 	return s.EmailService.SendRegistrantCancellation(ctx, cancellation)
+}
+
+// GetRegistrantsByEmail gets all registrants with a specific email address
+func (s *MeetingRegistrantService) GetRegistrantsByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(email)))
+
+	// Get all registrants with this email
+	registrants, err := s.RegistrantRepository.ListByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "returning registrants by email", "count", len(registrants))
+
+	return registrants, nil
+}
+
+// SendRegistrantUpdatedInvitation sends an updated invitation email to a registrant
+func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.Context, registrant *models.Registrant, meeting *models.MeetingBase, changes map[string]any, meetingID, passcode string) error {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return domain.NewUnavailableError("meeting registrant service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrant.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meeting.UID))
+	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(registrant.Email)))
+
+	// Determine recipient name (use first/last name from registrant if available, otherwise extract from email)
+	recipientName := strings.TrimSpace(registrant.FirstName + " " + registrant.LastName)
+	if recipientName == "" {
+		if atIndex := strings.Index(registrant.Email, "@"); atIndex > 0 {
+			recipientName = registrant.Email[:atIndex]
+		}
+	}
+
+	// Build updated invitation email data
+	updatedInvitation := domain.EmailUpdatedInvitation{
+		MeetingUID:     meeting.UID,
+		RecipientEmail: registrant.Email,
+		RecipientName:  recipientName,
+		MeetingTitle:   meeting.Title,
+		StartTime:      meeting.StartTime,
+		Duration:       meeting.Duration,
+		Timezone:       meeting.Timezone,
+		Description:    meeting.Description,
+		JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.Config.LFXEnvironment),
+		Platform:       meeting.Platform,
+		MeetingID:      meetingID,
+		Passcode:       passcode,
+		Recurrence:     meeting.Recurrence,
+		Changes:        changes,
+		ProjectName:    "",
+	}
+
+	// Send the email
+	return s.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
 }

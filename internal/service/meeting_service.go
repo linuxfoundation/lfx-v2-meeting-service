@@ -156,6 +156,35 @@ func (s *MeetingService) GetMeetings(ctx context.Context) ([]*models.MeetingFull
 	return meetings, nil
 }
 
+// GetMeetingsByCommittee gets all meetings associated with a committee
+func (s *MeetingService) GetMeetingsByCommittee(ctx context.Context, committeeUID string) ([]*models.MeetingBase, []*models.MeetingSettings, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, nil, domain.NewUnavailableError("meeting service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("committee_uid", committeeUID))
+
+	// Get meetings from repository
+	meetings, settings, err := s.MeetingRepository.ListByCommittee(ctx, committeeUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting meetings by committee", logging.ErrKey, err)
+		return nil, nil, err
+	}
+
+	// Calculate occurrences for each meeting
+	currentTime := time.Now()
+	for _, meeting := range meetings {
+		if meeting != nil {
+			meeting.Occurrences = s.OccurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+		}
+	}
+
+	slog.DebugContext(ctx, "returning meetings by committee", "meeting_count", len(meetings))
+
+	return meetings, settings, nil
+}
+
 func (s *MeetingService) validateCreateMeetingPayload(ctx context.Context, payload *models.MeetingFull) error {
 	if payload == nil || payload.Base == nil {
 		return domain.NewValidationError("meeting payload is required")

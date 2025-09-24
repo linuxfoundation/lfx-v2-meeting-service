@@ -265,7 +265,7 @@ func (h *CommitteeHandlers) HandleCommitteeMemberDeleted(ctx context.Context, ms
 // and adds the new member as a registrant if their voting status matches.
 func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, memberMsg *models.CommitteeMember) error {
 	// Get meetings that contain this committee
-	meetings, _, err := h.meetingService.MeetingRepository.ListByCommittee(ctx, memberMsg.CommitteeUID)
+	meetings, _, err := h.meetingService.GetMeetingsByCommittee(ctx, memberMsg.CommitteeUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list meetings by committee", logging.ErrKey, err)
 		return fmt.Errorf("failed to list meetings by committee: %w", err)
@@ -397,7 +397,7 @@ func (h *CommitteeHandlers) tryAddMemberToMeeting(ctx context.Context, meeting *
 // and removes or converts the member's registrant based on meeting visibility.
 func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context, member *models.CommitteeMember) error {
 	// Get meetings that contain this committee
-	meetings, _, err := h.meetingService.MeetingRepository.ListByCommittee(ctx, member.CommitteeUID)
+	meetings, _, err := h.meetingService.GetMeetingsByCommittee(ctx, member.CommitteeUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list meetings by committee", logging.ErrKey, err)
 		return fmt.Errorf("failed to list meetings by committee: %w", err)
