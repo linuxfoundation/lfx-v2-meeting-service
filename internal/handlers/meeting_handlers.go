@@ -181,7 +181,7 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 	slog.InfoContext(ctx, "processing meeting deletion, cleaning up registrants")
 
 	// Get all registrants for the meeting
-	registrants, err := s.registrantService.GetMeetingRegistrants(ctx, meetingUID)
+	registrants, err := s.registrantService.ListMeetingRegistrants(ctx, meetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting registrants for deleted meeting", logging.ErrKey, err)
 		return nil, err
@@ -337,7 +337,7 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 
 func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg models.MeetingUpdatedMessage) error {
 	// Get all registrants for the meeting
-	registrants, err := s.registrantService.GetMeetingRegistrants(ctx, msg.MeetingUID)
+	registrants, err := s.registrantService.ListMeetingRegistrants(ctx, msg.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting registrants for updated meeting", logging.ErrKey, err)
 		return err

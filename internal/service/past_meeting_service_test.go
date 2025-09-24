@@ -513,7 +513,7 @@ func TestPastMeetingService_GetPastMeetings(t *testing.T) {
 				tt.setupMocks(mockPastMeetingRepo)
 			}
 
-			result, err := service.GetPastMeetings(ctx)
+			result, err := service.ListPastMeetings(ctx)
 
 			if tt.wantErr {
 				assert.Error(t, err)

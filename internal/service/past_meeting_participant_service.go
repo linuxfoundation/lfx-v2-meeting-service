@@ -50,8 +50,8 @@ func (s *PastMeetingParticipantService) ServiceReady() bool {
 		s.MessageBuilder != nil
 }
 
-// GetPastMeetingParticipants fetches all participants for a past meeting
-func (s *PastMeetingParticipantService) GetPastMeetingParticipants(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
+// ListPastMeetingParticipants fetches all participants for a past meeting
+func (s *PastMeetingParticipantService) ListPastMeetingParticipants(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("service not initialized")

@@ -1165,7 +1165,7 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 	)
 
 	// Get all registrants for this meeting
-	registrants, err := s.registrantService.GetMeetingRegistrants(ctx, meeting.UID)
+	registrants, err := s.registrantService.ListMeetingRegistrants(ctx, meeting.UID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get registrants for meeting", logging.ErrKey, err)
 		return fmt.Errorf("failed to get registrants: %w", err)
@@ -1883,7 +1883,7 @@ func (s *ZoomWebhookHandler) createParticipantFromLeftEvent(ctx context.Context,
 func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMeeting *models.PastMeeting, participant ZoomPayloadForParticipant, session models.ParticipantSession) (*models.PastMeetingParticipant, error) {
 	// Check if this participant was invited (has a registrant record for this meeting)
 	var matchingRegistrant *models.Registrant
-	registrants, err := s.registrantService.GetRegistrantsByEmail(ctx, participant.Email)
+	registrants, err := s.registrantService.ListRegistrantsByEmail(ctx, participant.Email)
 	if err != nil {
 		slog.WarnContext(ctx, "could not check registrant records for participant",
 			logging.ErrKey, err,

@@ -196,7 +196,7 @@ func TestPastMeetingParticipantService_GetPastMeetingParticipants(t *testing.T) 
 				tt.setupMocks(mockPastMeetingRepo, mockParticipantRepo)
 			}
 
-			result, err := service.GetPastMeetingParticipants(ctx, tt.pastMeetingUID)
+			result, err := service.ListPastMeetingParticipants(ctx, tt.pastMeetingUID)
 
 			if tt.wantErr {
 				assert.Error(t, err)

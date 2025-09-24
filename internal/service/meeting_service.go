@@ -114,8 +114,8 @@ func (s *MeetingService) ServiceReady() bool {
 		s.OccurrenceService != nil
 }
 
-// GetMeetings fetches all meetings
-func (s *MeetingService) GetMeetings(ctx context.Context) ([]*models.MeetingFull, error) {
+// ListMeetings fetches all meetings
+func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting service is not ready")
@@ -156,8 +156,8 @@ func (s *MeetingService) GetMeetings(ctx context.Context) ([]*models.MeetingFull
 	return meetings, nil
 }
 
-// GetMeetingsByCommittee gets all meetings associated with a committee
-func (s *MeetingService) GetMeetingsByCommittee(ctx context.Context, committeeUID string) ([]*models.MeetingBase, []*models.MeetingSettings, error) {
+// ListMeetingsByCommittee gets all meetings associated with a committee
+func (s *MeetingService) ListMeetingsByCommittee(ctx context.Context, committeeUID string) ([]*models.MeetingBase, []*models.MeetingSettings, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, nil, domain.NewUnavailableError("meeting service is not ready")

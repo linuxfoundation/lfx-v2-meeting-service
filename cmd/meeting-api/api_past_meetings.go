@@ -18,7 +18,7 @@ func (s *MeetingsAPI) GetPastMeetings(ctx context.Context, payload *meetingsvc.G
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	pastMeetings, err := s.pastMeetingService.GetPastMeetings(ctx)
+	pastMeetings, err := s.pastMeetingService.ListPastMeetings(ctx)
 	if err != nil {
 		return nil, handleError(err)
 	}

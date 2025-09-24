@@ -57,6 +57,54 @@ func (s *MeetingRegistrantService) ServiceReady() bool {
 		s.OccurrenceService != nil
 }
 
+// ListMeetingRegistrants gets all registrants for a meeting
+func (s *MeetingRegistrantService) ListMeetingRegistrants(ctx context.Context, uid string) ([]*models.Registrant, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
+
+	// Check if the meeting exists
+	_, err := s.MeetingRepository.GetBase(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "meeting found", "meeting_uid", uid)
+
+	// Get all registrants for the meeting
+	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "returning meeting registrants", "count", len(registrants))
+
+	return registrants, nil
+}
+
+// ListRegistrantsByEmail gets all registrants with a specific email address
+func (s *MeetingRegistrantService) ListRegistrantsByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(email)))
+
+	// Get all registrants with this email
+	registrants, err := s.RegistrantRepository.ListByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "returning registrants by email", "count", len(registrants))
+
+	return registrants, nil
+}
+
 func (s *MeetingRegistrantService) validateCreateMeetingRegistrantRequest(ctx context.Context, reqRegistrant *models.Registrant) error {
 	// Check if the meeting exists
 	meeting, err := s.MeetingRepository.GetBase(ctx, reqRegistrant.MeetingUID)
@@ -172,54 +220,6 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 	}
 
 	return reqRegistrant, nil
-}
-
-// GetMeetingRegistrants gets all registrants for a meeting
-func (s *MeetingRegistrantService) GetMeetingRegistrants(ctx context.Context, uid string) ([]*models.Registrant, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
-	}
-
-	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", uid))
-
-	// Check if the meeting exists
-	_, err := s.MeetingRepository.GetBase(ctx, uid)
-	if err != nil {
-		return nil, err
-	}
-
-	slog.DebugContext(ctx, "meeting found", "meeting_uid", uid)
-
-	// Get all registrants for the meeting
-	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, uid)
-	if err != nil {
-		return nil, err
-	}
-
-	slog.DebugContext(ctx, "returning meeting registrants", "count", len(registrants))
-
-	return registrants, nil
-}
-
-// GetRegistrantsByEmail gets all registrants with a specific email address
-func (s *MeetingRegistrantService) GetRegistrantsByEmail(ctx context.Context, email string) ([]*models.Registrant, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
-	}
-
-	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(email)))
-
-	// Get all registrants with this email
-	registrants, err := s.RegistrantRepository.ListByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-
-	slog.DebugContext(ctx, "returning registrants by email", "count", len(registrants))
-
-	return registrants, nil
 }
 
 // GetMeetingRegistrant gets a specific registrant by UID

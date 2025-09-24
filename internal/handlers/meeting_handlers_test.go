@@ -112,7 +112,7 @@ func TestMeetingHandler_HandleMessage(t *testing.T) {
 						Host:       false,
 					},
 				}
-				// Mock for GetBase call in GetMeetingRegistrants service method
+				// Mock for GetBase call in ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-to-delete").Return(&models.MeetingBase{UID: "meeting-to-delete"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-to-delete").Return(registrants, nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil)
@@ -321,7 +321,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 						Host:       false,
 					},
 				}
-				// Mock for GetBase call in GetMeetingRegistrants service method
+				// Mock for GetBase call in ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-123").Return(&models.MeetingBase{UID: "meeting-123"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-123").Return(registrants, nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil)
@@ -365,7 +365,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 						Host:       false,
 					},
 				}
-				// Mock for GetBase call in GetMeetingRegistrants service method
+				// Mock for GetBase call in ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-456").Return(&models.MeetingBase{UID: "meeting-456"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-456").Return(registrants, nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil)
@@ -394,7 +394,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 			name:        "successfully handle meeting with no registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-789","meeting":{"uid":"meeting-789","project_uid":"project-789","title":"Test Meeting 3","start_time":"2023-12-01T12:00:00Z","duration":60,"timezone":"UTC","description":"Test meeting 3 description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
-				// Mock for GetBase call in GetMeetingRegistrants service method
+				// Mock for GetBase call in ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-789").Return(&models.MeetingBase{UID: "meeting-789"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-789").Return([]*models.Registrant{}, nil)
 				// No further mocks needed - no registrants to delete
@@ -427,7 +427,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 			name:        "repository error when listing registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-error","meeting":{"uid":"meeting-error","project_uid":"project-error","title":"Error Meeting","start_time":"2023-12-01T10:00:00Z","duration":60,"timezone":"UTC","description":"Error meeting description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
-				// Mock for GetBase call in GetMeetingRegistrants service method
+				// Mock for GetBase call in ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-error").Return(&models.MeetingBase{UID: "meeting-error"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-error").Return(
 					nil, domain.NewInternalError("internal error"),
@@ -453,7 +453,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 						Email:      "user2@example.com",
 					},
 				}
-				// Mock for GetBase call in GetMeetingRegistrants service method
+				// Mock for GetBase call in ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-partial").Return(&models.MeetingBase{UID: "meeting-partial"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-partial").Return(registrants, nil)
 				// Both deletions may be attempted concurrently, but at least one will fail
@@ -537,7 +537,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 						LastName:   "Smith",
 					},
 				}
-				// Mock for GetMeetingRegistrants service method
+				// Mock for ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-updated").Return(&models.MeetingBase{UID: "meeting-updated"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-updated").Return(registrants, nil)
 
@@ -572,7 +572,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 			name:        "successfully handle meeting with no registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-no-registrants","changes":{"Title":"Updated Title"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
-				// Mock for GetMeetingRegistrants service method
+				// Mock for ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-no-registrants").Return(&models.MeetingBase{UID: "meeting-no-registrants"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-no-registrants").Return([]*models.Registrant{}, nil)
 			},
@@ -606,7 +606,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 			name:        "handle repository error when listing registrants",
 			messageData: []byte(`{"meeting_uid":"meeting-repo-error","changes":{"Title":"Updated"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
-				// Mock for GetMeetingRegistrants service method
+				// Mock for ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-repo-error").Return(&models.MeetingBase{UID: "meeting-repo-error"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-repo-error").Return([]*models.Registrant{}, domain.NewInternalError("internal error"))
 			},
@@ -632,7 +632,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 						LastName:   "User",
 					},
 				}
-				// Mock for GetMeetingRegistrants service method
+				// Mock for ListMeetingRegistrants service method
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-partial-email-fail").Return(&models.MeetingBase{UID: "meeting-partial-email-fail"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-partial-email-fail").Return(registrants, nil)
 

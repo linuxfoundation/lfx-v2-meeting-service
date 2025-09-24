@@ -46,6 +46,21 @@ func (s *PastMeetingService) ServiceReady() bool {
 		s.MessageBuilder != nil
 }
 
+func (s *PastMeetingService) ListPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	pastMeetings, err := s.PastMeetingRepository.ListAll(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "error listing past meetings", logging.ErrKey, err)
+		return nil, err
+	}
+
+	return pastMeetings, nil
+}
+
 func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Context, pastMeeting *models.PastMeeting) error {
 	// Validate that required fields are present
 	if pastMeeting == nil {
@@ -149,21 +164,6 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	}
 
 	return pastMeetingReq, nil
-}
-
-func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized")
-	}
-
-	pastMeetings, err := s.PastMeetingRepository.ListAll(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "error listing past meetings", logging.ErrKey, err)
-		return nil, err
-	}
-
-	return pastMeetings, nil
 }
 
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
