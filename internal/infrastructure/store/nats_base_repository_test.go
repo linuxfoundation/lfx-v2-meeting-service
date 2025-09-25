@@ -271,6 +271,62 @@ func TestNatsBaseRepository_Exists(t *testing.T) {
 	})
 }
 
+func TestNatsBaseRepository_DeleteWithoutRevision(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful delete without revision", func(t *testing.T) {
+		mockKV := newMockNatsKeyValue()
+		repo := NewNatsBaseRepository[TestEntity](mockKV, "test")
+
+		// Setup existing data
+		mockKV.data["test-key"] = []byte(`{"id":"test-1"}`)
+		mockKV.revisions["test-key"] = 5 // Any revision
+
+		err := repo.DeleteWithoutRevision(ctx, "test-key")
+
+		assert.NoError(t, err)
+
+		// Verify data was deleted
+		_, exists := mockKV.data["test-key"]
+		assert.False(t, exists)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mockKV := newMockNatsKeyValue()
+		repo := NewNatsBaseRepository[TestEntity](mockKV, "test")
+
+		err := repo.DeleteWithoutRevision(ctx, "nonexistent")
+
+		assert.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+	})
+
+	t.Run("repository not ready", func(t *testing.T) {
+		repo := NewNatsBaseRepository[TestEntity](nil, "test")
+
+		err := repo.DeleteWithoutRevision(ctx, "test-key")
+
+		assert.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+	})
+
+	t.Run("deletes regardless of revision", func(t *testing.T) {
+		mockKV := newMockNatsKeyValue()
+		repo := NewNatsBaseRepository[TestEntity](mockKV, "test")
+
+		// Setup data with a specific revision
+		mockKV.data["test-key"] = []byte(`{"id":"test-1"}`)
+		mockKV.revisions["test-key"] = 100 // High revision number
+
+		// Delete without revision should work regardless of actual revision
+		err := repo.DeleteWithoutRevision(ctx, "test-key")
+
+		assert.NoError(t, err)
+		_, exists := mockKV.data["test-key"]
+		assert.False(t, exists)
+	})
+}
+
 func TestNatsBaseRepository_ListEntities(t *testing.T) {
 	ctx := context.Background()
 

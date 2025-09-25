@@ -205,6 +205,26 @@ func (r *NatsBaseRepository[T]) Delete(ctx context.Context, key string, revision
 	return nil
 }
 
+// DeleteWithoutRevision removes an entity from the store without revision checking
+// This will delete the key regardless of its current revision, useful for cleanup operations
+func (r *NatsBaseRepository[T]) DeleteWithoutRevision(ctx context.Context, key string) error {
+	if !r.IsReady() {
+		return domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+	}
+
+	err := r.kvStore.Delete(ctx, key)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return domain.NewNotFoundError(fmt.Sprintf("%s not found", r.entityName), err)
+		}
+		slog.ErrorContext(ctx, fmt.Sprintf("error deleting %s from NATS KV", r.entityName),
+			logging.ErrKey, err, "key", key)
+		return domain.NewInternalError(fmt.Sprintf("failed to delete %s from store", r.entityName), err)
+	}
+
+	return nil
+}
+
 // ListKeys lists all keys in the store with optional filtering
 func (r *NatsBaseRepository[T]) ListKeys(ctx context.Context) ([]string, error) {
 	if !r.IsReady() {

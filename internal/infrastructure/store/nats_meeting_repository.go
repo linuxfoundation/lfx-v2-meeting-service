@@ -151,7 +151,7 @@ func (r *NatsMeetingRepository) UpdateSettings(ctx context.Context, meetingSetti
 // Delete removes both meeting base and settings
 func (r *NatsMeetingRepository) Delete(ctx context.Context, meetingUID string, revision uint64) error {
 	// Delete settings first (less critical)
-	if err := r.settingsRepo.Delete(ctx, meetingUID, 0); err != nil {
+	if err := r.settingsRepo.DeleteWithoutRevision(ctx, meetingUID); err != nil {
 		slog.WarnContext(ctx, "failed to delete meeting settings",
 			logging.ErrKey, err, "meeting_uid", meetingUID)
 		// Continue with base deletion

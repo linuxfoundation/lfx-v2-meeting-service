@@ -5,7 +5,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -28,10 +27,6 @@ func NewNatsPastMeetingSummaryRepository(kvStore INatsKeyValue) *NatsPastMeeting
 
 // Create creates a new past meeting summary
 func (r *NatsPastMeetingSummaryRepository) Create(ctx context.Context, summary *models.PastMeetingSummary) error {
-	if summary.UID == "" {
-		return fmt.Errorf("summary UID is required")
-	}
-
 	return r.NatsBaseRepository.Create(ctx, summary.UID, summary)
 }
 
@@ -48,10 +43,6 @@ func (r *NatsPastMeetingSummaryRepository) GetWithRevision(ctx context.Context, 
 
 // Update updates an existing past meeting summary
 func (r *NatsPastMeetingSummaryRepository) Update(ctx context.Context, summary *models.PastMeetingSummary, revision uint64) error {
-	if summary.UID == "" {
-		return fmt.Errorf("summary UID is required")
-	}
-
 	return r.NatsBaseRepository.Update(ctx, summary.UID, summary, revision)
 }
 

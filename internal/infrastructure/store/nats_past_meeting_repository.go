@@ -6,6 +6,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -85,7 +86,7 @@ func (s *NatsPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, 
 	}
 
 	for _, pastMeeting := range allPastMeetings {
-		if pastMeeting.Platform == platform && pastMeeting.PlatformMeetingID == platformMeetingID {
+		if strings.EqualFold(pastMeeting.Platform, platform) && pastMeeting.PlatformMeetingID == platformMeetingID {
 			return pastMeeting, nil
 		}
 	}
@@ -102,7 +103,7 @@ func (s *NatsPastMeetingRepository) GetByPlatformMeetingIDAndOccurrence(ctx cont
 	}
 
 	for _, pastMeeting := range allPastMeetings {
-		if pastMeeting.Platform == platform &&
+		if strings.EqualFold(pastMeeting.Platform, platform) &&
 			pastMeeting.PlatformMeetingID == platformMeetingID &&
 			pastMeeting.OccurrenceID == occurrenceID {
 			return pastMeeting, nil

@@ -6,6 +6,7 @@ package store
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -87,7 +88,7 @@ func (r *NatsPastMeetingParticipantRepository) ListByEmail(ctx context.Context, 
 
 	var matchingParticipants []*models.PastMeetingParticipant
 	for _, participant := range allParticipants {
-		if participant.Email == email {
+		if strings.EqualFold(participant.Email, email) {
 			matchingParticipants = append(matchingParticipants, participant)
 		}
 	}
@@ -103,7 +104,7 @@ func (r *NatsPastMeetingParticipantRepository) GetByPastMeetingAndEmail(ctx cont
 	}
 
 	for _, participant := range participants {
-		if participant.Email == email {
+		if strings.EqualFold(participant.Email, email) {
 			return participant, nil
 		}
 	}
