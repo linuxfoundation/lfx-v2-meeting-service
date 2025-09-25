@@ -75,24 +75,6 @@ func (kb *KeyBuilder) CompoundKey(parts ...string) string {
 	return kb.applyPrefix(key, false)
 }
 
-// PrefixPattern returns a key pattern for filtering (e.g., "registrant/*")
-func (kb *KeyBuilder) PrefixPattern(prefix string) string {
-	pattern := fmt.Sprintf("%s/*", prefix)
-	return kb.applyPrefix(pattern, false)
-}
-
-// PrefixPatternEncoded returns an encoded key pattern for filtering
-func (kb *KeyBuilder) PrefixPatternEncoded(prefix string) string {
-	pattern := fmt.Sprintf("%s/*", prefix)
-	return kb.applyPrefix(pattern, true)
-}
-
-// IndexPattern returns a key pattern for index filtering
-func (kb *KeyBuilder) IndexPattern(indexType, indexValue string) string {
-	pattern := fmt.Sprintf("%s/%s/%s/*", KeyPrefixIndex, indexType, indexValue)
-	return kb.applyPrefix(pattern, false)
-}
-
 // applyPrefix adds the builder's prefix if one is set
 func (kb *KeyBuilder) applyPrefix(key string, encode bool) string {
 	var fullKey string
@@ -157,29 +139,4 @@ func (kb *KeyBuilder) DecodeKey(key string) (string, error) {
 	}
 
 	return fmt.Sprintf("/%s", strings.Join(res, "/")), nil
-}
-
-// FilterKeys filters a list of keys by a pattern
-func FilterKeys(keys []string, pattern string) []string {
-	if pattern == "" || pattern == "*" {
-		return keys
-	}
-
-	var filtered []string
-	for _, key := range keys {
-		if matchesKeyPattern(key, pattern) {
-			filtered = append(filtered, key)
-		}
-	}
-	return filtered
-}
-
-// matchesKeyPattern matches keys against patterns (supports wildcards)
-func matchesKeyPattern(key, pattern string) bool {
-	// Simple wildcard matching - can be enhanced
-	if strings.HasSuffix(pattern, "*") {
-		prefix := strings.TrimSuffix(pattern, "*")
-		return strings.HasPrefix(key, prefix)
-	}
-	return key == pattern
 }

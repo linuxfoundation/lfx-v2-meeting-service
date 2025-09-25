@@ -12,7 +12,6 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 )
 
-
 // NatsPastMeetingSummaryRepository is the NATS KV store repository for past meeting summaries.
 type NatsPastMeetingSummaryRepository struct {
 	*NatsBaseRepository[models.PastMeetingSummary]
