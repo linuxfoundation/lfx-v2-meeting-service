@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -16,7 +15,6 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -125,7 +123,7 @@ func (s *MeetingHandler) handleMeetingGetAttribute(ctx context.Context, msg doma
 		return nil, err
 	}
 
-	meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, meetingUID)
+	meeting, _, err := s.meetingService.GetMeetingBase(ctx, meetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting meeting from NATS KV", logging.ErrKey, err)
 		return nil, err
@@ -183,7 +181,7 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 	slog.InfoContext(ctx, "processing meeting deletion, cleaning up registrants")
 
 	// Get all registrants for the meeting
-	registrants, err := s.registrantService.RegistrantRepository.ListByMeeting(ctx, meetingUID)
+	registrants, err := s.registrantService.ListMeetingRegistrants(ctx, meetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting registrants for deleted meeting", logging.ErrKey, err)
 		return nil, err
@@ -339,7 +337,7 @@ func (s *MeetingHandler) HandleMeetingUpdated(ctx context.Context, msg domain.Me
 
 func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg models.MeetingUpdatedMessage) error {
 	// Get all registrants for the meeting
-	registrants, err := s.registrantService.RegistrantRepository.ListByMeeting(ctx, msg.MeetingUID)
+	registrants, err := s.registrantService.ListMeetingRegistrants(ctx, msg.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting registrants for updated meeting", logging.ErrKey, err)
 		return err
@@ -351,7 +349,7 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 	}
 
 	// Get meeting details once for all email notifications
-	meeting, err := s.meetingService.MeetingRepository.GetBase(ctx, msg.MeetingUID)
+	meeting, _, err := s.meetingService.GetMeetingBase(ctx, msg.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting meeting details for update notifications", logging.ErrKey, err)
 		return err
@@ -371,32 +369,8 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 	for _, registrant := range registrants {
 		reg := registrant // capture loop variable
 		tasks = append(tasks, func() error {
-
-			// Build recipient name from first and last name
-			var recipientName string
-			if reg.FirstName != "" || reg.LastName != "" {
-				recipientName = strings.TrimSpace(fmt.Sprintf("%s %s", reg.FirstName, reg.LastName))
-			}
-
-			// Send update notification email to registrant
-			updatedInvitation := domain.EmailUpdatedInvitation{
-				MeetingUID:     msg.MeetingUID,
-				RecipientEmail: reg.Email,
-				RecipientName:  recipientName,
-				MeetingTitle:   meeting.Title,
-				StartTime:      meeting.StartTime,
-				Duration:       meeting.Duration,
-				Timezone:       meeting.Timezone,
-				Description:    meeting.Description,
-				JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.registrantService.Config.LFXEnvironment),
-				Platform:       meeting.Platform,
-				MeetingID:      meetingID,
-				Passcode:       passcode,
-				Recurrence:     meeting.Recurrence,
-				Changes:        msg.Changes,
-			}
-
-			err := s.registrantService.EmailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
+			// Use the registrant service method to send updated invitation
+			err := s.registrantService.SendRegistrantUpdatedInvitation(ctx, reg, meeting, msg.Changes, meetingID, passcode)
 			if err != nil {
 				slog.ErrorContext(ctx, "error sending update notification email",
 					"registrant_uid", reg.UID,

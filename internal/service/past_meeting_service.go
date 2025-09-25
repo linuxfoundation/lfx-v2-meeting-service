@@ -18,10 +18,10 @@ import (
 
 // PastMeetingService implements the meetingsvc.Service interface and domain.MessageHandler
 type PastMeetingService struct {
-	MeetingRepository     domain.MeetingRepository
-	PastMeetingRepository domain.PastMeetingRepository
-	MessageBuilder        domain.MessageBuilder
-	Config                ServiceConfig
+	meetingRepository     domain.MeetingRepository
+	pastMeetingRepository domain.PastMeetingRepository
+	messageBuilder        domain.MessageBuilder
+	config                ServiceConfig
 }
 
 // NewPastMeetingService creates a new PastMeetingService.
@@ -32,18 +32,33 @@ func NewPastMeetingService(
 	config ServiceConfig,
 ) *PastMeetingService {
 	return &PastMeetingService{
-		Config:                config,
-		MeetingRepository:     meetingRepository,
-		PastMeetingRepository: pastMeetingRepository,
-		MessageBuilder:        messageBuilder,
+		config:                config,
+		meetingRepository:     meetingRepository,
+		pastMeetingRepository: pastMeetingRepository,
+		messageBuilder:        messageBuilder,
 	}
 }
 
 // ServiceReady checks if the service is ready for use.
 func (s *PastMeetingService) ServiceReady() bool {
-	return s.MeetingRepository != nil &&
-		s.PastMeetingRepository != nil &&
-		s.MessageBuilder != nil
+	return s.meetingRepository != nil &&
+		s.pastMeetingRepository != nil &&
+		s.messageBuilder != nil
+}
+
+func (s *PastMeetingService) ListPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	pastMeetings, err := s.pastMeetingRepository.ListAll(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "error listing past meetings", logging.ErrKey, err)
+		return nil, err
+	}
+
+	return pastMeetings, nil
 }
 
 func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Context, pastMeeting *models.PastMeeting) error {
@@ -101,7 +116,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	}
 
 	// Check if the original meeting exists (optional validation)
-	exists, err := s.MeetingRepository.Exists(ctx, pastMeetingReq.MeetingUID)
+	exists, err := s.meetingRepository.Exists(ctx, pastMeetingReq.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if meeting exists", logging.ErrKey, err)
 		return nil, err
@@ -115,7 +130,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	pastMeetingReq.UID = uuid.New().String()
 
 	// Save to repository
-	if err := s.PastMeetingRepository.Create(ctx, pastMeetingReq); err != nil {
+	if err := s.pastMeetingRepository.Create(ctx, pastMeetingReq); err != nil {
 		slog.ErrorContext(ctx, "error creating past meeting", logging.ErrKey, err)
 		return nil, err
 	}
@@ -124,7 +139,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeetingReq)
+			return s.messageBuilder.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeetingReq)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -133,7 +148,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 				committees[i] = committee.UID
 			}
 
-			return s.MessageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+			return s.messageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeetingReq.UID,
 				MeetingUID: pastMeetingReq.MeetingUID,
 				Public:     pastMeetingReq.IsPublic(),
@@ -151,34 +166,120 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	return pastMeetingReq, nil
 }
 
-func (s *PastMeetingService) GetPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized")
-	}
-
-	pastMeetings, err := s.PastMeetingRepository.ListAll(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "error listing past meetings", logging.ErrKey, err)
-		return nil, err
-	}
-
-	return pastMeetings, nil
-}
-
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, "", domain.NewUnavailableError("service not initialized")
 	}
 
-	pastMeeting, revision, err := s.PastMeetingRepository.GetWithRevision(ctx, uid)
+	pastMeeting, revision, err := s.pastMeetingRepository.GetWithRevision(ctx, uid)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
 		return nil, "", err
 	}
 
 	return pastMeeting, strconv.FormatUint(revision, 10), nil
+}
+
+func (s *PastMeetingService) GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	pastMeeting, err := s.pastMeetingRepository.GetByPlatformMeetingID(ctx, platform, platformMeetingID)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "returning past meeting by platform meeting ID",
+		"past_meeting_uid", pastMeeting.UID,
+		"platform", platform,
+		"platform_meeting_id", platformMeetingID)
+
+	return pastMeeting, nil
+}
+
+// GetByPlatformMeetingIDAndOccurrence gets a past meeting by platform meeting ID and occurrence
+func (s *PastMeetingService) GetByPlatformMeetingIDAndOccurrence(ctx context.Context, platform, platformMeetingID, occurrenceID string) (*models.PastMeeting, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	ctx = logging.AppendCtx(ctx,
+		slog.String("platform", platform))
+	ctx = logging.AppendCtx(ctx,
+		slog.String("platform_meeting_id", platformMeetingID))
+	ctx = logging.AppendCtx(ctx,
+		slog.String("occurrence_id", occurrenceID))
+
+	pastMeeting, err := s.pastMeetingRepository.GetByPlatformMeetingIDAndOccurrence(ctx, platform, platformMeetingID, occurrenceID)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "returning past meeting by platform meeting ID and occurrence", "past_meeting_uid", pastMeeting.UID)
+
+	return pastMeeting, nil
+}
+
+func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeeting *models.PastMeeting, revision uint64) error {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return domain.NewUnavailableError("service not initialized")
+	}
+
+	if pastMeeting == nil || pastMeeting.UID == "" {
+		slog.WarnContext(ctx, "past meeting UID is required")
+		return domain.NewValidationError("past meeting UID is required for update")
+	}
+
+	var err error
+	if s.config.SkipEtagValidation {
+		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
+		_, revision, err = s.pastMeetingRepository.GetWithRevision(ctx, pastMeeting.UID)
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting past meeting from store", logging.ErrKey, err)
+			return err
+		}
+	}
+
+	// Update the past meeting
+	if err := s.pastMeetingRepository.Update(ctx, pastMeeting, revision); err != nil {
+		slog.ErrorContext(ctx, "error updating past meeting", logging.ErrKey, err)
+		return err
+	}
+
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.messageBuilder.SendIndexPastMeeting(ctx, models.ActionUpdated, *pastMeeting)
+		},
+		func() error {
+			// For the message we only need the committee UIDs.
+			committees := make([]string, len(pastMeeting.Committees))
+			for i, committee := range pastMeeting.Committees {
+				committees[i] = committee.UID
+			}
+
+			return s.messageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+				UID:        pastMeeting.UID,
+				MeetingUID: pastMeeting.MeetingUID,
+				Public:     pastMeeting.IsPublic(),
+				ProjectUID: pastMeeting.ProjectUID,
+				Committees: committees,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
+	}
+
+	return nil
 }
 
 func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, revision uint64) error {
@@ -188,9 +289,9 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	}
 
 	var err error
-	if s.Config.SkipEtagValidation {
+	if s.config.SkipEtagValidation {
 		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
-		_, revision, err = s.PastMeetingRepository.GetWithRevision(ctx, uid)
+		_, revision, err = s.pastMeetingRepository.GetWithRevision(ctx, uid)
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting meeting from store", logging.ErrKey, err)
 			return err
@@ -198,7 +299,7 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	}
 
 	// Check if the past meeting exists
-	exists, err := s.PastMeetingRepository.Exists(ctx, uid)
+	exists, err := s.pastMeetingRepository.Exists(ctx, uid)
 	if err != nil {
 		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
 		return err
@@ -209,7 +310,7 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	}
 
 	// Delete the past meeting
-	if err := s.PastMeetingRepository.Delete(ctx, uid, revision); err != nil {
+	if err := s.pastMeetingRepository.Delete(ctx, uid, revision); err != nil {
 		slog.ErrorContext(ctx, "error deleting past meeting", logging.ErrKey, err)
 		return err
 	}
@@ -218,10 +319,10 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.MessageBuilder.SendDeleteIndexPastMeeting(ctx, uid)
+			return s.messageBuilder.SendDeleteIndexPastMeeting(ctx, uid)
 		},
 		func() error {
-			return s.MessageBuilder.SendDeleteAllAccessPastMeeting(ctx, uid)
+			return s.messageBuilder.SendDeleteAllAccessPastMeeting(ctx, uid)
 		},
 	}
 

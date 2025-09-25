@@ -20,13 +20,13 @@ import (
 
 // PastMeetingSummaryService implements the business logic for past meeting summaries.
 type PastMeetingSummaryService struct {
-	PastMeetingSummaryRepository domain.PastMeetingSummaryRepository
-	PastMeetingRepository        domain.PastMeetingRepository
-	RegistrantRepository         domain.RegistrantRepository
-	MeetingRepository            domain.MeetingRepository
-	EmailService                 domain.EmailService
-	MessageBuilder               domain.MessageBuilder
-	ServiceConfig                ServiceConfig
+	pastMeetingSummaryRepository domain.PastMeetingSummaryRepository
+	pastMeetingRepository        domain.PastMeetingRepository
+	registrantRepository         domain.RegistrantRepository
+	meetingRepository            domain.MeetingRepository
+	emailService                 domain.EmailService
+	messageBuilder               domain.MessageBuilder
+	config                       ServiceConfig
 }
 
 // NewPastMeetingSummaryService creates a new PastMeetingSummaryService.
@@ -40,24 +40,24 @@ func NewPastMeetingSummaryService(
 	serviceConfig ServiceConfig,
 ) *PastMeetingSummaryService {
 	return &PastMeetingSummaryService{
-		PastMeetingSummaryRepository: pastMeetingSummaryRepository,
-		PastMeetingRepository:        pastMeetingRepository,
-		RegistrantRepository:         registrantRepository,
-		MeetingRepository:            meetingRepository,
-		EmailService:                 emailService,
-		MessageBuilder:               messageBuilder,
-		ServiceConfig:                serviceConfig,
+		pastMeetingSummaryRepository: pastMeetingSummaryRepository,
+		pastMeetingRepository:        pastMeetingRepository,
+		registrantRepository:         registrantRepository,
+		meetingRepository:            meetingRepository,
+		emailService:                 emailService,
+		messageBuilder:               messageBuilder,
+		config:                       serviceConfig,
 	}
 }
 
 // ServiceReady checks if the service is ready to serve requests.
 func (s *PastMeetingSummaryService) ServiceReady() bool {
-	return s.PastMeetingSummaryRepository != nil &&
-		s.MessageBuilder != nil &&
-		s.PastMeetingRepository != nil &&
-		s.MeetingRepository != nil &&
-		s.RegistrantRepository != nil &&
-		s.EmailService != nil
+	return s.pastMeetingSummaryRepository != nil &&
+		s.messageBuilder != nil &&
+		s.pastMeetingRepository != nil &&
+		s.meetingRepository != nil &&
+		s.registrantRepository != nil &&
+		s.emailService != nil
 }
 
 // ListSummariesByPastMeeting returns all summaries for a given past meeting.
@@ -68,7 +68,7 @@ func (s *PastMeetingSummaryService) ListSummariesByPastMeeting(ctx context.Conte
 	}
 
 	// Validate that the past meeting exists
-	_, err := s.PastMeetingRepository.Get(ctx, pastMeetingUID)
+	_, err := s.pastMeetingRepository.Get(ctx, pastMeetingUID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "past meeting not found", "past_meeting_uid", pastMeetingUID)
@@ -78,7 +78,7 @@ func (s *PastMeetingSummaryService) ListSummariesByPastMeeting(ctx context.Conte
 		return nil, domain.NewInternalError("error checking past meeting existence", err)
 	}
 
-	summaries, err := s.PastMeetingSummaryRepository.ListByPastMeeting(ctx, pastMeetingUID)
+	summaries, err := s.pastMeetingSummaryRepository.ListByPastMeeting(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing summaries", logging.ErrKey, err, "past_meeting_uid", pastMeetingUID)
 		return nil, domain.NewInternalError("error listing summaries", err)
@@ -113,14 +113,14 @@ func (s *PastMeetingSummaryService) CreateSummary(
 	}
 
 	// Create in repository with correct EmailSent status
-	err = s.PastMeetingSummaryRepository.Create(ctx, summary)
+	err = s.pastMeetingSummaryRepository.Create(ctx, summary)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating summary", logging.ErrKey, err, "summary_uid", summary.UID)
 		return nil, domain.NewInternalError("error creating summary", err)
 	}
 
 	// Send indexing message for new summary
-	err = s.MessageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary)
+	err = s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for new summary", logging.ErrKey, err, "summary_uid", summary.UID)
 		// Don't fail the operation if indexing fails
@@ -151,7 +151,7 @@ func (s *PastMeetingSummaryService) GetSummary(ctx context.Context, summaryUID s
 	ctx = logging.AppendCtx(ctx, slog.String("summary_uid", summaryUID))
 
 	// Get the summary with revision
-	summary, revision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, summaryUID)
+	summary, revision, err := s.pastMeetingSummaryRepository.GetWithRevision(ctx, summaryUID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
@@ -182,7 +182,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 	}
 
 	// Get current summary
-	currentSummary, currentRevision, err := s.PastMeetingSummaryRepository.GetWithRevision(ctx, summary.UID)
+	currentSummary, currentRevision, err := s.pastMeetingSummaryRepository.GetWithRevision(ctx, summary.UID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "summary not found for update", "summary_uid", summary.UID)
@@ -214,14 +214,14 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 	updatedSummary.Approved = summary.Approved
 
 	// Update in repository
-	err = s.PastMeetingSummaryRepository.Update(ctx, &updatedSummary, revision)
+	err = s.pastMeetingSummaryRepository.Update(ctx, &updatedSummary, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error updating summary", logging.ErrKey, err, "summary_uid", summary.UID)
 		return nil, domain.NewInternalError("error updating summary", err)
 	}
 
 	// Send indexing message for updated summary
-	err = s.MessageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
+	err = s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for updated summary", logging.ErrKey, err, "summary_uid", summary.UID)
 		// Don't fail the operation if indexing fails
@@ -238,21 +238,21 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 // sendSummaryNotificationEmails sends email notifications to meeting host registrants
 func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Context, summary *models.PastMeetingSummary) error {
 	// Get the past meeting to retrieve meeting details
-	pastMeeting, err := s.PastMeetingRepository.Get(ctx, summary.PastMeetingUID)
+	pastMeeting, err := s.pastMeetingRepository.Get(ctx, summary.PastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get past meeting for summary notification", logging.ErrKey, err, "past_meeting_uid", summary.PastMeetingUID)
 		return err
 	}
 
 	// Get the original meeting to get project context
-	meetingBase, err := s.MeetingRepository.GetBase(ctx, summary.MeetingUID)
+	meetingBase, err := s.meetingRepository.GetBase(ctx, summary.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get meeting base for summary notification", logging.ErrKey, err, "meeting_uid", summary.MeetingUID)
 		return err
 	}
 
 	// Get all registrants for the meeting
-	registrants, err := s.RegistrantRepository.ListByMeeting(ctx, summary.MeetingUID)
+	registrants, err := s.registrantRepository.ListByMeeting(ctx, summary.MeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get registrants for summary notification", logging.ErrKey, err, "meeting_uid", summary.MeetingUID)
 		return err
@@ -285,7 +285,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 			SummaryTitle:   summary.SummaryData.Title,
 		}
 
-		err := s.EmailService.SendSummaryNotification(ctx, notification)
+		err := s.emailService.SendSummaryNotification(ctx, notification)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to send summary notification email",
 				logging.ErrKey, err,

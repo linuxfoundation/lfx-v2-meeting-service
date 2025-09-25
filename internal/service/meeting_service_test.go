@@ -27,13 +27,13 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 		SkipEtagValidation: false,
 	}
 
-	service := &MeetingService{
-		MeetingRepository: mockRepo,
-		MessageBuilder:    mockBuilder,
-		PlatformRegistry:  mockPlatformRegistry,
-		OccurrenceService: occurrenceService,
-		Config:            config,
-	}
+	service := NewMeetingService(
+		mockRepo,
+		mockBuilder,
+		mockPlatformRegistry,
+		occurrenceService,
+		config,
+	)
 
 	return service, mockRepo, mockBuilder
 }
@@ -129,12 +129,12 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
-				service.MeetingRepository = nil
+				service.meetingRepository = nil
 			}
 
 			tt.setupMocks(mockRepo, mockBuilder)
 
-			result, err := service.GetMeetings(context.Background())
+			result, err := service.ListMeetings(context.Background())
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -180,7 +180,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 			},
 			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Set up platform registry mock
-				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
+				mockPlatformRegistry := service.platformRegistry.(*mocks.MockPlatformRegistry)
 				mockProvider := &mocks.MockPlatformProvider{}
 				mockProvider.On("CreateMeeting", mock.Anything, mock.Anything).Return(&domain.CreateMeetingResult{
 					PlatformMeetingID: "zoom-meeting-123",
@@ -241,7 +241,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 			},
 			setupMocks: func(service *MeetingService, mockRepo *mocks.MockMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Set up platform registry mock for cleanup on error
-				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
+				mockPlatformRegistry := service.platformRegistry.(*mocks.MockPlatformRegistry)
 				mockProvider := &mocks.MockPlatformProvider{}
 				mockProvider.On("CreateMeeting", mock.Anything, mock.Anything).Return(&domain.CreateMeetingResult{
 					PlatformMeetingID: "zoom-meeting-123",
@@ -267,7 +267,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
-				service.MeetingRepository = nil
+				service.meetingRepository = nil
 			}
 
 			tt.setupMocks(service, mockRepo, mockBuilder)
@@ -293,7 +293,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 			mockRepo.AssertExpectations(t)
 			mockBuilder.AssertExpectations(t)
 			if tt.name != "service not ready" {
-				mockPlatformRegistry := service.PlatformRegistry.(*mocks.MockPlatformRegistry)
+				mockPlatformRegistry := service.platformRegistry.(*mocks.MockPlatformRegistry)
 				mockPlatformRegistry.AssertExpectations(t)
 			}
 		})
@@ -453,7 +453,7 @@ func TestMeetingsService_GetMeetingSettings(t *testing.T) {
 			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
-				service.MeetingRepository = nil
+				service.meetingRepository = nil
 			}
 
 			tt.setupMocks(mockRepo, mockBuilder)
@@ -596,11 +596,11 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 			service, mockRepo, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
-				service.MeetingRepository = nil
+				service.meetingRepository = nil
 			}
 
 			if tt.name == "skip etag validation mode" {
-				service.Config.SkipEtagValidation = true
+				service.config.SkipEtagValidation = true
 			}
 
 			tt.setupMocks(mockRepo, mockBuilder)

@@ -18,8 +18,8 @@ import (
 
 // ZoomWebhookService handles Zoom webhook event processing
 type ZoomWebhookService struct {
-	MessageBuilder   domain.MessageBuilder
-	WebhookValidator domain.WebhookValidator
+	messageBuilder   domain.MessageBuilder
+	webhookValidator domain.WebhookValidator
 }
 
 // WebhookRequest represents the webhook processing request
@@ -46,14 +46,14 @@ func NewZoomWebhookService(
 	webhookValidator domain.WebhookValidator,
 ) *ZoomWebhookService {
 	return &ZoomWebhookService{
-		MessageBuilder:   messageBuilder,
-		WebhookValidator: webhookValidator,
+		messageBuilder:   messageBuilder,
+		webhookValidator: webhookValidator,
 	}
 }
 
 // ServiceReady checks if the service is ready to process requests
 func (s *ZoomWebhookService) ServiceReady() bool {
-	return s.MessageBuilder != nil && s.WebhookValidator != nil
+	return s.messageBuilder != nil && s.webhookValidator != nil
 }
 
 // ProcessWebhookEvent processes a Zoom webhook event
@@ -96,7 +96,7 @@ func (s *ZoomWebhookService) validateRequest(req WebhookRequest) error {
 
 // validateSignature validates the webhook signature
 func (s *ZoomWebhookService) validateSignature(req WebhookRequest) error {
-	if err := s.WebhookValidator.ValidateSignature(req.RawBody, req.Signature, req.Timestamp); err != nil {
+	if err := s.webhookValidator.ValidateSignature(req.RawBody, req.Signature, req.Timestamp); err != nil {
 		return domain.NewValidationError("invalid webhook signature", err)
 	}
 	return nil
@@ -120,7 +120,7 @@ func (s *ZoomWebhookService) handleEndpointValidation(ctx context.Context, req W
 	}
 
 	// Generate encrypted token using HMAC SHA-256
-	secretToken := s.WebhookValidator.GetSecretToken()
+	secretToken := s.webhookValidator.GetSecretToken()
 	if secretToken == "" {
 		logger.ErrorContext(ctx, "Zoom webhook validator not properly configured")
 		return nil, domain.NewInternalError("webhook validation not configured")
@@ -163,7 +163,7 @@ func (s *ZoomWebhookService) processRegularEvent(ctx context.Context, req Webhoo
 	}
 
 	// Publish to NATS for async processing
-	if err := s.MessageBuilder.PublishZoomWebhookEvent(ctx, subject, webhookMessage); err != nil {
+	if err := s.messageBuilder.PublishZoomWebhookEvent(ctx, subject, webhookMessage); err != nil {
 		logger.ErrorContext(ctx, "Failed to publish webhook event to NATS", "error", err, "event_type", req.Event, "subject", subject)
 		return nil, domain.NewInternalError("failed to process webhook event", err)
 	}

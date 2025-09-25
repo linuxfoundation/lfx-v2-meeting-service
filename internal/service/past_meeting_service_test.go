@@ -36,12 +36,12 @@ func setupPastMeetingServiceForTesting() (*PastMeetingService, *mocks.MockMeetin
 		SkipEtagValidation: false,
 	}
 
-	service := &PastMeetingService{
-		MeetingRepository:     mockMeetingRepo,
-		PastMeetingRepository: mockPastMeetingRepo,
-		MessageBuilder:        mockBuilder,
-		Config:                config,
-	}
+	service := NewPastMeetingService(
+		mockMeetingRepo,
+		mockPastMeetingRepo,
+		mockBuilder,
+		config,
+	)
 
 	return service, mockMeetingRepo, mockPastMeetingRepo, mockBuilder
 }
@@ -63,27 +63,42 @@ func TestPastMeetingService_ServiceReady(t *testing.T) {
 		{
 			name: "service not ready - missing past meeting repository",
 			setup: func() *PastMeetingService {
-				service, _, _, _ := setupPastMeetingServiceForTesting()
-				service.PastMeetingRepository = nil
-				return service
+				_, mockMeetingRepo, _, mockBuilder := setupPastMeetingServiceForTesting()
+				config := ServiceConfig{SkipEtagValidation: false}
+				return NewPastMeetingService(
+					mockMeetingRepo,
+					nil, // past meeting repository is nil
+					mockBuilder,
+					config,
+				)
 			},
 			expected: false,
 		},
 		{
 			name: "service not ready - missing meeting repository",
 			setup: func() *PastMeetingService {
-				service, _, _, _ := setupPastMeetingServiceForTesting()
-				service.MeetingRepository = nil
-				return service
+				_, _, mockPastMeetingRepo, mockBuilder := setupPastMeetingServiceForTesting()
+				config := ServiceConfig{SkipEtagValidation: false}
+				return NewPastMeetingService(
+					nil, // meeting repository is nil
+					mockPastMeetingRepo,
+					mockBuilder,
+					config,
+				)
 			},
 			expected: false,
 		},
 		{
 			name: "service not ready - missing message builder",
 			setup: func() *PastMeetingService {
-				service, _, _, _ := setupPastMeetingServiceForTesting()
-				service.MessageBuilder = nil
-				return service
+				_, mockMeetingRepo, mockPastMeetingRepo, _ := setupPastMeetingServiceForTesting()
+				config := ServiceConfig{SkipEtagValidation: false}
+				return NewPastMeetingService(
+					mockMeetingRepo,
+					mockPastMeetingRepo,
+					nil, // message builder is nil
+					config,
+				)
 			},
 			expected: false,
 		},
@@ -413,7 +428,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 
 			// Remove repositories to test service not ready case
 			if tt.name == "service not ready" {
-				service.PastMeetingRepository = nil
+				// Create a service with nil repository for this test
+				service = NewPastMeetingService(nil, nil, mockBuilder, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
@@ -506,14 +522,15 @@ func TestPastMeetingService_GetPastMeetings(t *testing.T) {
 
 			// Test service not ready case
 			if tt.name == "service not ready" {
-				service.PastMeetingRepository = nil
+				// Create a service with nil repository for this test
+				service = NewPastMeetingService(nil, nil, nil, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
 				tt.setupMocks(mockPastMeetingRepo)
 			}
 
-			result, err := service.GetPastMeetings(ctx)
+			result, err := service.ListPastMeetings(ctx)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -602,7 +619,8 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 
 			// Test service not ready case
 			if tt.name == "service not ready" {
-				service.PastMeetingRepository = nil
+				// Create a service with nil repository for this test
+				service = NewPastMeetingService(nil, nil, nil, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
@@ -745,12 +763,21 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			service, _, mockPastMeetingRepo, mockBuilder := setupPastMeetingServiceForTesting()
 
 			if tt.skipEtag {
-				service.Config.SkipEtagValidation = true
+				// Create a service with SkipEtagValidation enabled
+				config := ServiceConfig{SkipEtagValidation: true}
+				_, mockMeetingRepo, _, _ := setupPastMeetingServiceForTesting()
+				service = NewPastMeetingService(
+					mockMeetingRepo,
+					mockPastMeetingRepo,
+					mockBuilder,
+					config,
+				)
 			}
 
 			// Test service not ready case
 			if tt.name == "service not ready" {
-				service.PastMeetingRepository = nil
+				// Create a service with nil repository for this test
+				service = NewPastMeetingService(nil, nil, nil, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
