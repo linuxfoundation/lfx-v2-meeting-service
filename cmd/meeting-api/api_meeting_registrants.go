@@ -17,7 +17,7 @@ func (s *MeetingsAPI) GetMeetingRegistrants(ctx context.Context, payload *meetin
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	registrants, err := s.registrantService.GetMeetingRegistrants(ctx, *payload.UID)
+	registrants, err := s.registrantService.ListMeetingRegistrants(ctx, *payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}

@@ -144,7 +144,7 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 	}
 
 	// Parse the Heimdall-authorized principal from the token.
-	principal, err := s.authService.Auth.ParsePrincipal(ctx, bearerToken, slog.Default())
+	principal, err := s.authService.ParsePrincipal(ctx, bearerToken, slog.Default())
 	if err != nil {
 		return ctx, err
 	}

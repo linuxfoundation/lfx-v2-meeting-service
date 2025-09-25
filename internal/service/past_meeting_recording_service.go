@@ -16,9 +16,9 @@ import (
 
 // PastMeetingRecordingService implements the business logic for past meeting recordings.
 type PastMeetingRecordingService struct {
-	PastMeetingRecordingRepository domain.PastMeetingRecordingRepository
-	MessageBuilder                 domain.MessageBuilder
-	ServiceConfig                  ServiceConfig
+	pastMeetingRecordingRepository domain.PastMeetingRecordingRepository
+	messageBuilder                 domain.MessageBuilder
+	config                         ServiceConfig
 }
 
 // NewPastMeetingRecordingService creates a new PastMeetingRecordingService.
@@ -28,15 +28,15 @@ func NewPastMeetingRecordingService(
 	serviceConfig ServiceConfig,
 ) *PastMeetingRecordingService {
 	return &PastMeetingRecordingService{
-		PastMeetingRecordingRepository: pastMeetingRecordingRepository,
-		MessageBuilder:                 messageBuilder,
-		ServiceConfig:                  serviceConfig,
+		pastMeetingRecordingRepository: pastMeetingRecordingRepository,
+		messageBuilder:                 messageBuilder,
+		config:                         serviceConfig,
 	}
 }
 
 // ServiceReady checks if the service is ready to serve requests.
 func (s *PastMeetingRecordingService) ServiceReady() bool {
-	return s.PastMeetingRecordingRepository != nil && s.MessageBuilder != nil
+	return s.pastMeetingRecordingRepository != nil && s.messageBuilder != nil
 }
 
 // ListRecordingsByPastMeeting returns all recordings for a given past meeting.
@@ -46,7 +46,7 @@ func (s *PastMeetingRecordingService) ListRecordingsByPastMeeting(ctx context.Co
 		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
-	recordings, err := s.PastMeetingRecordingRepository.ListByPastMeeting(ctx, pastMeetingUID)
+	recordings, err := s.pastMeetingRecordingRepository.ListByPastMeeting(ctx, pastMeetingUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing recordings", logging.ErrKey, err, "past_meeting_uid", pastMeetingUID)
 		return nil, err
@@ -72,14 +72,14 @@ func (s *PastMeetingRecordingService) CreateRecording(
 	recording.UpdatedAt = now
 
 	// Create in repository
-	err := s.PastMeetingRecordingRepository.Create(ctx, recording)
+	err := s.pastMeetingRecordingRepository.Create(ctx, recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error creating recording", logging.ErrKey, err, "recording_uid", recording.UID)
 		return nil, err
 	}
 
 	// Send indexing message for new recording
-	err = s.MessageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording)
+	err = s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for new recording", logging.ErrKey, err, "recording_uid", recording.UID)
 		// Don't fail the operation if indexing fails
@@ -102,7 +102,7 @@ func (s *PastMeetingRecordingService) GetRecording(ctx context.Context, recordin
 		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
-	recording, err := s.PastMeetingRecordingRepository.Get(ctx, recordingUID)
+	recording, err := s.pastMeetingRecordingRepository.Get(ctx, recordingUID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "recording not found", "recording_uid", recordingUID)
@@ -122,7 +122,7 @@ func (s *PastMeetingRecordingService) GetRecordingByPastMeetingUID(ctx context.C
 		return nil, domain.NewUnavailableError("service not initialized")
 	}
 
-	recording, err := s.PastMeetingRecordingRepository.GetByPastMeetingUID(ctx, pastMeetingUID)
+	recording, err := s.pastMeetingRecordingRepository.GetByPastMeetingUID(ctx, pastMeetingUID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "recording not found for past meeting", "past_meeting_uid", pastMeetingUID)
@@ -147,7 +147,7 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 	}
 
 	// Get current recording with revision
-	currentRecording, revision, err := s.PastMeetingRecordingRepository.GetWithRevision(ctx, recordingUID)
+	currentRecording, revision, err := s.pastMeetingRecordingRepository.GetWithRevision(ctx, recordingUID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "recording not found for update", "recording_uid", recordingUID)
@@ -169,14 +169,14 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 	currentRecording.UpdatedAt = time.Now().UTC()
 
 	// Update in repository
-	err = s.PastMeetingRecordingRepository.Update(ctx, currentRecording, revision)
+	err = s.pastMeetingRecordingRepository.Update(ctx, currentRecording, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error updating recording", logging.ErrKey, err, "recording_uid", recordingUID)
 		return nil, err
 	}
 
 	// Send indexing message for updated recording
-	err = s.MessageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording)
+	err = s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for updated recording", logging.ErrKey, err, "recording_uid", recordingUID)
 		// Don't fail the operation if indexing fails
@@ -200,7 +200,7 @@ func (s *PastMeetingRecordingService) DeleteRecording(ctx context.Context, recor
 	}
 
 	// Get the recording first to send delete message
-	recording, revision, err := s.PastMeetingRecordingRepository.GetWithRevision(ctx, recordingUID)
+	recording, revision, err := s.pastMeetingRecordingRepository.GetWithRevision(ctx, recordingUID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.DebugContext(ctx, "recording not found for deletion", "recording_uid", recordingUID)
@@ -211,14 +211,14 @@ func (s *PastMeetingRecordingService) DeleteRecording(ctx context.Context, recor
 	}
 
 	// Delete from repository
-	err = s.PastMeetingRecordingRepository.Delete(ctx, recordingUID, revision)
+	err = s.pastMeetingRecordingRepository.Delete(ctx, recordingUID, revision)
 	if err != nil {
 		slog.ErrorContext(ctx, "error deleting recording", logging.ErrKey, err, "recording_uid", recordingUID)
 		return err
 	}
 
 	// Send indexing message for deleted recording
-	err = s.MessageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionDeleted, *recording)
+	err = s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionDeleted, *recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for deleted recording", logging.ErrKey, err, "recording_uid", recordingUID)
 		// Don't fail the operation if indexing fails

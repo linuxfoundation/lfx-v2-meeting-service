@@ -13,7 +13,7 @@ import (
 
 // GetMeetings fetches all meetings
 func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMeetingsPayload) (*meetingsvc.GetMeetingsResult, error) {
-	meetings, err := s.meetingService.GetMeetings(ctx)
+	meetings, err := s.meetingService.ListMeetings(ctx)
 	if err != nil {
 		return nil, handleError(err)
 	}
