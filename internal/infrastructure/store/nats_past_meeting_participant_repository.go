@@ -5,281 +5,114 @@ package store
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"log/slog"
-	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
-	"github.com/nats-io/nats.go/jetstream"
-)
-
-// NATS Key-Value store bucket name for past meeting participants.
-const (
-	// KVStoreNamePastMeetingParticipants is the name of the KV store for past meeting participants.
-	KVStoreNamePastMeetingParticipants = "past-meeting-participants"
 )
 
 // NatsPastMeetingParticipantRepository is the NATS KV store repository for past meeting participants.
 type NatsPastMeetingParticipantRepository struct {
-	PastMeetingParticipants INatsKeyValue
+	*NatsBaseRepository[models.PastMeetingParticipant]
 }
 
 // NewNatsPastMeetingParticipantRepository creates a new NATS KV store repository for past meeting participants.
-func NewNatsPastMeetingParticipantRepository(pastMeetingParticipants INatsKeyValue) *NatsPastMeetingParticipantRepository {
+func NewNatsPastMeetingParticipantRepository(kvStore INatsKeyValue) *NatsPastMeetingParticipantRepository {
+	baseRepo := NewNatsBaseRepository[models.PastMeetingParticipant](kvStore, "past meeting participant")
+
 	return &NatsPastMeetingParticipantRepository{
-		PastMeetingParticipants: pastMeetingParticipants,
+		NatsBaseRepository: baseRepo,
 	}
 }
 
-func (s *NatsPastMeetingParticipantRepository) get(ctx context.Context, participantUID string) (jetstream.KeyValueEntry, error) {
-	return s.PastMeetingParticipants.Get(ctx, participantUID)
+// Get retrieves a past meeting participant by UID
+func (r *NatsPastMeetingParticipantRepository) Get(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, error) {
+	return r.NatsBaseRepository.Get(ctx, participantUID)
 }
 
-func (s *NatsPastMeetingParticipantRepository) unmarshal(ctx context.Context, entry jetstream.KeyValueEntry) (*models.PastMeetingParticipant, error) {
-	var participant models.PastMeetingParticipant
-	err := json.Unmarshal(entry.Value(), &participant)
-	if err != nil {
-		slog.ErrorContext(ctx, "error unmarshaling past meeting participant", logging.ErrKey, err)
-		return nil, err
-	}
-
-	return &participant, nil
+// GetWithRevision retrieves a past meeting participant with revision by UID
+func (r *NatsPastMeetingParticipantRepository) GetWithRevision(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, uint64, error) {
+	return r.NatsBaseRepository.GetWithRevision(ctx, participantUID)
 }
 
-func (s *NatsPastMeetingParticipantRepository) Get(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, error) {
-	participant, _, err := s.GetWithRevision(ctx, participantUID)
-	if err != nil {
-		return nil, err
-	}
-	return participant, nil
+// Exists checks if a past meeting participant exists
+func (r *NatsPastMeetingParticipantRepository) Exists(ctx context.Context, participantUID string) (bool, error) {
+	return r.NatsBaseRepository.Exists(ctx, participantUID)
 }
 
-func (s *NatsPastMeetingParticipantRepository) GetWithRevision(ctx context.Context, participantUID string) (*models.PastMeetingParticipant, uint64, error) {
-	entry, err := s.get(ctx, participantUID)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return nil, 0, domain.NewNotFoundError(fmt.Sprintf("past meeting participant with UID '%s' not found", participantUID), err)
-		}
-		slog.ErrorContext(ctx, "error getting past meeting participant from NATS KV", logging.ErrKey, err)
-		return nil, 0, domain.NewInternalError("failed to retrieve past meeting participant from store", err)
-	}
-
-	participant, err := s.unmarshal(ctx, entry)
-	if err != nil {
-		return nil, 0, domain.NewInternalError("failed to unmarshal past meeting participant data", err)
-	}
-
-	return participant, entry.Revision(), nil
-}
-
-func (s *NatsPastMeetingParticipantRepository) Exists(ctx context.Context, participantUID string) (bool, error) {
-	_, err := s.get(ctx, participantUID)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return false, nil
-		}
-		return false, domain.NewInternalError("failed to check if past meeting participant exists", err)
-	}
-	return true, nil
-}
-
-func (s *NatsPastMeetingParticipantRepository) Create(ctx context.Context, participant *models.PastMeetingParticipant) error {
-	if s.PastMeetingParticipants == nil {
-		return domain.NewUnavailableError("past meeting participant repository is not available")
-	}
-
+// Create creates a new past meeting participant
+func (r *NatsPastMeetingParticipantRepository) Create(ctx context.Context, participant *models.PastMeetingParticipant) error {
 	// Generate a new UID if not provided
 	if participant.UID == "" {
 		participant.UID = uuid.New().String()
 	}
 
-	// Set timestamps
-	now := time.Now()
-	participant.CreatedAt = &now
-	participant.UpdatedAt = &now
-
-	// Marshal the participant
-	participantBytes, err := json.Marshal(participant)
-	if err != nil {
-		slog.ErrorContext(ctx, "error marshaling past meeting participant", logging.ErrKey, err)
-		return domain.NewInternalError("failed to marshal past meeting participant data", err)
-	}
-
-	// Store in NATS KV
-	_, err = s.PastMeetingParticipants.Put(ctx, participant.UID, participantBytes)
-	if err != nil {
-		slog.ErrorContext(ctx, "error storing past meeting participant in NATS KV", logging.ErrKey, err)
-		return domain.NewInternalError("failed to store past meeting participant in store", err)
-	}
-
-	return nil
+	return r.NatsBaseRepository.Create(ctx, participant.UID, participant)
 }
 
-func (s *NatsPastMeetingParticipantRepository) Update(ctx context.Context, participant *models.PastMeetingParticipant, revision uint64) error {
-	if s.PastMeetingParticipants == nil {
-		return domain.NewUnavailableError("past meeting participant repository is not available")
-	}
-
-	// Update timestamp
-	now := time.Now()
-	participant.UpdatedAt = &now
-
-	// Marshal the participant
-	participantBytes, err := json.Marshal(participant)
-	if err != nil {
-		slog.ErrorContext(ctx, "error marshaling past meeting participant", logging.ErrKey, err)
-		return domain.NewInternalError("failed to marshal past meeting participant data", err)
-	}
-
-	// Update in NATS KV with revision check
-	_, err = s.PastMeetingParticipants.Update(ctx, participant.UID, participantBytes, revision)
-	if err != nil {
-		if strings.Contains(err.Error(), "wrong last sequence") {
-			return domain.NewConflictError("past meeting participant has been modified by another process", err)
-		}
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.NewNotFoundError("past meeting participant not found", err)
-		}
-		slog.ErrorContext(ctx, "error updating past meeting participant in NATS KV", logging.ErrKey, err)
-		return domain.NewInternalError("failed to update past meeting participant in store", err)
-	}
-
-	return nil
+// Update updates an existing past meeting participant
+func (r *NatsPastMeetingParticipantRepository) Update(ctx context.Context, participant *models.PastMeetingParticipant, revision uint64) error {
+	return r.NatsBaseRepository.Update(ctx, participant.UID, participant, revision)
 }
 
-func (s *NatsPastMeetingParticipantRepository) Delete(ctx context.Context, participantUID string, revision uint64) error {
-	if s.PastMeetingParticipants == nil {
-		return domain.NewUnavailableError("past meeting participant repository is not available")
-	}
-
-	err := s.PastMeetingParticipants.Delete(ctx, participantUID, jetstream.LastRevision(revision))
-	if err != nil {
-		if strings.Contains(err.Error(), "wrong last sequence") {
-			return domain.NewConflictError("past meeting participant has been modified by another process", err)
-		}
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.NewNotFoundError("past meeting participant not found", err)
-		}
-		slog.ErrorContext(ctx, "error deleting past meeting participant from NATS KV", logging.ErrKey, err)
-		return domain.NewInternalError("failed to delete past meeting participant from store", err)
-	}
-
-	return nil
+// Delete removes a past meeting participant
+func (r *NatsPastMeetingParticipantRepository) Delete(ctx context.Context, participantUID string, revision uint64) error {
+	return r.NatsBaseRepository.Delete(ctx, participantUID, revision)
 }
 
-func (s *NatsPastMeetingParticipantRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
-	if s.PastMeetingParticipants == nil {
-		return nil, domain.NewUnavailableError("past meeting participant repository is not available")
-	}
-
-	keysLister, err := s.PastMeetingParticipants.ListKeys(ctx)
+// ListByPastMeeting retrieves all past meeting participants for a given past meeting UID
+func (r *NatsPastMeetingParticipantRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingParticipant, error) {
+	allParticipants, err := r.ListAll(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "error listing past meeting participant keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.NewInternalError("failed to list past meeting participant keys from store", err)
+		return nil, err
 	}
 
-	var participants []*models.PastMeetingParticipant
-	for key := range keysLister.Keys() {
-		entry, err := s.get(ctx, key)
-		if err != nil {
-			if !errors.Is(err, jetstream.ErrKeyNotFound) {
-				slog.ErrorContext(ctx, "error getting past meeting participant from NATS KV store", logging.ErrKey, err, "key", key)
-			}
-			continue
-		}
-
-		participant, err := s.unmarshal(ctx, entry)
-		if err != nil {
-			slog.ErrorContext(ctx, "error unmarshaling past meeting participant", logging.ErrKey, err, "key", key)
-			continue
-		}
-
+	var matchingParticipants []*models.PastMeetingParticipant
+	for _, participant := range allParticipants {
 		if participant.PastMeetingUID == pastMeetingUID {
-			participants = append(participants, participant)
+			matchingParticipants = append(matchingParticipants, participant)
 		}
 	}
 
-	return participants, nil
+	return matchingParticipants, nil
 }
 
-func (s *NatsPastMeetingParticipantRepository) ListByEmail(ctx context.Context, email string) ([]*models.PastMeetingParticipant, error) {
-	if s.PastMeetingParticipants == nil {
-		return nil, domain.NewUnavailableError("past meeting participant repository is not available")
-	}
-
-	keysLister, err := s.PastMeetingParticipants.ListKeys(ctx)
+// ListByEmail retrieves all past meeting participants with a specific email
+func (r *NatsPastMeetingParticipantRepository) ListByEmail(ctx context.Context, email string) ([]*models.PastMeetingParticipant, error) {
+	allParticipants, err := r.ListAll(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "error listing past meeting participant keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.NewInternalError("failed to list past meeting participant keys from store", err)
+		return nil, err
 	}
 
-	email = strings.ToLower(email)
-
-	var participants []*models.PastMeetingParticipant
-	for key := range keysLister.Keys() {
-		entry, err := s.get(ctx, key)
-		if err != nil {
-			if !errors.Is(err, jetstream.ErrKeyNotFound) {
-				slog.ErrorContext(ctx, "error getting past meeting participant from NATS KV store", logging.ErrKey, err, "key", key)
-			}
-			continue
-		}
-
-		participant, err := s.unmarshal(ctx, entry)
-		if err != nil {
-			slog.ErrorContext(ctx, "error unmarshaling past meeting participant", logging.ErrKey, err, "key", key)
-			continue
-		}
-
-		if strings.ToLower(participant.Email) == email {
-			participants = append(participants, participant)
+	var matchingParticipants []*models.PastMeetingParticipant
+	for _, participant := range allParticipants {
+		if participant.Email == email {
+			matchingParticipants = append(matchingParticipants, participant)
 		}
 	}
 
-	return participants, nil
+	return matchingParticipants, nil
 }
 
-func (s *NatsPastMeetingParticipantRepository) GetByPastMeetingAndEmail(ctx context.Context, pastMeetingUID, email string) (*models.PastMeetingParticipant, error) {
-	if s.PastMeetingParticipants == nil {
-		return nil, domain.NewUnavailableError("past meeting participant repository is not available")
-	}
-
-	keysLister, err := s.PastMeetingParticipants.ListKeys(ctx)
+// GetByPastMeetingAndEmail retrieves a past meeting participant by past meeting UID and email
+func (r *NatsPastMeetingParticipantRepository) GetByPastMeetingAndEmail(ctx context.Context, pastMeetingUID, email string) (*models.PastMeetingParticipant, error) {
+	participants, err := r.ListByPastMeeting(ctx, pastMeetingUID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error listing past meeting participant keys from NATS KV store", logging.ErrKey, err)
-		return nil, domain.NewInternalError("failed to list past meeting participant keys from store", err)
+		return nil, err
 	}
 
-	email = strings.ToLower(email)
-
-	for key := range keysLister.Keys() {
-		entry, err := s.get(ctx, key)
-		if err != nil {
-			if !errors.Is(err, jetstream.ErrKeyNotFound) {
-				slog.ErrorContext(ctx, "error getting past meeting participant from NATS KV store", logging.ErrKey, err, "key", key)
-			}
-			continue
-		}
-
-		participant, err := s.unmarshal(ctx, entry)
-		if err != nil {
-			slog.ErrorContext(ctx, "error unmarshaling past meeting participant", logging.ErrKey, err, "key", key)
-			continue
-		}
-
-		if participant.PastMeetingUID == pastMeetingUID && strings.ToLower(participant.Email) == email {
+	for _, participant := range participants {
+		if participant.Email == email {
 			return participant, nil
 		}
 	}
 
-	return nil, domain.NewNotFoundError(fmt.Sprintf("no past meeting participant found for meeting '%s' with email '%s'", pastMeetingUID, email), nil)
+	slog.DebugContext(ctx, "participant not found", "past_meeting_uid", pastMeetingUID, "email", email)
+	return nil, domain.NewNotFoundError("participant not found")
 }
 
-// Ensure NatsPastMeetingParticipantRepository implements domain.PastMeetingParticipantRepository
-var _ domain.PastMeetingParticipantRepository = (*NatsPastMeetingParticipantRepository)(nil)
+// ListAll lists all past meeting participants
+func (r *NatsPastMeetingParticipantRepository) ListAll(ctx context.Context) ([]*models.PastMeetingParticipant, error) {
+	return r.ListEntities(ctx, "")
+}
