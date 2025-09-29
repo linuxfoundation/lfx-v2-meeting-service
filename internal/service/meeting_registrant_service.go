@@ -602,6 +602,11 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		return domain.NewUnavailableError("meeting registrant service is not ready")
 	}
 
+	if oldMeeting == nil {
+		slog.ErrorContext(ctx, "old meeting object missing; unable to send updated invitation")
+		return errors.New("old meeting object missing")
+	}
+
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrant.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meeting.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(registrant.Email)))

@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <!-- Copyright The Linux Foundation and each contributor to LFX. -->
 <!-- SPDX-License-Identifier: MIT -->
-<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -161,6 +161,24 @@
             text-decoration: none;
             color: #009aff;
         }
+
+        .separator {
+            border: 0.5px solid #e1e1e7;
+            margin: 24px 0;
+        }
+
+        .tight-spacing {
+            margin: 0;
+            padding: 0;
+        }
+
+        .tight-spacing p {
+            margin: 2px 0;
+        }
+
+        .text-gray {
+            color: #a5a6ab;
+        }
     </style>
 </head>
 
@@ -174,7 +192,11 @@
             <h1 class="title">{{.MeetingTitle}}</h1>
         </div>
         <div class="margin-bottom-24">
+            {{if eq .MeetingType "Board"}}
             <span class="badge badge-board">{{.MeetingType}}</span>
+            {{else}}
+            <span class="badge badge-default">{{.MeetingType}}</span>
+            {{end}}
             {{if .Recurrence}}
             <span class="badge badge-default">Recurring</span>
             {{else}}
@@ -199,13 +221,46 @@
         <div class="details">
             <div class="details-title">Meeting Details</div>
             {{.Description}}
-            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX One</a>
+            {{if .MeetingDetailsLink}}
+            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
+                One</a>
+            {{end}}
         </div>
         <div class="text-align-center">
             <a href="{{.JoinLink}}" class="button">Join Meeting</a>
         </div>
         <div class="footer">
             powered by <strong>LFX One</strong>
+        </div>
+        <hr class="separator">
+        <div class="details">
+            <p>Alternative ways to join meeting:</p>
+            <div>
+                <div>
+                    <p><b>1. Join from PC, Mac, iPad, or Android</b></p>
+                    <p class="text-gray">If the button above does not work, paste this into your browser: <a
+                            href="{{.JoinLink}}" class="text-button">{{.JoinLink}}</a></p>
+                </div>
+                <div>
+                    <p><b>2. Join via audio</b></p>
+                    <div class="tight-spacing text-gray">
+                        <p>One tap mobile:</p>
+                        <p>US: <a href="tel:+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#"
+                                class="text-button">+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
+                            or <a href="tel:+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#"
+                                class="text-button">+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
+                        </p>
+                    </div>
+                    <div class="tight-spacing text-gray">
+                        <p>Or dial:</p>
+                        <p>US: +1 253 215 8782</p>
+                        <p>Canada: +1 647 374 4685</p>
+                    </div>
+                    <p>Meeting ID: {{.MeetingID}}</p>
+                    <p>Meeting Passcode: {{.Passcode}}</p>
+                    <a href="https://zoom.us/u/alwnPIaVT" class="text-button">International numbers</a>
+                </div>
+            </div>
         </div>
     </div>
 </body>

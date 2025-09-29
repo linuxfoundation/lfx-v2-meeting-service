@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <!-- Copyright The Linux Foundation and each contributor to LFX. -->
 <!-- SPDX-License-Identifier: MIT -->
-<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -249,13 +249,17 @@
                 <div class="changed-details-old">{{.OldDescription}}</div>
                 <div class="changed-details-new"><strong>New: </strong>{{.Description}}</div>
             </div>
-            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX One</a>
+            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
+                One</a>
         </div>
         {{else}}
         <div class="details">
             <div class="details-title">Meeting Details</div>
             {{.Description}}
-            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX One</a>
+            {{if .MeetingDetailsLink}}
+            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
+                One</a>
+            {{end}}
         </div>
         {{end}}
         <div class="text-align-center">
@@ -277,8 +281,10 @@
                     <p><b>2. Join via audio</b></p>
                     <div class="tight-spacing text-gray">
                         <p>One tap mobile:</p>
-                        <p>US: <a href="tel:+12532158782,,123456789#,,,,*1234#">+12532158782,,123456789#,,,,*1234#</a>
-                            or <a href="tel:+13462487799,,123456789#,,,,*1234#">+13462487799,,123456789#,,,,*1234#</a>
+                        <p>US: <a href="tel:+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#"
+                                class="text-button">+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
+                            or <a href="tel:+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#"
+                                class="text-button">+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
                         </p>
                     </div>
                     <div class="tight-spacing text-gray">
@@ -288,10 +294,11 @@
                     </div>
                     <p>Meeting ID: {{.MeetingID}}</p>
                     <p>Meeting Passcode: {{.Passcode}}</p>
-                    <a href='https://zoom.us/u/alwnPIaVT'>International numbers</a>
+                    <a href="https://zoom.us/u/alwnPIaVT" class="text-button">International numbers</a>
                 </div>
             </div>
         </div>
+    </div>
 </body>
 
 </html>
