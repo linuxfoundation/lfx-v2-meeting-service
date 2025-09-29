@@ -568,6 +568,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 	}
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingDB.ProjectUID)
 
 	invitation := domain.EmailInvitation{
 		MeetingUID:     meetingDB.UID,
@@ -582,6 +583,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		MeetingType:    meetingDB.MeetingType,
 		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
 		ProjectName:    projectName,
+		ProjectLogo:    projectLogo,
 		Platform:       meetingDB.Platform,
 		MeetingID:      meetingID,
 		Passcode:       passcode,
@@ -608,6 +610,7 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 	}
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
 
 	updatedInvitation := domain.EmailUpdatedInvitation{
 		MeetingUID:     meeting.UID,
@@ -627,6 +630,7 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		Recurrence:     meeting.Recurrence,
 		Changes:        changes,
 		ProjectName:    projectName,
+		ProjectLogo:    projectLogo,
 		// Previous meeting data
 		OldStartTime:   oldMeeting.StartTime,
 		OldDuration:    oldMeeting.Duration,
@@ -655,6 +659,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 	}
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
 
 	cancellation := domain.EmailCancellation{
 		MeetingUID:     meeting.UID,
@@ -666,6 +671,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 		Timezone:       meeting.Timezone,
 		Description:    meeting.Description,
 		ProjectName:    projectName,
+		ProjectLogo:    projectLogo,
 		Reason:         "Your registration has been removed from this meeting.",
 		Recurrence:     meeting.Recurrence,
 	}

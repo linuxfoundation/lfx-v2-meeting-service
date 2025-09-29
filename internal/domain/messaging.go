@@ -54,4 +54,5 @@ type MessageBuilder interface {
 	GetCommitteeName(ctx context.Context, committeeUID string) (string, error)
 	GetCommitteeMembers(ctx context.Context, committeeUID string) ([]models.CommitteeMember, error)
 	GetProjectName(ctx context.Context, projectUID string) (string, error)
+	GetProjectLogo(ctx context.Context, projectUID string) (string, error)
 }

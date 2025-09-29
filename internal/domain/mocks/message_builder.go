@@ -163,3 +163,8 @@ func (m *MockMessageBuilder) GetProjectName(ctx context.Context, projectUID stri
 	args := m.Called(ctx, projectUID)
 	return args.String(0), args.Error(1)
 }
+
+func (m *MockMessageBuilder) GetProjectLogo(ctx context.Context, projectUID string) (string, error) {
+	args := m.Called(ctx, projectUID)
+	return args.String(0), args.Error(1)
+}

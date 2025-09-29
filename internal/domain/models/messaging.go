@@ -93,6 +93,10 @@ const (
 	// ProjectGetNameSubject is the subject for project name validation.
 	// The subject is of the form: lfx.projects-api.get_name
 	ProjectGetNameSubject = "lfx.projects-api.get_name"
+
+	// ProjectGetLogoSubject is the subject for project logo validation.
+	// The subject is of the form: lfx.projects-api.get_logo
+	ProjectGetLogoSubject = "lfx.projects-api.get_logo"
 )
 
 // NATS wildcard subjects that the meeting service handles messages about.

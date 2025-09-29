@@ -32,6 +32,7 @@ type EmailInvitation struct {
 	Visibility     string
 	JoinLink       string
 	ProjectName    string             // Optional project name for context
+	ProjectLogo    string             // Optional project logo URL
 	Platform       string             // Meeting platform (e.g., "Zoom")
 	MeetingID      string             // Zoom meeting ID for dial-in
 	Passcode       string             // Zoom passcode
@@ -50,6 +51,7 @@ type EmailCancellation struct {
 	Timezone       string
 	Description    string
 	ProjectName    string             // Optional project name for context
+	ProjectLogo    string             // Optional project logo URL
 	Reason         string             // Optional reason for cancellation
 	Recurrence     *models.Recurrence // Recurrence pattern for ICS
 	ICSAttachment  *EmailAttachment   // ICS calendar attachment for cancellation
@@ -69,6 +71,7 @@ type EmailUpdatedInvitation struct {
 	Visibility     string
 	MeetingType    string
 	ProjectName    string             // Optional project name for context
+	ProjectLogo    string             // Optional project logo URL
 	Platform       string             // Meeting platform (e.g., "Zoom")
 	MeetingID      string             // Zoom meeting ID for dial-in
 	Passcode       string             // Zoom passcode
@@ -91,6 +94,7 @@ type EmailSummaryNotification struct {
 	MeetingTitle   string    // Title of the meeting
 	MeetingDate    time.Time // Date when the meeting occurred
 	ProjectName    string    // Optional project name for context
+	ProjectLogo    string    // Optional project logo URL
 	SummaryContent string    // The summary content
 	SummaryDocURL  string    // Optional URL to the full summary document
 	SummaryTitle   string    // Title of the summary (if different from meeting title)
