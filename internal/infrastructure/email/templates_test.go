@@ -134,17 +134,17 @@ func TestFormatTime(t *testing.T) {
 		{
 			name:     "UTC timezone",
 			timezone: "UTC",
-			expected: "Monday, January 15, 2024 at 2:30 PM UTC",
+			expected: "Monday, January 15th, 14:30 UTC",
 		},
 		{
 			name:     "EST timezone",
 			timezone: "America/New_York",
-			expected: "Monday, January 15, 2024 at 9:30 AM EST",
+			expected: "Monday, January 15th, 09:30 America/New_York",
 		},
 		{
-			name:     "Invalid timezone falls back to UTC",
+			name:     "Invalid timezone shows as given",
 			timezone: "Invalid/Timezone",
-			expected: "Monday, January 15, 2024 at 2:30 PM UTC",
+			expected: "Monday, January 15th, 14:30 Invalid/Timezone",
 		},
 	}
 
@@ -198,8 +198,12 @@ func TestFormatDuration(t *testing.T) {
 }
 
 func TestFormatRecurrence(t *testing.T) {
+	// Default test values for startTime and timezone
+	testStartTime := time.Date(2024, 1, 15, 14, 30, 0, 0, time.UTC)
+	testTimezone := "America/New_York"
+
 	t.Run("nil recurrence", func(t *testing.T) {
-		result := formatRecurrence(nil)
+		result := formatRecurrence(nil, testStartTime, testTimezone)
 		assert.Equal(t, "", result)
 	})
 
@@ -212,12 +216,12 @@ func TestFormatRecurrence(t *testing.T) {
 			{
 				name:     "daily every day",
 				interval: 1,
-				expected: "Daily",
+				expected: "Daily at 09:30 America/New_York",
 			},
 			{
 				name:     "daily every 3 days",
 				interval: 3,
-				expected: "Every 3 days",
+				expected: "Every 3 days at 09:30 America/New_York",
 			},
 		}
 
@@ -227,13 +231,14 @@ func TestFormatRecurrence(t *testing.T) {
 					Type:           1, // Daily
 					RepeatInterval: tt.interval,
 				}
-				result := formatRecurrence(recurrence)
+				result := formatRecurrence(recurrence, testStartTime, testTimezone)
 				assert.Equal(t, tt.expected, result)
 			})
 		}
 	})
 
 	t.Run("weekly recurrence", func(t *testing.T) {
+		// testStartTime is Monday, January 15, 2024
 		tests := []struct {
 			name       string
 			interval   int
@@ -241,26 +246,28 @@ func TestFormatRecurrence(t *testing.T) {
 			expected   string
 		}{
 			{
-				name:     "weekly every week",
-				interval: 1,
-				expected: "Weekly",
+				name:       "weekly every week without specified days",
+				interval:   1,
+				weeklyDays: "",
+				expected:   "Weekly at 09:30 America/New_York",
 			},
 			{
-				name:     "weekly every 2 weeks",
-				interval: 2,
-				expected: "Every 2 weeks",
+				name:       "weekly every 2 weeks without specified days",
+				interval:   2,
+				weeklyDays: "",
+				expected:   "Every 2 weeks at 09:30 America/New_York",
 			},
 			{
 				name:       "weekly on Monday and Friday",
 				interval:   1,
 				weeklyDays: "2,6",
-				expected:   "Weekly on Monday and Friday",
+				expected:   "Weekly on Monday and Friday at 09:30 America/New_York",
 			},
 			{
 				name:       "weekly on Monday, Wednesday, and Friday",
 				interval:   1,
 				weeklyDays: "2,4,6",
-				expected:   "Weekly on Monday, Wednesday and Friday",
+				expected:   "Weekly on Monday, Wednesday and Friday at 09:30 America/New_York",
 			},
 		}
 
@@ -271,7 +278,7 @@ func TestFormatRecurrence(t *testing.T) {
 					RepeatInterval: tt.interval,
 					WeeklyDays:     tt.weeklyDays,
 				}
-				result := formatRecurrence(recurrence)
+				result := formatRecurrence(recurrence, testStartTime, testTimezone)
 				assert.Equal(t, tt.expected, result)
 			})
 		}
@@ -289,32 +296,32 @@ func TestFormatRecurrence(t *testing.T) {
 			{
 				name:     "monthly every month",
 				interval: 1,
-				expected: "Monthly",
+				expected: "Monthly at 09:30 America/New_York",
 			},
 			{
 				name:     "monthly every 3 months",
 				interval: 3,
-				expected: "Every 3 months",
+				expected: "Every 3 months at 09:30 America/New_York",
 			},
 			{
 				name:       "monthly on day 15",
 				interval:   1,
 				monthlyDay: 15,
-				expected:   "Monthly on day 15",
+				expected:   "Monthly on day 15 at 09:30 America/New_York",
 			},
 			{
 				name:           "monthly on first Monday",
 				interval:       1,
 				monthlyWeek:    1,
 				monthlyWeekDay: 2,
-				expected:       "Monthly on the first Monday",
+				expected:       "Monthly on the first Monday at 09:30 America/New_York",
 			},
 			{
 				name:           "monthly on third Friday",
 				interval:       1,
 				monthlyWeek:    3,
 				monthlyWeekDay: 6,
-				expected:       "Monthly on the third Friday",
+				expected:       "Monthly on the third Friday at 09:30 America/New_York",
 			},
 		}
 
@@ -327,7 +334,7 @@ func TestFormatRecurrence(t *testing.T) {
 					MonthlyWeek:    tt.monthlyWeek,
 					MonthlyWeekDay: tt.monthlyWeekDay,
 				}
-				result := formatRecurrence(recurrence)
+				result := formatRecurrence(recurrence, testStartTime, testTimezone)
 				assert.Equal(t, tt.expected, result)
 			})
 		}
@@ -345,12 +352,12 @@ func TestFormatRecurrence(t *testing.T) {
 			{
 				name:     "daily with 10 occurrences",
 				endTimes: 10,
-				expected: "Daily (10 occurrences)",
+				expected: "Daily at 09:30 America/New_York (10 occurrences)",
 			},
 			{
 				name:        "daily until December 31, 2024",
 				endDateTime: &endDate,
-				expected:    "Daily (until December 31, 2024)",
+				expected:    "Daily at 09:30 America/New_York (until December 31, 2024)",
 			},
 		}
 
@@ -362,7 +369,7 @@ func TestFormatRecurrence(t *testing.T) {
 					EndTimes:       tt.endTimes,
 					EndDateTime:    tt.endDateTime,
 				}
-				result := formatRecurrence(recurrence)
+				result := formatRecurrence(recurrence, testStartTime, testTimezone)
 				assert.Equal(t, tt.expected, result)
 			})
 		}
@@ -373,7 +380,7 @@ func TestFormatRecurrence(t *testing.T) {
 			Type:           99, // Unknown type
 			RepeatInterval: 1,
 		}
-		result := formatRecurrence(recurrence)
+		result := formatRecurrence(recurrence, testStartTime, testTimezone)
 		assert.Equal(t, "Custom recurrence", result)
 	})
 }
@@ -490,6 +497,57 @@ func TestGetOrdinalWeek(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getOrdinalWeek(tt.week)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestCapitalize(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "lowercase word",
+			input:    "hello",
+			expected: "Hello",
+		},
+		{
+			name:     "uppercase word",
+			input:    "WORLD",
+			expected: "World",
+		},
+		{
+			name:     "mixed case word",
+			input:    "gOoDbYe",
+			expected: "Goodbye",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "single character lowercase",
+			input:    "a",
+			expected: "A",
+		},
+		{
+			name:     "single character uppercase",
+			input:    "Z",
+			expected: "Z",
+		},
+		{
+			name:     "sentence",
+			input:    "the quick brown fox",
+			expected: "The quick brown fox",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := capitalize(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
