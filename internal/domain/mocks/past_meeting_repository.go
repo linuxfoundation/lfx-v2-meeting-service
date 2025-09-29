@@ -52,22 +52,6 @@ func (m *MockPastMeetingRepository) Update(ctx context.Context, pastMeeting *mod
 	return args.Error(0)
 }
 
-func (m *MockPastMeetingRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.PastMeeting, error) {
-	args := m.Called(ctx, meetingUID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]*models.PastMeeting), args.Error(1)
-}
-
-func (m *MockPastMeetingRepository) GetByMeetingAndOccurrence(ctx context.Context, meetingUID, occurrenceID string) (*models.PastMeeting, error) {
-	args := m.Called(ctx, meetingUID, occurrenceID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.PastMeeting), args.Error(1)
-}
-
 func (m *MockPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error) {
 	args := m.Called(ctx, platform, platformMeetingID)
 	if args.Get(0) == nil {

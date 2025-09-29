@@ -5,137 +5,55 @@ package store
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"log/slog"
-
-	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
-)
-
-// NATS Key-Value store bucket name for past meeting summaries.
-const (
-	// KVStoreNamePastMeetingSummaries is the name of the KV store for past meeting summaries.
-	KVStoreNamePastMeetingSummaries = "past-meeting-summaries"
 )
 
 // NatsPastMeetingSummaryRepository is the NATS KV store repository for past meeting summaries.
 type NatsPastMeetingSummaryRepository struct {
-	PastMeetingSummaries INatsKeyValue
+	*NatsBaseRepository[models.PastMeetingSummary]
 }
 
 // NewNatsPastMeetingSummaryRepository creates a new NATS KV store repository for past meeting summaries.
-func NewNatsPastMeetingSummaryRepository(pastMeetingSummaries INatsKeyValue) *NatsPastMeetingSummaryRepository {
+func NewNatsPastMeetingSummaryRepository(kvStore INatsKeyValue) *NatsPastMeetingSummaryRepository {
+	baseRepo := NewNatsBaseRepository[models.PastMeetingSummary](kvStore, "past meeting summary")
+
 	return &NatsPastMeetingSummaryRepository{
-		PastMeetingSummaries: pastMeetingSummaries,
+		NatsBaseRepository: baseRepo,
 	}
 }
 
-func (s *NatsPastMeetingSummaryRepository) get(ctx context.Context, summaryUID string) (jetstream.KeyValueEntry, error) {
-	return s.PastMeetingSummaries.Get(ctx, summaryUID)
+// Create creates a new past meeting summary
+func (r *NatsPastMeetingSummaryRepository) Create(ctx context.Context, summary *models.PastMeetingSummary) error {
+	return r.NatsBaseRepository.Create(ctx, summary.UID, summary)
 }
 
-func (s *NatsPastMeetingSummaryRepository) unmarshal(ctx context.Context, entry jetstream.KeyValueEntry) (*models.PastMeetingSummary, error) {
-	var summary models.PastMeetingSummary
-	err := json.Unmarshal(entry.Value(), &summary)
-	if err != nil {
-		slog.ErrorContext(ctx, "error unmarshaling past meeting summary", logging.ErrKey, err)
-		return nil, err
-	}
-	return &summary, nil
+// Get retrieves a past meeting summary by UID
+func (r *NatsPastMeetingSummaryRepository) Get(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, error) {
+	summary, _, err := r.GetWithRevision(ctx, summaryUID)
+	return summary, err
 }
 
-// Create creates a new past meeting summary in the NATS KV store.
-func (s *NatsPastMeetingSummaryRepository) Create(ctx context.Context, summary *models.PastMeetingSummary) error {
-	if summary.UID == "" {
-		return fmt.Errorf("summary UID is required")
-	}
-
-	data, err := json.Marshal(summary)
-	if err != nil {
-		slog.ErrorContext(ctx, "error marshaling summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		return domain.NewInternalError("error marshaling summary", err)
-	}
-
-	_, err = s.PastMeetingSummaries.Put(ctx, summary.UID, data)
-	if err != nil {
-		slog.ErrorContext(ctx, "error creating summary in KV store", logging.ErrKey, err, "summary_uid", summary.UID)
-		return domain.NewInternalError("error creating summary in KV store", err)
-	}
-
-	slog.DebugContext(ctx, "created past meeting summary", "summary_uid", summary.UID, "past_meeting_uid", summary.PastMeetingUID)
-	return nil
+// GetWithRevision retrieves a past meeting summary with revision by UID
+func (r *NatsPastMeetingSummaryRepository) GetWithRevision(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, uint64, error) {
+	return r.NatsBaseRepository.GetWithRevision(ctx, summaryUID)
 }
 
-// Get retrieves a past meeting summary from the NATS KV store.
-func (s *NatsPastMeetingSummaryRepository) Get(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, error) {
-	entry, err := s.get(ctx, summaryUID)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
-			return nil, domain.NewNotFoundError("summary not found")
-		}
-		slog.ErrorContext(ctx, "error getting summary from KV store", logging.ErrKey, err, "summary_uid", summaryUID)
-		return nil, domain.NewInternalError("error getting summary from KV store", err)
-	}
-
-	summary, err := s.unmarshal(ctx, entry)
-	if err != nil {
-		return nil, domain.NewInternalError("error unmarshaling summary", err)
-	}
-
-	return summary, nil
+// Update updates an existing past meeting summary
+func (r *NatsPastMeetingSummaryRepository) Update(ctx context.Context, summary *models.PastMeetingSummary, revision uint64) error {
+	return r.NatsBaseRepository.Update(ctx, summary.UID, summary, revision)
 }
 
-// GetWithRevision retrieves a past meeting summary with its revision from the NATS KV store.
-func (s *NatsPastMeetingSummaryRepository) GetWithRevision(ctx context.Context, summaryUID string) (*models.PastMeetingSummary, uint64, error) {
-	entry, err := s.get(ctx, summaryUID)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			slog.DebugContext(ctx, "summary not found", "summary_uid", summaryUID)
-			return nil, 0, domain.NewNotFoundError("summary not found")
-		}
-		slog.ErrorContext(ctx, "error getting summary from KV store", logging.ErrKey, err, "summary_uid", summaryUID)
-		return nil, 0, domain.NewInternalError("error getting summary from KV store", err)
-	}
-
-	summary, err := s.unmarshal(ctx, entry)
-	if err != nil {
-		return nil, 0, domain.NewInternalError("error unmarshaling summary", err)
-	}
-
-	return summary, entry.Revision(), nil
-}
-
-// Update updates a past meeting summary in the NATS KV store.
-func (s *NatsPastMeetingSummaryRepository) Update(ctx context.Context, summary *models.PastMeetingSummary, revision uint64) error {
-	if summary.UID == "" {
-		return fmt.Errorf("summary UID is required")
-	}
-
-	data, err := json.Marshal(summary)
-	if err != nil {
-		slog.ErrorContext(ctx, "error marshaling summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		return domain.NewInternalError("error marshaling summary", err)
-	}
-
-	_, err = s.PastMeetingSummaries.Update(ctx, summary.UID, data, revision)
-	if err != nil {
-		slog.ErrorContext(ctx, "error updating summary in KV store", logging.ErrKey, err, "summary_uid", summary.UID, "revision", revision)
-		return domain.NewInternalError("error updating summary in KV store", err)
-	}
-
-	slog.DebugContext(ctx, "updated past meeting summary", "summary_uid", summary.UID, "past_meeting_uid", summary.PastMeetingUID, "revision", revision)
-	return nil
+// ListAll lists all past meeting summaries
+func (r *NatsPastMeetingSummaryRepository) ListAll(ctx context.Context) ([]*models.PastMeetingSummary, error) {
+	return r.ListEntities(ctx, "")
 }
 
 // GetByPastMeetingUID retrieves a past meeting summary by past meeting UID.
-func (s *NatsPastMeetingSummaryRepository) GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingSummary, error) {
-	summaries, err := s.ListByPastMeeting(ctx, pastMeetingUID)
+func (r *NatsPastMeetingSummaryRepository) GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingSummary, error) {
+	summaries, err := r.ListByPastMeeting(ctx, pastMeetingUID)
 	if err != nil {
 		return nil, err
 	}
@@ -150,26 +68,18 @@ func (s *NatsPastMeetingSummaryRepository) GetByPastMeetingUID(ctx context.Conte
 }
 
 // ListByPastMeeting retrieves all past meeting summaries for a given past meeting UID.
-func (s *NatsPastMeetingSummaryRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingSummary, error) {
-	keys, err := s.PastMeetingSummaries.ListKeys(ctx)
+func (r *NatsPastMeetingSummaryRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingSummary, error) {
+	allSummaries, err := r.ListAll(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "error listing keys from KV store", logging.ErrKey, err)
-		return nil, domain.NewInternalError("error listing keys from KV store", err)
+		return nil, err
 	}
 
-	var summaries []*models.PastMeetingSummary
-	for key := range keys.Keys() {
-		summary, err := s.Get(ctx, key)
-		if err != nil {
-			// Skip entries that can't be read but continue processing others
-			slog.WarnContext(ctx, "failed to get summary during list operation", logging.ErrKey, err, "summary_uid", key)
-			continue
-		}
-
+	var matchingSummaries []*models.PastMeetingSummary
+	for _, summary := range allSummaries {
 		if summary.PastMeetingUID == pastMeetingUID {
-			summaries = append(summaries, summary)
+			matchingSummaries = append(matchingSummaries, summary)
 		}
 	}
 
-	return summaries, nil
+	return matchingSummaries, nil
 }
