@@ -15,7 +15,8 @@ Meeting Details:
 Meeting: {{.MeetingTitle}}
 Date & Time: {{formatTime .StartTime .Timezone}}
 Duration: {{formatDuration .Duration}}
-Time Zone: {{.Timezone}}
+Time Zone: {{.Timezone}}{{if .Recurrence}}
+Recurrence: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
 
 {{if .Description}}Meeting Description:
 {{.Description}}
