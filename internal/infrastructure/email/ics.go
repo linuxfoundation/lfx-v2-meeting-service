@@ -44,6 +44,7 @@ func NewICSGenerator() *ICSGenerator {
 type ICSMeetingInvitationParams struct {
 	MeetingUID     string // Unique meeting identifier for consistent ICS UID
 	MeetingTitle   string
+	MeetingType    string
 	Description    string
 	StartTime      time.Time
 	Duration       int // Duration in minutes

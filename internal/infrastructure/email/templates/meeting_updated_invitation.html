@@ -1,132 +1,128 @@
 <!DOCTYPE html>
-<!-- Copyright The Linux Foundation and each contributor to LFX. -->
-<!-- SPDX-License-Identifier: MIT -->
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Meeting update notification email from Linux Foundation">
-    <meta name="keywords" content="meeting, update, invitation, linux foundation, lfx">
-    <title>Meeting Updated</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            font-family: Inter, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
         }
 
         .container {
-            background-color: white;
+            width: 100%;
+            max-width: 550px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px 50px;
             border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .header {
-            border-bottom: 2px solid #0068c8;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            text-align: center;
+            padding: 10px 0;
         }
 
-        h1 {
-            color: #0068c8;
-            font-size: 24px;
-            margin: 0;
+        .header img {
+            max-width: 100px;
         }
 
-        .update-notice {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 20px;
+        .title {
+            text-align: center;
+            font-size: 22px;
+            color: #333333;
+            margin: 8px 0 32px 0;
         }
 
-        .update-notice h2 {
-            color: #856404;
-            margin-top: 0;
-            font-size: 18px;
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 10px;
+            margin-right: 5px;
+            font-size: 14px;
         }
 
-        .changes-list {
-            background-color: #f8f9fa;
-            border-left: 4px solid #0068c8;
-            padding: 15px;
-            margin: 15px 0;
+        .badge-changed {
+            display: inline-block;
+            background-color: #fff7f0;
+            color: #f97316;
         }
 
-        .change-item {
-            margin-bottom: 8px;
-        }
-
-        .change-label {
-            font-weight: bold;
-            color: #0068c8;
-        }
-
-        .meeting-details {
-            background-color: #f8f9fa;
-            border-left: 4px solid #0068c8;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .detail-row {
+        .details {
+            font-size: 14px;
+            color: #666666;
             margin: 10px 0;
         }
 
-        .detail-label {
-            font-weight: bold;
-            color: #555;
-            display: inline-block;
-            width: 140px;
-        }
-
-        .description {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #fafafa;
-            border-radius: 4px;
-        }
-
-        .join-button {
-            display: inline-block;
-            background-color: #0068c8;
-            color: white;
-            padding: 12px 30px;
+        .details a {
             text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
-            margin: 20px 0;
+            color: #229ff3;
         }
 
-        .join-button:hover {
-            background-color: #0056a8;
+        .button {
+            display: block;
+            width: 50%;
+            text-align: center;
+            background-color: #009aff;
+            color: #ffffff;
+            padding: 10px 0;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 32px auto;
         }
 
         .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-            font-size: 14px;
-            color: #666;
+            font-size: 12px;
+            color: #999999;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .details-title {
+            color: #94959B;
+            margin-bottom: 4px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: normal;
+        }
+
+        .details,
+        .text {
+            color: #000;
+            font-style: normal;
+            font-weight: 400;
+            line-height: normal;
+            margin-bottom: 24px;
         }
 
         .center {
             text-align: center;
         }
 
-        .calendar-update-notice {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f0f8ff;
-            border-left: 4px solid #0068c8;
-            border-radius: 4px;
+        .text-button {
+            text-decoration: none;
+            color: #009aff;
+        }
+
+        .changed-details div,
+        .changed-details span {
+            display: inline-block;
+            color: #f97316;
+        }
+
+        .changed-details div {
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .changed-details-old {
+            text-decoration: line-through;
+            color: #b4b5bb;
+        }
+
+        .text-gray {
+            color: #a5a6ab;
         }
     </style>
 </head>
@@ -134,111 +130,125 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Meeting Updated</h1>
+            <img src="https://via.placeholder.com/100" alt="Project Logo">
         </div>
-
-        <p>Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},</p>
-
-        <div class="update-notice">
-            <h2>Meeting Details Have Been Updated</h2>
-            <p>The meeting "{{.MeetingTitle}}" has been updated{{if .ProjectName}} for
-                <strong>{{.ProjectName}}</strong>{{end}}.</p>
+        <div
+            style="background-color: #fff7f0; padding: 10px; text-align: center; border-radius: 5px; margin-bottom: 24px;">
+            <span style="color: #f97316; font-size: 16px;"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                This meeting has been updated</span>
         </div>
-
-        {{if .Changes}}
-        <div class="changes-list">
-            <strong>What Changed:</strong>
-            {{range $field, $value := .Changes}}
-            <div class="change-item">
-                <span class="change-label">{{$field}}:</span> {{$value}}
-            </div>
-            {{end}}
+        <div>
+            <h1 class="title">{{.MeetingTitle}}</h1>
         </div>
-        {{end}}
-
-        <div class="meeting-details">
-            <div class="detail-row">
-                <span class="detail-label">Meeting:</span>
-                <strong>{{.MeetingTitle}}</strong>
+        {{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone)}}
+        <div class="details changed-component">
+            <div class="changed-details">
+                <div class="details-title">Next Meeting</div>
+                <span class="badge badge-changed">Changed</span>
             </div>
-            <div class="detail-row">
-                <span class="detail-label">Date &amp; Time:</span>
-                {{formatTime .StartTime .Timezone}}
+            <div>
+                <div class="changed-details-old">{{formatTime .OldStartTime .OldTimezone}}</div>
+                <div class="changed-details-new"><strong>New: </strong>{{formatTime .StartTime .Timezone}}</div>
             </div>
-            <div class="detail-row">
-                <span class="detail-label">Duration:</span>
-                {{formatDuration .Duration}}
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Time Zone:</span>
-                {{.Timezone}}
-            </div>
-            {{if .Recurrence}}
-            <div class="detail-row">
-                <span class="detail-label">Recurrence:</span>
-                {{formatRecurrence .Recurrence}}
-            </div>
-            {{end}}
         </div>
-
-        {{if .Description}}
-        <div class="description">
-            <strong>Description:</strong><br>
-            {{.Description}}
-        </div>
-        {{end}}
-
-        {{if .JoinLink}}
-        <div class="center">
-            <a href="{{.JoinLink}}" class="join-button">Join Meeting</a>
-        </div>
-
-        <p><small>Or copy and paste this link into your browser:</small><br>
-            <a href="{{.JoinLink}}">{{.JoinLink}}</a>
-        </p>
-
-        {{if .MeetingID}}
-        <p><small><strong>Meeting ID:</strong> {{.MeetingID}}<br>
-                {{if .Passcode}}<strong>Passcode:</strong> {{.Passcode}}{{end}}</small></p>
-
-        {{if eq .Platform "Zoom"}}
-        <!-- Dial-in Options for Zoom -->
-        <div class="meeting-details">
-            <strong>📞 Zoom Dial-in Options</strong>
-            <div class="detail-row">
-                <span class="detail-label">Find your local number:</span>
-                <a href="https://zoom.us/zoomconference" target="_blank">https://zoom.us/zoomconference</a>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">After dialing:</span>
-                <small>Enter Meeting ID: <strong>{{.MeetingID}}#</strong></small>
-            </div>
-            {{if .Passcode}}
-            <div class="detail-row">
-                <span class="detail-label">Then enter:</span>
-                <small>Passcode: <strong>{{.Passcode}}#</strong></small>
-            </div>
-            {{end}}
-        </div>
-        {{end}}
-        {{end}}
         {{else}}
-        <p><em>Meeting link will be provided closer to the meeting time.</em></p>
-        {{end}}
-
-        {{if .ICSAttachment}}
-        <p class="calendar-update-notice">
-            <strong>📅 Calendar Event Updated</strong><br>
-            An updated calendar file (.ics) is attached to this email. Open it to automatically update this meeting in
-            your calendar application.
-        </p>
-        {{end}}
-
-        <div class="footer">
-            <p>This is an automated email from the Linux Foundation Meeting Service.<br>
-                Please do not reply to this email.</p>
+        <div class="details">
+            <div class="details-title">Next Meeting</div>
+            {{formatTime .StartTime .Timezone}}
         </div>
-    </div>
+        {{end}}
+
+        {{if ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime
+        .OldTimezone)}}
+        <div class="details changed-component">
+            <div class="changed-details">
+                <div class="details-title">Repeats</div>
+                <span class="badge badge-changed">Changed</span>
+            </div>
+            <div>
+                <div class="changed-details-old">{{formatRecurrence .OldRecurrence .OldStartTime .OldTimezone}}</div>
+                <div class="changed-details-new"><strong>New: </strong>{{formatRecurrence .Recurrence .StartTime
+                    .Timezone}}</div>
+            </div>
+        </div>
+        {{else}}
+        <div class="details">
+            <div class="details-title">Repeats</div>
+            {{formatRecurrence .Recurrence .StartTime .Timezone}}
+        </div>
+        {{end}}
+
+        {{if ne .Duration .OldDuration}}
+        <div class="details changed-component">
+            <div class="changed-details">
+                <div class="details-title">Duration</div>
+                <span class="badge badge-changed">Changed</span>
+            </div>
+            <div>
+                <div class="changed-details-old">{{formatDuration .OldDuration}}</div>
+                <div class="changed-details-new"><strong>New: </strong>{{formatDuration .Duration}}</div>
+            </div>
+        </div>
+        {{else}}
+        <div class="details">
+            <div class="details-title">Duration</div>
+            {{formatDuration .Duration}}
+        </div>
+        {{end}}
+
+        {{if ne .Description .OldDescription}}
+        <div class="details changed-component">
+            <div class="changed-details">
+                <div class="details-title">Meeting Details</div>
+                <span class="badge badge-changed">Changed</span>
+            </div>
+            <div>
+                <div class="changed-details-old">{{.OldDescription}}</div>
+                <div class="changed-details-new"><strong>New: </strong>{{.Description}}</div>
+            </div>
+            <a href="#" class="text-button" style="display:block; margin-top: 16px">See full details in LFX One</a>
+        </div>
+        {{else}}
+        <div class="details">
+            <div class="details-title">Meeting Details</div>
+            {{.Description}}
+            <a href="#" class="text-button" style="display:block; margin-top: 16px">See full details in LFX One</a>
+        </div>
+        {{end}}
+        <div style="text-align: center">
+            <a href="{{.JoinLink}}" class="button">Join Meeting</a>
+        </div>
+        <div class="footer">
+            powered by <strong>LFX One</strong>
+        </div>
+        <hr style="border: 0.5px solid #e1e1e7; margin: 24px 0;">
+        <div class="details">
+            <p>Alternative ways to join meeting:</p>
+            <div>
+                <div>
+                    <p><b>1. Join from PC, Mac, iPad, or Android</b></p>
+                    <p class="text-gray">If the button above does not work, paste this into your browser: <a
+                            href="{{.JoinLink}}">{{.JoinLink}}</a></p>
+                </div>
+                <div>
+                    <p><b>2. Join via audio</b></p>
+                    <div class="tight-spacing text-gray">
+                        <p>One tap mobile:</p>
+                        <p>US: <a href="tel:+12532158782,,123456789#,,,,*1234#">+12532158782,,123456789#,,,,*1234#</a>
+                            or <a href="tel:+13462487799,,123456789#,,,,*1234#">+13462487799,,123456789#,,,,*1234#</a>
+                        </p>
+                    </div>
+                    <div class="tight-spacing text-gray">
+                        <p>Or dial:</p>
+                        <p>US: +1 253 215 8782</p>
+                        <p>Canada: +1 647 374 4685</p>
+                    </div>
+                    <p>Meeting ID: {{.MeetingID}}</p>
+                    <p>Meeting Passcode: {{.Passcode}}</p>
+                    <a href='https://zoom.us/u/alwnPIaVT'>International numbers</a>
+                </div>
+            </div>
+        </div>
 </body>
 
 </html>

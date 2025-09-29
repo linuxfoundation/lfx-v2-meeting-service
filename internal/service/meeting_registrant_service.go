@@ -578,6 +578,8 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		Duration:       meetingDB.Duration,
 		Timezone:       meetingDB.Timezone,
 		Description:    meetingDB.Description,
+		Visibility:     meetingDB.Visibility,
+		MeetingType:    meetingDB.MeetingType,
 		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
 		ProjectName:    projectName,
 		Platform:       meetingDB.Platform,
@@ -590,7 +592,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 }
 
 // SendRegistrantUpdatedInvitation sends an updated invitation email to a registrant
-func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.Context, registrant *models.Registrant, meeting *models.MeetingBase, changes map[string]any, meetingID, passcode string) error {
+func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.Context, registrant *models.Registrant, meeting *models.MeetingBase, oldMeeting *models.MeetingBase, changes map[string]any, meetingID, passcode string) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.NewUnavailableError("meeting registrant service is not ready")
@@ -616,6 +618,8 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		Duration:       meeting.Duration,
 		Timezone:       meeting.Timezone,
 		Description:    meeting.Description,
+		Visibility:     meeting.Visibility,
+		MeetingType:    meeting.MeetingType,
 		JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
 		Platform:       meeting.Platform,
 		MeetingID:      meetingID,
@@ -623,6 +627,12 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		Recurrence:     meeting.Recurrence,
 		Changes:        changes,
 		ProjectName:    projectName,
+		// Previous meeting data
+		OldStartTime:   oldMeeting.StartTime,
+		OldDuration:    oldMeeting.Duration,
+		OldTimezone:    oldMeeting.Timezone,
+		OldRecurrence:  oldMeeting.Recurrence,
+		OldDescription: oldMeeting.Description,
 	}
 
 	return s.emailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)

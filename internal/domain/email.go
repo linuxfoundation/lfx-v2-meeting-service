@@ -28,6 +28,8 @@ type EmailInvitation struct {
 	Duration       int // Duration in minutes
 	Timezone       string
 	Description    string
+	MeetingType    string
+	Visibility     string
 	JoinLink       string
 	ProjectName    string             // Optional project name for context
 	Platform       string             // Meeting platform (e.g., "Zoom")
@@ -64,6 +66,8 @@ type EmailUpdatedInvitation struct {
 	Timezone       string
 	Description    string
 	JoinLink       string
+	Visibility     string
+	MeetingType    string
 	ProjectName    string             // Optional project name for context
 	Platform       string             // Meeting platform (e.g., "Zoom")
 	MeetingID      string             // Zoom meeting ID for dial-in
@@ -71,6 +75,13 @@ type EmailUpdatedInvitation struct {
 	Recurrence     *models.Recurrence // Recurrence pattern for ICS
 	Changes        map[string]any     // Map of what changed (field names to new values)
 	ICSAttachment  *EmailAttachment   // Updated ICS calendar attachment
+
+	// Previous meeting data for showing what changed
+	OldStartTime   time.Time          // Previous start time
+	OldDuration    int                // Previous duration in minutes
+	OldTimezone    string             // Previous timezone
+	OldRecurrence  *models.Recurrence // Previous recurrence pattern
+	OldDescription string             // Previous description
 }
 
 // EmailSummaryNotification contains the data needed to send a meeting summary notification email

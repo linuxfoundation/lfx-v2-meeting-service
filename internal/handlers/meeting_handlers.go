@@ -370,7 +370,7 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 		reg := registrant // capture loop variable
 		tasks = append(tasks, func() error {
 			// Use the registrant service method to send updated invitation
-			err := s.registrantService.SendRegistrantUpdatedInvitation(ctx, reg, meeting, msg.Changes, meetingID, passcode)
+			err := s.registrantService.SendRegistrantUpdatedInvitation(ctx, reg, meeting, msg.PreviousBase, msg.Changes, meetingID, passcode)
 			if err != nil {
 				slog.ErrorContext(ctx, "error sending update notification email",
 					"registrant_uid", reg.UID,

@@ -8,17 +8,28 @@ Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},
 
 The meeting "{{.MeetingTitle}}" has been updated{{if .ProjectName}} for {{.ProjectName}}{{end}}.
 
-{{if .Changes}}What Changed:
-{{range $field, $value := .Changes}}- {{$field}}: {{$value}}
-{{end}}
+{{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone) (ne .Duration .OldDuration) (ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime .OldTimezone)) (ne .Description .OldDescription)}}What Changed:
+-------------{{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone)}}
+Date & Time:
+  Old: {{formatTime .OldStartTime .OldTimezone}}
+  New: {{formatTime .StartTime .Timezone}}{{end}}{{if ne .Duration .OldDuration}}
+Duration:
+  Old: {{formatDuration .OldDuration}}
+  New: {{formatDuration .Duration}}{{end}}{{if ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime .OldTimezone)}}
+Recurrence:
+  Old: {{formatRecurrence .OldRecurrence .OldStartTime .OldTimezone}}
+  New: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}{{if ne .Description .OldDescription}}
+Description:
+  Old: {{.OldDescription}}
+  New: {{.Description}}{{end}}
 
-{{end}}Meeting Details:
-----------------
+{{end}}Current Meeting Details:
+------------------------
 Meeting: {{.MeetingTitle}}
 Date & Time: {{formatTime .StartTime .Timezone}}
 Duration: {{formatDuration .Duration}}
 Time Zone: {{.Timezone}}{{if .Recurrence}}
-Recurrence: {{formatRecurrence .Recurrence}}{{end}}
+Recurrence: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
 
 {{if .Description}}Description:
 {{.Description}}
@@ -30,16 +41,12 @@ Meeting ID: {{.MeetingID}}{{if .Passcode}}
 Passcode: {{.Passcode}}{{end}}
 {{if eq .Platform "Zoom"}}
 
-📞 Zoom Dial-in Options:
+Zoom Dial-in Options:
 Find your local number: https://zoom.us/zoomconference
 After dialing: Enter Meeting ID: {{.MeetingID}}#{{if .Passcode}}
 Then enter: Passcode: {{.Passcode}}#{{end}}
 {{end}}
 {{end}}{{else}}Meeting link will be provided closer to the meeting time.
-{{end}}
-{{if .ICSAttachment}}
-📅 Calendar Event Updated
-An updated calendar file (.ics) is attached to this email. Open it to automatically update this meeting in your calendar application.
 {{end}}
 ---
 This is an automated email from the Linux Foundation Meeting Service.
