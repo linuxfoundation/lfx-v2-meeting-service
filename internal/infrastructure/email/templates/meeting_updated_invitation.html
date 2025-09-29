@@ -93,6 +93,52 @@
             color: #f97316;
         }
 
+        .badge-board {
+            background-color: #fee2e2;
+            /* bg-red-100 */
+            color: #ef4444;
+            /* text-red-500 */
+        }
+
+        .badge-maintainers {
+            background-color: #dbeafe;
+            /* bg-blue-100 */
+            color: #3b82f6;
+            /* text-blue-500 */
+        }
+
+        .badge-marketing {
+            background-color: #d1fae5;
+            /* bg-green-100 */
+            color: #10b981;
+            /* text-green-500 */
+        }
+
+        .badge-technical {
+            background-color: #f3e8ff;
+            /* bg-purple-100 */
+            color: #a855f7;
+            /* text-purple-500 */
+        }
+
+        .badge-legal {
+            background-color: #fef3c7;
+            /* bg-amber-100 */
+            color: #f59e0b;
+            /* text-amber-500 */
+        }
+
+        .badge-default {
+            background-color: #f3f4f6;
+            /* bg-gray-100 */
+            color: #9ca3af;
+            /* text-gray-400 */
+        }
+
+        .margin-bottom-24 {
+            margin-bottom: 24px;
+        }
+
         .details {
             font-size: 14px;
             color: #666666;
@@ -183,6 +229,29 @@
         <div>
             <h1 class="title">{{.MeetingTitle}}</h1>
         </div>
+        <div class="margin-bottom-24">
+            {{if eq .MeetingType "Board"}}
+            <span class="badge badge-board">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Maintainers"}}
+            <span class="badge badge-maintainers">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Marketing"}}
+            <span class="badge badge-marketing">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Technical"}}
+            <span class="badge badge-technical">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Legal"}}
+            <span class="badge badge-legal">{{.MeetingType}}</span>
+            {{else}}
+            <span class="badge badge-default">{{.MeetingType}}</span>
+            {{end}}
+            {{if .Recurrence}}
+            <span class="badge badge-default">Recurring</span>
+            {{else}}
+            <span class="badge badge-default">Non-recurring</span>
+            {{end}}
+            {{if .Visibility}}
+            <span class="badge badge-default">{{capitalize .Visibility}}</span>
+            {{end}}
+        </div>
         {{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone)}}
         <div class="details changed-component">
             <div class="changed-details">
@@ -249,8 +318,10 @@
                 <div class="changed-details-old">{{.OldDescription}}</div>
                 <div class="changed-details-new"><strong>New: </strong>{{.Description}}</div>
             </div>
+            {{if .MeetingDetailsLink}}
             <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
                 One</a>
+            {{end}}
         </div>
         {{else}}
         <div class="details">

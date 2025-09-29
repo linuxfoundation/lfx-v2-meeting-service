@@ -194,6 +194,14 @@
         <div class="margin-bottom-24">
             {{if eq .MeetingType "Board"}}
             <span class="badge badge-board">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Maintainers"}}
+            <span class="badge badge-maintainers">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Marketing"}}
+            <span class="badge badge-marketing">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Technical"}}
+            <span class="badge badge-technical">{{.MeetingType}}</span>
+            {{else if eq .MeetingType "Legal"}}
+            <span class="badge badge-legal">{{.MeetingType}}</span>
             {{else}}
             <span class="badge badge-default">{{.MeetingType}}</span>
             {{end}}
