@@ -270,6 +270,7 @@
         </div>
         {{end}}
 
+        {{if or .Recurrence .OldRecurrence}}
         {{if ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime
         .OldTimezone)}}
         <div class="details changed-component">
@@ -288,6 +289,7 @@
             <div class="details-title">Repeats</div>
             {{formatRecurrence .Recurrence .StartTime .Timezone}}
         </div>
+        {{end}}
         {{end}}
 
         {{if ne .Duration .OldDuration}}
