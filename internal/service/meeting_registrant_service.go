@@ -568,32 +568,43 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 	}
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingDB.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingDB.ProjectUID)
 
 	invitation := domain.EmailInvitation{
-		MeetingUID:     meetingDB.UID,
-		RecipientEmail: registrant.Email,
-		RecipientName:  recipientName,
-		MeetingTitle:   meetingDB.Title,
-		StartTime:      meetingDB.StartTime,
-		Duration:       meetingDB.Duration,
-		Timezone:       meetingDB.Timezone,
-		Description:    meetingDB.Description,
-		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
-		ProjectName:    projectName,
-		Platform:       meetingDB.Platform,
-		MeetingID:      meetingID,
-		Passcode:       passcode,
-		Recurrence:     meetingDB.Recurrence,
+		MeetingUID:         meetingDB.UID,
+		RecipientEmail:     registrant.Email,
+		RecipientName:      recipientName,
+		MeetingTitle:       meetingDB.Title,
+		StartTime:          meetingDB.StartTime,
+		Duration:           meetingDB.Duration,
+		Timezone:           meetingDB.Timezone,
+		Description:        meetingDB.Description,
+		Visibility:         meetingDB.Visibility,
+		MeetingType:        meetingDB.MeetingType,
+		JoinLink:           constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
+		MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, s.config.LFXEnvironment),
+		ProjectName:        projectName,
+		ProjectLogo:        projectLogo,
+		Platform:           meetingDB.Platform,
+		MeetingID:          meetingID,
+		Passcode:           passcode,
+		Recurrence:         meetingDB.Recurrence,
 	}
 
 	return s.emailService.SendRegistrantInvitation(ctx, invitation)
 }
 
 // SendRegistrantUpdatedInvitation sends an updated invitation email to a registrant
-func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.Context, registrant *models.Registrant, meeting *models.MeetingBase, changes map[string]any, meetingID, passcode string) error {
+func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.Context, registrant *models.Registrant, meeting *models.MeetingBase, oldMeeting *models.MeetingBase, changes map[string]any, meetingID, passcode string) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.NewUnavailableError("meeting registrant service is not ready")
+	}
+
+	if oldMeeting == nil {
+		slog.ErrorContext(ctx, "old meeting object missing; unable to send updated invitation")
+		return errors.New("old meeting object missing")
 	}
 
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrant.UID))
@@ -606,23 +617,35 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 	}
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
 
 	updatedInvitation := domain.EmailUpdatedInvitation{
-		MeetingUID:     meeting.UID,
-		RecipientEmail: registrant.Email,
-		RecipientName:  recipientName,
-		MeetingTitle:   meeting.Title,
-		StartTime:      meeting.StartTime,
-		Duration:       meeting.Duration,
-		Timezone:       meeting.Timezone,
-		Description:    meeting.Description,
-		JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
-		Platform:       meeting.Platform,
-		MeetingID:      meetingID,
-		Passcode:       passcode,
-		Recurrence:     meeting.Recurrence,
-		Changes:        changes,
-		ProjectName:    projectName,
+		MeetingUID:         meeting.UID,
+		RecipientEmail:     registrant.Email,
+		RecipientName:      recipientName,
+		MeetingTitle:       meeting.Title,
+		StartTime:          meeting.StartTime,
+		Duration:           meeting.Duration,
+		Timezone:           meeting.Timezone,
+		Description:        meeting.Description,
+		Visibility:         meeting.Visibility,
+		MeetingType:        meeting.MeetingType,
+		JoinLink:           constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
+		MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, s.config.LFXEnvironment),
+		Platform:           meeting.Platform,
+		MeetingID:          meetingID,
+		Passcode:           passcode,
+		Recurrence:         meeting.Recurrence,
+		Changes:            changes,
+		ProjectName:        projectName,
+		ProjectLogo:        projectLogo,
+		// Previous meeting data
+		OldStartTime:   oldMeeting.StartTime,
+		OldDuration:    oldMeeting.Duration,
+		OldTimezone:    oldMeeting.Timezone,
+		OldRecurrence:  oldMeeting.Recurrence,
+		OldDescription: oldMeeting.Description,
 	}
 
 	return s.emailService.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
@@ -645,6 +668,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 	}
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
 
 	cancellation := domain.EmailCancellation{
 		MeetingUID:     meeting.UID,
@@ -656,6 +680,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 		Timezone:       meeting.Timezone,
 		Description:    meeting.Description,
 		ProjectName:    projectName,
+		ProjectLogo:    projectLogo,
 		Reason:         "Your registration has been removed from this meeting.",
 		Recurrence:     meeting.Recurrence,
 	}

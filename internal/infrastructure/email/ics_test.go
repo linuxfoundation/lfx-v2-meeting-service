@@ -327,14 +327,6 @@ func TestFoldICSLine(t *testing.T) {
 }
 
 func TestBuildDescription(t *testing.T) {
-	startTime := time.Date(2024, 1, 15, 14, 0, 0, 0, time.UTC)
-	recurrence := &models.Recurrence{
-		Type:           2, // Weekly
-		RepeatInterval: 1,
-		WeeklyDays:     "2,4,6", // Monday, Wednesday, Friday
-		EndTimes:       10,
-	}
-
 	t.Run("with all details", func(t *testing.T) {
 		desc := buildDescription(
 			"Original description",
@@ -342,22 +334,14 @@ func TestBuildDescription(t *testing.T) {
 			"abc123",
 			"https://zoom.us/j/123456789",
 			"Test Project",
-			startTime,
-			60,
-			"America/New_York",
-			recurrence,
 		)
 
 		assert.Contains(t, desc, "Project: Test Project")
 		assert.Contains(t, desc, "Original description")
 		assert.Contains(t, desc, "Meeting ID: 123456789")
 		assert.Contains(t, desc, "Passcode: abc123")
-		assert.Contains(t, desc, "Join URL: https://zoom.us/j/123456789")
-		assert.Contains(t, desc, "Dial-in Options")
-		assert.Contains(t, desc, "Find your local number")
-		assert.Contains(t, desc, "Start Time:")
-		assert.Contains(t, desc, "Duration: 1 hour")
-		assert.Contains(t, desc, "Recurrence: Weekly on Monday, Wednesday and Friday")
+		assert.Contains(t, desc, "Join Meeting: https://zoom.us/j/123456789")
+		assert.Contains(t, desc, "find your local number")
 	})
 
 	t.Run("without passcode", func(t *testing.T) {
@@ -367,17 +351,11 @@ func TestBuildDescription(t *testing.T) {
 			"",
 			"https://zoom.us/j/987654321",
 			"",
-			startTime,
-			30,
-			"UTC",
-			nil,
 		)
 
 		assert.Contains(t, desc, "Meeting ID: 987654321")
 		assert.NotContains(t, desc, "Passcode:")
 		assert.Contains(t, desc, "enter Meeting ID: 987654321#")
-		assert.Contains(t, desc, "Duration: 30 minutes")
-		assert.NotContains(t, desc, "Recurrence:")
 	})
 
 	t.Run("without meeting details", func(t *testing.T) {
@@ -387,17 +365,13 @@ func TestBuildDescription(t *testing.T) {
 			"",
 			"",
 			"",
-			startTime,
-			90,
-			"Europe/London",
-			nil,
 		)
 
 		assert.Contains(t, desc, "Simple meeting")
 		assert.NotContains(t, desc, "Meeting ID:")
 		assert.NotContains(t, desc, "Passcode:")
-		assert.NotContains(t, desc, "Join URL:")
-		assert.NotContains(t, desc, "Dial-in Options")
+		assert.NotContains(t, desc, "Join Meeting:")
+		assert.NotContains(t, desc, "find your local number")
 	})
 }
 

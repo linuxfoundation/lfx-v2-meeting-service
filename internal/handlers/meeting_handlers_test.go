@@ -132,6 +132,8 @@ func TestMeetingHandler_HandleMessage(t *testing.T) {
 				}, uint64(0), nil).Maybe() // Maybe() because it's called in a goroutine
 				// Mock GetProjectName for cancellation email (called in goroutine)
 				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil).Maybe()
+				// Mock GetProjectLogo for cancellation email (called in goroutine)
+				mockBuilder.On("GetProjectLogo", mock.Anything, "project-123").Return("https://example.com/logo.png", nil).Maybe()
 				// Mock email service for cancellation
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
@@ -340,6 +342,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 					Description: "Test meeting description",
 				}, uint64(0), nil).Maybe()
 				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil).Maybe()
+				mockBuilder.On("GetProjectLogo", mock.Anything, "project-123").Return("https://example.com/logo.png", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: false,
@@ -386,6 +389,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 					Description: "Weekly team sync",
 				}, uint64(0), nil).Maybe()
 				mockBuilder.On("GetProjectName", mock.Anything, "project-456").Return("Team Project", nil).Maybe()
+				mockBuilder.On("GetProjectLogo", mock.Anything, "project-456").Return("https://example.com/logo.png", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: false,
@@ -471,6 +475,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 					Title:      "Test",
 				}, uint64(0), nil).Maybe()
 				mockBuilder.On("GetProjectName", mock.Anything, "project-partial").Return("Test Project", nil).Maybe()
+				mockBuilder.On("GetProjectLogo", mock.Anything, "project-partial").Return("https://example.com/logo.png", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: true, // Handler fails when any deletion fails due to WorkerPool fail-fast behavior
@@ -519,7 +524,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 	}{
 		{
 			name:        "successfully send update notifications to registrants",
-			messageData: []byte(`{"meeting_uid":"meeting-updated","changes":{"Title":"New Meeting Title","Start Time":"2024-01-01 10:00:00 UTC"}}`),
+			messageData: []byte(`{"meeting_uid":"meeting-updated","changes":{"Title":"New Meeting Title","Start Time":"2024-01-01 10:00:00 UTC"},"previous_base":{"uid":"meeting-updated","title":"Old Meeting Title","start_time":"2023-12-31T10:00:00Z","duration":30,"timezone":"America/New_York","description":"Old description","recurrence":{"type":1,"repeat_interval":1}}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				registrants := []*models.Registrant{
 					{
@@ -558,6 +563,10 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 
 				// Mock GetProjectName for email notifications
 				mockBuilder.On("GetProjectName", mock.Anything, mock.AnythingOfType("string")).Return("Test Project", nil)
+				// Mock GetProjectLogo for email notifications
+				mockBuilder.On("GetProjectLogo", mock.Anything, mock.AnythingOfType("string")).Return("https://example.com/logo.png", nil).Maybe()
+				// Mock GetProjectSlug for email notifications
+				mockBuilder.On("GetProjectSlug", mock.Anything, mock.AnythingOfType("string")).Return("test-project", nil).Maybe()
 
 				// Expect email notifications to be sent
 				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {
@@ -614,7 +623,7 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 		},
 		{
 			name:        "handle partial email notification failures",
-			messageData: []byte(`{"meeting_uid":"meeting-partial-email-fail","changes":{"Duration":"120 minutes"}}`),
+			messageData: []byte(`{"meeting_uid":"meeting-partial-email-fail","changes":{"Duration":"120 minutes"},"previous_base":{"uid":"meeting-partial-email-fail","title":"Test Meeting","start_time":"2023-12-31T10:00:00Z","duration":60,"timezone":"UTC","description":"Test description"}}`),
 			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockRegistrantRepo *mocks.MockRegistrantRepository, mockBuilder *mocks.MockMessageBuilder, mockEmailService *mocks.MockEmailService) {
 				registrants := []*models.Registrant{
 					{
@@ -647,6 +656,10 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 
 				// Mock GetProjectName for email notifications
 				mockBuilder.On("GetProjectName", mock.Anything, mock.AnythingOfType("string")).Return("Test Project", nil)
+				// Mock GetProjectLogo for email notifications
+				mockBuilder.On("GetProjectLogo", mock.Anything, mock.AnythingOfType("string")).Return("https://example.com/logo.png", nil).Maybe()
+				// Mock GetProjectSlug for email notifications
+				mockBuilder.On("GetProjectSlug", mock.Anything, mock.AnythingOfType("string")).Return("test-project", nil).Maybe()
 
 				// First email succeeds, second fails
 				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {

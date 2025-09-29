@@ -48,6 +48,7 @@ func loadTemplate(config templateConfig) (*template.Template, error) {
 		"formatTime":       formatTime,
 		"formatDuration":   formatDuration,
 		"formatRecurrence": formatRecurrence,
+		"capitalize":       capitalize,
 	}).ParseFS(templateFS, config.path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %s template: %w", config.name, err)
@@ -77,8 +78,30 @@ func formatTime(t time.Time, timezone string) string {
 	// Convert time to the specified timezone
 	localTime := t.In(loc)
 
-	// Format: Monday, January 2, 2006 at 3:04 PM MST
-	return localTime.Format("Monday, January 2, 2006 at 3:04 PM MST")
+	// Format with ordinal day suffix
+	day := localTime.Day()
+	var suffix string
+	switch {
+	case day >= 11 && day <= 13:
+		suffix = "th"
+	case day%10 == 1:
+		suffix = "st"
+	case day%10 == 2:
+		suffix = "nd"
+	case day%10 == 3:
+		suffix = "rd"
+	default:
+		suffix = "th"
+	}
+
+	// Format: Wednesday, September 15th, 10:30 Africa/Johannesburg
+	return fmt.Sprintf("%s, %s %d%s, %s %s",
+		localTime.Format("Monday"),
+		localTime.Format("January"),
+		day,
+		suffix,
+		localTime.Format("15:04"),
+		timezone)
 }
 
 // formatDuration formats duration in minutes to a human-readable string
@@ -112,7 +135,7 @@ func formatDuration(minutes int) string {
 }
 
 // formatRecurrence formats the recurrence pattern for display
-func formatRecurrence(recurrence *models.Recurrence) string {
+func formatRecurrence(recurrence *models.Recurrence, t time.Time, timezone string) string {
 	if recurrence == nil {
 		return ""
 	}
@@ -155,6 +178,13 @@ func formatRecurrence(recurrence *models.Recurrence) string {
 	default:
 		return "Custom recurrence"
 	}
+
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		return pattern.String()
+	}
+	localTime := t.In(loc)
+	pattern.WriteString(fmt.Sprintf(" at %s %s", localTime.Format("15:04"), timezone))
 
 	// Add end condition
 	if recurrence.EndTimes > 0 {
@@ -227,4 +257,12 @@ func getWeekdayFullName(weekday int) string {
 		return weekdays[weekday]
 	}
 	return ""
+}
+
+// capitalize capitalizes the first letter of a string
+func capitalize(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
 }

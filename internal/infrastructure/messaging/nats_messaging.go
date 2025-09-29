@@ -438,6 +438,50 @@ func (m *MessageBuilder) GetProjectName(ctx context.Context, projectUID string) 
 	return projectName, nil
 }
 
+// GetProjectLogo fetches project logo URL from projects-api.
+// Returns the project logo URL if it exists, or an error if it doesn't exist or there's a communication error.
+func (m *MessageBuilder) GetProjectLogo(ctx context.Context, projectUID string) (string, error) {
+	// Send request with 5 second timeout
+	msg, err := m.request(ctx, models.ProjectGetLogoSubject, []byte(projectUID), 5*time.Second)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse response
+	projectLogo := string(msg.Data)
+
+	// If response is empty, project doesn't have a logo
+	if projectLogo == "" {
+		slog.DebugContext(ctx, "project logo not found", "project_uid", projectUID)
+		return "", &ProjectNotFoundError{UID: projectUID, Details: "project logo does not exist"}
+	}
+
+	slog.DebugContext(ctx, "project logo retrieved successfully", "project_uid", projectUID, "logo_url", projectLogo)
+	return projectLogo, nil
+}
+
+// GetProjectSlug fetches project slug from projects-api.
+// Returns the project slug if it exists, or an error if it doesn't exist or there's a communication error.
+func (m *MessageBuilder) GetProjectSlug(ctx context.Context, projectUID string) (string, error) {
+	// Send request with 5 second timeout
+	msg, err := m.request(ctx, models.ProjectGetSlugSubject, []byte(projectUID), 5*time.Second)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse response
+	projectSlug := string(msg.Data)
+
+	// If response is empty, project doesn't have a slug
+	if projectSlug == "" {
+		slog.DebugContext(ctx, "project slug not found", "project_uid", projectUID)
+		return "", &ProjectNotFoundError{UID: projectUID, Details: "project slug does not exist"}
+	}
+
+	slog.DebugContext(ctx, "project slug retrieved successfully", "project_uid", projectUID, "project_slug", projectSlug)
+	return projectSlug, nil
+}
+
 // CommitteeNotFoundError represents an error when a committee is not found.
 type CommitteeNotFoundError struct {
 	UID     string

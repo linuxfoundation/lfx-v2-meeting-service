@@ -44,6 +44,7 @@ func NewICSGenerator() *ICSGenerator {
 type ICSMeetingInvitationParams struct {
 	MeetingUID     string // Unique meeting identifier for consistent ICS UID
 	MeetingTitle   string
+	MeetingType    string
 	Description    string
 	StartTime      time.Time
 	Duration       int // Duration in minutes
@@ -109,7 +110,7 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	ics.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICSText(param.MeetingTitle)))
 
 	// Build enhanced description with meeting details
-	descriptionText := buildDescription(param.Description, param.MeetingID, param.Passcode, param.JoinLink, param.ProjectName, param.StartTime, param.Duration, param.Timezone, param.Recurrence)
+	descriptionText := buildDescription(param.Description, param.MeetingID, param.Passcode, param.JoinLink, param.ProjectName)
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
 	// Location (Zoom URL) - only add if join link exists
@@ -226,7 +227,7 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 	ics.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICSText(params.MeetingTitle)))
 
 	// Build enhanced description with meeting details
-	descriptionText := buildDescription(params.Description, params.MeetingID, params.Passcode, params.JoinLink, params.ProjectName, params.StartTime, params.Duration, params.Timezone, params.Recurrence)
+	descriptionText := buildDescription(params.Description, params.MeetingID, params.Passcode, params.JoinLink, params.ProjectName)
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
 	// Location (Zoom URL) - only add if join link exists
@@ -415,51 +416,26 @@ func getWeekdayName(weekday int) string {
 }
 
 // buildDescription builds the enhanced description with meeting details
-func buildDescription(description, meetingID, passcode, joinLink, projectName string, startTime time.Time, duration int, timezone string, recurrence *models.Recurrence) string {
+func buildDescription(description, meetingID, passcode, joinLink, projectName string) string {
 	var desc strings.Builder
 
-	// Add project information if available
 	if projectName != "" {
 		desc.WriteString("Project: ")
 		desc.WriteString(projectName)
 		desc.WriteString("\n\n")
 	}
 
-	// Add original description
 	if description != "" {
 		desc.WriteString(description)
 		desc.WriteString("\n\n")
 	}
 
-	// Add meeting details section
-	desc.WriteString("=========================\n")
-	desc.WriteString("Meeting Details:\n")
-	desc.WriteString("=========================\n\n")
-
-	// Add start time and duration
-	desc.WriteString("Start Time: ")
-	desc.WriteString(formatTime(startTime, timezone))
-	desc.WriteString("\n")
-	desc.WriteString("Duration: ")
-	desc.WriteString(formatDuration(duration))
-	desc.WriteString("\n")
-
-	// Add recurrence pattern if present
-	if recurrence != nil {
-		desc.WriteString("Recurrence: ")
-		desc.WriteString(formatRecurrence(recurrence))
-		desc.WriteString("\n")
-	}
-	desc.WriteString("\n")
-
-	// Add join link
 	if joinLink != "" {
-		desc.WriteString("Join URL: ")
+		desc.WriteString("Join Meeting: ")
 		desc.WriteString(joinLink)
 		desc.WriteString("\n\n")
 	}
 
-	// Add meeting ID and passcode
 	if meetingID != "" {
 		desc.WriteString("Meeting ID: ")
 		desc.WriteString(meetingID)
@@ -472,13 +448,9 @@ func buildDescription(description, meetingID, passcode, joinLink, projectName st
 		desc.WriteString("\n")
 	}
 
-	// Add dial-in information
 	if meetingID != "" {
-		desc.WriteString("\n=========================\n")
-		desc.WriteString("Dial-in Options:\n")
-		desc.WriteString("=========================\n\n")
-		desc.WriteString("Find your local number:\n")
-		desc.WriteString("https://zoom.us/zoomconference\n\n")
+		desc.WriteString("\n")
+		desc.WriteString("To dial in, find your local number: https://zoom.us/zoomconference\n")
 		desc.WriteString("After dialing, enter Meeting ID: ")
 		desc.WriteString(meetingID)
 		desc.WriteString("#\n")
