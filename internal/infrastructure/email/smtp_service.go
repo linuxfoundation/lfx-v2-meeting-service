@@ -44,7 +44,7 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 	templateConfigs := map[string]templateConfig{
 		"invitationHTML":          {"meeting_invitation.html", "templates/meeting_invitation.html"},
 		"invitationText":          {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
-		"cancellationHTML":        {"meeting_invitation_cancellation_.html", "templates/meeting_invitation_cancellation.html"},
+		"cancellationHTML":        {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
 		"cancellationText":        {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
 		"updatedInvitationHTML":   {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
 		"updatedInvitationText":   {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},

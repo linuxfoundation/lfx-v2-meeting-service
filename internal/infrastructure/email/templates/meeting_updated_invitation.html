@@ -208,13 +208,13 @@
                 <div class="changed-details-old">{{.OldDescription}}</div>
                 <div class="changed-details-new"><strong>New: </strong>{{.Description}}</div>
             </div>
-            <a href="#" class="text-button" style="display:block; margin-top: 16px">See full details in LFX One</a>
+            <a href="{{.MeetingDetailsLink}}" class="text-button" style="display:block; margin-top: 16px">See full details in LFX One</a>
         </div>
         {{else}}
         <div class="details">
             <div class="details-title">Meeting Details</div>
             {{.Description}}
-            <a href="#" class="text-button" style="display:block; margin-top: 16px">See full details in LFX One</a>
+            <a href="{{.MeetingDetailsLink}}" class="text-button" style="display:block; margin-top: 16px">See full details in LFX One</a>
         </div>
         {{end}}
         <div style="text-align: center">

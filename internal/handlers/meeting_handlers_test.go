@@ -565,6 +565,8 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 				mockBuilder.On("GetProjectName", mock.Anything, mock.AnythingOfType("string")).Return("Test Project", nil)
 				// Mock GetProjectLogo for email notifications
 				mockBuilder.On("GetProjectLogo", mock.Anything, mock.AnythingOfType("string")).Return("https://example.com/logo.png", nil).Maybe()
+				// Mock GetProjectSlug for email notifications
+				mockBuilder.On("GetProjectSlug", mock.Anything, mock.AnythingOfType("string")).Return("test-project", nil).Maybe()
 
 				// Expect email notifications to be sent
 				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {
@@ -656,6 +658,8 @@ func TestMeetingHandler_HandleMeetingUpdatedMessage(t *testing.T) {
 				mockBuilder.On("GetProjectName", mock.Anything, mock.AnythingOfType("string")).Return("Test Project", nil)
 				// Mock GetProjectLogo for email notifications
 				mockBuilder.On("GetProjectLogo", mock.Anything, mock.AnythingOfType("string")).Return("https://example.com/logo.png", nil).Maybe()
+				// Mock GetProjectSlug for email notifications
+				mockBuilder.On("GetProjectSlug", mock.Anything, mock.AnythingOfType("string")).Return("test-project", nil).Maybe()
 
 				// First email succeeds, second fails
 				mockEmailService.On("SendRegistrantUpdatedInvitation", mock.Anything, mock.MatchedBy(func(invitation domain.EmailUpdatedInvitation) bool {

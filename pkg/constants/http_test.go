@@ -260,3 +260,58 @@ func TestGetLFXAppDomain(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateLFXMeetingDetailsURL(t *testing.T) {
+	tests := []struct {
+		name        string
+		envValue    string
+		projectSlug string
+		expectedURL string
+	}{
+		{
+			name:        "valid meeting details URL production",
+			envValue:    "prod",
+			projectSlug: "thelinuxfoundation",
+			expectedURL: "https://" + LFXDomainProd + "/project/thelinuxfoundation/meetings",
+		},
+		{
+			name:        "valid meeting details URL development",
+			envValue:    "dev",
+			projectSlug: "kubernetes",
+			expectedURL: "https://" + LFXDomainDev + "/project/kubernetes/meetings",
+		},
+		{
+			name:        "valid meeting details URL staging",
+			envValue:    "staging",
+			projectSlug: "cncf",
+			expectedURL: "https://" + LFXDomainStaging + "/project/cncf/meetings",
+		},
+		{
+			name:        "empty environment defaults to production",
+			envValue:    "",
+			projectSlug: "test-project",
+			expectedURL: "https://" + LFXDomainProd + "/project/test-project/meetings",
+		},
+		{
+			name:        "unknown environment defaults to production",
+			envValue:    "unknown",
+			projectSlug: "another-project",
+			expectedURL: "https://" + LFXDomainProd + "/project/another-project/meetings",
+		},
+		{
+			name:        "empty project slug",
+			envValue:    "prod",
+			projectSlug: "",
+			expectedURL: "https://" + LFXDomainProd + "/project//meetings",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GenerateLFXMeetingDetailsURL(tt.projectSlug, tt.envValue)
+			if result != tt.expectedURL {
+				t.Errorf("GenerateLFXMeetingDetailsURL(%q, %q) = %q, expected %q", tt.projectSlug, tt.envValue, result, tt.expectedURL)
+			}
+		})
+	}
+}

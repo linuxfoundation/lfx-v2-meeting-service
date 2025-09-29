@@ -569,25 +569,27 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
 	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingDB.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingDB.ProjectUID)
 
 	invitation := domain.EmailInvitation{
-		MeetingUID:     meetingDB.UID,
-		RecipientEmail: registrant.Email,
-		RecipientName:  recipientName,
-		MeetingTitle:   meetingDB.Title,
-		StartTime:      meetingDB.StartTime,
-		Duration:       meetingDB.Duration,
-		Timezone:       meetingDB.Timezone,
-		Description:    meetingDB.Description,
-		Visibility:     meetingDB.Visibility,
-		MeetingType:    meetingDB.MeetingType,
-		JoinLink:       constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
-		ProjectName:    projectName,
-		ProjectLogo:    projectLogo,
-		Platform:       meetingDB.Platform,
-		MeetingID:      meetingID,
-		Passcode:       passcode,
-		Recurrence:     meetingDB.Recurrence,
+		MeetingUID:         meetingDB.UID,
+		RecipientEmail:     registrant.Email,
+		RecipientName:      recipientName,
+		MeetingTitle:       meetingDB.Title,
+		StartTime:          meetingDB.StartTime,
+		Duration:           meetingDB.Duration,
+		Timezone:           meetingDB.Timezone,
+		Description:        meetingDB.Description,
+		Visibility:         meetingDB.Visibility,
+		MeetingType:        meetingDB.MeetingType,
+		JoinLink:           constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
+		MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, s.config.LFXEnvironment),
+		ProjectName:        projectName,
+		ProjectLogo:        projectLogo,
+		Platform:           meetingDB.Platform,
+		MeetingID:          meetingID,
+		Passcode:           passcode,
+		Recurrence:         meetingDB.Recurrence,
 	}
 
 	return s.emailService.SendRegistrantInvitation(ctx, invitation)
@@ -611,26 +613,28 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
 	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
 
 	updatedInvitation := domain.EmailUpdatedInvitation{
-		MeetingUID:     meeting.UID,
-		RecipientEmail: registrant.Email,
-		RecipientName:  recipientName,
-		MeetingTitle:   meeting.Title,
-		StartTime:      meeting.StartTime,
-		Duration:       meeting.Duration,
-		Timezone:       meeting.Timezone,
-		Description:    meeting.Description,
-		Visibility:     meeting.Visibility,
-		MeetingType:    meeting.MeetingType,
-		JoinLink:       constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
-		Platform:       meeting.Platform,
-		MeetingID:      meetingID,
-		Passcode:       passcode,
-		Recurrence:     meeting.Recurrence,
-		Changes:        changes,
-		ProjectName:    projectName,
-		ProjectLogo:    projectLogo,
+		MeetingUID:         meeting.UID,
+		RecipientEmail:     registrant.Email,
+		RecipientName:      recipientName,
+		MeetingTitle:       meeting.Title,
+		StartTime:          meeting.StartTime,
+		Duration:           meeting.Duration,
+		Timezone:           meeting.Timezone,
+		Description:        meeting.Description,
+		Visibility:         meeting.Visibility,
+		MeetingType:        meeting.MeetingType,
+		JoinLink:           constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
+		MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, s.config.LFXEnvironment),
+		Platform:           meeting.Platform,
+		MeetingID:          meetingID,
+		Passcode:           passcode,
+		Recurrence:         meeting.Recurrence,
+		Changes:            changes,
+		ProjectName:        projectName,
+		ProjectLogo:        projectLogo,
 		// Previous meeting data
 		OldStartTime:   oldMeeting.StartTime,
 		OldDuration:    oldMeeting.Duration,
