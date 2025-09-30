@@ -561,6 +561,9 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		}
 	}
 
+	// Increment ICS sequence for calendar updates
+	reqMeeting.IcsSequence = existingMeetingDB.IcsSequence + 1
+
 	// Detect changes before updating
 	changes := detectMeetingBaseChanges(existingMeetingDB, reqMeeting)
 

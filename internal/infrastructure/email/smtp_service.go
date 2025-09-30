@@ -251,7 +251,7 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 			RecipientEmail: updatedInvitation.RecipientEmail,
 			ProjectName:    updatedInvitation.ProjectName,
 			Recurrence:     updatedInvitation.Recurrence,
-			Sequence:       1, // Incremented sequence for updates
+			Sequence:       updatedInvitation.IcsSequence, // Use actual ICS sequence from meeting
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS update", logging.ErrKey, err)

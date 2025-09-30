@@ -336,7 +336,7 @@ func TestBuildDescription(t *testing.T) {
 			"Test Project",
 		)
 
-		assert.Contains(t, desc, "Project: Test Project")
+		assert.Contains(t, desc, "Test Project Meeting")
 		assert.Contains(t, desc, "Original description")
 		assert.Contains(t, desc, "Meeting ID: 123456789")
 		assert.Contains(t, desc, "Passcode: abc123")

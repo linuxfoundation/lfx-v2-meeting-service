@@ -55,6 +55,7 @@ type MeetingBase struct {
 	RegistrantResponseDeclinedCount int          `json:"registrant_response_declined_count,omitempty"`
 	RegistrantResponseAcceptedCount int          `json:"registrant_response_accepted_count,omitempty"`
 	Occurrences                     []Occurrence `json:"occurrences,omitempty"`
+	IcsSequence                     int          `json:"ics_sequence,omitempty"`
 	CreatedAt                       *time.Time   `json:"created_at,omitempty"`
 	UpdatedAt                       *time.Time   `json:"updated_at,omitempty"`
 }

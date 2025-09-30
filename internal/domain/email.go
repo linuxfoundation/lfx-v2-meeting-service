@@ -79,6 +79,7 @@ type EmailUpdatedInvitation struct {
 	Passcode           string             // Zoom passcode
 	Recurrence         *models.Recurrence // Recurrence pattern for ICS
 	Changes            map[string]any     // Map of what changed (field names to new values)
+	IcsSequence        int                // ICS sequence number for calendar updates
 	ICSAttachment      *EmailAttachment   // Updated ICS calendar attachment
 
 	// Previous meeting data for showing what changed
