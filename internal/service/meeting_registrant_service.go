@@ -684,6 +684,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 		ProjectLogo:    projectLogo,
 		Reason:         "Your registration has been removed from this meeting.",
 		Recurrence:     meeting.Recurrence,
+		IcsSequence:    meeting.IcsSequence,
 	}
 
 	return s.emailService.SendRegistrantCancellation(ctx, cancellation)

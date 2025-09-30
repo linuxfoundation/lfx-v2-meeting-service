@@ -176,6 +176,7 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 			Timezone:       cancellation.Timezone,
 			RecipientEmail: cancellation.RecipientEmail,
 			Recurrence:     cancellation.Recurrence,
+			Sequence:       cancellation.IcsSequence, // Use actual ICS sequence from meeting
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS cancellation", logging.ErrKey, err)

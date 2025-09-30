@@ -155,6 +155,7 @@ type ICSMeetingCancellationParams struct {
 	Timezone       string
 	RecipientEmail string
 	Recurrence     *models.Recurrence
+	Sequence       int // ICS sequence number for calendar updates
 }
 
 // ICSMeetingUpdateParams holds parameters for generating a meeting update ICS file
@@ -289,7 +290,7 @@ func (g *ICSGenerator) GenerateMeetingCancellationICS(params ICSMeetingCancellat
 	icsContent.WriteString(fmt.Sprintf("DTEND;TZID=%s:%s\r\n", params.Timezone, endTime.Format("20060102T150405")))
 	icsContent.WriteString(fmt.Sprintf("SUMMARY:%s (CANCELLED)\r\n", escapeICSText(params.MeetingTitle)))
 	icsContent.WriteString("STATUS:CANCELLED\r\n")
-	icsContent.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", 1)) // Increment sequence for cancellation
+	icsContent.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", params.Sequence))
 	icsContent.WriteString(fmt.Sprintf("ORGANIZER;CN=%s:mailto:%s\r\n", OrganizerName, OrganizerEmail))
 
 	if params.RecipientEmail != "" {

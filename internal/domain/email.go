@@ -55,6 +55,7 @@ type EmailCancellation struct {
 	ProjectLogo    string             // Optional project logo URL
 	Reason         string             // Optional reason for cancellation
 	Recurrence     *models.Recurrence // Recurrence pattern for ICS
+	IcsSequence    int                // ICS sequence number for calendar updates
 	ICSAttachment  *EmailAttachment   // ICS calendar attachment for cancellation
 }
 
