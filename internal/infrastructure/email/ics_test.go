@@ -33,6 +33,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "user@example.com",
 			ProjectName:    "Test Project",
 			Recurrence:     nil,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -72,6 +73,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "team@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -100,6 +102,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "group@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -127,6 +130,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "manager@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -156,6 +160,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "board@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -176,6 +181,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "office@example.com",
 			ProjectName:    "",
 			Recurrence:     nil,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)

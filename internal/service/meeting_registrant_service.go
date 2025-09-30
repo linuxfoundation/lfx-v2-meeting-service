@@ -590,6 +590,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		MeetingID:          meetingID,
 		Passcode:           passcode,
 		Recurrence:         meetingDB.Recurrence,
+		IcsSequence:        meetingDB.IcsSequence,
 	}
 
 	return s.emailService.SendRegistrantInvitation(ctx, invitation)

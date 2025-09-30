@@ -38,6 +38,7 @@ type EmailInvitation struct {
 	MeetingID          string             // Zoom meeting ID for dial-in
 	Passcode           string             // Zoom passcode
 	Recurrence         *models.Recurrence // Recurrence pattern for ICS
+	IcsSequence        int                // ICS sequence number for calendar updates
 	ICSAttachment      *EmailAttachment   // ICS calendar attachment
 }
 

@@ -55,6 +55,7 @@ type ICSMeetingInvitationParams struct {
 	RecipientEmail string
 	ProjectName    string
 	Recurrence     *models.Recurrence
+	Sequence       int // ICS sequence number for calendar updates
 }
 
 // GenerateMeetingICS generates an ICS file content for a meeting invitation
@@ -131,7 +132,7 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	ics.WriteString("TRANSP:OPAQUE\r\n")
 	ics.WriteString("CLASS:PUBLIC\r\n")
 	ics.WriteString("PRIORITY:5\r\n")
-	ics.WriteString("SEQUENCE:0\r\n")
+	ics.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", param.Sequence))
 
 	// Alarm (reminder 15 minutes before)
 	ics.WriteString("BEGIN:VALARM\r\n")
