@@ -33,6 +33,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "user@example.com",
 			ProjectName:    "Test Project",
 			Recurrence:     nil,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -72,6 +73,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "team@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -100,6 +102,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "group@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -127,6 +130,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "manager@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -156,6 +160,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "board@example.com",
 			ProjectName:    "",
 			Recurrence:     recurrence,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -176,6 +181,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 			RecipientEmail: "office@example.com",
 			ProjectName:    "",
 			Recurrence:     nil,
+			Sequence:       0,
 		})
 
 		require.NoError(t, err)
@@ -388,6 +394,7 @@ func TestGenerateMeetingCancellationICS(t *testing.T) {
 		Timezone:       "America/New_York",
 		RecipientEmail: "test@example.com",
 		Recurrence:     nil,
+		Sequence:       2,
 	}
 
 	icsContent, err := generator.GenerateMeetingCancellationICS(params)
@@ -402,7 +409,7 @@ func TestGenerateMeetingCancellationICS(t *testing.T) {
 	assert.Contains(t, icsContent, "SUMMARY:Test Meeting (CANCELLED)")
 	assert.Contains(t, icsContent, "ORGANIZER;CN=ITX:mailto:itx@linuxfoundation.org")
 	assert.Contains(t, icsContent, "ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:test@example.com")
-	assert.Contains(t, icsContent, "SEQUENCE:1") // Should have incremented sequence
+	assert.Contains(t, icsContent, "SEQUENCE:2")
 	assert.Contains(t, icsContent, "DTSTART;TZID=America/New_York:20241025T060000")
 	assert.Contains(t, icsContent, "DTEND;TZID=America/New_York:20241025T070000")
 }
@@ -426,6 +433,7 @@ func TestGenerateMeetingCancellationICS_WithRecurrence(t *testing.T) {
 		Timezone:       "UTC",
 		RecipientEmail: "staff@example.com",
 		Recurrence:     recurrence,
+		Sequence:       1,
 	}
 
 	icsContent, err := generator.GenerateMeetingCancellationICS(params)

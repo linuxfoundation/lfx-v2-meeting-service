@@ -106,6 +106,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		RecipientEmail: invitation.RecipientEmail,
 		ProjectName:    invitation.ProjectName,
 		Recurrence:     invitation.Recurrence,
+		Sequence:       invitation.IcsSequence,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to generate ICS file", logging.ErrKey, err)
@@ -176,6 +177,7 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 			Timezone:       cancellation.Timezone,
 			RecipientEmail: cancellation.RecipientEmail,
 			Recurrence:     cancellation.Recurrence,
+			Sequence:       cancellation.IcsSequence,
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS cancellation", logging.ErrKey, err)
@@ -251,7 +253,7 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 			RecipientEmail: updatedInvitation.RecipientEmail,
 			ProjectName:    updatedInvitation.ProjectName,
 			Recurrence:     updatedInvitation.Recurrence,
-			Sequence:       updatedInvitation.IcsSequence, // Use actual ICS sequence from meeting
+			Sequence:       updatedInvitation.IcsSequence,
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS update", logging.ErrKey, err)

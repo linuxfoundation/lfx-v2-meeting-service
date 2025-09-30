@@ -590,6 +590,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		MeetingID:          meetingID,
 		Passcode:           passcode,
 		Recurrence:         meetingDB.Recurrence,
+		IcsSequence:        meetingDB.IcsSequence,
 	}
 
 	return s.emailService.SendRegistrantInvitation(ctx, invitation)
@@ -684,6 +685,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 		ProjectLogo:    projectLogo,
 		Reason:         "Your registration has been removed from this meeting.",
 		Recurrence:     meeting.Recurrence,
+		IcsSequence:    meeting.IcsSequence,
 	}
 
 	return s.emailService.SendRegistrantCancellation(ctx, cancellation)
