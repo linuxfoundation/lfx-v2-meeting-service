@@ -640,6 +640,7 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		Changes:            changes,
 		ProjectName:        projectName,
 		ProjectLogo:        projectLogo,
+		IcsSequence:        meeting.IcsSequence,
 		// Previous meeting data
 		OldStartTime:   oldMeeting.StartTime,
 		OldDuration:    oldMeeting.Duration,

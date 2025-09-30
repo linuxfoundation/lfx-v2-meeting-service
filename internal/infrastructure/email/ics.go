@@ -420,8 +420,8 @@ func buildDescription(description, meetingID, passcode, joinLink, projectName st
 	var desc strings.Builder
 
 	if projectName != "" {
-		desc.WriteString("Project: ")
 		desc.WriteString(projectName)
+		desc.WriteString(" Meeting")
 		desc.WriteString("\n\n")
 	}
 
