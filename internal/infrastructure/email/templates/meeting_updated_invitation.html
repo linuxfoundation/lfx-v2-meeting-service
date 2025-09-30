@@ -317,8 +317,8 @@
                 <span class="badge badge-changed">Changed</span>
             </div>
             <div>
-                <div class="changed-details-old">{{.OldDescription}}</div>
-                <div class="changed-details-new"><strong>New: </strong>{{.Description}}</div>
+                <div class="changed-details-old">{{newLineToBreakLine .OldDescription}}</div>
+                <div class="changed-details-new"><strong>New: </strong>{{newLineToBreakLine .Description}}</div>
             </div>
             {{if .MeetingDetailsLink}}
             <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
@@ -328,7 +328,7 @@
         {{else}}
         <div class="details">
             <div class="details-title">Meeting Details</div>
-            {{.Description}}
+            {{newLineToBreakLine .Description}}
             {{if .MeetingDetailsLink}}
             <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
                 One</a>

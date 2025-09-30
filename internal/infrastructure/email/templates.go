@@ -45,10 +45,11 @@ type templateConfig struct {
 // loadTemplate loads a single template with the shared function map
 func loadTemplate(config templateConfig) (*template.Template, error) {
 	tmpl, err := template.New(config.name).Funcs(template.FuncMap{
-		"formatTime":       formatTime,
-		"formatDuration":   formatDuration,
-		"formatRecurrence": formatRecurrence,
-		"capitalize":       capitalize,
+		"formatTime":         formatTime,
+		"formatDuration":     formatDuration,
+		"formatRecurrence":   formatRecurrence,
+		"capitalize":         capitalize,
+		"newLineToBreakLine": newLineToBreakLine,
 	}).ParseFS(templateFS, config.path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %s template: %w", config.name, err)
@@ -265,4 +266,13 @@ func capitalize(s string) string {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
+}
+
+// newLineToBreakLine converts newlines to HTML break tags for proper email formatting
+func newLineToBreakLine(s string) template.HTML {
+	// Replace newlines with <br> tags
+	escaped := template.HTMLEscapeString(s)
+	replaced := strings.ReplaceAll(escaped, "\n", "<br>")
+	// Return as template.HTML to prevent double escaping
+	return template.HTML(replaced)
 }

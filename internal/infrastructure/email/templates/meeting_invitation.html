@@ -230,7 +230,7 @@
         </div>
         <div class="details">
             <div class="details-title">Meeting Details</div>
-            {{.Description}}
+            {{newLineToBreakLine .Description}}
             {{if .MeetingDetailsLink}}
             <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
                 One</a>
