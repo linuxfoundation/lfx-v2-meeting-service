@@ -492,7 +492,7 @@ func TestOccurrenceService_CalculateOccurrencesFromDate(t *testing.T) {
 			name: "include ongoing meeting",
 			meeting: &models.MeetingBase{
 				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Started at 10:00
-				Duration:  120, // 2 hours duration (ends at 12:00)
+				Duration:  120,                                          // 2 hours duration (ends at 12:00)
 				Timezone:  "UTC",
 			},
 			fromDate:      time.Date(2024, 6, 1, 11, 0, 0, 0, time.UTC), // Query at 11:00 (during meeting)
@@ -506,7 +506,7 @@ func TestOccurrenceService_CalculateOccurrencesFromDate(t *testing.T) {
 			name: "include meeting within 40-minute buffer",
 			meeting: &models.MeetingBase{
 				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Started at 10:00
-				Duration:  60, // 1 hour duration (ends at 11:00)
+				Duration:  60,                                           // 1 hour duration (ends at 11:00)
 				Timezone:  "UTC",
 			},
 			fromDate:      time.Date(2024, 6, 1, 11, 30, 0, 0, time.UTC), // Query at 11:30 (30 min after end, within 40-min buffer)
@@ -520,7 +520,7 @@ func TestOccurrenceService_CalculateOccurrencesFromDate(t *testing.T) {
 			name: "exclude meeting outside 40-minute buffer",
 			meeting: &models.MeetingBase{
 				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Started at 10:00
-				Duration:  60, // 1 hour duration (ends at 11:00)
+				Duration:  60,                                           // 1 hour duration (ends at 11:00)
 				Timezone:  "UTC",
 			},
 			fromDate:      time.Date(2024, 6, 1, 11, 41, 0, 0, time.UTC), // Query at 11:41 (41 min after end, outside buffer)
@@ -545,6 +545,188 @@ func TestOccurrenceService_CalculateOccurrencesFromDate(t *testing.T) {
 				time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC), // Ongoing occurrence
 				time.Date(2024, 6, 4, 10, 0, 0, 0, time.UTC), // Future occurrence
 				time.Date(2024, 6, 5, 10, 0, 0, 0, time.UTC), // Future occurrence
+			},
+		},
+		// Daily recurrence tests
+		{
+			name: "daily meeting - ongoing (started in past, still in progress)",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC),
+				Duration:  120, // 2 hours (ends at 12:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           1, // Daily
+					RepeatInterval: 1,
+				},
+			},
+			fromDate:      time.Date(2024, 6, 3, 11, 0, 0, 0, time.UTC), // Query at 11:00 (meeting started at 10:00, ends at 12:00)
+			limit:         2,
+			expectedCount: 2,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC), // Today's ongoing meeting
+				time.Date(2024, 6, 4, 10, 0, 0, 0, time.UTC), // Tomorrow's meeting
+			},
+		},
+		{
+			name: "daily meeting - within 40-minute buffer after end",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC),
+				Duration:  60, // 1 hour (ends at 11:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           1, // Daily
+					RepeatInterval: 1,
+				},
+			},
+			fromDate:      time.Date(2024, 6, 3, 11, 30, 0, 0, time.UTC), // Query at 11:30 (30 min after end, within buffer)
+			limit:         2,
+			expectedCount: 2,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC), // Today's meeting (in buffer)
+				time.Date(2024, 6, 4, 10, 0, 0, 0, time.UTC), // Tomorrow's meeting
+			},
+		},
+		{
+			name: "daily meeting - outside 40-minute buffer after end",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC),
+				Duration:  60, // 1 hour (ends at 11:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           1, // Daily
+					RepeatInterval: 1,
+				},
+			},
+			fromDate:      time.Date(2024, 6, 3, 11, 41, 0, 0, time.UTC),
+			limit:         2,
+			expectedCount: 2,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 4, 10, 0, 0, 0, time.UTC),
+				time.Date(2024, 6, 5, 10, 0, 0, 0, time.UTC),
+			},
+		},
+		// Weekly recurrence tests
+		{
+			name: "weekly meeting - ongoing (started in past, still in progress)",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC), // Monday June 3
+				Duration:  180,                                          // 3 hours (ends at 13:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           2, // Weekly
+					RepeatInterval: 1,
+					WeeklyDays:     "2,4", // Monday(2), Wednesday(4)
+				},
+			},
+			fromDate:      time.Date(2024, 6, 5, 11, 30, 0, 0, time.UTC), // Wednesday June 5 at 11:30 (meeting 10:00-13:00)
+			limit:         3,
+			expectedCount: 3,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 5, 10, 0, 0, 0, time.UTC),  // Today's ongoing meeting
+				time.Date(2024, 6, 10, 10, 0, 0, 0, time.UTC), // Next Monday
+				time.Date(2024, 6, 12, 10, 0, 0, 0, time.UTC), // Next Wednesday
+			},
+		},
+		{
+			name: "weekly meeting - within 40-minute buffer after end",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC), // Monday June 3
+				Duration:  60,                                           // 1 hour (ends at 11:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           2, // Weekly
+					RepeatInterval: 1,
+					WeeklyDays:     "2,4", // Monday(2), Wednesday(4)
+				},
+			},
+			fromDate:      time.Date(2024, 6, 5, 11, 30, 0, 0, time.UTC), // Wednesday June 5 at 11:30 (30 min after end)
+			limit:         3,
+			expectedCount: 3,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 5, 10, 0, 0, 0, time.UTC),  // Today's meeting (in buffer)
+				time.Date(2024, 6, 10, 10, 0, 0, 0, time.UTC), // Next Monday
+				time.Date(2024, 6, 12, 10, 0, 0, 0, time.UTC), // Next Wednesday
+			},
+		},
+		{
+			name: "weekly meeting - outside 40-minute buffer after end",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC), // Monday June 3
+				Duration:  60,                                           // 1 hour (ends at 11:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           2, // Weekly
+					RepeatInterval: 1,
+					WeeklyDays:     "2,4", // Monday(2), Wednesday(4)
+				},
+			},
+			fromDate:      time.Date(2024, 6, 5, 11, 41, 0, 0, time.UTC), // Wednesday June 5 at 11:41 (41 min after end)
+			limit:         2,
+			expectedCount: 2,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 10, 10, 0, 0, 0, time.UTC), // Next Monday
+				time.Date(2024, 6, 12, 10, 0, 0, 0, time.UTC), // Next Wednesday
+			},
+		},
+		// Monthly recurrence tests
+		{
+			name: "monthly meeting - ongoing (started in past, still in progress)",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 1, 15, 14, 0, 0, 0, time.UTC),
+				Duration:  240, // 4 hours (ends at 18:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           3, // Monthly
+					RepeatInterval: 1,
+					MonthlyDay:     15,
+				},
+			},
+			fromDate:      time.Date(2024, 3, 15, 16, 0, 0, 0, time.UTC), // March 15 at 16:00 (meeting 14:00-18:00)
+			limit:         2,
+			expectedCount: 2,
+			validateDates: []time.Time{
+				time.Date(2024, 3, 15, 14, 0, 0, 0, time.UTC), // Today's ongoing meeting
+				time.Date(2024, 4, 15, 14, 0, 0, 0, time.UTC), // Next month's meeting
+			},
+		},
+		{
+			name: "monthly meeting - within 40-minute buffer after end",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 1, 15, 14, 0, 0, 0, time.UTC),
+				Duration:  60, // 1 hour (ends at 15:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           3, // Monthly
+					RepeatInterval: 1,
+					MonthlyDay:     15,
+				},
+			},
+			fromDate:      time.Date(2024, 3, 15, 15, 30, 0, 0, time.UTC), // March 15 at 15:30 (30 min after end)
+			limit:         2,
+			expectedCount: 2,
+			validateDates: []time.Time{
+				time.Date(2024, 3, 15, 14, 0, 0, 0, time.UTC), // Today's meeting (in buffer)
+				time.Date(2024, 4, 15, 14, 0, 0, 0, time.UTC), // Next month's meeting
+			},
+		},
+		{
+			name: "monthly meeting - outside 40-minute buffer after end",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 1, 15, 14, 0, 0, 0, time.UTC),
+				Duration:  60, // 1 hour (ends at 15:00)
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           3, // Monthly
+					RepeatInterval: 1,
+					MonthlyDay:     15,
+				},
+			},
+			fromDate:      time.Date(2024, 3, 15, 15, 41, 0, 0, time.UTC),
+			limit:         2,
+			expectedCount: 2,
+			validateDates: []time.Time{
+				time.Date(2024, 4, 15, 14, 0, 0, 0, time.UTC),
+				time.Date(2024, 5, 15, 14, 0, 0, 0, time.UTC),
 			},
 		},
 	}

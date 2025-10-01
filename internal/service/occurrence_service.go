@@ -71,10 +71,6 @@ func (s *OccurrenceService) ValidateFutureOccurrenceID(meeting *models.MeetingBa
 }
 
 // CalculateOccurrencesFromDate calculates occurrences for a meeting starting from a specific date
-// It includes occurrences that:
-// - Start on or after the fromDate
-// - Are currently ongoing (started before fromDate but end after it)
-// - Ended within the last 40 minutes before fromDate (buffer period)
 func (s *OccurrenceService) CalculateOccurrencesFromDate(meeting *models.MeetingBase, fromDate time.Time, limit int) []models.Occurrence {
 	if meeting == nil || limit <= 0 {
 		return []models.Occurrence{}
@@ -127,9 +123,7 @@ func (s *OccurrenceService) isOccurrenceRelevant(occurrenceStart time.Time, dura
 	// Calculate when the occurrence ends (including buffer)
 	occurrenceEndWithBuffer := occurrenceStart.Add(time.Duration(duration+bufferMinutes) * time.Minute)
 
-	// Include if:
-	// 1. Starts on or after fromDate OR
-	// 2. Ends (with buffer) after fromDate (meaning it's ongoing or recently ended)
+	// Consider the occurrence relevant if starts in the future or is ongoing/ended within the buffer period
 	return !occurrenceStart.Before(fromDate) || occurrenceEndWithBuffer.After(fromDate)
 }
 
@@ -199,10 +193,8 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 				continue
 			}
 
-			// Only include occurrences that are:
-			// 1. On or after the meeting start time AND
-			// 2. Still relevant (ongoing, future, or within buffer)
-			if !occurrenceDate.Before(startTime) && s.isOccurrenceRelevant(occurrenceDate, meeting.Duration, fromDate) && len(occurrences) < limit {
+			// Include this occurrence if it's still relevant (ongoing, future, or within buffer)
+			if s.isOccurrenceRelevant(occurrenceDate, meeting.Duration, fromDate) && len(occurrences) < limit {
 				occurrences = append(occurrences, s.createOccurrence(meeting, occurrenceDate))
 			}
 		}
