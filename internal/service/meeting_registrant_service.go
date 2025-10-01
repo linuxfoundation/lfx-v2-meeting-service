@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -570,6 +572,23 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
 	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingDB.ProjectUID)
 	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingDB.ProjectUID)
+
+	// Try to get the project logo as a PNG image.
+	// If there is a project logo and it is in .svg format, then use the .png format of the logo image instead.
+	if projectLogo != "" && strings.HasSuffix(projectLogo, ".svg") {
+		projectLogoUrl := fmt.Sprintf("https://lfx-one-project-logos-png-%s.s3.us-west-2.amazonaws.com/%s.png", s.config.LFXEnvironment, meetingDB.ProjectUID)
+
+		// Check that the project logo is reachable
+		resp, err := http.Get(projectLogoUrl)
+		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
+			projectLogo = projectLogoUrl
+		} else {
+			slog.WarnContext(ctx, "unable to confirm that the project logo url is accessible", "url", projectLogoUrl, "status_code", resp.StatusCode)
+		}
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+	}
 
 	invitation := domain.EmailInvitation{
 		MeetingUID:         meetingDB.UID,
