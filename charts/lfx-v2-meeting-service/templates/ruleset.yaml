@@ -154,9 +154,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              # TODO: should this be auditor relation on the project object? If so,
-              # how do we get the project_uid from the request body?
-              relation: organizer
+              relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         {{/*
