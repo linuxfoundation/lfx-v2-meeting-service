@@ -71,17 +71,21 @@ func (s *OccurrenceService) ValidateFutureOccurrenceID(meeting *models.MeetingBa
 }
 
 // CalculateOccurrencesFromDate calculates occurrences for a meeting starting from a specific date
+// It includes occurrences that:
+// - Start on or after the fromDate
+// - Are currently ongoing (started before fromDate but end after it)
+// - Ended within the last 40 minutes before fromDate (buffer period)
 func (s *OccurrenceService) CalculateOccurrencesFromDate(meeting *models.MeetingBase, fromDate time.Time, limit int) []models.Occurrence {
 	if meeting == nil || limit <= 0 {
 		return []models.Occurrence{}
 	}
 
-	// If the meeting has no recurrence, return just the original meeting if it's after fromDate
+	// If the meeting has no recurrence, return just the original meeting if it's still relevant
 	if meeting.Recurrence == nil {
-		if meeting.StartTime.Before(fromDate) {
-			return []models.Occurrence{}
+		if s.isOccurrenceRelevant(meeting.StartTime, meeting.Duration, fromDate) {
+			return []models.Occurrence{s.createOccurrence(meeting, meeting.StartTime)}
 		}
-		return []models.Occurrence{s.createOccurrence(meeting, meeting.StartTime)}
+		return []models.Occurrence{}
 	}
 
 	// Load the meeting timezone
@@ -112,6 +116,23 @@ func (s *OccurrenceService) CalculateOccurrencesFromDate(meeting *models.Meeting
 	return occurrences
 }
 
+// isOccurrenceRelevant checks if an occurrence should be included based on:
+// - If it starts on or after fromDate
+// - If it's currently ongoing (started before fromDate but ends after it)
+// - If it ended within the last 40 minutes before fromDate
+func (s *OccurrenceService) isOccurrenceRelevant(occurrenceStart time.Time, duration int, fromDate time.Time) bool {
+	// Buffer period after meeting ends (40 minutes)
+	const bufferMinutes = 40
+
+	// Calculate when the occurrence ends (including buffer)
+	occurrenceEndWithBuffer := occurrenceStart.Add(time.Duration(duration+bufferMinutes) * time.Minute)
+
+	// Include if:
+	// 1. Starts on or after fromDate OR
+	// 2. Ends (with buffer) after fromDate (meaning it's ongoing or recently ended)
+	return !occurrenceStart.Before(fromDate) || occurrenceEndWithBuffer.After(fromDate)
+}
+
 // calculateDailyOccurrences calculates occurrences for daily recurrence patterns
 func (s *OccurrenceService) calculateDailyOccurrences(meeting *models.MeetingBase, startTime, fromDate, endDate time.Time, limit int) []models.Occurrence {
 	var occurrences []models.Occurrence
@@ -123,8 +144,8 @@ func (s *OccurrenceService) calculateDailyOccurrences(meeting *models.MeetingBas
 			break
 		}
 
-		// If this occurrence is on or after the fromDate, include it
-		if !current.Before(fromDate) {
+		// Include this occurrence if it's still relevant (ongoing, future, or within buffer)
+		if s.isOccurrenceRelevant(current, meeting.Duration, fromDate) {
 			occurrences = append(occurrences, s.createOccurrence(meeting, current))
 		}
 
@@ -179,9 +200,9 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 			}
 
 			// Only include occurrences that are:
-			// 1. On or after the meeting start time
-			// 2. On or after the fromDate
-			if !occurrenceDate.Before(startTime) && !occurrenceDate.Before(fromDate) && len(occurrences) < limit {
+			// 1. On or after the meeting start time AND
+			// 2. Still relevant (ongoing, future, or within buffer)
+			if !occurrenceDate.Before(startTime) && s.isOccurrenceRelevant(occurrenceDate, meeting.Duration, fromDate) && len(occurrences) < limit {
 				occurrences = append(occurrences, s.createOccurrence(meeting, occurrenceDate))
 			}
 		}
@@ -228,8 +249,8 @@ func (s *OccurrenceService) calculateMonthlyOccurrences(meeting *models.MeetingB
 			break
 		}
 
-		// If this occurrence is on or after the fromDate, include it
-		if !occurrenceDate.Before(fromDate) {
+		// Include this occurrence if it's still relevant (ongoing, future, or within buffer)
+		if s.isOccurrenceRelevant(occurrenceDate, meeting.Duration, fromDate) {
 			occurrences = append(occurrences, s.createOccurrence(meeting, occurrenceDate))
 		}
 

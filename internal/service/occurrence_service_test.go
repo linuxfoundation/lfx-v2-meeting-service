@@ -488,6 +488,65 @@ func TestOccurrenceService_CalculateOccurrencesFromDate(t *testing.T) {
 				time.Date(2024, 6, 24, 10, 0, 0, 0, time.UTC), // Monday June 24
 			},
 		},
+		{
+			name: "include ongoing meeting",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Started at 10:00
+				Duration:  120, // 2 hours duration (ends at 12:00)
+				Timezone:  "UTC",
+			},
+			fromDate:      time.Date(2024, 6, 1, 11, 0, 0, 0, time.UTC), // Query at 11:00 (during meeting)
+			limit:         1,
+			expectedCount: 1,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Should include the ongoing meeting
+			},
+		},
+		{
+			name: "include meeting within 40-minute buffer",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Started at 10:00
+				Duration:  60, // 1 hour duration (ends at 11:00)
+				Timezone:  "UTC",
+			},
+			fromDate:      time.Date(2024, 6, 1, 11, 30, 0, 0, time.UTC), // Query at 11:30 (30 min after end, within 40-min buffer)
+			limit:         1,
+			expectedCount: 1,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Should include due to buffer
+			},
+		},
+		{
+			name: "exclude meeting outside 40-minute buffer",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC), // Started at 10:00
+				Duration:  60, // 1 hour duration (ends at 11:00)
+				Timezone:  "UTC",
+			},
+			fromDate:      time.Date(2024, 6, 1, 11, 41, 0, 0, time.UTC), // Query at 11:41 (41 min after end, outside buffer)
+			limit:         1,
+			expectedCount: 0, // Should exclude as it's outside the 40-minute buffer
+		},
+		{
+			name: "recurring meeting with ongoing and future occurrences",
+			meeting: &models.MeetingBase{
+				StartTime: time.Date(2024, 6, 1, 10, 0, 0, 0, time.UTC),
+				Duration:  90, // 1.5 hours
+				Timezone:  "UTC",
+				Recurrence: &models.Recurrence{
+					Type:           1, // Daily
+					RepeatInterval: 1,
+				},
+			},
+			fromDate:      time.Date(2024, 6, 3, 11, 0, 0, 0, time.UTC), // Query at 11:00 on June 3 (during that day's occurrence)
+			limit:         3,
+			expectedCount: 3,
+			validateDates: []time.Time{
+				time.Date(2024, 6, 3, 10, 0, 0, 0, time.UTC), // Ongoing occurrence
+				time.Date(2024, 6, 4, 10, 0, 0, 0, time.UTC), // Future occurrence
+				time.Date(2024, 6, 5, 10, 0, 0, 0, time.UTC), // Future occurrence
+			},
+		},
 	}
 
 	for _, tt := range tests {
