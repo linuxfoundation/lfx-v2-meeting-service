@@ -320,7 +320,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: organizer
+              relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         {{/*
@@ -382,7 +382,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: organizer
+              relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         {{/*
@@ -599,7 +599,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: organizer
+              relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         {{/*
@@ -661,7 +661,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: organizer
+              relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         {{/*
@@ -726,7 +726,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: organizer
+              relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         {{/*
@@ -788,7 +788,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: organizer
+              relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else -}}
         {{/*
