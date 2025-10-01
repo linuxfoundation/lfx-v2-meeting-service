@@ -17,6 +17,7 @@ spec:
           - path: /_meetings/openapi.yaml
           - path: /_meetings/openapi3.json
           - path: /_meetings/openapi3.yaml
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -34,6 +35,7 @@ spec:
           - POST
         routes:
           - path: /webhooks/zoom
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -53,6 +55,7 @@ spec:
           - POST
         routes:
           - path: /meetings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -84,6 +87,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -114,6 +118,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/join_url
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -144,6 +149,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/settings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -176,6 +182,7 @@ spec:
           - PUT
         routes:
           - path: /meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -206,6 +213,7 @@ spec:
           - PUT
         routes:
           - path: /meetings/:id/settings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -236,6 +244,7 @@ spec:
           - DELETE
         routes:
           - path: /meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -266,6 +275,7 @@ spec:
           - POST
         routes:
           - path: /meetings/:id/registrants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -299,6 +309,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/registrants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -329,6 +340,7 @@ spec:
           - PUT
         routes:
           - path: /meetings/:id/registrants/:registrant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -359,6 +371,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/registrants/:registrant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -389,6 +402,7 @@ spec:
           - DELETE
         routes:
           - path: /meetings/:id/registrants/:registrant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -420,6 +434,7 @@ spec:
           - POST
         routes:
           - path: /past_meetings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -454,6 +469,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -476,6 +492,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -506,6 +523,7 @@ spec:
           - DELETE
         routes:
           - path: /past_meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -536,6 +554,7 @@ spec:
           - POST
         routes:
           - path: /past_meetings/:id/participants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -569,6 +588,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/participants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -599,6 +619,7 @@ spec:
           - PUT
         routes:
           - path: /past_meetings/:id/participants/:participant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -629,6 +650,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/participants/:participant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -659,6 +681,7 @@ spec:
           - DELETE
         routes:
           - path: /past_meetings/:id/participants/:participant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -692,6 +715,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/summaries
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -722,6 +746,7 @@ spec:
           - PUT
         routes:
           - path: /past_meetings/:id/summaries/:summary_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -752,6 +777,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/summaries/:summary_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
