@@ -17,6 +17,7 @@ spec:
           - path: /_meetings/openapi.yaml
           - path: /_meetings/openapi3.json
           - path: /_meetings/openapi3.yaml
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -34,6 +35,7 @@ spec:
           - POST
         routes:
           - path: /webhooks/zoom
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -53,6 +55,7 @@ spec:
           - POST
         routes:
           - path: /meetings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -66,7 +69,7 @@ spec:
             values:
               relation: writer
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -84,6 +87,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -96,7 +100,7 @@ spec:
             values:
               relation: viewer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -114,6 +118,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/join_url
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -126,7 +131,7 @@ spec:
             values:
               relation: viewer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -144,6 +149,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/settings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -156,7 +162,7 @@ spec:
             values:
               relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -174,6 +180,7 @@ spec:
           - PUT
         routes:
           - path: /meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -186,7 +193,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -204,6 +211,7 @@ spec:
           - PUT
         routes:
           - path: /meetings/:id/settings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -216,7 +224,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -234,6 +242,7 @@ spec:
           - DELETE
         routes:
           - path: /meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -246,7 +255,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -264,6 +273,7 @@ spec:
           - POST
         routes:
           - path: /meetings/:id/registrants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -276,7 +286,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -297,6 +307,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/registrants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -309,7 +320,7 @@ spec:
             values:
               relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -327,6 +338,7 @@ spec:
           - PUT
         routes:
           - path: /meetings/:id/registrants/:registrant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -339,7 +351,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -357,6 +369,7 @@ spec:
           - GET
         routes:
           - path: /meetings/:id/registrants/:registrant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -369,7 +382,7 @@ spec:
             values:
               relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -387,6 +400,7 @@ spec:
           - DELETE
         routes:
           - path: /meetings/:id/registrants/:registrant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -399,7 +413,38 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:resend_invitation"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /meetings/:id/registrants/:registrant_id/resend
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -418,6 +463,7 @@ spec:
           - POST
         routes:
           - path: /past_meetings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -431,7 +477,7 @@ spec:
             values:
               relation: writer
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -452,6 +498,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -474,6 +521,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -486,7 +534,7 @@ spec:
             values:
               relation: viewer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -504,6 +552,7 @@ spec:
           - DELETE
         routes:
           - path: /past_meetings/:id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -516,7 +565,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -534,6 +583,7 @@ spec:
           - POST
         routes:
           - path: /past_meetings/:id/participants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -546,7 +596,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -567,6 +617,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/participants
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -579,7 +630,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -597,6 +648,7 @@ spec:
           - PUT
         routes:
           - path: /past_meetings/:id/participants/:participant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -609,7 +661,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -627,6 +679,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/participants/:participant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -639,7 +692,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -657,6 +710,7 @@ spec:
           - DELETE
         routes:
           - path: /past_meetings/:id/participants/:participant_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -669,7 +723,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -690,6 +744,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/summaries
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -702,7 +757,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -720,6 +775,7 @@ spec:
           - PUT
         routes:
           - path: /past_meetings/:id/summaries/:summary_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -732,7 +788,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -750,6 +806,7 @@ spec:
           - GET
         routes:
           - path: /past_meetings/:id/summaries/:summary_id
+      allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
         - authenticator: anonymous_authenticator
@@ -762,7 +819,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)

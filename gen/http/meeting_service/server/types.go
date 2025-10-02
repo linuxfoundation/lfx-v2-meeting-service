@@ -1308,6 +1308,46 @@ type DeleteMeetingRegistrantServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// ResendMeetingRegistrantInvitationBadRequestResponseBody is the type of the
+// "Meeting Service" service "resend-meeting-registrant-invitation" endpoint
+// HTTP response body for the "BadRequest" error.
+type ResendMeetingRegistrantInvitationBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// ResendMeetingRegistrantInvitationInternalServerErrorResponseBody is the type
+// of the "Meeting Service" service "resend-meeting-registrant-invitation"
+// endpoint HTTP response body for the "InternalServerError" error.
+type ResendMeetingRegistrantInvitationInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// ResendMeetingRegistrantInvitationNotFoundResponseBody is the type of the
+// "Meeting Service" service "resend-meeting-registrant-invitation" endpoint
+// HTTP response body for the "NotFound" error.
+type ResendMeetingRegistrantInvitationNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// ResendMeetingRegistrantInvitationServiceUnavailableResponseBody is the type
+// of the "Meeting Service" service "resend-meeting-registrant-invitation"
+// endpoint HTTP response body for the "ServiceUnavailable" error.
+type ResendMeetingRegistrantInvitationServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // ZoomWebhookBadRequestResponseBody is the type of the "Meeting Service"
 // service "zoom-webhook" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -3543,6 +3583,52 @@ func NewDeleteMeetingRegistrantServiceUnavailableResponseBody(res *meetingservic
 	return body
 }
 
+// NewResendMeetingRegistrantInvitationBadRequestResponseBody builds the HTTP
+// response body from the result of the "resend-meeting-registrant-invitation"
+// endpoint of the "Meeting Service" service.
+func NewResendMeetingRegistrantInvitationBadRequestResponseBody(res *meetingservice.BadRequestError) *ResendMeetingRegistrantInvitationBadRequestResponseBody {
+	body := &ResendMeetingRegistrantInvitationBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewResendMeetingRegistrantInvitationInternalServerErrorResponseBody builds
+// the HTTP response body from the result of the
+// "resend-meeting-registrant-invitation" endpoint of the "Meeting Service"
+// service.
+func NewResendMeetingRegistrantInvitationInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *ResendMeetingRegistrantInvitationInternalServerErrorResponseBody {
+	body := &ResendMeetingRegistrantInvitationInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewResendMeetingRegistrantInvitationNotFoundResponseBody builds the HTTP
+// response body from the result of the "resend-meeting-registrant-invitation"
+// endpoint of the "Meeting Service" service.
+func NewResendMeetingRegistrantInvitationNotFoundResponseBody(res *meetingservice.NotFoundError) *ResendMeetingRegistrantInvitationNotFoundResponseBody {
+	body := &ResendMeetingRegistrantInvitationNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewResendMeetingRegistrantInvitationServiceUnavailableResponseBody builds
+// the HTTP response body from the result of the
+// "resend-meeting-registrant-invitation" endpoint of the "Meeting Service"
+// service.
+func NewResendMeetingRegistrantInvitationServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *ResendMeetingRegistrantInvitationServiceUnavailableResponseBody {
+	body := &ResendMeetingRegistrantInvitationServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewZoomWebhookBadRequestResponseBody builds the HTTP response body from the
 // result of the "zoom-webhook" endpoint of the "Meeting Service" service.
 func NewZoomWebhookBadRequestResponseBody(res *meetingservice.BadRequestError) *ZoomWebhookBadRequestResponseBody {
@@ -4300,6 +4386,18 @@ func NewDeleteMeetingRegistrantPayload(meetingUID string, uid string, version *s
 	v.Version = version
 	v.BearerToken = bearerToken
 	v.IfMatch = ifMatch
+
+	return v
+}
+
+// NewResendMeetingRegistrantInvitationPayload builds a Meeting Service service
+// resend-meeting-registrant-invitation endpoint payload.
+func NewResendMeetingRegistrantInvitationPayload(meetingUID string, uid string, version *string, bearerToken *string) *meetingservice.ResendMeetingRegistrantInvitationPayload {
+	v := &meetingservice.ResendMeetingRegistrantInvitationPayload{}
+	v.MeetingUID = &meetingUID
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
 
 	return v
 }

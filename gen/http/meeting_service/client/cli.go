@@ -843,6 +843,53 @@ func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMe
 	return v, nil
 }
 
+// BuildResendMeetingRegistrantInvitationPayload builds the payload for the
+// Meeting Service resend-meeting-registrant-invitation endpoint from CLI flags.
+func BuildResendMeetingRegistrantInvitationPayload(meetingServiceResendMeetingRegistrantInvitationMeetingUID string, meetingServiceResendMeetingRegistrantInvitationUID string, meetingServiceResendMeetingRegistrantInvitationVersion string, meetingServiceResendMeetingRegistrantInvitationBearerToken string) (*meetingservice.ResendMeetingRegistrantInvitationPayload, error) {
+	var err error
+	var meetingUID string
+	{
+		meetingUID = meetingServiceResendMeetingRegistrantInvitationMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("meeting_uid", meetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var uid string
+	{
+		uid = meetingServiceResendMeetingRegistrantInvitationUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceResendMeetingRegistrantInvitationVersion != "" {
+			version = &meetingServiceResendMeetingRegistrantInvitationVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceResendMeetingRegistrantInvitationBearerToken != "" {
+			bearerToken = &meetingServiceResendMeetingRegistrantInvitationBearerToken
+		}
+	}
+	v := &meetingservice.ResendMeetingRegistrantInvitationPayload{}
+	v.MeetingUID = &meetingUID
+	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildZoomWebhookPayload builds the payload for the Meeting Service
 // zoom-webhook endpoint from CLI flags.
 func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServiceZoomWebhookZoomSignature string, meetingServiceZoomWebhookZoomTimestamp string) (*meetingservice.ZoomWebhookPayload, error) {

@@ -105,3 +105,24 @@ func (s *MeetingsAPI) DeleteMeetingRegistrant(ctx context.Context, payload *meet
 
 	return nil
 }
+
+// ResendMeetingRegistrantInvitation resends an invitation email to a meeting registrant.
+func (s *MeetingsAPI) ResendMeetingRegistrantInvitation(ctx context.Context, payload *meetingsvc.ResendMeetingRegistrantInvitationPayload) error {
+	if payload == nil || payload.MeetingUID == nil || payload.UID == nil {
+		return handleError(domain.NewValidationError("validation failed"))
+	}
+
+	// Get the registrant to ensure it exists
+	registrant, _, err := s.registrantService.GetMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID)
+	if err != nil {
+		return handleError(err)
+	}
+
+	// Send the invitation email using the existing method
+	err = s.registrantService.SendRegistrantInvitationEmail(ctx, registrant)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return nil
+}

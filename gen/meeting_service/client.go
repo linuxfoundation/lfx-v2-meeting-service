@@ -15,67 +15,69 @@ import (
 
 // Client is the "Meeting Service" service client.
 type Client struct {
-	GetMeetingsEndpoint                  goa.Endpoint
-	CreateMeetingEndpoint                goa.Endpoint
-	GetMeetingBaseEndpoint               goa.Endpoint
-	GetMeetingSettingsEndpoint           goa.Endpoint
-	GetMeetingJoinURLEndpoint            goa.Endpoint
-	UpdateMeetingBaseEndpoint            goa.Endpoint
-	UpdateMeetingSettingsEndpoint        goa.Endpoint
-	DeleteMeetingEndpoint                goa.Endpoint
-	GetMeetingRegistrantsEndpoint        goa.Endpoint
-	CreateMeetingRegistrantEndpoint      goa.Endpoint
-	GetMeetingRegistrantEndpoint         goa.Endpoint
-	UpdateMeetingRegistrantEndpoint      goa.Endpoint
-	DeleteMeetingRegistrantEndpoint      goa.Endpoint
-	ZoomWebhookEndpoint                  goa.Endpoint
-	GetPastMeetingsEndpoint              goa.Endpoint
-	CreatePastMeetingEndpoint            goa.Endpoint
-	GetPastMeetingEndpoint               goa.Endpoint
-	DeletePastMeetingEndpoint            goa.Endpoint
-	GetPastMeetingParticipantsEndpoint   goa.Endpoint
-	CreatePastMeetingParticipantEndpoint goa.Endpoint
-	GetPastMeetingParticipantEndpoint    goa.Endpoint
-	UpdatePastMeetingParticipantEndpoint goa.Endpoint
-	DeletePastMeetingParticipantEndpoint goa.Endpoint
-	GetPastMeetingSummariesEndpoint      goa.Endpoint
-	GetPastMeetingSummaryEndpoint        goa.Endpoint
-	UpdatePastMeetingSummaryEndpoint     goa.Endpoint
-	ReadyzEndpoint                       goa.Endpoint
-	LivezEndpoint                        goa.Endpoint
+	GetMeetingsEndpoint                       goa.Endpoint
+	CreateMeetingEndpoint                     goa.Endpoint
+	GetMeetingBaseEndpoint                    goa.Endpoint
+	GetMeetingSettingsEndpoint                goa.Endpoint
+	GetMeetingJoinURLEndpoint                 goa.Endpoint
+	UpdateMeetingBaseEndpoint                 goa.Endpoint
+	UpdateMeetingSettingsEndpoint             goa.Endpoint
+	DeleteMeetingEndpoint                     goa.Endpoint
+	GetMeetingRegistrantsEndpoint             goa.Endpoint
+	CreateMeetingRegistrantEndpoint           goa.Endpoint
+	GetMeetingRegistrantEndpoint              goa.Endpoint
+	UpdateMeetingRegistrantEndpoint           goa.Endpoint
+	DeleteMeetingRegistrantEndpoint           goa.Endpoint
+	ResendMeetingRegistrantInvitationEndpoint goa.Endpoint
+	ZoomWebhookEndpoint                       goa.Endpoint
+	GetPastMeetingsEndpoint                   goa.Endpoint
+	CreatePastMeetingEndpoint                 goa.Endpoint
+	GetPastMeetingEndpoint                    goa.Endpoint
+	DeletePastMeetingEndpoint                 goa.Endpoint
+	GetPastMeetingParticipantsEndpoint        goa.Endpoint
+	CreatePastMeetingParticipantEndpoint      goa.Endpoint
+	GetPastMeetingParticipantEndpoint         goa.Endpoint
+	UpdatePastMeetingParticipantEndpoint      goa.Endpoint
+	DeletePastMeetingParticipantEndpoint      goa.Endpoint
+	GetPastMeetingSummariesEndpoint           goa.Endpoint
+	GetPastMeetingSummaryEndpoint             goa.Endpoint
+	UpdatePastMeetingSummaryEndpoint          goa.Endpoint
+	ReadyzEndpoint                            goa.Endpoint
+	LivezEndpoint                             goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, readyz, livez goa.Endpoint) *Client {
 	return &Client{
-		GetMeetingsEndpoint:                  getMeetings,
-		CreateMeetingEndpoint:                createMeeting,
-		GetMeetingBaseEndpoint:               getMeetingBase,
-		GetMeetingSettingsEndpoint:           getMeetingSettings,
-		GetMeetingJoinURLEndpoint:            getMeetingJoinURL,
-		UpdateMeetingBaseEndpoint:            updateMeetingBase,
-		UpdateMeetingSettingsEndpoint:        updateMeetingSettings,
-		DeleteMeetingEndpoint:                deleteMeeting,
-		GetMeetingRegistrantsEndpoint:        getMeetingRegistrants,
-		CreateMeetingRegistrantEndpoint:      createMeetingRegistrant,
-		GetMeetingRegistrantEndpoint:         getMeetingRegistrant,
-		UpdateMeetingRegistrantEndpoint:      updateMeetingRegistrant,
-		DeleteMeetingRegistrantEndpoint:      deleteMeetingRegistrant,
-		ZoomWebhookEndpoint:                  zoomWebhook,
-		GetPastMeetingsEndpoint:              getPastMeetings,
-		CreatePastMeetingEndpoint:            createPastMeeting,
-		GetPastMeetingEndpoint:               getPastMeeting,
-		DeletePastMeetingEndpoint:            deletePastMeeting,
-		GetPastMeetingParticipantsEndpoint:   getPastMeetingParticipants,
-		CreatePastMeetingParticipantEndpoint: createPastMeetingParticipant,
-		GetPastMeetingParticipantEndpoint:    getPastMeetingParticipant,
-		UpdatePastMeetingParticipantEndpoint: updatePastMeetingParticipant,
-		DeletePastMeetingParticipantEndpoint: deletePastMeetingParticipant,
-		GetPastMeetingSummariesEndpoint:      getPastMeetingSummaries,
-		GetPastMeetingSummaryEndpoint:        getPastMeetingSummary,
-		UpdatePastMeetingSummaryEndpoint:     updatePastMeetingSummary,
-		ReadyzEndpoint:                       readyz,
-		LivezEndpoint:                        livez,
+		GetMeetingsEndpoint:                       getMeetings,
+		CreateMeetingEndpoint:                     createMeeting,
+		GetMeetingBaseEndpoint:                    getMeetingBase,
+		GetMeetingSettingsEndpoint:                getMeetingSettings,
+		GetMeetingJoinURLEndpoint:                 getMeetingJoinURL,
+		UpdateMeetingBaseEndpoint:                 updateMeetingBase,
+		UpdateMeetingSettingsEndpoint:             updateMeetingSettings,
+		DeleteMeetingEndpoint:                     deleteMeeting,
+		GetMeetingRegistrantsEndpoint:             getMeetingRegistrants,
+		CreateMeetingRegistrantEndpoint:           createMeetingRegistrant,
+		GetMeetingRegistrantEndpoint:              getMeetingRegistrant,
+		UpdateMeetingRegistrantEndpoint:           updateMeetingRegistrant,
+		DeleteMeetingRegistrantEndpoint:           deleteMeetingRegistrant,
+		ResendMeetingRegistrantInvitationEndpoint: resendMeetingRegistrantInvitation,
+		ZoomWebhookEndpoint:                       zoomWebhook,
+		GetPastMeetingsEndpoint:                   getPastMeetings,
+		CreatePastMeetingEndpoint:                 createPastMeeting,
+		GetPastMeetingEndpoint:                    getPastMeeting,
+		DeletePastMeetingEndpoint:                 deletePastMeeting,
+		GetPastMeetingParticipantsEndpoint:        getPastMeetingParticipants,
+		CreatePastMeetingParticipantEndpoint:      createPastMeetingParticipant,
+		GetPastMeetingParticipantEndpoint:         getPastMeetingParticipant,
+		UpdatePastMeetingParticipantEndpoint:      updatePastMeetingParticipant,
+		DeletePastMeetingParticipantEndpoint:      deletePastMeetingParticipant,
+		GetPastMeetingSummariesEndpoint:           getPastMeetingSummaries,
+		GetPastMeetingSummaryEndpoint:             getPastMeetingSummary,
+		UpdatePastMeetingSummaryEndpoint:          updatePastMeetingSummary,
+		ReadyzEndpoint:                            readyz,
+		LivezEndpoint:                             livez,
 	}
 }
 
@@ -287,6 +289,20 @@ func (c *Client) UpdateMeetingRegistrant(ctx context.Context, p *UpdateMeetingRe
 //   - error: internal error
 func (c *Client) DeleteMeetingRegistrant(ctx context.Context, p *DeleteMeetingRegistrantPayload) (err error) {
 	_, err = c.DeleteMeetingRegistrantEndpoint(ctx, p)
+	return
+}
+
+// ResendMeetingRegistrantInvitation calls the
+// "resend-meeting-registrant-invitation" endpoint of the "Meeting Service"
+// service.
+// ResendMeetingRegistrantInvitation may return the following errors:
+//   - "NotFound" (type *NotFoundError): Meeting or registrant not found
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) ResendMeetingRegistrantInvitation(ctx context.Context, p *ResendMeetingRegistrantInvitationPayload) (err error) {
+	_, err = c.ResendMeetingRegistrantInvitationEndpoint(ctx, p)
 	return
 }
 
