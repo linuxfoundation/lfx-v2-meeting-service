@@ -69,7 +69,7 @@ spec:
             values:
               relation: writer
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -100,7 +100,7 @@ spec:
             values:
               relation: viewer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -131,7 +131,7 @@ spec:
             values:
               relation: viewer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -162,7 +162,7 @@ spec:
             values:
               relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -193,7 +193,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -224,7 +224,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -255,7 +255,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -286,7 +286,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -320,7 +320,7 @@ spec:
             values:
               relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -351,7 +351,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -382,7 +382,7 @@ spec:
             values:
               relation: auditor
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -413,7 +413,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -444,7 +444,7 @@ spec:
             values:
               relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -477,7 +477,7 @@ spec:
             values:
               relation: writer
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -534,7 +534,7 @@ spec:
             values:
               relation: viewer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -565,7 +565,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -596,7 +596,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -630,7 +630,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -661,7 +661,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -692,7 +692,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -723,7 +723,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -757,7 +757,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -788,7 +788,7 @@ spec:
             values:
               relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
@@ -819,7 +819,7 @@ spec:
             values:
               relation: auditor
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else -}}
+        {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
           (Only meant for *local development* because OpenFGA should be enabled when deployed)
