@@ -45,6 +45,8 @@ type Service interface {
 	UpdateMeetingRegistrant(context.Context, *UpdateMeetingRegistrantPayload) (res *Registrant, err error)
 	// Delete a registrant from a meeting
 	DeleteMeetingRegistrant(context.Context, *DeleteMeetingRegistrantPayload) (err error)
+	// Resend an invitation email to a meeting registrant
+	ResendMeetingRegistrantInvitation(context.Context, *ResendMeetingRegistrantInvitationPayload) (err error)
 	// Handle Zoom webhook events for meeting lifecycle, participants, and
 	// recordings.
 	ZoomWebhook(context.Context, *ZoomWebhookPayload) (res *ZoomWebhookResponse, err error)
@@ -99,7 +101,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [28]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
+var MethodNames = [29]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -1055,6 +1057,19 @@ type Registrant struct {
 	CreatedAt *string
 	// The date and time the resource was last updated
 	UpdatedAt *string
+}
+
+// ResendMeetingRegistrantInvitationPayload is the payload type of the Meeting
+// Service service resend-meeting-registrant-invitation method.
+type ResendMeetingRegistrantInvitationPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting
+	MeetingUID *string
+	// The UID of the registrant
+	UID *string
 }
 
 type ServiceUnavailableError struct {

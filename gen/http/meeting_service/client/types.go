@@ -1308,6 +1308,46 @@ type DeleteMeetingRegistrantServiceUnavailableResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// ResendMeetingRegistrantInvitationBadRequestResponseBody is the type of the
+// "Meeting Service" service "resend-meeting-registrant-invitation" endpoint
+// HTTP response body for the "BadRequest" error.
+type ResendMeetingRegistrantInvitationBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendMeetingRegistrantInvitationInternalServerErrorResponseBody is the type
+// of the "Meeting Service" service "resend-meeting-registrant-invitation"
+// endpoint HTTP response body for the "InternalServerError" error.
+type ResendMeetingRegistrantInvitationInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendMeetingRegistrantInvitationNotFoundResponseBody is the type of the
+// "Meeting Service" service "resend-meeting-registrant-invitation" endpoint
+// HTTP response body for the "NotFound" error.
+type ResendMeetingRegistrantInvitationNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendMeetingRegistrantInvitationServiceUnavailableResponseBody is the type
+// of the "Meeting Service" service "resend-meeting-registrant-invitation"
+// endpoint HTTP response body for the "ServiceUnavailable" error.
+type ResendMeetingRegistrantInvitationServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // ZoomWebhookBadRequestResponseBody is the type of the "Meeting Service"
 // service "zoom-webhook" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -3482,6 +3522,52 @@ func NewDeleteMeetingRegistrantNotFound(body *DeleteMeetingRegistrantNotFoundRes
 // NewDeleteMeetingRegistrantServiceUnavailable builds a Meeting Service
 // service delete-meeting-registrant endpoint ServiceUnavailable error.
 func NewDeleteMeetingRegistrantServiceUnavailable(body *DeleteMeetingRegistrantServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendMeetingRegistrantInvitationBadRequest builds a Meeting Service
+// service resend-meeting-registrant-invitation endpoint BadRequest error.
+func NewResendMeetingRegistrantInvitationBadRequest(body *ResendMeetingRegistrantInvitationBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendMeetingRegistrantInvitationInternalServerError builds a Meeting
+// Service service resend-meeting-registrant-invitation endpoint
+// InternalServerError error.
+func NewResendMeetingRegistrantInvitationInternalServerError(body *ResendMeetingRegistrantInvitationInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendMeetingRegistrantInvitationNotFound builds a Meeting Service
+// service resend-meeting-registrant-invitation endpoint NotFound error.
+func NewResendMeetingRegistrantInvitationNotFound(body *ResendMeetingRegistrantInvitationNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendMeetingRegistrantInvitationServiceUnavailable builds a Meeting
+// Service service resend-meeting-registrant-invitation endpoint
+// ServiceUnavailable error.
+func NewResendMeetingRegistrantInvitationServiceUnavailable(body *ResendMeetingRegistrantInvitationServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
 	v := &meetingservice.ServiceUnavailableError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -6044,6 +6130,58 @@ func ValidateDeleteMeetingRegistrantNotFoundResponseBody(body *DeleteMeetingRegi
 // validations defined on
 // delete-meeting-registrant_ServiceUnavailable_response_body
 func ValidateDeleteMeetingRegistrantServiceUnavailableResponseBody(body *DeleteMeetingRegistrantServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendMeetingRegistrantInvitationBadRequestResponseBody runs the
+// validations defined on
+// resend-meeting-registrant-invitation_BadRequest_response_body
+func ValidateResendMeetingRegistrantInvitationBadRequestResponseBody(body *ResendMeetingRegistrantInvitationBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendMeetingRegistrantInvitationInternalServerErrorResponseBody
+// runs the validations defined on
+// resend-meeting-registrant-invitation_InternalServerError_response_body
+func ValidateResendMeetingRegistrantInvitationInternalServerErrorResponseBody(body *ResendMeetingRegistrantInvitationInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendMeetingRegistrantInvitationNotFoundResponseBody runs the
+// validations defined on
+// resend-meeting-registrant-invitation_NotFound_response_body
+func ValidateResendMeetingRegistrantInvitationNotFoundResponseBody(body *ResendMeetingRegistrantInvitationNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendMeetingRegistrantInvitationServiceUnavailableResponseBody runs
+// the validations defined on
+// resend-meeting-registrant-invitation_ServiceUnavailable_response_body
+func ValidateResendMeetingRegistrantInvitationServiceUnavailableResponseBody(body *ResendMeetingRegistrantInvitationServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

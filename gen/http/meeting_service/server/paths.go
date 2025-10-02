@@ -76,6 +76,11 @@ func DeleteMeetingRegistrantMeetingServicePath(meetingUID string, uid string) st
 	return fmt.Sprintf("/meetings/%v/registrants/%v", meetingUID, uid)
 }
 
+// ResendMeetingRegistrantInvitationMeetingServicePath returns the URL path to the Meeting Service service resend-meeting-registrant-invitation HTTP endpoint.
+func ResendMeetingRegistrantInvitationMeetingServicePath(meetingUID string, uid string) string {
+	return fmt.Sprintf("/meetings/%v/registrants/%v/resend", meetingUID, uid)
+}
+
 // ZoomWebhookMeetingServicePath returns the URL path to the Meeting Service service zoom-webhook HTTP endpoint.
 func ZoomWebhookMeetingServicePath() string {
 	return "/webhooks/zoom"

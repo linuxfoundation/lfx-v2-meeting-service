@@ -19,39 +19,40 @@ import (
 
 // Server lists the Meeting Service service endpoint HTTP handlers.
 type Server struct {
-	Mounts                       []*MountPoint
-	GetMeetings                  http.Handler
-	CreateMeeting                http.Handler
-	GetMeetingBase               http.Handler
-	GetMeetingSettings           http.Handler
-	GetMeetingJoinURL            http.Handler
-	UpdateMeetingBase            http.Handler
-	UpdateMeetingSettings        http.Handler
-	DeleteMeeting                http.Handler
-	GetMeetingRegistrants        http.Handler
-	CreateMeetingRegistrant      http.Handler
-	GetMeetingRegistrant         http.Handler
-	UpdateMeetingRegistrant      http.Handler
-	DeleteMeetingRegistrant      http.Handler
-	ZoomWebhook                  http.Handler
-	GetPastMeetings              http.Handler
-	CreatePastMeeting            http.Handler
-	GetPastMeeting               http.Handler
-	DeletePastMeeting            http.Handler
-	GetPastMeetingParticipants   http.Handler
-	CreatePastMeetingParticipant http.Handler
-	GetPastMeetingParticipant    http.Handler
-	UpdatePastMeetingParticipant http.Handler
-	DeletePastMeetingParticipant http.Handler
-	GetPastMeetingSummaries      http.Handler
-	GetPastMeetingSummary        http.Handler
-	UpdatePastMeetingSummary     http.Handler
-	Readyz                       http.Handler
-	Livez                        http.Handler
-	GenHTTPOpenapiJSON           http.Handler
-	GenHTTPOpenapiYaml           http.Handler
-	GenHTTPOpenapi3JSON          http.Handler
-	GenHTTPOpenapi3Yaml          http.Handler
+	Mounts                            []*MountPoint
+	GetMeetings                       http.Handler
+	CreateMeeting                     http.Handler
+	GetMeetingBase                    http.Handler
+	GetMeetingSettings                http.Handler
+	GetMeetingJoinURL                 http.Handler
+	UpdateMeetingBase                 http.Handler
+	UpdateMeetingSettings             http.Handler
+	DeleteMeeting                     http.Handler
+	GetMeetingRegistrants             http.Handler
+	CreateMeetingRegistrant           http.Handler
+	GetMeetingRegistrant              http.Handler
+	UpdateMeetingRegistrant           http.Handler
+	DeleteMeetingRegistrant           http.Handler
+	ResendMeetingRegistrantInvitation http.Handler
+	ZoomWebhook                       http.Handler
+	GetPastMeetings                   http.Handler
+	CreatePastMeeting                 http.Handler
+	GetPastMeeting                    http.Handler
+	DeletePastMeeting                 http.Handler
+	GetPastMeetingParticipants        http.Handler
+	CreatePastMeetingParticipant      http.Handler
+	GetPastMeetingParticipant         http.Handler
+	UpdatePastMeetingParticipant      http.Handler
+	DeletePastMeetingParticipant      http.Handler
+	GetPastMeetingSummaries           http.Handler
+	GetPastMeetingSummary             http.Handler
+	UpdatePastMeetingSummary          http.Handler
+	Readyz                            http.Handler
+	Livez                             http.Handler
+	GenHTTPOpenapiJSON                http.Handler
+	GenHTTPOpenapiYaml                http.Handler
+	GenHTTPOpenapi3JSON               http.Handler
+	GenHTTPOpenapi3Yaml               http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -114,6 +115,7 @@ func New(
 			{"GetMeetingRegistrant", "GET", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"UpdateMeetingRegistrant", "PUT", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"DeleteMeetingRegistrant", "DELETE", "/meetings/{meeting_uid}/registrants/{uid}"},
+			{"ResendMeetingRegistrantInvitation", "POST", "/meetings/{meeting_uid}/registrants/{uid}/resend"},
 			{"ZoomWebhook", "POST", "/webhooks/zoom"},
 			{"GetPastMeetings", "GET", "/past_meetings"},
 			{"CreatePastMeeting", "POST", "/past_meetings"},
@@ -134,38 +136,39 @@ func New(
 			{"Serve gen/http/openapi3.json", "GET", "/_meetings/openapi3.json"},
 			{"Serve gen/http/openapi3.yaml", "GET", "/_meetings/openapi3.yaml"},
 		},
-		GetMeetings:                  NewGetMeetingsHandler(e.GetMeetings, mux, decoder, encoder, errhandler, formatter),
-		CreateMeeting:                NewCreateMeetingHandler(e.CreateMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetMeetingBase:               NewGetMeetingBaseHandler(e.GetMeetingBase, mux, decoder, encoder, errhandler, formatter),
-		GetMeetingSettings:           NewGetMeetingSettingsHandler(e.GetMeetingSettings, mux, decoder, encoder, errhandler, formatter),
-		GetMeetingJoinURL:            NewGetMeetingJoinURLHandler(e.GetMeetingJoinURL, mux, decoder, encoder, errhandler, formatter),
-		UpdateMeetingBase:            NewUpdateMeetingBaseHandler(e.UpdateMeetingBase, mux, decoder, encoder, errhandler, formatter),
-		UpdateMeetingSettings:        NewUpdateMeetingSettingsHandler(e.UpdateMeetingSettings, mux, decoder, encoder, errhandler, formatter),
-		DeleteMeeting:                NewDeleteMeetingHandler(e.DeleteMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetMeetingRegistrants:        NewGetMeetingRegistrantsHandler(e.GetMeetingRegistrants, mux, decoder, encoder, errhandler, formatter),
-		CreateMeetingRegistrant:      NewCreateMeetingRegistrantHandler(e.CreateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
-		GetMeetingRegistrant:         NewGetMeetingRegistrantHandler(e.GetMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
-		UpdateMeetingRegistrant:      NewUpdateMeetingRegistrantHandler(e.UpdateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
-		DeleteMeetingRegistrant:      NewDeleteMeetingRegistrantHandler(e.DeleteMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
-		ZoomWebhook:                  NewZoomWebhookHandler(e.ZoomWebhook, mux, decoder, encoder, errhandler, formatter),
-		GetPastMeetings:              NewGetPastMeetingsHandler(e.GetPastMeetings, mux, decoder, encoder, errhandler, formatter),
-		CreatePastMeeting:            NewCreatePastMeetingHandler(e.CreatePastMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetPastMeeting:               NewGetPastMeetingHandler(e.GetPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		DeletePastMeeting:            NewDeletePastMeetingHandler(e.DeletePastMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetPastMeetingParticipants:   NewGetPastMeetingParticipantsHandler(e.GetPastMeetingParticipants, mux, decoder, encoder, errhandler, formatter),
-		CreatePastMeetingParticipant: NewCreatePastMeetingParticipantHandler(e.CreatePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
-		GetPastMeetingParticipant:    NewGetPastMeetingParticipantHandler(e.GetPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
-		UpdatePastMeetingParticipant: NewUpdatePastMeetingParticipantHandler(e.UpdatePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
-		DeletePastMeetingParticipant: NewDeletePastMeetingParticipantHandler(e.DeletePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
-		GetPastMeetingSummaries:      NewGetPastMeetingSummariesHandler(e.GetPastMeetingSummaries, mux, decoder, encoder, errhandler, formatter),
-		GetPastMeetingSummary:        NewGetPastMeetingSummaryHandler(e.GetPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
-		UpdatePastMeetingSummary:     NewUpdatePastMeetingSummaryHandler(e.UpdatePastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
-		Readyz:                       NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
-		Livez:                        NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
-		GenHTTPOpenapiJSON:           http.FileServer(fileSystemGenHTTPOpenapiJSON),
-		GenHTTPOpenapiYaml:           http.FileServer(fileSystemGenHTTPOpenapiYaml),
-		GenHTTPOpenapi3JSON:          http.FileServer(fileSystemGenHTTPOpenapi3JSON),
-		GenHTTPOpenapi3Yaml:          http.FileServer(fileSystemGenHTTPOpenapi3Yaml),
+		GetMeetings:                       NewGetMeetingsHandler(e.GetMeetings, mux, decoder, encoder, errhandler, formatter),
+		CreateMeeting:                     NewCreateMeetingHandler(e.CreateMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingBase:                    NewGetMeetingBaseHandler(e.GetMeetingBase, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingSettings:                NewGetMeetingSettingsHandler(e.GetMeetingSettings, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingJoinURL:                 NewGetMeetingJoinURLHandler(e.GetMeetingJoinURL, mux, decoder, encoder, errhandler, formatter),
+		UpdateMeetingBase:                 NewUpdateMeetingBaseHandler(e.UpdateMeetingBase, mux, decoder, encoder, errhandler, formatter),
+		UpdateMeetingSettings:             NewUpdateMeetingSettingsHandler(e.UpdateMeetingSettings, mux, decoder, encoder, errhandler, formatter),
+		DeleteMeeting:                     NewDeleteMeetingHandler(e.DeleteMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingRegistrants:             NewGetMeetingRegistrantsHandler(e.GetMeetingRegistrants, mux, decoder, encoder, errhandler, formatter),
+		CreateMeetingRegistrant:           NewCreateMeetingRegistrantHandler(e.CreateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingRegistrant:              NewGetMeetingRegistrantHandler(e.GetMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
+		UpdateMeetingRegistrant:           NewUpdateMeetingRegistrantHandler(e.UpdateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
+		DeleteMeetingRegistrant:           NewDeleteMeetingRegistrantHandler(e.DeleteMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
+		ResendMeetingRegistrantInvitation: NewResendMeetingRegistrantInvitationHandler(e.ResendMeetingRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
+		ZoomWebhook:                       NewZoomWebhookHandler(e.ZoomWebhook, mux, decoder, encoder, errhandler, formatter),
+		GetPastMeetings:                   NewGetPastMeetingsHandler(e.GetPastMeetings, mux, decoder, encoder, errhandler, formatter),
+		CreatePastMeeting:                 NewCreatePastMeetingHandler(e.CreatePastMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetPastMeeting:                    NewGetPastMeetingHandler(e.GetPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		DeletePastMeeting:                 NewDeletePastMeetingHandler(e.DeletePastMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetPastMeetingParticipants:        NewGetPastMeetingParticipantsHandler(e.GetPastMeetingParticipants, mux, decoder, encoder, errhandler, formatter),
+		CreatePastMeetingParticipant:      NewCreatePastMeetingParticipantHandler(e.CreatePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		GetPastMeetingParticipant:         NewGetPastMeetingParticipantHandler(e.GetPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		UpdatePastMeetingParticipant:      NewUpdatePastMeetingParticipantHandler(e.UpdatePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		DeletePastMeetingParticipant:      NewDeletePastMeetingParticipantHandler(e.DeletePastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		GetPastMeetingSummaries:           NewGetPastMeetingSummariesHandler(e.GetPastMeetingSummaries, mux, decoder, encoder, errhandler, formatter),
+		GetPastMeetingSummary:             NewGetPastMeetingSummaryHandler(e.GetPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
+		UpdatePastMeetingSummary:          NewUpdatePastMeetingSummaryHandler(e.UpdatePastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
+		Readyz:                            NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
+		Livez:                             NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
+		GenHTTPOpenapiJSON:                http.FileServer(fileSystemGenHTTPOpenapiJSON),
+		GenHTTPOpenapiYaml:                http.FileServer(fileSystemGenHTTPOpenapiYaml),
+		GenHTTPOpenapi3JSON:               http.FileServer(fileSystemGenHTTPOpenapi3JSON),
+		GenHTTPOpenapi3Yaml:               http.FileServer(fileSystemGenHTTPOpenapi3Yaml),
 	}
 }
 
@@ -187,6 +190,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.GetMeetingRegistrant = m(s.GetMeetingRegistrant)
 	s.UpdateMeetingRegistrant = m(s.UpdateMeetingRegistrant)
 	s.DeleteMeetingRegistrant = m(s.DeleteMeetingRegistrant)
+	s.ResendMeetingRegistrantInvitation = m(s.ResendMeetingRegistrantInvitation)
 	s.ZoomWebhook = m(s.ZoomWebhook)
 	s.GetPastMeetings = m(s.GetPastMeetings)
 	s.CreatePastMeeting = m(s.CreatePastMeeting)
@@ -222,6 +226,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetMeetingRegistrantHandler(mux, h.GetMeetingRegistrant)
 	MountUpdateMeetingRegistrantHandler(mux, h.UpdateMeetingRegistrant)
 	MountDeleteMeetingRegistrantHandler(mux, h.DeleteMeetingRegistrant)
+	MountResendMeetingRegistrantInvitationHandler(mux, h.ResendMeetingRegistrantInvitation)
 	MountZoomWebhookHandler(mux, h.ZoomWebhook)
 	MountGetPastMeetingsHandler(mux, h.GetPastMeetings)
 	MountCreatePastMeetingHandler(mux, h.CreatePastMeeting)
@@ -899,6 +904,59 @@ func NewDeleteMeetingRegistrantHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "delete-meeting-registrant")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountResendMeetingRegistrantInvitationHandler configures the mux to serve
+// the "Meeting Service" service "resend-meeting-registrant-invitation"
+// endpoint.
+func MountResendMeetingRegistrantInvitationHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/meetings/{meeting_uid}/registrants/{uid}/resend", f)
+}
+
+// NewResendMeetingRegistrantInvitationHandler creates a HTTP handler which
+// loads the HTTP request and calls the "Meeting Service" service
+// "resend-meeting-registrant-invitation" endpoint.
+func NewResendMeetingRegistrantInvitationHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeResendMeetingRegistrantInvitationRequest(mux, decoder)
+		encodeResponse = EncodeResendMeetingRegistrantInvitationResponse(encoder)
+		encodeError    = EncodeResendMeetingRegistrantInvitationError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "resend-meeting-registrant-invitation")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

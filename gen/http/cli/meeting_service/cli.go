@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|readyz|livez)
 `
 }
 
@@ -120,6 +120,12 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingRegistrantBearerTokenFlag = meetingServiceDeleteMeetingRegistrantFlags.String("bearer-token", "", "")
 		meetingServiceDeleteMeetingRegistrantIfMatchFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("if-match", "", "")
 
+		meetingServiceResendMeetingRegistrantInvitationFlags           = flag.NewFlagSet("resend-meeting-registrant-invitation", flag.ExitOnError)
+		meetingServiceResendMeetingRegistrantInvitationMeetingUIDFlag  = meetingServiceResendMeetingRegistrantInvitationFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceResendMeetingRegistrantInvitationUIDFlag         = meetingServiceResendMeetingRegistrantInvitationFlags.String("uid", "REQUIRED", "The UID of the registrant")
+		meetingServiceResendMeetingRegistrantInvitationVersionFlag     = meetingServiceResendMeetingRegistrantInvitationFlags.String("version", "", "")
+		meetingServiceResendMeetingRegistrantInvitationBearerTokenFlag = meetingServiceResendMeetingRegistrantInvitationFlags.String("bearer-token", "", "")
+
 		meetingServiceZoomWebhookFlags             = flag.NewFlagSet("zoom-webhook", flag.ExitOnError)
 		meetingServiceZoomWebhookBodyFlag          = meetingServiceZoomWebhookFlags.String("body", "REQUIRED", "")
 		meetingServiceZoomWebhookZoomSignatureFlag = meetingServiceZoomWebhookFlags.String("zoom-signature", "REQUIRED", "")
@@ -214,6 +220,7 @@ func ParseEndpoint(
 	meetingServiceGetMeetingRegistrantFlags.Usage = meetingServiceGetMeetingRegistrantUsage
 	meetingServiceUpdateMeetingRegistrantFlags.Usage = meetingServiceUpdateMeetingRegistrantUsage
 	meetingServiceDeleteMeetingRegistrantFlags.Usage = meetingServiceDeleteMeetingRegistrantUsage
+	meetingServiceResendMeetingRegistrantInvitationFlags.Usage = meetingServiceResendMeetingRegistrantInvitationUsage
 	meetingServiceZoomWebhookFlags.Usage = meetingServiceZoomWebhookUsage
 	meetingServiceGetPastMeetingsFlags.Usage = meetingServiceGetPastMeetingsUsage
 	meetingServiceCreatePastMeetingFlags.Usage = meetingServiceCreatePastMeetingUsage
@@ -302,6 +309,9 @@ func ParseEndpoint(
 
 			case "delete-meeting-registrant":
 				epf = meetingServiceDeleteMeetingRegistrantFlags
+
+			case "resend-meeting-registrant-invitation":
+				epf = meetingServiceResendMeetingRegistrantInvitationFlags
 
 			case "zoom-webhook":
 				epf = meetingServiceZoomWebhookFlags
@@ -412,6 +422,9 @@ func ParseEndpoint(
 			case "delete-meeting-registrant":
 				endpoint = c.DeleteMeetingRegistrant()
 				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantIfMatchFlag)
+			case "resend-meeting-registrant-invitation":
+				endpoint = c.ResendMeetingRegistrantInvitation()
+				data, err = meetingservicec.BuildResendMeetingRegistrantInvitationPayload(*meetingServiceResendMeetingRegistrantInvitationMeetingUIDFlag, *meetingServiceResendMeetingRegistrantInvitationUIDFlag, *meetingServiceResendMeetingRegistrantInvitationVersionFlag, *meetingServiceResendMeetingRegistrantInvitationBearerTokenFlag)
 			case "zoom-webhook":
 				endpoint = c.ZoomWebhook()
 				data, err = meetingservicec.BuildZoomWebhookPayload(*meetingServiceZoomWebhookBodyFlag, *meetingServiceZoomWebhookZoomSignatureFlag, *meetingServiceZoomWebhookZoomTimestampFlag)
@@ -487,6 +500,7 @@ COMMAND:
     get-meeting-registrant: Get a specific registrant for a meeting by UID
     update-meeting-registrant: Update an existing registrant for a meeting
     delete-meeting-registrant: Delete a registrant from a meeting
+    resend-meeting-registrant-invitation: Resend an invitation email to a meeting registrant
     zoom-webhook: Handle Zoom webhook events for meeting lifecycle, participants, and recordings.
     get-past-meetings: Get all past meetings.
     create-past-meeting: Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.
@@ -834,6 +848,20 @@ Delete a registrant from a meeting
 
 Example:
     %[1]s meeting-service delete-meeting-registrant --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+`, os.Args[0])
+}
+
+func meetingServiceResendMeetingRegistrantInvitationUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service resend-meeting-registrant-invitation -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
+
+Resend an invitation email to a meeting registrant
+    -meeting-uid STRING: The UID of the meeting
+    -uid STRING: The UID of the registrant
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service resend-meeting-registrant-invitation --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 

@@ -531,6 +531,40 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// POST resend meeting registrant invitation endpoint
+	Method("resend-meeting-registrant-invitation", func() {
+		Description("Resend an invitation email to a meeting registrant")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			RegistrantMeetingUIDAttribute()
+			RegistrantUIDAttribute()
+		})
+
+		Error("NotFound", NotFoundError, "Meeting or registrant not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/meetings/{meeting_uid}/registrants/{uid}/resend")
+			Params(func() {
+				Param("version:v")
+				Param("meeting_uid")
+				Param("uid")
+			})
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("zoom-webhook", func() {
 		Description("Handle Zoom webhook events for meeting lifecycle, participants, and recordings.")
 

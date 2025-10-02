@@ -69,6 +69,10 @@ type Client struct {
 	// delete-meeting-registrant endpoint.
 	DeleteMeetingRegistrantDoer goahttp.Doer
 
+	// ResendMeetingRegistrantInvitation Doer is the HTTP client used to make
+	// requests to the resend-meeting-registrant-invitation endpoint.
+	ResendMeetingRegistrantInvitationDoer goahttp.Doer
+
 	// ZoomWebhook Doer is the HTTP client used to make requests to the
 	// zoom-webhook endpoint.
 	ZoomWebhookDoer goahttp.Doer
@@ -148,39 +152,40 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		GetMeetingsDoer:                  doer,
-		CreateMeetingDoer:                doer,
-		GetMeetingBaseDoer:               doer,
-		GetMeetingSettingsDoer:           doer,
-		GetMeetingJoinURLDoer:            doer,
-		UpdateMeetingBaseDoer:            doer,
-		UpdateMeetingSettingsDoer:        doer,
-		DeleteMeetingDoer:                doer,
-		GetMeetingRegistrantsDoer:        doer,
-		CreateMeetingRegistrantDoer:      doer,
-		GetMeetingRegistrantDoer:         doer,
-		UpdateMeetingRegistrantDoer:      doer,
-		DeleteMeetingRegistrantDoer:      doer,
-		ZoomWebhookDoer:                  doer,
-		GetPastMeetingsDoer:              doer,
-		CreatePastMeetingDoer:            doer,
-		GetPastMeetingDoer:               doer,
-		DeletePastMeetingDoer:            doer,
-		GetPastMeetingParticipantsDoer:   doer,
-		CreatePastMeetingParticipantDoer: doer,
-		GetPastMeetingParticipantDoer:    doer,
-		UpdatePastMeetingParticipantDoer: doer,
-		DeletePastMeetingParticipantDoer: doer,
-		GetPastMeetingSummariesDoer:      doer,
-		GetPastMeetingSummaryDoer:        doer,
-		UpdatePastMeetingSummaryDoer:     doer,
-		ReadyzDoer:                       doer,
-		LivezDoer:                        doer,
-		RestoreResponseBody:              restoreBody,
-		scheme:                           scheme,
-		host:                             host,
-		decoder:                          dec,
-		encoder:                          enc,
+		GetMeetingsDoer:                       doer,
+		CreateMeetingDoer:                     doer,
+		GetMeetingBaseDoer:                    doer,
+		GetMeetingSettingsDoer:                doer,
+		GetMeetingJoinURLDoer:                 doer,
+		UpdateMeetingBaseDoer:                 doer,
+		UpdateMeetingSettingsDoer:             doer,
+		DeleteMeetingDoer:                     doer,
+		GetMeetingRegistrantsDoer:             doer,
+		CreateMeetingRegistrantDoer:           doer,
+		GetMeetingRegistrantDoer:              doer,
+		UpdateMeetingRegistrantDoer:           doer,
+		DeleteMeetingRegistrantDoer:           doer,
+		ResendMeetingRegistrantInvitationDoer: doer,
+		ZoomWebhookDoer:                       doer,
+		GetPastMeetingsDoer:                   doer,
+		CreatePastMeetingDoer:                 doer,
+		GetPastMeetingDoer:                    doer,
+		DeletePastMeetingDoer:                 doer,
+		GetPastMeetingParticipantsDoer:        doer,
+		CreatePastMeetingParticipantDoer:      doer,
+		GetPastMeetingParticipantDoer:         doer,
+		UpdatePastMeetingParticipantDoer:      doer,
+		DeletePastMeetingParticipantDoer:      doer,
+		GetPastMeetingSummariesDoer:           doer,
+		GetPastMeetingSummaryDoer:             doer,
+		UpdatePastMeetingSummaryDoer:          doer,
+		ReadyzDoer:                            doer,
+		LivezDoer:                             doer,
+		RestoreResponseBody:                   restoreBody,
+		scheme:                                scheme,
+		host:                                  host,
+		decoder:                               dec,
+		encoder:                               enc,
 	}
 }
 
@@ -491,6 +496,31 @@ func (c *Client) DeleteMeetingRegistrant() goa.Endpoint {
 		resp, err := c.DeleteMeetingRegistrantDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-meeting-registrant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// ResendMeetingRegistrantInvitation returns an endpoint that makes HTTP
+// requests to the Meeting Service service resend-meeting-registrant-invitation
+// server.
+func (c *Client) ResendMeetingRegistrantInvitation() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeResendMeetingRegistrantInvitationRequest(c.encoder)
+		decodeResponse = DecodeResendMeetingRegistrantInvitationResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildResendMeetingRegistrantInvitationRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.ResendMeetingRegistrantInvitationDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "resend-meeting-registrant-invitation", err)
 		}
 		return decodeResponse(resp)
 	}
