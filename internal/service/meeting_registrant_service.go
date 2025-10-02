@@ -576,7 +576,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 	// Try to get the project logo as a PNG image.
 	// If there is a project logo and it is in .svg format, then use the .png format of the logo image instead.
 	if projectLogo != "" && strings.HasSuffix(projectLogo, ".svg") {
-		projectLogoUrl := fmt.Sprintf("https://lfx-one-project-logos-png-%s.s3.us-west-2.amazonaws.com/%s.png", s.config.LFXEnvironment, meetingDB.ProjectUID)
+		projectLogoUrl := fmt.Sprintf("%s/%s.png", s.config.ProjectLogoBaseURL, meetingDB.ProjectUID)
 
 		// Check that the project logo is reachable
 		resp, err := http.Get(projectLogoUrl)

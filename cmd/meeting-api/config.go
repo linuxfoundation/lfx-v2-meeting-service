@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"log/slog"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -25,6 +26,7 @@ type environment struct {
 	Port               string
 	SkipEtagValidation bool
 	LFXEnvironment     string
+	ProjectLogoBaseURL string
 	EmailConfig        emailConfig
 }
 
@@ -95,11 +97,26 @@ func parseEnv() environment {
 		lfxEnvironment = "prod" // Default to production
 	}
 
+	projectLogoBaseURL := os.Getenv("PROJECT_LOGO_BASE_URL")
+	if projectLogoBaseURL != "" {
+		// Validate that the provided URL is valid
+		if _, err := url.Parse(projectLogoBaseURL); err != nil {
+			slog.With(logging.ErrKey, err, "url", projectLogoBaseURL).Error("invalid PROJECT_LOGO_BASE_URL provided, using default")
+			projectLogoBaseURL = ""
+		}
+	}
+
+	if projectLogoBaseURL == "" {
+		// Default to the existing S3 bucket pattern
+		projectLogoBaseURL = "https://lfx-one-project-logos-png-" + lfxEnvironment + ".s3.us-west-2.amazonaws.com"
+	}
+
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,
 		SkipEtagValidation: skipEtagValidation,
 		LFXEnvironment:     lfxEnvironment,
+		ProjectLogoBaseURL: projectLogoBaseURL,
 		EmailConfig:        parseEmailConfig(),
 	}
 }

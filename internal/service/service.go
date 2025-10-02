@@ -13,4 +13,6 @@ type ServiceConfig struct {
 	SkipEtagValidation bool
 	// LFXEnvironment is the environment name for LFX app domain generation.
 	LFXEnvironment string
+	// ProjectLogoBaseURL is the base URL for project logo PNG images.
+	ProjectLogoBaseURL string
 }

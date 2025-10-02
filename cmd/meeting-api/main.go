@@ -71,6 +71,7 @@ func main() {
 	serviceConfig := service.ServiceConfig{
 		SkipEtagValidation: env.SkipEtagValidation,
 		LFXEnvironment:     env.LFXEnvironment,
+		ProjectLogoBaseURL: env.ProjectLogoBaseURL,
 	}
 	messageBuilder := messaging.NewMessageBuilder(natsConn)
 	authService := service.NewAuthService(jwtAuth)
