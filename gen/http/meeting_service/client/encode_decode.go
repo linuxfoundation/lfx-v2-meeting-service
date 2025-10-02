@@ -2035,6 +2035,155 @@ func DecodeDeleteMeetingRegistrantResponse(decoder func(*http.Response) goahttp.
 	}
 }
 
+// BuildResendMeetingRegistrantInvitationRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "resend-meeting-registrant-invitation" endpoint
+func (c *Client) BuildResendMeetingRegistrantInvitationRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingUID string
+		uid        string
+	)
+	{
+		p, ok := v.(*meetingservice.ResendMeetingRegistrantInvitationPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "resend-meeting-registrant-invitation", "*meetingservice.ResendMeetingRegistrantInvitationPayload", v)
+		}
+		if p.MeetingUID != nil {
+			meetingUID = *p.MeetingUID
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ResendMeetingRegistrantInvitationMeetingServicePath(meetingUID, uid)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "resend-meeting-registrant-invitation", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeResendMeetingRegistrantInvitationRequest returns an encoder for
+// requests sent to the Meeting Service resend-meeting-registrant-invitation
+// server.
+func EncodeResendMeetingRegistrantInvitationRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.ResendMeetingRegistrantInvitationPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "resend-meeting-registrant-invitation", "*meetingservice.ResendMeetingRegistrantInvitationPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeResendMeetingRegistrantInvitationResponse returns a decoder for
+// responses returned by the Meeting Service
+// resend-meeting-registrant-invitation endpoint. restoreBody controls whether
+// the response body should be restored after having been read.
+// DecodeResendMeetingRegistrantInvitationResponse may return the following
+// errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeResendMeetingRegistrantInvitationResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body ResendMeetingRegistrantInvitationBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			err = ValidateResendMeetingRegistrantInvitationBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			return nil, NewResendMeetingRegistrantInvitationBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body ResendMeetingRegistrantInvitationInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			err = ValidateResendMeetingRegistrantInvitationInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			return nil, NewResendMeetingRegistrantInvitationInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body ResendMeetingRegistrantInvitationNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			err = ValidateResendMeetingRegistrantInvitationNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			return nil, NewResendMeetingRegistrantInvitationNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body ResendMeetingRegistrantInvitationServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			err = ValidateResendMeetingRegistrantInvitationServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "resend-meeting-registrant-invitation", err)
+			}
+			return nil, NewResendMeetingRegistrantInvitationServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "resend-meeting-registrant-invitation", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildZoomWebhookRequest instantiates a HTTP request object with method and
 // path set to call the "Meeting Service" service "zoom-webhook" endpoint
 func (c *Client) BuildZoomWebhookRequest(ctx context.Context, v any) (*http.Request, error) {
