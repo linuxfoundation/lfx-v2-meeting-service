@@ -95,26 +95,6 @@ func (s *PastMeetingRecordingService) CreateRecording(
 	return recording, nil
 }
 
-// GetRecording retrieves a recording by UID.
-func (s *PastMeetingRecordingService) GetRecording(ctx context.Context, recordingUID string) (*models.PastMeetingRecording, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized")
-	}
-
-	recording, err := s.pastMeetingRecordingRepository.Get(ctx, recordingUID)
-	if err != nil {
-		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
-			slog.DebugContext(ctx, "recording not found", "recording_uid", recordingUID)
-		} else {
-			slog.ErrorContext(ctx, "error getting recording", logging.ErrKey, err, "recording_uid", recordingUID)
-		}
-		return nil, err
-	}
-
-	return recording, nil
-}
-
 // GetRecordingByPastMeetingUID retrieves a recording by past meeting UID.
 func (s *PastMeetingRecordingService) GetRecordingByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingRecording, error) {
 	if !s.ServiceReady() {

@@ -31,6 +31,7 @@ type ZoomWebhookHandler struct {
 	pastMeetingService            *service.PastMeetingService
 	pastMeetingParticipantService *service.PastMeetingParticipantService
 	pastMeetingRecordingService   *service.PastMeetingRecordingService
+	pastMeetingTranscriptService  *service.PastMeetingTranscriptService
 	pastMeetingSummaryService     *service.PastMeetingSummaryService
 	occurrenceService             domain.OccurrenceService
 	WebhookValidator              domain.WebhookValidator
@@ -42,6 +43,7 @@ func NewZoomWebhookHandler(
 	pastMeetingService *service.PastMeetingService,
 	pastMeetingParticipantService *service.PastMeetingParticipantService,
 	pastMeetingRecordingService *service.PastMeetingRecordingService,
+	pastMeetingTranscriptService *service.PastMeetingTranscriptService,
 	pastMeetingSummaryService *service.PastMeetingSummaryService,
 	occurrenceService domain.OccurrenceService,
 	webhookValidator domain.WebhookValidator,
@@ -52,6 +54,7 @@ func NewZoomWebhookHandler(
 		pastMeetingService:            pastMeetingService,
 		pastMeetingParticipantService: pastMeetingParticipantService,
 		pastMeetingRecordingService:   pastMeetingRecordingService,
+		pastMeetingTranscriptService:  pastMeetingTranscriptService,
 		pastMeetingSummaryService:     pastMeetingSummaryService,
 		occurrenceService:             occurrenceService,
 		WebhookValidator:              webhookValidator,
@@ -860,8 +863,14 @@ func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID strin
 	recording.AddRecordingSession(session)
 
 	// Convert Zoom recording files to domain model format
+	// Exclude transcript files as they are now handled by the transcript service
 	var recordingFiles []models.RecordingFileData
 	for _, zoomFile := range payload.Object.RecordingFiles {
+		// Skip transcript-related files - these are handled by the transcript service
+		if zoomFile.FileType == "TRANSCRIPT" || zoomFile.FileType == "TIMELINE" {
+			continue
+		}
+
 		recordingFiles = append(recordingFiles, models.RecordingFileData{
 			ID:                zoomFile.ID,
 			PlatformMeetingID: zoomFile.MeetingID,
@@ -881,42 +890,46 @@ func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID strin
 	return recording
 }
 
-// createRecordingFromZoomTranscriptPayload converts a Zoom transcript completed payload to a domain model.
-func (s *ZoomWebhookHandler) createRecordingFromZoomTranscriptPayload(pastMeetingUID string, payload models.ZoomTranscriptCompletedPayload) *models.PastMeetingRecording {
-	recording := &models.PastMeetingRecording{
+
+// createTranscriptFromZoomPayload converts a Zoom transcript completed payload to a transcript domain model.
+func (s *ZoomWebhookHandler) createTranscriptFromZoomPayload(pastMeetingUID string, payload models.ZoomTranscriptCompletedPayload) *models.PastMeetingTranscript {
+	transcript := &models.PastMeetingTranscript{
 		PastMeetingUID:    pastMeetingUID,
 		Platform:          models.PlatformZoom,
 		PlatformMeetingID: strconv.FormatInt(payload.Object.ID, 10),
 	}
 
-	session := models.RecordingSession{
+	session := models.TranscriptSession{
 		UUID:      payload.Object.UUID,
 		ShareURL:  payload.Object.ShareURL,
 		TotalSize: payload.Object.TotalSize,
 		StartTime: payload.Object.StartTime,
 	}
-	recording.AddRecordingSession(session)
+	transcript.Sessions = append(transcript.Sessions, session)
 
-	// Convert Zoom transcript files to domain model format
-	var recordingFiles []models.RecordingFileData
+	// Convert Zoom transcript files to domain model format - only transcript files
+	var transcriptFiles []models.TranscriptFileData
 	for _, zoomFile := range payload.Object.RecordingFiles {
-		recordingFiles = append(recordingFiles, models.RecordingFileData{
-			ID:                zoomFile.ID,
-			PlatformMeetingID: zoomFile.MeetingID,
-			RecordingStart:    zoomFile.RecordingStart,
-			RecordingEnd:      zoomFile.RecordingEnd,
-			FileType:          zoomFile.FileType,
-			FileSize:          zoomFile.FileSize,
-			PlayURL:           zoomFile.PlayURL,
-			DownloadURL:       zoomFile.DownloadURL,
-			Status:            zoomFile.Status,
-			RecordingType:     zoomFile.RecordingType,
-		})
+		// Only process transcript-related files
+		if zoomFile.FileType == "TRANSCRIPT" || zoomFile.FileType == "TIMELINE" {
+			transcriptFiles = append(transcriptFiles, models.TranscriptFileData{
+				ID:                zoomFile.ID,
+				PlatformMeetingID: zoomFile.MeetingID,
+				RecordingStart:    zoomFile.RecordingStart,
+				RecordingEnd:      zoomFile.RecordingEnd,
+				FileType:          zoomFile.FileType,
+				FileSize:          zoomFile.FileSize,
+				PlayURL:           zoomFile.PlayURL,
+				DownloadURL:       zoomFile.DownloadURL,
+				Status:            zoomFile.Status,
+				RecordingType:     zoomFile.RecordingType,
+			})
+		}
 	}
 
-	recording.AddRecordingFiles(recordingFiles)
+	transcript.TranscriptFiles = transcriptFiles
 
-	return recording
+	return transcript
 }
 
 // handleTranscriptCompletedEvent processes recording.transcript_completed events
@@ -954,52 +967,52 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 		return fmt.Errorf("failed to find past meeting: %w", err)
 	}
 
-	// Check if a recording already exists for this past meeting
-	existingRecording, err := s.pastMeetingRecordingService.GetRecordingByPastMeetingUID(ctx, pastMeeting.UID)
+	// Check if a transcript already exists for this past meeting
+	existingTranscript, err := s.pastMeetingTranscriptService.GetTranscriptByPastMeetingUID(ctx, pastMeeting.UID)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
-		slog.ErrorContext(ctx, "error checking for existing recording", logging.ErrKey, err,
+		slog.ErrorContext(ctx, "error checking for existing transcript", logging.ErrKey, err,
 			"past_meeting_uid", pastMeeting.UID,
 			"zoom_meeting_id", payload.Object.ID,
 		)
-		return fmt.Errorf("failed to check for existing recording: %w", err)
+		return fmt.Errorf("failed to check for existing transcript: %w", err)
 	}
 
 	// Create domain model from Zoom transcript payload
-	recordingFromPayload := s.createRecordingFromZoomTranscriptPayload(pastMeeting.UID, *payload)
+	transcriptFromPayload := s.createTranscriptFromZoomPayload(pastMeeting.UID, *payload)
 
-	var recording *models.PastMeetingRecording
-	if existingRecording != nil {
-		recording, err = s.pastMeetingRecordingService.UpdateRecording(ctx, existingRecording.UID, recordingFromPayload)
+	var transcript *models.PastMeetingTranscript
+	if existingTranscript != nil {
+		transcript, err = s.pastMeetingTranscriptService.UpdateTranscript(ctx, existingTranscript.UID, transcriptFromPayload)
 		if err != nil {
-			slog.ErrorContext(ctx, "error updating recording with transcript", logging.ErrKey, err,
-				"recording_uid", existingRecording.UID,
+			slog.ErrorContext(ctx, "error updating transcript", logging.ErrKey, err,
+				"transcript_uid", existingTranscript.UID,
 				"past_meeting_uid", pastMeeting.UID,
 				"zoom_meeting_id", payload.Object.ID,
 			)
-			return fmt.Errorf("failed to update recording: %w", err)
+			return fmt.Errorf("failed to update transcript: %w", err)
 		}
-		slog.InfoContext(ctx, "successfully updated recording with transcript files",
-			"recording_uid", recording.UID,
+		slog.InfoContext(ctx, "successfully updated transcript with files",
+			"transcript_uid", transcript.UID,
 			"past_meeting_uid", pastMeeting.UID,
 			"zoom_meeting_id", payload.Object.ID,
-			"total_files", len(recording.RecordingFiles),
-			"total_size", recording.TotalSize,
+			"total_files", len(transcript.TranscriptFiles),
+			"total_size", transcript.TotalSize,
 		)
 	} else {
-		recording, err = s.pastMeetingRecordingService.CreateRecording(ctx, recordingFromPayload)
+		transcript, err = s.pastMeetingTranscriptService.CreateTranscript(ctx, transcriptFromPayload)
 		if err != nil {
-			slog.ErrorContext(ctx, "error creating recording with transcript", logging.ErrKey, err,
+			slog.ErrorContext(ctx, "error creating transcript", logging.ErrKey, err,
 				"past_meeting_uid", pastMeeting.UID,
 				"zoom_meeting_id", payload.Object.ID,
 			)
-			return fmt.Errorf("failed to create recording: %w", err)
+			return fmt.Errorf("failed to create transcript: %w", err)
 		}
-		slog.InfoContext(ctx, "successfully created recording with transcript files",
-			"recording_uid", recording.UID,
+		slog.InfoContext(ctx, "successfully created transcript with files",
+			"transcript_uid", transcript.UID,
 			"past_meeting_uid", pastMeeting.UID,
 			"zoom_meeting_id", payload.Object.ID,
-			"total_files", len(recording.RecordingFiles),
-			"total_size", recording.TotalSize,
+			"total_files", len(transcript.TranscriptFiles),
+			"total_size", transcript.TotalSize,
 		)
 	}
 

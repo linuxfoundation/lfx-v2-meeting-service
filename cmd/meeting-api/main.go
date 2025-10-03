@@ -109,6 +109,11 @@ func main() {
 		messageBuilder,
 		serviceConfig,
 	)
+	pastMeetingTranscriptService := service.NewPastMeetingTranscriptService(
+		repos.PastMeetingTranscript,
+		messageBuilder,
+		serviceConfig,
+	)
 	pastMeetingSummaryService := service.NewPastMeetingSummaryService(
 		repos.PastMeetingSummary,
 		repos.PastMeeting,
@@ -143,6 +148,7 @@ func main() {
 		pastMeetingService,
 		pastMeetingParticipantService,
 		pastMeetingRecordingService,
+		pastMeetingTranscriptService,
 		pastMeetingSummaryService,
 		occurrenceService,
 		platformConfigs.Zoom.Validator,

@@ -21,6 +21,7 @@ const (
 	KeyPrefixPastMeeting = "past-meeting"
 	KeyPrefixParticipant = "participant"
 	KeyPrefixRecording   = "recording"
+	KeyPrefixTranscript  = "transcript"
 	KeyPrefixSummary     = "summary"
 
 	// Index prefixes
