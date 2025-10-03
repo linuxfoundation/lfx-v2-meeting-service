@@ -560,6 +560,12 @@ func TestPastMeetingParticipantService_UpdatePastMeetingParticipant(t *testing.T
 			},
 			revision: 42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Get past meeting for artifact visibility
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
+
 				// Get existing participant
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(&models.PastMeetingParticipant{
 					UID:            "participant-123",
@@ -612,10 +618,16 @@ func TestPastMeetingParticipantService_UpdatePastMeetingParticipant(t *testing.T
 		{
 			name: "participant not found",
 			participant: &models.PastMeetingParticipant{
-				UID: "participant-123",
+				UID:            "participant-123",
+				PastMeetingUID: "past-meeting-123",
 			},
 			revision: 42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Mock past meeting get call (which happens before participant check)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 			},
 			wantErr:         true,
@@ -630,6 +642,11 @@ func TestPastMeetingParticipantService_UpdatePastMeetingParticipant(t *testing.T
 			},
 			revision: 42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// Mock past meeting get call (which happens before participant check)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(&models.PastMeetingParticipant{
 					UID:            "participant-123",
 					PastMeetingUID: "past-meeting-123",
@@ -694,7 +711,11 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 			participantUID: "participant-123",
 			revision:       42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
+				// Mock past meeting get call (which happens before participant check)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(&models.PastMeetingParticipant{
 					UID:            "participant-123",
 					PastMeetingUID: "past-meeting-123",
@@ -735,7 +756,7 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 			participantUID: "participant-123",
 			revision:       42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(false, nil)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(nil, domain.NewNotFoundError("past meeting not found"))
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeNotFound,
@@ -746,7 +767,10 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 			participantUID: "participant-123",
 			revision:       42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(nil, domain.NewNotFoundError("past meeting participant not found"))
 			},
 			wantErr:         true,
@@ -758,7 +782,10 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 			participantUID: "participant-123",
 			revision:       42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(&models.PastMeetingParticipant{
 					UID:            "participant-123",
 					PastMeetingUID: "different-past-meeting",
@@ -773,7 +800,10 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 			participantUID: "participant-123",
 			revision:       42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(&models.PastMeetingParticipant{
 					UID:            "participant-123",
 					PastMeetingUID: "past-meeting-123",
@@ -789,7 +819,10 @@ func TestPastMeetingParticipantService_DeletePastMeetingParticipant(t *testing.T
 			participantUID: "participant-123",
 			revision:       42,
 			setupMocks: func(mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockParticipantRepo *mocks.MockPastMeetingParticipantRepository, mockBuilder *mocks.MockMessageBuilder) {
-				mockPastMeetingRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
+				mockPastMeetingRepo.On("Get", mock.Anything, "past-meeting-123").Return(&models.PastMeeting{
+					UID:                "past-meeting-123",
+					ArtifactVisibility: "meeting_participants",
+				}, nil)
 				mockParticipantRepo.On("Get", mock.Anything, "participant-123").Return(&models.PastMeetingParticipant{
 					UID:            "participant-123",
 					PastMeetingUID: "past-meeting-123",

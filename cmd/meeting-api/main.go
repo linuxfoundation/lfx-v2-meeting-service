@@ -106,17 +106,22 @@ func main() {
 	)
 	pastMeetingRecordingService := service.NewPastMeetingRecordingService(
 		repos.PastMeetingRecording,
+		repos.PastMeeting,
+		repos.PastMeetingParticipant,
 		messageBuilder,
 		serviceConfig,
 	)
 	pastMeetingTranscriptService := service.NewPastMeetingTranscriptService(
 		repos.PastMeetingTranscript,
+		repos.PastMeeting,
+		repos.PastMeetingParticipant,
 		messageBuilder,
 		serviceConfig,
 	)
 	pastMeetingSummaryService := service.NewPastMeetingSummaryService(
 		repos.PastMeetingSummary,
 		repos.PastMeeting,
+		repos.PastMeetingParticipant,
 		repos.Registrant,
 		repos.Meeting,
 		emailService,

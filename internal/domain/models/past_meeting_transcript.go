@@ -11,16 +11,16 @@ import (
 // PastMeetingTranscript represents a transcript associated with a past meeting occurrence.
 // This model stores metadata about meeting transcripts and their associated files.
 type PastMeetingTranscript struct {
-	UID               string                `json:"uid"`
-	PastMeetingUID    string                `json:"past_meeting_uid"`
-	Platform          string                `json:"platform"`            // Platform name (e.g., "Zoom", "Teams", etc.)
-	PlatformMeetingID string                `json:"platform_meeting_id"` // Platform-specific meeting ID
-	TotalSize         int64                 `json:"total_size"`          // Total size of all transcript files
-	TranscriptCount   int                   `json:"transcript_count"`    // Number of transcript files
-	TranscriptFiles   []TranscriptFileData  `json:"transcript_files"`    // Array of transcript files
-	Sessions          []TranscriptSession   `json:"sessions"`            // Array of transcript sessions
-	CreatedAt         time.Time             `json:"created_at"`
-	UpdatedAt         time.Time             `json:"updated_at"`
+	UID               string               `json:"uid"`
+	PastMeetingUID    string               `json:"past_meeting_uid"`
+	Platform          string               `json:"platform"`            // Platform name (e.g., "Zoom", "Teams", etc.)
+	PlatformMeetingID string               `json:"platform_meeting_id"` // Platform-specific meeting ID
+	TotalSize         int64                `json:"total_size"`          // Total size of all transcript files
+	TranscriptCount   int                  `json:"transcript_count"`    // Number of transcript files
+	TranscriptFiles   []TranscriptFileData `json:"transcript_files"`    // Array of transcript files
+	Sessions          []TranscriptSession  `json:"sessions"`            // Array of transcript sessions
+	CreatedAt         time.Time            `json:"created_at"`
+	UpdatedAt         time.Time            `json:"updated_at"`
 }
 
 // TranscriptSession represents a single meeting session for a transcript.

@@ -12,31 +12,41 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
 // PastMeetingTranscriptService provides business logic for past meeting transcripts
 type PastMeetingTranscriptService struct {
-	pastMeetingTranscriptRepository domain.PastMeetingTranscriptRepository
-	messageBuilder                  domain.MessageBuilder
-	config                          ServiceConfig
+	pastMeetingTranscriptRepository  domain.PastMeetingTranscriptRepository
+	pastMeetingRepository            domain.PastMeetingRepository
+	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository
+	messageBuilder                   domain.MessageBuilder
+	config                           ServiceConfig
 }
 
 // NewPastMeetingTranscriptService creates a new PastMeetingTranscriptService
 func NewPastMeetingTranscriptService(
 	pastMeetingTranscriptRepository domain.PastMeetingTranscriptRepository,
+	pastMeetingRepository domain.PastMeetingRepository,
+	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository,
 	messageBuilder domain.MessageBuilder,
 	serviceConfig ServiceConfig,
 ) *PastMeetingTranscriptService {
 	return &PastMeetingTranscriptService{
-		pastMeetingTranscriptRepository: pastMeetingTranscriptRepository,
-		messageBuilder:                  messageBuilder,
-		config:                          serviceConfig,
+		pastMeetingTranscriptRepository:  pastMeetingTranscriptRepository,
+		pastMeetingRepository:            pastMeetingRepository,
+		pastMeetingParticipantRepository: pastMeetingParticipantRepository,
+		messageBuilder:                   messageBuilder,
+		config:                           serviceConfig,
 	}
 }
 
 // ServiceReady checks if the service is ready to serve requests
 func (s *PastMeetingTranscriptService) ServiceReady() bool {
-	return s.pastMeetingTranscriptRepository != nil && s.messageBuilder != nil
+	return s.pastMeetingTranscriptRepository != nil &&
+		s.pastMeetingRepository != nil &&
+		s.pastMeetingParticipantRepository != nil &&
+		s.messageBuilder != nil
 }
 
 // CreateTranscript creates a new past meeting transcript
@@ -57,21 +67,54 @@ func (s *PastMeetingTranscriptService) CreateTranscript(ctx context.Context, tra
 		transcript.TotalSize += file.FileSize
 	}
 
-	err := s.pastMeetingTranscriptRepository.Create(ctx, transcript)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to create transcript", logging.ErrKey, err,
-			"transcript_uid", transcript.UID,
-			"past_meeting_uid", transcript.PastMeetingUID,
-		)
-		return nil, err
+	// err := s.pastMeetingTranscriptRepository.Create(ctx, transcript)
+	// if err != nil {
+	// 	slog.ErrorContext(ctx, "failed to create transcript", logging.ErrKey, err,
+	// 		"transcript_uid", transcript.UID,
+	// 		"past_meeting_uid", transcript.PastMeetingUID,
+	// 	)
+	// 	return nil, err
+	// }
+
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.messageBuilder.SendIndexPastMeetingTranscript(ctx, models.ActionCreated, *transcript)
+		},
+		func() error {
+			// Get past meeting to retrieve artifact visibility
+			pastMeeting, err := s.pastMeetingRepository.Get(ctx, transcript.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Get participants for the past meeting
+			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, transcript.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Convert to simplified access participants
+			participants := make([]models.AccessParticipant, len(participantPointers))
+			for i, p := range participantPointers {
+				participants[i] = models.AccessParticipant{
+					Username: p.Username,
+					Host:     p.Host,
+				}
+			}
+
+			return s.messageBuilder.SendUpdateAccessPastMeetingTranscript(ctx, models.PastMeetingTranscriptAccessMessage{
+				UID:                transcript.UID,
+				PastMeetingUID:     transcript.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Participants:       participants,
+			})
+		},
 	}
 
-	// Publish creation message
-	err = s.messageBuilder.SendIndexPastMeetingTranscript(ctx, models.ActionCreated, *transcript)
-	if err != nil {
-		slog.WarnContext(ctx, "failed to publish transcript creation message", logging.ErrKey, err,
-			"transcript_uid", transcript.UID,
-		)
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
 		// Don't fail the operation if messaging fails
 	}
 
@@ -141,12 +184,45 @@ func (s *PastMeetingTranscriptService) UpdateTranscript(ctx context.Context, tra
 		return nil, err
 	}
 
-	// Publish update message
-	err = s.messageBuilder.SendIndexPastMeetingTranscript(ctx, models.ActionUpdated, *existingTranscript)
-	if err != nil {
-		slog.WarnContext(ctx, "failed to publish transcript update message", logging.ErrKey, err,
-			"transcript_uid", transcriptUID,
-		)
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.messageBuilder.SendIndexPastMeetingTranscript(ctx, models.ActionUpdated, *existingTranscript)
+		},
+		func() error {
+			// Get past meeting to retrieve artifact visibility
+			pastMeeting, err := s.pastMeetingRepository.Get(ctx, existingTranscript.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Get participants for the past meeting
+			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, existingTranscript.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Convert to simplified access participants
+			participants := make([]models.AccessParticipant, len(participantPointers))
+			for i, p := range participantPointers {
+				participants[i] = models.AccessParticipant{
+					Username: p.Username,
+					Host:     p.Host,
+				}
+			}
+
+			return s.messageBuilder.SendUpdateAccessPastMeetingTranscript(ctx, models.PastMeetingTranscriptAccessMessage{
+				UID:                existingTranscript.UID,
+				PastMeetingUID:     existingTranscript.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Participants:       participants,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
 		// Don't fail the operation if messaging fails
 	}
 

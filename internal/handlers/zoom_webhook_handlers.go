@@ -890,7 +890,6 @@ func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID strin
 	return recording
 }
 
-
 // createTranscriptFromZoomPayload converts a Zoom transcript completed payload to a transcript domain model.
 func (s *ZoomWebhookHandler) createTranscriptFromZoomPayload(pastMeetingUID string, payload models.ZoomTranscriptCompletedPayload) *models.PastMeetingTranscript {
 	transcript := &models.PastMeetingTranscript{

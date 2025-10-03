@@ -94,6 +94,5 @@ func (r *NatsPastMeetingTranscriptRepository) ListByPastMeeting(ctx context.Cont
 // ListAll retrieves all past meeting transcripts
 func (r *NatsPastMeetingTranscriptRepository) ListAll(ctx context.Context) ([]*models.PastMeetingTranscript, error) {
 	// List all entities using the base repository functionality
-	return r.NatsBaseRepository.ListEntities(ctx, "")
+	return r.ListEntities(ctx, "")
 }
-
