@@ -171,12 +171,13 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 		},
 		func() error {
 			return s.messageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
-				UID:            participant.UID,
-				PastMeetingUID: participant.PastMeetingUID,
-				Username:       participant.Username,
-				Host:           participant.Host,
-				IsInvited:      participant.IsInvited,
-				IsAttended:     participant.IsAttended,
+				UID:                participant.UID,
+				PastMeetingUID:     participant.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Username:           participant.Username,
+				Host:               participant.Host,
+				IsInvited:          participant.IsInvited,
+				IsAttended:         participant.IsAttended,
 			})
 		},
 	}
@@ -293,6 +294,13 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	ctx = logging.AppendCtx(ctx, slog.String("participant_uid", participant.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
+	// Get the past meeting to populate the ArtifactVisibility for the access message
+	pastMeeting, err := s.pastMeetingRepository.Get(ctx, participant.PastMeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
+		return nil, err
+	}
+
 	// Check if the participant exists and get existing data
 	existingParticipant, err := s.pastMeetingParticipantRepository.Get(ctx, participant.UID)
 	if err != nil {
@@ -328,12 +336,13 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 		},
 		func() error {
 			return s.messageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
-				UID:            participant.UID,
-				PastMeetingUID: participant.PastMeetingUID,
-				Username:       participant.Username,
-				Host:           participant.Host,
-				IsInvited:      participant.IsInvited,
-				IsAttended:     participant.IsAttended,
+				UID:                participant.UID,
+				PastMeetingUID:     participant.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Username:           participant.Username,
+				Host:               participant.Host,
+				IsInvited:          participant.IsInvited,
+				IsAttended:         participant.IsAttended,
 			})
 		},
 	}
@@ -372,15 +381,11 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	ctx = logging.AppendCtx(ctx, slog.String("participant_uid", participantUID))
 	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
 
-	// Check if the past meeting exists
-	exists, err := s.pastMeetingRepository.Exists(ctx, pastMeetingUID)
+	// Get the past meeting to populate the ArtifactVisibility for the access message
+	pastMeeting, err := s.pastMeetingRepository.Get(ctx, pastMeetingUID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "error getting past meeting", logging.ErrKey, err)
 		return err
-	}
-	if !exists {
-		slog.WarnContext(ctx, "past meeting not found")
-		return domain.NewNotFoundError("past meeting not found")
 	}
 
 	// Check if the participant exists and belongs to the specified past meeting
@@ -415,12 +420,13 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 		},
 		func() error {
 			return s.messageBuilder.SendRemovePastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
-				UID:            participantUID,
-				PastMeetingUID: participant.PastMeetingUID,
-				Username:       participant.Username,
-				Host:           participant.Host,
-				IsInvited:      participant.IsInvited,
-				IsAttended:     participant.IsAttended,
+				UID:                participantUID,
+				PastMeetingUID:     participant.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Username:           participant.Username,
+				Host:               participant.Host,
+				IsInvited:          participant.IsInvited,
+				IsAttended:         participant.IsAttended,
 			})
 		},
 	}

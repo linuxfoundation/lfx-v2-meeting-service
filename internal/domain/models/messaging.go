@@ -31,6 +31,10 @@ const (
 	// The subject is of the form: lfx.index.past_meeting_recording
 	IndexPastMeetingRecordingSubject = "lfx.index.past_meeting_recording"
 
+	// IndexPastMeetingTranscriptSubject is the subject for the past meeting transcript indexing.
+	// The subject is of the form: lfx.index.past_meeting_transcript
+	IndexPastMeetingTranscriptSubject = "lfx.index.past_meeting_transcript"
+
 	// IndexPastMeetingSummarySubject is the subject for the past meeting summary indexing.
 	// The subject is of the form: lfx.index.past_meeting_summary
 	IndexPastMeetingSummarySubject = "lfx.index.past_meeting_summary"
@@ -54,6 +58,18 @@ const (
 	// UpdateAccessPastMeetingSubject is the subject for the past meeting access control updates.
 	// The subject is of the form: lfx.update_access.past_meeting
 	UpdateAccessPastMeetingSubject = "lfx.update_access.past_meeting"
+
+	// UpdateAccessPastMeetingRecordingSubject is the subject for the past meeting recording access control updates.
+	// The subject is of the form: lfx.update_access.past_meeting_recording
+	UpdateAccessPastMeetingRecordingSubject = "lfx.update_access.past_meeting_recording"
+
+	// UpdateAccessPastMeetingTranscriptSubject is the subject for the past meeting transcript access control updates.
+	// The subject is of the form: lfx.update_access.past_meeting_transcript
+	UpdateAccessPastMeetingTranscriptSubject = "lfx.update_access.past_meeting_transcript"
+
+	// UpdateAccessPastMeetingSummarySubject is the subject for the past meeting summary access control updates.
+	// The subject is of the form: lfx.update_access.past_meeting_summary
+	UpdateAccessPastMeetingSummarySubject = "lfx.update_access.past_meeting_summary"
 
 	// DeleteAllAccessPastMeetingSubject is the subject for the past meeting access control deletion.
 	// The subject is of the form: lfx.delete_all_access.past_meeting
@@ -281,12 +297,46 @@ type PastMeetingAccessMessage struct {
 // PastMeetingParticipantAccessMessage is the schema for the data in the message sent to the fga-sync service.
 // These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
 type PastMeetingParticipantAccessMessage struct {
-	UID            string `json:"uid"`
-	PastMeetingUID string `json:"past_meeting_uid"`
-	Username       string `json:"username"`
-	Host           bool   `json:"host"`
-	IsInvited      bool   `json:"is_invited"`
-	IsAttended     bool   `json:"is_attended"`
+	UID                string `json:"uid"`
+	PastMeetingUID     string `json:"past_meeting_uid"`
+	ArtifactVisibility string `json:"artifact_visibility"`
+	Username           string `json:"username"`
+	Host               bool   `json:"host"`
+	IsInvited          bool   `json:"is_invited"`
+	IsAttended         bool   `json:"is_attended"`
+}
+
+// AccessParticipant represents a simplified participant for access control messages.
+type AccessParticipant struct {
+	Username string `json:"username"`
+	Host     bool   `json:"host"`
+}
+
+// PastMeetingRecordingAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions for recordings.
+type PastMeetingRecordingAccessMessage struct {
+	UID                string              `json:"uid"`
+	PastMeetingUID     string              `json:"past_meeting_uid"`
+	ArtifactVisibility string              `json:"artifact_visibility"`
+	Participants       []AccessParticipant `json:"participants"`
+}
+
+// PastMeetingTranscriptAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions for transcripts.
+type PastMeetingTranscriptAccessMessage struct {
+	UID                string              `json:"uid"`
+	PastMeetingUID     string              `json:"past_meeting_uid"`
+	ArtifactVisibility string              `json:"artifact_visibility"`
+	Participants       []AccessParticipant `json:"participants"`
+}
+
+// PastMeetingSummaryAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions for summaries.
+type PastMeetingSummaryAccessMessage struct {
+	UID                string              `json:"uid"`
+	PastMeetingUID     string              `json:"past_meeting_uid"`
+	ArtifactVisibility string              `json:"artifact_visibility"`
+	Participants       []AccessParticipant `json:"participants"`
 }
 
 // ZoomWebhookEventMessage is the schema for Zoom webhook events sent via NATS for async processing.
