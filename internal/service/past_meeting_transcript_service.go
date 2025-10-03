@@ -67,14 +67,14 @@ func (s *PastMeetingTranscriptService) CreateTranscript(ctx context.Context, tra
 		transcript.TotalSize += file.FileSize
 	}
 
-	// err := s.pastMeetingTranscriptRepository.Create(ctx, transcript)
-	// if err != nil {
-	// 	slog.ErrorContext(ctx, "failed to create transcript", logging.ErrKey, err,
-	// 		"transcript_uid", transcript.UID,
-	// 		"past_meeting_uid", transcript.PastMeetingUID,
-	// 	)
-	// 	return nil, err
-	// }
+	err := s.pastMeetingTranscriptRepository.Create(ctx, transcript)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create transcript", logging.ErrKey, err,
+			"transcript_uid", transcript.UID,
+			"past_meeting_uid", transcript.PastMeetingUID,
+		)
+		return nil, err
+	}
 
 	// Use WorkerPool for concurrent NATS message sending
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
