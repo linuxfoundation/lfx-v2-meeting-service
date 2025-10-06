@@ -232,6 +232,10 @@
             margin-bottom: 4px;
         }
 
+        .method-text-margin {
+            margin-top: 12px;
+        }
+
         .footer {
             background-color: #f9fafb;
             padding: 20px 32px;
@@ -357,7 +361,7 @@
                         <a href="tel:+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#" class="text-link">+1 346 248 7799,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
                     </div>
                     
-                    <div class="method-text" style="margin-top: 12px;">Or dial manually:</div>
+                    <div class="method-text method-text-margin">Or dial manually:</div>
                     <div class="method-text">US: +1 253 215 8782 | Canada: +1 647 374 4685</div>
                     <div class="method-text">Meeting ID: {{.MeetingID}}</div>
                     {{if .Passcode}}
