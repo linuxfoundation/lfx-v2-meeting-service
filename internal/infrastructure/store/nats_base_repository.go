@@ -24,6 +24,7 @@ const (
 	KVStoreNamePastMeetings            = "past-meetings"
 	KVStoreNamePastMeetingParticipants = "past-meeting-participants"
 	KVStoreNamePastMeetingRecordings   = "past-meeting-recordings"
+	KVStoreNamePastMeetingTranscripts  = "past-meeting-transcripts"
 	KVStoreNamePastMeetingSummaries    = "past-meeting-summaries"
 )
 

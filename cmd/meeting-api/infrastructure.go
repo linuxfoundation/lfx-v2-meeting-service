@@ -121,6 +121,7 @@ type Repositories struct {
 	PastMeeting            *store.NatsPastMeetingRepository
 	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
 	PastMeetingRecording   *store.NatsPastMeetingRecordingRepository
+	PastMeetingTranscript  *store.NatsPastMeetingTranscriptRepository
 	PastMeetingSummary     *store.NatsPastMeetingSummaryRepository
 }
 
@@ -141,6 +142,7 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		store.KVStoreNamePastMeetings,
 		store.KVStoreNamePastMeetingParticipants,
 		store.KVStoreNamePastMeetingRecordings,
+		store.KVStoreNamePastMeetingTranscripts,
 		store.KVStoreNamePastMeetingSummaries,
 	}
 
@@ -159,6 +161,7 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		PastMeeting:            store.NewNatsPastMeetingRepository(kvStores[store.KVStoreNamePastMeetings]),
 		PastMeetingParticipant: store.NewNatsPastMeetingParticipantRepository(kvStores[store.KVStoreNamePastMeetingParticipants]),
 		PastMeetingRecording:   store.NewNatsPastMeetingRecordingRepository(kvStores[store.KVStoreNamePastMeetingRecordings]),
+		PastMeetingTranscript:  store.NewNatsPastMeetingTranscriptRepository(kvStores[store.KVStoreNamePastMeetingTranscripts]),
 		PastMeetingSummary:     store.NewNatsPastMeetingSummaryRepository(kvStores[store.KVStoreNamePastMeetingSummaries]),
 	}
 
