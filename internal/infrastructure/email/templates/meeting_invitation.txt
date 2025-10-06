@@ -4,35 +4,51 @@
 Meeting Invitation
 ==================
 
-Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},
+{{.RecipientName}}, you've been invited to
 
-You have been invited to the following meeting{{if .ProjectName}} for {{.ProjectName}}{{end}}:
+{{.MeetingTitle}}
 
-Meeting Details:
-----------------
-Meeting: {{.MeetingTitle}}
-Date & Time: {{formatTime .StartTime .Timezone}}
-Duration: {{formatDuration .Duration}}
-Time Zone: {{.Timezone}}{{if .Recurrence}}
-Recurrence: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
+Meeting Type: {{if .Visibility}}{{if eq .Visibility "private"}}Private{{else}}Public{{end}} • {{end}}{{.MeetingType}}{{if .Recurrence}} • Recurring{{else}} • One-time{{end}}
 
-{{if .Description}}Description:
+Meeting Information:
+-------------------
+Date & Time: {{formatTime .StartTime .Timezone}}{{if .Recurrence}}
+Repeats: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
+Duration: {{formatDuration .Duration}}{{if .Platform}}
+Platform: {{.Platform}}{{end}}
+
+{{if .Description}}Meeting Description:
 {{.Description}}
 
-{{end}}{{if .JoinLink}}Join the Meeting:
-{{.JoinLink}}
-{{if .MeetingID}}
-Meeting ID: {{.MeetingID}}{{if .Passcode}}
-Passcode: {{.Passcode}}{{end}}
-{{if eq .Platform "Zoom"}}
+{{end}}{{if .MeetingDetailsLink}}View full details: {{.MeetingDetailsLink}}
 
-Zoom Dial-in Options:
-Find your local number: https://zoom.us/zoomconference
-After dialing: Enter Meeting ID: {{.MeetingID}}#{{if .Passcode}}
-Then enter: Passcode: {{.Passcode}}#{{end}}
-{{end}}
-{{end}}{{else}}Meeting link will be provided closer to the meeting time.
-{{end}}
----
+{{end}}Join Meeting:
+=============
+{{.JoinLink}}
+
+Alternative Ways to Join:
+========================
+
+1. Join from any device
+   If the link above doesn't work, copy and paste this into your browser:
+   {{.JoinLink}}
+
+{{if .MeetingID}}2. Join by phone
+   One-tap mobile (US):
+   +1 253 215 8782,,{{.MeetingID}}#,,,,*{{.Passcode}}#
+   +1 346 248 7799,,{{.MeetingID}}#,,,,*{{.Passcode}}#
+   
+   Or dial manually:
+   US: +1 253 215 8782
+   Canada: +1 647 374 4685
+   
+   Meeting ID: {{.MeetingID}}{{if .Passcode}}
+   Passcode: {{.Passcode}}{{end}}
+   
+   Find international numbers: https://zoom.us/u/alwnPIaVT
+
+{{end}}---
+Powered by LFX One
+
 This is an automated email from the Linux Foundation Meeting Service.
 Please do not reply to this email.
