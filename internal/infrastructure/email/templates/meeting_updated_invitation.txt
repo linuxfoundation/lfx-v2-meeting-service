@@ -1,53 +1,72 @@
 {{/* Copyright The Linux Foundation and each contributor to LFX. */}}
 {{/* SPDX-License-Identifier: MIT */}}
 
-Meeting Updated
-===============
+⚠️  Meeting Updated
+==================
 
-Dear {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}},
+{{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}}, the meeting has been updated:
 
-The meeting "{{.MeetingTitle}}" has been updated{{if .ProjectName}} for {{.ProjectName}}{{end}}.
+{{.MeetingTitle}}
+
+Meeting Type: {{if .Visibility}}{{if eq .Visibility "private"}}Private{{else}}Public{{end}} • {{end}}{{.MeetingType}}{{if .Recurrence}} • Recurring{{else}} • One-time{{end}}
 
 {{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone) (ne .Duration .OldDuration) (ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime .OldTimezone)) (ne .Description .OldDescription)}}What Changed:
--------------{{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone)}}
-Date & Time:
+=============
+{{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone)}}Date & Time: [UPDATED]
   Old: {{formatTime .OldStartTime .OldTimezone}}
-  New: {{formatTime .StartTime .Timezone}}{{end}}{{if ne .Duration .OldDuration}}
-Duration:
+  New: {{formatTime .StartTime .Timezone}}
+
+{{end}}{{if ne .Duration .OldDuration}}Duration: [UPDATED]
   Old: {{formatDuration .OldDuration}}
-  New: {{formatDuration .Duration}}{{end}}{{if ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime .OldTimezone)}}
-Recurrence:
+  New: {{formatDuration .Duration}}
+
+{{end}}{{if ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime .OldTimezone)}}Recurrence: [UPDATED]
   Old: {{formatRecurrence .OldRecurrence .OldStartTime .OldTimezone}}
-  New: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}{{if ne .Description .OldDescription}}
-Description:
+  New: {{formatRecurrence .Recurrence .StartTime .Timezone}}
+
+{{end}}{{if ne .Description .OldDescription}}Description: [UPDATED]
   Old: {{.OldDescription}}
-  New: {{.Description}}{{end}}
+  New: {{.Description}}
 
-{{end}}Current Meeting Details:
-------------------------
-Meeting: {{.MeetingTitle}}
-Date & Time: {{formatTime .StartTime .Timezone}}
-Duration: {{formatDuration .Duration}}
-Time Zone: {{.Timezone}}{{if .Recurrence}}
-Recurrence: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
+{{end}}{{end}}Current Meeting Information:
+==========================
+Date & Time: {{formatTime .StartTime .Timezone}}{{if .Recurrence}}
+Repeats: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
+Duration: {{formatDuration .Duration}}{{if .Platform}}
+Platform: {{.Platform}}{{end}}
 
-{{if .Description}}Description:
+{{if .Description}}Meeting Description:
 {{.Description}}
 
-{{end}}{{if .JoinLink}}Join the Meeting:
-{{.JoinLink}}
-{{if .MeetingID}}
-Meeting ID: {{.MeetingID}}{{if .Passcode}}
-Passcode: {{.Passcode}}{{end}}
-{{if eq .Platform "Zoom"}}
+{{end}}{{if .MeetingDetailsLink}}View full details: {{.MeetingDetailsLink}}
 
-Zoom Dial-in Options:
-Find your local number: https://zoom.us/zoomconference
-After dialing: Enter Meeting ID: {{.MeetingID}}#{{if .Passcode}}
-Then enter: Passcode: {{.Passcode}}#{{end}}
-{{end}}
-{{end}}{{else}}Meeting link will be provided closer to the meeting time.
-{{end}}
----
+{{end}}Join Meeting:
+=============
+{{.JoinLink}}
+
+Alternative Ways to Join:
+========================
+
+1. Join from any device
+   If the link above doesn't work, copy and paste this into your browser:
+   {{.JoinLink}}
+
+{{if .MeetingID}}2. Join by phone
+   One-tap mobile (US):
+   +1 253 215 8782,,{{.MeetingID}}#,,,,*{{.Passcode}}#
+   +1 346 248 7799,,{{.MeetingID}}#,,,,*{{.Passcode}}#
+   
+   Or dial manually:
+   US: +1 253 215 8782
+   Canada: +1 647 374 4685
+   
+   Meeting ID: {{.MeetingID}}{{if .Passcode}}
+   Passcode: {{.Passcode}}{{end}}
+   
+   Find international numbers: https://zoom.us/u/alwnPIaVT
+
+{{end}}---
+Powered by LFX One
+
 This is an automated email from the Linux Foundation Meeting Service.
 Please do not reply to this email.

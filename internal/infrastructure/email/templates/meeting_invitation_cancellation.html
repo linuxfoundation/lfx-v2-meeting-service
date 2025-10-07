@@ -12,21 +12,24 @@
             font-family: Inter, Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: #f8fafc;
+            line-height: 1.5;
         }
 
         .container {
             width: 100%;
-            max-width: 550px;
+            max-width: 600px;
             margin: 0 auto;
             background-color: #ffffff;
-            padding: 20px 50px;
-            border-radius: 8px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
         .header {
             text-align: center;
-            padding: 10px 0;
+            padding: 24px 32px;
+            background-color: #ffffff;
         }
 
         .header img {
@@ -36,124 +39,207 @@
             height: 60px;
         }
 
+        .content {
+            padding: 0 32px 32px 32px;
+        }
+
         .cancellation-notice {
-            background-color: #FFDDD9;
-            padding: 10px;
+            background-color: #fee2e2;
+            border: 1px solid #dc2626;
+            border-radius: 8px;
+            padding: 16px;
             text-align: center;
-            border-radius: 5px;
             margin-bottom: 24px;
         }
 
         .cancellation-notice-text {
-            color: #FA3B19;
+            color: #dc2626;
             font-size: 16px;
+            font-weight: 600;
+            margin: 0;
         }
 
-        .cancelled-date {
-            display: inline-block;
-        }
-
-        .cancelled-date-text {
-            display: inline-block;
-            text-decoration: line-through;
-            margin-right: 6px;
-        }
-
-        .title {
+        .invitation-header {
             text-align: center;
-            font-size: 22px;
-            color: #333333;
-            margin: 8px 0 32px 0;
+            margin-bottom: 32px;
+        }
+
+        .meeting-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .meeting-card {
+            background-color: #f9fafb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .badge-container {
+            margin-bottom: 16px;
         }
 
         .badge {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 10px;
-            margin-right: 5px;
-            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .badge-cancelled {
-            display: inline-block;
-            background-color: #FFDDD9;
-            color: #FA3B19;
+            background-color: #fee2e2;
+            color: #dc2626;
         }
 
-        .details {
-            font-size: 14px;
-            color: #666666;
-            margin: 10px 0;
+        .badge-board {
+            background-color: #fee2e2;
+            color: #dc2626;
         }
 
-        .details a {
-            text-decoration: none;
-            color: #229ff3;
+        .badge-maintainers {
+            background-color: #dbeafe;
+            color: #2563eb;
         }
 
-        .button {
-            display: block;
-            width: 50%;
-            text-align: center;
-            background-color: #009aff;
-            color: #ffffff;
-            padding: 10px 0;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 32px auto;
+        .badge-marketing {
+            background-color: #d1fae5;
+            color: #059669;
         }
 
-        .footer {
-            font-size: 12px;
-            color: #999999;
-            text-align: center;
-            margin-top: 20px;
+        .badge-technical {
+            background-color: #f3e8ff;
+            color: #7c3aed;
         }
 
-        .details-title {
-            color: #94959B;
-            margin-bottom: 4px;
-            font-style: normal;
-            font-weight: 400;
-            line-height: normal;
+        .badge-legal {
+            background-color: #fef3c7;
+            color: #d97706;
         }
 
-        .details,
-        .text {
-            color: #000;
-            font-style: normal;
-            font-weight: 400;
-            line-height: normal;
+        .badge-private {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-public {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+
+        .badge-default {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .meeting-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
             margin-bottom: 24px;
         }
 
-        .center {
-            text-align: center;
+        .info-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            position: relative;
         }
 
-        .text-button {
-            text-decoration: none;
-            color: #009aff;
+        .info-card.cancelled {
+            border: 2px solid #dc2626;
+            background-color: #fef2f2;
         }
 
-        .changed-details div,
-        .changed-details span {
-            display: inline-block;
-            color: #f97316;
+        .info-label {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
         }
 
-        .changed-details div {
+        .info-value {
+            color: #111827;
+            font-size: 14px;
             font-weight: 600;
-            margin-right: 6px;
         }
 
-        .changed-details-old {
+        .cancelled-value {
             text-decoration: line-through;
-            color: #b4b5bb;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        .text-gray {
-            color: #a5a6ab;
+        .description-section {
+            margin-bottom: 24px;
+        }
+
+        .description-title {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .description-text {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .reason-section {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .reason-title {
+            color: #d97706;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .reason-text {
+            color: #92400e;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background-color: #f9fafb;
+            padding: 20px 32px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .footer-text {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .text-link {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .text-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -163,29 +249,101 @@
         <div class="header">
             <img src="{{.ProjectLogo}}" alt="{{.ProjectName}}" width="170" height="60">
         </div>
-        <div class="cancellation-notice">
-            <span class="cancellation-notice-text">
-                This meeting has been cancelled</span>
-        </div>
-        <div>
-            <h1 class="title">{{.MeetingTitle}}</h1>
-        </div>
-        <div class="details">
-            <div class="details-title">Date</div>
-            <div class="cancelled-date">
-                <p class="cancelled-date-text">{{formatTime
-                    .StartTime .Timezone}}</p>
-                <span class="badge badge-cancelled">Cancelled</span>
+        
+        <div class="content">
+            <div class="cancellation-notice">
+                <p class="cancellation-notice-text">🚫 This meeting has been cancelled</p>
             </div>
-        </div>
-        <div class="details">
-            <div class="details-title">Why have I received this email?</div>
-            You may have received this email if the project meeting was deleted by a project administrator, or you have
-            been removed as a meeting participant or associated committee member.
+
+            <div class="invitation-header">
+                <h1 class="meeting-title">{{.MeetingTitle}}</h1>
+            </div>
+
+            <div class="meeting-card">
+                <div class="badge-container">
+                    <span class="badge badge-cancelled">Cancelled</span>
+                    {{if .Visibility}}
+                    {{if eq .Visibility "private"}}
+                    <span class="badge badge-private">Private</span>
+                    {{else}}
+                    <span class="badge badge-public">Public</span>
+                    {{end}}
+                    {{end}}
+                    {{if eq .MeetingType "Board"}}
+                    <span class="badge badge-board">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Maintainers"}}
+                    <span class="badge badge-maintainers">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Marketing"}}
+                    <span class="badge badge-marketing">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Technical"}}
+                    <span class="badge badge-technical">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Legal"}}
+                    <span class="badge badge-legal">{{.MeetingType}}</span>
+                    {{else}}
+                    <span class="badge badge-default">{{.MeetingType}}</span>
+                    {{end}}
+                    {{if .Recurrence}}
+                    <span class="badge badge-default">Recurring</span>
+                    {{else}}
+                    <span class="badge badge-default">One-time</span>
+                    {{end}}
+                </div>
+
+                <div class="meeting-info-grid">
+                    <div class="info-card cancelled">
+                        <div class="info-label">Date & Time</div>
+                        <div class="cancelled-value">{{formatTime .StartTime .Timezone}}</div>
+                    </div>
+                    {{if .Recurrence}}
+                    <div class="info-card cancelled">
+                        <div class="info-label">Repeats</div>
+                        <div class="cancelled-value">{{formatRecurrence .Recurrence .StartTime .Timezone}}</div>
+                    </div>
+                    {{end}}
+                    <div class="info-card cancelled">
+                        <div class="info-label">Duration</div>
+                        <div class="cancelled-value">{{formatDuration .Duration}}</div>
+                    </div>
+                    {{if .Platform}}
+                    <div class="info-card cancelled">
+                        <div class="info-label">Platform</div>
+                        <div class="cancelled-value">{{.Platform}}</div>
+                    </div>
+                    {{end}}
+                </div>
+
+                {{if .Description}}
+                <div class="description-section">
+                    <div class="description-title">Meeting Description</div>
+                    <div class="description-text">{{newLineToBreakLine .Description}}</div>
+                </div>
+                {{end}}
+            </div>
+
+            {{if .Reason}}
+            <div class="reason-section">
+                <div class="reason-title">Cancellation Reason</div>
+                <div class="reason-text">{{newLineToBreakLine .Reason}}</div>
+            </div>
+            {{end}}
+
+            <div class="description-section">
+                <div class="description-title">Why did I receive this email?</div>
+                <div class="description-text">
+                    You received this email because you were registered for this meeting. The meeting may have been cancelled by a project administrator, or you may have been removed as a meeting participant or committee member.
+                    {{if .ICSAttachment}}<br><br>📅 A calendar cancellation file (.ics) is attached to this email. Open it to automatically remove this meeting from your calendar application.{{end}}
+                </div>
+            </div>
+
+            {{if .MeetingDetailsLink}}
+            <div style="text-align: center; margin: 24px 0;">
+                <a href="{{.MeetingDetailsLink}}" class="text-link">View project details in LFX One →</a>
+            </div>
+            {{end}}
         </div>
 
         <div class="footer">
-            powered by <strong>LFX One</strong>
+            <div class="footer-text">Powered by <strong>LFX One</strong></div>
         </div>
     </div>
 </body>
