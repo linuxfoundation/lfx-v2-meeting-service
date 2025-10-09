@@ -1,271 +1,382 @@
 # Copyright The Linux Foundation and each contributor to LFX.
 # SPDX-License-Identifier: MIT
 ---
-# image is the configuration for the container images
-image:
-  # repository is the container image repository
-  repository: ghcr.io/linuxfoundation/lfx-v2-meeting-service/meeting-api
-  # tag is the container image tag (overrides appVersion from Chart.yaml)
-  tag: ""
-  # pullPolicy is the image pull policy
-  pullPolicy: IfNotPresent
+# Configuration for the base lfx-service chart
+lfx-service:
+  # Global configuration
+  global:
+    domain: ""
+    namespace: ""
 
-# app is the configuration for the application
-app:
-  # audience is the JWT audience required for this authentication with this app
-  audience: lfx-v2-meeting-service
-  # skipEtagValidation is a boolean to determine if the etag validation should be skipped
-  # (only use for local development)
-  skipEtagValidation: false
-  # use_oidc_contextualizer is a boolean to determine if the OIDC contextualizer should be used
-  use_oidc_contextualizer: true
+  # Image configuration
+  image:
+    repository: ghcr.io/linuxfoundation/lfx-one-meeting-service/meeting-api
+    tag: "1.0"
 
-  environment:
-    # NATS_URL is required
-    NATS_URL:
-      value: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
-    # LOG_LEVEL is optional
-    LOG_LEVEL:
-      value: info
-    # LOG_ADD_SOURCE is optional
-    LOG_ADD_SOURCE:
-      value: true
-    # JWKS_URL is required unless JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL is set to a non-empty value
-    JWKS_URL:
-      value: http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks
-    # JWT_AUDIENCE is required
-    JWT_AUDIENCE:
-      value: lfx-v2-meeting-service
-    # SKIP_ETAG_VALIDATION is optional
-    SKIP_ETAG_VALIDATION:
-      value: "false"
-    # JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL is optional
-    JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL:
-      value: ''
-    # EMAIL_ENABLED is optional
-    EMAIL_ENABLED:
-      value: "true"
-    # SMTP_HOST is optional
-    SMTP_HOST:
-      value: lfx-platform-mailpit-smtp.lfx.svc.cluster.local
-    # SMTP_PORT is optional
-    SMTP_PORT:
-      value: "25"
-    # SMTP_FROM is optional
-    SMTP_FROM:
-      value: noreply@lfx.linuxfoundation.org
-    # SMTP_USERNAME is optional
-    SMTP_USERNAME:
-      value: null
-    # SMTP_PASSWORD is optional
-    SMTP_PASSWORD:
-      value: null
-    # ZOOM_ACCOUNT_ID is optional
-    ZOOM_ACCOUNT_ID:
-      value: null
-    # ZOOM_CLIENT_ID is optional
-    ZOOM_CLIENT_ID:
-      value: null
-    # ZOOM_CLIENT_SECRET is optional
-    ZOOM_CLIENT_SECRET:
-      value: null
-    # ZOOM_WEBHOOK_SECRET_TOKEN is optional
-    ZOOM_WEBHOOK_SECRET_TOKEN:
-      value: null
-    # LFX_ENVIRONMENT is optional (dev, staging, prod) - defaults to prod if not set
-    LFX_ENVIRONMENT:
-      value: prod
+  # Deployment configuration
+  deployment:
+    # Environment variables using the new format
+    environment:
+      NATS_URL:
+        value: "nats://lfx-platform-nats.lfx.svc.cluster.local:4222"
+      LOG_LEVEL:
+        value: "info"
+      LOG_ADD_SOURCE:
+        value: "true"
+      JWKS_URL:
+        value: "http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks"
+      JWT_AUDIENCE:
+        value: "lfx-v2-meeting-service"
+      SKIP_ETAG_VALIDATION:
+        value: "false"
+      JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL:
+        value: ""
+      EMAIL_ENABLED:
+        value: "true"
+      SMTP_HOST:
+        value: "lfx-platform-mailpit-smtp.lfx.svc.cluster.local"
+      SMTP_PORT:
+        value: "25"
+      SMTP_FROM:
+        value: "noreply@lfx.linuxfoundation.org"
+      SMTP_USERNAME:
+        value: ""
+      SMTP_PASSWORD:
+        value: ""
+      ZOOM_ACCOUNT_ID:
+        value: ""
+      ZOOM_CLIENT_ID:
+        value: ""
+      ZOOM_CLIENT_SECRET:
+        value: ""
+      ZOOM_WEBHOOK_SECRET_TOKEN:
+        value: ""
+      LFX_ENVIRONMENT:
+        value: ""
 
-# traefik is the configuration for Traefik Gateway API routing
-traefik:
-  # gateway specifies the platform Gateway to attach to
-  gateway:
-    name: lfx-platform-gateway
-    namespace: lfx
+  # HTTPRoute configuration
+  httpRoute:
+    enabled: true
+    gateway:
+      name: lfx-platform-gateway
+      namespace: lfx
+    
+    matches:
+      - path:
+          type: Exact
+          value: /meetings
+      - path:
+          type: PathPrefix
+          value: /meetings/
+      - path:
+          type: Exact
+          value: /past_meetings
+      - path:
+          type: PathPrefix
+          value: /past_meetings/
+      - path:
+          type: PathPrefix
+          value: /webhooks/
+      - path:
+          type: PathPrefix
+          value: /_meetings/
 
-# lfx is the configuration for LFX platform
-lfx:
-  # domain is the base domain for routing
-  domain: k8s.orb.local
-  # namespace is the target namespace for deployment
-  namespace: lfx
+    filters:
+      - type: ExtensionRef
+        extensionRef:
+          group: traefik.io
+          kind: Middleware
+          name: heimdall-forward-body
 
-# service is the configuration for the Kubernetes service
-service:
-  # port is the service port
-  port: 8080
+  # Heimdall middleware
+  heimdall:
+    enabled: true
+    url: http://lfx-platform-heimdall.lfx.svc.cluster.local:4456
+    createMiddleware: true
 
-# serviceAccount is the configuration for the Kubernetes service account
-serviceAccount:
-  # create specifies whether a service account should be created
-  create: true
-  # name is the name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
-  # annotations to add to the service account
-  annotations: {}
-  # automountServiceAccountToken is a boolean to determine if the service account token should be automatically mounted
-  automountServiceAccountToken: true
+  # RuleSet for authentication
+  ruleSet:
+    enabled: true
+    audience: lfx-v2-meeting-service
+    
+    rules:
+      # OpenAPI endpoints
+      - id: "rule:lfx:lfx-v2-meeting-service:openapi:get"
+        match:
+          methods: ["GET"]
+          routes:
+            - "/_meetings/openapi.json"
+            - "/_meetings/openapi.yaml"
+            - "/_meetings/openapi3.json"
+            - "/_meetings/openapi3.yaml"
+        # No authorization required for OpenAPI docs
 
-# nats is the configuration for the NATS server
-nats:
+      # Zoom webhook endpoint
+      - id: "rule:lfx:lfx-v2-meeting-service:webhooks:zoom"
+        match:
+          methods: ["POST"]
+          routes: ["/webhooks/zoom"]
+        # No authorization - endpoint validates Zoom signature
 
-  # kv_bucket_meetings is the configuration for the KV bucket for storing meeting base information
-  kv_bucket_meetings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting base information
-    name: meetings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
+      # Meeting operations
+      - id: "rule:lfx:lfx-v2-meeting-service:meetings:create"
+        match:
+          methods: ["POST"]
+          routes: ["/meetings"]
+        authorization:
+          requireJsonContent: true
+          relation: writer
+          object: "project:{{.Request.Body.project_uid}}"
 
-  # kv_bucket_meeting_settings is the configuration for the KV bucket for storing meeting settings
-  kv_bucket_meeting_settings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting settings
-    name: meeting-settings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
+      - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:get"
+        match:
+          methods: ["GET"]
+          routes: ["/meetings/:id"]
+        authorization:
+          relation: viewer
+          object: "meeting:{{.Request.URL.Captures.id}}"
 
-  # kv_bucket_meeting_registrants is the configuration for the KV bucket for storing meeting registrants
-  kv_bucket_meeting_registrants:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting registrants
-    name: meeting-registrants
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
+      - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:join_url"
+        match:
+          methods: ["GET"]
+          routes: ["/meetings/:id/join_url"]
+        authorization:
+          relation: viewer
+          object: "meeting:{{.Request.URL.Captures.id}}"
 
-  # kv_bucket_past_meetings is the configuration for the KV bucket for storing past meetings
-  kv_bucket_past_meetings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meetings
-    name: past-meetings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 5368709120  # 5GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
+      - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:get"
+        match:
+          methods: ["GET"]
+          routes: ["/meetings/:id/settings"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
 
-  # kv_bucket_past_meeting_participants is the configuration for the KV bucket for storing past meeting participants
-  kv_bucket_past_meeting_participants:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting participants
-    name: past-meeting-participants
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 5368709120  # 5GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
+      - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:update"
+        match:
+          methods: ["PUT"]
+          routes: ["/meetings/:id"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
 
-  # kv_bucket_past_meeting_recordings is the configuration for the KV bucket for storing past meeting recordings
-  kv_bucket_past_meeting_recordings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting recordings
-    name: past-meeting-recordings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 10737418240  # 10GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
+      - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:update"
+        match:
+          methods: ["PUT"]
+          routes: ["/meetings/:id/settings"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
 
-  # kv_bucket_past_meeting_summaries is the configuration for the KV bucket for storing past meeting summaries
-  kv_bucket_past_meeting_summaries:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting summaries
-    name: past-meeting-summaries
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
+      - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:delete"
+        match:
+          methods: ["DELETE"]
+          routes: ["/meetings/:id"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
 
-# openfga is the configuration for the OpenFGA server
-openfga:
-  # enabled is a boolean to determine if the OpenFGA server should be enabled for authorization
-  # Note: If it is disabled, then the meeting service will allow all requests
-  # (Disabling OpenFGA should only be used for local development).
-  enabled: true
+      # Meeting registrants
+      - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:create"
+        match:
+          methods: ["POST"]
+          routes: ["/meetings/:id/registrants"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
 
-# heimdall is the configuration for the heimdall middleware
-heimdall:
-  enabled: true
-  url: http://lfx-platform-heimdall.lfx.svc.cluster.local:4456
-  add_middleware: false
+      - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:list"
+        match:
+          methods: ["GET"]
+          routes: ["/meetings/:id/registrants"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:update"
+        match:
+          methods: ["PUT"]
+          routes: ["/meetings/:id/registrants/:registrant_id"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:get"
+        match:
+          methods: ["GET"]
+          routes: ["/meetings/:id/registrants/:registrant_id"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:delete"
+        match:
+          methods: ["DELETE"]
+          routes: ["/meetings/:id/registrants/:registrant_id"]
+        authorization:
+          relation: organizer
+          object: "meeting:{{.Request.URL.Captures.id}}"
+
+      # Past meetings
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:create"
+        match:
+          methods: ["POST"]
+          routes: ["/past_meetings"]
+        authorization:
+          requireJsonContent: true
+          relation: writer
+          object: "project:{{.Request.Body.project_uid}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:list"
+        match:
+          methods: ["GET"]
+          routes: ["/past_meetings"]
+        # Allow all for development endpoint
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:past_meeting:get"
+        match:
+          methods: ["GET"]
+          routes: ["/past_meetings/:id"]
+        authorization:
+          relation: viewer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:past_meeting:delete"
+        match:
+          methods: ["DELETE"]
+          routes: ["/past_meetings/:id"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      # Past meeting participants
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:create"
+        match:
+          methods: ["POST"]
+          routes: ["/past_meetings/:id/participants"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:list"
+        match:
+          methods: ["GET"]
+          routes: ["/past_meetings/:id/participants"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:update"
+        match:
+          methods: ["PUT"]
+          routes: ["/past_meetings/:id/participants/:participant_id"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:get"
+        match:
+          methods: ["GET"]
+          routes: ["/past_meetings/:id/participants/:participant_id"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:delete"
+        match:
+          methods: ["DELETE"]
+          routes: ["/past_meetings/:id/participants/:participant_id"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      # Past meeting summaries
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_summaries:list"
+        match:
+          methods: ["GET"]
+          routes: ["/past_meetings/:id/summaries"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_summaries:update"
+        match:
+          methods: ["PUT"]
+          routes: ["/past_meetings/:id/summaries/:summary_id"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+      - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_summaries:get"
+        match:
+          methods: ["GET"]
+          routes: ["/past_meetings/:id/summaries/:summary_id"]
+        authorization:
+          relation: organizer
+          object: "past_meeting:{{.Request.URL.Captures.id}}"
+
+  # NATS KV Buckets
+  nats:
+    kvBuckets:
+      - name: meetings
+        creation: true
+        keep: true
+        history: 20
+        storage: file
+        maxValueSize: 10485760  # 10MB
+        maxBytes: 1073741824    # 1GB
+        compression: true
+
+      - name: meeting-settings
+        creation: true
+        keep: true
+        history: 20
+        storage: file
+        maxValueSize: 10485760  # 10MB
+        maxBytes: 1073741824    # 1GB
+        compression: true
+
+      - name: meeting-registrants
+        creation: true
+        keep: true
+        history: 20
+        storage: file
+        maxValueSize: 10485760  # 10MB
+        maxBytes: 1073741824    # 1GB
+        compression: true
+
+      - name: past-meetings
+        creation: true
+        keep: true
+        history: 20
+        storage: file
+        maxValueSize: 10485760  # 10MB
+        maxBytes: 5368709120    # 5GB
+        compression: true
+
+      - name: past-meeting-participants
+        creation: true
+        keep: true
+        history: 20
+        storage: file
+        maxValueSize: 10485760  # 10MB
+        maxBytes: 5368709120    # 5GB
+        compression: true
+
+      - name: past-meeting-recordings
+        creation: true
+        keep: true
+        history: 20
+        storage: file
+        maxValueSize: 10485760  # 10MB
+        maxBytes: 10737418240   # 10GB
+        compression: true
+
+      - name: past-meeting-summaries
+        creation: true
+        keep: true
+        history: 20
+        storage: file
+        maxValueSize: 10485760  # 10MB
+        maxBytes: 1073741824    # 1GB
+        compression: true
