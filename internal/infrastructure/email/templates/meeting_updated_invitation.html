@@ -12,21 +12,24 @@
             font-family: Inter, Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: #f8fafc;
+            line-height: 1.5;
         }
 
         .container {
             width: 100%;
-            max-width: 550px;
+            max-width: 600px;
             margin: 0 auto;
             background-color: #ffffff;
-            padding: 20px 50px;
-            border-radius: 8px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
         .header {
             text-align: center;
-            padding: 10px 0;
+            padding: 24px 32px;
+            background-color: #ffffff;
         }
 
         .header img {
@@ -36,183 +39,267 @@
             height: 60px;
         }
 
+        .content {
+            padding: 0 32px 32px 32px;
+        }
+
         .update-notice {
-            background-color: #fff7f0;
-            padding: 10px;
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
             text-align: center;
-            border-radius: 5px;
             margin-bottom: 24px;
         }
 
         .update-notice-text {
-            color: #f97316;
+            color: #d97706;
             font-size: 16px;
-        }
-
-        .text-align-center {
-            text-align: center;
-        }
-
-        .display-block-margin-top-16 {
-            display: block;
-            margin-top: 16px;
-        }
-
-        .tight-spacing {
+            font-weight: 600;
             margin: 0;
-            padding: 0;
         }
 
-        .tight-spacing p {
-            margin: 2px 0;
-        }
-
-        .separator {
-            border: 0.5px solid #e1e1e7;
-            margin: 24px 0;
-        }
-
-        .title {
+        .invitation-header {
             text-align: center;
-            font-size: 22px;
-            color: #333333;
-            margin: 8px 0 32px 0;
+            margin-bottom: 32px;
+        }
+
+        .meeting-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .meeting-card {
+            background-color: #f9fafb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .badge-container {
+            margin-bottom: 16px;
         }
 
         .badge {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 10px;
-            margin-right: 5px;
-            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .badge-changed {
-            display: inline-block;
-            background-color: #fff7f0;
-            color: #f97316;
+            background-color: #fef3c7;
+            color: #d97706;
         }
 
         .badge-board {
             background-color: #fee2e2;
-            /* bg-red-100 */
-            color: #ef4444;
-            /* text-red-500 */
+            color: #dc2626;
         }
 
         .badge-maintainers {
             background-color: #dbeafe;
-            /* bg-blue-100 */
-            color: #3b82f6;
-            /* text-blue-500 */
+            color: #2563eb;
         }
 
         .badge-marketing {
             background-color: #d1fae5;
-            /* bg-green-100 */
-            color: #10b981;
-            /* text-green-500 */
+            color: #059669;
         }
 
         .badge-technical {
             background-color: #f3e8ff;
-            /* bg-purple-100 */
-            color: #a855f7;
-            /* text-purple-500 */
+            color: #7c3aed;
         }
 
         .badge-legal {
             background-color: #fef3c7;
-            /* bg-amber-100 */
-            color: #f59e0b;
-            /* text-amber-500 */
+            color: #d97706;
+        }
+
+        .badge-private {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-public {
+            background-color: #d1fae5;
+            color: #059669;
         }
 
         .badge-default {
             background-color: #f3f4f6;
-            /* bg-gray-100 */
-            color: #9ca3af;
-            /* text-gray-400 */
+            color: #6b7280;
         }
 
-        .margin-bottom-24 {
+        .meeting-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
             margin-bottom: 24px;
         }
 
-        .details {
+        .info-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        .info-card.changed {
+            border: 2px solid #f59e0b;
+            background-color: #fffbeb;
+        }
+
+        .info-label {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            color: #111827;
             font-size: 14px;
-            color: #666666;
-            margin: 10px 0;
+            font-weight: 600;
         }
 
-        .details a {
-            text-decoration: none;
-            color: #229ff3;
-        }
-
-        .button {
-            display: block;
-            width: 50%;
-            text-align: center;
-            background-color: #009aff;
+        .changed-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #f59e0b;
             color: #ffffff;
-            padding: 10px 0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .old-value {
+            text-decoration: line-through;
+            color: #9ca3af;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .new-value {
+            color: #111827;
+            font-weight: 600;
+        }
+
+        .description-section {
+            margin-bottom: 24px;
+        }
+
+        .description-title {
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .description-text {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .join-section {
+            text-align: center;
+            margin: 32px 0;
+        }
+
+        .join-button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: #ffffff;
+            padding: 14px 32px;
             text-decoration: none;
-            border-radius: 5px;
-            margin: 32px auto;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .join-button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .meeting-details-link {
+            display: inline-block;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+
+        .alternative-section {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 32px;
+        }
+
+        .alternative-title {
+            color: #374151;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .alternative-method {
+            margin-bottom: 16px;
+        }
+
+        .method-title {
+            color: #111827;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .method-text {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .method-spacing {
+            margin-top: 12px;
         }
 
         .footer {
+            background-color: #f9fafb;
+            padding: 20px 32px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .footer-text {
+            color: #9ca3af;
             font-size: 12px;
-            color: #999999;
-            text-align: center;
-            margin-top: 20px;
         }
 
-        .details-title {
-            color: #94959B;
-            margin-bottom: 4px;
-            font-style: normal;
-            font-weight: 400;
-            line-height: normal;
-        }
-
-        .details,
-        .text {
-            color: #000;
-            font-style: normal;
-            font-weight: 400;
-            line-height: normal;
-            margin-bottom: 24px;
-        }
-
-        .center {
-            text-align: center;
-        }
-
-        .text-button {
+        .text-link {
+            color: #2563eb;
             text-decoration: none;
-            color: #009aff;
         }
 
-        .changed-details div,
-        .changed-details span {
-            display: inline-block;
-            color: #f97316;
-        }
-
-        .changed-details div {
-            font-weight: 600;
-            margin-right: 6px;
-        }
-
-        .changed-details-old {
-            text-decoration: line-through;
-            color: #b4b5bb;
-        }
-
-        .text-gray {
-            color: #a5a6ab;
+        .text-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -222,154 +309,156 @@
         <div class="header">
             <img src="{{.ProjectLogo}}" alt="{{.ProjectName}}" width="170" height="60">
         </div>
-        <div class="update-notice">
-            <span class="update-notice-text"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-                This meeting has been updated</span>
-        </div>
-        <div>
-            <h1 class="title">{{.MeetingTitle}}</h1>
-        </div>
-        <div class="margin-bottom-24">
-            {{if eq .MeetingType "Board"}}
-            <span class="badge badge-board">{{.MeetingType}}</span>
-            {{else if eq .MeetingType "Maintainers"}}
-            <span class="badge badge-maintainers">{{.MeetingType}}</span>
-            {{else if eq .MeetingType "Marketing"}}
-            <span class="badge badge-marketing">{{.MeetingType}}</span>
-            {{else if eq .MeetingType "Technical"}}
-            <span class="badge badge-technical">{{.MeetingType}}</span>
-            {{else if eq .MeetingType "Legal"}}
-            <span class="badge badge-legal">{{.MeetingType}}</span>
-            {{else}}
-            <span class="badge badge-default">{{.MeetingType}}</span>
-            {{end}}
-            {{if .Recurrence}}
-            <span class="badge badge-default">Recurring</span>
-            {{else}}
-            <span class="badge badge-default">Non-recurring</span>
-            {{end}}
-            {{if .Visibility}}
-            <span class="badge badge-default">{{capitalize .Visibility}}</span>
-            {{end}}
-        </div>
-        {{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone)}}
-        <div class="details changed-component">
-            <div class="changed-details">
-                <div class="details-title">Next Meeting</div>
-                <span class="badge badge-changed">Changed</span>
+        
+        <div class="content">
+            <div class="update-notice">
+                <p class="update-notice-text">⚠️ This meeting has been updated</p>
             </div>
-            <div>
-                <div class="changed-details-old">{{formatTime .OldStartTime .OldTimezone}}</div>
-                <div class="changed-details-new"><strong>New: </strong>{{formatTime .StartTime .Timezone}}</div>
-            </div>
-        </div>
-        {{else}}
-        <div class="details">
-            <div class="details-title">Next Meeting</div>
-            {{formatTime .StartTime .Timezone}}
-        </div>
-        {{end}}
 
-        {{if or .Recurrence .OldRecurrence}}
-        {{if ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime
-        .OldTimezone)}}
-        <div class="details changed-component">
-            <div class="changed-details">
-                <div class="details-title">Repeats</div>
-                <span class="badge badge-changed">Changed</span>
+            <div class="invitation-header">
+                <h1 class="meeting-title">{{.MeetingTitle}}</h1>
             </div>
-            <div>
-                <div class="changed-details-old">{{formatRecurrence .OldRecurrence .OldStartTime .OldTimezone}}</div>
-                <div class="changed-details-new"><strong>New: </strong>{{formatRecurrence .Recurrence .StartTime
-                    .Timezone}}</div>
-            </div>
-        </div>
-        {{else}}
-        <div class="details">
-            <div class="details-title">Repeats</div>
-            {{formatRecurrence .Recurrence .StartTime .Timezone}}
-        </div>
-        {{end}}
-        {{end}}
 
-        {{if ne .Duration .OldDuration}}
-        <div class="details changed-component">
-            <div class="changed-details">
-                <div class="details-title">Duration</div>
-                <span class="badge badge-changed">Changed</span>
-            </div>
-            <div>
-                <div class="changed-details-old">{{formatDuration .OldDuration}}</div>
-                <div class="changed-details-new"><strong>New: </strong>{{formatDuration .Duration}}</div>
-            </div>
-        </div>
-        {{else}}
-        <div class="details">
-            <div class="details-title">Duration</div>
-            {{formatDuration .Duration}}
-        </div>
-        {{end}}
+            <div class="meeting-card">
+                <div class="badge-container">
+                    {{if .Visibility}}
+                    {{if eq .Visibility "private"}}
+                    <span class="badge badge-private">Private</span>
+                    {{else}}
+                    <span class="badge badge-public">Public</span>
+                    {{end}}
+                    {{end}}
+                    {{if eq .MeetingType "Board"}}
+                    <span class="badge badge-board">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Maintainers"}}
+                    <span class="badge badge-maintainers">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Marketing"}}
+                    <span class="badge badge-marketing">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Technical"}}
+                    <span class="badge badge-technical">{{.MeetingType}}</span>
+                    {{else if eq .MeetingType "Legal"}}
+                    <span class="badge badge-legal">{{.MeetingType}}</span>
+                    {{else}}
+                    <span class="badge badge-default">{{.MeetingType}}</span>
+                    {{end}}
+                    {{if .Recurrence}}
+                    <span class="badge badge-default">Recurring</span>
+                    {{else}}
+                    <span class="badge badge-default">One-time</span>
+                    {{end}}
+                </div>
 
-        {{if ne .Description .OldDescription}}
-        <div class="details changed-component">
-            <div class="changed-details">
-                <div class="details-title">Meeting Details</div>
-                <span class="badge badge-changed">Changed</span>
+                <div class="meeting-info-grid">
+                    {{if or (ne .StartTime .OldStartTime) (ne .Timezone .OldTimezone)}}
+                    <div class="info-card changed">
+                        <div class="changed-indicator">Updated</div>
+                        <div class="info-label">Date &amp; Time</div>
+                        <div class="old-value">{{formatTime .OldStartTime .OldTimezone}}</div>
+                        <div class="new-value">{{formatTime .StartTime .Timezone}}</div>
+                    </div>
+                    {{else}}
+                    <div class="info-card">
+                        <div class="info-label">Date &amp; Time</div>
+                        <div class="info-value">{{formatTime .StartTime .Timezone}}</div>
+                    </div>
+                    {{end}}
+
+                    {{if or .Recurrence .OldRecurrence}}
+                    {{if ne (formatRecurrence .Recurrence .StartTime .Timezone) (formatRecurrence .OldRecurrence .OldStartTime .OldTimezone)}}
+                    <div class="info-card changed">
+                        <div class="changed-indicator">Updated</div>
+                        <div class="info-label">Repeats</div>
+                        <div class="old-value">{{formatRecurrence .OldRecurrence .OldStartTime .OldTimezone}}</div>
+                        <div class="new-value">{{formatRecurrence .Recurrence .StartTime .Timezone}}</div>
+                    </div>
+                    {{else}}
+                    <div class="info-card">
+                        <div class="info-label">Repeats</div>
+                        <div class="info-value">{{formatRecurrence .Recurrence .StartTime .Timezone}}</div>
+                    </div>
+                    {{end}}
+                    {{end}}
+
+                    {{if ne .Duration .OldDuration}}
+                    <div class="info-card changed">
+                        <div class="changed-indicator">Updated</div>
+                        <div class="info-label">Duration</div>
+                        <div class="old-value">{{formatDuration .OldDuration}}</div>
+                        <div class="new-value">{{formatDuration .Duration}}</div>
+                    </div>
+                    {{else}}
+                    <div class="info-card">
+                        <div class="info-label">Duration</div>
+                        <div class="info-value">{{formatDuration .Duration}}</div>
+                    </div>
+                    {{end}}
+
+                    {{if .Platform}}
+                    <div class="info-card">
+                        <div class="info-label">Platform</div>
+                        <div class="info-value">{{.Platform}}</div>
+                    </div>
+                    {{end}}
+                </div>
+
+                {{if ne .Description .OldDescription}}
+                <div class="description-section">
+                    <div class="description-title">Meeting Description <span class="badge badge-changed">Updated</span></div>
+                    <div class="old-value">{{newLineToBreakLine .OldDescription}}</div>
+                    <div class="description-text new-value">{{newLineToBreakLine .Description}}</div>
+                </div>
+                {{else if .Description}}
+                <div class="description-section">
+                    <div class="description-title">Meeting Description</div>
+                    <div class="description-text">{{newLineToBreakLine .Description}}</div>
+                </div>
+                {{end}}
+
+                {{if .MeetingDetailsLink}}
+                <div>
+                    <a href="{{.MeetingDetailsLink}}" class="meeting-details-link">View full details in LFX One →</a>
+                </div>
+                {{end}}
             </div>
-            <div>
-                <div class="changed-details-old">{{newLineToBreakLine .OldDescription}}</div>
-                <div class="changed-details-new"><strong>New: </strong>{{newLineToBreakLine .Description}}</div>
+
+            <div class="join-section">
+                <a href="{{.JoinLink}}" class="join-button">Join Meeting</a>
             </div>
-            {{if .MeetingDetailsLink}}
-            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
-                One</a>
-            {{end}}
+
+            <div class="alternative-section">
+                <div class="alternative-title">Alternative ways to join</div>
+                
+                <div class="alternative-method">
+                    <div class="method-title">1. Join from any device</div>
+                    <div class="method-text">If the button above doesn't work, copy and paste this link into your browser:</div>
+                    <div><a href="{{.JoinLink}}" class="text-link">{{.JoinLink}}</a></div>
+                </div>
+
+                {{if .MeetingID}}
+                <div class="alternative-method">
+                    <div class="method-title">2. Join by phone</div>
+                    <div class="method-text">One-tap mobile (US):</div>
+                    <div>
+                        <a href="tel:+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#" class="text-link">+1 253 215 8782,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
+                    </div>
+                    <div>
+                        <a href="tel:+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#" class="text-link">+1 346 248 7799,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
+                    </div>
+                    
+                    <div class="method-text method-spacing">Or dial manually:</div>
+                    <div class="method-text">US: +1 253 215 8782 | Canada: +1 647 374 4685</div>
+                    <div class="method-text">Meeting ID: {{.MeetingID}}</div>
+                    {{if .Passcode}}
+                    <div class="method-text">Passcode: {{.Passcode}}</div>
+                    {{end}}
+                    <div><a href="https://zoom.us/u/alwnPIaVT" class="text-link">Find international numbers</a></div>
+                </div>
+                {{end}}
+            </div>
         </div>
-        {{else}}
-        <div class="details">
-            <div class="details-title">Meeting Details</div>
-            {{newLineToBreakLine .Description}}
-            {{if .MeetingDetailsLink}}
-            <a href="{{.MeetingDetailsLink}}" class="text-button display-block-margin-top-16">See full details in LFX
-                One</a>
-            {{end}}
-        </div>
-        {{end}}
-        <div class="text-align-center">
-            <a href="{{.JoinLink}}" class="button">Join Meeting</a>
-        </div>
+
         <div class="footer">
-            powered by <strong>LFX One</strong>
-        </div>
-        <hr class="separator">
-        <div class="details">
-            <p>Alternative ways to join meeting:</p>
-            <div>
-                <div>
-                    <p><b>1. Join from PC, Mac, iPad, or Android</b></p>
-                    <p class="text-gray">If the button above does not work, paste this into your browser: <a
-                            href="{{.JoinLink}}">{{.JoinLink}}</a></p>
-                </div>
-                <div>
-                    <p><b>2. Join via audio</b></p>
-                    <div class="tight-spacing text-gray">
-                        <p>One tap mobile:</p>
-                        <p>US: <a href="tel:+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#"
-                                class="text-button">+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
-                            or <a href="tel:+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#"
-                                class="text-button">+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
-                        </p>
-                    </div>
-                    <div class="tight-spacing text-gray">
-                        <p>Or dial:</p>
-                        <p>US: +1 253 215 8782</p>
-                        <p>Canada: +1 647 374 4685</p>
-                    </div>
-                    <p>Meeting ID: {{.MeetingID}}</p>
-                    <p>Meeting Passcode: {{.Passcode}}</p>
-                    <a href="https://zoom.us/u/alwnPIaVT" class="text-button">International numbers</a>
-                </div>
-            </div>
+            <div class="footer-text">Powered by <strong>LFX One</strong></div>
         </div>
     </div>
 </body>
