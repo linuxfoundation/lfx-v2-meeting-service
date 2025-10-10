@@ -241,6 +241,10 @@
         .text-link:hover {
             text-decoration: underline;
         }
+        .text-center-spacing {
+            text-align: center;
+            margin: 24px 0;
+        }
     </style>
 </head>
 
@@ -291,7 +295,7 @@
 
                 <div class="meeting-info-grid">
                     <div class="info-card cancelled">
-                        <div class="info-label">Date & Time</div>
+                        <div class="info-label">Date &amp; Time</div>
                         <div class="cancelled-value">{{formatTime .StartTime .Timezone}}</div>
                     </div>
                     {{if .Recurrence}}
@@ -336,7 +340,7 @@
             </div>
 
             {{if .MeetingDetailsLink}}
-            <div style="text-align: center; margin: 24px 0;">
+            <div class="text-center-spacing">
                 <a href="{{.MeetingDetailsLink}}" class="text-link">View project details in LFX One →</a>
             </div>
             {{end}}
