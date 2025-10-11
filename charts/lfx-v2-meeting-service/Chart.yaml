@@ -2,8 +2,14 @@
 # SPDX-License-Identifier: MIT
 ---
 apiVersion: v2
-name: lfx-v2-meeting-service
-description: LFX Platform V2 Meeting Service chart
+name: lfx-one-meeting-service
+description: LFX one Meeting Service chart
 type: application
-version: 0.4.16
+version: 2.0.0
 appVersion: "latest"
+
+dependencies:
+  - name: lfx-service
+    version: 1.0.0
+    repository: file://../../../lfx-v2-helm/charts/lfx-service
+    # repository: oci://ghcr.io/linuxfoundation/lfx-service/chart
