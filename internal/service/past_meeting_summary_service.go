@@ -14,25 +14,28 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // PastMeetingSummaryService implements the business logic for past meeting summaries.
 type PastMeetingSummaryService struct {
-	pastMeetingSummaryRepository domain.PastMeetingSummaryRepository
-	pastMeetingRepository        domain.PastMeetingRepository
-	registrantRepository         domain.RegistrantRepository
-	meetingRepository            domain.MeetingRepository
-	emailService                 domain.EmailService
-	messageBuilder               domain.MessageBuilder
-	config                       ServiceConfig
+	pastMeetingSummaryRepository     domain.PastMeetingSummaryRepository
+	pastMeetingRepository            domain.PastMeetingRepository
+	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository
+	registrantRepository             domain.RegistrantRepository
+	meetingRepository                domain.MeetingRepository
+	emailService                     domain.EmailService
+	messageBuilder                   domain.MessageBuilder
+	config                           ServiceConfig
 }
 
 // NewPastMeetingSummaryService creates a new PastMeetingSummaryService.
 func NewPastMeetingSummaryService(
 	pastMeetingSummaryRepository domain.PastMeetingSummaryRepository,
 	pastMeetingRepository domain.PastMeetingRepository,
+	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository,
 	registrantRepository domain.RegistrantRepository,
 	meetingRepository domain.MeetingRepository,
 	emailService domain.EmailService,
@@ -40,24 +43,26 @@ func NewPastMeetingSummaryService(
 	serviceConfig ServiceConfig,
 ) *PastMeetingSummaryService {
 	return &PastMeetingSummaryService{
-		pastMeetingSummaryRepository: pastMeetingSummaryRepository,
-		pastMeetingRepository:        pastMeetingRepository,
-		registrantRepository:         registrantRepository,
-		meetingRepository:            meetingRepository,
-		emailService:                 emailService,
-		messageBuilder:               messageBuilder,
-		config:                       serviceConfig,
+		pastMeetingSummaryRepository:     pastMeetingSummaryRepository,
+		pastMeetingRepository:            pastMeetingRepository,
+		pastMeetingParticipantRepository: pastMeetingParticipantRepository,
+		registrantRepository:             registrantRepository,
+		meetingRepository:                meetingRepository,
+		emailService:                     emailService,
+		messageBuilder:                   messageBuilder,
+		config:                           serviceConfig,
 	}
 }
 
 // ServiceReady checks if the service is ready to serve requests.
 func (s *PastMeetingSummaryService) ServiceReady() bool {
 	return s.pastMeetingSummaryRepository != nil &&
-		s.messageBuilder != nil &&
 		s.pastMeetingRepository != nil &&
-		s.meetingRepository != nil &&
+		s.pastMeetingParticipantRepository != nil &&
 		s.registrantRepository != nil &&
-		s.emailService != nil
+		s.meetingRepository != nil &&
+		s.emailService != nil &&
+		s.messageBuilder != nil
 }
 
 // ListSummariesByPastMeeting returns all summaries for a given past meeting.
@@ -119,11 +124,46 @@ func (s *PastMeetingSummaryService) CreateSummary(
 		return nil, domain.NewInternalError("error creating summary", err)
 	}
 
-	// Send indexing message for new summary
-	err = s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending index message for new summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		// Don't fail the operation if indexing fails
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary)
+		},
+		func() error {
+			// Get past meeting to retrieve artifact visibility
+			pastMeeting, err := s.pastMeetingRepository.Get(ctx, summary.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Get participants for the past meeting
+			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, summary.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Convert to simplified access participants
+			participants := make([]models.AccessParticipant, len(participantPointers))
+			for i, p := range participantPointers {
+				participants[i] = models.AccessParticipant{
+					Username: p.Username,
+					Host:     p.Host,
+				}
+			}
+
+			return s.messageBuilder.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{
+				UID:                summary.UID,
+				PastMeetingUID:     summary.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Participants:       participants,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
 	}
 
 	slog.InfoContext(ctx, "created new past meeting summary",
@@ -220,11 +260,46 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 		return nil, domain.NewInternalError("error updating summary", err)
 	}
 
-	// Send indexing message for updated summary
-	err = s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending index message for updated summary", logging.ErrKey, err, "summary_uid", summary.UID)
-		// Don't fail the operation if indexing fails
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
+		},
+		func() error {
+			// Get past meeting to retrieve artifact visibility
+			pastMeeting, err := s.pastMeetingRepository.Get(ctx, updatedSummary.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Get participants for the past meeting
+			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, updatedSummary.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Convert to simplified access participants
+			participants := make([]models.AccessParticipant, len(participantPointers))
+			for i, p := range participantPointers {
+				participants[i] = models.AccessParticipant{
+					Username: p.Username,
+					Host:     p.Host,
+				}
+			}
+
+			return s.messageBuilder.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{
+				UID:                updatedSummary.UID,
+				PastMeetingUID:     updatedSummary.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Participants:       participants,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
 	}
 
 	slog.InfoContext(ctx, "updated existing past meeting summary",

@@ -37,12 +37,17 @@ type MessageBuilder interface {
 	SendDeleteIndexPastMeetingParticipant(ctx context.Context, data string) error
 	SendIndexPastMeetingRecording(ctx context.Context, action models.MessageAction, data models.PastMeetingRecording) error
 	SendDeleteIndexPastMeetingRecording(ctx context.Context, data string) error
+	SendIndexPastMeetingTranscript(ctx context.Context, action models.MessageAction, data models.PastMeetingTranscript) error
+	SendDeleteIndexPastMeetingTranscript(ctx context.Context, data string) error
 	SendIndexPastMeetingSummary(ctx context.Context, action models.MessageAction, data models.PastMeetingSummary) error
 	SendDeleteIndexPastMeetingSummary(ctx context.Context, data string) error
 	SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error
 	SendDeleteAllAccessMeeting(ctx context.Context, data string) error
 	SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error
 	SendDeleteAllAccessPastMeeting(ctx context.Context, data string) error
+	SendUpdateAccessPastMeetingRecording(ctx context.Context, data models.PastMeetingRecordingAccessMessage) error
+	SendUpdateAccessPastMeetingTranscript(ctx context.Context, data models.PastMeetingTranscriptAccessMessage) error
+	SendUpdateAccessPastMeetingSummary(ctx context.Context, data models.PastMeetingSummaryAccessMessage) error
 	SendPutPastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error
 	SendRemovePastMeetingParticipantAccess(ctx context.Context, data models.PastMeetingParticipantAccessMessage) error
 	SendPutMeetingRegistrantAccess(ctx context.Context, data models.MeetingRegistrantAccessMessage) error
