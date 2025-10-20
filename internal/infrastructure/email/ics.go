@@ -134,9 +134,9 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	ics.WriteString("PRIORITY:5\r\n")
 	ics.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", param.Sequence))
 
-	// Alarm (reminder 15 minutes before)
+	// Alarm
 	ics.WriteString("BEGIN:VALARM\r\n")
-	ics.WriteString("TRIGGER:-PT15M\r\n")
+	ics.WriteString("TRIGGER:-PT10M\r\n")
 	ics.WriteString("ACTION:DISPLAY\r\n")
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:Reminder: %s\r\n", escapeICSText(param.MeetingTitle)))
 	ics.WriteString("END:VALARM\r\n")
@@ -252,9 +252,9 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 	ics.WriteString("PRIORITY:5\r\n")
 	ics.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", params.Sequence)) // Incremented sequence for updates
 
-	// Alarm (reminder 15 minutes before)
+	// Alarm
 	ics.WriteString("BEGIN:VALARM\r\n")
-	ics.WriteString("TRIGGER:-PT15M\r\n")
+	ics.WriteString("TRIGGER:-PT10M\r\n")
 	ics.WriteString("ACTION:DISPLAY\r\n")
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:Reminder: %s\r\n", escapeICSText(params.MeetingTitle)))
 	ics.WriteString("END:VALARM\r\n")
