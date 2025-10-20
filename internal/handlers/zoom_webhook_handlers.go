@@ -1385,10 +1385,27 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 	// Calculate occurrence ID based on meeting type and occurrences
 	occurrenceID := s.findClosestOccurrenceID(meeting, zoomData.StartTime)
 
+	// Parse occurrence ID to get the scheduled start time for this occurrence
+	// The occurrence ID is a unix timestamp string
+	scheduledStartTime := meeting.StartTime // Default to meeting start time
+	if occurrenceUnix, err := strconv.ParseInt(occurrenceID, 10, 64); err == nil {
+		scheduledStartTime = time.Unix(occurrenceUnix, 0)
+	} else {
+		slog.WarnContext(ctx, "failed to parse occurrence ID as unix timestamp, using meeting start time",
+			"occurrence_id", occurrenceID,
+			"error", err,
+		)
+	}
+
+	// Calculate scheduled end time based on duration from the scheduled start time
+	scheduledEndTime := scheduledStartTime.Add(time.Duration(meeting.Duration) * time.Minute)
+
 	logFields := []any{
 		"meeting_uid", meeting.UID,
 		"zoom_meeting_uuid", zoomData.UUID,
 		"actual_start_time", zoomData.StartTime,
+		"scheduled_start_time", scheduledStartTime,
+		"scheduled_end_time", scheduledEndTime,
 		"timezone", zoomData.Timezone,
 		"occurrence_id", occurrenceID,
 		"is_recurring", meeting.Recurrence != nil,
@@ -1406,9 +1423,6 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		platformMeetingID = meeting.ZoomConfig.MeetingID
 	}
 
-	// Calculate scheduled end time based on duration
-	scheduledEndTime := meeting.StartTime.Add(time.Duration(meeting.Duration) * time.Minute)
-
 	// Create session with appropriate end time
 	session := models.Session{
 		UID:       zoomData.UUID,
@@ -1422,7 +1436,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		MeetingUID:           meeting.UID,
 		OccurrenceID:         occurrenceID,
 		ProjectUID:           meeting.ProjectUID,
-		ScheduledStartTime:   meeting.StartTime, // Scheduled time from our meeting
+		ScheduledStartTime:   scheduledStartTime, // Scheduled time for this specific occurrence
 		ScheduledEndTime:     scheduledEndTime,
 		Duration:             meeting.Duration,
 		Timezone:             zoomData.Timezone, // Use timezone from webhook payload
