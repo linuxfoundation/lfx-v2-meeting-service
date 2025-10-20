@@ -134,6 +134,8 @@ func TestMeetingHandler_HandleMessage(t *testing.T) {
 				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil).Maybe()
 				// Mock GetProjectLogo for cancellation email (called in goroutine)
 				mockBuilder.On("GetProjectLogo", mock.Anything, "project-123").Return("https://example.com/logo.png", nil).Maybe()
+				// Mock GetProjectSlug for cancellation email (called in goroutine)
+				mockBuilder.On("GetProjectSlug", mock.Anything, "project-123").Return("test-project", nil).Maybe()
 				// Mock email service for cancellation
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
@@ -343,6 +345,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				}, uint64(0), nil).Maybe()
 				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil).Maybe()
 				mockBuilder.On("GetProjectLogo", mock.Anything, "project-123").Return("https://example.com/logo.png", nil).Maybe()
+				mockBuilder.On("GetProjectSlug", mock.Anything, "project-123").Return("test-project", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: false,
@@ -390,6 +393,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				}, uint64(0), nil).Maybe()
 				mockBuilder.On("GetProjectName", mock.Anything, "project-456").Return("Team Project", nil).Maybe()
 				mockBuilder.On("GetProjectLogo", mock.Anything, "project-456").Return("https://example.com/logo.png", nil).Maybe()
+				mockBuilder.On("GetProjectSlug", mock.Anything, "project-456").Return("team-project", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: false,
@@ -476,6 +480,7 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				}, uint64(0), nil).Maybe()
 				mockBuilder.On("GetProjectName", mock.Anything, "project-partial").Return("Test Project", nil).Maybe()
 				mockBuilder.On("GetProjectLogo", mock.Anything, "project-partial").Return("https://example.com/logo.png", nil).Maybe()
+				mockBuilder.On("GetProjectSlug", mock.Anything, "project-partial").Return("test-project", nil).Maybe()
 				mockEmailService.On("SendRegistrantCancellation", mock.Anything, mock.AnythingOfType("domain.EmailCancellation")).Return(nil).Maybe()
 			},
 			expectError: true, // Handler fails when any deletion fails due to WorkerPool fail-fast behavior

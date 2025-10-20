@@ -690,21 +690,26 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
 	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
 
 	cancellation := domain.EmailCancellation{
-		MeetingUID:     meeting.UID,
-		RecipientEmail: registrant.Email,
-		RecipientName:  recipientName,
-		MeetingTitle:   meeting.Title,
-		StartTime:      meeting.StartTime,
-		Duration:       meeting.Duration,
-		Timezone:       meeting.Timezone,
-		Description:    meeting.Description,
-		ProjectName:    projectName,
-		ProjectLogo:    projectLogo,
-		Reason:         "Your registration has been removed from this meeting.",
-		Recurrence:     meeting.Recurrence,
-		IcsSequence:    meeting.IcsSequence,
+		MeetingUID:         meeting.UID,
+		RecipientEmail:     registrant.Email,
+		RecipientName:      recipientName,
+		MeetingTitle:       meeting.Title,
+		StartTime:          meeting.StartTime,
+		Duration:           meeting.Duration,
+		Timezone:           meeting.Timezone,
+		Description:        meeting.Description,
+		Visibility:         meeting.Visibility,
+		MeetingType:        meeting.MeetingType,
+		Platform:           meeting.Platform,
+		MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, s.config.LFXEnvironment),
+		ProjectName:        projectName,
+		ProjectLogo:        projectLogo,
+		Reason:             "Your registration has been removed from this meeting.",
+		Recurrence:         meeting.Recurrence,
+		IcsSequence:        meeting.IcsSequence,
 	}
 
 	return s.emailService.SendRegistrantCancellation(ctx, cancellation)
