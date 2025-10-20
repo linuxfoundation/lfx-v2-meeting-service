@@ -768,24 +768,45 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
+		"start_time", payload.Object.StartTime,
 		"total_size", payload.Object.TotalSize,
 		"recording_count", payload.Object.RecordingCount,
 	)
 
-	// Find the PastMeeting record by platform meeting ID
+	// Get the base meeting to calculate the occurrence ID
 	meetingIDStr := strconv.FormatInt(payload.Object.ID, 10)
-	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	meeting, err := s.meetingService.GetMeetingByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.WarnContext(ctx, "no meeting found for recording, cannot determine occurrence",
+				"zoom_meeting_id", payload.Object.ID,
+			)
+			return nil
+		}
+		slog.ErrorContext(ctx, "error finding meeting for recording", logging.ErrKey, err,
+			"zoom_meeting_id", payload.Object.ID,
+		)
+		return fmt.Errorf("failed to find meeting: %w", err)
+	}
+
+	// Calculate the occurrence ID based on the recording start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.StartTime)
+
+	// Find the PastMeeting record by platform meeting ID AND occurrence ID
+	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingIDStr, occurrenceID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "no past meeting found for recording completed event, skipping",
 				"zoom_meeting_id", payload.Object.ID,
 				"zoom_meeting_uuid", payload.Object.UUID,
+				"occurrence_id", occurrenceID,
 				"topic", payload.Object.Topic,
 			)
 			return nil // Not an error - we just don't have a past meeting record yet
 		}
 		slog.ErrorContext(ctx, "error finding past meeting for recording", logging.ErrKey, err,
 			"zoom_meeting_id", payload.Object.ID,
+			"occurrence_id", occurrenceID,
 		)
 		return fmt.Errorf("failed to find past meeting: %w", err)
 	}
@@ -932,24 +953,45 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
+		"start_time", payload.Object.StartTime,
 		"duration", payload.Object.Duration,
 		"recording_files", len(payload.Object.RecordingFiles),
 	)
 
-	// Find the PastMeeting record by platform meeting ID
+	// Get the base meeting to calculate the occurrence ID
 	meetingIDStr := strconv.FormatInt(payload.Object.ID, 10)
-	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	meeting, err := s.meetingService.GetMeetingByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.WarnContext(ctx, "no meeting found for transcript, cannot determine occurrence",
+				"zoom_meeting_id", payload.Object.ID,
+			)
+			return nil
+		}
+		slog.ErrorContext(ctx, "error finding meeting for transcript", logging.ErrKey, err,
+			"zoom_meeting_id", payload.Object.ID,
+		)
+		return fmt.Errorf("failed to find meeting: %w", err)
+	}
+
+	// Calculate the occurrence ID based on the transcript start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.StartTime)
+
+	// Find the PastMeeting record by platform meeting ID AND occurrence ID
+	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingIDStr, occurrenceID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "no past meeting found for transcript completed event, skipping",
 				"zoom_meeting_id", payload.Object.ID,
 				"zoom_meeting_uuid", payload.Object.UUID,
+				"occurrence_id", occurrenceID,
 				"topic", payload.Object.Topic,
 			)
 			return nil // Not an error - we just don't have a past meeting record yet
 		}
 		slog.ErrorContext(ctx, "error finding past meeting for transcript", logging.ErrKey, err,
 			"zoom_meeting_id", payload.Object.ID,
+			"occurrence_id", occurrenceID,
 		)
 		return fmt.Errorf("failed to find past meeting: %w", err)
 	}
@@ -1387,9 +1429,9 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 
 	// Parse occurrence ID to get the scheduled start time for this occurrence
 	// The occurrence ID is a unix timestamp string
-	scheduledStartTime := meeting.StartTime // Default to meeting start time
+	scheduledStartTime := meeting.StartTime.UTC() // Default to meeting start time in UTC
 	if occurrenceUnix, err := strconv.ParseInt(occurrenceID, 10, 64); err == nil {
-		scheduledStartTime = time.Unix(occurrenceUnix, 0)
+		scheduledStartTime = time.Unix(occurrenceUnix, 0).UTC()
 	} else {
 		slog.WarnContext(ctx, "failed to parse occurrence ID as unix timestamp, using meeting start time",
 			"occurrence_id", occurrenceID,
@@ -1397,7 +1439,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		)
 	}
 
-	// Calculate scheduled end time based on duration from the scheduled start time
+	// Calculate scheduled end time based on duration from the scheduled start time (will be in UTC)
 	scheduledEndTime := scheduledStartTime.Add(time.Duration(meeting.Duration) * time.Minute)
 
 	logFields := []any{
