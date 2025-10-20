@@ -181,25 +181,6 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*m
 	return pastMeeting, strconv.FormatUint(revision, 10), nil
 }
 
-func (s *PastMeetingService) GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized")
-	}
-
-	pastMeeting, err := s.pastMeetingRepository.GetByPlatformMeetingID(ctx, platform, platformMeetingID)
-	if err != nil {
-		return nil, err
-	}
-
-	slog.DebugContext(ctx, "returning past meeting by platform meeting ID",
-		"past_meeting_uid", pastMeeting.UID,
-		"platform", platform,
-		"platform_meeting_id", platformMeetingID)
-
-	return pastMeeting, nil
-}
-
 // GetByPlatformMeetingIDAndOccurrence gets a past meeting by platform meeting ID and occurrence
 func (s *PastMeetingService) GetByPlatformMeetingIDAndOccurrence(ctx context.Context, platform, platformMeetingID, occurrenceID string) (*models.PastMeeting, error) {
 	if !s.ServiceReady() {
