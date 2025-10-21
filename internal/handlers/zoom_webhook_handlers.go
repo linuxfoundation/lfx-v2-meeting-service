@@ -68,6 +68,7 @@ func (s *ZoomWebhookHandler) HandlerReady() bool {
 		s.pastMeetingService.ServiceReady() &&
 		s.pastMeetingParticipantService.ServiceReady() &&
 		s.pastMeetingRecordingService.ServiceReady() &&
+		s.pastMeetingTranscriptService.ServiceReady() &&
 		s.pastMeetingSummaryService.ServiceReady()
 }
 
@@ -970,6 +971,11 @@ func (s *ZoomWebhookHandler) createTranscriptFromZoomPayload(pastMeetingUID stri
 	}
 
 	transcript.TranscriptFiles = transcriptFiles
+	transcript.TranscriptCount = len(transcriptFiles)
+	transcript.TotalSize = 0
+	for _, file := range transcriptFiles {
+		transcript.TotalSize += file.FileSize
+	}
 
 	return transcript
 }
