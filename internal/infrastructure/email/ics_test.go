@@ -50,7 +50,7 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		assert.Contains(t, ics, "ATTENDEE")
 		assert.Contains(t, ics, "user@example.com")
 		assert.Contains(t, ics, "BEGIN:VALARM")
-		assert.Contains(t, ics, "TRIGGER:-PT15M")
+		assert.Contains(t, ics, "TRIGGER:-PT10M")
 	})
 
 	t.Run("meeting with daily recurrence", func(t *testing.T) {

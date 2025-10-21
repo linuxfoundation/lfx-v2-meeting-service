@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -771,24 +772,45 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
+		"start_time", payload.Object.StartTime,
 		"total_size", payload.Object.TotalSize,
 		"recording_count", payload.Object.RecordingCount,
 	)
 
-	// Find the PastMeeting record by platform meeting ID
+	// Get the base meeting to calculate the occurrence ID
 	meetingIDStr := strconv.FormatInt(payload.Object.ID, 10)
-	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	meeting, err := s.meetingService.GetMeetingByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.WarnContext(ctx, "no meeting found for recording, cannot determine occurrence",
+				"zoom_meeting_id", payload.Object.ID,
+			)
+			return nil
+		}
+		slog.ErrorContext(ctx, "error finding meeting for recording", logging.ErrKey, err,
+			"zoom_meeting_id", payload.Object.ID,
+		)
+		return fmt.Errorf("failed to find meeting: %w", err)
+	}
+
+	// Calculate the occurrence ID based on the recording start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.StartTime)
+
+	// Find the PastMeeting record by platform meeting ID AND occurrence ID
+	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingIDStr, occurrenceID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "no past meeting found for recording completed event, skipping",
 				"zoom_meeting_id", payload.Object.ID,
 				"zoom_meeting_uuid", payload.Object.UUID,
+				"occurrence_id", occurrenceID,
 				"topic", payload.Object.Topic,
 			)
 			return nil // Not an error - we just don't have a past meeting record yet
 		}
 		slog.ErrorContext(ctx, "error finding past meeting for recording", logging.ErrKey, err,
 			"zoom_meeting_id", payload.Object.ID,
+			"occurrence_id", occurrenceID,
 		)
 		return fmt.Errorf("failed to find past meeting: %w", err)
 	}
@@ -840,6 +862,27 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 			"total_files", len(recording.RecordingFiles),
 			"total_size", recording.TotalSize,
 		)
+
+		// Add recording UID to past meeting's RecordingUIDs array
+		if !slices.Contains(pastMeeting.RecordingUIDs, recording.UID) {
+			// Get the latest version with revision to update
+			updatedPastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, pastMeeting.UID)
+			if err != nil {
+				slog.WarnContext(ctx, "failed to get past meeting for recording UID update", logging.ErrKey, err,
+					"past_meeting_uid", pastMeeting.UID,
+				)
+			} else {
+				updatedPastMeeting.RecordingUIDs = append(updatedPastMeeting.RecordingUIDs, recording.UID)
+				revisionUint, _ := strconv.ParseUint(revision, 10, 64)
+				if err := s.pastMeetingService.UpdatePastMeeting(ctx, updatedPastMeeting, revisionUint); err != nil {
+					slog.WarnContext(ctx, "failed to update past meeting with recording UID", logging.ErrKey, err,
+						"past_meeting_uid", pastMeeting.UID,
+						"recording_uid", recording.UID,
+					)
+					// Don't fail the entire operation if this update fails
+				}
+			}
+		}
 	}
 
 	return nil
@@ -944,24 +987,45 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 		"zoom_meeting_uuid", payload.Object.UUID,
 		"zoom_meeting_id", payload.Object.ID,
 		"topic", payload.Object.Topic,
+		"start_time", payload.Object.StartTime,
 		"duration", payload.Object.Duration,
 		"recording_files", len(payload.Object.RecordingFiles),
 	)
 
-	// Find the PastMeeting record by platform meeting ID
+	// Get the base meeting to calculate the occurrence ID
 	meetingIDStr := strconv.FormatInt(payload.Object.ID, 10)
-	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	meeting, err := s.meetingService.GetMeetingByPlatformMeetingID(ctx, models.PlatformZoom, meetingIDStr)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.WarnContext(ctx, "no meeting found for transcript, cannot determine occurrence",
+				"zoom_meeting_id", payload.Object.ID,
+			)
+			return nil
+		}
+		slog.ErrorContext(ctx, "error finding meeting for transcript", logging.ErrKey, err,
+			"zoom_meeting_id", payload.Object.ID,
+		)
+		return fmt.Errorf("failed to find meeting: %w", err)
+	}
+
+	// Calculate the occurrence ID based on the transcript start time
+	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.StartTime)
+
+	// Find the PastMeeting record by platform meeting ID AND occurrence ID
+	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingIDStr, occurrenceID)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
 			slog.WarnContext(ctx, "no past meeting found for transcript completed event, skipping",
 				"zoom_meeting_id", payload.Object.ID,
 				"zoom_meeting_uuid", payload.Object.UUID,
+				"occurrence_id", occurrenceID,
 				"topic", payload.Object.Topic,
 			)
 			return nil // Not an error - we just don't have a past meeting record yet
 		}
 		slog.ErrorContext(ctx, "error finding past meeting for transcript", logging.ErrKey, err,
 			"zoom_meeting_id", payload.Object.ID,
+			"occurrence_id", occurrenceID,
 		)
 		return fmt.Errorf("failed to find past meeting: %w", err)
 	}
@@ -1013,6 +1077,27 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 			"total_files", len(transcript.TranscriptFiles),
 			"total_size", transcript.TotalSize,
 		)
+
+		// Add transcript UID to past meeting's TranscriptUIDs array
+		if !slices.Contains(pastMeeting.TranscriptUIDs, transcript.UID) {
+			// Get the latest version with revision to update
+			updatedPastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, pastMeeting.UID)
+			if err != nil {
+				slog.WarnContext(ctx, "failed to get past meeting for transcript UID update", logging.ErrKey, err,
+					"past_meeting_uid", pastMeeting.UID,
+				)
+			} else {
+				updatedPastMeeting.TranscriptUIDs = append(updatedPastMeeting.TranscriptUIDs, transcript.UID)
+				revisionUint, _ := strconv.ParseUint(revision, 10, 64)
+				if err := s.pastMeetingService.UpdatePastMeeting(ctx, updatedPastMeeting, revisionUint); err != nil {
+					slog.WarnContext(ctx, "failed to update past meeting with transcript UID", logging.ErrKey, err,
+						"past_meeting_uid", pastMeeting.UID,
+						"transcript_uid", transcript.UID,
+					)
+					// Don't fail the entire operation if this update fails
+				}
+			}
+		}
 	}
 
 	return nil
@@ -1132,6 +1217,27 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 		"zoom_meeting_id", zoomMeetingID,
 		"zoom_meeting_uuid", payload.Object.MeetingUUID,
 	)
+
+	// Add summary UID to past meeting's SummaryUIDs array
+	if !slices.Contains(pastMeeting.SummaryUIDs, createdSummary.UID) {
+		// Get the latest version with revision to update
+		updatedPastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, pastMeeting.UID)
+		if err != nil {
+			slog.WarnContext(ctx, "failed to get past meeting for summary UID update", logging.ErrKey, err,
+				"past_meeting_uid", pastMeeting.UID,
+			)
+		} else {
+			updatedPastMeeting.SummaryUIDs = append(updatedPastMeeting.SummaryUIDs, createdSummary.UID)
+			revisionUint, _ := strconv.ParseUint(revision, 10, 64)
+			if err := s.pastMeetingService.UpdatePastMeeting(ctx, updatedPastMeeting, revisionUint); err != nil {
+				slog.WarnContext(ctx, "failed to update past meeting with summary UID", logging.ErrKey, err,
+					"past_meeting_uid", pastMeeting.UID,
+					"summary_uid", createdSummary.UID,
+				)
+				// Don't fail the entire operation if this update fails
+			}
+		}
+	}
 
 	return nil
 }
@@ -1397,10 +1503,27 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 	// Calculate occurrence ID based on meeting type and occurrences
 	occurrenceID := s.findClosestOccurrenceID(meeting, zoomData.StartTime)
 
+	// Parse occurrence ID to get the scheduled start time for this occurrence
+	// The occurrence ID is a unix timestamp string
+	scheduledStartTime := meeting.StartTime.UTC() // Default to meeting start time in UTC
+	if occurrenceUnix, err := strconv.ParseInt(occurrenceID, 10, 64); err == nil {
+		scheduledStartTime = time.Unix(occurrenceUnix, 0).UTC()
+	} else {
+		slog.WarnContext(ctx, "failed to parse occurrence ID as unix timestamp, using meeting start time",
+			"occurrence_id", occurrenceID,
+			"error", err,
+		)
+	}
+
+	// Calculate scheduled end time based on duration from the scheduled start time (will be in UTC)
+	scheduledEndTime := scheduledStartTime.Add(time.Duration(meeting.Duration) * time.Minute)
+
 	logFields := []any{
 		"meeting_uid", meeting.UID,
 		"zoom_meeting_uuid", zoomData.UUID,
 		"actual_start_time", zoomData.StartTime,
+		"scheduled_start_time", scheduledStartTime,
+		"scheduled_end_time", scheduledEndTime,
 		"timezone", zoomData.Timezone,
 		"occurrence_id", occurrenceID,
 		"is_recurring", meeting.Recurrence != nil,
@@ -1418,9 +1541,6 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		platformMeetingID = meeting.ZoomConfig.MeetingID
 	}
 
-	// Calculate scheduled end time based on duration
-	scheduledEndTime := meeting.StartTime.Add(time.Duration(meeting.Duration) * time.Minute)
-
 	// Create session with appropriate end time
 	session := models.Session{
 		UID:       zoomData.UUID,
@@ -1434,7 +1554,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		MeetingUID:           meeting.UID,
 		OccurrenceID:         occurrenceID,
 		ProjectUID:           meeting.ProjectUID,
-		ScheduledStartTime:   meeting.StartTime, // Scheduled time from our meeting
+		ScheduledStartTime:   scheduledStartTime, // Scheduled time for this specific occurrence
 		ScheduledEndTime:     scheduledEndTime,
 		Duration:             meeting.Duration,
 		Timezone:             zoomData.Timezone, // Use timezone from webhook payload

@@ -78,23 +78,6 @@ func (s *NatsPastMeetingRepository) ListAll(ctx context.Context) ([]*models.Past
 	return s.ListEntities(ctx, "")
 }
 
-// GetByPlatformMeetingID gets a past meeting by platform meeting ID
-func (s *NatsPastMeetingRepository) GetByPlatformMeetingID(ctx context.Context, platform, platformMeetingID string) (*models.PastMeeting, error) {
-	allPastMeetings, err := s.ListAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, pastMeeting := range allPastMeetings {
-		if strings.EqualFold(pastMeeting.Platform, platform) && pastMeeting.PlatformMeetingID == platformMeetingID {
-			return pastMeeting, nil
-		}
-	}
-
-	return nil, domain.NewNotFoundError(
-		fmt.Sprintf("past meeting with platform '%s' and meeting ID '%s' not found", platform, platformMeetingID))
-}
-
 // GetByPlatformMeetingIDAndOccurrence gets a past meeting by platform meeting ID and occurrence
 func (s *NatsPastMeetingRepository) GetByPlatformMeetingIDAndOccurrence(ctx context.Context, platform, platformMeetingID, occurrenceID string) (*models.PastMeeting, error) {
 	allPastMeetings, err := s.ListAll(ctx)
