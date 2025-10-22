@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 // PastMeetingService implements the meetingsvc.Service interface and domain.MessageHandler
@@ -82,22 +84,26 @@ func (s *PastMeetingService) validateCreatePastMeetingPayload(ctx context.Contex
 		return domain.NewValidationError("platform is required")
 	}
 
-	// Validate that the meeting has started in the past (UTC)
-	if !pastMeeting.ScheduledStartTime.Before(time.Now().UTC()) {
-		slog.WarnContext(ctx, "scheduled start time must be in the past")
-		return domain.NewValidationError("scheduled start time must be in the past")
-	}
-
-	// Validate that the meeting has ended in the past (UTC)
-	if !pastMeeting.ScheduledEndTime.Before(time.Now().UTC()) {
-		slog.WarnContext(ctx, "scheduled end time must be in the past")
-		return domain.NewValidationError("scheduled end time must be in the past")
+	// Validate that the meeting scheduled start time is not too far in the future
+	// Allow up to MaxEarlyJoinTimeMinutes in the future to account for early join functionality
+	maxFutureTime := time.Now().UTC().Add(time.Duration(constants.MaxEarlyJoinTimeMinutes) * time.Minute)
+	if pastMeeting.ScheduledStartTime.After(maxFutureTime) {
+		slog.WarnContext(ctx, "scheduled start time is too far in the future")
+		return domain.NewValidationError(fmt.Sprintf("scheduled start time cannot be more than %d minutes in the future", constants.MaxEarlyJoinTimeMinutes))
 	}
 
 	// Validate that end time is after start time
 	if pastMeeting.ScheduledEndTime.Before(pastMeeting.ScheduledStartTime) {
 		slog.WarnContext(ctx, "scheduled end time cannot be before start time")
 		return domain.NewValidationError("scheduled end time cannot be before start time")
+	}
+
+	// Validate that scheduled end time is not greater than the maximum duration from start time
+	maxDuration := time.Duration(constants.MaxMeetingDurationMinutes) * time.Minute
+	maxEndTime := pastMeeting.ScheduledStartTime.Add(maxDuration)
+	if pastMeeting.ScheduledEndTime.After(maxEndTime) {
+		slog.WarnContext(ctx, "scheduled end time is too far from start time")
+		return domain.NewValidationError(fmt.Sprintf("scheduled end time cannot be more than %d minutes from start time", constants.MaxMeetingDurationMinutes))
 	}
 
 	return nil
