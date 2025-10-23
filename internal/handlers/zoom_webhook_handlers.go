@@ -816,72 +816,65 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 		return fmt.Errorf("failed to find past meeting: %w", err)
 	}
 
-	// Check if a recording already exists for this past meeting
-	existingRecording, err := s.pastMeetingRecordingService.GetRecordingByPastMeetingUID(ctx, pastMeeting.UID)
+	// Check if a recording already exists for this Zoom UUID (for idempotency)
+	existingRecording, err := s.pastMeetingRecordingService.GetRecordingByPlatformMeetingInstanceID(ctx, models.PlatformZoom, payload.Object.UUID)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
-		slog.ErrorContext(ctx, "error checking for existing recording", logging.ErrKey, err,
-			"past_meeting_uid", pastMeeting.UID,
-			"zoom_meeting_id", payload.Object.ID,
+		slog.ErrorContext(ctx, "error checking for existing recording by instance ID", logging.ErrKey, err,
+			"zoom_meeting_uuid", payload.Object.UUID,
 		)
 		return fmt.Errorf("failed to check for existing recording: %w", err)
 	}
 
-	// Create domain model from Zoom payload
+	// If recording already exists for this Zoom UUID, skip creation (idempotent)
+	if existingRecording != nil {
+		slog.InfoContext(ctx, "recording already exists for this Zoom UUID, skipping creation",
+			"recording_uid", existingRecording.UID,
+			"past_meeting_uid", pastMeeting.UID,
+			"zoom_meeting_id", payload.Object.ID,
+			"zoom_meeting_uuid", payload.Object.UUID,
+		)
+		return nil
+	}
+
+	// Create domain model from Zoom payload - each Zoom UUID gets its own recording
 	recordingFromPayload := s.createRecordingFromZoomPayload(pastMeeting.UID, *payload)
 
-	var recording *models.PastMeetingRecording
-	if existingRecording != nil {
-		recording, err = s.pastMeetingRecordingService.UpdateRecording(ctx, existingRecording.UID, recordingFromPayload)
-		if err != nil {
-			slog.ErrorContext(ctx, "error updating recording", logging.ErrKey, err,
-				"recording_uid", existingRecording.UID,
-				"past_meeting_uid", pastMeeting.UID,
-				"zoom_meeting_id", payload.Object.ID,
-			)
-			return fmt.Errorf("failed to update recording: %w", err)
-		}
-		slog.InfoContext(ctx, "successfully updated existing recording",
-			"recording_uid", recording.UID,
+	// Create new recording for this Zoom UUID
+	recording, err := s.pastMeetingRecordingService.CreateRecording(ctx, recordingFromPayload)
+	if err != nil {
+		slog.ErrorContext(ctx, "error creating recording", logging.ErrKey, err,
 			"past_meeting_uid", pastMeeting.UID,
 			"zoom_meeting_id", payload.Object.ID,
-			"total_files", len(recording.RecordingFiles),
-			"total_size", recording.TotalSize,
+			"zoom_meeting_uuid", payload.Object.UUID,
 		)
-	} else {
-		recording, err = s.pastMeetingRecordingService.CreateRecording(ctx, recordingFromPayload)
-		if err != nil {
-			slog.ErrorContext(ctx, "error creating recording", logging.ErrKey, err,
-				"past_meeting_uid", pastMeeting.UID,
-				"zoom_meeting_id", payload.Object.ID,
-			)
-			return fmt.Errorf("failed to create recording: %w", err)
-		}
-		slog.InfoContext(ctx, "successfully created new recording",
-			"recording_uid", recording.UID,
-			"past_meeting_uid", pastMeeting.UID,
-			"zoom_meeting_id", payload.Object.ID,
-			"total_files", len(recording.RecordingFiles),
-			"total_size", recording.TotalSize,
-		)
+		return fmt.Errorf("failed to create recording: %w", err)
+	}
+	slog.InfoContext(ctx, "successfully created new recording",
+		"recording_uid", recording.UID,
+		"past_meeting_uid", pastMeeting.UID,
+		"zoom_meeting_id", payload.Object.ID,
+		"zoom_meeting_uuid", payload.Object.UUID,
+		"total_files", len(recording.RecordingFiles),
+		"total_size", recording.TotalSize,
+	)
 
-		// Add recording UID to past meeting's RecordingUIDs array
-		if !slices.Contains(pastMeeting.RecordingUIDs, recording.UID) {
-			// Get the latest version with revision to update
-			updatedPastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, pastMeeting.UID)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to get past meeting for recording UID update", logging.ErrKey, err,
+	// Add recording UID to past meeting's RecordingUIDs array
+	if !slices.Contains(pastMeeting.RecordingUIDs, recording.UID) {
+		// Get the latest version with revision to update
+		updatedPastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, pastMeeting.UID)
+		if err != nil {
+			slog.WarnContext(ctx, "failed to get past meeting for recording UID update", logging.ErrKey, err,
+				"past_meeting_uid", pastMeeting.UID,
+			)
+		} else {
+			updatedPastMeeting.RecordingUIDs = append(updatedPastMeeting.RecordingUIDs, recording.UID)
+			revisionUint, _ := strconv.ParseUint(revision, 10, 64)
+			if err := s.pastMeetingService.UpdatePastMeeting(ctx, updatedPastMeeting, revisionUint); err != nil {
+				slog.WarnContext(ctx, "failed to update past meeting with recording UID", logging.ErrKey, err,
 					"past_meeting_uid", pastMeeting.UID,
+					"recording_uid", recording.UID,
 				)
-			} else {
-				updatedPastMeeting.RecordingUIDs = append(updatedPastMeeting.RecordingUIDs, recording.UID)
-				revisionUint, _ := strconv.ParseUint(revision, 10, 64)
-				if err := s.pastMeetingService.UpdatePastMeeting(ctx, updatedPastMeeting, revisionUint); err != nil {
-					slog.WarnContext(ctx, "failed to update past meeting with recording UID", logging.ErrKey, err,
-						"past_meeting_uid", pastMeeting.UID,
-						"recording_uid", recording.UID,
-					)
-					// Don't fail the entire operation if this update fails
-				}
+				// Don't fail the entire operation if this update fails
 			}
 		}
 	}
@@ -892,9 +885,10 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 // createRecordingFromZoomPayload converts a Zoom recording completed payload to a domain model.
 func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID string, payload models.ZoomRecordingCompletedPayload) *models.PastMeetingRecording {
 	recording := &models.PastMeetingRecording{
-		PastMeetingUID:    pastMeetingUID,
-		Platform:          models.PlatformZoom,
-		PlatformMeetingID: strconv.FormatInt(payload.Object.ID, 10),
+		PastMeetingUID:            pastMeetingUID,
+		Platform:                  models.PlatformZoom,
+		PlatformMeetingID:         strconv.FormatInt(payload.Object.ID, 10),
+		PlatformMeetingInstanceID: payload.Object.UUID, // Zoom meeting UUID uniquely identifies this recording instance
 	}
 
 	// Create recording session from payload
@@ -937,9 +931,10 @@ func (s *ZoomWebhookHandler) createRecordingFromZoomPayload(pastMeetingUID strin
 // createTranscriptFromZoomPayload converts a Zoom transcript completed payload to a transcript domain model.
 func (s *ZoomWebhookHandler) createTranscriptFromZoomPayload(pastMeetingUID string, payload models.ZoomTranscriptCompletedPayload) *models.PastMeetingTranscript {
 	transcript := &models.PastMeetingTranscript{
-		PastMeetingUID:    pastMeetingUID,
-		Platform:          models.PlatformZoom,
-		PlatformMeetingID: strconv.FormatInt(payload.Object.ID, 10),
+		PastMeetingUID:            pastMeetingUID,
+		Platform:                  models.PlatformZoom,
+		PlatformMeetingID:         strconv.FormatInt(payload.Object.ID, 10),
+		PlatformMeetingInstanceID: payload.Object.UUID, // Zoom meeting UUID uniquely identifies this transcript instance
 	}
 
 	session := models.TranscriptSession{
@@ -1036,72 +1031,65 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 		return fmt.Errorf("failed to find past meeting: %w", err)
 	}
 
-	// Check if a transcript already exists for this past meeting
-	existingTranscript, err := s.pastMeetingTranscriptService.GetTranscriptByPastMeetingUID(ctx, pastMeeting.UID)
+	// Check if a transcript already exists for this Zoom UUID (for idempotency)
+	existingTranscript, err := s.pastMeetingTranscriptService.GetTranscriptByPlatformMeetingInstanceID(ctx, models.PlatformZoom, payload.Object.UUID)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
-		slog.ErrorContext(ctx, "error checking for existing transcript", logging.ErrKey, err,
-			"past_meeting_uid", pastMeeting.UID,
-			"zoom_meeting_id", payload.Object.ID,
+		slog.ErrorContext(ctx, "error checking for existing transcript by instance ID", logging.ErrKey, err,
+			"zoom_meeting_uuid", payload.Object.UUID,
 		)
 		return fmt.Errorf("failed to check for existing transcript: %w", err)
 	}
 
-	// Create domain model from Zoom transcript payload
+	// If transcript already exists for this Zoom UUID, skip creation (idempotent)
+	if existingTranscript != nil {
+		slog.InfoContext(ctx, "transcript already exists for this Zoom UUID, skipping creation",
+			"transcript_uid", existingTranscript.UID,
+			"past_meeting_uid", pastMeeting.UID,
+			"zoom_meeting_id", payload.Object.ID,
+			"zoom_meeting_uuid", payload.Object.UUID,
+		)
+		return nil
+	}
+
+	// Create domain model from Zoom transcript payload - each Zoom UUID gets its own transcript
 	transcriptFromPayload := s.createTranscriptFromZoomPayload(pastMeeting.UID, *payload)
 
-	var transcript *models.PastMeetingTranscript
-	if existingTranscript != nil {
-		transcript, err = s.pastMeetingTranscriptService.UpdateTranscript(ctx, existingTranscript.UID, transcriptFromPayload)
-		if err != nil {
-			slog.ErrorContext(ctx, "error updating transcript", logging.ErrKey, err,
-				"transcript_uid", existingTranscript.UID,
-				"past_meeting_uid", pastMeeting.UID,
-				"zoom_meeting_id", payload.Object.ID,
-			)
-			return fmt.Errorf("failed to update transcript: %w", err)
-		}
-		slog.InfoContext(ctx, "successfully updated transcript with files",
-			"transcript_uid", transcript.UID,
+	// Create new transcript for this Zoom UUID
+	transcript, err := s.pastMeetingTranscriptService.CreateTranscript(ctx, transcriptFromPayload)
+	if err != nil {
+		slog.ErrorContext(ctx, "error creating transcript", logging.ErrKey, err,
 			"past_meeting_uid", pastMeeting.UID,
 			"zoom_meeting_id", payload.Object.ID,
-			"total_files", len(transcript.TranscriptFiles),
-			"total_size", transcript.TotalSize,
+			"zoom_meeting_uuid", payload.Object.UUID,
 		)
-	} else {
-		transcript, err = s.pastMeetingTranscriptService.CreateTranscript(ctx, transcriptFromPayload)
-		if err != nil {
-			slog.ErrorContext(ctx, "error creating transcript", logging.ErrKey, err,
-				"past_meeting_uid", pastMeeting.UID,
-				"zoom_meeting_id", payload.Object.ID,
-			)
-			return fmt.Errorf("failed to create transcript: %w", err)
-		}
-		slog.InfoContext(ctx, "successfully created transcript with files",
-			"transcript_uid", transcript.UID,
-			"past_meeting_uid", pastMeeting.UID,
-			"zoom_meeting_id", payload.Object.ID,
-			"total_files", len(transcript.TranscriptFiles),
-			"total_size", transcript.TotalSize,
-		)
+		return fmt.Errorf("failed to create transcript: %w", err)
+	}
+	slog.InfoContext(ctx, "successfully created transcript with files",
+		"transcript_uid", transcript.UID,
+		"past_meeting_uid", pastMeeting.UID,
+		"zoom_meeting_id", payload.Object.ID,
+		"zoom_meeting_uuid", payload.Object.UUID,
+		"total_files", len(transcript.TranscriptFiles),
+		"total_size", transcript.TotalSize,
+	)
 
-		// Add transcript UID to past meeting's TranscriptUIDs array
-		if !slices.Contains(pastMeeting.TranscriptUIDs, transcript.UID) {
-			// Get the latest version with revision to update
-			updatedPastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, pastMeeting.UID)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to get past meeting for transcript UID update", logging.ErrKey, err,
+	// Add transcript UID to past meeting's TranscriptUIDs array
+	if !slices.Contains(pastMeeting.TranscriptUIDs, transcript.UID) {
+		// Get the latest version with revision to update
+		updatedPastMeeting, revision, err := s.pastMeetingService.GetPastMeeting(ctx, pastMeeting.UID)
+		if err != nil {
+			slog.WarnContext(ctx, "failed to get past meeting for transcript UID update", logging.ErrKey, err,
+				"past_meeting_uid", pastMeeting.UID,
+			)
+		} else {
+			updatedPastMeeting.TranscriptUIDs = append(updatedPastMeeting.TranscriptUIDs, transcript.UID)
+			revisionUint, _ := strconv.ParseUint(revision, 10, 64)
+			if err := s.pastMeetingService.UpdatePastMeeting(ctx, updatedPastMeeting, revisionUint); err != nil {
+				slog.WarnContext(ctx, "failed to update past meeting with transcript UID", logging.ErrKey, err,
 					"past_meeting_uid", pastMeeting.UID,
+					"transcript_uid", transcript.UID,
 				)
-			} else {
-				updatedPastMeeting.TranscriptUIDs = append(updatedPastMeeting.TranscriptUIDs, transcript.UID)
-				revisionUint, _ := strconv.ParseUint(revision, 10, 64)
-				if err := s.pastMeetingService.UpdatePastMeeting(ctx, updatedPastMeeting, revisionUint); err != nil {
-					slog.WarnContext(ctx, "failed to update past meeting with transcript UID", logging.ErrKey, err,
-						"past_meeting_uid", pastMeeting.UID,
-						"transcript_uid", transcript.UID,
-					)
-					// Don't fail the entire operation if this update fails
-				}
+				// Don't fail the entire operation if this update fails
 			}
 		}
 	}

@@ -73,6 +73,23 @@ func (r *NatsPastMeetingTranscriptRepository) GetByPastMeetingUID(ctx context.Co
 		fmt.Sprintf("transcript for past meeting UID '%s' not found", pastMeetingUID), nil)
 }
 
+// GetByPlatformMeetingInstanceID retrieves a past meeting transcript by platform and meeting instance ID
+func (r *NatsPastMeetingTranscriptRepository) GetByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingTranscript, error) {
+	allTranscripts, err := r.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, transcript := range allTranscripts {
+		if transcript.Platform == platform && transcript.PlatformMeetingInstanceID == platformMeetingInstanceID {
+			return transcript, nil
+		}
+	}
+
+	return nil, domain.NewNotFoundError(
+		fmt.Sprintf("transcript for platform '%s' and instance ID '%s' not found", platform, platformMeetingInstanceID), nil)
+}
+
 // ListByPastMeeting retrieves all transcripts for a specific past meeting
 func (r *NatsPastMeetingTranscriptRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingTranscript, error) {
 	// List all transcripts and filter by past meeting UID

@@ -147,6 +147,27 @@ func (s *PastMeetingTranscriptService) GetTranscriptByPastMeetingUID(ctx context
 	return transcript, nil
 }
 
+// GetTranscriptByPlatformMeetingInstanceID retrieves a transcript by platform and meeting instance ID.
+func (s *PastMeetingTranscriptService) GetTranscriptByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingTranscript, error) {
+	transcript, err := s.pastMeetingTranscriptRepository.GetByPlatformMeetingInstanceID(ctx, platform, platformMeetingInstanceID)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.DebugContext(ctx, "transcript not found for platform instance",
+				"platform", platform,
+				"platform_meeting_instance_id", platformMeetingInstanceID,
+			)
+		} else {
+			slog.ErrorContext(ctx, "error getting transcript by platform instance ID", logging.ErrKey, err,
+				"platform", platform,
+				"platform_meeting_instance_id", platformMeetingInstanceID,
+			)
+		}
+		return nil, err
+	}
+
+	return transcript, nil
+}
+
 // UpdateTranscript updates an existing transcript or creates one if it doesn't exist
 func (s *PastMeetingTranscriptService) UpdateTranscript(ctx context.Context, transcriptUID string, updatedTranscript *models.PastMeetingTranscript) (*models.PastMeetingTranscript, error) {
 	// Get existing transcript with revision

@@ -160,6 +160,26 @@ func (s *PastMeetingRecordingService) GetRecordingByPastMeetingUID(ctx context.C
 	return recording, nil
 }
 
+// GetRecordingByPlatformMeetingInstanceID retrieves a recording by platform and meeting instance ID.
+func (s *PastMeetingRecordingService) GetRecordingByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingRecording, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	recording, err := s.pastMeetingRecordingRepository.GetByPlatformMeetingInstanceID(ctx, platform, platformMeetingInstanceID)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.DebugContext(ctx, "recording not found for platform instance", "platform", platform, "platform_meeting_instance_id", platformMeetingInstanceID)
+		} else {
+			slog.ErrorContext(ctx, "error getting recording by platform instance ID", logging.ErrKey, err, "platform", platform, "platform_meeting_instance_id", platformMeetingInstanceID)
+		}
+		return nil, err
+	}
+
+	return recording, nil
+}
+
 // UpdateRecording updates an existing recording with additional recording files.
 func (s *PastMeetingRecordingService) UpdateRecording(
 	ctx context.Context,

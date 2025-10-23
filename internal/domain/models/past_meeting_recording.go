@@ -11,16 +11,17 @@ import (
 // PastMeetingRecording represents a recording associated with a past meeting occurrence.
 // This model stores metadata about meeting recordings and their associated files.
 type PastMeetingRecording struct {
-	UID               string              `json:"uid"`
-	PastMeetingUID    string              `json:"past_meeting_uid"`
-	Platform          string              `json:"platform"`            // Platform name (e.g., "Zoom", "Teams", etc.)
-	PlatformMeetingID string              `json:"platform_meeting_id"` // Platform-specific meeting ID
-	TotalSize         int64               `json:"total_size"`          // Total size of all recording files
-	RecordingCount    int                 `json:"recording_count"`     // Number of recording files
-	RecordingFiles    []RecordingFileData `json:"recording_files"`     // Array of recording files
-	Sessions          []RecordingSession  `json:"sessions"`            // Array of recording sessions
-	CreatedAt         time.Time           `json:"created_at"`
-	UpdatedAt         time.Time           `json:"updated_at"`
+	UID                        string              `json:"uid"`
+	PastMeetingUID             string              `json:"past_meeting_uid"`
+	Platform                   string              `json:"platform"`                      // Platform name (e.g., "Zoom", "Teams", etc.)
+	PlatformMeetingID          string              `json:"platform_meeting_id"`           // Platform-specific meeting ID
+	PlatformMeetingInstanceID  string              `json:"platform_meeting_instance_id"`  // Platform-specific meeting instance ID (e.g., Zoom UUID)
+	TotalSize                  int64               `json:"total_size"`                    // Total size of all recording files
+	RecordingCount             int                 `json:"recording_count"`               // Number of recording files
+	RecordingFiles             []RecordingFileData `json:"recording_files"`               // Array of recording files
+	Sessions                   []RecordingSession  `json:"sessions"`                      // Array of recording sessions (kept for backward compatibility)
+	CreatedAt                  time.Time           `json:"created_at"`
+	UpdatedAt                  time.Time           `json:"updated_at"`
 }
 
 // RecordingSession represents a single meeting session for a recording.
@@ -77,6 +78,11 @@ func (p *PastMeetingRecording) Tags() []string {
 
 	if p.PlatformMeetingID != "" {
 		tag := fmt.Sprintf("platform_meeting_id:%s", p.PlatformMeetingID)
+		tags = append(tags, tag)
+	}
+
+	if p.PlatformMeetingInstanceID != "" {
+		tag := fmt.Sprintf("platform_meeting_instance_id:%s", p.PlatformMeetingInstanceID)
 		tags = append(tags, tag)
 	}
 

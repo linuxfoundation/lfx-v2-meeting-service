@@ -103,6 +103,7 @@ type PastMeetingRecordingRepository interface {
 	GetWithRevision(ctx context.Context, recordingUID string) (*models.PastMeetingRecording, uint64, error)
 	Update(ctx context.Context, recording *models.PastMeetingRecording, revision uint64) error
 	GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingRecording, error)
+	GetByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingRecording, error)
 	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingRecording, error)
 	ListAll(ctx context.Context) ([]*models.PastMeetingRecording, error)
 }
@@ -117,6 +118,7 @@ type PastMeetingTranscriptRepository interface {
 	GetWithRevision(ctx context.Context, transcriptUID string) (*models.PastMeetingTranscript, uint64, error)
 	Update(ctx context.Context, transcript *models.PastMeetingTranscript, revision uint64) error
 	GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingTranscript, error)
+	GetByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingTranscript, error)
 	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingTranscript, error)
 	ListAll(ctx context.Context) ([]*models.PastMeetingTranscript, error)
 }
