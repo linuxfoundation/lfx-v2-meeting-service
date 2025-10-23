@@ -98,15 +98,15 @@ type EmailUpdatedInvitation struct {
 
 // EmailSummaryNotification contains the data needed to send a meeting summary notification email
 type EmailSummaryNotification struct {
-	RecipientEmail string    // Email address of the recipient
-	RecipientName  string    // Name of the recipient
-	MeetingTitle   string    // Title of the meeting
-	MeetingDate    time.Time // Date when the meeting occurred
-	ProjectName    string    // Optional project name for context
-	ProjectLogo    string    // Optional project logo URL
-	SummaryContent string    // The summary content
-	SummaryDocURL  string    // Optional URL to the full summary document
-	SummaryTitle   string    // Title of the summary (if different from meeting title)
+	RecipientEmail     string    // Email address of the recipient
+	RecipientName      string    // Name of the recipient
+	MeetingTitle       string    // Title of the meeting
+	MeetingDate        time.Time // Date when the meeting occurred
+	ProjectName        string    // Optional project name for context
+	ProjectLogo        string    // Optional project logo URL
+	SummaryContent     string    // The summary content
+	SummaryTitle       string    // Title of the summary (if different from meeting title)
+	MeetingDetailsLink string    // URL to meeting details in LFX One
 }
 
 // EmailAttachment represents a file attachment for an email

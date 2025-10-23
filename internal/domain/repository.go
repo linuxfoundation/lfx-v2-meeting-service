@@ -103,8 +103,24 @@ type PastMeetingRecordingRepository interface {
 	GetWithRevision(ctx context.Context, recordingUID string) (*models.PastMeetingRecording, uint64, error)
 	Update(ctx context.Context, recording *models.PastMeetingRecording, revision uint64) error
 	GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingRecording, error)
+	GetByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingRecording, error)
 	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingRecording, error)
 	ListAll(ctx context.Context) ([]*models.PastMeetingRecording, error)
+}
+
+// PastMeetingTranscriptRepository defines the interface for past meeting transcript storage operations.
+// This interface can be implemented by different storage backends (NATS, PostgreSQL, etc.)
+type PastMeetingTranscriptRepository interface {
+	Create(ctx context.Context, transcript *models.PastMeetingTranscript) error
+	Exists(ctx context.Context, transcriptUID string) (bool, error)
+	Delete(ctx context.Context, transcriptUID string, revision uint64) error
+	Get(ctx context.Context, transcriptUID string) (*models.PastMeetingTranscript, error)
+	GetWithRevision(ctx context.Context, transcriptUID string) (*models.PastMeetingTranscript, uint64, error)
+	Update(ctx context.Context, transcript *models.PastMeetingTranscript, revision uint64) error
+	GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingTranscript, error)
+	GetByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingTranscript, error)
+	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingTranscript, error)
+	ListAll(ctx context.Context) ([]*models.PastMeetingTranscript, error)
 }
 
 // PastMeetingSummaryRepository defines the interface for past meeting summary storage operations.

@@ -78,8 +78,8 @@ func GenerateLFXMeetingURL(meetingUID, password, environment string) string {
 	return fmt.Sprintf("https://%s/meetings/%s?password=%s", domain, meetingUID, url.QueryEscape(password))
 }
 
-// GenerateLFXMeetingDetailsURL generates the LFX app project meetings page URL with the given project slug
-func GenerateLFXMeetingDetailsURL(projectSlug, environment string) string {
+// GenerateLFXMeetingDetailsURL generates the LFX app project meetings page URL with the given project slug and meeting UID
+func GenerateLFXMeetingDetailsURL(projectSlug, meetingUID, environment string) string {
 	domain := GetLFXAppDomain(environment)
-	return fmt.Sprintf("https://%s/project/%s/meetings", domain, projectSlug)
+	return fmt.Sprintf("https://%s/project/%s/meetings#meeting-%s", domain, projectSlug, meetingUID)
 }

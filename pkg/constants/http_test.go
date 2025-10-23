@@ -266,51 +266,58 @@ func TestGenerateLFXMeetingDetailsURL(t *testing.T) {
 		name        string
 		envValue    string
 		projectSlug string
+		meetingUID  string
 		expectedURL string
 	}{
 		{
 			name:        "valid meeting details URL production",
 			envValue:    "prod",
 			projectSlug: "thelinuxfoundation",
-			expectedURL: "https://" + LFXDomainProd + "/project/thelinuxfoundation/meetings",
+			meetingUID:  "123e4567-e89b-12d3-a456-426614174000",
+			expectedURL: "https://" + LFXDomainProd + "/project/thelinuxfoundation/meetings#meeting-123e4567-e89b-12d3-a456-426614174000",
 		},
 		{
 			name:        "valid meeting details URL development",
 			envValue:    "dev",
 			projectSlug: "kubernetes",
-			expectedURL: "https://" + LFXDomainDev + "/project/kubernetes/meetings",
+			meetingUID:  "223e4567-e89b-12d3-a456-426614174000",
+			expectedURL: "https://" + LFXDomainDev + "/project/kubernetes/meetings#meeting-223e4567-e89b-12d3-a456-426614174000",
 		},
 		{
 			name:        "valid meeting details URL staging",
 			envValue:    "staging",
 			projectSlug: "cncf",
-			expectedURL: "https://" + LFXDomainStaging + "/project/cncf/meetings",
+			meetingUID:  "323e4567-e89b-12d3-a456-426614174000",
+			expectedURL: "https://" + LFXDomainStaging + "/project/cncf/meetings#meeting-323e4567-e89b-12d3-a456-426614174000",
 		},
 		{
 			name:        "empty environment defaults to production",
 			envValue:    "",
 			projectSlug: "test-project",
-			expectedURL: "https://" + LFXDomainProd + "/project/test-project/meetings",
+			meetingUID:  "423e4567-e89b-12d3-a456-426614174000",
+			expectedURL: "https://" + LFXDomainProd + "/project/test-project/meetings#meeting-423e4567-e89b-12d3-a456-426614174000",
 		},
 		{
 			name:        "unknown environment defaults to production",
 			envValue:    "unknown",
 			projectSlug: "another-project",
-			expectedURL: "https://" + LFXDomainProd + "/project/another-project/meetings",
+			meetingUID:  "523e4567-e89b-12d3-a456-426614174000",
+			expectedURL: "https://" + LFXDomainProd + "/project/another-project/meetings#meeting-523e4567-e89b-12d3-a456-426614174000",
 		},
 		{
 			name:        "empty project slug",
 			envValue:    "prod",
 			projectSlug: "",
-			expectedURL: "https://" + LFXDomainProd + "/project//meetings",
+			meetingUID:  "623e4567-e89b-12d3-a456-426614174000",
+			expectedURL: "https://" + LFXDomainProd + "/project//meetings#meeting-623e4567-e89b-12d3-a456-426614174000",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := GenerateLFXMeetingDetailsURL(tt.projectSlug, tt.envValue)
+			result := GenerateLFXMeetingDetailsURL(tt.projectSlug, tt.meetingUID, tt.envValue)
 			if result != tt.expectedURL {
-				t.Errorf("GenerateLFXMeetingDetailsURL(%q, %q) = %q, expected %q", tt.projectSlug, tt.envValue, result, tt.expectedURL)
+				t.Errorf("GenerateLFXMeetingDetailsURL(%q, %q, %q) = %q, expected %q", tt.projectSlug, tt.meetingUID, tt.envValue, result, tt.expectedURL)
 			}
 		})
 	}

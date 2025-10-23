@@ -12,31 +12,41 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
 // PastMeetingRecordingService implements the business logic for past meeting recordings.
 type PastMeetingRecordingService struct {
-	pastMeetingRecordingRepository domain.PastMeetingRecordingRepository
-	messageBuilder                 domain.MessageBuilder
-	config                         ServiceConfig
+	pastMeetingRecordingRepository   domain.PastMeetingRecordingRepository
+	pastMeetingRepository            domain.PastMeetingRepository
+	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository
+	messageBuilder                   domain.MessageBuilder
+	config                           ServiceConfig
 }
 
 // NewPastMeetingRecordingService creates a new PastMeetingRecordingService.
 func NewPastMeetingRecordingService(
 	pastMeetingRecordingRepository domain.PastMeetingRecordingRepository,
+	pastMeetingRepository domain.PastMeetingRepository,
+	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository,
 	messageBuilder domain.MessageBuilder,
 	serviceConfig ServiceConfig,
 ) *PastMeetingRecordingService {
 	return &PastMeetingRecordingService{
-		pastMeetingRecordingRepository: pastMeetingRecordingRepository,
-		messageBuilder:                 messageBuilder,
-		config:                         serviceConfig,
+		pastMeetingRecordingRepository:   pastMeetingRecordingRepository,
+		pastMeetingRepository:            pastMeetingRepository,
+		pastMeetingParticipantRepository: pastMeetingParticipantRepository,
+		messageBuilder:                   messageBuilder,
+		config:                           serviceConfig,
 	}
 }
 
 // ServiceReady checks if the service is ready to serve requests.
 func (s *PastMeetingRecordingService) ServiceReady() bool {
-	return s.pastMeetingRecordingRepository != nil && s.messageBuilder != nil
+	return s.pastMeetingRecordingRepository != nil &&
+		s.pastMeetingRepository != nil &&
+		s.pastMeetingParticipantRepository != nil &&
+		s.messageBuilder != nil
 }
 
 // ListRecordingsByPastMeeting returns all recordings for a given past meeting.
@@ -78,11 +88,46 @@ func (s *PastMeetingRecordingService) CreateRecording(
 		return nil, err
 	}
 
-	// Send indexing message for new recording
-	err = s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending index message for new recording", logging.ErrKey, err, "recording_uid", recording.UID)
-		// Don't fail the operation if indexing fails
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording)
+		},
+		func() error {
+			// Get past meeting to retrieve artifact visibility
+			pastMeeting, err := s.pastMeetingRepository.Get(ctx, recording.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Get participants for the past meeting
+			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, recording.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Convert to simplified access participants
+			participants := make([]models.AccessParticipant, len(participantPointers))
+			for i, p := range participantPointers {
+				participants[i] = models.AccessParticipant{
+					Username: p.Username,
+					Host:     p.Host,
+				}
+			}
+
+			return s.messageBuilder.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
+				UID:                recording.UID,
+				PastMeetingUID:     recording.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Participants:       participants,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
 	}
 
 	slog.InfoContext(ctx, "created new past meeting recording",
@@ -91,26 +136,6 @@ func (s *PastMeetingRecordingService) CreateRecording(
 		"total_files", len(recording.RecordingFiles),
 		"total_size", recording.TotalSize,
 	)
-
-	return recording, nil
-}
-
-// GetRecording retrieves a recording by UID.
-func (s *PastMeetingRecordingService) GetRecording(ctx context.Context, recordingUID string) (*models.PastMeetingRecording, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("service not initialized")
-	}
-
-	recording, err := s.pastMeetingRecordingRepository.Get(ctx, recordingUID)
-	if err != nil {
-		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
-			slog.DebugContext(ctx, "recording not found", "recording_uid", recordingUID)
-		} else {
-			slog.ErrorContext(ctx, "error getting recording", logging.ErrKey, err, "recording_uid", recordingUID)
-		}
-		return nil, err
-	}
 
 	return recording, nil
 }
@@ -128,6 +153,26 @@ func (s *PastMeetingRecordingService) GetRecordingByPastMeetingUID(ctx context.C
 			slog.DebugContext(ctx, "recording not found for past meeting", "past_meeting_uid", pastMeetingUID)
 		} else {
 			slog.ErrorContext(ctx, "error getting recording", logging.ErrKey, err, "past_meeting_uid", pastMeetingUID)
+		}
+		return nil, err
+	}
+
+	return recording, nil
+}
+
+// GetRecordingByPlatformMeetingInstanceID retrieves a recording by platform and meeting instance ID.
+func (s *PastMeetingRecordingService) GetRecordingByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingRecording, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	recording, err := s.pastMeetingRecordingRepository.GetByPlatformMeetingInstanceID(ctx, platform, platformMeetingInstanceID)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeNotFound {
+			slog.DebugContext(ctx, "recording not found for platform instance", "platform", platform, "platform_meeting_instance_id", platformMeetingInstanceID)
+		} else {
+			slog.ErrorContext(ctx, "error getting recording by platform instance ID", logging.ErrKey, err, "platform", platform, "platform_meeting_instance_id", platformMeetingInstanceID)
 		}
 		return nil, err
 	}
@@ -175,11 +220,46 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 		return nil, err
 	}
 
-	// Send indexing message for updated recording
-	err = s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording)
-	if err != nil {
-		slog.ErrorContext(ctx, "error sending index message for updated recording", logging.ErrKey, err, "recording_uid", recordingUID)
-		// Don't fail the operation if indexing fails
+	// Use WorkerPool for concurrent NATS message sending
+	pool := concurrent.NewWorkerPool(2) // 2 messages to send
+	messages := []func() error{
+		func() error {
+			return s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording)
+		},
+		func() error {
+			// Get past meeting to retrieve artifact visibility
+			pastMeeting, err := s.pastMeetingRepository.Get(ctx, currentRecording.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Get participants for the past meeting
+			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, currentRecording.PastMeetingUID)
+			if err != nil {
+				return err
+			}
+
+			// Convert to simplified access participants
+			participants := make([]models.AccessParticipant, len(participantPointers))
+			for i, p := range participantPointers {
+				participants[i] = models.AccessParticipant{
+					Username: p.Username,
+					Host:     p.Host,
+				}
+			}
+
+			return s.messageBuilder.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
+				UID:                currentRecording.UID,
+				PastMeetingUID:     currentRecording.PastMeetingUID,
+				ArtifactVisibility: pastMeeting.ArtifactVisibility,
+				Participants:       participants,
+			})
+		},
+	}
+
+	if err := pool.Run(ctx, messages...); err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS messages", logging.ErrKey, err)
+		// Don't fail the operation if messaging fails
 	}
 
 	slog.InfoContext(ctx, "updated existing past meeting recording",

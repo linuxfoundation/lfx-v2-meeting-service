@@ -75,6 +75,26 @@ func (r *NatsPastMeetingRecordingRepository) GetByPastMeetingUID(ctx context.Con
 	return recordings[0], nil
 }
 
+// GetByPlatformMeetingInstanceID retrieves a past meeting recording by platform and meeting instance ID
+func (r *NatsPastMeetingRecordingRepository) GetByPlatformMeetingInstanceID(ctx context.Context, platform, platformMeetingInstanceID string) (*models.PastMeetingRecording, error) {
+	allRecordings, err := r.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, recording := range allRecordings {
+		if recording.Platform == platform && recording.PlatformMeetingInstanceID == platformMeetingInstanceID {
+			return recording, nil
+		}
+	}
+
+	slog.DebugContext(ctx, "no recording found for platform meeting instance",
+		"platform", platform,
+		"platform_meeting_instance_id", platformMeetingInstanceID,
+	)
+	return nil, domain.NewNotFoundError("recording not found")
+}
+
 // ListByPastMeeting retrieves all past meeting recordings for a given past meeting UID
 func (r *NatsPastMeetingRecordingRepository) ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingRecording, error) {
 	allRecordings, err := r.ListAll(ctx)
