@@ -346,18 +346,24 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 		return nil
 	}
 
+	// Get project details for email
+	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingBase.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingBase.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingBase.ProjectUID)
+
 	// Send email to each host
 	successCount := 0
 	for _, registrant := range hostRegistrants {
 		notification := domain.EmailSummaryNotification{
-			RecipientEmail: registrant.Email,
-			RecipientName:  strings.TrimSpace(strings.Join([]string{registrant.FirstName, registrant.LastName}, " ")),
-			MeetingTitle:   pastMeeting.Title,
-			MeetingDate:    pastMeeting.ScheduledStartTime,
-			ProjectName:    meetingBase.ProjectUID, // Using ProjectUID as project context
-			SummaryContent: summary.SummaryData.Content,
-			SummaryDocURL:  summary.SummaryData.DocURL,
-			SummaryTitle:   summary.SummaryData.Title,
+			RecipientEmail:     registrant.Email,
+			RecipientName:      strings.TrimSpace(strings.Join([]string{registrant.FirstName, registrant.LastName}, " ")),
+			MeetingTitle:       pastMeeting.Title,
+			MeetingDate:        pastMeeting.ScheduledStartTime,
+			ProjectName:        projectName,
+			ProjectLogo:        projectLogo,
+			SummaryContent:     summary.SummaryData.Content,
+			SummaryTitle:       summary.SummaryData.Title,
+			MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, pastMeeting.UID, s.config.LFXEnvironment),
 		}
 
 		err := s.emailService.SendSummaryNotification(ctx, notification)

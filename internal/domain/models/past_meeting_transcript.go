@@ -13,13 +13,13 @@ import (
 type PastMeetingTranscript struct {
 	UID                       string               `json:"uid"`
 	PastMeetingUID            string               `json:"past_meeting_uid"`
-	Platform                  string               `json:"platform"`                       // Platform name (e.g., "Zoom", "Teams", etc.)
-	PlatformMeetingID         string               `json:"platform_meeting_id"`            // Platform-specific meeting ID
-	PlatformMeetingInstanceID string               `json:"platform_meeting_instance_id"`   // Platform-specific meeting instance ID (e.g., Zoom UUID)
-	TotalSize                 int64                `json:"total_size"`                     // Total size of all transcript files
-	TranscriptCount           int                  `json:"transcript_count"`               // Number of transcript files
-	TranscriptFiles           []TranscriptFileData `json:"transcript_files"`               // Array of transcript files
-	Sessions                  []TranscriptSession  `json:"sessions"`                       // Array of transcript sessions (kept for backward compatibility)
+	Platform                  string               `json:"platform"`                     // Platform name (e.g., "Zoom", "Teams", etc.)
+	PlatformMeetingID         string               `json:"platform_meeting_id"`          // Platform-specific meeting ID
+	PlatformMeetingInstanceID string               `json:"platform_meeting_instance_id"` // Platform-specific meeting instance ID (e.g., Zoom UUID)
+	TotalSize                 int64                `json:"total_size"`                   // Total size of all transcript files
+	TranscriptCount           int                  `json:"transcript_count"`             // Number of transcript files
+	TranscriptFiles           []TranscriptFileData `json:"transcript_files"`             // Array of transcript files
+	Sessions                  []TranscriptSession  `json:"sessions"`                     // Array of transcript sessions (kept for backward compatibility)
 	CreatedAt                 time.Time            `json:"created_at"`
 	UpdatedAt                 time.Time            `json:"updated_at"`
 }

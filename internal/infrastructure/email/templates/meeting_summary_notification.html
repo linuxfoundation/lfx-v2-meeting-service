@@ -134,13 +134,13 @@
         </div>
         {{end}}
 
-        {{if .SummaryDocURL}}
+        {{if .MeetingDetailsLink}}
         <div class="center">
-            <a href="{{.SummaryDocURL}}" class="doc-button">View Full Summary</a>
+            <a href="{{.MeetingDetailsLink}}" class="doc-button">View Past Meeting</a>
         </div>
 
         <p><small>Or copy and paste this link into your browser:</small><br>
-            <a href="{{.SummaryDocURL}}">{{.SummaryDocURL}}</a>
+            <a href="{{.MeetingDetailsLink}}">{{.MeetingDetailsLink}}</a>
         </p>
         {{end}}
 

@@ -19,11 +19,11 @@ MEETING SUMMARY
 {{.SummaryContent}}
 
 {{end}}
-{{if .SummaryDocURL}}
-VIEW FULL SUMMARY
+{{if .MeetingDetailsLink}}
+VIEW PAST MEETING
 =================
-You can view the complete summary at:
-{{.SummaryDocURL}}
+You can view the past meeting and summary at:
+{{.MeetingDetailsLink}}
 
 {{end}}
 This summary was automatically generated using AI technology. Please review the content and make any necessary edits through your meeting management interface.
