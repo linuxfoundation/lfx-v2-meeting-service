@@ -25,6 +25,9 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			BearerTokenAttribute()
 			VersionAttribute()
+			Attribute("include_cancelled_occurrences", Boolean, "Include cancelled occurrences in the response", func() {
+				Default(false)
+			})
 		})
 
 		Result(func() {
@@ -42,6 +45,7 @@ var _ = Service("Meeting Service", func() {
 		HTTP(func() {
 			GET("/meetings")
 			Param("version:v")
+			Param("include_cancelled_occurrences")
 			Header("bearer_token:Authorization")
 			Response(StatusOK, func() {
 				Header("cache_control:Cache-Control")
@@ -114,6 +118,9 @@ var _ = Service("Meeting Service", func() {
 			BearerTokenAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
+			Attribute("include_cancelled_occurrences", Boolean, "Include cancelled occurrences in the response", func() {
+				Default(false)
+			})
 		})
 
 		Result(func() {
@@ -130,6 +137,7 @@ var _ = Service("Meeting Service", func() {
 			GET("/meetings/{uid}")
 			Param("version:v")
 			Param("uid")
+			Param("include_cancelled_occurrences")
 			Header("bearer_token:Authorization")
 			Response(StatusOK, func() {
 				Body("meeting")
@@ -341,6 +349,47 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// DELETE meeting occurrence endpoint
+	Method("delete-meeting-occurrence", func() {
+		Description("Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			IfMatchAttribute()
+			VersionAttribute()
+			MeetingUIDAttribute()
+			Attribute("occurrence_id", String, "The ID of the occurrence to cancel", func() {
+				Example("1640995200")
+			})
+			Required("uid", "occurrence_id")
+		})
+
+		Error("NotFound", NotFoundError, "Meeting or occurrence not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Conflict", ConflictError, "Conflict")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/meetings/{uid}/occurrences/{occurrence_id}")
+			Params(func() {
+				Param("version:v")
+				Param("uid")
+				Param("occurrence_id")
+			})
+			Header("bearer_token:Authorization")
+			Header("if_match:If-Match")
+			Response(StatusNoContent)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// TODO: delete this endpoint once the query service supports meeting registrant queries
 	// GET meeting registrants endpoint
 	Method("get-meeting-registrants", func() {
@@ -511,6 +560,7 @@ var _ = Service("Meeting Service", func() {
 
 		Error("NotFound", NotFoundError, "Meeting or registrant not found")
 		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Conflict", ConflictError, "Conflict")
 		Error("InternalServerError", InternalServerError, "Internal server error")
 		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
 
@@ -526,6 +576,7 @@ var _ = Service("Meeting Service", func() {
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
 			Response("BadRequest", StatusBadRequest)
+			Response("Conflict", StatusConflict)
 			Response("InternalServerError", StatusInternalServerError)
 			Response("ServiceUnavailable", StatusServiceUnavailable)
 		})

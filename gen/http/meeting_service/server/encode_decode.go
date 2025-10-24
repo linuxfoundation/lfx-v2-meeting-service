@@ -12,6 +12,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -39,17 +40,29 @@ func EncodeGetMeetingsResponse(encoder func(context.Context, http.ResponseWriter
 func DecodeGetMeetingsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			version     *string
-			bearerToken *string
-			err         error
+			version                     *string
+			includeCancelledOccurrences bool
+			bearerToken                 *string
+			err                         error
 		)
-		versionRaw := r.URL.Query().Get("v")
+		qp := r.URL.Query()
+		versionRaw := qp.Get("v")
 		if versionRaw != "" {
 			version = &versionRaw
 		}
 		if version != nil {
 			if !(*version == "1") {
 				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		{
+			includeCancelledOccurrencesRaw := qp.Get("include_cancelled_occurrences")
+			if includeCancelledOccurrencesRaw != "" {
+				v, err2 := strconv.ParseBool(includeCancelledOccurrencesRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("include_cancelled_occurrences", includeCancelledOccurrencesRaw, "boolean"))
+				}
+				includeCancelledOccurrences = v
 			}
 		}
 		bearerTokenRaw := r.Header.Get("Authorization")
@@ -59,7 +72,7 @@ func DecodeGetMeetingsRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetMeetingsPayload(version, bearerToken)
+		payload := NewGetMeetingsPayload(version, includeCancelledOccurrences, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -284,22 +297,34 @@ func EncodeGetMeetingBaseResponse(encoder func(context.Context, http.ResponseWri
 func DecodeGetMeetingBaseRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			uid         string
-			version     *string
-			bearerToken *string
-			err         error
+			uid                         string
+			version                     *string
+			includeCancelledOccurrences bool
+			bearerToken                 *string
+			err                         error
 
 			params = mux.Vars(r)
 		)
 		uid = params["uid"]
 		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
-		versionRaw := r.URL.Query().Get("v")
+		qp := r.URL.Query()
+		versionRaw := qp.Get("v")
 		if versionRaw != "" {
 			version = &versionRaw
 		}
 		if version != nil {
 			if !(*version == "1") {
 				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		{
+			includeCancelledOccurrencesRaw := qp.Get("include_cancelled_occurrences")
+			if includeCancelledOccurrencesRaw != "" {
+				v, err2 := strconv.ParseBool(includeCancelledOccurrencesRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("include_cancelled_occurrences", includeCancelledOccurrencesRaw, "boolean"))
+				}
+				includeCancelledOccurrences = v
 			}
 		}
 		bearerTokenRaw := r.Header.Get("Authorization")
@@ -309,7 +334,7 @@ func DecodeGetMeetingBaseRequest(mux goahttp.Muxer, decoder func(*http.Request) 
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetMeetingBasePayload(uid, version, bearerToken)
+		payload := NewGetMeetingBasePayload(uid, version, includeCancelledOccurrences, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -1041,6 +1066,146 @@ func EncodeDeleteMeetingError(encoder func(context.Context, http.ResponseWriter)
 	}
 }
 
+// EncodeDeleteMeetingOccurrenceResponse returns an encoder for responses
+// returned by the Meeting Service delete-meeting-occurrence endpoint.
+func EncodeDeleteMeetingOccurrenceResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+}
+
+// DecodeDeleteMeetingOccurrenceRequest returns a decoder for requests sent to
+// the Meeting Service delete-meeting-occurrence endpoint.
+func DecodeDeleteMeetingOccurrenceRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			uid          string
+			occurrenceID string
+			version      *string
+			bearerToken  *string
+			ifMatch      *string
+			err          error
+
+			params = mux.Vars(r)
+		)
+		uid = params["uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		occurrenceID = params["occurrence_id"]
+		versionRaw := r.URL.Query().Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		ifMatchRaw := r.Header.Get("If-Match")
+		if ifMatchRaw != "" {
+			ifMatch = &ifMatchRaw
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewDeleteMeetingOccurrencePayload(uid, occurrenceID, version, bearerToken, ifMatch)
+		if payload.BearerToken != nil {
+			if strings.Contains(*payload.BearerToken, " ") {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeDeleteMeetingOccurrenceError returns an encoder for errors returned by
+// the delete-meeting-occurrence Meeting Service endpoint.
+func EncodeDeleteMeetingOccurrenceError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteMeetingOccurrenceBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "Conflict":
+			var res *meetingservice.ConflictError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteMeetingOccurrenceConflictResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusConflict)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteMeetingOccurrenceInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteMeetingOccurrenceNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteMeetingOccurrenceServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeGetMeetingRegistrantsResponse returns an encoder for responses
 // returned by the Meeting Service get-meeting-registrants endpoint.
 func EncodeGetMeetingRegistrantsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
@@ -1670,6 +1835,19 @@ func EncodeDeleteMeetingRegistrantError(encoder func(context.Context, http.Respo
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "Conflict":
+			var res *meetingservice.ConflictError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteMeetingRegistrantConflictResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusConflict)
 			return enc.Encode(body)
 		case "InternalServerError":
 			var res *meetingservice.InternalServerError

@@ -217,3 +217,80 @@ func TestRegistrant_Tags(t *testing.T) {
 		})
 	}
 }
+
+func TestRegistrant_GetFullName(t *testing.T) {
+	tests := []struct {
+		name       string
+		registrant *Registrant
+		want       string
+	}{
+		{
+			name: "both names present",
+			registrant: &Registrant{
+				FirstName: "John",
+				LastName:  "Doe",
+			},
+			want: "John Doe",
+		},
+		{
+			name: "only first name",
+			registrant: &Registrant{
+				FirstName: "John",
+				LastName:  "",
+			},
+			want: "John",
+		},
+		{
+			name: "only last name",
+			registrant: &Registrant{
+				FirstName: "",
+				LastName:  "Doe",
+			},
+			want: "Doe",
+		},
+		{
+			name: "both empty",
+			registrant: &Registrant{
+				FirstName: "",
+				LastName:  "",
+			},
+			want: "",
+		},
+		{
+			name: "whitespace only",
+			registrant: &Registrant{
+				FirstName: "  ",
+				LastName:  "  ",
+			},
+			want: "",
+		},
+		{
+			name:       "nil registrant",
+			registrant: nil,
+			want:       "",
+		},
+		{
+			name: "with surrounding whitespace",
+			registrant: &Registrant{
+				FirstName: "  John",
+				LastName:  "Doe  ",
+			},
+			want: "John Doe",
+		},
+		{
+			name: "special characters",
+			registrant: &Registrant{
+				FirstName: "María",
+				LastName:  "González-Hernández",
+			},
+			want: "María González-Hernández",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.registrant.GetFullName()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

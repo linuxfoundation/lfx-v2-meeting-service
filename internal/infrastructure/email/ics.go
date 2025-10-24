@@ -42,20 +42,21 @@ func NewICSGenerator() *ICSGenerator {
 // ICSMeetingInvitationParams contains all the information needed to generate an ICS file
 // for a meeting invitation
 type ICSMeetingInvitationParams struct {
-	MeetingUID     string // Unique meeting identifier for consistent ICS UID
-	MeetingTitle   string
-	MeetingType    string
-	Description    string
-	StartTime      time.Time
-	Duration       int // Duration in minutes
-	Timezone       string
-	JoinLink       string
-	MeetingID      string
-	Passcode       string
-	RecipientEmail string
-	ProjectName    string
-	Recurrence     *models.Recurrence
-	Sequence       int // ICS sequence number for calendar updates
+	MeetingUID               string // Unique meeting identifier for consistent ICS UID
+	MeetingTitle             string
+	MeetingType              string
+	Description              string
+	StartTime                time.Time
+	Duration                 int // Duration in minutes
+	Timezone                 string
+	JoinLink                 string
+	MeetingID                string
+	Passcode                 string
+	RecipientEmail           string
+	ProjectName              string
+	Recurrence               *models.Recurrence
+	Sequence                 int         // ICS sequence number for calendar updates
+	CancelledOccurrenceTimes []time.Time // List of cancelled occurrence start times to exclude via EXDATE
 }
 
 // GenerateMeetingICS generates an ICS file content for a meeting invitation
@@ -104,6 +105,18 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 		rrule := generateRRule(param.Recurrence)
 		if rrule != "" {
 			ics.WriteString(fmt.Sprintf("RRULE:%s\r\n", rrule))
+		}
+
+		// Add EXDATE for cancelled occurrences to exclude them from the series
+		if len(param.CancelledOccurrenceTimes) > 0 {
+			var exdates []string
+			for _, cancelledTime := range param.CancelledOccurrenceTimes {
+				// Convert to meeting timezone and format as YYYYMMDDTHHMMSS
+				cancelledLocal := cancelledTime.In(loc)
+				exdates = append(exdates, cancelledLocal.Format("20060102T150405"))
+			}
+			// Join all cancelled dates with commas
+			ics.WriteString(fmt.Sprintf("EXDATE;TZID=%s:%s\r\n", param.Timezone, strings.Join(exdates, ",")))
 		}
 	}
 
@@ -304,6 +317,65 @@ func (g *ICSGenerator) GenerateMeetingCancellationICS(params ICSMeetingCancellat
 		if rrule != "" {
 			icsContent.WriteString(fmt.Sprintf("RRULE:%s\r\n", rrule))
 		}
+	}
+
+	icsContent.WriteString("END:VEVENT\r\n")
+
+	// Include timezone definition
+	icsContent.WriteString(generateTimezoneDefinition(params.Timezone, loc))
+
+	icsContent.WriteString("END:VCALENDAR\r\n")
+
+	return icsContent.String(), nil
+}
+
+// ICSOccurrenceCancellationParams holds parameters for generating a single occurrence cancellation ICS file
+type ICSOccurrenceCancellationParams struct {
+	MeetingUID          string // Unique meeting identifier for consistent ICS UID
+	MeetingTitle        string
+	OccurrenceStartTime time.Time // The specific occurrence start time
+	Duration            int       // Duration in minutes
+	Timezone            string
+	RecipientEmail      string
+	Sequence            int // ICS sequence number for calendar updates
+}
+
+// GenerateOccurrenceCancellationICS generates an ICS file to cancel a specific occurrence of a recurring meeting.
+// This uses RECURRENCE-ID to target only a single occurrence rather than the entire series.
+func (g *ICSGenerator) GenerateOccurrenceCancellationICS(params ICSOccurrenceCancellationParams) (string, error) {
+	loc, err := time.LoadLocation(params.Timezone)
+	if err != nil {
+		return "", fmt.Errorf("invalid timezone: %w", err)
+	}
+
+	startTime := params.OccurrenceStartTime.In(loc)
+	endTime := startTime.Add(time.Duration(params.Duration) * time.Minute)
+
+	// Use the same UID as the original meeting for proper cancellation matching
+	uid := params.MeetingUID
+
+	var icsContent strings.Builder
+	icsContent.WriteString("BEGIN:VCALENDAR\r\n")
+	icsContent.WriteString(fmt.Sprintf("VERSION:%s\r\n", ICALVersion))
+	icsContent.WriteString(fmt.Sprintf("PRODID:%s\r\n", ICSProdID))
+	icsContent.WriteString("METHOD:CANCEL\r\n")
+	icsContent.WriteString(fmt.Sprintf("CALSCALE:%s\r\n", ICALScale))
+	icsContent.WriteString("BEGIN:VEVENT\r\n")
+	icsContent.WriteString(fmt.Sprintf("UID:%s\r\n", uid))
+	icsContent.WriteString(fmt.Sprintf("DTSTAMP:%s\r\n", time.Now().UTC().Format("20060102T150405Z")))
+	icsContent.WriteString(fmt.Sprintf("DTSTART;TZID=%s:%s\r\n", params.Timezone, startTime.Format("20060102T150405")))
+	icsContent.WriteString(fmt.Sprintf("DTEND;TZID=%s:%s\r\n", params.Timezone, endTime.Format("20060102T150405")))
+
+	// RECURRENCE-ID identifies which specific occurrence to cancel
+	icsContent.WriteString(fmt.Sprintf("RECURRENCE-ID;TZID=%s:%s\r\n", params.Timezone, startTime.Format("20060102T150405")))
+
+	icsContent.WriteString(fmt.Sprintf("SUMMARY:%s (CANCELLED)\r\n", escapeICSText(params.MeetingTitle)))
+	icsContent.WriteString("STATUS:CANCELLED\r\n")
+	icsContent.WriteString(fmt.Sprintf("SEQUENCE:%d\r\n", params.Sequence))
+	icsContent.WriteString(fmt.Sprintf("ORGANIZER;CN=%s:mailto:%s\r\n", OrganizerName, OrganizerEmail))
+
+	if params.RecipientEmail != "" {
+		icsContent.WriteString(fmt.Sprintf("ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:%s\r\n", params.RecipientEmail))
 	}
 
 	icsContent.WriteString("END:VEVENT\r\n")

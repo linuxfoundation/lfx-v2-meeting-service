@@ -51,6 +51,11 @@ func DeleteMeetingMeetingServicePath(uid string) string {
 	return fmt.Sprintf("/meetings/%v", uid)
 }
 
+// DeleteMeetingOccurrenceMeetingServicePath returns the URL path to the Meeting Service service delete-meeting-occurrence HTTP endpoint.
+func DeleteMeetingOccurrenceMeetingServicePath(uid string, occurrenceID string) string {
+	return fmt.Sprintf("/meetings/%v/occurrences/%v", uid, occurrenceID)
+}
+
 // GetMeetingRegistrantsMeetingServicePath returns the URL path to the Meeting Service service get-meeting-registrants HTTP endpoint.
 func GetMeetingRegistrantsMeetingServicePath(uid string) string {
 	return fmt.Sprintf("/meetings/%v/registrants", uid)

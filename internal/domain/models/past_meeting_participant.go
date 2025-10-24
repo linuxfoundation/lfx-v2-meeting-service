@@ -5,6 +5,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -37,6 +38,15 @@ type ParticipantSession struct {
 	JoinTime    time.Time  `json:"join_time"`
 	LeaveTime   *time.Time `json:"leave_time,omitempty"`
 	LeaveReason string     `json:"leave_reason,omitempty"`
+}
+
+// GetFullName returns the participant's full name by combining FirstName and LastName.
+// The result is trimmed of leading/trailing whitespace.
+func (p *PastMeetingParticipant) GetFullName() string {
+	if p == nil {
+		return ""
+	}
+	return strings.TrimSpace(fmt.Sprintf("%s %s", p.FirstName, p.LastName))
 }
 
 // Tags generates a consistent set of tags for the past meeting participant.

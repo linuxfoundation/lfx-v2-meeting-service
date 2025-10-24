@@ -1744,7 +1744,7 @@ func (s *ZoomWebhookHandler) findExistingParticipant(ctx context.Context, pastMe
 		// Clean the Zoom name to remove organization info in parentheses
 		cleanedZoomName := cleanZoomUserName(userName)
 		for _, p := range participants {
-			existingFullName := strings.TrimSpace(p.FirstName + " " + p.LastName)
+			existingFullName := p.GetFullName()
 			if existingFullName != "" && strings.EqualFold(cleanedZoomName, existingFullName) {
 				slog.DebugContext(ctx, "found existing participant by name match",
 					"participant_uid", p.UID,

@@ -32,9 +32,11 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 	occurrenceService := service.NewOccurrenceService()
 	meetingService := service.NewMeetingService(
 		mockMeetingRepo,
+		mockRegistrantRepo,
 		mockMessageBuilder,
 		mockPlatformRegistry,
 		occurrenceService,
+		mockEmailService,
 		config,
 	)
 
