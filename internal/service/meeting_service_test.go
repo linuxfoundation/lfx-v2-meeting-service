@@ -19,8 +19,10 @@ import (
 // setupServiceForTesting creates a MeetingService with all mock dependencies for testing
 func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {
 	mockRepo := new(mocks.MockMeetingRepository)
+	mockRegistrantRepo := new(mocks.MockRegistrantRepository)
 	mockBuilder := new(mocks.MockMessageBuilder)
 	mockPlatformRegistry := new(mocks.MockPlatformRegistry)
+	mockEmailService := new(mocks.MockEmailService)
 	occurrenceService := NewOccurrenceService()
 
 	config := ServiceConfig{
@@ -29,9 +31,11 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 
 	service := NewMeetingService(
 		mockRepo,
+		mockRegistrantRepo,
 		mockBuilder,
 		mockPlatformRegistry,
 		occurrenceService,
+		mockEmailService,
 		config,
 	)
 

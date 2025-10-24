@@ -14,6 +14,7 @@ import (
 type EmailService interface {
 	SendRegistrantInvitation(ctx context.Context, invitation EmailInvitation) error
 	SendRegistrantCancellation(ctx context.Context, cancellation EmailCancellation) error
+	SendOccurrenceCancellation(ctx context.Context, cancellation EmailOccurrenceCancellation) error
 	SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation EmailUpdatedInvitation) error
 	SendSummaryNotification(ctx context.Context, notification EmailSummaryNotification) error
 }
@@ -62,6 +63,29 @@ type EmailCancellation struct {
 	Recurrence         *models.Recurrence // Recurrence pattern for ICS
 	IcsSequence        int                // ICS sequence number for calendar updates
 	ICSAttachment      *EmailAttachment   // ICS calendar attachment for cancellation
+}
+
+// EmailOccurrenceCancellation contains the data needed to send a single occurrence cancellation email
+type EmailOccurrenceCancellation struct {
+	MeetingUID          string // Meeting UID for consistent calendar event identification
+	RecipientEmail      string
+	RecipientName       string
+	MeetingTitle        string
+	OccurrenceID        string    // ID of the cancelled occurrence
+	OccurrenceStartTime time.Time // Start time of the cancelled occurrence
+	Duration            int       // Duration in minutes
+	Timezone            string
+	Description         string
+	Visibility          string
+	MeetingType         string
+	Platform            string             // Meeting platform (e.g., "Zoom")
+	MeetingDetailsLink  string             // URL to meeting details in LFX One
+	ProjectName         string             // Optional project name for context
+	ProjectLogo         string             // Optional project logo URL
+	Reason              string             // Optional reason for cancellation
+	Recurrence          *models.Recurrence // Recurrence pattern of the series for context
+	IcsSequence         int                // ICS sequence number for calendar updates
+	ICSAttachment       *EmailAttachment   // ICS calendar attachment for occurrence cancellation
 }
 
 // EmailUpdatedInvitation contains the data needed to send a meeting update notification email

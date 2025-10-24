@@ -26,6 +26,11 @@ func (m *MockEmailService) SendRegistrantCancellation(ctx context.Context, cance
 	return args.Error(0)
 }
 
+func (m *MockEmailService) SendOccurrenceCancellation(ctx context.Context, cancellation domain.EmailOccurrenceCancellation) error {
+	args := m.Called(ctx, cancellation)
+	return args.Error(0)
+}
+
 func (m *MockEmailService) SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation domain.EmailUpdatedInvitation) error {
 	args := m.Called(ctx, updatedInvitation)
 	return args.Error(0)

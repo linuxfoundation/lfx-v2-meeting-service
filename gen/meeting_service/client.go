@@ -300,6 +300,7 @@ func (c *Client) UpdateMeetingRegistrant(ctx context.Context, p *UpdateMeetingRe
 // DeleteMeetingRegistrant may return the following errors:
 //   - "NotFound" (type *NotFoundError): Meeting or registrant not found
 //   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Conflict" (type *ConflictError): Conflict
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error

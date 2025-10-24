@@ -38,6 +38,16 @@ func (s *NoOpService) SendRegistrantCancellation(ctx context.Context, cancellati
 	return nil
 }
 
+// SendOccurrenceCancellation logs the occurrence cancellation but doesn't send an email
+func (s *NoOpService) SendOccurrenceCancellation(ctx context.Context, cancellation domain.EmailOccurrenceCancellation) error {
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(cancellation.RecipientEmail)))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", cancellation.MeetingTitle))
+	ctx = logging.AppendCtx(ctx, slog.String("occurrence_id", cancellation.OccurrenceID))
+
+	slog.DebugContext(ctx, "email service disabled, skipping occurrence cancellation email")
+	return nil
+}
+
 // SendRegistrantUpdatedInvitation logs the update but doesn't send an email
 func (s *NoOpService) SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation domain.EmailUpdatedInvitation) error {
 	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(updatedInvitation.RecipientEmail)))

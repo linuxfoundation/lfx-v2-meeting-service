@@ -1328,6 +1328,16 @@ type DeleteMeetingRegistrantBadRequestResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// DeleteMeetingRegistrantConflictResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-registrant" endpoint HTTP response body for
+// the "Conflict" error.
+type DeleteMeetingRegistrantConflictResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // DeleteMeetingRegistrantInternalServerErrorResponseBody is the type of the
 // "Meeting Service" service "delete-meeting-registrant" endpoint HTTP response
 // body for the "InternalServerError" error.
@@ -3595,6 +3605,17 @@ func NewUpdateMeetingRegistrantServiceUnavailable(body *UpdateMeetingRegistrantS
 // delete-meeting-registrant endpoint BadRequest error.
 func NewDeleteMeetingRegistrantBadRequest(body *DeleteMeetingRegistrantBadRequestResponseBody) *meetingservice.BadRequestError {
 	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteMeetingRegistrantConflict builds a Meeting Service service
+// delete-meeting-registrant endpoint Conflict error.
+func NewDeleteMeetingRegistrantConflict(body *DeleteMeetingRegistrantConflictResponseBody) *meetingservice.ConflictError {
+	v := &meetingservice.ConflictError{
 		Code:    *body.Code,
 		Message: *body.Message,
 	}
@@ -6259,6 +6280,18 @@ func ValidateUpdateMeetingRegistrantServiceUnavailableResponseBody(body *UpdateM
 // ValidateDeleteMeetingRegistrantBadRequestResponseBody runs the validations
 // defined on delete-meeting-registrant_BadRequest_response_body
 func ValidateDeleteMeetingRegistrantBadRequestResponseBody(body *DeleteMeetingRegistrantBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteMeetingRegistrantConflictResponseBody runs the validations
+// defined on delete-meeting-registrant_Conflict_response_body
+func ValidateDeleteMeetingRegistrantConflictResponseBody(body *DeleteMeetingRegistrantConflictResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

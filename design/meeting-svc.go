@@ -552,6 +552,7 @@ var _ = Service("Meeting Service", func() {
 
 		Error("NotFound", NotFoundError, "Meeting or registrant not found")
 		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Conflict", ConflictError, "Conflict")
 		Error("InternalServerError", InternalServerError, "Internal server error")
 		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
 
@@ -567,6 +568,7 @@ var _ = Service("Meeting Service", func() {
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
 			Response("BadRequest", StatusBadRequest)
+			Response("Conflict", StatusConflict)
 			Response("InternalServerError", StatusInternalServerError)
 			Response("ServiceUnavailable", StatusServiceUnavailable)
 		})

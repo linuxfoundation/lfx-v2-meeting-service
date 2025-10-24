@@ -1328,6 +1328,16 @@ type DeleteMeetingRegistrantBadRequestResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// DeleteMeetingRegistrantConflictResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-registrant" endpoint HTTP response body for
+// the "Conflict" error.
+type DeleteMeetingRegistrantConflictResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // DeleteMeetingRegistrantInternalServerErrorResponseBody is the type of the
 // "Meeting Service" service "delete-meeting-registrant" endpoint HTTP response
 // body for the "InternalServerError" error.
@@ -3649,6 +3659,17 @@ func NewUpdateMeetingRegistrantServiceUnavailableResponseBody(res *meetingservic
 // "Meeting Service" service.
 func NewDeleteMeetingRegistrantBadRequestResponseBody(res *meetingservice.BadRequestError) *DeleteMeetingRegistrantBadRequestResponseBody {
 	body := &DeleteMeetingRegistrantBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteMeetingRegistrantConflictResponseBody builds the HTTP response body
+// from the result of the "delete-meeting-registrant" endpoint of the "Meeting
+// Service" service.
+func NewDeleteMeetingRegistrantConflictResponseBody(res *meetingservice.ConflictError) *DeleteMeetingRegistrantConflictResponseBody {
+	body := &DeleteMeetingRegistrantConflictResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}

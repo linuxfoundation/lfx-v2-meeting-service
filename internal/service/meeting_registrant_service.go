@@ -714,3 +714,54 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 
 	return s.emailService.SendRegistrantCancellation(ctx, cancellation)
 }
+
+// SendOccurrenceCancellationEmail sends an occurrence cancellation email to a registrant
+func (s *MeetingRegistrantService) SendOccurrenceCancellationEmail(
+	ctx context.Context,
+	registrant *models.Registrant,
+	meeting *models.MeetingBase,
+	occurrence models.Occurrence,
+) error {
+	if meeting == nil {
+		return domain.NewValidationError("meeting is required")
+	}
+	if registrant == nil {
+		return domain.NewValidationError("registrant is required")
+	}
+
+	// Get project information for email branding
+	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
+
+	// Get the occurrence start time
+	occurrenceStartTime := meeting.StartTime
+	if occurrence.StartTime != nil {
+		occurrenceStartTime = *occurrence.StartTime
+	}
+
+	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
+
+	cancellation := domain.EmailOccurrenceCancellation{
+		MeetingUID:          meeting.UID,
+		RecipientEmail:      registrant.Email,
+		RecipientName:       recipientName,
+		MeetingTitle:        meeting.Title,
+		OccurrenceID:        occurrence.OccurrenceID,
+		OccurrenceStartTime: occurrenceStartTime,
+		Duration:            meeting.Duration,
+		Timezone:            meeting.Timezone,
+		Description:         meeting.Description,
+		Visibility:          meeting.Visibility,
+		MeetingType:         meeting.MeetingType,
+		Platform:            meeting.Platform,
+		MeetingDetailsLink:  constants.GenerateLFXMeetingDetailsURL(projectSlug, meeting.UID, s.config.LFXEnvironment),
+		ProjectName:         projectName,
+		ProjectLogo:         projectLogo,
+		Reason:              "This specific occurrence of the recurring meeting has been cancelled by an organizer.",
+		Recurrence:          meeting.Recurrence,
+		IcsSequence:         meeting.IcsSequence,
+	}
+
+	return s.emailService.SendOccurrenceCancellation(ctx, cancellation)
+}

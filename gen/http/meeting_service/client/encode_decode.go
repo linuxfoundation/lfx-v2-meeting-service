@@ -2113,6 +2113,7 @@ func EncodeDeleteMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 // having been read.
 // DecodeDeleteMeetingRegistrantResponse may return the following errors:
 //   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
 //   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
 //   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
 //   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
@@ -2148,6 +2149,20 @@ func DecodeDeleteMeetingRegistrantResponse(decoder func(*http.Response) goahttp.
 				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-registrant", err)
 			}
 			return nil, NewDeleteMeetingRegistrantBadRequest(&body)
+		case http.StatusConflict:
+			var (
+				body DeleteMeetingRegistrantConflictResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-meeting-registrant", err)
+			}
+			err = ValidateDeleteMeetingRegistrantConflictResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-registrant", err)
+			}
+			return nil, NewDeleteMeetingRegistrantConflict(&body)
 		case http.StatusInternalServerError:
 			var (
 				body DeleteMeetingRegistrantInternalServerErrorResponseBody

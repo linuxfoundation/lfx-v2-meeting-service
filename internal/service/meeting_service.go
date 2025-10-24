@@ -24,27 +24,33 @@ import (
 
 // MeetingsService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingService struct {
-	meetingRepository domain.MeetingRepository
-	messageBuilder    domain.MessageBuilder
-	platformRegistry  domain.PlatformRegistry
-	occurrenceService domain.OccurrenceService
-	config            ServiceConfig
+	meetingRepository    domain.MeetingRepository
+	registrantRepository domain.RegistrantRepository
+	messageBuilder       domain.MessageBuilder
+	platformRegistry     domain.PlatformRegistry
+	occurrenceService    domain.OccurrenceService
+	emailService         domain.EmailService
+	config               ServiceConfig
 }
 
 // NewMeetingsService creates a new MeetingsService.
 func NewMeetingService(
 	meetingRepository domain.MeetingRepository,
+	registrantRepository domain.RegistrantRepository,
 	messageBuilder domain.MessageBuilder,
 	platformRegistry domain.PlatformRegistry,
 	occurrenceService domain.OccurrenceService,
+	emailService domain.EmailService,
 	config ServiceConfig,
 ) *MeetingService {
 	return &MeetingService{
-		meetingRepository: meetingRepository,
-		messageBuilder:    messageBuilder,
-		platformRegistry:  platformRegistry,
-		occurrenceService: occurrenceService,
-		config:            config,
+		meetingRepository:    meetingRepository,
+		registrantRepository: registrantRepository,
+		messageBuilder:       messageBuilder,
+		platformRegistry:     platformRegistry,
+		occurrenceService:    occurrenceService,
+		emailService:         emailService,
+		config:               config,
 	}
 }
 
@@ -843,15 +849,16 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 	calculatedOccurrences := s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
 
 	// Find the occurrence and check if it's already cancelled
-	occurrenceFound := false
+	var cancelledOccurrence *models.Occurrence
 	for i, occ := range calculatedOccurrences {
 		if occ.OccurrenceID == occurrenceID {
-			occurrenceFound = true
 			// Check if the occurrence is already cancelled
 			if occ.IsCancelled {
 				slog.WarnContext(ctx, "occurrence is already cancelled", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
 				return domain.NewConflictError("occurrence is already cancelled")
 			}
+			// Capture the occurrence for email notifications
+			cancelledOccurrence = &occ
 			// Mark the occurrence as cancelled
 			calculatedOccurrences[i].IsCancelled = true
 			slog.InfoContext(ctx, "marked occurrence as cancelled", "occurrence_id", occurrenceID)
@@ -859,7 +866,7 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 		}
 	}
 
-	if !occurrenceFound {
+	if cancelledOccurrence == nil {
 		slog.WarnContext(ctx, "occurrence not found for meeting", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
 		return domain.NewNotFoundError("occurrence not found for this meeting")
 	}
@@ -879,6 +886,79 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send NATS message for cancelled occurrence", logging.ErrKey, err)
 		return domain.NewInternalError("failed to publish occurrence cancellation event", err)
+	}
+
+	// Send email notifications to all registrants (async operations that don't fail the cancellation)
+	registrants, err := s.registrantRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to fetch registrants for occurrence cancellation emails", logging.ErrKey, err)
+		// Don't fail the operation if we can't fetch registrants
+	}
+
+	if len(registrants) == 0 {
+		slog.InfoContext(ctx, "successfully cancelled meeting occurrence", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
+		return nil
+	}
+
+	// Get project information for email branding
+	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingDB.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingDB.ProjectUID)
+
+	// Build functions to send emails to each registrant
+	var emailFunctions []func() error
+	for _, registrant := range registrants {
+		// Capture loop variables
+		r := registrant
+		occ := *cancelledOccurrence
+
+		emailFunctions = append(emailFunctions, func() error {
+			emailCtx := logging.AppendCtx(ctx, slog.String("registrant_uid", r.UID))
+			emailCtx = logging.AppendCtx(emailCtx, slog.String("registrant_email", r.Email))
+
+			// Get the occurrence start time
+			occurrenceStartTime := meetingDB.StartTime
+			if occ.StartTime != nil {
+				occurrenceStartTime = *occ.StartTime
+			}
+
+			recipientName := fmt.Sprintf("%s %s", r.FirstName, r.LastName)
+
+			cancellation := domain.EmailOccurrenceCancellation{
+				MeetingUID:          meetingDB.UID,
+				RecipientEmail:      r.Email,
+				RecipientName:       recipientName,
+				MeetingTitle:        meetingDB.Title,
+				OccurrenceID:        occ.OccurrenceID,
+				OccurrenceStartTime: occurrenceStartTime,
+				Duration:            meetingDB.Duration,
+				Timezone:            meetingDB.Timezone,
+				Description:         meetingDB.Description,
+				Visibility:          meetingDB.Visibility,
+				MeetingType:         meetingDB.MeetingType,
+				Platform:            meetingDB.Platform,
+				MeetingDetailsLink:  constants.GenerateLFXMeetingDetailsURL(projectSlug, meetingDB.UID, s.config.LFXEnvironment),
+				ProjectName:         projectName,
+				ProjectLogo:         projectLogo,
+				Reason:              "This specific occurrence of the recurring meeting has been cancelled by an organizer.",
+				Recurrence:          meetingDB.Recurrence,
+				IcsSequence:         meetingDB.IcsSequence,
+			}
+
+			err := s.emailService.SendOccurrenceCancellation(emailCtx, cancellation)
+			if err != nil {
+				slog.ErrorContext(emailCtx, "failed to send occurrence cancellation email", logging.ErrKey, err)
+			}
+			return nil // Don't propagate email errors as they shouldn't fail the operation
+		})
+	}
+
+	// Execute all email functions concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(5) // Use 5 workers for email operations
+	err = pool.Run(ctx, emailFunctions...)
+	if err != nil {
+		// Log the error but don't fail the operation since email errors are non-critical
+		slog.WarnContext(ctx, "some email operations failed during occurrence cancellation", logging.ErrKey, err)
 	}
 
 	slog.InfoContext(ctx, "successfully cancelled meeting occurrence", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)

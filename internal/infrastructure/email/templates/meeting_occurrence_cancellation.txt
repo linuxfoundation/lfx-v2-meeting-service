@@ -1,0 +1,41 @@
+{{/* Copyright The Linux Foundation and each contributor to LFX. */}}
+{{/* SPDX-License-Identifier: MIT */}}
+
+🚫 Meeting Occurrence Cancelled
+================================
+
+{{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}}, one occurrence of this meeting has been cancelled:
+
+{{.MeetingTitle}}
+
+Meeting Type: [OCCURRENCE CANCELLED] • {{if .Visibility}}{{if eq .Visibility "private"}}Private{{else}}Public{{end}} • {{end}}{{.MeetingType}} • Recurring Series
+
+Cancelled Occurrence Information:
+==================================
+Cancelled Date & Time: {{formatTime .OccurrenceStartTime .Timezone}} [CANCELLED]
+Duration: {{formatDuration .Duration}} [CANCELLED]{{if .Platform}}
+Platform: {{.Platform}} [CANCELLED]{{end}}
+
+{{if .Description}}Meeting Description:
+{{.Description}}
+
+{{end}}{{if .Reason}}Cancellation Reason:
+========================
+{{.Reason}}
+
+{{end}}Why did I receive this email?
+===============================
+You received this email because you are registered for this recurring meeting series, and one occurrence has been cancelled. This cancellation only affects the specific date and time shown above. All other scheduled occurrences of this meeting remain active.
+
+{{if .ICSAttachment}}📅 Calendar Cancellation:
+A calendar cancellation file (.ics) is attached to this email. Open it to automatically remove this specific occurrence from your calendar application.
+
+{{end}}{{if .MeetingDetailsLink}}View meeting details: {{.MeetingDetailsLink}}
+
+{{end}}We apologize for any inconvenience this may cause. If you have any questions, please contact the meeting organizer.
+
+---
+Powered by LFX One
+
+This is an automated email from the Linux Foundation Meeting Service.
+Please do not reply to this email.
