@@ -306,11 +306,6 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 			return nil, domain.NewInternalError("failed to initialize meeting platform", err)
 		}
 
-		if provider == nil {
-			slog.ErrorContext(ctx, "platform provider is nil")
-			return nil, domain.NewInternalError("platform provider is nil", nil)
-		}
-
 		result, err := provider.CreateMeeting(ctx, reqMeeting.Base)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to create platform meeting",
@@ -395,7 +390,14 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	return reqMeeting, nil
 }
 
-func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string, includeCancelledOccurrences bool) (*models.MeetingBase, string, error) {
+// GetMeetingBaseOptions contains options for filtering meeting base data.
+type GetMeetingBaseOptions struct {
+	// IncludeCancelledOccurrences determines whether to include cancelled occurrences in the response.
+	// Defaults to false (cancelled occurrences are hidden).
+	IncludeCancelledOccurrences bool
+}
+
+func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string, options GetMeetingBaseOptions) (*models.MeetingBase, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, "", domain.NewUnavailableError("meeting service is not ready")
@@ -417,7 +419,7 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string, include
 	meetingDB.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
 
 	// Filter out cancelled occurrences unless explicitly requested
-	if !includeCancelledOccurrences {
+	if !options.IncludeCancelledOccurrences {
 		nonCancelledOccurrences := make([]models.Occurrence, 0, len(meetingDB.Occurrences))
 		for _, occ := range meetingDB.Occurrences {
 			if !occ.IsCancelled {
@@ -875,6 +877,12 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 		return err
 	}
 
+	// Validate that the meeting is recurring
+	if meetingDB.Recurrence == nil {
+		slog.WarnContext(ctx, "cannot cancel occurrence of non-recurring meeting")
+		return domain.NewValidationError("meeting must be recurring to cancel individual occurrences")
+	}
+
 	// Calculate current occurrences
 	// We calculate up to 50 occurrences which should be sufficient for most use cases
 	currentTime := time.Now()
@@ -884,14 +892,20 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 	var cancelledOccurrence *models.Occurrence
 	for i, occ := range calculatedOccurrences {
 		if occ.OccurrenceID == occurrenceID {
-			// Check if the occurrence is already cancelled
 			if occ.IsCancelled {
 				slog.WarnContext(ctx, "occurrence is already cancelled", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
 				return domain.NewConflictError("occurrence is already cancelled")
 			}
-			// Capture the occurrence for email notifications
+			// Validate that the occurrence is in the future
+			occurrenceTime := meetingDB.StartTime
+			if occ.StartTime != nil {
+				occurrenceTime = *occ.StartTime
+			}
+			if occurrenceTime.Before(time.Now()) {
+				slog.WarnContext(ctx, "cannot cancel past occurrence", "occurrence_time", occurrenceTime)
+				return domain.NewValidationError("cannot cancel past occurrences")
+			}
 			cancelledOccurrence = &occ
-			// Mark the occurrence as cancelled
 			calculatedOccurrences[i].IsCancelled = true
 			slog.InfoContext(ctx, "marked occurrence as cancelled", "occurrence_id", occurrenceID)
 			break

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -587,26 +588,37 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		}
 	}
 
+	// Extract cancelled occurrence times for EXDATE in ICS file
+	var cancelledOccurrenceTimes []time.Time
+	if len(meetingDB.Occurrences) > 0 {
+		for _, occ := range meetingDB.Occurrences {
+			if occ.IsCancelled && occ.StartTime != nil {
+				cancelledOccurrenceTimes = append(cancelledOccurrenceTimes, *occ.StartTime)
+			}
+		}
+	}
+
 	invitation := domain.EmailInvitation{
-		MeetingUID:         meetingDB.UID,
-		RecipientEmail:     registrant.Email,
-		RecipientName:      recipientName,
-		MeetingTitle:       meetingDB.Title,
-		StartTime:          meetingDB.StartTime,
-		Duration:           meetingDB.Duration,
-		Timezone:           meetingDB.Timezone,
-		Description:        meetingDB.Description,
-		Visibility:         meetingDB.Visibility,
-		MeetingType:        meetingDB.MeetingType,
-		JoinLink:           constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
-		MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, meetingDB.UID, s.config.LFXEnvironment),
-		ProjectName:        projectName,
-		ProjectLogo:        projectLogo,
-		Platform:           meetingDB.Platform,
-		MeetingID:          meetingID,
-		Passcode:           passcode,
-		Recurrence:         meetingDB.Recurrence,
-		IcsSequence:        meetingDB.IcsSequence,
+		MeetingUID:               meetingDB.UID,
+		RecipientEmail:           registrant.Email,
+		RecipientName:            recipientName,
+		MeetingTitle:             meetingDB.Title,
+		StartTime:                meetingDB.StartTime,
+		Duration:                 meetingDB.Duration,
+		Timezone:                 meetingDB.Timezone,
+		Description:              meetingDB.Description,
+		Visibility:               meetingDB.Visibility,
+		MeetingType:              meetingDB.MeetingType,
+		JoinLink:                 constants.GenerateLFXMeetingURL(meetingDB.UID, meetingDB.Password, s.config.LFXEnvironment),
+		MeetingDetailsLink:       constants.GenerateLFXMeetingDetailsURL(projectSlug, meetingDB.UID, s.config.LFXEnvironment),
+		ProjectName:              projectName,
+		ProjectLogo:              projectLogo,
+		Platform:                 meetingDB.Platform,
+		MeetingID:                meetingID,
+		Passcode:                 passcode,
+		Recurrence:               meetingDB.Recurrence,
+		IcsSequence:              meetingDB.IcsSequence,
+		CancelledOccurrenceTimes: cancelledOccurrenceTimes,
 	}
 
 	return s.emailService.SendRegistrantInvitation(ctx, invitation)
@@ -726,9 +738,14 @@ func (s *MeetingRegistrantService) SendOccurrenceCancellationEmail(
 	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
 
 	// Get the occurrence start time
-	occurrenceStartTime := meeting.StartTime
-	if occurrence.StartTime != nil {
-		occurrenceStartTime = *occurrence.StartTime
+	if occurrence.StartTime == nil {
+		return domain.NewValidationError("occurrence start_time is required")
+	}
+	occurrenceStartTime := *occurrence.StartTime
+
+	// Ensure this API is used only for recurring meetings
+	if meeting.Recurrence == nil {
+		return domain.NewValidationError("meeting is not recurring")
 	}
 
 	recipientName := registrant.GetFullName()

@@ -21,26 +21,27 @@ type EmailService interface {
 
 // EmailInvitation contains the data needed to send a meeting invitation email
 type EmailInvitation struct {
-	MeetingUID         string // Meeting UID for consistent calendar event identification
-	RecipientEmail     string
-	RecipientName      string
-	MeetingTitle       string
-	StartTime          time.Time
-	Duration           int // Duration in minutes
-	Timezone           string
-	Description        string
-	MeetingType        string
-	Visibility         string
-	JoinLink           string
-	MeetingDetailsLink string             // URL to meeting details in LFX One
-	ProjectName        string             // Optional project name for context
-	ProjectLogo        string             // Optional project logo URL
-	Platform           string             // Meeting platform (e.g., "Zoom")
-	MeetingID          string             // Zoom meeting ID for dial-in
-	Passcode           string             // Zoom passcode
-	Recurrence         *models.Recurrence // Recurrence pattern for ICS
-	IcsSequence        int                // ICS sequence number for calendar updates
-	ICSAttachment      *EmailAttachment   // ICS calendar attachment
+	MeetingUID               string // Meeting UID for consistent calendar event identification
+	RecipientEmail           string
+	RecipientName            string
+	MeetingTitle             string
+	StartTime                time.Time
+	Duration                 int // Duration in minutes
+	Timezone                 string
+	Description              string
+	MeetingType              string
+	Visibility               string
+	JoinLink                 string
+	MeetingDetailsLink       string             // URL to meeting details in LFX One
+	ProjectName              string             // Optional project name for context
+	ProjectLogo              string             // Optional project logo URL
+	Platform                 string             // Meeting platform (e.g., "Zoom")
+	MeetingID                string             // Zoom meeting ID for dial-in
+	Passcode                 string             // Zoom passcode
+	Recurrence               *models.Recurrence // Recurrence pattern for ICS
+	IcsSequence              int                // ICS sequence number for calendar updates
+	ICSAttachment            *EmailAttachment   // ICS calendar attachment
+	CancelledOccurrenceTimes []time.Time        // Cancelled occurrence start times to exclude from ICS
 }
 
 // EmailCancellation contains the data needed to send a meeting cancellation email

@@ -9,10 +9,15 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	svc "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 )
 
 // GetMeetings fetches all meetings
 func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMeetingsPayload) (*meetingsvc.GetMeetingsResult, error) {
+	if payload == nil {
+		return nil, handleError(domain.NewValidationError("payload is empty"))
+	}
+
 	meetings, err := s.meetingService.ListMeetings(ctx, payload.IncludeCancelledOccurrences)
 	if err != nil {
 		return nil, handleError(err)
@@ -50,9 +55,11 @@ func (s *MeetingsAPI) GetMeetingBase(ctx context.Context, payload *meetingsvc.Ge
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	includeCancelledOccurrences := payload.IncludeCancelledOccurrences
+	options := svc.GetMeetingBaseOptions{
+		IncludeCancelledOccurrences: payload.IncludeCancelledOccurrences,
+	}
 
-	meeting, revision, err := s.meetingService.GetMeetingBase(ctx, *payload.UID, includeCancelledOccurrences)
+	meeting, revision, err := s.meetingService.GetMeetingBase(ctx, *payload.UID, options)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -159,7 +166,7 @@ func (s *MeetingsAPI) DeleteMeeting(ctx context.Context, payload *meetingsvc.Del
 // DeleteMeetingOccurrence cancels a specific occurrence of a meeting.
 func (s *MeetingsAPI) DeleteMeetingOccurrence(ctx context.Context, payload *meetingsvc.DeleteMeetingOccurrencePayload) error {
 	if payload == nil {
-		return handleError(domain.NewValidationError("validation failed"))
+		return handleError(domain.NewValidationError("payload is empty"))
 	}
 
 	etag, err := service.EtagValidator(payload.IfMatch)

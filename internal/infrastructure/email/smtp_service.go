@@ -100,19 +100,20 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 
 	// Generate ICS file content
 	icsContent, err := s.icsGenerator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-		MeetingUID:     invitation.MeetingUID,
-		MeetingTitle:   invitation.MeetingTitle,
-		Description:    invitation.Description,
-		StartTime:      invitation.StartTime,
-		Duration:       invitation.Duration,
-		Timezone:       invitation.Timezone,
-		JoinLink:       invitation.JoinLink,
-		MeetingID:      invitation.MeetingID,
-		Passcode:       invitation.Passcode,
-		RecipientEmail: invitation.RecipientEmail,
-		ProjectName:    invitation.ProjectName,
-		Recurrence:     invitation.Recurrence,
-		Sequence:       invitation.IcsSequence,
+		MeetingUID:               invitation.MeetingUID,
+		MeetingTitle:             invitation.MeetingTitle,
+		Description:              invitation.Description,
+		StartTime:                invitation.StartTime,
+		Duration:                 invitation.Duration,
+		Timezone:                 invitation.Timezone,
+		JoinLink:                 invitation.JoinLink,
+		MeetingID:                invitation.MeetingID,
+		Passcode:                 invitation.Passcode,
+		RecipientEmail:           invitation.RecipientEmail,
+		ProjectName:              invitation.ProjectName,
+		Recurrence:               invitation.Recurrence,
+		Sequence:                 invitation.IcsSequence,
+		CancelledOccurrenceTimes: invitation.CancelledOccurrenceTimes,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to generate ICS file", logging.ErrKey, err)
@@ -247,15 +248,14 @@ func (s *SMTPService) SendOccurrenceCancellation(ctx context.Context, cancellati
 	// Generate ICS cancellation file for the specific occurrence if it's in the future
 	var attachment *domain.EmailAttachment
 	if cancellation.OccurrenceStartTime.After(time.Now()) {
-		icsContent, err := s.icsGenerator.GenerateMeetingCancellationICS(ICSMeetingCancellationParams{
-			MeetingUID:     cancellation.MeetingUID,
-			MeetingTitle:   cancellation.MeetingTitle,
-			StartTime:      cancellation.OccurrenceStartTime, // Use the specific occurrence start time
-			Duration:       cancellation.Duration,
-			Timezone:       cancellation.Timezone,
-			RecipientEmail: cancellation.RecipientEmail,
-			Recurrence:     nil, // Single occurrence, not the series
-			Sequence:       cancellation.IcsSequence,
+		icsContent, err := s.icsGenerator.GenerateOccurrenceCancellationICS(ICSOccurrenceCancellationParams{
+			MeetingUID:          cancellation.MeetingUID,
+			MeetingTitle:        cancellation.MeetingTitle,
+			OccurrenceStartTime: cancellation.OccurrenceStartTime,
+			Duration:            cancellation.Duration,
+			Timezone:            cancellation.Timezone,
+			RecipientEmail:      cancellation.RecipientEmail,
+			Sequence:            cancellation.IcsSequence,
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS cancellation for occurrence", logging.ErrKey, err)

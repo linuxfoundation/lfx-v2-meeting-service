@@ -370,7 +370,7 @@ func TestMeetingsService_GetMeetingBase(t *testing.T) {
 			service, mockRepo, mockBuilder := setupServiceForTesting()
 			tt.setupMocks(mockRepo, mockBuilder)
 
-			result, etag, err := service.GetMeetingBase(context.Background(), tt.uid, false)
+			result, etag, err := service.GetMeetingBase(context.Background(), tt.uid, GetMeetingBaseOptions{})
 
 			if tt.wantErr {
 				assert.Error(t, err)
