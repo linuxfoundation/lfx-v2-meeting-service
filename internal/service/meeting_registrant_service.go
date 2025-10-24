@@ -558,10 +558,7 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		return fmt.Errorf("failed to get meeting details: %w", err)
 	}
 
-	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
-	if recipientName == " " {
-		recipientName = ""
-	}
+	recipientName := registrant.GetFullName()
 
 	var meetingID, passcode string
 	if meetingDB.ZoomConfig != nil {
@@ -631,10 +628,7 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meeting.UID))
 	ctx = logging.AppendCtx(ctx, slog.String("email", redaction.RedactEmail(registrant.Email)))
 
-	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
-	if recipientName == " " {
-		recipientName = ""
-	}
+	recipientName := registrant.GetFullName()
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
 	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
@@ -683,10 +677,7 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 		return errors.New("meeting object missing")
 	}
 
-	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
-	if recipientName == " " {
-		recipientName = ""
-	}
+	recipientName := registrant.GetFullName()
 
 	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
 	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
@@ -740,7 +731,7 @@ func (s *MeetingRegistrantService) SendOccurrenceCancellationEmail(
 		occurrenceStartTime = *occurrence.StartTime
 	}
 
-	recipientName := fmt.Sprintf("%s %s", registrant.FirstName, registrant.LastName)
+	recipientName := registrant.GetFullName()
 
 	cancellation := domain.EmailOccurrenceCancellation{
 		MeetingUID:          meeting.UID,

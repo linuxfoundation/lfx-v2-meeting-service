@@ -922,7 +922,7 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 				occurrenceStartTime = *occ.StartTime
 			}
 
-			recipientName := fmt.Sprintf("%s %s", r.FirstName, r.LastName)
+			recipientName := r.GetFullName()
 
 			cancellation := domain.EmailOccurrenceCancellation{
 				MeetingUID:          meetingDB.UID,
