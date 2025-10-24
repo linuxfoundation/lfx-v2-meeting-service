@@ -1909,6 +1909,103 @@ paths:
                                 message: The service is unavailable.
             security:
                 - jwt_header_Authorization: []
+    /meetings/{uid}/occurrences/{occurrence_id}:
+        delete:
+            tags:
+                - Meeting Service
+            summary: delete-meeting-occurrence Meeting Service
+            description: Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.
+            operationId: Meeting Service#delete-meeting-occurrence
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: uid
+                  in: path
+                  description: The UID of the meeting
+                  required: true
+                  schema:
+                    type: string
+                    description: The UID of the meeting
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
+                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: occurrence_id
+                  in: path
+                  description: The ID of the occurrence to cancel
+                  required: true
+                  schema:
+                    type: string
+                    description: The ID of the occurrence to cancel
+                    example: "1640995200"
+                  example: "1640995200"
+                - name: If-Match
+                  in: header
+                  description: If-Match header value for conditional requests
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: If-Match header value for conditional requests
+                    example: "123"
+                  example: "123"
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'BadRequest: Bad request'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BadRequestError'
+                            example:
+                                code: "400"
+                                message: The request was invalid.
+                "404":
+                    description: 'NotFound: Meeting or occurrence not found'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "409":
+                    description: 'Conflict: Conflict'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ConflictError'
+                            example:
+                                code: "409"
+                                message: The resource already exists.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
     /meetings/{uid}/registrants:
         get:
             tags:

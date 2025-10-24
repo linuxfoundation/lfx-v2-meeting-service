@@ -23,6 +23,7 @@ type Client struct {
 	UpdateMeetingBaseEndpoint                 goa.Endpoint
 	UpdateMeetingSettingsEndpoint             goa.Endpoint
 	DeleteMeetingEndpoint                     goa.Endpoint
+	DeleteMeetingOccurrenceEndpoint           goa.Endpoint
 	GetMeetingRegistrantsEndpoint             goa.Endpoint
 	CreateMeetingRegistrantEndpoint           goa.Endpoint
 	GetMeetingRegistrantEndpoint              goa.Endpoint
@@ -47,7 +48,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -57,6 +58,7 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		UpdateMeetingBaseEndpoint:                 updateMeetingBase,
 		UpdateMeetingSettingsEndpoint:             updateMeetingSettings,
 		DeleteMeetingEndpoint:                     deleteMeeting,
+		DeleteMeetingOccurrenceEndpoint:           deleteMeetingOccurrence,
 		GetMeetingRegistrantsEndpoint:             getMeetingRegistrants,
 		CreateMeetingRegistrantEndpoint:           createMeetingRegistrant,
 		GetMeetingRegistrantEndpoint:              getMeetingRegistrant,
@@ -208,6 +210,20 @@ func (c *Client) UpdateMeetingSettings(ctx context.Context, p *UpdateMeetingSett
 //   - error: internal error
 func (c *Client) DeleteMeeting(ctx context.Context, p *DeleteMeetingPayload) (err error) {
 	_, err = c.DeleteMeetingEndpoint(ctx, p)
+	return
+}
+
+// DeleteMeetingOccurrence calls the "delete-meeting-occurrence" endpoint of
+// the "Meeting Service" service.
+// DeleteMeetingOccurrence may return the following errors:
+//   - "NotFound" (type *NotFoundError): Meeting or occurrence not found
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Conflict" (type *ConflictError): Conflict
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteMeetingOccurrence(ctx context.Context, p *DeleteMeetingOccurrencePayload) (err error) {
+	_, err = c.DeleteMeetingOccurrenceEndpoint(ctx, p)
 	return
 }
 

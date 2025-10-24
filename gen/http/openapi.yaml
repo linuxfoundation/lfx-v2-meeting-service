@@ -797,6 +797,84 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
+    /meetings/{uid}/occurrences/{occurrence_id}:
+        delete:
+            tags:
+                - Meeting Service
+            summary: delete-meeting-occurrence Meeting Service
+            description: Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.
+            operationId: Meeting Service#delete-meeting-occurrence
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: uid
+                  in: path
+                  description: The UID of the meeting
+                  required: true
+                  type: string
+                  format: uuid
+                - name: occurrence_id
+                  in: path
+                  description: The ID of the occurrence to cancel
+                  required: true
+                  type: string
+                - name: Authorization
+                  in: header
+                  description: JWT token issued by Heimdall
+                  required: false
+                  type: string
+                - name: If-Match
+                  in: header
+                  description: If-Match header value for conditional requests
+                  required: false
+                  type: string
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/BadRequestError'
+                        required:
+                            - code
+                            - message
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "409":
+                    description: Conflict response.
+                    schema:
+                        $ref: '#/definitions/ConflictError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: Service Unavailable response.
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
     /meetings/{uid}/registrants:
         get:
             tags:

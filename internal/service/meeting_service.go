@@ -800,3 +800,87 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	slog.DebugContext(ctx, "deleted meeting", "meeting_uid", uid)
 	return nil
 }
+
+// CancelMeetingOccurrence cancels a specific occurrence of a meeting by setting its IsCancelled field to true
+func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID string, occurrenceID string, revision uint64) error {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return domain.NewUnavailableError("meeting service is not ready")
+	}
+
+	if meetingUID == "" {
+		slog.WarnContext(ctx, "meeting UID is required")
+		return domain.NewValidationError("meeting UID is required")
+	}
+
+	if occurrenceID == "" {
+		slog.WarnContext(ctx, "occurrence ID is required")
+		return domain.NewValidationError("occurrence ID is required")
+	}
+
+	var err error
+	if s.config.SkipEtagValidation {
+		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
+		_, revision, err = s.meetingRepository.GetBaseWithRevision(ctx, meetingUID)
+		if err != nil {
+			return err
+		}
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+	ctx = logging.AppendCtx(ctx, slog.String("occurrence_id", occurrenceID))
+	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
+
+	// Get the meeting from repository
+	meetingDB, err := s.meetingRepository.GetBase(ctx, meetingUID)
+	if err != nil {
+		return err
+	}
+
+	// Calculate current occurrences
+	// We calculate up to 50 occurrences which should be sufficient for most use cases
+	currentTime := time.Now()
+	calculatedOccurrences := s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
+
+	// Find the occurrence and check if it's already cancelled
+	occurrenceFound := false
+	for i, occ := range calculatedOccurrences {
+		if occ.OccurrenceID == occurrenceID {
+			occurrenceFound = true
+			// Check if the occurrence is already cancelled
+			if occ.IsCancelled {
+				slog.WarnContext(ctx, "occurrence is already cancelled", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
+				return domain.NewConflictError("occurrence is already cancelled")
+			}
+			// Mark the occurrence as cancelled
+			calculatedOccurrences[i].IsCancelled = true
+			slog.InfoContext(ctx, "marked occurrence as cancelled", "occurrence_id", occurrenceID)
+			break
+		}
+	}
+
+	if !occurrenceFound {
+		slog.WarnContext(ctx, "occurrence not found for meeting", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
+		return domain.NewNotFoundError("occurrence not found for this meeting")
+	}
+
+	// Replace the entire occurrences array with the calculated occurrences (including the cancelled one)
+	meetingDB.Occurrences = calculatedOccurrences
+
+	// Update the meeting in the repository
+	err = s.meetingRepository.UpdateBase(ctx, meetingDB, revision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update meeting in repository", logging.ErrKey, err)
+		return err
+	}
+
+	// Send update to indexer
+	err = s.messageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *meetingDB)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS message for cancelled occurrence", logging.ErrKey, err)
+		return domain.NewInternalError("failed to publish occurrence cancellation event", err)
+	}
+
+	slog.InfoContext(ctx, "successfully cancelled meeting occurrence", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
+	return nil
+}

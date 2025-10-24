@@ -153,3 +153,21 @@ func (s *MeetingsAPI) DeleteMeeting(ctx context.Context, payload *meetingsvc.Del
 	}
 	return nil
 }
+
+// DeleteMeetingOccurrence cancels a specific occurrence of a meeting.
+func (s *MeetingsAPI) DeleteMeetingOccurrence(ctx context.Context, payload *meetingsvc.DeleteMeetingOccurrencePayload) error {
+	if payload == nil {
+		return handleError(domain.NewValidationError("validation failed"))
+	}
+
+	etag, err := service.EtagValidator(payload.IfMatch)
+	if err != nil {
+		return handleError(err)
+	}
+
+	err = s.meetingService.CancelMeetingOccurrence(ctx, payload.UID, payload.OccurrenceID, etag)
+	if err != nil {
+		return handleError(err)
+	}
+	return nil
+}

@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|readyz|livez)
 `
 }
 
@@ -87,6 +87,13 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingVersionFlag     = meetingServiceDeleteMeetingFlags.String("version", "", "")
 		meetingServiceDeleteMeetingBearerTokenFlag = meetingServiceDeleteMeetingFlags.String("bearer-token", "", "")
 		meetingServiceDeleteMeetingIfMatchFlag     = meetingServiceDeleteMeetingFlags.String("if-match", "", "")
+
+		meetingServiceDeleteMeetingOccurrenceFlags            = flag.NewFlagSet("delete-meeting-occurrence", flag.ExitOnError)
+		meetingServiceDeleteMeetingOccurrenceUIDFlag          = meetingServiceDeleteMeetingOccurrenceFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceDeleteMeetingOccurrenceOccurrenceIDFlag = meetingServiceDeleteMeetingOccurrenceFlags.String("occurrence-id", "REQUIRED", "The ID of the occurrence to cancel")
+		meetingServiceDeleteMeetingOccurrenceVersionFlag      = meetingServiceDeleteMeetingOccurrenceFlags.String("version", "", "")
+		meetingServiceDeleteMeetingOccurrenceBearerTokenFlag  = meetingServiceDeleteMeetingOccurrenceFlags.String("bearer-token", "", "")
+		meetingServiceDeleteMeetingOccurrenceIfMatchFlag      = meetingServiceDeleteMeetingOccurrenceFlags.String("if-match", "", "")
 
 		meetingServiceGetMeetingRegistrantsFlags           = flag.NewFlagSet("get-meeting-registrants", flag.ExitOnError)
 		meetingServiceGetMeetingRegistrantsUIDFlag         = meetingServiceGetMeetingRegistrantsFlags.String("uid", "REQUIRED", "The UID of the meeting")
@@ -215,6 +222,7 @@ func ParseEndpoint(
 	meetingServiceUpdateMeetingBaseFlags.Usage = meetingServiceUpdateMeetingBaseUsage
 	meetingServiceUpdateMeetingSettingsFlags.Usage = meetingServiceUpdateMeetingSettingsUsage
 	meetingServiceDeleteMeetingFlags.Usage = meetingServiceDeleteMeetingUsage
+	meetingServiceDeleteMeetingOccurrenceFlags.Usage = meetingServiceDeleteMeetingOccurrenceUsage
 	meetingServiceGetMeetingRegistrantsFlags.Usage = meetingServiceGetMeetingRegistrantsUsage
 	meetingServiceCreateMeetingRegistrantFlags.Usage = meetingServiceCreateMeetingRegistrantUsage
 	meetingServiceGetMeetingRegistrantFlags.Usage = meetingServiceGetMeetingRegistrantUsage
@@ -294,6 +302,9 @@ func ParseEndpoint(
 
 			case "delete-meeting":
 				epf = meetingServiceDeleteMeetingFlags
+
+			case "delete-meeting-occurrence":
+				epf = meetingServiceDeleteMeetingOccurrenceFlags
 
 			case "get-meeting-registrants":
 				epf = meetingServiceGetMeetingRegistrantsFlags
@@ -407,6 +418,9 @@ func ParseEndpoint(
 			case "delete-meeting":
 				endpoint = c.DeleteMeeting()
 				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingIfMatchFlag)
+			case "delete-meeting-occurrence":
+				endpoint = c.DeleteMeetingOccurrence()
+				data, err = meetingservicec.BuildDeleteMeetingOccurrencePayload(*meetingServiceDeleteMeetingOccurrenceUIDFlag, *meetingServiceDeleteMeetingOccurrenceOccurrenceIDFlag, *meetingServiceDeleteMeetingOccurrenceVersionFlag, *meetingServiceDeleteMeetingOccurrenceBearerTokenFlag, *meetingServiceDeleteMeetingOccurrenceIfMatchFlag)
 			case "get-meeting-registrants":
 				endpoint = c.GetMeetingRegistrants()
 				data, err = meetingservicec.BuildGetMeetingRegistrantsPayload(*meetingServiceGetMeetingRegistrantsUIDFlag, *meetingServiceGetMeetingRegistrantsVersionFlag, *meetingServiceGetMeetingRegistrantsBearerTokenFlag)
@@ -495,6 +509,7 @@ COMMAND:
     update-meeting-base: Update an existing meeting base.
     update-meeting-settings: Update an existing meeting's settings.
     delete-meeting: Delete an existing meeting.
+    delete-meeting-occurrence: Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.
     get-meeting-registrants: Get all registrants for a meeting
     create-meeting-registrant: Create a new registrant for a meeting
     get-meeting-registrant: Get a specific registrant for a meeting by UID
@@ -756,6 +771,21 @@ Delete an existing meeting.
 
 Example:
     %[1]s meeting-service delete-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+`, os.Args[0])
+}
+
+func meetingServiceDeleteMeetingOccurrenceUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-occurrence -uid STRING -occurrence-id STRING -version STRING -bearer-token STRING -if-match STRING
+
+Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.
+    -uid STRING: The UID of the meeting
+    -occurrence-id STRING: The ID of the occurrence to cancel
+    -version STRING: 
+    -bearer-token STRING: 
+    -if-match STRING: 
+
+Example:
+    %[1]s meeting-service delete-meeting-occurrence --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --occurrence-id "1640995200" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
 

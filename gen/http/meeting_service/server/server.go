@@ -28,6 +28,7 @@ type Server struct {
 	UpdateMeetingBase                 http.Handler
 	UpdateMeetingSettings             http.Handler
 	DeleteMeeting                     http.Handler
+	DeleteMeetingOccurrence           http.Handler
 	GetMeetingRegistrants             http.Handler
 	CreateMeetingRegistrant           http.Handler
 	GetMeetingRegistrant              http.Handler
@@ -110,6 +111,7 @@ func New(
 			{"UpdateMeetingBase", "PUT", "/meetings/{uid}"},
 			{"UpdateMeetingSettings", "PUT", "/meetings/{uid}/settings"},
 			{"DeleteMeeting", "DELETE", "/meetings/{uid}"},
+			{"DeleteMeetingOccurrence", "DELETE", "/meetings/{uid}/occurrences/{occurrence_id}"},
 			{"GetMeetingRegistrants", "GET", "/meetings/{uid}/registrants"},
 			{"CreateMeetingRegistrant", "POST", "/meetings/{meeting_uid}/registrants"},
 			{"GetMeetingRegistrant", "GET", "/meetings/{meeting_uid}/registrants/{uid}"},
@@ -144,6 +146,7 @@ func New(
 		UpdateMeetingBase:                 NewUpdateMeetingBaseHandler(e.UpdateMeetingBase, mux, decoder, encoder, errhandler, formatter),
 		UpdateMeetingSettings:             NewUpdateMeetingSettingsHandler(e.UpdateMeetingSettings, mux, decoder, encoder, errhandler, formatter),
 		DeleteMeeting:                     NewDeleteMeetingHandler(e.DeleteMeeting, mux, decoder, encoder, errhandler, formatter),
+		DeleteMeetingOccurrence:           NewDeleteMeetingOccurrenceHandler(e.DeleteMeetingOccurrence, mux, decoder, encoder, errhandler, formatter),
 		GetMeetingRegistrants:             NewGetMeetingRegistrantsHandler(e.GetMeetingRegistrants, mux, decoder, encoder, errhandler, formatter),
 		CreateMeetingRegistrant:           NewCreateMeetingRegistrantHandler(e.CreateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
 		GetMeetingRegistrant:              NewGetMeetingRegistrantHandler(e.GetMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
@@ -185,6 +188,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UpdateMeetingBase = m(s.UpdateMeetingBase)
 	s.UpdateMeetingSettings = m(s.UpdateMeetingSettings)
 	s.DeleteMeeting = m(s.DeleteMeeting)
+	s.DeleteMeetingOccurrence = m(s.DeleteMeetingOccurrence)
 	s.GetMeetingRegistrants = m(s.GetMeetingRegistrants)
 	s.CreateMeetingRegistrant = m(s.CreateMeetingRegistrant)
 	s.GetMeetingRegistrant = m(s.GetMeetingRegistrant)
@@ -221,6 +225,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountUpdateMeetingBaseHandler(mux, h.UpdateMeetingBase)
 	MountUpdateMeetingSettingsHandler(mux, h.UpdateMeetingSettings)
 	MountDeleteMeetingHandler(mux, h.DeleteMeeting)
+	MountDeleteMeetingOccurrenceHandler(mux, h.DeleteMeetingOccurrence)
 	MountGetMeetingRegistrantsHandler(mux, h.GetMeetingRegistrants)
 	MountCreateMeetingRegistrantHandler(mux, h.CreateMeetingRegistrant)
 	MountGetMeetingRegistrantHandler(mux, h.GetMeetingRegistrant)
@@ -644,6 +649,58 @@ func NewDeleteMeetingHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "delete-meeting")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountDeleteMeetingOccurrenceHandler configures the mux to serve the "Meeting
+// Service" service "delete-meeting-occurrence" endpoint.
+func MountDeleteMeetingOccurrenceHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("DELETE", "/meetings/{uid}/occurrences/{occurrence_id}", f)
+}
+
+// NewDeleteMeetingOccurrenceHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "delete-meeting-occurrence" endpoint.
+func NewDeleteMeetingOccurrenceHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeDeleteMeetingOccurrenceRequest(mux, decoder)
+		encodeResponse = EncodeDeleteMeetingOccurrenceResponse(encoder)
+		encodeError    = EncodeDeleteMeetingOccurrenceError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "delete-meeting-occurrence")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

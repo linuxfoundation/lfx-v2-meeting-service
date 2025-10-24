@@ -518,6 +518,56 @@ func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingSer
 	return v, nil
 }
 
+// BuildDeleteMeetingOccurrencePayload builds the payload for the Meeting
+// Service delete-meeting-occurrence endpoint from CLI flags.
+func BuildDeleteMeetingOccurrencePayload(meetingServiceDeleteMeetingOccurrenceUID string, meetingServiceDeleteMeetingOccurrenceOccurrenceID string, meetingServiceDeleteMeetingOccurrenceVersion string, meetingServiceDeleteMeetingOccurrenceBearerToken string, meetingServiceDeleteMeetingOccurrenceIfMatch string) (*meetingservice.DeleteMeetingOccurrencePayload, error) {
+	var err error
+	var uid string
+	{
+		uid = meetingServiceDeleteMeetingOccurrenceUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var occurrenceID string
+	{
+		occurrenceID = meetingServiceDeleteMeetingOccurrenceOccurrenceID
+	}
+	var version *string
+	{
+		if meetingServiceDeleteMeetingOccurrenceVersion != "" {
+			version = &meetingServiceDeleteMeetingOccurrenceVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceDeleteMeetingOccurrenceBearerToken != "" {
+			bearerToken = &meetingServiceDeleteMeetingOccurrenceBearerToken
+		}
+	}
+	var ifMatch *string
+	{
+		if meetingServiceDeleteMeetingOccurrenceIfMatch != "" {
+			ifMatch = &meetingServiceDeleteMeetingOccurrenceIfMatch
+		}
+	}
+	v := &meetingservice.DeleteMeetingOccurrencePayload{}
+	v.UID = uid
+	v.OccurrenceID = occurrenceID
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.IfMatch = ifMatch
+
+	return v, nil
+}
+
 // BuildGetMeetingRegistrantsPayload builds the payload for the Meeting Service
 // get-meeting-registrants endpoint from CLI flags.
 func BuildGetMeetingRegistrantsPayload(meetingServiceGetMeetingRegistrantsUID string, meetingServiceGetMeetingRegistrantsVersion string, meetingServiceGetMeetingRegistrantsBearerToken string) (*meetingservice.GetMeetingRegistrantsPayload, error) {
