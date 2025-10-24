@@ -13,7 +13,7 @@ import (
 
 // GetMeetings fetches all meetings
 func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMeetingsPayload) (*meetingsvc.GetMeetingsResult, error) {
-	meetings, err := s.meetingService.ListMeetings(ctx)
+	meetings, err := s.meetingService.ListMeetings(ctx, payload.IncludeCancelledOccurrences)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -50,7 +50,9 @@ func (s *MeetingsAPI) GetMeetingBase(ctx context.Context, payload *meetingsvc.Ge
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	meeting, revision, err := s.meetingService.GetMeetingBase(ctx, *payload.UID)
+	includeCancelledOccurrences := payload.IncludeCancelledOccurrences
+
+	meeting, revision, err := s.meetingService.GetMeetingBase(ctx, *payload.UID, includeCancelledOccurrences)
 	if err != nil {
 		return nil, handleError(err)
 	}

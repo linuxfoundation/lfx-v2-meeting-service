@@ -121,7 +121,7 @@ func (s *MeetingService) ServiceReady() bool {
 }
 
 // ListMeetings fetches all meetings
-func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFull, error) {
+func (s *MeetingService) ListMeetings(ctx context.Context, includeCancelledOccurrences bool) ([]*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting service is not ready")
@@ -150,6 +150,17 @@ func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFul
 			settings = settingsByUID[meeting.UID]
 			// Calculate next 50 occurrences from current time
 			meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+
+			// Filter out cancelled occurrences unless explicitly requested
+			if !includeCancelledOccurrences {
+				nonCancelledOccurrences := make([]models.Occurrence, 0, len(meeting.Occurrences))
+				for _, occ := range meeting.Occurrences {
+					if !occ.IsCancelled {
+						nonCancelledOccurrences = append(nonCancelledOccurrences, occ)
+					}
+				}
+				meeting.Occurrences = nonCancelledOccurrences
+			}
 		}
 		meetings[i] = &models.MeetingFull{
 			Base:     meeting,
@@ -379,7 +390,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	return reqMeeting, nil
 }
 
-func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*models.MeetingBase, string, error) {
+func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string, includeCancelledOccurrences bool) (*models.MeetingBase, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, "", domain.NewUnavailableError("meeting service is not ready")
@@ -399,6 +410,17 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 	// Calculate next 50 occurrences from current time
 	currentTime := time.Now()
 	meetingDB.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
+
+	// Filter out cancelled occurrences unless explicitly requested
+	if !includeCancelledOccurrences {
+		nonCancelledOccurrences := make([]models.Occurrence, 0, len(meetingDB.Occurrences))
+		for _, occ := range meetingDB.Occurrences {
+			if !occ.IsCancelled {
+				nonCancelledOccurrences = append(nonCancelledOccurrences, occ)
+			}
+		}
+		meetingDB.Occurrences = nonCancelledOccurrences
+	}
 
 	slog.DebugContext(ctx, "returning meeting", "meeting", meetingDB, "revision", revision)
 

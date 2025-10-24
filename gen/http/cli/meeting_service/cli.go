@@ -28,7 +28,7 @@ func UsageCommands() string {
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` meeting-service get-meetings --version "1" --bearer-token "eyJhbGci..."` + "\n" +
+	return os.Args[0] + ` meeting-service get-meetings --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."` + "\n" +
 		""
 }
 
@@ -44,19 +44,21 @@ func ParseEndpoint(
 	var (
 		meetingServiceFlags = flag.NewFlagSet("meeting-service", flag.ContinueOnError)
 
-		meetingServiceGetMeetingsFlags           = flag.NewFlagSet("get-meetings", flag.ExitOnError)
-		meetingServiceGetMeetingsVersionFlag     = meetingServiceGetMeetingsFlags.String("version", "", "")
-		meetingServiceGetMeetingsBearerTokenFlag = meetingServiceGetMeetingsFlags.String("bearer-token", "", "")
+		meetingServiceGetMeetingsFlags                           = flag.NewFlagSet("get-meetings", flag.ExitOnError)
+		meetingServiceGetMeetingsVersionFlag                     = meetingServiceGetMeetingsFlags.String("version", "", "")
+		meetingServiceGetMeetingsIncludeCancelledOccurrencesFlag = meetingServiceGetMeetingsFlags.String("include-cancelled-occurrences", "", "")
+		meetingServiceGetMeetingsBearerTokenFlag                 = meetingServiceGetMeetingsFlags.String("bearer-token", "", "")
 
 		meetingServiceCreateMeetingFlags           = flag.NewFlagSet("create-meeting", flag.ExitOnError)
 		meetingServiceCreateMeetingBodyFlag        = meetingServiceCreateMeetingFlags.String("body", "REQUIRED", "")
 		meetingServiceCreateMeetingVersionFlag     = meetingServiceCreateMeetingFlags.String("version", "", "")
 		meetingServiceCreateMeetingBearerTokenFlag = meetingServiceCreateMeetingFlags.String("bearer-token", "", "")
 
-		meetingServiceGetMeetingBaseFlags           = flag.NewFlagSet("get-meeting-base", flag.ExitOnError)
-		meetingServiceGetMeetingBaseUIDFlag         = meetingServiceGetMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceGetMeetingBaseVersionFlag     = meetingServiceGetMeetingBaseFlags.String("version", "", "")
-		meetingServiceGetMeetingBaseBearerTokenFlag = meetingServiceGetMeetingBaseFlags.String("bearer-token", "", "")
+		meetingServiceGetMeetingBaseFlags                           = flag.NewFlagSet("get-meeting-base", flag.ExitOnError)
+		meetingServiceGetMeetingBaseUIDFlag                         = meetingServiceGetMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
+		meetingServiceGetMeetingBaseVersionFlag                     = meetingServiceGetMeetingBaseFlags.String("version", "", "")
+		meetingServiceGetMeetingBaseIncludeCancelledOccurrencesFlag = meetingServiceGetMeetingBaseFlags.String("include-cancelled-occurrences", "", "")
+		meetingServiceGetMeetingBaseBearerTokenFlag                 = meetingServiceGetMeetingBaseFlags.String("bearer-token", "", "")
 
 		meetingServiceGetMeetingSettingsFlags           = flag.NewFlagSet("get-meeting-settings", flag.ExitOnError)
 		meetingServiceGetMeetingSettingsUIDFlag         = meetingServiceGetMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
@@ -396,13 +398,13 @@ func ParseEndpoint(
 			switch epn {
 			case "get-meetings":
 				endpoint = c.GetMeetings()
-				data, err = meetingservicec.BuildGetMeetingsPayload(*meetingServiceGetMeetingsVersionFlag, *meetingServiceGetMeetingsBearerTokenFlag)
+				data, err = meetingservicec.BuildGetMeetingsPayload(*meetingServiceGetMeetingsVersionFlag, *meetingServiceGetMeetingsIncludeCancelledOccurrencesFlag, *meetingServiceGetMeetingsBearerTokenFlag)
 			case "create-meeting":
 				endpoint = c.CreateMeeting()
 				data, err = meetingservicec.BuildCreateMeetingPayload(*meetingServiceCreateMeetingBodyFlag, *meetingServiceCreateMeetingVersionFlag, *meetingServiceCreateMeetingBearerTokenFlag)
 			case "get-meeting-base":
 				endpoint = c.GetMeetingBase()
-				data, err = meetingservicec.BuildGetMeetingBasePayload(*meetingServiceGetMeetingBaseUIDFlag, *meetingServiceGetMeetingBaseVersionFlag, *meetingServiceGetMeetingBaseBearerTokenFlag)
+				data, err = meetingservicec.BuildGetMeetingBasePayload(*meetingServiceGetMeetingBaseUIDFlag, *meetingServiceGetMeetingBaseVersionFlag, *meetingServiceGetMeetingBaseIncludeCancelledOccurrencesFlag, *meetingServiceGetMeetingBaseBearerTokenFlag)
 			case "get-meeting-settings":
 				endpoint = c.GetMeetingSettings()
 				data, err = meetingservicec.BuildGetMeetingSettingsPayload(*meetingServiceGetMeetingSettingsUIDFlag, *meetingServiceGetMeetingSettingsVersionFlag, *meetingServiceGetMeetingSettingsBearerTokenFlag)
@@ -537,14 +539,15 @@ Additional help:
 `, os.Args[0])
 }
 func meetingServiceGetMeetingsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meetings -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meetings -version STRING -include-cancelled-occurrences BOOL -bearer-token STRING
 
 Get all meetings.
     -version STRING: 
+    -include-cancelled-occurrences BOOL: 
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-meetings --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-meetings --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -559,87 +562,83 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
-            ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Ut ut voluptatem."
          }
       ],
-      "description": "Quis est est molestias eligendi nulla porro.",
-      "duration": 254,
-      "early_join_time_minutes": 55,
-      "meeting_type": "Other",
+      "description": "Et nemo.",
+      "duration": 63,
+      "early_join_time_minutes": 57,
+      "meeting_type": "Technical",
       "organizers": [
-         "Sit ad maiores id velit ratione et.",
-         "Et illo similique qui est."
+         "Libero enim ut quae.",
+         "Facere consectetur quod voluptatibus in necessitatibus rerum."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "recording_enabled": true,
+      "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1982-02-16T02:33:37Z",
-         "end_times": 748992484864519505,
-         "monthly_day": 26,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 7700406239905879971,
+         "end_date_time": "1993-04-10T19:30:34Z",
+         "end_times": 3732607533624244863,
+         "monthly_day": 13,
+         "monthly_week": 4,
+         "monthly_week_day": 2,
+         "repeat_interval": 6620790648848392796,
          "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Quasi dolor facilis exercitationem rem.",
-      "title": "Et dolor.",
-      "transcript_enabled": false,
-      "visibility": "private",
+      "timezone": "Dolores et doloremque et voluptatem vel voluptates.",
+      "title": "Deleniti omnis.",
+      "transcript_enabled": true,
+      "visibility": "public",
       "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": true
+         "ai_summary_require_approval": false
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
 func meetingServiceGetMeetingBaseUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meeting-base -uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meeting-base -uid STRING -version STRING -include-cancelled-occurrences BOOL -bearer-token STRING
 
 Get a meeting by ID
     -uid STRING: The UID of the meeting
     -version STRING: 
+    -include-cancelled-occurrences BOOL: 
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-meeting-base --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-meeting-base --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --include-cancelled-occurrences false --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -681,60 +680,54 @@ Update an existing meeting base.
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
-            ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Ut ut voluptatem."
          }
       ],
-      "description": "Et nihil repellat totam officiis enim veritatis.",
-      "duration": 507,
-      "early_join_time_minutes": 44,
+      "description": "Repellat totam officiis enim veritatis est.",
+      "duration": 135,
+      "early_join_time_minutes": 21,
       "meeting_type": "Maintainers",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1982-02-16T02:33:37Z",
-         "end_times": 748992484864519505,
-         "monthly_day": 26,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 7700406239905879971,
+         "end_date_time": "1993-04-10T19:30:34Z",
+         "end_times": 3732607533624244863,
+         "monthly_day": 13,
+         "monthly_week": 4,
+         "monthly_week_day": 2,
+         "repeat_interval": 6620790648848392796,
          "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Laboriosam ea qui quia maiores.",
-      "title": "Dolore omnis fugiat.",
-      "transcript_enabled": true,
-      "visibility": "private",
+      "timezone": "Maiores veniam dolore omnis.",
+      "title": "Repudiandae et.",
+      "transcript_enabled": false,
+      "visibility": "public",
       "youtube_upload_enabled": false,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": true
+         "ai_summary_require_approval": false
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -938,19 +931,21 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Ut ut voluptatem."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
+               "Et et consectetur nihil.",
+               "Consequatur perspiciatis sed est laudantium quasi.",
+               "Fuga sit ad maiores id velit ratione.",
+               "Nam et."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Ut ut voluptatem."
          }
       ],
       "description": "Fugit architecto ea fugiat reiciendis omnis.",
@@ -965,12 +960,12 @@ Example:
       "public_link": "http://maggio.com/ressie_schuppe",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1982-02-16T02:33:37Z",
-         "end_times": 748992484864519505,
-         "monthly_day": 26,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 7700406239905879971,
+         "end_date_time": "1993-04-10T19:30:34Z",
+         "end_times": 3732607533624244863,
+         "monthly_day": 13,
+         "monthly_week": 4,
+         "monthly_week_day": 2,
+         "repeat_interval": 6620790648848392796,
          "type": 3,
          "weekly_days": "1,3,5"
       },

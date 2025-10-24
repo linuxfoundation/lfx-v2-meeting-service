@@ -12,6 +12,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -39,17 +40,29 @@ func EncodeGetMeetingsResponse(encoder func(context.Context, http.ResponseWriter
 func DecodeGetMeetingsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			version     *string
-			bearerToken *string
-			err         error
+			version                     *string
+			includeCancelledOccurrences bool
+			bearerToken                 *string
+			err                         error
 		)
-		versionRaw := r.URL.Query().Get("v")
+		qp := r.URL.Query()
+		versionRaw := qp.Get("v")
 		if versionRaw != "" {
 			version = &versionRaw
 		}
 		if version != nil {
 			if !(*version == "1") {
 				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		{
+			includeCancelledOccurrencesRaw := qp.Get("include_cancelled_occurrences")
+			if includeCancelledOccurrencesRaw != "" {
+				v, err2 := strconv.ParseBool(includeCancelledOccurrencesRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("include_cancelled_occurrences", includeCancelledOccurrencesRaw, "boolean"))
+				}
+				includeCancelledOccurrences = v
 			}
 		}
 		bearerTokenRaw := r.Header.Get("Authorization")
@@ -59,7 +72,7 @@ func DecodeGetMeetingsRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetMeetingsPayload(version, bearerToken)
+		payload := NewGetMeetingsPayload(version, includeCancelledOccurrences, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -284,22 +297,34 @@ func EncodeGetMeetingBaseResponse(encoder func(context.Context, http.ResponseWri
 func DecodeGetMeetingBaseRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
 		var (
-			uid         string
-			version     *string
-			bearerToken *string
-			err         error
+			uid                         string
+			version                     *string
+			includeCancelledOccurrences bool
+			bearerToken                 *string
+			err                         error
 
 			params = mux.Vars(r)
 		)
 		uid = params["uid"]
 		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
-		versionRaw := r.URL.Query().Get("v")
+		qp := r.URL.Query()
+		versionRaw := qp.Get("v")
 		if versionRaw != "" {
 			version = &versionRaw
 		}
 		if version != nil {
 			if !(*version == "1") {
 				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		{
+			includeCancelledOccurrencesRaw := qp.Get("include_cancelled_occurrences")
+			if includeCancelledOccurrencesRaw != "" {
+				v, err2 := strconv.ParseBool(includeCancelledOccurrencesRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("include_cancelled_occurrences", includeCancelledOccurrencesRaw, "boolean"))
+				}
+				includeCancelledOccurrences = v
 			}
 		}
 		bearerTokenRaw := r.Header.Get("Authorization")
@@ -309,7 +334,7 @@ func DecodeGetMeetingBaseRequest(mux goahttp.Muxer, decoder func(*http.Request) 
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetMeetingBasePayload(uid, version, bearerToken)
+		payload := NewGetMeetingBasePayload(uid, version, includeCancelledOccurrences, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")

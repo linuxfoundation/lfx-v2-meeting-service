@@ -27,6 +27,12 @@ paths:
                   type: string
                   enum:
                     - "1"
+                - name: include_cancelled_occurrences
+                  in: query
+                  description: Include cancelled occurrences in the response
+                  required: false
+                  type: boolean
+                  default: false
                 - name: Authorization
                   in: header
                   description: JWT token issued by Heimdall
@@ -549,6 +555,12 @@ paths:
                   required: true
                   type: string
                   format: uuid
+                - name: include_cancelled_occurrences
+                  in: query
+                  description: Include cancelled occurrences in the response
+                  required: false
+                  type: boolean
+                  default: false
                 - name: Authorization
                   in: header
                   description: JWT token issued by Heimdall
@@ -2095,29 +2107,21 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -2164,42 +2168,42 @@ definitions:
                     $ref: '#/definitions/Occurrence'
                 description: Array of meeting occurrences (read-only from platform API)
                 example:
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                      title: Suscipit aliquid qui.
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
+                      title: Suscipit aliquid qui.
             password:
                 type: string
                 description: Unique, non-guessable, password for the meeting - is needed to join a meeting and is included in invites
@@ -2291,29 +2295,21 @@ definitions:
             artifact_visibility: meeting_participants
             committees:
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
             created_at: "2021-01-01T00:00:00Z"
             description: Ea rem.
             duration: 164
@@ -2321,55 +2317,55 @@ definitions:
             email_delivery_error_count: 2070412516841793856
             meeting_type: Board
             occurrences:
-                - description: Ipsa consequatur.
-                  duration: 2349221354295471536
+                - description: Dolorem maxime nulla quam eaque ipsa.
+                  duration: 7501709844621677873
                   is_cancelled: true
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
-                  registrant_count: 1699484973781406020
-                  response_count_no: 3366683520866107591
-                  response_count_yes: 2950823478810821812
+                  registrant_count: 2349221354295471536
+                  response_count_no: 1699484973781406020
+                  response_count_yes: 3366683520866107591
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Eligendi dolorem maxime nulla quam.
-                - description: Ipsa consequatur.
-                  duration: 2349221354295471536
+                  title: Suscipit aliquid qui.
+                - description: Dolorem maxime nulla quam eaque ipsa.
+                  duration: 7501709844621677873
                   is_cancelled: true
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
-                  registrant_count: 1699484973781406020
-                  response_count_no: 3366683520866107591
-                  response_count_yes: 2950823478810821812
+                  registrant_count: 2349221354295471536
+                  response_count_no: 1699484973781406020
+                  response_count_yes: 3366683520866107591
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Eligendi dolorem maxime nulla quam.
+                  title: Suscipit aliquid qui.
             password: 764bf5ca-7b5e-49a0-9e33-1568a1c05c8d
             platform: Zoom
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             public_link: http://emardkerluke.org/brock
             recording_enabled: true
             recurrence:
-                end_date_time: "1993-10-10T09:38:35Z"
-                end_times: 4512914251130879789
-                monthly_day: 29
-                monthly_week: 3
-                monthly_week_day: 7
-                repeat_interval: 1192004912365717691
-                type: 3
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 574996697957586595
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 1
+                repeat_interval: 1930574206310923018
+                type: 2
                 weekly_days: 1,3,5
             registrant_count: 1943423708768640745
             registrant_response_accepted_count: 5258251481031143723
@@ -2384,7 +2380,7 @@ definitions:
             visibility: private
             youtube_upload_enabled: false
             zoom_config:
-                ai_companion_enabled: true
+                ai_companion_enabled: false
                 ai_summary_require_approval: true
                 meeting_id: "1234567890"
                 passcode: "147258"
@@ -2407,29 +2403,21 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -2476,60 +2464,60 @@ definitions:
                     $ref: '#/definitions/Occurrence'
                 description: Array of meeting occurrences (read-only from platform API)
                 example:
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                      title: Suscipit aliquid qui.
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                      title: Suscipit aliquid qui.
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
+                      title: Suscipit aliquid qui.
             organizers:
                 type: array
                 items:
@@ -2631,17 +2619,13 @@ definitions:
             artifact_visibility: public
             committees:
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
             created_at: "2021-01-01T00:00:00Z"
             description: Nam fugiat corrupti in error.
             duration: 527
@@ -2649,42 +2633,42 @@ definitions:
             email_delivery_error_count: 66263233063477501
             meeting_type: Board
             occurrences:
-                - description: Ipsa consequatur.
-                  duration: 2349221354295471536
+                - description: Dolorem maxime nulla quam eaque ipsa.
+                  duration: 7501709844621677873
                   is_cancelled: true
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
-                  registrant_count: 1699484973781406020
-                  response_count_no: 3366683520866107591
-                  response_count_yes: 2950823478810821812
+                  registrant_count: 2349221354295471536
+                  response_count_no: 1699484973781406020
+                  response_count_yes: 3366683520866107591
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Eligendi dolorem maxime nulla quam.
-                - description: Ipsa consequatur.
-                  duration: 2349221354295471536
+                  title: Suscipit aliquid qui.
+                - description: Dolorem maxime nulla quam eaque ipsa.
+                  duration: 7501709844621677873
                   is_cancelled: true
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
-                  registrant_count: 1699484973781406020
-                  response_count_no: 3366683520866107591
-                  response_count_yes: 2950823478810821812
+                  registrant_count: 2349221354295471536
+                  response_count_no: 1699484973781406020
+                  response_count_yes: 3366683520866107591
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Eligendi dolorem maxime nulla quam.
+                  title: Suscipit aliquid qui.
             organizers:
                 - Neque aperiam voluptatem omnis enim qui voluptas.
                 - Optio occaecati veritatis iure quidem.
@@ -2696,13 +2680,13 @@ definitions:
             public_link: http://beier.org/maxine
             recording_enabled: false
             recurrence:
-                end_date_time: "1993-10-10T09:38:35Z"
-                end_times: 4512914251130879789
-                monthly_day: 29
-                monthly_week: 3
-                monthly_week_day: 7
-                repeat_interval: 1192004912365717691
-                type: 3
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 574996697957586595
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 1
+                repeat_interval: 1930574206310923018
+                type: 2
                 weekly_days: 1,3,5
             registrant_count: 4076929526901589638
             registrant_response_accepted_count: 46392183874597027
@@ -2717,7 +2701,7 @@ definitions:
             visibility: private
             youtube_upload_enabled: false
             zoom_config:
-                ai_companion_enabled: true
+                ai_companion_enabled: false
                 ai_summary_require_approval: true
                 meeting_id: "1234567890"
                 passcode: "147258"
@@ -2799,25 +2783,29 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
             description:
                 type: string
                 description: The description of the meeting
@@ -2913,15 +2901,17 @@ definitions:
             artifact_visibility: public
             committees:
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
             description: Unde eos et quia id vel aspernatur.
             duration: 213
             early_join_time_minutes: 16
@@ -2933,12 +2923,12 @@ definitions:
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: true
             recurrence:
-                end_date_time: "1982-02-16T02:33:37Z"
-                end_times: 748992484864519505
-                monthly_day: 26
-                monthly_week: -1
-                monthly_week_day: 6
-                repeat_interval: 7700406239905879971
+                end_date_time: "1993-04-10T19:30:34Z"
+                end_times: 3732607533624244863
+                monthly_day: 13
+                monthly_week: 4
+                monthly_week_day: 2
+                repeat_interval: 6620790648848392796
                 type: 3
                 weekly_days: 1,3,5
             restricted: true
@@ -2950,7 +2940,7 @@ definitions:
             youtube_upload_enabled: true
             zoom_config:
                 ai_companion_enabled: true
-                ai_summary_require_approval: true
+                ai_summary_require_approval: false
         required:
             - project_uid
             - start_time
@@ -3047,20 +3037,23 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
             description:
                 type: string
                 description: The description of the meeting
@@ -3187,25 +3180,29 @@ definitions:
             artifact_visibility: meeting_participants
             committees:
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
             description: Quam qui.
             duration: 259
             early_join_time_minutes: 22
@@ -3218,12 +3215,12 @@ definitions:
             public_link: http://boehm.biz/kallie
             recording_enabled: false
             recurrence:
-                end_date_time: "1982-02-16T02:33:37Z"
-                end_times: 748992484864519505
-                monthly_day: 26
-                monthly_week: -1
-                monthly_week_day: 6
-                repeat_interval: 7700406239905879971
+                end_date_time: "1993-04-10T19:30:34Z"
+                end_times: 3732607533624244863
+                monthly_day: 13
+                monthly_week: 4
+                monthly_week_day: 2
+                repeat_interval: 6620790648848392796
                 type: 3
                 weekly_days: 1,3,5
             restricted: true
@@ -3404,513 +3401,461 @@ definitions:
                     $ref: '#/definitions/MeetingFull'
                 description: Resources found
                 example:
-                    - artifact_visibility: meeting_hosts
+                    - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Sunt qui modi non et cupiditate.
-                      duration: 411
-                      early_join_time_minutes: 58
-                      email_delivery_error_count: 7454104311853961740
-                      meeting_type: Board
+                      description: Iure vero ipsa possimus sint et.
+                      duration: 257
+                      early_join_time_minutes: 49
+                      email_delivery_error_count: 9175101536347037250
+                      meeting_type: Legal
                       occurrences:
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
+                        - description: Dolorem maxime nulla quam eaque ipsa.
+                          duration: 7501709844621677873
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 574996697957586595
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 1
+                            repeat_interval: 1930574206310923018
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
+                          registrant_count: 2349221354295471536
+                          response_count_no: 1699484973781406020
+                          response_count_yes: 3366683520866107591
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
+                          title: Suscipit aliquid qui.
+                        - description: Dolorem maxime nulla quam eaque ipsa.
+                          duration: 7501709844621677873
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 574996697957586595
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 1
+                            repeat_interval: 1930574206310923018
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
+                          registrant_count: 2349221354295471536
+                          response_count_no: 1699484973781406020
+                          response_count_yes: 3366683520866107591
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
+                          title: Suscipit aliquid qui.
+                        - description: Dolorem maxime nulla quam eaque ipsa.
+                          duration: 7501709844621677873
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 574996697957586595
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 1
+                            repeat_interval: 1930574206310923018
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
+                          registrant_count: 2349221354295471536
+                          response_count_no: 1699484973781406020
+                          response_count_yes: 3366683520866107591
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
-                          is_cancelled: true
-                          occurrence_id: "1640995200"
-                          recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
-                            weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
-                          start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
+                          title: Suscipit aliquid qui.
                       organizers:
-                        - Aut nesciunt quaerat.
-                        - Ut molestias.
-                      password: c8421e1b-4c3c-4254-8739-632b829dd9ad
+                        - Soluta aut nesciunt quaerat et ut molestias.
+                        - Sit quia quasi dolor facilis exercitationem rem.
+                        - Dolorum sed aspernatur enim doloremque sunt.
+                      password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: http://mullermarvin.name/fermin
+                      public_link: http://mcdermott.info/fermin_shanahan
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 3159850865208170899
-                      registrant_response_accepted_count: 5737528203681987190
-                      registrant_response_declined_count: 173265964044935897
+                      registrant_count: 6899912874666998650
+                      registrant_response_accepted_count: 6472152244165966278
+                      registrant_response_declined_count: 6527186480651577770
                       restricted: false
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Modi in minus et et optio atque.
-                      title: Dolore et similique ut.
-                      transcript_enabled: true
+                      timezone: Et nostrum numquam aliquid.
+                      title: Modi non et cupiditate.
+                      transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      visibility: private
+                      visibility: public
                       youtube_upload_enabled: true
                       zoom_config:
-                        ai_companion_enabled: true
+                        ai_companion_enabled: false
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_hosts
+                    - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Sunt qui modi non et cupiditate.
-                      duration: 411
-                      early_join_time_minutes: 58
-                      email_delivery_error_count: 7454104311853961740
-                      meeting_type: Board
+                      description: Iure vero ipsa possimus sint et.
+                      duration: 257
+                      early_join_time_minutes: 49
+                      email_delivery_error_count: 9175101536347037250
+                      meeting_type: Legal
                       occurrences:
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
+                        - description: Dolorem maxime nulla quam eaque ipsa.
+                          duration: 7501709844621677873
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 574996697957586595
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 1
+                            repeat_interval: 1930574206310923018
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
+                          registrant_count: 2349221354295471536
+                          response_count_no: 1699484973781406020
+                          response_count_yes: 3366683520866107591
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
+                          title: Suscipit aliquid qui.
+                        - description: Dolorem maxime nulla quam eaque ipsa.
+                          duration: 7501709844621677873
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 574996697957586595
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 1
+                            repeat_interval: 1930574206310923018
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
+                          registrant_count: 2349221354295471536
+                          response_count_no: 1699484973781406020
+                          response_count_yes: 3366683520866107591
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
+                          title: Suscipit aliquid qui.
+                        - description: Dolorem maxime nulla quam eaque ipsa.
+                          duration: 7501709844621677873
                           is_cancelled: true
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 574996697957586595
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 1
+                            repeat_interval: 1930574206310923018
+                            type: 2
                             weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
+                          registrant_count: 2349221354295471536
+                          response_count_no: 1699484973781406020
+                          response_count_yes: 3366683520866107591
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
-                        - description: Ipsa consequatur.
-                          duration: 2349221354295471536
-                          is_cancelled: true
-                          occurrence_id: "1640995200"
-                          recurrence:
-                            end_date_time: "1993-10-10T09:38:35Z"
-                            end_times: 4512914251130879789
-                            monthly_day: 29
-                            monthly_week: 3
-                            monthly_week_day: 7
-                            repeat_interval: 1192004912365717691
-                            type: 3
-                            weekly_days: 1,3,5
-                          registrant_count: 1699484973781406020
-                          response_count_no: 3366683520866107591
-                          response_count_yes: 2950823478810821812
-                          start_time: "2021-01-01T10:00:00Z"
-                          title: Eligendi dolorem maxime nulla quam.
+                          title: Suscipit aliquid qui.
                       organizers:
-                        - Aut nesciunt quaerat.
-                        - Ut molestias.
-                      password: c8421e1b-4c3c-4254-8739-632b829dd9ad
+                        - Soluta aut nesciunt quaerat et ut molestias.
+                        - Sit quia quasi dolor facilis exercitationem rem.
+                        - Dolorum sed aspernatur enim doloremque sunt.
+                      password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: http://mullermarvin.name/fermin
+                      public_link: http://mcdermott.info/fermin_shanahan
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 3159850865208170899
-                      registrant_response_accepted_count: 5737528203681987190
-                      registrant_response_declined_count: 173265964044935897
+                      registrant_count: 6899912874666998650
+                      registrant_response_accepted_count: 6472152244165966278
+                      registrant_response_declined_count: 6527186480651577770
                       restricted: false
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Modi in minus et et optio atque.
-                      title: Dolore et similique ut.
-                      transcript_enabled: true
+                      timezone: Et nostrum numquam aliquid.
+                      title: Modi non et cupiditate.
+                      transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
-                      visibility: private
+                      visibility: public
                       youtube_upload_enabled: true
                       zoom_config:
-                        ai_companion_enabled: true
+                        ai_companion_enabled: false
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
         example:
             meetings:
-                - artifact_visibility: meeting_hosts
+                - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Sunt qui modi non et cupiditate.
-                  duration: 411
-                  early_join_time_minutes: 58
-                  email_delivery_error_count: 7454104311853961740
-                  meeting_type: Board
+                  description: Iure vero ipsa possimus sint et.
+                  duration: 257
+                  early_join_time_minutes: 49
+                  email_delivery_error_count: 9175101536347037250
+                  meeting_type: Legal
                   occurrences:
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                      title: Suscipit aliquid qui.
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                      title: Suscipit aliquid qui.
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
-                      is_cancelled: true
-                      occurrence_id: "1640995200"
-                      recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
-                        weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
-                      start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
+                      title: Suscipit aliquid qui.
                   organizers:
-                    - Aut nesciunt quaerat.
-                    - Ut molestias.
-                  password: c8421e1b-4c3c-4254-8739-632b829dd9ad
+                    - Soluta aut nesciunt quaerat et ut molestias.
+                    - Sit quia quasi dolor facilis exercitationem rem.
+                    - Dolorum sed aspernatur enim doloremque sunt.
+                  password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://mullermarvin.name/fermin
+                  public_link: http://mcdermott.info/fermin_shanahan
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
-                  registrant_count: 3159850865208170899
-                  registrant_response_accepted_count: 5737528203681987190
-                  registrant_response_declined_count: 173265964044935897
+                  registrant_count: 6899912874666998650
+                  registrant_response_accepted_count: 6472152244165966278
+                  registrant_response_declined_count: 6527186480651577770
                   restricted: false
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Modi in minus et et optio atque.
-                  title: Dolore et similique ut.
-                  transcript_enabled: true
+                  timezone: Et nostrum numquam aliquid.
+                  title: Modi non et cupiditate.
+                  transcript_enabled: false
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
-                  visibility: private
+                  visibility: public
                   youtube_upload_enabled: true
                   zoom_config:
-                    ai_companion_enabled: true
+                    ai_companion_enabled: false
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
-                - artifact_visibility: meeting_hosts
+                - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Sunt qui modi non et cupiditate.
-                  duration: 411
-                  early_join_time_minutes: 58
-                  email_delivery_error_count: 7454104311853961740
-                  meeting_type: Board
+                  description: Iure vero ipsa possimus sint et.
+                  duration: 257
+                  early_join_time_minutes: 49
+                  email_delivery_error_count: 9175101536347037250
+                  meeting_type: Legal
                   occurrences:
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                      title: Suscipit aliquid qui.
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
+                      title: Suscipit aliquid qui.
+                    - description: Dolorem maxime nulla quam eaque ipsa.
+                      duration: 7501709844621677873
                       is_cancelled: true
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
+                      registrant_count: 2349221354295471536
+                      response_count_no: 1699484973781406020
+                      response_count_yes: 3366683520866107591
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
-                    - description: Ipsa consequatur.
-                      duration: 2349221354295471536
-                      is_cancelled: true
-                      occurrence_id: "1640995200"
-                      recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
-                        weekly_days: 1,3,5
-                      registrant_count: 1699484973781406020
-                      response_count_no: 3366683520866107591
-                      response_count_yes: 2950823478810821812
-                      start_time: "2021-01-01T10:00:00Z"
-                      title: Eligendi dolorem maxime nulla quam.
+                      title: Suscipit aliquid qui.
                   organizers:
-                    - Aut nesciunt quaerat.
-                    - Ut molestias.
-                  password: c8421e1b-4c3c-4254-8739-632b829dd9ad
+                    - Soluta aut nesciunt quaerat et ut molestias.
+                    - Sit quia quasi dolor facilis exercitationem rem.
+                    - Dolorum sed aspernatur enim doloremque sunt.
+                  password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://mullermarvin.name/fermin
+                  public_link: http://mcdermott.info/fermin_shanahan
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
-                  registrant_count: 3159850865208170899
-                  registrant_response_accepted_count: 5737528203681987190
-                  registrant_response_declined_count: 173265964044935897
+                  registrant_count: 6899912874666998650
+                  registrant_response_accepted_count: 6472152244165966278
+                  registrant_response_declined_count: 6527186480651577770
                   restricted: false
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Modi in minus et et optio atque.
-                  title: Dolore et similique ut.
-                  transcript_enabled: true
+                  timezone: Et nostrum numquam aliquid.
+                  title: Modi non et cupiditate.
+                  transcript_enabled: false
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
-                  visibility: private
+                  visibility: public
                   youtube_upload_enabled: true
                   zoom_config:
-                    ai_companion_enabled: true
+                    ai_companion_enabled: false
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
@@ -4366,17 +4311,13 @@ definitions:
                     - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Magnam sed et.
                       duration: 65
@@ -4390,13 +4331,13 @@ definitions:
                       public_link: http://goldner.info/amber.effertz
                       recording_enabled: true
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
                       restricted: false
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -4416,24 +4357,20 @@ definitions:
                       visibility: public
                       youtube_upload_enabled: false
                       zoom_config:
-                        ai_companion_enabled: true
+                        ai_companion_enabled: false
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
                     - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Vero ipsa esse repellat sunt eveniet.
-                            - Deleniti ea sunt nihil nam nesciunt earum.
-                            - Unde quis voluptate est qui.
-                            - Nobis totam.
-                          uid: Vero ipsa possimus sint et.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Magnam sed et.
                       duration: 65
@@ -4447,13 +4384,13 @@ definitions:
                       public_link: http://goldner.info/amber.effertz
                       recording_enabled: true
                       recurrence:
-                        end_date_time: "1993-10-10T09:38:35Z"
-                        end_times: 4512914251130879789
-                        monthly_day: 29
-                        monthly_week: 3
-                        monthly_week_day: 7
-                        repeat_interval: 1192004912365717691
-                        type: 3
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 574996697957586595
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 1
+                        repeat_interval: 1930574206310923018
+                        type: 2
                         weekly_days: 1,3,5
                       restricted: false
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -4473,7 +4410,7 @@ definitions:
                       visibility: public
                       youtube_upload_enabled: false
                       zoom_config:
-                        ai_companion_enabled: true
+                        ai_companion_enabled: false
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
@@ -4482,17 +4419,13 @@ definitions:
                 - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
                   description: Magnam sed et.
                   duration: 65
@@ -4506,13 +4439,13 @@ definitions:
                   public_link: http://goldner.info/amber.effertz
                   recording_enabled: true
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
                   restricted: false
                   scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -4532,24 +4465,20 @@ definitions:
                   visibility: public
                   youtube_upload_enabled: false
                   zoom_config:
-                    ai_companion_enabled: true
+                    ai_companion_enabled: false
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
                 - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
                   description: Magnam sed et.
                   duration: 65
@@ -4563,13 +4492,13 @@ definitions:
                   public_link: http://goldner.info/amber.effertz
                   recording_enabled: true
                   recurrence:
-                    end_date_time: "1993-10-10T09:38:35Z"
-                    end_times: 4512914251130879789
-                    monthly_day: 29
-                    monthly_week: 3
-                    monthly_week_day: 7
-                    repeat_interval: 1192004912365717691
-                    type: 3
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 574996697957586595
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 1
+                    repeat_interval: 1930574206310923018
+                    type: 2
                     weekly_days: 1,3,5
                   restricted: false
                   scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -4589,7 +4518,7 @@ definitions:
                   visibility: public
                   youtube_upload_enabled: false
                   zoom_config:
-                    ai_companion_enabled: true
+                    ai_companion_enabled: false
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
@@ -4614,25 +4543,29 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
                     - allowed_voting_statuses:
-                        - Earum et nemo omnis.
-                        - Ut ut voluptatem.
-                        - Debitis et et.
-                      uid: Ab nobis libero nihil aliquam.
+                        - Et et consectetur nihil.
+                        - Consequatur perspiciatis sed est laudantium quasi.
+                        - Fuga sit ad maiores id velit ratione.
+                        - Nam et.
+                      uid: Ut ut voluptatem.
             description:
                 type: string
                 description: The description of the meeting
@@ -4718,15 +4651,17 @@ definitions:
             artifact_visibility: public
             committees:
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
                 - allowed_voting_statuses:
-                    - Earum et nemo omnis.
-                    - Ut ut voluptatem.
-                    - Debitis et et.
-                  uid: Ab nobis libero nihil aliquam.
+                    - Et et consectetur nihil.
+                    - Consequatur perspiciatis sed est laudantium quasi.
+                    - Fuga sit ad maiores id velit ratione.
+                    - Nam et.
+                  uid: Ut ut voluptatem.
             description: Ut et dolores eius neque.
             duration: 29
             early_join_time_minutes: 37
@@ -4735,12 +4670,12 @@ definitions:
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: false
             recurrence:
-                end_date_time: "1982-02-16T02:33:37Z"
-                end_times: 748992484864519505
-                monthly_day: 26
-                monthly_week: -1
-                monthly_week_day: 6
-                repeat_interval: 7700406239905879971
+                end_date_time: "1993-04-10T19:30:34Z"
+                end_times: 3732607533624244863
+                monthly_day: 13
+                monthly_week: 4
+                monthly_week_day: 2
+                repeat_interval: 6620790648848392796
                 type: 3
                 weekly_days: 1,3,5
             restricted: false
@@ -4752,7 +4687,7 @@ definitions:
             youtube_upload_enabled: true
             zoom_config:
                 ai_companion_enabled: true
-                ai_summary_require_approval: true
+                ai_summary_require_approval: false
         required:
             - project_uid
             - start_time
@@ -5027,13 +4962,13 @@ definitions:
             is_cancelled: false
             occurrence_id: "1640995200"
             recurrence:
-                end_date_time: "1993-10-10T09:38:35Z"
-                end_times: 4512914251130879789
-                monthly_day: 29
-                monthly_week: 3
-                monthly_week_day: 7
-                repeat_interval: 1192004912365717691
-                type: 3
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 574996697957586595
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 1
+                repeat_interval: 1930574206310923018
+                type: 2
                 weekly_days: 1,3,5
             registrant_count: 1026892670438597558
             response_count_no: 5738571027944680885
@@ -5090,23 +5025,17 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Vero ipsa esse repellat sunt eveniet.
-                        - Deleniti ea sunt nihil nam nesciunt earum.
-                        - Unde quis voluptate est qui.
-                        - Nobis totam.
-                      uid: Vero ipsa possimus sint et.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -5243,29 +5172,21 @@ definitions:
             artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Vero ipsa esse repellat sunt eveniet.
-                    - Deleniti ea sunt nihil nam nesciunt earum.
-                    - Unde quis voluptate est qui.
-                    - Nobis totam.
-                  uid: Vero ipsa possimus sint et.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
             created_at: "2021-01-01T00:00:00Z"
             description: Distinctio voluptatem sit adipisci repudiandae tempore rerum.
             duration: 220
@@ -5279,13 +5200,13 @@ definitions:
             public_link: http://frami.name/russel
             recording_enabled: true
             recurrence:
-                end_date_time: "1993-10-10T09:38:35Z"
-                end_times: 4512914251130879789
-                monthly_day: 29
-                monthly_week: 3
-                monthly_week_day: 7
-                repeat_interval: 1192004912365717691
-                type: 3
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 574996697957586595
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 1
+                repeat_interval: 1930574206310923018
+                type: 2
                 weekly_days: 1,3,5
             restricted: false
             scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5305,7 +5226,7 @@ definitions:
             visibility: public
             youtube_upload_enabled: false
             zoom_config:
-                ai_companion_enabled: true
+                ai_companion_enabled: false
                 ai_summary_require_approval: true
                 meeting_id: "1234567890"
                 passcode: "147258"

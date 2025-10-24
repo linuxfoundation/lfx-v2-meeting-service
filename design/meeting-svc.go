@@ -25,6 +25,9 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			BearerTokenAttribute()
 			VersionAttribute()
+			Attribute("include_cancelled_occurrences", Boolean, "Include cancelled occurrences in the response", func() {
+				Default(false)
+			})
 		})
 
 		Result(func() {
@@ -42,6 +45,7 @@ var _ = Service("Meeting Service", func() {
 		HTTP(func() {
 			GET("/meetings")
 			Param("version:v")
+			Param("include_cancelled_occurrences")
 			Header("bearer_token:Authorization")
 			Response(StatusOK, func() {
 				Header("cache_control:Cache-Control")
@@ -114,6 +118,9 @@ var _ = Service("Meeting Service", func() {
 			BearerTokenAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
+			Attribute("include_cancelled_occurrences", Boolean, "Include cancelled occurrences in the response", func() {
+				Default(false)
+			})
 		})
 
 		Result(func() {
@@ -130,6 +137,7 @@ var _ = Service("Meeting Service", func() {
 			GET("/meetings/{uid}")
 			Param("version:v")
 			Param("uid")
+			Param("include_cancelled_occurrences")
 			Header("bearer_token:Authorization")
 			Response(StatusOK, func() {
 				Body("meeting")

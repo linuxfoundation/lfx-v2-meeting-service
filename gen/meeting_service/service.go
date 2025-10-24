@@ -388,6 +388,8 @@ type GetMeetingBasePayload struct {
 	Version *string
 	// The UID of the meeting
 	UID *string
+	// Include cancelled occurrences in the response
+	IncludeCancelledOccurrences bool
 }
 
 // GetMeetingBaseResult is the result type of the Meeting Service service
@@ -485,6 +487,8 @@ type GetMeetingsPayload struct {
 	BearerToken *string
 	// Version of the API
 	Version *string
+	// Include cancelled occurrences in the response
+	IncludeCancelledOccurrences bool
 }
 
 // GetMeetingsResult is the result type of the Meeting Service service

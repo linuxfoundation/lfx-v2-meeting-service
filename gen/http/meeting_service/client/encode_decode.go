@@ -10,6 +10,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -54,6 +55,7 @@ func EncodeGetMeetingsRequest(encoder func(*http.Request) goahttp.Encoder) func(
 		if p.Version != nil {
 			values.Add("v", *p.Version)
 		}
+		values.Add("include_cancelled_occurrences", fmt.Sprintf("%v", p.IncludeCancelledOccurrences))
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}
@@ -347,6 +349,7 @@ func EncodeGetMeetingBaseRequest(encoder func(*http.Request) goahttp.Encoder) fu
 		if p.Version != nil {
 			values.Add("v", *p.Version)
 		}
+		values.Add("include_cancelled_occurrences", fmt.Sprintf("%v", p.IncludeCancelledOccurrences))
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}

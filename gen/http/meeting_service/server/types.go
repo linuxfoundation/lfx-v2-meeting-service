@@ -4281,9 +4281,10 @@ func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavaila
 
 // NewGetMeetingsPayload builds a Meeting Service service get-meetings endpoint
 // payload.
-func NewGetMeetingsPayload(version *string, bearerToken *string) *meetingservice.GetMeetingsPayload {
+func NewGetMeetingsPayload(version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingsPayload {
 	v := &meetingservice.GetMeetingsPayload{}
 	v.Version = version
+	v.IncludeCancelledOccurrences = includeCancelledOccurrences
 	v.BearerToken = bearerToken
 
 	return v
@@ -4335,10 +4336,11 @@ func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, be
 
 // NewGetMeetingBasePayload builds a Meeting Service service get-meeting-base
 // endpoint payload.
-func NewGetMeetingBasePayload(uid string, version *string, bearerToken *string) *meetingservice.GetMeetingBasePayload {
+func NewGetMeetingBasePayload(uid string, version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingBasePayload {
 	v := &meetingservice.GetMeetingBasePayload{}
 	v.UID = &uid
 	v.Version = version
+	v.IncludeCancelledOccurrences = includeCancelledOccurrences
 	v.BearerToken = bearerToken
 
 	return v
