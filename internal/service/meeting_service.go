@@ -306,6 +306,11 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 			return nil, domain.NewInternalError("failed to initialize meeting platform", err)
 		}
 
+		if provider == nil {
+			slog.ErrorContext(ctx, "platform provider is nil")
+			return nil, domain.NewInternalError("platform provider is nil", nil)
+		}
+
 		result, err := provider.CreateMeeting(ctx, reqMeeting.Base)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to create platform meeting",
@@ -331,7 +336,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	if err != nil {
 		// If repository creation fails and we created a platform meeting, attempt to clean it up
 		if reqMeeting.Base.Platform != "" {
-			if provider, provErr := s.platformRegistry.GetProvider(reqMeeting.Base.Platform); provErr == nil {
+			if provider, provErr := s.platformRegistry.GetProvider(reqMeeting.Base.Platform); provErr == nil && provider != nil {
 				if platformMeetingID := provider.GetPlatformMeetingID(reqMeeting.Base); platformMeetingID != "" {
 					if delErr := provider.DeleteMeeting(ctx, platformMeetingID); delErr != nil {
 						slog.ErrorContext(ctx, "failed to cleanup platform meeting after repository error",
@@ -567,6 +572,11 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 			return nil, domain.NewInternalError("failed to initialize meeting platform", err)
 		}
 
+		if provider == nil {
+			slog.ErrorContext(ctx, "platform provider is nil")
+			return nil, domain.NewInternalError("platform provider is nil", nil)
+		}
+
 		platformMeetingID := provider.GetPlatformMeetingID(reqMeeting)
 		slog.DebugContext(ctx, "checking if meeting has platform ID",
 			"platform", reqMeeting.Platform,
@@ -777,7 +787,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 				"platform", meetingDB.Platform,
 				logging.ErrKey, err)
 			// Continue anyway - meeting is already deleted from our system
-		} else {
+		} else if provider != nil {
 			platformMeetingID := provider.GetPlatformMeetingID(meetingDB)
 			if platformMeetingID != "" {
 				if err := provider.DeleteMeeting(ctx, platformMeetingID); err != nil {
