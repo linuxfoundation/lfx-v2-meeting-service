@@ -117,7 +117,8 @@ func (s *MeetingService) ServiceReady() bool {
 	return s.meetingRepository != nil &&
 		s.messageBuilder != nil &&
 		s.platformRegistry != nil &&
-		s.occurrenceService != nil
+		s.occurrenceService != nil &&
+		s.registrantRepository != nil
 }
 
 // ListMeetings fetches all meetings
@@ -168,7 +169,7 @@ func (s *MeetingService) ListMeetings(ctx context.Context, includeCancelledOccur
 		}
 	}
 
-	slog.DebugContext(ctx, "returning meetings", "meetings", meetings)
+	slog.DebugContext(ctx, "returning meetings", "meeting_count", len(meetings))
 
 	return meetings, nil
 }
@@ -883,8 +884,9 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 		return domain.NewValidationError("meeting must be recurring to cancel individual occurrences")
 	}
 
-	// Calculate current occurrences
+	// Calculate future occurrences (from current time onwards)
 	// We calculate up to 50 occurrences which should be sufficient for most use cases
+	// Past occurrences are not included, so attempts to cancel them will result in "not found"
 	currentTime := time.Now()
 	calculatedOccurrences := s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
 
@@ -895,15 +897,6 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 			if occ.IsCancelled {
 				slog.WarnContext(ctx, "occurrence is already cancelled", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
 				return domain.NewConflictError("occurrence is already cancelled")
-			}
-			// Validate that the occurrence is in the future
-			occurrenceTime := meetingDB.StartTime
-			if occ.StartTime != nil {
-				occurrenceTime = *occ.StartTime
-			}
-			if occurrenceTime.Before(time.Now()) {
-				slog.WarnContext(ctx, "cannot cancel past occurrence", "occurrence_time", occurrenceTime)
-				return domain.NewValidationError("cannot cancel past occurrences")
 			}
 			cancelledOccurrence = &occ
 			calculatedOccurrences[i].IsCancelled = true
@@ -919,6 +912,7 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 
 	// Replace the entire occurrences array with the calculated occurrences (including the cancelled one)
 	meetingDB.Occurrences = calculatedOccurrences
+	meetingDB.IcsSequence++ // Increment ICS sequence for calendar updates
 
 	// Update the meeting in the repository
 	err = s.meetingRepository.UpdateBase(ctx, meetingDB, revision)
