@@ -201,3 +201,80 @@ func TestPastMeetingParticipant_Tags(t *testing.T) {
 		})
 	}
 }
+
+func TestPastMeetingParticipant_GetFullName(t *testing.T) {
+	tests := []struct {
+		name        string
+		participant *PastMeetingParticipant
+		want        string
+	}{
+		{
+			name: "both names present",
+			participant: &PastMeetingParticipant{
+				FirstName: "John",
+				LastName:  "Doe",
+			},
+			want: "John Doe",
+		},
+		{
+			name: "only first name",
+			participant: &PastMeetingParticipant{
+				FirstName: "John",
+				LastName:  "",
+			},
+			want: "John",
+		},
+		{
+			name: "only last name",
+			participant: &PastMeetingParticipant{
+				FirstName: "",
+				LastName:  "Doe",
+			},
+			want: "Doe",
+		},
+		{
+			name: "both empty",
+			participant: &PastMeetingParticipant{
+				FirstName: "",
+				LastName:  "",
+			},
+			want: "",
+		},
+		{
+			name: "whitespace only",
+			participant: &PastMeetingParticipant{
+				FirstName: "  ",
+				LastName:  "  ",
+			},
+			want: "",
+		},
+		{
+			name:        "nil participant",
+			participant: nil,
+			want:        "",
+		},
+		{
+			name: "with surrounding whitespace",
+			participant: &PastMeetingParticipant{
+				FirstName: "  John",
+				LastName:  "Doe  ",
+			},
+			want: "John Doe",
+		},
+		{
+			name: "special characters",
+			participant: &PastMeetingParticipant{
+				FirstName: "José",
+				LastName:  "García-López",
+			},
+			want: "José García-López",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.participant.GetFullName()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

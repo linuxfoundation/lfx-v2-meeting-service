@@ -10,6 +10,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"unicode/utf8"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -18,7 +19,7 @@ import (
 
 // BuildGetMeetingsPayload builds the payload for the Meeting Service
 // get-meetings endpoint from CLI flags.
-func BuildGetMeetingsPayload(meetingServiceGetMeetingsVersion string, meetingServiceGetMeetingsBearerToken string) (*meetingservice.GetMeetingsPayload, error) {
+func BuildGetMeetingsPayload(meetingServiceGetMeetingsVersion string, meetingServiceGetMeetingsIncludeCancelledOccurrences string, meetingServiceGetMeetingsBearerToken string) (*meetingservice.GetMeetingsPayload, error) {
 	var err error
 	var version *string
 	{
@@ -32,6 +33,15 @@ func BuildGetMeetingsPayload(meetingServiceGetMeetingsVersion string, meetingSer
 			}
 		}
 	}
+	var includeCancelledOccurrences bool
+	{
+		if meetingServiceGetMeetingsIncludeCancelledOccurrences != "" {
+			includeCancelledOccurrences, err = strconv.ParseBool(meetingServiceGetMeetingsIncludeCancelledOccurrences)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for includeCancelledOccurrences, must be BOOL")
+			}
+		}
+	}
 	var bearerToken *string
 	{
 		if meetingServiceGetMeetingsBearerToken != "" {
@@ -40,6 +50,7 @@ func BuildGetMeetingsPayload(meetingServiceGetMeetingsVersion string, meetingSer
 	}
 	v := &meetingservice.GetMeetingsPayload{}
 	v.Version = version
+	v.IncludeCancelledOccurrences = includeCancelledOccurrences
 	v.BearerToken = bearerToken
 
 	return v, nil
@@ -170,7 +181,7 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 
 // BuildGetMeetingBasePayload builds the payload for the Meeting Service
 // get-meeting-base endpoint from CLI flags.
-func BuildGetMeetingBasePayload(meetingServiceGetMeetingBaseUID string, meetingServiceGetMeetingBaseVersion string, meetingServiceGetMeetingBaseBearerToken string) (*meetingservice.GetMeetingBasePayload, error) {
+func BuildGetMeetingBasePayload(meetingServiceGetMeetingBaseUID string, meetingServiceGetMeetingBaseVersion string, meetingServiceGetMeetingBaseIncludeCancelledOccurrences string, meetingServiceGetMeetingBaseBearerToken string) (*meetingservice.GetMeetingBasePayload, error) {
 	var err error
 	var uid string
 	{
@@ -192,6 +203,15 @@ func BuildGetMeetingBasePayload(meetingServiceGetMeetingBaseUID string, meetingS
 			}
 		}
 	}
+	var includeCancelledOccurrences bool
+	{
+		if meetingServiceGetMeetingBaseIncludeCancelledOccurrences != "" {
+			includeCancelledOccurrences, err = strconv.ParseBool(meetingServiceGetMeetingBaseIncludeCancelledOccurrences)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for includeCancelledOccurrences, must be BOOL")
+			}
+		}
+	}
 	var bearerToken *string
 	{
 		if meetingServiceGetMeetingBaseBearerToken != "" {
@@ -201,6 +221,7 @@ func BuildGetMeetingBasePayload(meetingServiceGetMeetingBaseUID string, meetingS
 	v := &meetingservice.GetMeetingBasePayload{}
 	v.UID = &uid
 	v.Version = version
+	v.IncludeCancelledOccurrences = includeCancelledOccurrences
 	v.BearerToken = bearerToken
 
 	return v, nil
@@ -511,6 +532,56 @@ func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingSer
 	}
 	v := &meetingservice.DeleteMeetingPayload{}
 	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.IfMatch = ifMatch
+
+	return v, nil
+}
+
+// BuildDeleteMeetingOccurrencePayload builds the payload for the Meeting
+// Service delete-meeting-occurrence endpoint from CLI flags.
+func BuildDeleteMeetingOccurrencePayload(meetingServiceDeleteMeetingOccurrenceUID string, meetingServiceDeleteMeetingOccurrenceOccurrenceID string, meetingServiceDeleteMeetingOccurrenceVersion string, meetingServiceDeleteMeetingOccurrenceBearerToken string, meetingServiceDeleteMeetingOccurrenceIfMatch string) (*meetingservice.DeleteMeetingOccurrencePayload, error) {
+	var err error
+	var uid string
+	{
+		uid = meetingServiceDeleteMeetingOccurrenceUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var occurrenceID string
+	{
+		occurrenceID = meetingServiceDeleteMeetingOccurrenceOccurrenceID
+	}
+	var version *string
+	{
+		if meetingServiceDeleteMeetingOccurrenceVersion != "" {
+			version = &meetingServiceDeleteMeetingOccurrenceVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceDeleteMeetingOccurrenceBearerToken != "" {
+			bearerToken = &meetingServiceDeleteMeetingOccurrenceBearerToken
+		}
+	}
+	var ifMatch *string
+	{
+		if meetingServiceDeleteMeetingOccurrenceIfMatch != "" {
+			ifMatch = &meetingServiceDeleteMeetingOccurrenceIfMatch
+		}
+	}
+	v := &meetingservice.DeleteMeetingOccurrencePayload{}
+	v.UID = uid
+	v.OccurrenceID = occurrenceID
 	v.Version = version
 	v.BearerToken = bearerToken
 	v.IfMatch = ifMatch

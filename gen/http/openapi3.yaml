@@ -25,6 +25,16 @@ paths:
                     enum:
                         - "1"
                   example: "1"
+                - name: include_cancelled_occurrences
+                  in: query
+                  description: Include cancelled occurrences in the response
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Include cancelled occurrences in the response
+                    default: false
+                    example: true
+                  example: false
             responses:
                 "200":
                     description: OK response.
@@ -58,7 +68,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 174
+                                      duration: 441
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -69,12 +79,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -88,12 +98,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -107,12 +117,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -126,12 +136,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -151,17 +161,17 @@ paths:
                                       recording_enabled: false
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Accusamus blanditiis eius cumque eum.
+                                      timezone: Blanditiis eius cumque eum modi.
                                       title: Praesentium cumque velit recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -189,7 +199,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 174
+                                      duration: 441
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -200,12 +210,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -219,12 +229,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -238,12 +248,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -257,12 +267,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -282,17 +292,17 @@ paths:
                                       recording_enabled: false
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Accusamus blanditiis eius cumque eum.
+                                      timezone: Blanditiis eius cumque eum modi.
                                       title: Praesentium cumque velit recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -320,7 +330,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 174
+                                      duration: 441
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -331,12 +341,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -350,12 +360,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -369,12 +379,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -388,12 +398,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -413,17 +423,17 @@ paths:
                                       recording_enabled: false
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Accusamus blanditiis eius cumque eum.
+                                      timezone: Blanditiis eius cumque eum modi.
                                       title: Praesentium cumque velit recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -451,7 +461,7 @@ paths:
                                           uid: Non et cupiditate a iure vero.
                                       created_at: "2021-01-01T00:00:00Z"
                                       description: Ut dolore et similique ut quaerat sunt.
-                                      duration: 174
+                                      duration: 441
                                       early_join_time_minutes: 28
                                       email_delivery_error_count: 9175101536347037250
                                       meeting_type: Marketing
@@ -462,12 +472,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -481,12 +491,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -500,12 +510,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -519,12 +529,12 @@ paths:
                                           occurrence_id: "1640995200"
                                           recurrence:
                                             end_date_time: "2011-11-09T13:49:54Z"
-                                            end_times: 6262370327954619117
-                                            monthly_day: 18
-                                            monthly_week: 4
-                                            monthly_week_day: 6
-                                            repeat_interval: 5372487561029615016
-                                            type: 2
+                                            end_times: 7450094571460397270
+                                            monthly_day: 15
+                                            monthly_week: 1
+                                            monthly_week_day: 2
+                                            repeat_interval: 1324310727355159338
+                                            type: 3
                                             weekly_days: 1,3,5
                                           registrant_count: 1059783170136508550
                                           response_count_maybe: 2323794702427202478
@@ -544,17 +554,17 @@ paths:
                                       recording_enabled: false
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 6899912874666998650
                                       restricted: true
                                       start_time: "2021-01-01T00:00:00Z"
-                                      timezone: Accusamus blanditiis eius cumque eum.
+                                      timezone: Blanditiis eius cumque eum modi.
                                       title: Praesentium cumque velit recusandae voluptatem.
                                       transcript_enabled: false
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -715,12 +725,12 @@ paths:
                                       occurrence_id: "1640995200"
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 1059783170136508550
                                       response_count_maybe: 2323794702427202478
@@ -734,12 +744,12 @@ paths:
                                       occurrence_id: "1640995200"
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 1059783170136508550
                                       response_count_maybe: 2323794702427202478
@@ -758,12 +768,12 @@ paths:
                                 recording_enabled: false
                                 recurrence:
                                     end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_times: 7450094571460397270
+                                    monthly_day: 15
+                                    monthly_week: 1
+                                    monthly_week_day: 2
+                                    repeat_interval: 1324310727355159338
+                                    type: 3
                                     weekly_days: 1,3,5
                                 registrant_count: 6783094276240313429
                                 restricted: false
@@ -1004,6 +1014,15 @@ paths:
                             example:
                                 code: "404"
                                 message: The resource was not found.
+                "409":
+                    description: 'Conflict: Conflict'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ConflictError'
+                            example:
+                                code: "409"
+                                message: The resource already exists.
                 "500":
                     description: 'InternalServerError: Internal server error'
                     content:
@@ -1478,7 +1497,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/CreateRSVPPayload'
+                            $ref: '#/components/schemas/CreateMeetingRsvpRequestBody'
                         example:
                             occurrence_id: "1640995200"
                             registrant_id: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -1648,6 +1667,16 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: include_cancelled_occurrences
+                  in: query
+                  description: Include cancelled occurrences in the response
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Include cancelled occurrences in the response
+                    default: false
+                    example: true
+                  example: true
             responses:
                 "200":
                     description: OK response.
@@ -1692,7 +1721,7 @@ paths:
                                       uid: Non et cupiditate a iure vero.
                                 created_at: "2021-01-01T00:00:00Z"
                                 description: Possimus quas.
-                                duration: 216
+                                duration: 159
                                 early_join_time_minutes: 57
                                 email_delivery_error_count: 4268736475519781127
                                 meeting_type: Board
@@ -1703,12 +1732,12 @@ paths:
                                       occurrence_id: "1640995200"
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 1059783170136508550
                                       response_count_maybe: 2323794702427202478
@@ -1722,12 +1751,12 @@ paths:
                                       occurrence_id: "1640995200"
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 1059783170136508550
                                       response_count_maybe: 2323794702427202478
@@ -1741,12 +1770,12 @@ paths:
                                       occurrence_id: "1640995200"
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 1059783170136508550
                                       response_count_maybe: 2323794702427202478
@@ -1761,17 +1790,17 @@ paths:
                                 recording_enabled: true
                                 recurrence:
                                     end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_times: 7450094571460397270
+                                    monthly_day: 15
+                                    monthly_week: 1
+                                    monthly_week_day: 2
+                                    repeat_interval: 1324310727355159338
+                                    type: 3
                                     weekly_days: 1,3,5
                                 registrant_count: 83223306159919769
                                 restricted: false
                                 start_time: "2021-01-01T00:00:00Z"
-                                timezone: Fuga omnis recusandae autem esse.
+                                timezone: Omnis recusandae autem esse.
                                 title: Suscipit ipsam accusamus.
                                 transcript_enabled: true
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -1941,12 +1970,12 @@ paths:
                                       occurrence_id: "1640995200"
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 1059783170136508550
                                       response_count_maybe: 2323794702427202478
@@ -1960,12 +1989,12 @@ paths:
                                       occurrence_id: "1640995200"
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       registrant_count: 1059783170136508550
                                       response_count_maybe: 2323794702427202478
@@ -1980,12 +2009,12 @@ paths:
                                 recording_enabled: false
                                 recurrence:
                                     end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_times: 7450094571460397270
+                                    monthly_day: 15
+                                    monthly_week: 1
+                                    monthly_week_day: 2
+                                    repeat_interval: 1324310727355159338
+                                    type: 3
                                     weekly_days: 1,3,5
                                 registrant_count: 2530479471633554910
                                 restricted: true
@@ -2105,6 +2134,103 @@ paths:
                             example:
                                 code: "404"
                                 message: The resource was not found.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
+    /meetings/{uid}/occurrences/{occurrence_id}:
+        delete:
+            tags:
+                - Meeting Service
+            summary: delete-meeting-occurrence Meeting Service
+            description: Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.
+            operationId: Meeting Service#delete-meeting-occurrence
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: uid
+                  in: path
+                  description: The UID of the meeting
+                  required: true
+                  schema:
+                    type: string
+                    description: The UID of the meeting
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
+                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: occurrence_id
+                  in: path
+                  description: The ID of the occurrence to cancel
+                  required: true
+                  schema:
+                    type: string
+                    description: The ID of the occurrence to cancel
+                    example: "1640995200"
+                  example: "1640995200"
+                - name: If-Match
+                  in: header
+                  description: If-Match header value for conditional requests
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: If-Match header value for conditional requests
+                    example: "123"
+                  example: "123"
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'BadRequest: Bad request'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BadRequestError'
+                            example:
+                                code: "400"
+                                message: The request was invalid.
+                "404":
+                    description: 'NotFound: Meeting or occurrence not found'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "409":
+                    description: 'Conflict: Conflict'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ConflictError'
+                            example:
+                                code: "409"
+                                message: The resource already exists.
                 "500":
                     description: 'InternalServerError: Internal server error'
                     content:
@@ -2513,12 +2639,12 @@ paths:
                                       recording_enabled: true
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       restricted: true
                                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -2570,12 +2696,12 @@ paths:
                                       recording_enabled: true
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       restricted: true
                                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -2627,12 +2753,12 @@ paths:
                                       recording_enabled: true
                                       recurrence:
                                         end_date_time: "2011-11-09T13:49:54Z"
-                                        end_times: 6262370327954619117
-                                        monthly_day: 18
-                                        monthly_week: 4
-                                        monthly_week_day: 6
-                                        repeat_interval: 5372487561029615016
-                                        type: 2
+                                        end_times: 7450094571460397270
+                                        monthly_day: 15
+                                        monthly_week: 1
+                                        monthly_week_day: 2
+                                        repeat_interval: 1324310727355159338
+                                        type: 3
                                         weekly_days: 1,3,5
                                       restricted: true
                                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -2826,12 +2952,12 @@ paths:
                                 recording_enabled: false
                                 recurrence:
                                     end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_times: 7450094571460397270
+                                    monthly_day: 15
+                                    monthly_week: 1
+                                    monthly_week_day: 2
+                                    repeat_interval: 1324310727355159338
+                                    type: 3
                                     weekly_days: 1,3,5
                                 restricted: false
                                 scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -3623,12 +3749,12 @@ paths:
                                 recording_enabled: true
                                 recurrence:
                                     end_date_time: "2011-11-09T13:49:54Z"
-                                    end_times: 6262370327954619117
-                                    monthly_day: 18
-                                    monthly_week: 4
-                                    monthly_week_day: 6
-                                    repeat_interval: 5372487561029615016
-                                    type: 2
+                                    end_times: 7450094571460397270
+                                    monthly_day: 15
+                                    monthly_week: 1
+                                    monthly_week_day: 2
+                                    repeat_interval: 1324310727355159338
+                                    type: 3
                                     weekly_days: 1,3,5
                                 restricted: true
                                 scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -4098,8 +4224,8 @@ paths:
                   schema:
                     type: string
                     description: HMAC-SHA256 signature of the request body
-                    example: Facilis aut sint atque.
-                  example: Quasi consequatur voluptatem id fuga.
+                    example: Consequatur quasi consequatur voluptatem id.
+                  example: Et et possimus ipsa aliquam consequuntur et.
                 - name: x-zm-request-timestamp
                   in: header
                   description: Timestamp when the webhook was sent
@@ -4108,8 +4234,8 @@ paths:
                   schema:
                     type: string
                     description: Timestamp when the webhook was sent
-                    example: Et possimus.
-                  example: Aliquam consequuntur et.
+                    example: Atque quia blanditiis qui qui occaecati.
+                  example: Et enim quia.
             requestBody:
                 required: true
                 content:
@@ -4463,6 +4589,48 @@ components:
                 username: Amet non iure.
             required:
                 - email
+        CreateMeetingRsvpRequestBody:
+            type: object
+            properties:
+                occurrence_id:
+                    type: string
+                    description: The ID of the specific occurrence (required for 'single' and 'this_and_following' scopes)
+                    example: "1640995200"
+                    pattern: ^[0-9]*$
+                registrant_id:
+                    type: string
+                    description: The ID of the registrant submitting this RSVP
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
+                response:
+                    type: string
+                    description: The RSVP response
+                    example: accepted
+                    enum:
+                        - accepted
+                        - maybe
+                        - declined
+                scope:
+                    type: string
+                    description: The scope of the RSVP (single occurrence, all occurrences, or this and following)
+                    example: all
+                    enum:
+                        - single
+                        - all
+                        - this_and_following
+                username:
+                    type: string
+                    description: The username of the registrant
+                    example: jdoe
+            example:
+                occurrence_id: "1640995200"
+                registrant_id: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                response: accepted
+                scope: all
+                username: jdoe
+            required:
+                - response
+                - scope
         CreatePastMeetingParticipantPayload:
             type: object
             properties:
@@ -4794,17 +4962,12 @@ components:
                         - single
                         - all
                         - this_and_following
-                username:
-                    type: string
-                    description: The username of the registrant
-                    example: jdoe
             description: Payload for creating or updating an RSVP response. Username is automatically extracted from the JWT token.
             example:
                 occurrence_id: "1640995200"
                 registrant_id: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 response: accepted
                 scope: all
-                username: jdoe
             required:
                 - response
                 - scope
@@ -5054,7 +5217,7 @@ components:
                               uid: Non et cupiditate a iure vero.
                           created_at: "2021-01-01T00:00:00Z"
                           description: Ut dolore et similique ut quaerat sunt.
-                          duration: 174
+                          duration: 441
                           early_join_time_minutes: 28
                           email_delivery_error_count: 9175101536347037250
                           meeting_type: Marketing
@@ -5065,12 +5228,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5084,12 +5247,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5103,12 +5266,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5122,12 +5285,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5147,17 +5310,17 @@ components:
                           recording_enabled: false
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 6899912874666998650
                           restricted: true
                           start_time: "2021-01-01T00:00:00Z"
-                          timezone: Accusamus blanditiis eius cumque eum.
+                          timezone: Blanditiis eius cumque eum modi.
                           title: Praesentium cumque velit recusandae voluptatem.
                           transcript_enabled: false
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -5185,7 +5348,7 @@ components:
                               uid: Non et cupiditate a iure vero.
                           created_at: "2021-01-01T00:00:00Z"
                           description: Ut dolore et similique ut quaerat sunt.
-                          duration: 174
+                          duration: 441
                           early_join_time_minutes: 28
                           email_delivery_error_count: 9175101536347037250
                           meeting_type: Marketing
@@ -5196,12 +5359,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5215,12 +5378,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5234,12 +5397,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5253,12 +5416,12 @@ components:
                               occurrence_id: "1640995200"
                               recurrence:
                                 end_date_time: "2011-11-09T13:49:54Z"
-                                end_times: 6262370327954619117
-                                monthly_day: 18
-                                monthly_week: 4
-                                monthly_week_day: 6
-                                repeat_interval: 5372487561029615016
-                                type: 2
+                                end_times: 7450094571460397270
+                                monthly_day: 15
+                                monthly_week: 1
+                                monthly_week_day: 2
+                                repeat_interval: 1324310727355159338
+                                type: 3
                                 weekly_days: 1,3,5
                               registrant_count: 1059783170136508550
                               response_count_maybe: 2323794702427202478
@@ -5278,17 +5441,17 @@ components:
                           recording_enabled: false
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 6899912874666998650
                           restricted: true
                           start_time: "2021-01-01T00:00:00Z"
-                          timezone: Accusamus blanditiis eius cumque eum.
+                          timezone: Blanditiis eius cumque eum modi.
                           title: Praesentium cumque velit recusandae voluptatem.
                           transcript_enabled: false
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -5318,7 +5481,7 @@ components:
                           uid: Non et cupiditate a iure vero.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Ut dolore et similique ut quaerat sunt.
-                      duration: 174
+                      duration: 441
                       early_join_time_minutes: 28
                       email_delivery_error_count: 9175101536347037250
                       meeting_type: Marketing
@@ -5329,12 +5492,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5348,12 +5511,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5367,12 +5530,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5386,12 +5549,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5411,17 +5574,17 @@ components:
                       recording_enabled: false
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       registrant_count: 6899912874666998650
                       restricted: true
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Accusamus blanditiis eius cumque eum.
+                      timezone: Blanditiis eius cumque eum modi.
                       title: Praesentium cumque velit recusandae voluptatem.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -5449,7 +5612,7 @@ components:
                           uid: Non et cupiditate a iure vero.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Ut dolore et similique ut quaerat sunt.
-                      duration: 174
+                      duration: 441
                       early_join_time_minutes: 28
                       email_delivery_error_count: 9175101536347037250
                       meeting_type: Marketing
@@ -5460,12 +5623,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5479,12 +5642,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5498,12 +5661,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5517,12 +5680,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5542,17 +5705,17 @@ components:
                       recording_enabled: false
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       registrant_count: 6899912874666998650
                       restricted: true
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Accusamus blanditiis eius cumque eum.
+                      timezone: Blanditiis eius cumque eum modi.
                       title: Praesentium cumque velit recusandae voluptatem.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -5580,7 +5743,7 @@ components:
                           uid: Non et cupiditate a iure vero.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Ut dolore et similique ut quaerat sunt.
-                      duration: 174
+                      duration: 441
                       early_join_time_minutes: 28
                       email_delivery_error_count: 9175101536347037250
                       meeting_type: Marketing
@@ -5591,12 +5754,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5610,12 +5773,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5629,12 +5792,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5648,12 +5811,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5673,17 +5836,17 @@ components:
                       recording_enabled: false
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       registrant_count: 6899912874666998650
                       restricted: true
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Accusamus blanditiis eius cumque eum.
+                      timezone: Blanditiis eius cumque eum modi.
                       title: Praesentium cumque velit recusandae voluptatem.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -5711,7 +5874,7 @@ components:
                           uid: Non et cupiditate a iure vero.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Ut dolore et similique ut quaerat sunt.
-                      duration: 174
+                      duration: 441
                       early_join_time_minutes: 28
                       email_delivery_error_count: 9175101536347037250
                       meeting_type: Marketing
@@ -5722,12 +5885,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5741,12 +5904,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5760,12 +5923,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5779,12 +5942,12 @@ components:
                           occurrence_id: "1640995200"
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           registrant_count: 1059783170136508550
                           response_count_maybe: 2323794702427202478
@@ -5804,17 +5967,17 @@ components:
                       recording_enabled: false
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       registrant_count: 6899912874666998650
                       restricted: true
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Accusamus blanditiis eius cumque eum.
+                      timezone: Blanditiis eius cumque eum modi.
                       title: Praesentium cumque velit recusandae voluptatem.
                       transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -6261,12 +6424,12 @@ components:
                           recording_enabled: true
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           restricted: true
                           scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -6318,12 +6481,12 @@ components:
                           recording_enabled: true
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           restricted: true
                           scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -6375,12 +6538,12 @@ components:
                           recording_enabled: true
                           recurrence:
                             end_date_time: "2011-11-09T13:49:54Z"
-                            end_times: 6262370327954619117
-                            monthly_day: 18
-                            monthly_week: 4
-                            monthly_week_day: 6
-                            repeat_interval: 5372487561029615016
-                            type: 2
+                            end_times: 7450094571460397270
+                            monthly_day: 15
+                            monthly_week: 1
+                            monthly_week_day: 2
+                            repeat_interval: 1324310727355159338
+                            type: 3
                             weekly_days: 1,3,5
                           restricted: true
                           scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -6434,12 +6597,12 @@ components:
                       recording_enabled: true
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       restricted: true
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -6491,12 +6654,12 @@ components:
                       recording_enabled: true
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       restricted: true
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -6548,12 +6711,12 @@ components:
                       recording_enabled: true
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       restricted: true
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -6605,12 +6768,12 @@ components:
                       recording_enabled: true
                       recurrence:
                         end_date_time: "2011-11-09T13:49:54Z"
-                        end_times: 6262370327954619117
-                        monthly_day: 18
-                        monthly_week: 4
-                        monthly_week_day: 6
-                        repeat_interval: 5372487561029615016
-                        type: 2
+                        end_times: 7450094571460397270
+                        monthly_day: 15
+                        monthly_week: 1
+                        monthly_week_day: 2
+                        repeat_interval: 1324310727355159338
+                        type: 3
                         weekly_days: 1,3,5
                       restricted: true
                       scheduled_end_time: "2021-01-01T11:00:00Z"

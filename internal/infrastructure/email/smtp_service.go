@@ -42,14 +42,16 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 
 	// Define all templates to load
 	templateConfigs := map[string]templateConfig{
-		"invitationHTML":          {"meeting_invitation.html", "templates/meeting_invitation.html"},
-		"invitationText":          {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
-		"cancellationHTML":        {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
-		"cancellationText":        {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
-		"updatedInvitationHTML":   {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
-		"updatedInvitationText":   {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},
-		"summaryNotificationHTML": {"meeting_summary_notification.html", "templates/meeting_summary_notification.html"},
-		"summaryNotificationText": {"meeting_summary_notification.txt", "templates/meeting_summary_notification.txt"},
+		"invitationHTML":             {"meeting_invitation.html", "templates/meeting_invitation.html"},
+		"invitationText":             {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
+		"cancellationHTML":           {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
+		"cancellationText":           {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
+		"occurrenceCancellationHTML": {"meeting_occurrence_cancellation.html", "templates/meeting_occurrence_cancellation.html"},
+		"occurrenceCancellationText": {"meeting_occurrence_cancellation.txt", "templates/meeting_occurrence_cancellation.txt"},
+		"updatedInvitationHTML":      {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
+		"updatedInvitationText":      {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},
+		"summaryNotificationHTML":    {"meeting_summary_notification.html", "templates/meeting_summary_notification.html"},
+		"summaryNotificationText":    {"meeting_summary_notification.txt", "templates/meeting_summary_notification.txt"},
 	}
 
 	// Load all templates
@@ -73,6 +75,10 @@ func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
 				HTML: loadedTemplates["cancellationHTML"],
 				Text: loadedTemplates["cancellationText"],
 			},
+			OccurrenceCancellation: TemplateSet{
+				HTML: loadedTemplates["occurrenceCancellationHTML"],
+				Text: loadedTemplates["occurrenceCancellationText"],
+			},
 			UpdatedInvitation: TemplateSet{
 				HTML: loadedTemplates["updatedInvitationHTML"],
 				Text: loadedTemplates["updatedInvitationText"],
@@ -94,19 +100,20 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 
 	// Generate ICS file content
 	icsContent, err := s.icsGenerator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-		MeetingUID:     invitation.MeetingUID,
-		MeetingTitle:   invitation.MeetingTitle,
-		Description:    invitation.Description,
-		StartTime:      invitation.StartTime,
-		Duration:       invitation.Duration,
-		Timezone:       invitation.Timezone,
-		JoinLink:       invitation.JoinLink,
-		MeetingID:      invitation.MeetingID,
-		Passcode:       invitation.Passcode,
-		RecipientEmail: invitation.RecipientEmail,
-		ProjectName:    invitation.ProjectName,
-		Recurrence:     invitation.Recurrence,
-		Sequence:       invitation.IcsSequence,
+		MeetingUID:               invitation.MeetingUID,
+		MeetingTitle:             invitation.MeetingTitle,
+		Description:              invitation.Description,
+		StartTime:                invitation.StartTime,
+		Duration:                 invitation.Duration,
+		Timezone:                 invitation.Timezone,
+		JoinLink:                 invitation.JoinLink,
+		MeetingID:                invitation.MeetingID,
+		Passcode:                 invitation.Passcode,
+		RecipientEmail:           invitation.RecipientEmail,
+		ProjectName:              invitation.ProjectName,
+		Recurrence:               invitation.Recurrence,
+		Sequence:                 invitation.IcsSequence,
+		CancelledOccurrenceTimes: invitation.CancelledOccurrenceTimes,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to generate ICS file", logging.ErrKey, err)
@@ -228,6 +235,77 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	slog.InfoContext(ctx, "cancellation email sent successfully")
 	if attachment != nil {
 		slog.InfoContext(ctx, "ICS cancellation attachment included")
+	}
+	return nil
+}
+
+// SendOccurrenceCancellation sends an occurrence cancellation email to a meeting registrant
+func (s *SMTPService) SendOccurrenceCancellation(ctx context.Context, cancellation domain.EmailOccurrenceCancellation) error {
+	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(cancellation.RecipientEmail)))
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", cancellation.MeetingTitle))
+	ctx = logging.AppendCtx(ctx, slog.String("occurrence_id", cancellation.OccurrenceID))
+
+	// Generate ICS cancellation file for the specific occurrence if it's in the future
+	var attachment *domain.EmailAttachment
+	if cancellation.OccurrenceStartTime.After(time.Now()) {
+		icsContent, err := s.icsGenerator.GenerateOccurrenceCancellationICS(ICSOccurrenceCancellationParams{
+			MeetingUID:          cancellation.MeetingUID,
+			MeetingTitle:        cancellation.MeetingTitle,
+			OccurrenceStartTime: cancellation.OccurrenceStartTime,
+			Duration:            cancellation.Duration,
+			Timezone:            cancellation.Timezone,
+			RecipientEmail:      cancellation.RecipientEmail,
+			Sequence:            cancellation.IcsSequence,
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to generate ICS cancellation for occurrence", logging.ErrKey, err)
+			// Continue without ICS - don't fail the whole email
+		} else {
+			// Create attachment
+			attachment = &domain.EmailAttachment{
+				Filename:    fmt.Sprintf("%s-occurrence-cancellation.ics", strings.ReplaceAll(cancellation.MeetingTitle, " ", "_")),
+				ContentType: "text/calendar; charset=UTF-8; method=CANCEL",
+				Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
+			}
+			cancellation.ICSAttachment = attachment
+		}
+	}
+
+	// Generate email content from templates
+	htmlContent, err := renderTemplate(s.templates.Meeting.OccurrenceCancellation.HTML, cancellation)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to render occurrence cancellation HTML template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render occurrence cancellation HTML template: %w", err)
+	}
+
+	textContent, err := renderTemplate(s.templates.Meeting.OccurrenceCancellation.Text, cancellation)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to render occurrence cancellation text template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render occurrence cancellation text template: %w", err)
+	}
+
+	// Build and send the email with attachment
+	subject := fmt.Sprintf("Updated Invitation: %s", cancellation.MeetingTitle)
+	message := buildEmailMessageWithParams(EmailMessageParams{
+		Recipient:   cancellation.RecipientEmail,
+		Subject:     subject,
+		HTMLContent: htmlContent,
+		TextContent: textContent,
+		Attachment:  attachment,
+		Config:      s.config,
+		Metadata: &EmailMetadata{
+			ProjectName: cancellation.ProjectName,
+		},
+	})
+	err = sendEmailMessage(cancellation.RecipientEmail, message, s.config)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send occurrence cancellation email", logging.ErrKey, err)
+		return err
+	}
+
+	slog.InfoContext(ctx, "occurrence cancellation email sent successfully")
+	if attachment != nil {
+		slog.InfoContext(ctx, "ICS occurrence cancellation attachment included")
 	}
 	return nil
 }

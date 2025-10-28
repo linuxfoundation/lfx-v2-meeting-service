@@ -10,6 +10,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -54,6 +55,7 @@ func EncodeGetMeetingsRequest(encoder func(*http.Request) goahttp.Encoder) func(
 		if p.Version != nil {
 			values.Add("v", *p.Version)
 		}
+		values.Add("include_cancelled_occurrences", fmt.Sprintf("%v", p.IncludeCancelledOccurrences))
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}
@@ -347,6 +349,7 @@ func EncodeGetMeetingBaseRequest(encoder func(*http.Request) goahttp.Encoder) fu
 		if p.Version != nil {
 			values.Add("v", *p.Version)
 		}
+		values.Add("include_cancelled_occurrences", fmt.Sprintf("%v", p.IncludeCancelledOccurrences))
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}
@@ -1232,6 +1235,168 @@ func DecodeDeleteMeetingResponse(decoder func(*http.Response) goahttp.Decoder, r
 	}
 }
 
+// BuildDeleteMeetingOccurrenceRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "delete-meeting-occurrence" endpoint
+func (c *Client) BuildDeleteMeetingOccurrenceRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid          string
+		occurrenceID string
+	)
+	{
+		p, ok := v.(*meetingservice.DeleteMeetingOccurrencePayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-meeting-occurrence", "*meetingservice.DeleteMeetingOccurrencePayload", v)
+		}
+		uid = p.UID
+		occurrenceID = p.OccurrenceID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeleteMeetingOccurrenceMeetingServicePath(uid, occurrenceID)}
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-meeting-occurrence", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDeleteMeetingOccurrenceRequest returns an encoder for requests sent to
+// the Meeting Service delete-meeting-occurrence server.
+func EncodeDeleteMeetingOccurrenceRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.DeleteMeetingOccurrencePayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "delete-meeting-occurrence", "*meetingservice.DeleteMeetingOccurrencePayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		if p.IfMatch != nil {
+			head := *p.IfMatch
+			req.Header.Set("If-Match", head)
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDeleteMeetingOccurrenceResponse returns a decoder for responses
+// returned by the Meeting Service delete-meeting-occurrence endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeDeleteMeetingOccurrenceResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeDeleteMeetingOccurrenceResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body DeleteMeetingOccurrenceBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			err = ValidateDeleteMeetingOccurrenceBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			return nil, NewDeleteMeetingOccurrenceBadRequest(&body)
+		case http.StatusConflict:
+			var (
+				body DeleteMeetingOccurrenceConflictResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			err = ValidateDeleteMeetingOccurrenceConflictResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			return nil, NewDeleteMeetingOccurrenceConflict(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DeleteMeetingOccurrenceInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			err = ValidateDeleteMeetingOccurrenceInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			return nil, NewDeleteMeetingOccurrenceInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body DeleteMeetingOccurrenceNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			err = ValidateDeleteMeetingOccurrenceNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			return nil, NewDeleteMeetingOccurrenceNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body DeleteMeetingOccurrenceServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			err = ValidateDeleteMeetingOccurrenceServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-occurrence", err)
+			}
+			return nil, NewDeleteMeetingOccurrenceServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-meeting-occurrence", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildGetMeetingRegistrantsRequest instantiates a HTTP request object with
 // method and path set to call the "Meeting Service" service
 // "get-meeting-registrants" endpoint
@@ -1951,6 +2116,7 @@ func EncodeDeleteMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 // having been read.
 // DecodeDeleteMeetingRegistrantResponse may return the following errors:
 //   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
 //   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
 //   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
 //   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
@@ -1986,6 +2152,20 @@ func DecodeDeleteMeetingRegistrantResponse(decoder func(*http.Response) goahttp.
 				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-registrant", err)
 			}
 			return nil, NewDeleteMeetingRegistrantBadRequest(&body)
+		case http.StatusConflict:
+			var (
+				body DeleteMeetingRegistrantConflictResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-meeting-registrant", err)
+			}
+			err = ValidateDeleteMeetingRegistrantConflictResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-meeting-registrant", err)
+			}
+			return nil, NewDeleteMeetingRegistrantConflict(&body)
 		case http.StatusInternalServerError:
 			var (
 				body DeleteMeetingRegistrantInternalServerErrorResponseBody

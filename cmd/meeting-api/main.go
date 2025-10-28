@@ -78,11 +78,13 @@ func main() {
 	occurrenceService := service.NewOccurrenceService()
 	meetingService := service.NewMeetingService(
 		repos.Meeting,
+		repos.Registrant,
 		repos.MeetingRSVP,
 		messageBuilder,
 		messageBuilder,
 		platformRegistry,
 		occurrenceService,
+		emailService,
 		serviceConfig,
 	)
 	registrantService := service.NewMeetingRegistrantService(

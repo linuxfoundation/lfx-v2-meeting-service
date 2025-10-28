@@ -24,6 +24,7 @@ type Endpoints struct {
 	UpdateMeetingBase                 goa.Endpoint
 	UpdateMeetingSettings             goa.Endpoint
 	DeleteMeeting                     goa.Endpoint
+	DeleteMeetingOccurrence           goa.Endpoint
 	GetMeetingRegistrants             goa.Endpoint
 	CreateMeetingRegistrant           goa.Endpoint
 	GetMeetingRegistrant              goa.Endpoint
@@ -63,6 +64,7 @@ func NewEndpoints(s Service) *Endpoints {
 		UpdateMeetingBase:                 NewUpdateMeetingBaseEndpoint(s, a.JWTAuth),
 		UpdateMeetingSettings:             NewUpdateMeetingSettingsEndpoint(s, a.JWTAuth),
 		DeleteMeeting:                     NewDeleteMeetingEndpoint(s, a.JWTAuth),
+		DeleteMeetingOccurrence:           NewDeleteMeetingOccurrenceEndpoint(s, a.JWTAuth),
 		GetMeetingRegistrants:             NewGetMeetingRegistrantsEndpoint(s, a.JWTAuth),
 		CreateMeetingRegistrant:           NewCreateMeetingRegistrantEndpoint(s, a.JWTAuth),
 		GetMeetingRegistrant:              NewGetMeetingRegistrantEndpoint(s, a.JWTAuth),
@@ -100,6 +102,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UpdateMeetingBase = m(e.UpdateMeetingBase)
 	e.UpdateMeetingSettings = m(e.UpdateMeetingSettings)
 	e.DeleteMeeting = m(e.DeleteMeeting)
+	e.DeleteMeetingOccurrence = m(e.DeleteMeetingOccurrence)
 	e.GetMeetingRegistrants = m(e.GetMeetingRegistrants)
 	e.CreateMeetingRegistrant = m(e.CreateMeetingRegistrant)
 	e.GetMeetingRegistrant = m(e.GetMeetingRegistrant)
@@ -306,6 +309,29 @@ func NewDeleteMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.End
 			return nil, err
 		}
 		return nil, s.DeleteMeeting(ctx, p)
+	}
+}
+
+// NewDeleteMeetingOccurrenceEndpoint returns an endpoint function that calls
+// the method "delete-meeting-occurrence" of service "Meeting Service".
+func NewDeleteMeetingOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeleteMeetingOccurrencePayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeleteMeetingOccurrence(ctx, p)
 	}
 }
 

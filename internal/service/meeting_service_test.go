@@ -20,8 +20,10 @@ import (
 func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMeetingRSVPRepository, *mocks.MockMessageBuilder) {
 	mockRepo := new(mocks.MockMeetingRepository)
 	mockRSVPRepo := new(mocks.MockMeetingRSVPRepository)
+	mockRegistrantRepo := new(mocks.MockRegistrantRepository)
 	mockBuilder := new(mocks.MockMessageBuilder)
 	mockPlatformRegistry := new(mocks.MockPlatformRegistry)
+	mockEmailService := new(mocks.MockEmailService)
 	occurrenceService := NewOccurrenceService()
 
 	config := ServiceConfig{
@@ -34,11 +36,13 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 
 	service := NewMeetingService(
 		mockRepo,
+		mockRegistrantRepo,
 		mockRSVPRepo,
 		mockBuilder,
 		mockBuilder,
 		mockPlatformRegistry,
 		occurrenceService,
+		mockEmailService,
 		config,
 	)
 
@@ -141,7 +145,7 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 
 			tt.setupMocks(mockRepo, mockBuilder)
 
-			result, err := service.ListMeetings(context.Background())
+			result, err := service.ListMeetings(context.Background(), false)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -373,7 +377,7 @@ func TestMeetingsService_GetMeetingBase(t *testing.T) {
 			service, mockRepo, _, mockBuilder := setupServiceForTesting()
 			tt.setupMocks(mockRepo, mockBuilder)
 
-			result, etag, err := service.GetMeetingBase(context.Background(), tt.uid)
+			result, etag, err := service.GetMeetingBase(context.Background(), tt.uid, GetMeetingBaseOptions{})
 
 			if tt.wantErr {
 				assert.Error(t, err)

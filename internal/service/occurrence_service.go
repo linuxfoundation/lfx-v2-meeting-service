@@ -385,6 +385,13 @@ func (s *OccurrenceService) findLastWeekdayOfMonth(lastOfMonth time.Time, target
 // createOccurrence creates an occurrence model from meeting and start time.
 // Note: Response counts are initialized to 0 and will be calculated later based on RSVPs.
 func (s *OccurrenceService) createOccurrence(meeting *models.MeetingBase, startTime time.Time) models.Occurrence {
+	var occurrenceInMeeting models.Occurrence
+	for _, occurrence := range meeting.Occurrences {
+		if occurrence.OccurrenceID == strconv.FormatInt(startTime.Unix(), 10) {
+			occurrenceInMeeting = occurrence
+		}
+	}
+
 	return models.Occurrence{
 		OccurrenceID:       strconv.FormatInt(startTime.Unix(), 10),
 		StartTime:          &startTime,
@@ -396,7 +403,7 @@ func (s *OccurrenceService) createOccurrence(meeting *models.MeetingBase, startT
 		ResponseCountNo:    0,
 		ResponseCountYes:   0,
 		ResponseCountMaybe: 0,
-		IsCancelled:        false,
+		IsCancelled:        occurrenceInMeeting.IsCancelled,
 	}
 }
 
