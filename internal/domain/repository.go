@@ -135,7 +135,6 @@ type PastMeetingSummaryRepository interface {
 }
 
 // MeetingRSVPRepository defines the interface for meeting RSVP storage operations.
-// Since "most recent wins", only one RSVP per registrant per meeting is stored.
 type MeetingRSVPRepository interface {
 	// RSVP full operations
 	Create(ctx context.Context, rsvp *models.RSVPResponse) error
@@ -149,5 +148,4 @@ type MeetingRSVPRepository interface {
 
 	// Query operations
 	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.RSVPResponse, error)
-	GetByMeetingAndRegistrant(ctx context.Context, meetingUID, registrantID string) (*models.RSVPResponse, uint64, error)
 }

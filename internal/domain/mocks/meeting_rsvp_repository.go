@@ -60,14 +60,6 @@ func (m *MockMeetingRSVPRepository) ListByMeeting(ctx context.Context, meetingUI
 	return args.Get(0).([]*models.RSVPResponse), args.Error(1)
 }
 
-func (m *MockMeetingRSVPRepository) GetByMeetingAndRegistrant(ctx context.Context, meetingUID, registrantID string) (*models.RSVPResponse, uint64, error) {
-	args := m.Called(ctx, meetingUID, registrantID)
-	if args.Get(0) == nil {
-		return nil, args.Get(1).(uint64), args.Error(2)
-	}
-	return args.Get(0).(*models.RSVPResponse), args.Get(1).(uint64), args.Error(2)
-}
-
 // NewMockMeetingRSVPRepository creates a new mock RSVP repository for testing
 func NewMockMeetingRSVPRepository(t interface{ Cleanup(func()) }) *MockMeetingRSVPRepository {
 	return &MockMeetingRSVPRepository{}

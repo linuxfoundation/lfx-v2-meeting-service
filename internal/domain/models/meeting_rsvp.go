@@ -44,7 +44,6 @@ type CreateRSVPRequest struct {
 }
 
 // RSVPResponse represents a registrant's RSVP response to a meeting or occurrence.
-// Since "most recent wins", only one RSVP per registrant per meeting is stored.
 type RSVPResponse struct {
 	ID           string           `json:"id"`                      // Unique identifier for this RSVP
 	MeetingUID   string           `json:"meeting_uid"`             // Meeting this RSVP is for
@@ -100,25 +99,4 @@ func (r *RSVPResponse) Tags() []string {
 	}
 
 	return tags
-}
-
-// AppliesToOccurrence determines if this RSVP applies to a given occurrence.
-// It considers the scope and occurrence ordering based on the "most recent wins" rule.
-func (r *RSVPResponse) AppliesToOccurrence(occurrenceID string) bool {
-	if r == nil {
-		return false
-	}
-
-	switch r.Scope {
-	case RSVPScopeAll:
-		return true
-	case RSVPScopeSingle:
-		return r.OccurrenceID != nil && *r.OccurrenceID == occurrenceID
-	case RSVPScopeThisAndFollowing:
-		// This would require occurrence ordering logic in the service layer
-		// For now, return true if it matches or if we need to check ordering
-		return r.OccurrenceID != nil
-	default:
-		return false
-	}
 }

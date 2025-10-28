@@ -115,6 +115,7 @@ func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[st
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingService) ServiceReady() bool {
 	return s.meetingRepository != nil &&
+		s.meetingRSVPRepository != nil &&
 		s.messageSender != nil &&
 		s.externalClient != nil &&
 		s.platformRegistry != nil &&
@@ -127,6 +128,7 @@ func (s *MeetingService) ServiceReady() bool {
 func (s *MeetingService) calculateOccurrenceCounts(ctx context.Context, meetingUID string, occurrences []models.Occurrence) error {
 	// If RSVP repository is not available, skip count calculation
 	if s.meetingRSVPRepository == nil {
+		slog.WarnContext(ctx, "RSVP repository not available, skipping occurrence count calculation")
 		return nil
 	}
 
@@ -188,11 +190,12 @@ func (s *MeetingService) getMostRecentApplicableRSVP(rsvps []*models.RSVPRespons
 
 		// Determine the timestamp for this RSVP (prefer UpdatedAt, fallback to CreatedAt)
 		var rsvpTime time.Time
-		if rsvp.UpdatedAt != nil {
+		switch {
+		case rsvp.UpdatedAt != nil:
 			rsvpTime = *rsvp.UpdatedAt
-		} else if rsvp.CreatedAt != nil {
+		case rsvp.CreatedAt != nil:
 			rsvpTime = *rsvp.CreatedAt
-		} else {
+		default:
 			// Skip RSVPs with no timestamp
 			continue
 		}

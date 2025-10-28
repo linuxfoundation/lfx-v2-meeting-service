@@ -34,12 +34,3 @@ func (s *AuthService) ParsePrincipal(ctx context.Context, bearerToken string, lo
 
 	return s.auth.ParsePrincipal(ctx, bearerToken, logger)
 }
-
-// ParseUsername parses the username from the bearer token.
-func (s *AuthService) ParseUsername(ctx context.Context, bearerToken string, logger *slog.Logger) (string, error) {
-	if !s.ServiceReady() {
-		return "", domain.NewUnavailableError("auth service not ready")
-	}
-
-	return s.auth.ParseUsername(ctx, bearerToken, logger)
-}

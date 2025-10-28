@@ -5,7 +5,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -74,24 +73,6 @@ func (r *NatsMeetingRSVPRepository) ListByMeeting(ctx context.Context, meetingUI
 	}
 
 	return matchingRSVPs, nil
-}
-
-// GetByMeetingAndRegistrant retrieves an RSVP response by meeting and registrant
-// Since "most recent wins", only one RSVP per registrant per meeting is stored
-func (r *NatsMeetingRSVPRepository) GetByMeetingAndRegistrant(ctx context.Context, meetingUID, registrantID string) (*models.RSVPResponse, uint64, error) {
-	rsvps, err := r.ListByMeeting(ctx, meetingUID)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	for _, rsvp := range rsvps {
-		if rsvp.RegistrantID == registrantID {
-			// Get with revision
-			return r.GetWithRevision(ctx, rsvp.ID)
-		}
-	}
-
-	return nil, 0, domain.NewNotFoundError(fmt.Sprintf("rsvp with meeting '%s' and registrant '%s' not found", meetingUID, registrantID))
 }
 
 // ListAll lists all RSVP responses

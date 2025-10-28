@@ -550,6 +550,10 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 
 // ConvertRSVPToResponse converts a domain RSVPResponse to Goa RSVPResponse
 func ConvertRSVPToResponse(rsvp *models.RSVPResponse) *meetingservice.RSVPResponse {
+	if rsvp == nil {
+		return nil
+	}
+
 	resp := &meetingservice.RSVPResponse{
 		ID:           rsvp.ID,
 		MeetingUID:   rsvp.MeetingUID,

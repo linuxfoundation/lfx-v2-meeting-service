@@ -66,7 +66,6 @@ type JWTAuth struct {
 // IJWTAuth is a JWT authentication interface needed for the [MeetingsService].
 type IJWTAuth interface {
 	ParsePrincipal(ctx context.Context, token string, logger *slog.Logger) (string, error)
-	ParseUsername(ctx context.Context, token string, logger *slog.Logger) (string, error)
 }
 
 func NewJWTAuth(config JWTAuthConfig) (*JWTAuth, error) {
@@ -174,60 +173,5 @@ func (j *JWTAuth) ParsePrincipal(ctx context.Context, token string, logger *slog
 		"email", redaction.RedactEmail(customClaims.Email),
 	)
 
-	return customClaims.Principal, nil
-}
-
-// ParseUsername extracts the username from the JWT claims.
-// In Heimdall, the principal claim contains the username.
-func (j *JWTAuth) ParseUsername(ctx context.Context, token string, logger *slog.Logger) (string, error) {
-	// To avoid having to use a valid JWT token for local development, we can use the
-	// MockLocalPrincipal configuration parameter.
-	if j.config.MockLocalPrincipal != "" {
-		logger.InfoContext(ctx, "JWT authentication is disabled, returning mock username",
-			"username", j.config.MockLocalPrincipal,
-		)
-		return j.config.MockLocalPrincipal, nil
-	}
-
-	if j.validator == nil {
-		return "", errors.New("JWT validator is not set up")
-	}
-
-	parsedJWT, err := j.validator.ValidateToken(ctx, token)
-	if err != nil {
-		// Drop tertiary (and deeper) nested errors for security reasons
-		logger.WarnContext(ctx, "authorization failed during username extraction",
-			"default_audience", defaultAudience,
-			"default_issuer", defaultIssuer,
-			logging.ErrKey, err,
-		)
-		errString := err.Error()
-		firstColon := strings.Index(errString, ":")
-		if firstColon != -1 && firstColon+1 < len(errString) {
-			errString = strings.Replace(errString, ": go-jose/go-jose/jwt", "", 1)
-			secondColon := strings.Index(errString[firstColon+1:], ":")
-			if secondColon != -1 {
-				errString = errString[:firstColon+secondColon+1]
-			}
-		}
-		return "", errors.New(errString)
-	}
-
-	claims, ok := parsedJWT.(*validator.ValidatedClaims)
-	if !ok {
-		return "", errors.New("failed to get validated authorization claims")
-	}
-
-	customClaims, ok := claims.CustomClaims.(*HeimdallClaims)
-	if !ok {
-		return "", errors.New("failed to get custom authorization claims")
-	}
-
-	logger.DebugContext(ctx, "JWT username parsed",
-		"username", customClaims.Principal,
-		"email", redaction.RedactEmail(customClaims.Email),
-	)
-
-	// In Heimdall, the principal claim is the username
 	return customClaims.Principal, nil
 }

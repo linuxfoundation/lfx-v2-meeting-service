@@ -393,10 +393,10 @@ func (s *OccurrenceService) createOccurrence(meeting *models.MeetingBase, startT
 		Duration:           meeting.Duration,
 		Recurrence:         nil, // Occurrences don't have recurrence patterns - reserved for future use
 		RegistrantCount:    meeting.RegistrantCount,
-		ResponseCountNo:    0,     // Calculated per-occurrence based on RSVPs
-		ResponseCountYes:   0,     // Calculated per-occurrence based on RSVPs
-		ResponseCountMaybe: 0,     // Calculated per-occurrence based on RSVPs
-		IsCancelled:        false, // Default to not cancelled for calculated occurrences
+		ResponseCountNo:    0,
+		ResponseCountYes:   0,
+		ResponseCountMaybe: 0,
+		IsCancelled:        false,
 	}
 }
 

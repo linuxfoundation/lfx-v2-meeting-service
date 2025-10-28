@@ -11,7 +11,6 @@ import (
 var CreateRSVPPayload = Type("CreateRSVPPayload", func() {
 	Description("Payload for creating or updating an RSVP response. Username is automatically extracted from the JWT token.")
 	RSVPRegistrantIDAttribute()
-	RSVPUsernameAttribute()
 	RSVPResponseAttribute()
 	RSVPScopeAttribute()
 	RSVPOccurrenceIDAttribute()

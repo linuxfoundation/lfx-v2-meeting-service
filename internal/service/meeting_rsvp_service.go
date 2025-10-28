@@ -51,8 +51,12 @@ func (s *MeetingRSVPService) ServiceReady() bool {
 }
 
 // PutRSVP creates or updates an RSVP response for a meeting registrant.
-// Following "most recent wins" rule, this replaces any existing RSVP for this registrant/meeting combination.
-// Either RegistrantID or Username must be provided to identify the registrant.
+// There can be multiple RSVPs per registrant per meeting, since there are the three following scopes:
+// 1. Single: RSVP applies to a single occurrence
+// 2. All: RSVP applies to all occurrences in the series
+// 3. This and Following: RSVP applies to a specific occurrence and all following ones
+//
+// There can't be two single or two this_and_following RSVPs for the same registrant and occurrence of a meeting.
 func (s *MeetingRSVPService) PutRSVP(ctx context.Context, req *models.CreateRSVPRequest) (*models.RSVPResponse, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
@@ -247,38 +251,4 @@ func (s *MeetingRSVPService) GetMeetingRSVPs(ctx context.Context, meetingUID str
 	slog.DebugContext(ctx, "returning meeting rsvps", "count", len(rsvps))
 
 	return rsvps, nil
-}
-
-// GetRSVPForOccurrence determines what RSVP response applies to a specific occurrence
-// based on the "most recent wins" rule and scope logic
-func (s *MeetingRSVPService) GetRSVPForOccurrence(ctx context.Context, meetingUID, registrantID, occurrenceID string) (*models.RSVPResponse, error) {
-	if !s.ServiceReady() {
-		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
-		return nil, domain.NewUnavailableError("rsvp service is not ready")
-	}
-
-	// Get the registrant's RSVP for this meeting
-	rsvp, _, err := s.meetingRSVPRepository.GetByMeetingAndRegistrant(ctx, meetingUID, registrantID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if the RSVP applies to this occurrence
-	switch rsvp.Scope {
-	case models.RSVPScopeAll:
-		return rsvp, nil
-	case models.RSVPScopeSingle:
-		if rsvp.OccurrenceID != nil && *rsvp.OccurrenceID == occurrenceID {
-			return rsvp, nil
-		}
-	case models.RSVPScopeThisAndFollowing:
-		// Need to check if the occurrence is >= the RSVP's occurrence
-		// This requires occurrence ordering logic in the calling code
-		if rsvp.OccurrenceID != nil {
-			// For now, return the RSVP and let the caller handle ordering logic
-			return rsvp, nil
-		}
-	}
-
-	return nil, domain.NewNotFoundError(fmt.Sprintf("no rsvp applies to occurrence %s for registrant %s", occurrenceID, registrantID))
 }

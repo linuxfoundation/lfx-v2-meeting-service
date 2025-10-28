@@ -18,16 +18,13 @@ func (s *MeetingsAPI) CreateMeetingRsvp(ctx context.Context, payload *meetingsvc
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	slog.InfoContext(ctx, "creating meeting rsvp", "token", *payload.BearerToken)
-
-	// Parse username from JWT token if not provided in payload
-	username, err := s.authService.ParseUsername(ctx, *payload.BearerToken, slog.Default())
+	// Parse username from JWT token (principal is the username in Heimdall)
+	username, err := s.authService.ParsePrincipal(ctx, *payload.BearerToken, slog.Default())
 	if err != nil {
 		slog.WarnContext(ctx, "failed to parse username from JWT token", "error", err)
 		return nil, handleError(domain.NewValidationError("failed to parse username from authorization token"))
 	}
 	payload.Username = &username
-	slog.DebugContext(ctx, "parsed username from JWT token", "username", username)
 
 	req := service.ConvertCreateRSVPPayloadToDomain(payload)
 
