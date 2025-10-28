@@ -49,6 +49,10 @@ type Client struct {
 	// delete-meeting endpoint.
 	DeleteMeetingDoer goahttp.Doer
 
+	// DeleteMeetingOccurrence Doer is the HTTP client used to make requests to the
+	// delete-meeting-occurrence endpoint.
+	DeleteMeetingOccurrenceDoer goahttp.Doer
+
 	// GetMeetingRegistrants Doer is the HTTP client used to make requests to the
 	// get-meeting-registrants endpoint.
 	GetMeetingRegistrantsDoer goahttp.Doer
@@ -160,6 +164,7 @@ func NewClient(
 		UpdateMeetingBaseDoer:                 doer,
 		UpdateMeetingSettingsDoer:             doer,
 		DeleteMeetingDoer:                     doer,
+		DeleteMeetingOccurrenceDoer:           doer,
 		GetMeetingRegistrantsDoer:             doer,
 		CreateMeetingRegistrantDoer:           doer,
 		GetMeetingRegistrantDoer:              doer,
@@ -376,6 +381,30 @@ func (c *Client) DeleteMeeting() goa.Endpoint {
 		resp, err := c.DeleteMeetingDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteMeetingOccurrence returns an endpoint that makes HTTP requests to the
+// Meeting Service service delete-meeting-occurrence server.
+func (c *Client) DeleteMeetingOccurrence() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteMeetingOccurrenceRequest(c.encoder)
+		decodeResponse = DecodeDeleteMeetingOccurrenceResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteMeetingOccurrenceRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteMeetingOccurrenceDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-meeting-occurrence", err)
 		}
 		return decodeResponse(resp)
 	}

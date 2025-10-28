@@ -5,6 +5,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -37,6 +38,15 @@ type Registrant struct {
 	Username           string         `json:"username,omitempty"`
 	CreatedAt          *time.Time     `json:"created_at,omitempty"`
 	UpdatedAt          *time.Time     `json:"updated_at,omitempty"`
+}
+
+// GetFullName returns the registrant's full name by combining FirstName and LastName.
+// The result is trimmed of leading/trailing whitespace.
+func (r *Registrant) GetFullName() string {
+	if r == nil {
+		return ""
+	}
+	return strings.TrimSpace(fmt.Sprintf("%s %s", r.FirstName, r.LastName))
 }
 
 // Tags generates a consistent set of tags for the registrant.

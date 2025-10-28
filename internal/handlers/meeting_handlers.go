@@ -123,7 +123,7 @@ func (s *MeetingHandler) handleMeetingGetAttribute(ctx context.Context, msg doma
 		return nil, err
 	}
 
-	meeting, _, err := s.meetingService.GetMeetingBase(ctx, meetingUID)
+	meeting, _, err := s.meetingService.GetMeetingBase(ctx, meetingUID, service.GetMeetingBaseOptions{})
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting meeting from NATS KV", logging.ErrKey, err)
 		return nil, err
@@ -349,7 +349,7 @@ func (s *MeetingHandler) meetingUpdatedInvitations(ctx context.Context, msg mode
 	}
 
 	// Get meeting details once for all email notifications
-	meeting, _, err := s.meetingService.GetMeetingBase(ctx, msg.MeetingUID)
+	meeting, _, err := s.meetingService.GetMeetingBase(ctx, msg.MeetingUID, service.GetMeetingBaseOptions{})
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting meeting details for update notifications", logging.ErrKey, err)
 		return err

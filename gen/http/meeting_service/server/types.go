@@ -1108,6 +1108,56 @@ type DeleteMeetingServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// DeleteMeetingOccurrenceBadRequestResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-occurrence" endpoint HTTP response body for
+// the "BadRequest" error.
+type DeleteMeetingOccurrenceBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteMeetingOccurrenceConflictResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-occurrence" endpoint HTTP response body for
+// the "Conflict" error.
+type DeleteMeetingOccurrenceConflictResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteMeetingOccurrenceInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "delete-meeting-occurrence" endpoint HTTP response
+// body for the "InternalServerError" error.
+type DeleteMeetingOccurrenceInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteMeetingOccurrenceNotFoundResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-occurrence" endpoint HTTP response body for
+// the "NotFound" error.
+type DeleteMeetingOccurrenceNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteMeetingOccurrenceServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-meeting-occurrence" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type DeleteMeetingOccurrenceServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // GetMeetingRegistrantsInternalServerErrorResponseBody is the type of the
 // "Meeting Service" service "get-meeting-registrants" endpoint HTTP response
 // body for the "InternalServerError" error.
@@ -1272,6 +1322,16 @@ type UpdateMeetingRegistrantServiceUnavailableResponseBody struct {
 // Service" service "delete-meeting-registrant" endpoint HTTP response body for
 // the "BadRequest" error.
 type DeleteMeetingRegistrantBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteMeetingRegistrantConflictResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-registrant" endpoint HTTP response body for
+// the "Conflict" error.
+type DeleteMeetingRegistrantConflictResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
@@ -3363,6 +3423,61 @@ func NewDeleteMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceU
 	return body
 }
 
+// NewDeleteMeetingOccurrenceBadRequestResponseBody builds the HTTP response
+// body from the result of the "delete-meeting-occurrence" endpoint of the
+// "Meeting Service" service.
+func NewDeleteMeetingOccurrenceBadRequestResponseBody(res *meetingservice.BadRequestError) *DeleteMeetingOccurrenceBadRequestResponseBody {
+	body := &DeleteMeetingOccurrenceBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteMeetingOccurrenceConflictResponseBody builds the HTTP response body
+// from the result of the "delete-meeting-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewDeleteMeetingOccurrenceConflictResponseBody(res *meetingservice.ConflictError) *DeleteMeetingOccurrenceConflictResponseBody {
+	body := &DeleteMeetingOccurrenceConflictResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteMeetingOccurrenceInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "delete-meeting-occurrence" endpoint of
+// the "Meeting Service" service.
+func NewDeleteMeetingOccurrenceInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *DeleteMeetingOccurrenceInternalServerErrorResponseBody {
+	body := &DeleteMeetingOccurrenceInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteMeetingOccurrenceNotFoundResponseBody builds the HTTP response body
+// from the result of the "delete-meeting-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewDeleteMeetingOccurrenceNotFoundResponseBody(res *meetingservice.NotFoundError) *DeleteMeetingOccurrenceNotFoundResponseBody {
+	body := &DeleteMeetingOccurrenceNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteMeetingOccurrenceServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "delete-meeting-occurrence" endpoint of
+// the "Meeting Service" service.
+func NewDeleteMeetingOccurrenceServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *DeleteMeetingOccurrenceServiceUnavailableResponseBody {
+	body := &DeleteMeetingOccurrenceServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewGetMeetingRegistrantsInternalServerErrorResponseBody builds the HTTP
 // response body from the result of the "get-meeting-registrants" endpoint of
 // the "Meeting Service" service.
@@ -3544,6 +3659,17 @@ func NewUpdateMeetingRegistrantServiceUnavailableResponseBody(res *meetingservic
 // "Meeting Service" service.
 func NewDeleteMeetingRegistrantBadRequestResponseBody(res *meetingservice.BadRequestError) *DeleteMeetingRegistrantBadRequestResponseBody {
 	body := &DeleteMeetingRegistrantBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteMeetingRegistrantConflictResponseBody builds the HTTP response body
+// from the result of the "delete-meeting-registrant" endpoint of the "Meeting
+// Service" service.
+func NewDeleteMeetingRegistrantConflictResponseBody(res *meetingservice.ConflictError) *DeleteMeetingRegistrantConflictResponseBody {
+	body := &DeleteMeetingRegistrantConflictResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}
@@ -4155,9 +4281,10 @@ func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavaila
 
 // NewGetMeetingsPayload builds a Meeting Service service get-meetings endpoint
 // payload.
-func NewGetMeetingsPayload(version *string, bearerToken *string) *meetingservice.GetMeetingsPayload {
+func NewGetMeetingsPayload(version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingsPayload {
 	v := &meetingservice.GetMeetingsPayload{}
 	v.Version = version
+	v.IncludeCancelledOccurrences = includeCancelledOccurrences
 	v.BearerToken = bearerToken
 
 	return v
@@ -4209,10 +4336,11 @@ func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, be
 
 // NewGetMeetingBasePayload builds a Meeting Service service get-meeting-base
 // endpoint payload.
-func NewGetMeetingBasePayload(uid string, version *string, bearerToken *string) *meetingservice.GetMeetingBasePayload {
+func NewGetMeetingBasePayload(uid string, version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingBasePayload {
 	v := &meetingservice.GetMeetingBasePayload{}
 	v.UID = &uid
 	v.Version = version
+	v.IncludeCancelledOccurrences = includeCancelledOccurrences
 	v.BearerToken = bearerToken
 
 	return v
@@ -4303,6 +4431,19 @@ func NewUpdateMeetingSettingsPayload(body *UpdateMeetingSettingsRequestBody, uid
 func NewDeleteMeetingPayload(uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeleteMeetingPayload {
 	v := &meetingservice.DeleteMeetingPayload{}
 	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.IfMatch = ifMatch
+
+	return v
+}
+
+// NewDeleteMeetingOccurrencePayload builds a Meeting Service service
+// delete-meeting-occurrence endpoint payload.
+func NewDeleteMeetingOccurrencePayload(uid string, occurrenceID string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeleteMeetingOccurrencePayload {
+	v := &meetingservice.DeleteMeetingOccurrencePayload{}
+	v.UID = uid
+	v.OccurrenceID = occurrenceID
 	v.Version = version
 	v.BearerToken = bearerToken
 	v.IfMatch = ifMatch

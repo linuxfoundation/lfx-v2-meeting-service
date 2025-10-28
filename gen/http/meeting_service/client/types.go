@@ -1108,6 +1108,56 @@ type DeleteMeetingServiceUnavailableResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// DeleteMeetingOccurrenceBadRequestResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-occurrence" endpoint HTTP response body for
+// the "BadRequest" error.
+type DeleteMeetingOccurrenceBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteMeetingOccurrenceConflictResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-occurrence" endpoint HTTP response body for
+// the "Conflict" error.
+type DeleteMeetingOccurrenceConflictResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteMeetingOccurrenceInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "delete-meeting-occurrence" endpoint HTTP response
+// body for the "InternalServerError" error.
+type DeleteMeetingOccurrenceInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteMeetingOccurrenceNotFoundResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-occurrence" endpoint HTTP response body for
+// the "NotFound" error.
+type DeleteMeetingOccurrenceNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteMeetingOccurrenceServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-meeting-occurrence" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type DeleteMeetingOccurrenceServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // GetMeetingRegistrantsInternalServerErrorResponseBody is the type of the
 // "Meeting Service" service "get-meeting-registrants" endpoint HTTP response
 // body for the "InternalServerError" error.
@@ -1272,6 +1322,16 @@ type UpdateMeetingRegistrantServiceUnavailableResponseBody struct {
 // Service" service "delete-meeting-registrant" endpoint HTTP response body for
 // the "BadRequest" error.
 type DeleteMeetingRegistrantBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteMeetingRegistrantConflictResponseBody is the type of the "Meeting
+// Service" service "delete-meeting-registrant" endpoint HTTP response body for
+// the "Conflict" error.
+type DeleteMeetingRegistrantConflictResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -3214,6 +3274,61 @@ func NewDeleteMeetingServiceUnavailable(body *DeleteMeetingServiceUnavailableRes
 	return v
 }
 
+// NewDeleteMeetingOccurrenceBadRequest builds a Meeting Service service
+// delete-meeting-occurrence endpoint BadRequest error.
+func NewDeleteMeetingOccurrenceBadRequest(body *DeleteMeetingOccurrenceBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteMeetingOccurrenceConflict builds a Meeting Service service
+// delete-meeting-occurrence endpoint Conflict error.
+func NewDeleteMeetingOccurrenceConflict(body *DeleteMeetingOccurrenceConflictResponseBody) *meetingservice.ConflictError {
+	v := &meetingservice.ConflictError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteMeetingOccurrenceInternalServerError builds a Meeting Service
+// service delete-meeting-occurrence endpoint InternalServerError error.
+func NewDeleteMeetingOccurrenceInternalServerError(body *DeleteMeetingOccurrenceInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteMeetingOccurrenceNotFound builds a Meeting Service service
+// delete-meeting-occurrence endpoint NotFound error.
+func NewDeleteMeetingOccurrenceNotFound(body *DeleteMeetingOccurrenceNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteMeetingOccurrenceServiceUnavailable builds a Meeting Service
+// service delete-meeting-occurrence endpoint ServiceUnavailable error.
+func NewDeleteMeetingOccurrenceServiceUnavailable(body *DeleteMeetingOccurrenceServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewGetMeetingRegistrantsResultOK builds a "Meeting Service" service
 // "get-meeting-registrants" endpoint result from a HTTP "OK" response.
 func NewGetMeetingRegistrantsResultOK(body *GetMeetingRegistrantsResponseBody, cacheControl *string) *meetingservice.GetMeetingRegistrantsResult {
@@ -3490,6 +3605,17 @@ func NewUpdateMeetingRegistrantServiceUnavailable(body *UpdateMeetingRegistrantS
 // delete-meeting-registrant endpoint BadRequest error.
 func NewDeleteMeetingRegistrantBadRequest(body *DeleteMeetingRegistrantBadRequestResponseBody) *meetingservice.BadRequestError {
 	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteMeetingRegistrantConflict builds a Meeting Service service
+// delete-meeting-registrant endpoint Conflict error.
+func NewDeleteMeetingRegistrantConflict(body *DeleteMeetingRegistrantConflictResponseBody) *meetingservice.ConflictError {
+	v := &meetingservice.ConflictError{
 		Code:    *body.Code,
 		Message: *body.Message,
 	}
@@ -5889,6 +6015,68 @@ func ValidateDeleteMeetingServiceUnavailableResponseBody(body *DeleteMeetingServ
 	return
 }
 
+// ValidateDeleteMeetingOccurrenceBadRequestResponseBody runs the validations
+// defined on delete-meeting-occurrence_BadRequest_response_body
+func ValidateDeleteMeetingOccurrenceBadRequestResponseBody(body *DeleteMeetingOccurrenceBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteMeetingOccurrenceConflictResponseBody runs the validations
+// defined on delete-meeting-occurrence_Conflict_response_body
+func ValidateDeleteMeetingOccurrenceConflictResponseBody(body *DeleteMeetingOccurrenceConflictResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteMeetingOccurrenceInternalServerErrorResponseBody runs the
+// validations defined on
+// delete-meeting-occurrence_InternalServerError_response_body
+func ValidateDeleteMeetingOccurrenceInternalServerErrorResponseBody(body *DeleteMeetingOccurrenceInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteMeetingOccurrenceNotFoundResponseBody runs the validations
+// defined on delete-meeting-occurrence_NotFound_response_body
+func ValidateDeleteMeetingOccurrenceNotFoundResponseBody(body *DeleteMeetingOccurrenceNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteMeetingOccurrenceServiceUnavailableResponseBody runs the
+// validations defined on
+// delete-meeting-occurrence_ServiceUnavailable_response_body
+func ValidateDeleteMeetingOccurrenceServiceUnavailableResponseBody(body *DeleteMeetingOccurrenceServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
 // ValidateGetMeetingRegistrantsInternalServerErrorResponseBody runs the
 // validations defined on
 // get-meeting-registrants_InternalServerError_response_body
@@ -6092,6 +6280,18 @@ func ValidateUpdateMeetingRegistrantServiceUnavailableResponseBody(body *UpdateM
 // ValidateDeleteMeetingRegistrantBadRequestResponseBody runs the validations
 // defined on delete-meeting-registrant_BadRequest_response_body
 func ValidateDeleteMeetingRegistrantBadRequestResponseBody(body *DeleteMeetingRegistrantBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteMeetingRegistrantConflictResponseBody runs the validations
+// defined on delete-meeting-registrant_Conflict_response_body
+func ValidateDeleteMeetingRegistrantConflictResponseBody(body *DeleteMeetingRegistrantConflictResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

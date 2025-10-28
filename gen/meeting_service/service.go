@@ -35,6 +35,9 @@ type Service interface {
 	UpdateMeetingSettings(context.Context, *UpdateMeetingSettingsPayload) (res *MeetingSettings, err error)
 	// Delete an existing meeting.
 	DeleteMeeting(context.Context, *DeleteMeetingPayload) (err error)
+	// Cancel a specific occurrence of a meeting by setting its IsCancelled field
+	// to true.
+	DeleteMeetingOccurrence(context.Context, *DeleteMeetingOccurrencePayload) (err error)
 	// Get all registrants for a meeting
 	GetMeetingRegistrants(context.Context, *GetMeetingRegistrantsPayload) (res *GetMeetingRegistrantsResult, err error)
 	// Create a new registrant for a meeting
@@ -101,7 +104,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [29]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
+var MethodNames = [30]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -305,6 +308,21 @@ type CreatePastMeetingPayload struct {
 	Sessions []*Session
 }
 
+// DeleteMeetingOccurrencePayload is the payload type of the Meeting Service
+// service delete-meeting-occurrence method.
+type DeleteMeetingOccurrencePayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// If-Match header value for conditional requests
+	IfMatch *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting
+	UID string
+	// The ID of the occurrence to cancel
+	OccurrenceID string
+}
+
 // DeleteMeetingPayload is the payload type of the Meeting Service service
 // delete-meeting method.
 type DeleteMeetingPayload struct {
@@ -370,6 +388,8 @@ type GetMeetingBasePayload struct {
 	Version *string
 	// The UID of the meeting
 	UID *string
+	// Include cancelled occurrences in the response
+	IncludeCancelledOccurrences bool
 }
 
 // GetMeetingBaseResult is the result type of the Meeting Service service
@@ -467,6 +487,8 @@ type GetMeetingsPayload struct {
 	BearerToken *string
 	// Version of the API
 	Version *string
+	// Include cancelled occurrences in the response
+	IncludeCancelledOccurrences bool
 }
 
 // GetMeetingsResult is the result type of the Meeting Service service

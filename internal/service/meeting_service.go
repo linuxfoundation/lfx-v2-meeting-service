@@ -24,27 +24,33 @@ import (
 
 // MeetingsService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingService struct {
-	meetingRepository domain.MeetingRepository
-	messageBuilder    domain.MessageBuilder
-	platformRegistry  domain.PlatformRegistry
-	occurrenceService domain.OccurrenceService
-	config            ServiceConfig
+	meetingRepository    domain.MeetingRepository
+	registrantRepository domain.RegistrantRepository
+	messageBuilder       domain.MessageBuilder
+	platformRegistry     domain.PlatformRegistry
+	occurrenceService    domain.OccurrenceService
+	emailService         domain.EmailService
+	config               ServiceConfig
 }
 
 // NewMeetingsService creates a new MeetingsService.
 func NewMeetingService(
 	meetingRepository domain.MeetingRepository,
+	registrantRepository domain.RegistrantRepository,
 	messageBuilder domain.MessageBuilder,
 	platformRegistry domain.PlatformRegistry,
 	occurrenceService domain.OccurrenceService,
+	emailService domain.EmailService,
 	config ServiceConfig,
 ) *MeetingService {
 	return &MeetingService{
-		meetingRepository: meetingRepository,
-		messageBuilder:    messageBuilder,
-		platformRegistry:  platformRegistry,
-		occurrenceService: occurrenceService,
-		config:            config,
+		meetingRepository:    meetingRepository,
+		registrantRepository: registrantRepository,
+		messageBuilder:       messageBuilder,
+		platformRegistry:     platformRegistry,
+		occurrenceService:    occurrenceService,
+		emailService:         emailService,
+		config:               config,
 	}
 }
 
@@ -111,11 +117,12 @@ func (s *MeetingService) ServiceReady() bool {
 	return s.meetingRepository != nil &&
 		s.messageBuilder != nil &&
 		s.platformRegistry != nil &&
-		s.occurrenceService != nil
+		s.occurrenceService != nil &&
+		s.registrantRepository != nil
 }
 
 // ListMeetings fetches all meetings
-func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFull, error) {
+func (s *MeetingService) ListMeetings(ctx context.Context, includeCancelledOccurrences bool) ([]*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting service is not ready")
@@ -144,6 +151,17 @@ func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFul
 			settings = settingsByUID[meeting.UID]
 			// Calculate next 50 occurrences from current time
 			meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+
+			// Filter out cancelled occurrences unless explicitly requested
+			if !includeCancelledOccurrences {
+				nonCancelledOccurrences := make([]models.Occurrence, 0, len(meeting.Occurrences))
+				for _, occ := range meeting.Occurrences {
+					if !occ.IsCancelled {
+						nonCancelledOccurrences = append(nonCancelledOccurrences, occ)
+					}
+				}
+				meeting.Occurrences = nonCancelledOccurrences
+			}
 		}
 		meetings[i] = &models.MeetingFull{
 			Base:     meeting,
@@ -151,7 +169,7 @@ func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFul
 		}
 	}
 
-	slog.DebugContext(ctx, "returning meetings", "meetings", meetings)
+	slog.DebugContext(ctx, "returning meetings", "meeting_count", len(meetings))
 
 	return meetings, nil
 }
@@ -314,7 +332,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	if err != nil {
 		// If repository creation fails and we created a platform meeting, attempt to clean it up
 		if reqMeeting.Base.Platform != "" {
-			if provider, provErr := s.platformRegistry.GetProvider(reqMeeting.Base.Platform); provErr == nil {
+			if provider, provErr := s.platformRegistry.GetProvider(reqMeeting.Base.Platform); provErr == nil && provider != nil {
 				if platformMeetingID := provider.GetPlatformMeetingID(reqMeeting.Base); platformMeetingID != "" {
 					if delErr := provider.DeleteMeeting(ctx, platformMeetingID); delErr != nil {
 						slog.ErrorContext(ctx, "failed to cleanup platform meeting after repository error",
@@ -373,7 +391,14 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	return reqMeeting, nil
 }
 
-func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*models.MeetingBase, string, error) {
+// GetMeetingBaseOptions contains options for filtering meeting base data.
+type GetMeetingBaseOptions struct {
+	// IncludeCancelledOccurrences determines whether to include cancelled occurrences in the response.
+	// Defaults to false (cancelled occurrences are hidden).
+	IncludeCancelledOccurrences bool
+}
+
+func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string, options GetMeetingBaseOptions) (*models.MeetingBase, string, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, "", domain.NewUnavailableError("meeting service is not ready")
@@ -393,6 +418,17 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 	// Calculate next 50 occurrences from current time
 	currentTime := time.Now()
 	meetingDB.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
+
+	// Filter out cancelled occurrences unless explicitly requested
+	if !options.IncludeCancelledOccurrences {
+		nonCancelledOccurrences := make([]models.Occurrence, 0, len(meetingDB.Occurrences))
+		for _, occ := range meetingDB.Occurrences {
+			if !occ.IsCancelled {
+				nonCancelledOccurrences = append(nonCancelledOccurrences, occ)
+			}
+		}
+		meetingDB.Occurrences = nonCancelledOccurrences
+	}
 
 	slog.DebugContext(ctx, "returning meeting", "meeting", meetingDB, "revision", revision)
 
@@ -537,6 +573,11 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 				"platform", reqMeeting.Platform,
 				logging.ErrKey, err)
 			return nil, domain.NewInternalError("failed to initialize meeting platform", err)
+		}
+
+		if provider == nil {
+			slog.ErrorContext(ctx, "platform provider is nil")
+			return nil, domain.NewInternalError("platform provider is nil", nil)
 		}
 
 		platformMeetingID := provider.GetPlatformMeetingID(reqMeeting)
@@ -749,7 +790,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 				"platform", meetingDB.Platform,
 				logging.ErrKey, err)
 			// Continue anyway - meeting is already deleted from our system
-		} else {
+		} else if provider != nil {
 			platformMeetingID := provider.GetPlatformMeetingID(meetingDB)
 			if platformMeetingID != "" {
 				if err := provider.DeleteMeeting(ctx, platformMeetingID); err != nil {
@@ -798,5 +839,168 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	}
 
 	slog.DebugContext(ctx, "deleted meeting", "meeting_uid", uid)
+	return nil
+}
+
+// CancelMeetingOccurrence cancels a specific occurrence of a meeting by setting its IsCancelled field to true
+func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID string, occurrenceID string, revision uint64) error {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return domain.NewUnavailableError("meeting service is not ready")
+	}
+
+	if meetingUID == "" {
+		slog.WarnContext(ctx, "meeting UID is required")
+		return domain.NewValidationError("meeting UID is required")
+	}
+
+	if occurrenceID == "" {
+		slog.WarnContext(ctx, "occurrence ID is required")
+		return domain.NewValidationError("occurrence ID is required")
+	}
+
+	var err error
+	if s.config.SkipEtagValidation {
+		// If skipping the Etag validation, we need to get the key revision from the store with a Get request.
+		_, revision, err = s.meetingRepository.GetBaseWithRevision(ctx, meetingUID)
+		if err != nil {
+			return err
+		}
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+	ctx = logging.AppendCtx(ctx, slog.String("occurrence_id", occurrenceID))
+	ctx = logging.AppendCtx(ctx, slog.String("etag", strconv.FormatUint(revision, 10)))
+
+	// Get the meeting from repository
+	meetingDB, err := s.meetingRepository.GetBase(ctx, meetingUID)
+	if err != nil {
+		return err
+	}
+
+	// Validate that the meeting is recurring
+	if meetingDB.Recurrence == nil {
+		slog.WarnContext(ctx, "cannot cancel occurrence of non-recurring meeting")
+		return domain.NewValidationError("meeting must be recurring to cancel individual occurrences")
+	}
+
+	// Calculate future occurrences (from current time onwards)
+	// We calculate up to 50 occurrences which should be sufficient for most use cases
+	// Past occurrences are not included, so attempts to cancel them will result in "not found"
+	currentTime := time.Now()
+	calculatedOccurrences := s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
+
+	// Find the occurrence and check if it's already cancelled
+	var cancelledOccurrence *models.Occurrence
+	for i, occ := range calculatedOccurrences {
+		if occ.OccurrenceID == occurrenceID {
+			if occ.IsCancelled {
+				slog.WarnContext(ctx, "occurrence is already cancelled", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
+				return domain.NewConflictError("occurrence is already cancelled")
+			}
+			cancelledOccurrence = &occ
+			calculatedOccurrences[i].IsCancelled = true
+			slog.InfoContext(ctx, "marked occurrence as cancelled", "occurrence_id", occurrenceID)
+			break
+		}
+	}
+
+	if cancelledOccurrence == nil {
+		slog.WarnContext(ctx, "occurrence not found for meeting", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
+		return domain.NewNotFoundError("occurrence not found for this meeting")
+	}
+
+	// Replace the entire occurrences array with the calculated occurrences (including the cancelled one)
+	meetingDB.Occurrences = calculatedOccurrences
+	meetingDB.IcsSequence++ // Increment ICS sequence for calendar updates
+
+	// Update the meeting in the repository
+	err = s.meetingRepository.UpdateBase(ctx, meetingDB, revision)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update meeting in repository", logging.ErrKey, err)
+		return err
+	}
+
+	// Send update to indexer
+	err = s.messageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *meetingDB)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to send NATS message for cancelled occurrence", logging.ErrKey, err)
+		return domain.NewInternalError("failed to publish occurrence cancellation event", err)
+	}
+
+	// Send email notifications to all registrants (async operations that don't fail the cancellation)
+	registrants, err := s.registrantRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to fetch registrants for occurrence cancellation emails", logging.ErrKey, err)
+		// Don't fail the operation if we can't fetch registrants
+	}
+
+	if len(registrants) == 0 {
+		slog.InfoContext(ctx, "successfully cancelled meeting occurrence", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
+		return nil
+	}
+
+	// Get project information for email branding
+	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
+	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingDB.ProjectUID)
+	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingDB.ProjectUID)
+
+	// Build functions to send emails to each registrant
+	var emailFunctions []func() error
+	for _, registrant := range registrants {
+		// Capture loop variables
+		r := registrant
+		occ := *cancelledOccurrence
+
+		emailFunctions = append(emailFunctions, func() error {
+			emailCtx := logging.AppendCtx(ctx, slog.String("registrant_uid", r.UID))
+			emailCtx = logging.AppendCtx(emailCtx, slog.String("registrant_email", r.Email))
+
+			// Get the occurrence start time
+			occurrenceStartTime := meetingDB.StartTime
+			if occ.StartTime != nil {
+				occurrenceStartTime = *occ.StartTime
+			}
+
+			recipientName := r.GetFullName()
+
+			cancellation := domain.EmailOccurrenceCancellation{
+				MeetingUID:          meetingDB.UID,
+				RecipientEmail:      r.Email,
+				RecipientName:       recipientName,
+				MeetingTitle:        meetingDB.Title,
+				OccurrenceID:        occ.OccurrenceID,
+				OccurrenceStartTime: occurrenceStartTime,
+				Duration:            meetingDB.Duration,
+				Timezone:            meetingDB.Timezone,
+				Description:         meetingDB.Description,
+				Visibility:          meetingDB.Visibility,
+				MeetingType:         meetingDB.MeetingType,
+				Platform:            meetingDB.Platform,
+				MeetingDetailsLink:  constants.GenerateLFXMeetingDetailsURL(projectSlug, meetingDB.UID, s.config.LFXEnvironment),
+				ProjectName:         projectName,
+				ProjectLogo:         projectLogo,
+				Reason:              "This specific occurrence of the recurring meeting has been cancelled by an organizer.",
+				Recurrence:          meetingDB.Recurrence,
+				IcsSequence:         meetingDB.IcsSequence,
+			}
+
+			err := s.emailService.SendOccurrenceCancellation(emailCtx, cancellation)
+			if err != nil {
+				slog.ErrorContext(emailCtx, "failed to send occurrence cancellation email", logging.ErrKey, err)
+			}
+			return nil // Don't propagate email errors as they shouldn't fail the operation
+		})
+	}
+
+	// Execute all email functions concurrently using WorkerPool
+	pool := concurrent.NewWorkerPool(5) // Use 5 workers for email operations
+	err = pool.Run(ctx, emailFunctions...)
+	if err != nil {
+		// Log the error but don't fail the operation since email errors are non-critical
+		slog.WarnContext(ctx, "some email operations failed during occurrence cancellation", logging.ErrKey, err)
+	}
+
+	slog.InfoContext(ctx, "successfully cancelled meeting occurrence", "meeting_uid", meetingUID, "occurrence_id", occurrenceID)
 	return nil
 }
