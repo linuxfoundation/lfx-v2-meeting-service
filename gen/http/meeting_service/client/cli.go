@@ -53,7 +53,7 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreateMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         }\n      ],\n      \"description\": \"Quis est est molestias eligendi nulla porro.\",\n      \"duration\": 254,\n      \"early_join_time_minutes\": 55,\n      \"meeting_type\": \"Other\",\n      \"organizers\": [\n         \"Sit ad maiores id velit ratione et.\",\n         \"Et illo similique qui est.\"\n      ],\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1982-02-16T02:33:37Z\",\n         \"end_times\": 748992484864519505,\n         \"monthly_day\": 26,\n         \"monthly_week\": -1,\n         \"monthly_week_day\": 6,\n         \"repeat_interval\": 7700406239905879971,\n         \"type\": 3,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Quasi dolor facilis exercitationem rem.\",\n      \"title\": \"Et dolor.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": true,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         }\n      ],\n      \"description\": \"Nobis libero nihil aliquam deleniti.\",\n      \"duration\": 115,\n      \"early_join_time_minutes\": 12,\n      \"meeting_type\": \"None\",\n      \"organizers\": [\n         \"Ratione et nam et illo.\",\n         \"Qui est quod nihil voluptas.\",\n         \"Et ex sapiente libero.\"\n      ],\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2011-08-19T18:52:38Z\",\n         \"end_times\": 295409726269402937,\n         \"monthly_day\": 4,\n         \"monthly_week\": 1,\n         \"monthly_week_day\": 5,\n         \"repeat_interval\": 3423590977722818127,\n         \"type\": 1,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Enim doloremque.\",\n      \"title\": \"Est molestias eligendi nulla porro necessitatibus et.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": false,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", body.ProjectUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
@@ -290,7 +290,7 @@ func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, m
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingBaseBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         }\n      ],\n      \"description\": \"Et nihil repellat totam officiis enim veritatis.\",\n      \"duration\": 507,\n      \"early_join_time_minutes\": 44,\n      \"meeting_type\": \"Maintainers\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1982-02-16T02:33:37Z\",\n         \"end_times\": 748992484864519505,\n         \"monthly_day\": 26,\n         \"monthly_week\": -1,\n         \"monthly_week_day\": 6,\n         \"repeat_interval\": 7700406239905879971,\n         \"type\": 3,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Laboriosam ea qui quia maiores.\",\n      \"title\": \"Dolore omnis fugiat.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         }\n      ],\n      \"description\": \"Repudiandae et.\",\n      \"duration\": 295,\n      \"early_join_time_minutes\": 40,\n      \"meeting_type\": \"Board\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"2011-08-19T18:52:38Z\",\n         \"end_times\": 295409726269402937,\n         \"monthly_day\": 4,\n         \"monthly_week\": 1,\n         \"monthly_week_day\": 5,\n         \"repeat_interval\": 3423590977722818127,\n         \"type\": 1,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Repellendus reiciendis sint laboriosam ea qui.\",\n      \"title\": \"Maiores veniam dolore omnis.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": false,\n         \"ai_summary_require_approval\": true\n      }\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", body.ProjectUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
@@ -423,7 +423,7 @@ func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody s
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingSettingsBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"organizers\": [\n         \"Sed asperiores ipsa eveniet sed.\",\n         \"Molestiae et facilis.\"\n      ]\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"organizers\": [\n         \"Similique natus minus voluptas ut corrupti.\",\n         \"Blanditiis qui explicabo quae quae.\",\n         \"Sed asperiores ipsa eveniet sed.\"\n      ]\n   }'")
 		}
 	}
 	var uid string
@@ -564,7 +564,7 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreateMeetingRegistrantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Debitis voluptas est ut possimus.\",\n      \"username\": \"Quo ipsum commodi vel.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Ut possimus aut quo.\",\n      \"username\": \"Commodi vel ullam quo porro.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if body.FirstName != nil {
@@ -890,6 +890,110 @@ func BuildResendMeetingRegistrantInvitationPayload(meetingServiceResendMeetingRe
 	return v, nil
 }
 
+// BuildCreateMeetingRsvpPayload builds the payload for the Meeting Service
+// create-meeting-rsvp endpoint from CLI flags.
+func BuildCreateMeetingRsvpPayload(meetingServiceCreateMeetingRsvpBody string, meetingServiceCreateMeetingRsvpMeetingUID string, meetingServiceCreateMeetingRsvpVersion string, meetingServiceCreateMeetingRsvpBearerToken string) (*meetingservice.CreateMeetingRsvpPayload, error) {
+	var err error
+	var body CreateMeetingRsvpRequestBody
+	{
+		err = json.Unmarshal([]byte(meetingServiceCreateMeetingRsvpBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"occurrence_id\": \"1640995200\",\n      \"registrant_id\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"response\": \"accepted\",\n      \"scope\": \"all\",\n      \"username\": \"jdoe\"\n   }'")
+		}
+		if body.RegistrantID != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.registrant_id", *body.RegistrantID, goa.FormatUUID))
+		}
+		if !(body.Response == "accepted" || body.Response == "maybe" || body.Response == "declined") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.response", body.Response, []any{"accepted", "maybe", "declined"}))
+		}
+		if !(body.Scope == "single" || body.Scope == "all" || body.Scope == "this_and_following") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.scope", body.Scope, []any{"single", "all", "this_and_following"}))
+		}
+		if body.OccurrenceID != nil {
+			err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var meetingUID string
+	{
+		meetingUID = meetingServiceCreateMeetingRsvpMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("meeting_uid", meetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceCreateMeetingRsvpVersion != "" {
+			version = &meetingServiceCreateMeetingRsvpVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceCreateMeetingRsvpBearerToken != "" {
+			bearerToken = &meetingServiceCreateMeetingRsvpBearerToken
+		}
+	}
+	v := &meetingservice.CreateMeetingRsvpPayload{
+		RegistrantID: body.RegistrantID,
+		Username:     body.Username,
+		Response:     body.Response,
+		Scope:        body.Scope,
+		OccurrenceID: body.OccurrenceID,
+	}
+	v.MeetingUID = meetingUID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
+// BuildGetMeetingRsvpsPayload builds the payload for the Meeting Service
+// get-meeting-rsvps endpoint from CLI flags.
+func BuildGetMeetingRsvpsPayload(meetingServiceGetMeetingRsvpsMeetingUID string, meetingServiceGetMeetingRsvpsVersion string, meetingServiceGetMeetingRsvpsBearerToken string) (*meetingservice.GetMeetingRsvpsPayload, error) {
+	var err error
+	var meetingUID string
+	{
+		meetingUID = meetingServiceGetMeetingRsvpsMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("meeting_uid", meetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceGetMeetingRsvpsVersion != "" {
+			version = &meetingServiceGetMeetingRsvpsVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetMeetingRsvpsBearerToken != "" {
+			bearerToken = &meetingServiceGetMeetingRsvpsBearerToken
+		}
+	}
+	v := &meetingservice.GetMeetingRsvpsPayload{}
+	v.MeetingUID = meetingUID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildZoomWebhookPayload builds the payload for the Meeting Service
 // zoom-webhook endpoint from CLI flags.
 func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServiceZoomWebhookZoomSignature string, meetingServiceZoomWebhookZoomTimestamp string) (*meetingservice.ZoomWebhookPayload, error) {
@@ -898,7 +1002,7 @@ func BuildZoomWebhookPayload(meetingServiceZoomWebhookBody string, meetingServic
 	{
 		err = json.Unmarshal([]byte(meetingServiceZoomWebhookBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"event\": \"meeting.started\",\n      \"event_ts\": 1609459200000,\n      \"payload\": \"Rerum voluptas consequatur nisi ut accusantium quaerat.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"event\": \"meeting.started\",\n      \"event_ts\": 1609459200000,\n      \"payload\": \"Voluptas consequatur.\"\n   }'")
 		}
 		if body.Payload == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("payload", "body"))
@@ -966,7 +1070,7 @@ func BuildCreatePastMeetingPayload(meetingServiceCreatePastMeetingBody string, m
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreatePastMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Earum et nemo omnis.\",\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\"\n            ],\n            \"uid\": \"Ab nobis libero nihil aliquam.\"\n         }\n      ],\n      \"description\": \"Fugit architecto ea fugiat reiciendis omnis.\",\n      \"duration\": 74,\n      \"early_join_time_minutes\": 34,\n      \"meeting_type\": \"Other\",\n      \"meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"occurrence_id\": \"1640995200\",\n      \"platform\": \"Zoom\",\n      \"platform_meeting_id\": \"1234567890\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"http://maggio.com/ressie_schuppe\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1982-02-16T02:33:37Z\",\n         \"end_times\": 748992484864519505,\n         \"monthly_day\": 26,\n         \"monthly_week\": -1,\n         \"monthly_week_day\": 6,\n         \"repeat_interval\": 7700406239905879971,\n         \"type\": 3,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"scheduled_end_time\": \"2021-01-01T11:00:00Z\",\n      \"scheduled_start_time\": \"2021-01-01T10:00:00Z\",\n      \"sessions\": [\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"timezone\": \"Qui voluptas repellendus eos ut labore.\",\n      \"title\": \"Aut asperiores.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true,\n         \"meeting_id\": \"1234567890\",\n         \"passcode\": \"147258\"\n      }\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ut ut voluptatem.\",\n               \"Debitis et et.\",\n               \"Nihil vel consequatur perspiciatis.\"\n            ],\n            \"uid\": \"Et nemo.\"\n         }\n      ],\n      \"description\": \"Modi fugit architecto.\",\n      \"duration\": 204,\n      \"early_join_time_minutes\": 56,\n      \"meeting_type\": \"Marketing\",\n      \"meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"occurrence_id\": \"1640995200\",\n      \"platform\": \"Zoom\",\n      \"platform_meeting_id\": \"1234567890\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"http://predovic.org/leila\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"2011-08-19T18:52:38Z\",\n         \"end_times\": 295409726269402937,\n         \"monthly_day\": 4,\n         \"monthly_week\": 1,\n         \"monthly_week_day\": 5,\n         \"repeat_interval\": 3423590977722818127,\n         \"type\": 1,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": false,\n      \"scheduled_end_time\": \"2021-01-01T11:00:00Z\",\n      \"scheduled_start_time\": \"2021-01-01T10:00:00Z\",\n      \"sessions\": [\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"timezone\": \"Atque dolores consequatur qui quod qui.\",\n      \"title\": \"Repellendus eos ut labore quia aut.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true,\n         \"meeting_id\": \"1234567890\",\n         \"passcode\": \"147258\"\n      }\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", body.MeetingUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", body.ProjectUID, goa.FormatUUID))

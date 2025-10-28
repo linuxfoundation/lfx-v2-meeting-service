@@ -28,36 +28,34 @@ const (
 
 // MeetingBase is the key-value store representation of a meeting base.
 type MeetingBase struct {
-	UID                             string       `json:"uid"`
-	ProjectUID                      string       `json:"project_uid"`
-	StartTime                       time.Time    `json:"start_time"`
-	Duration                        int          `json:"duration"`
-	Timezone                        string       `json:"timezone"`
-	Recurrence                      *Recurrence  `json:"recurrence,omitempty"`
-	Title                           string       `json:"title"`
-	Description                     string       `json:"description"`
-	Committees                      []Committee  `json:"committees,omitempty"`
-	Platform                        string       `json:"platform"`
-	EarlyJoinTimeMinutes            int          `json:"early_join_time_minutes,omitempty"`
-	MeetingType                     string       `json:"meeting_type,omitempty"`
-	Visibility                      string       `json:"visibility,omitempty"`
-	Restricted                      bool         `json:"restricted"`
-	ArtifactVisibility              string       `json:"artifact_visibility,omitempty"`
-	PublicLink                      string       `json:"public_link,omitempty"`
-	JoinURL                         string       `json:"join_url,omitempty"`
-	Password                        string       `json:"password,omitempty"`
-	EmailDeliveryErrorCount         int          `json:"email_delivery_error_count,omitempty"`
-	RecordingEnabled                bool         `json:"recording_enabled"`
-	TranscriptEnabled               bool         `json:"transcript_enabled"`
-	YoutubeUploadEnabled            bool         `json:"youtube_upload_enabled"`
-	ZoomConfig                      *ZoomConfig  `json:"zoom_config,omitempty"`
-	RegistrantCount                 int          `json:"registrant_count,omitempty"`
-	RegistrantResponseDeclinedCount int          `json:"registrant_response_declined_count,omitempty"`
-	RegistrantResponseAcceptedCount int          `json:"registrant_response_accepted_count,omitempty"`
-	Occurrences                     []Occurrence `json:"occurrences,omitempty"`
-	IcsSequence                     int          `json:"ics_sequence,omitempty"`
-	CreatedAt                       *time.Time   `json:"created_at,omitempty"`
-	UpdatedAt                       *time.Time   `json:"updated_at,omitempty"`
+	UID                     string       `json:"uid"`
+	ProjectUID              string       `json:"project_uid"`
+	StartTime               time.Time    `json:"start_time"`
+	Duration                int          `json:"duration"`
+	Timezone                string       `json:"timezone"`
+	Recurrence              *Recurrence  `json:"recurrence,omitempty"`
+	Title                   string       `json:"title"`
+	Description             string       `json:"description"`
+	Committees              []Committee  `json:"committees,omitempty"`
+	Platform                string       `json:"platform"`
+	EarlyJoinTimeMinutes    int          `json:"early_join_time_minutes,omitempty"`
+	MeetingType             string       `json:"meeting_type,omitempty"`
+	Visibility              string       `json:"visibility,omitempty"`
+	Restricted              bool         `json:"restricted"`
+	ArtifactVisibility      string       `json:"artifact_visibility,omitempty"`
+	PublicLink              string       `json:"public_link,omitempty"`
+	JoinURL                 string       `json:"join_url,omitempty"`
+	Password                string       `json:"password,omitempty"`
+	EmailDeliveryErrorCount int          `json:"email_delivery_error_count,omitempty"`
+	RecordingEnabled        bool         `json:"recording_enabled"`
+	TranscriptEnabled       bool         `json:"transcript_enabled"`
+	YoutubeUploadEnabled    bool         `json:"youtube_upload_enabled"`
+	ZoomConfig              *ZoomConfig  `json:"zoom_config,omitempty"`
+	RegistrantCount         int          `json:"registrant_count,omitempty"`
+	Occurrences             []Occurrence `json:"occurrences,omitempty"`
+	IcsSequence             int          `json:"ics_sequence,omitempty"`
+	CreatedAt               *time.Time   `json:"created_at,omitempty"`
+	UpdatedAt               *time.Time   `json:"updated_at,omitempty"`
 }
 
 // MeetingSettings is the key-value store representation of a meeting settings.
@@ -88,16 +86,17 @@ type Recurrence struct {
 
 // Occurrence represents a single occurrence of a recurring meeting
 type Occurrence struct {
-	OccurrenceID     string      `json:"occurrence_id"`
-	StartTime        *time.Time  `json:"start_time"`
-	Title            string      `json:"title,omitempty"`
-	Description      string      `json:"description,omitempty"`
-	Duration         int         `json:"duration,omitempty"`
-	Recurrence       *Recurrence `json:"recurrence,omitempty"`
-	RegistrantCount  int         `json:"registrant_count,omitempty"`
-	ResponseCountNo  int         `json:"response_count_no,omitempty"`
-	ResponseCountYes int         `json:"response_count_yes,omitempty"`
-	IsCancelled      bool        `json:"is_cancelled,omitempty"`
+	OccurrenceID       string      `json:"occurrence_id"`
+	StartTime          *time.Time  `json:"start_time"`
+	Title              string      `json:"title,omitempty"`
+	Description        string      `json:"description,omitempty"`
+	Duration           int         `json:"duration,omitempty"`
+	Recurrence         *Recurrence `json:"recurrence,omitempty"`
+	RegistrantCount    int         `json:"registrant_count,omitempty"`
+	ResponseCountNo    int         `json:"response_count_no,omitempty"`
+	ResponseCountYes   int         `json:"response_count_yes,omitempty"`
+	ResponseCountMaybe int         `json:"response_count_maybe,omitempty"`
+	IsCancelled        bool        `json:"is_cancelled,omitempty"`
 }
 
 // ZoomConfig represents Zoom-specific configuration for a meeting

@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|readyz|livez)
 `
 }
 
@@ -126,6 +126,17 @@ func ParseEndpoint(
 		meetingServiceResendMeetingRegistrantInvitationVersionFlag     = meetingServiceResendMeetingRegistrantInvitationFlags.String("version", "", "")
 		meetingServiceResendMeetingRegistrantInvitationBearerTokenFlag = meetingServiceResendMeetingRegistrantInvitationFlags.String("bearer-token", "", "")
 
+		meetingServiceCreateMeetingRsvpFlags           = flag.NewFlagSet("create-meeting-rsvp", flag.ExitOnError)
+		meetingServiceCreateMeetingRsvpBodyFlag        = meetingServiceCreateMeetingRsvpFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateMeetingRsvpMeetingUIDFlag  = meetingServiceCreateMeetingRsvpFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this RSVP is for")
+		meetingServiceCreateMeetingRsvpVersionFlag     = meetingServiceCreateMeetingRsvpFlags.String("version", "", "")
+		meetingServiceCreateMeetingRsvpBearerTokenFlag = meetingServiceCreateMeetingRsvpFlags.String("bearer-token", "", "")
+
+		meetingServiceGetMeetingRsvpsFlags           = flag.NewFlagSet("get-meeting-rsvps", flag.ExitOnError)
+		meetingServiceGetMeetingRsvpsMeetingUIDFlag  = meetingServiceGetMeetingRsvpsFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this RSVP is for")
+		meetingServiceGetMeetingRsvpsVersionFlag     = meetingServiceGetMeetingRsvpsFlags.String("version", "", "")
+		meetingServiceGetMeetingRsvpsBearerTokenFlag = meetingServiceGetMeetingRsvpsFlags.String("bearer-token", "", "")
+
 		meetingServiceZoomWebhookFlags             = flag.NewFlagSet("zoom-webhook", flag.ExitOnError)
 		meetingServiceZoomWebhookBodyFlag          = meetingServiceZoomWebhookFlags.String("body", "REQUIRED", "")
 		meetingServiceZoomWebhookZoomSignatureFlag = meetingServiceZoomWebhookFlags.String("zoom-signature", "REQUIRED", "")
@@ -221,6 +232,8 @@ func ParseEndpoint(
 	meetingServiceUpdateMeetingRegistrantFlags.Usage = meetingServiceUpdateMeetingRegistrantUsage
 	meetingServiceDeleteMeetingRegistrantFlags.Usage = meetingServiceDeleteMeetingRegistrantUsage
 	meetingServiceResendMeetingRegistrantInvitationFlags.Usage = meetingServiceResendMeetingRegistrantInvitationUsage
+	meetingServiceCreateMeetingRsvpFlags.Usage = meetingServiceCreateMeetingRsvpUsage
+	meetingServiceGetMeetingRsvpsFlags.Usage = meetingServiceGetMeetingRsvpsUsage
 	meetingServiceZoomWebhookFlags.Usage = meetingServiceZoomWebhookUsage
 	meetingServiceGetPastMeetingsFlags.Usage = meetingServiceGetPastMeetingsUsage
 	meetingServiceCreatePastMeetingFlags.Usage = meetingServiceCreatePastMeetingUsage
@@ -312,6 +325,12 @@ func ParseEndpoint(
 
 			case "resend-meeting-registrant-invitation":
 				epf = meetingServiceResendMeetingRegistrantInvitationFlags
+
+			case "create-meeting-rsvp":
+				epf = meetingServiceCreateMeetingRsvpFlags
+
+			case "get-meeting-rsvps":
+				epf = meetingServiceGetMeetingRsvpsFlags
 
 			case "zoom-webhook":
 				epf = meetingServiceZoomWebhookFlags
@@ -425,6 +444,12 @@ func ParseEndpoint(
 			case "resend-meeting-registrant-invitation":
 				endpoint = c.ResendMeetingRegistrantInvitation()
 				data, err = meetingservicec.BuildResendMeetingRegistrantInvitationPayload(*meetingServiceResendMeetingRegistrantInvitationMeetingUIDFlag, *meetingServiceResendMeetingRegistrantInvitationUIDFlag, *meetingServiceResendMeetingRegistrantInvitationVersionFlag, *meetingServiceResendMeetingRegistrantInvitationBearerTokenFlag)
+			case "create-meeting-rsvp":
+				endpoint = c.CreateMeetingRsvp()
+				data, err = meetingservicec.BuildCreateMeetingRsvpPayload(*meetingServiceCreateMeetingRsvpBodyFlag, *meetingServiceCreateMeetingRsvpMeetingUIDFlag, *meetingServiceCreateMeetingRsvpVersionFlag, *meetingServiceCreateMeetingRsvpBearerTokenFlag)
+			case "get-meeting-rsvps":
+				endpoint = c.GetMeetingRsvps()
+				data, err = meetingservicec.BuildGetMeetingRsvpsPayload(*meetingServiceGetMeetingRsvpsMeetingUIDFlag, *meetingServiceGetMeetingRsvpsVersionFlag, *meetingServiceGetMeetingRsvpsBearerTokenFlag)
 			case "zoom-webhook":
 				endpoint = c.ZoomWebhook()
 				data, err = meetingservicec.BuildZoomWebhookPayload(*meetingServiceZoomWebhookBodyFlag, *meetingServiceZoomWebhookZoomSignatureFlag, *meetingServiceZoomWebhookZoomTimestampFlag)
@@ -501,6 +526,8 @@ COMMAND:
     update-meeting-registrant: Update an existing registrant for a meeting
     delete-meeting-registrant: Delete a registrant from a meeting
     resend-meeting-registrant-invitation: Resend an invitation email to a meeting registrant
+    create-meeting-rsvp: Create or update an RSVP response for a meeting. Username is automatically extracted from the JWT token. The most recent RSVP takes precedence.
+    get-meeting-rsvps: Get all RSVP responses for a meeting (organizers only)
     zoom-webhook: Handle Zoom webhook events for meeting lifecycle, participants, and recordings.
     get-past-meetings: Get all past meetings.
     create-past-meeting: Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.
@@ -544,71 +571,72 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
          }
       ],
-      "description": "Quis est est molestias eligendi nulla porro.",
-      "duration": 254,
-      "early_join_time_minutes": 55,
-      "meeting_type": "Other",
+      "description": "Nobis libero nihil aliquam deleniti.",
+      "duration": 115,
+      "early_join_time_minutes": 12,
+      "meeting_type": "None",
       "organizers": [
-         "Sit ad maiores id velit ratione et.",
-         "Et illo similique qui est."
+         "Ratione et nam et illo.",
+         "Qui est quod nihil voluptas.",
+         "Et ex sapiente libero."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1982-02-16T02:33:37Z",
-         "end_times": 748992484864519505,
-         "monthly_day": 26,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 7700406239905879971,
-         "type": 3,
+         "end_date_time": "2011-08-19T18:52:38Z",
+         "end_times": 295409726269402937,
+         "monthly_day": 4,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 3423590977722818127,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
       "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Quasi dolor facilis exercitationem rem.",
-      "title": "Et dolor.",
+      "timezone": "Enim doloremque.",
+      "title": "Est molestias eligendi nulla porro necessitatibus et.",
       "transcript_enabled": false,
-      "visibility": "private",
-      "youtube_upload_enabled": true,
+      "visibility": "public",
+      "youtube_upload_enabled": false,
       "zoom_config": {
-         "ai_companion_enabled": true,
+         "ai_companion_enabled": false,
          "ai_summary_require_approval": true
       }
    }' --version "1" --bearer-token "eyJhbGci..."
@@ -666,59 +694,51 @@ Update an existing meeting base.
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_participants",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
-               "Ut ut voluptatem.",
-               "Debitis et et."
-            ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
          }
       ],
-      "description": "Et nihil repellat totam officiis enim veritatis.",
-      "duration": 507,
-      "early_join_time_minutes": 44,
-      "meeting_type": "Maintainers",
+      "description": "Repudiandae et.",
+      "duration": 295,
+      "early_join_time_minutes": 40,
+      "meeting_type": "Board",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "recording_enabled": true,
+      "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1982-02-16T02:33:37Z",
-         "end_times": 748992484864519505,
-         "monthly_day": 26,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 7700406239905879971,
-         "type": 3,
+         "end_date_time": "2011-08-19T18:52:38Z",
+         "end_times": 295409726269402937,
+         "monthly_day": 4,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 3423590977722818127,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Laboriosam ea qui quia maiores.",
-      "title": "Dolore omnis fugiat.",
+      "timezone": "Repellendus reiciendis sint laboriosam ea qui.",
+      "title": "Maiores veniam dolore omnis.",
       "transcript_enabled": true,
-      "visibility": "private",
+      "visibility": "public",
       "youtube_upload_enabled": false,
       "zoom_config": {
-         "ai_companion_enabled": true,
+         "ai_companion_enabled": false,
          "ai_summary_require_approval": true
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
@@ -738,8 +758,9 @@ Update an existing meeting's settings.
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
       "organizers": [
-         "Sed asperiores ipsa eveniet sed.",
-         "Molestiae et facilis."
+         "Similique natus minus voluptas ut corrupti.",
+         "Blanditiis qui explicabo quae quae.",
+         "Sed asperiores ipsa eveniet sed."
       ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -790,8 +811,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Debitis voluptas est ut possimus.",
-      "username": "Quo ipsum commodi vel."
+      "org_name": "Ut possimus aut quo.",
+      "username": "Commodi vel ullam quo porro."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -865,6 +886,39 @@ Example:
 `, os.Args[0])
 }
 
+func meetingServiceCreateMeetingRsvpUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-rsvp -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
+
+Create or update an RSVP response for a meeting. Username is automatically extracted from the JWT token. The most recent RSVP takes precedence.
+    -body JSON: 
+    -meeting-uid STRING: The UID of the meeting this RSVP is for
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service create-meeting-rsvp --body '{
+      "occurrence_id": "1640995200",
+      "registrant_id": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
+      "response": "accepted",
+      "scope": "all",
+      "username": "jdoe"
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceGetMeetingRsvpsUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-meeting-rsvps -meeting-uid STRING -version STRING -bearer-token STRING
+
+Get all RSVP responses for a meeting (organizers only)
+    -meeting-uid STRING: The UID of the meeting this RSVP is for
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-meeting-rsvps --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
 func meetingServiceZoomWebhookUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service zoom-webhook -body JSON -zoom-signature STRING -zoom-timestamp STRING
 
@@ -877,8 +931,8 @@ Example:
     %[1]s meeting-service zoom-webhook --body '{
       "event": "meeting.started",
       "event_ts": 1609459200000,
-      "payload": "Rerum voluptas consequatur nisi ut accusantium quaerat."
-   }' --zoom-signature "Aperiam dolor voluptatem id amet est laboriosam." --zoom-timestamp "Sit autem consequatur."
+      "payload": "Voluptas consequatur."
+   }' --zoom-signature "Ut accusantium quaerat illum aperiam dolor." --zoom-timestamp "Id amet est laboriosam."
 `, os.Args[0])
 }
 
@@ -904,47 +958,63 @@ Create a new past meeting record. This allows manual addition of past meetings t
 
 Example:
     %[1]s meeting-service create-past-meeting --body '{
-      "artifact_visibility": "meeting_hosts",
+      "artifact_visibility": "public",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Earum et nemo omnis.",
                "Ut ut voluptatem.",
-               "Debitis et et."
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Ab nobis libero nihil aliquam."
+            "uid": "Et nemo."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
+            ],
+            "uid": "Et nemo."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
+            ],
+            "uid": "Et nemo."
          }
       ],
-      "description": "Fugit architecto ea fugiat reiciendis omnis.",
-      "duration": 74,
-      "early_join_time_minutes": 34,
-      "meeting_type": "Other",
+      "description": "Modi fugit architecto.",
+      "duration": 204,
+      "early_join_time_minutes": 56,
+      "meeting_type": "Marketing",
       "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "occurrence_id": "1640995200",
       "platform": "Zoom",
       "platform_meeting_id": "1234567890",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "http://maggio.com/ressie_schuppe",
-      "recording_enabled": true,
+      "public_link": "http://predovic.org/leila",
+      "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1982-02-16T02:33:37Z",
-         "end_times": 748992484864519505,
-         "monthly_day": 26,
-         "monthly_week": -1,
-         "monthly_week_day": 6,
-         "repeat_interval": 7700406239905879971,
-         "type": 3,
+         "end_date_time": "2011-08-19T18:52:38Z",
+         "end_times": 295409726269402937,
+         "monthly_day": 4,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 3423590977722818127,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "scheduled_end_time": "2021-01-01T11:00:00Z",
       "scheduled_start_time": "2021-01-01T10:00:00Z",
       "sessions": [
@@ -957,11 +1027,21 @@ Example:
             "end_time": "2021-01-01T11:00:00Z",
             "start_time": "2021-01-01T10:00:00Z",
             "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
+         },
+         {
+            "end_time": "2021-01-01T11:00:00Z",
+            "start_time": "2021-01-01T10:00:00Z",
+            "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
+         },
+         {
+            "end_time": "2021-01-01T11:00:00Z",
+            "start_time": "2021-01-01T10:00:00Z",
+            "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
          }
       ],
-      "timezone": "Qui voluptas repellendus eos ut labore.",
-      "title": "Aut asperiores.",
-      "transcript_enabled": false,
+      "timezone": "Atque dolores consequatur qui quod qui.",
+      "title": "Repellendus eos ut labore quia aut.",
+      "transcript_enabled": true,
       "visibility": "public",
       "youtube_upload_enabled": true,
       "zoom_config": {

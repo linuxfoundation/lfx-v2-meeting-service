@@ -41,6 +41,12 @@ type contextPrincipal string
 // PrincipalContextID is the context ID for the principal
 const PrincipalContextID contextPrincipal = "x-on-behalf-of"
 
+// contextUsername is the type for the username context key
+type contextUsername string
+
+// UsernameContextID is the context ID for the authenticated username from JWT
+const UsernameContextID contextUsername = "username"
+
 type contextEtag string
 
 // ETagContextID is the context ID for the ETag

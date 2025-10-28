@@ -22,7 +22,7 @@ type PastMeetingParticipantService struct {
 	meetingRepository                domain.MeetingRepository
 	pastMeetingRepository            domain.PastMeetingRepository
 	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository
-	messageBuilder                   domain.MessageBuilder
+	messageSender                    domain.PastMeetingParticipantMessageSender
 	config                           ServiceConfig
 }
 
@@ -31,7 +31,7 @@ func NewPastMeetingParticipantService(
 	meetingRepository domain.MeetingRepository,
 	pastMeetingRepository domain.PastMeetingRepository,
 	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository,
-	messageBuilder domain.MessageBuilder,
+	messageSender domain.PastMeetingParticipantMessageSender,
 	config ServiceConfig,
 ) *PastMeetingParticipantService {
 	return &PastMeetingParticipantService{
@@ -39,7 +39,7 @@ func NewPastMeetingParticipantService(
 		meetingRepository:                meetingRepository,
 		pastMeetingRepository:            pastMeetingRepository,
 		pastMeetingParticipantRepository: pastMeetingParticipantRepository,
-		messageBuilder:                   messageBuilder,
+		messageSender:                    messageSender,
 	}
 }
 
@@ -47,7 +47,7 @@ func NewPastMeetingParticipantService(
 func (s *PastMeetingParticipantService) ServiceReady() bool {
 	return s.pastMeetingRepository != nil &&
 		s.pastMeetingParticipantRepository != nil &&
-		s.messageBuilder != nil
+		s.messageSender != nil
 }
 
 // ListPastMeetingParticipants fetches all participants for a past meeting
@@ -167,10 +167,10 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant)
+			return s.messageSender.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant)
 		},
 		func() error {
-			return s.messageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+			return s.messageSender.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
 				UID:                participant.UID,
 				PastMeetingUID:     participant.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
@@ -332,10 +332,10 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeetingParticipant(ctx, models.ActionUpdated, *participant)
+			return s.messageSender.SendIndexPastMeetingParticipant(ctx, models.ActionUpdated, *participant)
 		},
 		func() error {
-			return s.messageBuilder.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+			return s.messageSender.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
 				UID:                participant.UID,
 				PastMeetingUID:     participant.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
@@ -416,10 +416,10 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendDeleteIndexPastMeetingParticipant(ctx, participantUID)
+			return s.messageSender.SendDeleteIndexPastMeetingParticipant(ctx, participantUID)
 		},
 		func() error {
-			return s.messageBuilder.SendRemovePastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
+			return s.messageSender.SendRemovePastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
 				UID:                participantUID,
 				PastMeetingUID:     participant.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,

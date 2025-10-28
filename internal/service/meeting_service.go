@@ -24,27 +24,33 @@ import (
 
 // MeetingsService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingService struct {
-	meetingRepository domain.MeetingRepository
-	messageBuilder    domain.MessageBuilder
-	platformRegistry  domain.PlatformRegistry
-	occurrenceService domain.OccurrenceService
-	config            ServiceConfig
+	meetingRepository     domain.MeetingRepository
+	meetingRSVPRepository domain.MeetingRSVPRepository
+	messageSender         domain.MeetingMessageSender
+	externalClient        domain.ExternalServiceClient
+	platformRegistry      domain.PlatformRegistry
+	occurrenceService     domain.OccurrenceService
+	config                ServiceConfig
 }
 
 // NewMeetingsService creates a new MeetingsService.
 func NewMeetingService(
 	meetingRepository domain.MeetingRepository,
-	messageBuilder domain.MessageBuilder,
+	meetingRSVPRepository domain.MeetingRSVPRepository,
+	messageSender domain.MeetingMessageSender,
+	externalClient domain.ExternalServiceClient,
 	platformRegistry domain.PlatformRegistry,
 	occurrenceService domain.OccurrenceService,
 	config ServiceConfig,
 ) *MeetingService {
 	return &MeetingService{
-		meetingRepository: meetingRepository,
-		messageBuilder:    messageBuilder,
-		platformRegistry:  platformRegistry,
-		occurrenceService: occurrenceService,
-		config:            config,
+		meetingRepository:     meetingRepository,
+		meetingRSVPRepository: meetingRSVPRepository,
+		messageSender:         messageSender,
+		externalClient:        externalClient,
+		platformRegistry:      platformRegistry,
+		occurrenceService:     occurrenceService,
+		config:                config,
 	}
 }
 
@@ -109,9 +115,118 @@ func detectMeetingBaseChanges(oldMeeting, newMeeting *models.MeetingBase) map[st
 // ServiceReady checks if the service is ready for use.
 func (s *MeetingService) ServiceReady() bool {
 	return s.meetingRepository != nil &&
-		s.messageBuilder != nil &&
+		s.messageSender != nil &&
+		s.externalClient != nil &&
 		s.platformRegistry != nil &&
 		s.occurrenceService != nil
+}
+
+// calculateOccurrenceCounts calculates RSVP response counts for each occurrence based on RSVP scopes.
+// This method modifies the occurrences slice in-place, updating the count fields for each occurrence.
+// When multiple RSVPs exist per registrant, the most recent RSVP wins (based on UpdatedAt/CreatedAt).
+func (s *MeetingService) calculateOccurrenceCounts(ctx context.Context, meetingUID string, occurrences []models.Occurrence) error {
+	// If RSVP repository is not available, skip count calculation
+	if s.meetingRSVPRepository == nil {
+		return nil
+	}
+
+	// Get all RSVPs for this meeting
+	rsvps, err := s.meetingRSVPRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		// Don't fail the entire operation if we can't get RSVPs
+		slog.WarnContext(ctx, "failed to get RSVPs for occurrence count calculation", logging.ErrKey, err)
+		return nil
+	}
+
+	// Group RSVPs by registrant for recency-based resolution
+	rsvpsByRegistrant := make(map[string][]*models.RSVPResponse)
+	for _, rsvp := range rsvps {
+		rsvpsByRegistrant[rsvp.RegistrantID] = append(rsvpsByRegistrant[rsvp.RegistrantID], rsvp)
+	}
+
+	// For each occurrence, calculate counts based on most recent RSVP per registrant
+	for i := range occurrences {
+		occurrence := &occurrences[i]
+		var acceptedCount, maybeCount, declinedCount int
+
+		// For each registrant, find the most recent RSVP that applies to this occurrence
+		for _, registrantRSVPs := range rsvpsByRegistrant {
+			effectiveRSVP := s.getMostRecentApplicableRSVP(registrantRSVPs, occurrence.OccurrenceID)
+			if effectiveRSVP != nil {
+				switch effectiveRSVP.Response {
+				case models.RSVPResponseAccepted:
+					acceptedCount++
+				case models.RSVPResponseMaybe:
+					maybeCount++
+				case models.RSVPResponseDeclined:
+					declinedCount++
+				}
+			}
+		}
+
+		// Update occurrence counts
+		occurrence.ResponseCountYes = acceptedCount
+		occurrence.ResponseCountMaybe = maybeCount
+		occurrence.ResponseCountNo = declinedCount
+	}
+
+	return nil
+}
+
+// getMostRecentApplicableRSVP finds the most recent RSVP that applies to the given occurrence.
+// "Most recent" is determined by UpdatedAt (or CreatedAt if UpdatedAt is nil).
+// This implements the "most recent wins" rule across all scopes.
+func (s *MeetingService) getMostRecentApplicableRSVP(rsvps []*models.RSVPResponse, occurrenceID string) *models.RSVPResponse {
+	var mostRecent *models.RSVPResponse
+	var mostRecentTime time.Time
+
+	for _, rsvp := range rsvps {
+		// Check if this RSVP applies to the occurrence
+		if !s.rsvpAppliesToOccurrence(rsvp, occurrenceID) {
+			continue
+		}
+
+		// Determine the timestamp for this RSVP (prefer UpdatedAt, fallback to CreatedAt)
+		var rsvpTime time.Time
+		if rsvp.UpdatedAt != nil {
+			rsvpTime = *rsvp.UpdatedAt
+		} else if rsvp.CreatedAt != nil {
+			rsvpTime = *rsvp.CreatedAt
+		} else {
+			// Skip RSVPs with no timestamp
+			continue
+		}
+
+		// Keep the most recent one
+		if mostRecent == nil || rsvpTime.After(mostRecentTime) {
+			mostRecent = rsvp
+			mostRecentTime = rsvpTime
+		}
+	}
+
+	return mostRecent
+}
+
+// rsvpAppliesToOccurrence determines if an RSVP applies to a specific occurrence based on its scope
+func (s *MeetingService) rsvpAppliesToOccurrence(rsvp *models.RSVPResponse, occurrenceID string) bool {
+	switch rsvp.Scope {
+	case models.RSVPScopeAll:
+		// RSVP applies to all occurrences
+		return true
+	case models.RSVPScopeSingle:
+		// RSVP applies only to the specific occurrence
+		return rsvp.OccurrenceID != nil && *rsvp.OccurrenceID == occurrenceID
+	case models.RSVPScopeThisAndFollowing:
+		// RSVP applies to the occurrence and all following ones
+		// Occurrence IDs are Unix timestamps as strings, so we can compare them lexicographically
+		// since larger timestamps come later
+		if rsvp.OccurrenceID == nil {
+			return false
+		}
+		return occurrenceID >= *rsvp.OccurrenceID
+	default:
+		return false
+	}
 }
 
 // ListMeetings fetches all meetings
@@ -144,6 +259,11 @@ func (s *MeetingService) ListMeetings(ctx context.Context) ([]*models.MeetingFul
 			settings = settingsByUID[meeting.UID]
 			// Calculate next 50 occurrences from current time
 			meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+			// Calculate RSVP counts for each occurrence based on RSVP scopes
+			if err := s.calculateOccurrenceCounts(ctx, meeting.UID, meeting.Occurrences); err != nil {
+				slog.WarnContext(ctx, "failed to calculate occurrence counts", logging.ErrKey, err, "meeting_uid", meeting.UID)
+				// Don't fail the operation if count calculation fails
+			}
 		}
 		meetings[i] = &models.MeetingFull{
 			Base:     meeting,
@@ -177,6 +297,11 @@ func (s *MeetingService) ListMeetingsByCommittee(ctx context.Context, committeeU
 	for _, meeting := range meetings {
 		if meeting != nil {
 			meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+			// Calculate RSVP counts for each occurrence based on RSVP scopes
+			if err := s.calculateOccurrenceCounts(ctx, meeting.UID, meeting.Occurrences); err != nil {
+				slog.WarnContext(ctx, "failed to calculate occurrence counts", logging.ErrKey, err, "meeting_uid", meeting.UID)
+				// Don't fail the operation if count calculation fails
+			}
 		}
 	}
 
@@ -210,7 +335,7 @@ func (s *MeetingService) validateCommittees(ctx context.Context, committees []mo
 			continue
 		}
 
-		_, err := s.messageBuilder.GetCommitteeName(ctx, committee.UID)
+		_, err := s.externalClient.GetCommitteeName(ctx, committee.UID)
 		if err != nil {
 			var committeNotFoundErr *messaging.CommitteeNotFoundError
 			if errors.As(err, &committeNotFoundErr) {
@@ -236,7 +361,7 @@ func (s *MeetingService) validateProject(ctx context.Context, projectUID string)
 		return nil
 	}
 
-	_, err := s.messageBuilder.GetProjectName(ctx, projectUID)
+	_, err := s.externalClient.GetProjectName(ctx, projectUID)
 	if err != nil {
 		var projectNotFoundErr *messaging.ProjectNotFoundError
 		if errors.As(err, &projectNotFoundErr) {
@@ -334,10 +459,10 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexMeeting(ctx, models.ActionCreated, *reqMeeting.Base)
+			return s.messageSender.SendIndexMeeting(ctx, models.ActionCreated, *reqMeeting.Base)
 		},
 		func() error {
-			return s.messageBuilder.SendIndexMeetingSettings(ctx, models.ActionCreated, *reqMeeting.Settings)
+			return s.messageSender.SendIndexMeetingSettings(ctx, models.ActionCreated, *reqMeeting.Settings)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -346,7 +471,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 				committees[i] = committee.UID
 			}
 
-			return s.messageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+			return s.messageSender.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        reqMeeting.Base.UID,
 				Public:     reqMeeting.Base.IsPublic(),
 				ProjectUID: reqMeeting.Base.ProjectUID,
@@ -355,7 +480,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 			})
 		},
 		func() error {
-			return s.messageBuilder.SendMeetingCreated(ctx, models.MeetingCreatedMessage{
+			return s.messageSender.SendMeetingCreated(ctx, models.MeetingCreatedMessage{
 				MeetingUID: reqMeeting.Base.UID,
 				Base:       reqMeeting.Base,
 				Settings:   reqMeeting.Settings,
@@ -394,6 +519,12 @@ func (s *MeetingService) GetMeetingBase(ctx context.Context, uid string) (*model
 	currentTime := time.Now()
 	meetingDB.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meetingDB, currentTime, 50)
 
+	// Calculate RSVP counts for each occurrence based on RSVP scopes
+	if err := s.calculateOccurrenceCounts(ctx, uid, meetingDB.Occurrences); err != nil {
+		slog.WarnContext(ctx, "failed to calculate occurrence counts", logging.ErrKey, err)
+		// Don't fail the operation if count calculation fails
+	}
+
 	slog.DebugContext(ctx, "returning meeting", "meeting", meetingDB, "revision", revision)
 
 	return meetingDB, revisionStr, nil
@@ -419,6 +550,12 @@ func (s *MeetingService) GetMeetingByPlatformMeetingID(ctx context.Context, plat
 		// Calculate next 50 occurrences from current time
 		currentTime := time.Now()
 		meeting.Occurrences = s.occurrenceService.CalculateOccurrencesFromDate(meeting, currentTime, 50)
+
+		// Calculate RSVP counts for each occurrence based on RSVP scopes
+		if err := s.calculateOccurrenceCounts(ctx, meeting.UID, meeting.Occurrences); err != nil {
+			slog.WarnContext(ctx, "failed to calculate occurrence counts", logging.ErrKey, err)
+			// Don't fail the operation if count calculation fails
+		}
 
 		slog.DebugContext(ctx, "returning meeting by Zoom meeting ID", "meeting_uid", meeting.UID)
 		return meeting, nil
@@ -590,7 +727,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting)
+			return s.messageSender.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -599,7 +736,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 				committees[i] = committee.UID
 			}
 
-			return s.messageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+			return s.messageSender.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        reqMeeting.UID,
 				Public:     reqMeeting.IsPublic(),
 				ProjectUID: reqMeeting.ProjectUID,
@@ -608,7 +745,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 			})
 		},
 		func() error {
-			return s.messageBuilder.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
+			return s.messageSender.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
 				MeetingUID:   reqMeeting.UID,
 				UpdatedBase:  reqMeeting,
 				PreviousBase: existingMeetingDB,
@@ -671,7 +808,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexMeetingSettings(ctx, models.ActionUpdated, *reqSettings)
+			return s.messageSender.SendIndexMeetingSettings(ctx, models.ActionUpdated, *reqSettings)
 		},
 		func() error {
 			// Get the meeting base data to send access update message
@@ -689,7 +826,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 				committees[i] = committee.UID
 			}
 
-			return s.messageBuilder.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
+			return s.messageSender.SendUpdateAccessMeeting(ctx, models.MeetingAccessMessage{
 				UID:        meetingDB.UID,
 				Public:     meetingDB.IsPublic(),
 				ProjectUID: meetingDB.ProjectUID,
@@ -768,7 +905,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 	}
 
 	// Send meeting deletion message to trigger registrant cleanup
-	err = s.messageBuilder.SendMeetingDeleted(ctx, models.MeetingDeletedMessage{
+	err = s.messageSender.SendMeetingDeleted(ctx, models.MeetingDeletedMessage{
 		MeetingUID: uid,
 		Meeting:    meetingDB,
 	})
@@ -782,13 +919,13 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendDeleteIndexMeeting(ctx, uid)
+			return s.messageSender.SendDeleteIndexMeeting(ctx, uid)
 		},
 		func() error {
-			return s.messageBuilder.SendDeleteIndexMeetingSettings(ctx, uid)
+			return s.messageSender.SendDeleteIndexMeetingSettings(ctx, uid)
 		},
 		func() error {
-			return s.messageBuilder.SendDeleteAllAccessMeeting(ctx, uid)
+			return s.messageSender.SendDeleteAllAccessMeeting(ctx, uid)
 		},
 	}
 

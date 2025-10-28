@@ -17,8 +17,9 @@ import (
 )
 
 // setupServiceForTesting creates a MeetingService with all mock dependencies for testing
-func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMessageBuilder) {
+func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *mocks.MockMeetingRSVPRepository, *mocks.MockMessageBuilder) {
 	mockRepo := new(mocks.MockMeetingRepository)
+	mockRSVPRepo := new(mocks.MockMeetingRSVPRepository)
 	mockBuilder := new(mocks.MockMessageBuilder)
 	mockPlatformRegistry := new(mocks.MockPlatformRegistry)
 	occurrenceService := NewOccurrenceService()
@@ -27,15 +28,21 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 		SkipEtagValidation: false,
 	}
 
+	// Set up default expectations for RSVP repository
+	// By default, return empty RSVP list for any meeting (tests can override this)
+	mockRSVPRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.RSVPResponse{}, nil).Maybe()
+
 	service := NewMeetingService(
 		mockRepo,
+		mockRSVPRepo,
+		mockBuilder,
 		mockBuilder,
 		mockPlatformRegistry,
 		occurrenceService,
 		config,
 	)
 
-	return service, mockRepo, mockBuilder
+	return service, mockRepo, mockRSVPRepo, mockBuilder
 }
 
 func TestMeetingsService_GetMeetings(t *testing.T) {
@@ -126,7 +133,7 @@ func TestMeetingsService_GetMeetings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder := setupServiceForTesting()
+			service, mockRepo, _, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.meetingRepository = nil
@@ -264,7 +271,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder := setupServiceForTesting()
+			service, mockRepo, _, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.meetingRepository = nil
@@ -363,7 +370,7 @@ func TestMeetingsService_GetMeetingBase(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder := setupServiceForTesting()
+			service, mockRepo, _, mockBuilder := setupServiceForTesting()
 			tt.setupMocks(mockRepo, mockBuilder)
 
 			result, etag, err := service.GetMeetingBase(context.Background(), tt.uid)
@@ -450,7 +457,7 @@ func TestMeetingsService_GetMeetingSettings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder := setupServiceForTesting()
+			service, mockRepo, _, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.meetingRepository = nil
@@ -593,7 +600,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockRepo, mockBuilder := setupServiceForTesting()
+			service, mockRepo, _, mockBuilder := setupServiceForTesting()
 
 			if tt.name == "service not ready" {
 				service.meetingRepository = nil

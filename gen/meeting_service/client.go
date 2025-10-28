@@ -29,6 +29,8 @@ type Client struct {
 	UpdateMeetingRegistrantEndpoint           goa.Endpoint
 	DeleteMeetingRegistrantEndpoint           goa.Endpoint
 	ResendMeetingRegistrantInvitationEndpoint goa.Endpoint
+	CreateMeetingRsvpEndpoint                 goa.Endpoint
+	GetMeetingRsvpsEndpoint                   goa.Endpoint
 	ZoomWebhookEndpoint                       goa.Endpoint
 	GetPastMeetingsEndpoint                   goa.Endpoint
 	CreatePastMeetingEndpoint                 goa.Endpoint
@@ -47,7 +49,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -63,6 +65,8 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		UpdateMeetingRegistrantEndpoint:           updateMeetingRegistrant,
 		DeleteMeetingRegistrantEndpoint:           deleteMeetingRegistrant,
 		ResendMeetingRegistrantInvitationEndpoint: resendMeetingRegistrantInvitation,
+		CreateMeetingRsvpEndpoint:                 createMeetingRsvp,
+		GetMeetingRsvpsEndpoint:                   getMeetingRsvps,
 		ZoomWebhookEndpoint:                       zoomWebhook,
 		GetPastMeetingsEndpoint:                   getPastMeetings,
 		CreatePastMeetingEndpoint:                 createPastMeeting,
@@ -304,6 +308,40 @@ func (c *Client) DeleteMeetingRegistrant(ctx context.Context, p *DeleteMeetingRe
 func (c *Client) ResendMeetingRegistrantInvitation(ctx context.Context, p *ResendMeetingRegistrantInvitationPayload) (err error) {
 	_, err = c.ResendMeetingRegistrantInvitationEndpoint(ctx, p)
 	return
+}
+
+// CreateMeetingRsvp calls the "create-meeting-rsvp" endpoint of the "Meeting
+// Service" service.
+// CreateMeetingRsvp may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request - invalid scope or missing occurrence_id
+//   - "NotFound" (type *NotFoundError): Meeting or registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateMeetingRsvp(ctx context.Context, p *CreateMeetingRsvpPayload) (res *RSVPResponse, err error) {
+	var ires any
+	ires, err = c.CreateMeetingRsvpEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*RSVPResponse), nil
+}
+
+// GetMeetingRsvps calls the "get-meeting-rsvps" endpoint of the "Meeting
+// Service" service.
+// GetMeetingRsvps may return the following errors:
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetMeetingRsvps(ctx context.Context, p *GetMeetingRsvpsPayload) (res *RSVPListResult, err error) {
+	var ires any
+	ires, err = c.GetMeetingRsvpsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*RSVPListResult), nil
 }
 
 // ZoomWebhook calls the "zoom-webhook" endpoint of the "Meeting Service"

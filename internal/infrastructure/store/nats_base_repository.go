@@ -21,6 +21,7 @@ const (
 	KVStoreNameMeetings                = "meetings"
 	KVStoreNameMeetingSettings         = "meeting-settings"
 	KVStoreNameMeetingRegistrants      = "meeting-registrants"
+	KVStoreNameMeetingRSVPs            = "meeting-rsvps"
 	KVStoreNamePastMeetings            = "past-meetings"
 	KVStoreNamePastMeetingParticipants = "past-meeting-participants"
 	KVStoreNamePastMeetingRecordings   = "past-meeting-recordings"

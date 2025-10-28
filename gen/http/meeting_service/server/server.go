@@ -34,6 +34,8 @@ type Server struct {
 	UpdateMeetingRegistrant           http.Handler
 	DeleteMeetingRegistrant           http.Handler
 	ResendMeetingRegistrantInvitation http.Handler
+	CreateMeetingRsvp                 http.Handler
+	GetMeetingRsvps                   http.Handler
 	ZoomWebhook                       http.Handler
 	GetPastMeetings                   http.Handler
 	CreatePastMeeting                 http.Handler
@@ -116,6 +118,8 @@ func New(
 			{"UpdateMeetingRegistrant", "PUT", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"DeleteMeetingRegistrant", "DELETE", "/meetings/{meeting_uid}/registrants/{uid}"},
 			{"ResendMeetingRegistrantInvitation", "POST", "/meetings/{meeting_uid}/registrants/{uid}/resend"},
+			{"CreateMeetingRsvp", "POST", "/meetings/{meeting_uid}/rsvp"},
+			{"GetMeetingRsvps", "GET", "/meetings/{meeting_uid}/rsvp"},
 			{"ZoomWebhook", "POST", "/webhooks/zoom"},
 			{"GetPastMeetings", "GET", "/past_meetings"},
 			{"CreatePastMeeting", "POST", "/past_meetings"},
@@ -150,6 +154,8 @@ func New(
 		UpdateMeetingRegistrant:           NewUpdateMeetingRegistrantHandler(e.UpdateMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
 		DeleteMeetingRegistrant:           NewDeleteMeetingRegistrantHandler(e.DeleteMeetingRegistrant, mux, decoder, encoder, errhandler, formatter),
 		ResendMeetingRegistrantInvitation: NewResendMeetingRegistrantInvitationHandler(e.ResendMeetingRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
+		CreateMeetingRsvp:                 NewCreateMeetingRsvpHandler(e.CreateMeetingRsvp, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingRsvps:                   NewGetMeetingRsvpsHandler(e.GetMeetingRsvps, mux, decoder, encoder, errhandler, formatter),
 		ZoomWebhook:                       NewZoomWebhookHandler(e.ZoomWebhook, mux, decoder, encoder, errhandler, formatter),
 		GetPastMeetings:                   NewGetPastMeetingsHandler(e.GetPastMeetings, mux, decoder, encoder, errhandler, formatter),
 		CreatePastMeeting:                 NewCreatePastMeetingHandler(e.CreatePastMeeting, mux, decoder, encoder, errhandler, formatter),
@@ -191,6 +197,8 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UpdateMeetingRegistrant = m(s.UpdateMeetingRegistrant)
 	s.DeleteMeetingRegistrant = m(s.DeleteMeetingRegistrant)
 	s.ResendMeetingRegistrantInvitation = m(s.ResendMeetingRegistrantInvitation)
+	s.CreateMeetingRsvp = m(s.CreateMeetingRsvp)
+	s.GetMeetingRsvps = m(s.GetMeetingRsvps)
 	s.ZoomWebhook = m(s.ZoomWebhook)
 	s.GetPastMeetings = m(s.GetPastMeetings)
 	s.CreatePastMeeting = m(s.CreatePastMeeting)
@@ -227,6 +235,8 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountUpdateMeetingRegistrantHandler(mux, h.UpdateMeetingRegistrant)
 	MountDeleteMeetingRegistrantHandler(mux, h.DeleteMeetingRegistrant)
 	MountResendMeetingRegistrantInvitationHandler(mux, h.ResendMeetingRegistrantInvitation)
+	MountCreateMeetingRsvpHandler(mux, h.CreateMeetingRsvp)
+	MountGetMeetingRsvpsHandler(mux, h.GetMeetingRsvps)
 	MountZoomWebhookHandler(mux, h.ZoomWebhook)
 	MountGetPastMeetingsHandler(mux, h.GetPastMeetings)
 	MountCreatePastMeetingHandler(mux, h.CreatePastMeeting)
@@ -957,6 +967,109 @@ func NewResendMeetingRegistrantInvitationHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "resend-meeting-registrant-invitation")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountCreateMeetingRsvpHandler configures the mux to serve the "Meeting
+// Service" service "create-meeting-rsvp" endpoint.
+func MountCreateMeetingRsvpHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/meetings/{meeting_uid}/rsvp", f)
+}
+
+// NewCreateMeetingRsvpHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "create-meeting-rsvp"
+// endpoint.
+func NewCreateMeetingRsvpHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreateMeetingRsvpRequest(mux, decoder)
+		encodeResponse = EncodeCreateMeetingRsvpResponse(encoder)
+		encodeError    = EncodeCreateMeetingRsvpError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "create-meeting-rsvp")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetMeetingRsvpsHandler configures the mux to serve the "Meeting
+// Service" service "get-meeting-rsvps" endpoint.
+func MountGetMeetingRsvpsHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/meetings/{meeting_uid}/rsvp", f)
+}
+
+// NewGetMeetingRsvpsHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "get-meeting-rsvps" endpoint.
+func NewGetMeetingRsvpsHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetMeetingRsvpsRequest(mux, decoder)
+		encodeResponse = EncodeGetMeetingRsvpsResponse(encoder)
+		encodeError    = EncodeGetMeetingRsvpsError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting-rsvps")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

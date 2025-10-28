@@ -73,6 +73,14 @@ type Client struct {
 	// requests to the resend-meeting-registrant-invitation endpoint.
 	ResendMeetingRegistrantInvitationDoer goahttp.Doer
 
+	// CreateMeetingRsvp Doer is the HTTP client used to make requests to the
+	// create-meeting-rsvp endpoint.
+	CreateMeetingRsvpDoer goahttp.Doer
+
+	// GetMeetingRsvps Doer is the HTTP client used to make requests to the
+	// get-meeting-rsvps endpoint.
+	GetMeetingRsvpsDoer goahttp.Doer
+
 	// ZoomWebhook Doer is the HTTP client used to make requests to the
 	// zoom-webhook endpoint.
 	ZoomWebhookDoer goahttp.Doer
@@ -166,6 +174,8 @@ func NewClient(
 		UpdateMeetingRegistrantDoer:           doer,
 		DeleteMeetingRegistrantDoer:           doer,
 		ResendMeetingRegistrantInvitationDoer: doer,
+		CreateMeetingRsvpDoer:                 doer,
+		GetMeetingRsvpsDoer:                   doer,
 		ZoomWebhookDoer:                       doer,
 		GetPastMeetingsDoer:                   doer,
 		CreatePastMeetingDoer:                 doer,
@@ -521,6 +531,54 @@ func (c *Client) ResendMeetingRegistrantInvitation() goa.Endpoint {
 		resp, err := c.ResendMeetingRegistrantInvitationDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "resend-meeting-registrant-invitation", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateMeetingRsvp returns an endpoint that makes HTTP requests to the
+// Meeting Service service create-meeting-rsvp server.
+func (c *Client) CreateMeetingRsvp() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateMeetingRsvpRequest(c.encoder)
+		decodeResponse = DecodeCreateMeetingRsvpResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateMeetingRsvpRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateMeetingRsvpDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-meeting-rsvp", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetMeetingRsvps returns an endpoint that makes HTTP requests to the Meeting
+// Service service get-meeting-rsvps server.
+func (c *Client) GetMeetingRsvps() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetMeetingRsvpsRequest(c.encoder)
+		decodeResponse = DecodeGetMeetingRsvpsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetMeetingRsvpsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetMeetingRsvpsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-rsvps", err)
 		}
 		return decodeResponse(resp)
 	}

@@ -78,6 +78,8 @@ func main() {
 	occurrenceService := service.NewOccurrenceService()
 	meetingService := service.NewMeetingService(
 		repos.Meeting,
+		repos.MeetingRSVP,
+		messageBuilder,
 		messageBuilder,
 		platformRegistry,
 		occurrenceService,
@@ -88,34 +90,42 @@ func main() {
 		repos.Registrant,
 		emailService,
 		messageBuilder,
+		messageBuilder,
 		occurrenceService,
 		serviceConfig,
+	)
+	meetingRSVPService := service.NewMeetingRSVPService(
+		repos.MeetingRSVP,
+		repos.Meeting,
+		repos.Registrant,
+		occurrenceService,
+		messageBuilder, // Implements MeetingRSVPIndexSender
 	)
 	pastMeetingService := service.NewPastMeetingService(
 		repos.Meeting,
 		repos.PastMeeting,
-		messageBuilder,
+		messageBuilder, // Implements PastMeetingBasicMessageSender
 		serviceConfig,
 	)
 	pastMeetingParticipantService := service.NewPastMeetingParticipantService(
 		repos.Meeting,
 		repos.PastMeeting,
 		repos.PastMeetingParticipant,
-		messageBuilder,
+		messageBuilder, // Implements PastMeetingParticipantMessageSender
 		serviceConfig,
 	)
 	pastMeetingRecordingService := service.NewPastMeetingRecordingService(
 		repos.PastMeetingRecording,
 		repos.PastMeeting,
 		repos.PastMeetingParticipant,
-		messageBuilder,
+		messageBuilder, // Implements PastMeetingRecordingMessageSender
 		serviceConfig,
 	)
 	pastMeetingTranscriptService := service.NewPastMeetingTranscriptService(
 		repos.PastMeetingTranscript,
 		repos.PastMeeting,
 		repos.PastMeetingParticipant,
-		messageBuilder,
+		messageBuilder, // Implements PastMeetingTranscriptMessageSender
 		serviceConfig,
 	)
 	pastMeetingSummaryService := service.NewPastMeetingSummaryService(
@@ -125,17 +135,19 @@ func main() {
 		repos.Registrant,
 		repos.Meeting,
 		emailService,
-		messageBuilder,
+		messageBuilder, // Implements PastMeetingSummaryMessageSender
+		messageBuilder, // Implements ExternalServiceClient
 		serviceConfig,
 	)
 	committeeSyncService := service.NewCommitteeSyncService(
 		repos.Meeting,
 		repos.Registrant,
 		registrantService,
-		messageBuilder,
+		messageBuilder, // Implements MeetingRegistrantIndexSender
+		messageBuilder, // Implements ExternalServiceClient
 	)
 	zoomWebhookService := service.NewZoomWebhookService(
-		messageBuilder,
+		messageBuilder, // Implements WebhookEventSender
 		platformConfigs.Zoom.Validator,
 	)
 
@@ -169,6 +181,7 @@ func main() {
 		authService,
 		meetingService,
 		registrantService,
+		meetingRSVPService,
 		pastMeetingService,
 		pastMeetingParticipantService,
 		pastMeetingSummaryService,

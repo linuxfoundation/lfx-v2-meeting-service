@@ -22,7 +22,7 @@ import (
 type PastMeetingService struct {
 	meetingRepository     domain.MeetingRepository
 	pastMeetingRepository domain.PastMeetingRepository
-	messageBuilder        domain.MessageBuilder
+	messageSender         domain.PastMeetingBasicMessageSender
 	config                ServiceConfig
 }
 
@@ -30,14 +30,14 @@ type PastMeetingService struct {
 func NewPastMeetingService(
 	meetingRepository domain.MeetingRepository,
 	pastMeetingRepository domain.PastMeetingRepository,
-	messageBuilder domain.MessageBuilder,
+	messageSender domain.PastMeetingBasicMessageSender,
 	config ServiceConfig,
 ) *PastMeetingService {
 	return &PastMeetingService{
 		config:                config,
 		meetingRepository:     meetingRepository,
 		pastMeetingRepository: pastMeetingRepository,
-		messageBuilder:        messageBuilder,
+		messageSender:         messageSender,
 	}
 }
 
@@ -45,7 +45,7 @@ func NewPastMeetingService(
 func (s *PastMeetingService) ServiceReady() bool {
 	return s.meetingRepository != nil &&
 		s.pastMeetingRepository != nil &&
-		s.messageBuilder != nil
+		s.messageSender != nil
 }
 
 func (s *PastMeetingService) ListPastMeetings(ctx context.Context) ([]*models.PastMeeting, error) {
@@ -145,7 +145,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeetingReq)
+			return s.messageSender.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeetingReq)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -154,7 +154,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 				committees[i] = committee.UID
 			}
 
-			return s.messageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+			return s.messageSender.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeetingReq.UID,
 				MeetingUID: pastMeetingReq.MeetingUID,
 				Public:     pastMeetingReq.IsPublic(),
@@ -242,7 +242,7 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeeting 
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeeting(ctx, models.ActionUpdated, *pastMeeting)
+			return s.messageSender.SendIndexPastMeeting(ctx, models.ActionUpdated, *pastMeeting)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -251,7 +251,7 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeeting 
 				committees[i] = committee.UID
 			}
 
-			return s.messageBuilder.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
+			return s.messageSender.SendUpdateAccessPastMeeting(ctx, models.PastMeetingAccessMessage{
 				UID:        pastMeeting.UID,
 				MeetingUID: pastMeeting.MeetingUID,
 				Public:     pastMeeting.IsPublic(),
@@ -306,10 +306,10 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendDeleteIndexPastMeeting(ctx, uid)
+			return s.messageSender.SendDeleteIndexPastMeeting(ctx, uid)
 		},
 		func() error {
-			return s.messageBuilder.SendDeleteAllAccessPastMeeting(ctx, uid)
+			return s.messageSender.SendDeleteAllAccessPastMeeting(ctx, uid)
 		},
 	}
 

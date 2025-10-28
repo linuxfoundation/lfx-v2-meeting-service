@@ -35,7 +35,8 @@ type CommitteeSyncService struct {
 	meetingRepository    domain.MeetingRepository
 	registrantRepository domain.RegistrantRepository
 	registrantService    *MeetingRegistrantService
-	messageBuilder       domain.MessageBuilder
+	indexSender          domain.MeetingRegistrantIndexSender
+	externalClient       domain.ExternalServiceClient
 }
 
 // NewCommitteeSyncService creates a new committee sync service
@@ -43,13 +44,15 @@ func NewCommitteeSyncService(
 	meetingRepository domain.MeetingRepository,
 	registrantRepository domain.RegistrantRepository,
 	registrantService *MeetingRegistrantService,
-	messageBuilder domain.MessageBuilder,
+	indexSender domain.MeetingRegistrantIndexSender,
+	externalClient domain.ExternalServiceClient,
 ) *CommitteeSyncService {
 	return &CommitteeSyncService{
 		meetingRepository:    meetingRepository,
 		registrantRepository: registrantRepository,
 		registrantService:    registrantService,
-		messageBuilder:       messageBuilder,
+		indexSender:          indexSender,
+		externalClient:       externalClient,
 	}
 }
 
@@ -58,7 +61,8 @@ func (s *CommitteeSyncService) ServiceReady() bool {
 	return s.meetingRepository != nil &&
 		s.registrantRepository != nil &&
 		s.registrantService != nil &&
-		s.messageBuilder != nil
+		s.indexSender != nil &&
+		s.externalClient != nil
 }
 
 // SyncCommittees synchronizes committee members between old and new committee configurations
@@ -216,7 +220,7 @@ func (s *CommitteeSyncService) addCommitteeMembersForCommittee(
 	committee models.Committee,
 ) error {
 	// Fetch committee members from committee-api
-	members, err := s.messageBuilder.GetCommitteeMembers(ctx, committee.UID)
+	members, err := s.externalClient.GetCommitteeMembers(ctx, committee.UID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to fetch committee members",
 			"committee_uid", committee.UID,
@@ -556,7 +560,7 @@ func (s *CommitteeSyncService) convertRegistrantToDirect(
 	}
 
 	// Send indexing message
-	err = s.messageBuilder.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrant)
+	err = s.indexSender.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrant)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send indexing message for converted registrant",
 			"registrant_uid", registrant.UID,
@@ -607,7 +611,7 @@ func (s *CommitteeSyncService) updateCommitteeMembersForCommittee(
 	isPublicMeeting bool,
 ) error {
 	// Fetch current committee members
-	members, err := s.messageBuilder.GetCommitteeMembers(ctx, change.New.UID)
+	members, err := s.externalClient.GetCommitteeMembers(ctx, change.New.UID)
 	if err != nil {
 		return fmt.Errorf("failed to fetch committee members for %s: %w", change.New.UID, err)
 	}

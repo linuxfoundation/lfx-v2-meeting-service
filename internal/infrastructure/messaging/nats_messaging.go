@@ -192,6 +192,24 @@ func (m *MessageBuilder) SendDeleteIndexMeetingRegistrant(ctx context.Context, d
 	return m.sendIndexerMessage(ctx, models.IndexMeetingRegistrantSubject, models.ActionDeleted, []byte(data), nil)
 }
 
+// SendIndexMeetingRSVP sends the message to the NATS server for the meeting RSVP indexing.
+func (m *MessageBuilder) SendIndexMeetingRSVP(ctx context.Context, action models.MessageAction, data models.RSVPResponse) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.Tags()...)
+
+	return m.sendIndexerMessage(ctx, models.IndexMeetingRSVPSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexMeetingRSVP sends the message to the NATS server for the meeting RSVP indexing.
+func (m *MessageBuilder) SendDeleteIndexMeetingRSVP(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexMeetingRSVPSubject, models.ActionDeleted, []byte(data), nil)
+}
+
 // SendIndexPastMeeting sends the message to the NATS server for the past meeting indexing.
 func (m *MessageBuilder) SendIndexPastMeeting(ctx context.Context, action models.MessageAction, data models.PastMeeting) error {
 	dataBytes, err := json.Marshal(data)

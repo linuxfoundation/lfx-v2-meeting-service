@@ -54,6 +54,7 @@ type RegistrantRepository interface {
 	ListByEmail(ctx context.Context, email string) ([]*models.Registrant, error)
 	ListByEmailAndCommittee(ctx context.Context, email string, committeeUID string) ([]*models.Registrant, error)
 	GetByMeetingAndEmail(ctx context.Context, meetingUID, email string) (*models.Registrant, uint64, error)
+	GetByMeetingAndUsername(ctx context.Context, meetingUID, username string) (*models.Registrant, uint64, error)
 }
 
 // PastMeetingRepository defines the interface for past meeting storage operations.
@@ -131,4 +132,22 @@ type PastMeetingSummaryRepository interface {
 	Update(ctx context.Context, summary *models.PastMeetingSummary, revision uint64) error
 	GetByPastMeetingUID(ctx context.Context, pastMeetingUID string) (*models.PastMeetingSummary, error)
 	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingSummary, error)
+}
+
+// MeetingRSVPRepository defines the interface for meeting RSVP storage operations.
+// Since "most recent wins", only one RSVP per registrant per meeting is stored.
+type MeetingRSVPRepository interface {
+	// RSVP full operations
+	Create(ctx context.Context, rsvp *models.RSVPResponse) error
+	Exists(ctx context.Context, rsvpID string) (bool, error)
+	Delete(ctx context.Context, rsvpID string, revision uint64) error
+
+	// RSVP base operations
+	Get(ctx context.Context, rsvpID string) (*models.RSVPResponse, error)
+	GetWithRevision(ctx context.Context, rsvpID string) (*models.RSVPResponse, uint64, error)
+	Update(ctx context.Context, rsvp *models.RSVPResponse, revision uint64) error
+
+	// Query operations
+	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.RSVPResponse, error)
+	GetByMeetingAndRegistrant(ctx context.Context, meetingUID, registrantID string) (*models.RSVPResponse, uint64, error)
 }

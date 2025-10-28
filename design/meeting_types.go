@@ -95,8 +95,6 @@ func MeetingBaseAttributes() {
 	YoutubeUploadEnabledAttribute()
 	ZoomConfigFullAttribute()
 	RegistrantCountAttribute()
-	RegistrantResponseDeclinedCountAttribute()
-	RegistrantResponseAcceptedCountAttribute()
 	OccurrencesAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
@@ -195,6 +193,7 @@ var Occurrence = Type("Occurrence", func() {
 	Attribute("registrant_count", Int, "Number of registrants for this meeting occurrence")
 	Attribute("response_count_no", Int, "Number of registrants who declined the invite for this occurrence")
 	Attribute("response_count_yes", Int, "Number of registrants who accepted the invite for this occurrence")
+	Attribute("response_count_maybe", Int, "Number of registrants who responded maybe to the invite for this occurrence")
 	Attribute("is_cancelled", Boolean, "Whether the occurrence is cancelled")
 })
 
@@ -352,18 +351,6 @@ func YoutubeUploadEnabledAttribute() {
 func RegistrantCountAttribute() {
 	// Read-only attribute
 	Attribute("registrant_count", Int, "The number of registrants for the meeting")
-}
-
-// RegistrantResponseDeclinedCountAttribute is the DSL attribute for registrant response declined count.
-func RegistrantResponseDeclinedCountAttribute() {
-	// Read-only attribute
-	Attribute("registrant_response_declined_count", Int, "The number of registrants that have declined the meeting invitation")
-}
-
-// RegistrantResponseAcceptedCountAttribute is the DSL attribute for registrant response accepted count.
-func RegistrantResponseAcceptedCountAttribute() {
-	// Read-only attribute
-	Attribute("registrant_response_accepted_count", Int, "The number of registrants that have accepted the meeting invitation")
 }
 
 // OccurrencesAttribute is the DSL attribute for meeting occurrences.
