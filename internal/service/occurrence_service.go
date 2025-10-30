@@ -95,7 +95,7 @@ func (s *OccurrenceService) CalculateOccurrencesFromDate(meeting *models.Meeting
 	endDate := s.getEndDate(meeting, loc)
 
 	if meeting.Recurrence.EndTimes > 0 {
-		current = meeting.StartTime
+		current = meeting.StartTime.In(loc)
 		limit = meeting.Recurrence.EndTimes
 	}
 
@@ -133,8 +133,8 @@ func (s *OccurrenceService) calculateDailyOccurrences(meeting *models.MeetingBas
 	current := startTime
 
 	for len(occurrences) < limit {
-		// Check if we've exceeded the end date
-		if !endDate.IsZero() && current.After(endDate) {
+		// Check if we've exceeded the end date (exclusive boundary)
+		if !endDate.IsZero() && !current.Before(endDate) {
 			break
 		}
 
@@ -171,11 +171,6 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 	for len(occurrences) < limit {
 		currentWeek := weekStart.AddDate(0, 0, weekCount*7*meeting.Recurrence.RepeatInterval)
 
-		// Check if we've exceeded the end date
-		if !endDate.IsZero() && currentWeek.After(endDate) {
-			break
-		}
-
 		// Generate occurrences for each specified day of this week
 		for _, dayOfWeek := range weeklyDays {
 			dayOffset := (dayOfWeek - int(currentWeek.Weekday()) + 7) % 7
@@ -188,8 +183,8 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 				loc,
 			)
 
-			// Check if we've exceeded the end date
-			if !endDate.IsZero() && occurrenceDate.After(endDate) {
+			// Check if we've exceeded the end date (exclusive boundary)
+			if !endDate.IsZero() && !occurrenceDate.Before(endDate) {
 				continue
 			}
 
@@ -217,8 +212,8 @@ func (s *OccurrenceService) calculateMonthlyOccurrences(meeting *models.MeetingB
 
 	monthCount := 0
 	for len(occurrences) < limit {
-		// Check if we've exceeded the end date
-		if !endDate.IsZero() && current.After(endDate) {
+		// Check if we've exceeded the end date (exclusive boundary)
+		if !endDate.IsZero() && !current.Before(endDate) {
 			break
 		}
 
@@ -325,7 +320,8 @@ func (s *OccurrenceService) getEndDate(meeting *models.MeetingBase, loc *time.Lo
 		switch recurrence.Type {
 		case 1: // Daily
 			// For daily: last occurrence is at start + (EndTimes - 1) * RepeatInterval days
-			return startTime.AddDate(0, 0, (recurrence.EndTimes-1)*recurrence.RepeatInterval)
+			// Add 1 nanosecond to make this boundary inclusive (so the Nth occurrence is included)
+			return startTime.AddDate(0, 0, (recurrence.EndTimes-1)*recurrence.RepeatInterval).Add(time.Nanosecond)
 
 		case 2: // Weekly
 			// For weekly, we need to count occurrences more carefully
@@ -347,7 +343,8 @@ func (s *OccurrenceService) getEndDate(meeting *models.MeetingBase, loc *time.Lo
 
 					count++
 					if count == recurrence.EndTimes {
-						return occurrenceDate
+						// Add 1 nanosecond to make this boundary inclusive
+						return occurrenceDate.Add(time.Nanosecond)
 					}
 				}
 				weekNum++
@@ -369,7 +366,8 @@ func (s *OccurrenceService) getEndDate(meeting *models.MeetingBase, loc *time.Lo
 
 				monthNum++
 				if monthNum == recurrence.EndTimes {
-					return occurrenceDate
+					// Add 1 nanosecond to make this boundary inclusive
+					return occurrenceDate.Add(time.Nanosecond)
 				}
 			}
 		}

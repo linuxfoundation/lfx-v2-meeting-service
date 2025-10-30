@@ -435,6 +435,11 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 				logging.ErrKey, err)
 			return nil, domain.NewInternalError("failed to initialize meeting platform", err)
 		}
+		if provider == nil {
+			slog.ErrorContext(ctx, "platform provider not found",
+				"platform", reqMeeting.Base.Platform)
+			return nil, domain.NewInternalError("platform provider not found", nil)
+		}
 
 		result, err := provider.CreateMeeting(ctx, reqMeeting.Base)
 		if err != nil {
