@@ -58,6 +58,25 @@ spec:
   compression: {{ .Values.nats.kv_bucket_meeting_registrants.compression }}
 {{- end }}
 ---
+{{- if .Values.nats.kv_bucket_meeting_rsvp.creation }}
+apiVersion: jetstream.nats.io/v1beta2
+kind: KeyValue
+metadata:
+  name: {{ .Values.nats.kv_bucket_meeting_rsvp.name }}
+  namespace: lfx
+  {{- if .Values.nats.kv_bucket_meeting_rsvp.keep }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  {{- end }}
+spec:
+  bucket: {{ .Values.nats.kv_bucket_meeting_rsvp.name }}
+  history: {{ .Values.nats.kv_bucket_meeting_rsvp.history }}
+  storage: {{ .Values.nats.kv_bucket_meeting_rsvp.storage }}
+  maxValueSize: {{ .Values.nats.kv_bucket_meeting_rsvp.maxValueSize }}
+  maxBytes: {{ .Values.nats.kv_bucket_meeting_rsvp.maxBytes }}
+  compression: {{ .Values.nats.kv_bucket_meeting_rsvp.compression }}
+{{- end }}
+---
 {{- if .Values.nats.kv_bucket_past_meetings.creation }}
 apiVersion: jetstream.nats.io/v1beta2
 kind: KeyValue

@@ -92,7 +92,12 @@ func (s *OccurrenceService) CalculateOccurrencesFromDate(meeting *models.Meeting
 
 	var occurrences []models.Occurrence
 	current := meeting.StartTime.In(loc)
-	endDate := s.getEndDate(meeting.Recurrence, loc)
+	endDate := s.getEndDate(meeting, loc)
+
+	if meeting.Recurrence.EndTimes > 0 {
+		current = meeting.StartTime
+		limit = meeting.Recurrence.EndTimes
+	}
 
 	// Calculate occurrences based on recurrence type
 	switch meeting.Recurrence.Type {
@@ -102,11 +107,6 @@ func (s *OccurrenceService) CalculateOccurrencesFromDate(meeting *models.Meeting
 		occurrences = s.calculateWeeklyOccurrences(meeting, current, fromDate, endDate, limit, loc)
 	case 3: // Monthly
 		occurrences = s.calculateMonthlyOccurrences(meeting, current, fromDate, endDate, limit, loc)
-	}
-
-	// Apply EndTimes limit if specified
-	if meeting.Recurrence.EndTimes > 0 && len(occurrences) > meeting.Recurrence.EndTimes {
-		occurrences = occurrences[:meeting.Recurrence.EndTimes]
 	}
 
 	return occurrences
@@ -133,8 +133,8 @@ func (s *OccurrenceService) calculateDailyOccurrences(meeting *models.MeetingBas
 	current := startTime
 
 	for len(occurrences) < limit {
-		// Check if we've exceeded the end date (use Before or Equal to exclude the end date)
-		if !endDate.IsZero() && !current.Before(endDate) {
+		// Check if we've exceeded the end date
+		if !endDate.IsZero() && current.After(endDate) {
 			break
 		}
 
@@ -172,7 +172,7 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 		currentWeek := weekStart.AddDate(0, 0, weekCount*7*meeting.Recurrence.RepeatInterval)
 
 		// Check if we've exceeded the end date
-		if !endDate.IsZero() && !currentWeek.Before(endDate) {
+		if !endDate.IsZero() && currentWeek.After(endDate) {
 			break
 		}
 
@@ -189,7 +189,7 @@ func (s *OccurrenceService) calculateWeeklyOccurrences(meeting *models.MeetingBa
 			)
 
 			// Check if we've exceeded the end date
-			if !endDate.IsZero() && !occurrenceDate.Before(endDate) {
+			if !endDate.IsZero() && occurrenceDate.After(endDate) {
 				continue
 			}
 
@@ -218,7 +218,7 @@ func (s *OccurrenceService) calculateMonthlyOccurrences(meeting *models.MeetingB
 	monthCount := 0
 	for len(occurrences) < limit {
 		// Check if we've exceeded the end date
-		if !endDate.IsZero() && !current.Before(endDate) {
+		if !endDate.IsZero() && current.After(endDate) {
 			break
 		}
 
@@ -237,7 +237,7 @@ func (s *OccurrenceService) calculateMonthlyOccurrences(meeting *models.MeetingB
 		}
 
 		// Check if we've exceeded the end date
-		if !endDate.IsZero() && !occurrenceDate.Before(endDate) {
+		if !endDate.IsZero() && occurrenceDate.After(endDate) {
 			break
 		}
 
@@ -312,12 +312,70 @@ func (s *OccurrenceService) calculateMonthlyByWeekDay(startTime time.Time, month
 // Helper functions
 
 // getEndDate determines the end date based on recurrence settings
-func (s *OccurrenceService) getEndDate(recurrence *models.Recurrence, loc *time.Location) time.Time {
+func (s *OccurrenceService) getEndDate(meeting *models.MeetingBase, loc *time.Location) time.Time {
+	recurrence := meeting.Recurrence
 	if recurrence.EndDateTime != nil {
 		return recurrence.EndDateTime.In(loc)
 	}
-	// If EndTimes is specified, we'll handle it later by limiting the slice
-	// For now, return zero time to indicate no end date
+
+	// Calculate end date from EndTimes if specified
+	if recurrence.EndTimes > 0 {
+		startTime := meeting.StartTime.In(loc)
+
+		switch recurrence.Type {
+		case 1: // Daily
+			// For daily: last occurrence is at start + (EndTimes - 1) * RepeatInterval days
+			return startTime.AddDate(0, 0, (recurrence.EndTimes-1)*recurrence.RepeatInterval)
+
+		case 2: // Weekly
+			// For weekly, we need to count occurrences more carefully
+			weeklyDays := s.parseWeeklyDays(recurrence.WeeklyDays)
+			if len(weeklyDays) == 0 {
+				weeklyDays = []int{int(startTime.Weekday())}
+			}
+
+			// Find when the last occurrence would be
+			count := 0
+			weekStart := s.getStartOfWeek(s.findFirstWeeklyOccurrence(startTime, weeklyDays, loc))
+			weekNum := 0
+
+			for count < recurrence.EndTimes && weekNum < MaxWeeksCount {
+				currentWeek := weekStart.AddDate(0, 0, 7*recurrence.RepeatInterval*weekNum)
+				for _, dayOfWeek := range weeklyDays {
+					dayOffset := (dayOfWeek - int(currentWeek.Weekday()) + 7) % 7
+					occurrenceDate := currentWeek.AddDate(0, 0, dayOffset)
+
+					count++
+					if count == recurrence.EndTimes {
+						return occurrenceDate
+					}
+				}
+				weekNum++
+			}
+
+		case 3: // Monthly
+			// For monthly, calculate based on the monthly pattern
+			monthNum := 0
+			for monthNum < recurrence.EndTimes && monthNum < MaxMonthsCount {
+				var occurrenceDate time.Time
+				switch {
+				case recurrence.MonthlyDay > 0:
+					occurrenceDate = s.calculateMonthlyByDay(startTime, monthNum, recurrence.MonthlyDay, recurrence.RepeatInterval, loc)
+				case recurrence.MonthlyWeek != 0 && recurrence.MonthlyWeekDay > 0:
+					occurrenceDate = s.calculateMonthlyByWeekDay(startTime, monthNum, recurrence.MonthlyWeek, recurrence.MonthlyWeekDay, recurrence.RepeatInterval, loc)
+				default:
+					occurrenceDate = s.calculateMonthlyByDay(startTime, monthNum, startTime.Day(), recurrence.RepeatInterval, loc)
+				}
+
+				monthNum++
+				if monthNum == recurrence.EndTimes {
+					return occurrenceDate
+				}
+			}
+		}
+	}
+
+	// No end date specified
 	return time.Time{}
 }
 
