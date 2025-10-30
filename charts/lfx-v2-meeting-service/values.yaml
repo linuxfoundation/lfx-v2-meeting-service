@@ -20,6 +20,9 @@ app:
   # use_oidc_contextualizer is a boolean to determine if the OIDC contextualizer should be used
   use_oidc_contextualizer: true
 
+  annotations:
+    reloader.stakater.com/auto: "true"
+
   environment:
     # NATS_URL is required
     NATS_URL:
