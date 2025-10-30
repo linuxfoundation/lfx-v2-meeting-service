@@ -20,9 +20,6 @@ app:
   # use_oidc_contextualizer is a boolean to determine if the OIDC contextualizer should be used
   use_oidc_contextualizer: true
 
-  annotations:
-    reloader.stakater.com/auto: "true"
-
   environment:
     # NATS_URL is required
     NATS_URL:
@@ -293,3 +290,6 @@ heimdall:
   enabled: true
   url: http://lfx-platform-heimdall.lfx.svc.cluster.local:4456
   add_middleware: false
+
+annotations:
+  reloader.stakater.com/auto: "true"
