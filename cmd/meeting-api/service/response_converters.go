@@ -76,12 +76,6 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 	if meetingBase.RegistrantCount != 0 {
 		meetingFull.RegistrantCount = utils.IntPtr(meetingBase.RegistrantCount)
 	}
-	if meetingBase.RegistrantResponseDeclinedCount != 0 {
-		meetingFull.RegistrantResponseDeclinedCount = utils.IntPtr(meetingBase.RegistrantResponseDeclinedCount)
-	}
-	if meetingBase.RegistrantResponseAcceptedCount != 0 {
-		meetingFull.RegistrantResponseAcceptedCount = utils.IntPtr(meetingBase.RegistrantResponseAcceptedCount)
-	}
 	if len(meetingBase.Occurrences) > 0 {
 		meetingFull.Occurrences = make([]*meetingservice.Occurrence, 0, len(meetingBase.Occurrences))
 		for _, o := range meetingBase.Occurrences {
@@ -117,28 +111,26 @@ func ConvertDomainToBaseResponse(meeting *models.MeetingBase) *meetingservice.Me
 	}
 
 	goaMeeting := &meetingservice.MeetingBase{
-		UID:                             utils.StringPtr(meeting.UID),
-		ProjectUID:                      utils.StringPtr(meeting.ProjectUID),
-		StartTime:                       utils.StringPtr(meeting.StartTime.Format(time.RFC3339)),
-		Duration:                        utils.IntPtr(meeting.Duration),
-		Timezone:                        utils.StringPtr(meeting.Timezone),
-		Title:                           utils.StringPtr(meeting.Title),
-		Description:                     utils.StringPtr(meeting.Description),
-		Platform:                        utils.StringPtr(meeting.Platform),
-		EarlyJoinTimeMinutes:            utils.IntPtr(meeting.EarlyJoinTimeMinutes),
-		MeetingType:                     utils.StringPtr(meeting.MeetingType),
-		Visibility:                      utils.StringPtr(meeting.Visibility),
-		Restricted:                      utils.BoolPtr(meeting.Restricted),
-		ArtifactVisibility:              utils.StringPtr(meeting.ArtifactVisibility),
-		PublicLink:                      utils.StringPtr(meeting.PublicLink),
-		Password:                        utils.StringPtr(meeting.Password),
-		EmailDeliveryErrorCount:         utils.IntPtr(meeting.EmailDeliveryErrorCount),
-		RecordingEnabled:                utils.BoolPtr(meeting.RecordingEnabled),
-		TranscriptEnabled:               utils.BoolPtr(meeting.TranscriptEnabled),
-		YoutubeUploadEnabled:            utils.BoolPtr(meeting.YoutubeUploadEnabled),
-		RegistrantCount:                 utils.IntPtr(meeting.RegistrantCount),
-		RegistrantResponseDeclinedCount: utils.IntPtr(meeting.RegistrantResponseDeclinedCount),
-		RegistrantResponseAcceptedCount: utils.IntPtr(meeting.RegistrantResponseAcceptedCount),
+		UID:                     utils.StringPtr(meeting.UID),
+		ProjectUID:              utils.StringPtr(meeting.ProjectUID),
+		StartTime:               utils.StringPtr(meeting.StartTime.Format(time.RFC3339)),
+		Duration:                utils.IntPtr(meeting.Duration),
+		Timezone:                utils.StringPtr(meeting.Timezone),
+		Title:                   utils.StringPtr(meeting.Title),
+		Description:             utils.StringPtr(meeting.Description),
+		Platform:                utils.StringPtr(meeting.Platform),
+		EarlyJoinTimeMinutes:    utils.IntPtr(meeting.EarlyJoinTimeMinutes),
+		MeetingType:             utils.StringPtr(meeting.MeetingType),
+		Visibility:              utils.StringPtr(meeting.Visibility),
+		Restricted:              utils.BoolPtr(meeting.Restricted),
+		ArtifactVisibility:      utils.StringPtr(meeting.ArtifactVisibility),
+		PublicLink:              utils.StringPtr(meeting.PublicLink),
+		Password:                utils.StringPtr(meeting.Password),
+		EmailDeliveryErrorCount: utils.IntPtr(meeting.EmailDeliveryErrorCount),
+		RecordingEnabled:        utils.BoolPtr(meeting.RecordingEnabled),
+		TranscriptEnabled:       utils.BoolPtr(meeting.TranscriptEnabled),
+		YoutubeUploadEnabled:    utils.BoolPtr(meeting.YoutubeUploadEnabled),
+		RegistrantCount:         utils.IntPtr(meeting.RegistrantCount),
 	}
 
 	// Convert timestamps
@@ -271,6 +263,9 @@ func convertDomainToOccurrenceResponse(o *models.Occurrence) *meetingservice.Occ
 	}
 	if o.ResponseCountYes != 0 {
 		occ.ResponseCountYes = utils.IntPtr(o.ResponseCountYes)
+	}
+	if o.ResponseCountMaybe != 0 {
+		occ.ResponseCountMaybe = utils.IntPtr(o.ResponseCountMaybe)
 	}
 	if o.IsCancelled {
 		occ.IsCancelled = utils.BoolPtr(o.IsCancelled)
@@ -551,4 +546,32 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 	}
 
 	return result
+}
+
+// ConvertRSVPToResponse converts a domain RSVPResponse to Goa RSVPResponse
+func ConvertRSVPToResponse(rsvp *models.RSVPResponse) *meetingservice.RSVPResponse {
+	if rsvp == nil {
+		return nil
+	}
+
+	resp := &meetingservice.RSVPResponse{
+		ID:           rsvp.ID,
+		MeetingUID:   rsvp.MeetingUID,
+		RegistrantID: rsvp.RegistrantID,
+		Username:     rsvp.Username,
+		Email:        rsvp.Email,
+		Response:     string(rsvp.Response),
+		Scope:        string(rsvp.Scope),
+		OccurrenceID: rsvp.OccurrenceID,
+	}
+
+	if rsvp.CreatedAt != nil {
+		resp.CreatedAt = utils.StringPtr(rsvp.CreatedAt.Format(time.RFC3339))
+	}
+
+	if rsvp.UpdatedAt != nil {
+		resp.UpdatedAt = utils.StringPtr(rsvp.UpdatedAt.Format(time.RFC3339))
+	}
+
+	return resp
 }

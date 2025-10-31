@@ -19,6 +19,10 @@ const (
 	// The subject is of the form: lfx.index.meeting_registrant
 	IndexMeetingRegistrantSubject = "lfx.index.meeting_registrant"
 
+	// IndexMeetingRSVPSubject is the subject for the meeting RSVP indexing.
+	// The subject is of the form: lfx.index.meeting_rsvp
+	IndexMeetingRSVPSubject = "lfx.index.meeting_rsvp"
+
 	// IndexPastMeetingSubject is the subject for the past meeting indexing.
 	// The subject is of the form: lfx.index.past_meeting
 	IndexPastMeetingSubject = "lfx.index.past_meeting"

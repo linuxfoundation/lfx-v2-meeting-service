@@ -31,6 +31,8 @@ type Endpoints struct {
 	UpdateMeetingRegistrant           goa.Endpoint
 	DeleteMeetingRegistrant           goa.Endpoint
 	ResendMeetingRegistrantInvitation goa.Endpoint
+	CreateMeetingRsvp                 goa.Endpoint
+	GetMeetingRsvps                   goa.Endpoint
 	ZoomWebhook                       goa.Endpoint
 	GetPastMeetings                   goa.Endpoint
 	CreatePastMeeting                 goa.Endpoint
@@ -69,6 +71,8 @@ func NewEndpoints(s Service) *Endpoints {
 		UpdateMeetingRegistrant:           NewUpdateMeetingRegistrantEndpoint(s, a.JWTAuth),
 		DeleteMeetingRegistrant:           NewDeleteMeetingRegistrantEndpoint(s, a.JWTAuth),
 		ResendMeetingRegistrantInvitation: NewResendMeetingRegistrantInvitationEndpoint(s, a.JWTAuth),
+		CreateMeetingRsvp:                 NewCreateMeetingRsvpEndpoint(s, a.JWTAuth),
+		GetMeetingRsvps:                   NewGetMeetingRsvpsEndpoint(s, a.JWTAuth),
 		ZoomWebhook:                       NewZoomWebhookEndpoint(s),
 		GetPastMeetings:                   NewGetPastMeetingsEndpoint(s, a.JWTAuth),
 		CreatePastMeeting:                 NewCreatePastMeetingEndpoint(s, a.JWTAuth),
@@ -105,6 +109,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UpdateMeetingRegistrant = m(e.UpdateMeetingRegistrant)
 	e.DeleteMeetingRegistrant = m(e.DeleteMeetingRegistrant)
 	e.ResendMeetingRegistrantInvitation = m(e.ResendMeetingRegistrantInvitation)
+	e.CreateMeetingRsvp = m(e.CreateMeetingRsvp)
+	e.GetMeetingRsvps = m(e.GetMeetingRsvps)
 	e.ZoomWebhook = m(e.ZoomWebhook)
 	e.GetPastMeetings = m(e.GetPastMeetings)
 	e.CreatePastMeeting = m(e.CreatePastMeeting)
@@ -465,6 +471,52 @@ func NewResendMeetingRegistrantInvitationEndpoint(s Service, authJWTFn security.
 			return nil, err
 		}
 		return nil, s.ResendMeetingRegistrantInvitation(ctx, p)
+	}
+}
+
+// NewCreateMeetingRsvpEndpoint returns an endpoint function that calls the
+// method "create-meeting-rsvp" of service "Meeting Service".
+func NewCreateMeetingRsvpEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreateMeetingRsvpPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreateMeetingRsvp(ctx, p)
+	}
+}
+
+// NewGetMeetingRsvpsEndpoint returns an endpoint function that calls the
+// method "get-meeting-rsvps" of service "Meeting Service".
+func NewGetMeetingRsvpsEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetMeetingRsvpsPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetMeetingRsvps(ctx, p)
 	}
 }
 

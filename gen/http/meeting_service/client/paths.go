@@ -86,6 +86,16 @@ func ResendMeetingRegistrantInvitationMeetingServicePath(meetingUID string, uid 
 	return fmt.Sprintf("/meetings/%v/registrants/%v/resend", meetingUID, uid)
 }
 
+// CreateMeetingRsvpMeetingServicePath returns the URL path to the Meeting Service service create-meeting-rsvp HTTP endpoint.
+func CreateMeetingRsvpMeetingServicePath(meetingUID string) string {
+	return fmt.Sprintf("/meetings/%v/rsvp", meetingUID)
+}
+
+// GetMeetingRsvpsMeetingServicePath returns the URL path to the Meeting Service service get-meeting-rsvps HTTP endpoint.
+func GetMeetingRsvpsMeetingServicePath(meetingUID string) string {
+	return fmt.Sprintf("/meetings/%v/rsvp", meetingUID)
+}
+
 // ZoomWebhookMeetingServicePath returns the URL path to the Meeting Service service zoom-webhook HTTP endpoint.
 func ZoomWebhookMeetingServicePath() string {
 	return "/webhooks/zoom"

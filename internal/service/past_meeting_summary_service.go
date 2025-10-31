@@ -27,7 +27,8 @@ type PastMeetingSummaryService struct {
 	registrantRepository             domain.RegistrantRepository
 	meetingRepository                domain.MeetingRepository
 	emailService                     domain.EmailService
-	messageBuilder                   domain.MessageBuilder
+	messageSender                    domain.PastMeetingSummaryMessageSender
+	externalClient                   domain.ExternalServiceClient
 	config                           ServiceConfig
 }
 
@@ -39,7 +40,8 @@ func NewPastMeetingSummaryService(
 	registrantRepository domain.RegistrantRepository,
 	meetingRepository domain.MeetingRepository,
 	emailService domain.EmailService,
-	messageBuilder domain.MessageBuilder,
+	messageSender domain.PastMeetingSummaryMessageSender,
+	externalClient domain.ExternalServiceClient,
 	serviceConfig ServiceConfig,
 ) *PastMeetingSummaryService {
 	return &PastMeetingSummaryService{
@@ -49,7 +51,8 @@ func NewPastMeetingSummaryService(
 		registrantRepository:             registrantRepository,
 		meetingRepository:                meetingRepository,
 		emailService:                     emailService,
-		messageBuilder:                   messageBuilder,
+		messageSender:                    messageSender,
+		externalClient:                   externalClient,
 		config:                           serviceConfig,
 	}
 }
@@ -62,7 +65,8 @@ func (s *PastMeetingSummaryService) ServiceReady() bool {
 		s.registrantRepository != nil &&
 		s.meetingRepository != nil &&
 		s.emailService != nil &&
-		s.messageBuilder != nil
+		s.messageSender != nil &&
+		s.externalClient != nil
 }
 
 // ListSummariesByPastMeeting returns all summaries for a given past meeting.
@@ -128,7 +132,7 @@ func (s *PastMeetingSummaryService) CreateSummary(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary)
+			return s.messageSender.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -152,7 +156,7 @@ func (s *PastMeetingSummaryService) CreateSummary(
 				}
 			}
 
-			return s.messageBuilder.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{
+			return s.messageSender.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{
 				UID:                summary.UID,
 				PastMeetingUID:     summary.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
@@ -264,7 +268,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
+			return s.messageSender.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -288,7 +292,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 				}
 			}
 
-			return s.messageBuilder.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{
+			return s.messageSender.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{
 				UID:                updatedSummary.UID,
 				PastMeetingUID:     updatedSummary.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
@@ -347,9 +351,9 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 	}
 
 	// Get project details for email
-	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingBase.ProjectUID)
-	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingBase.ProjectUID)
-	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingBase.ProjectUID)
+	projectName, _ := s.externalClient.GetProjectName(ctx, meetingBase.ProjectUID)
+	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meetingBase.ProjectUID)
+	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meetingBase.ProjectUID)
 
 	// Send email to each host
 	successCount := 0

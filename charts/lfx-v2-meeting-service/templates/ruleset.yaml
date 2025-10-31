@@ -487,6 +487,72 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
+    # =============== Meeting RSVPs ==================
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_rsvp:create"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /meetings/:id/rsvp
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: viewer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+  # TODO: remove this rule once we remove the list meeting rsvps endpoint.
+  # It is not meant to be used by applications, it should only be used
+  # in local development, therefore the authorizer allows all requests.
+    - id: "rule:lfx:lfx-v2-meeting-service:meeting_rsvp:list"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /meetings/:id/rsvp
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
     # =============== Past meetings ==================
     - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:create"
       match:

@@ -2364,6 +2364,316 @@ func DecodeResendMeetingRegistrantInvitationResponse(decoder func(*http.Response
 	}
 }
 
+// BuildCreateMeetingRsvpRequest instantiates a HTTP request object with method
+// and path set to call the "Meeting Service" service "create-meeting-rsvp"
+// endpoint
+func (c *Client) BuildCreateMeetingRsvpRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingUID string
+	)
+	{
+		p, ok := v.(*meetingservice.CreateMeetingRsvpPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "create-meeting-rsvp", "*meetingservice.CreateMeetingRsvpPayload", v)
+		}
+		meetingUID = p.MeetingUID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateMeetingRsvpMeetingServicePath(meetingUID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-meeting-rsvp", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeCreateMeetingRsvpRequest returns an encoder for requests sent to the
+// Meeting Service create-meeting-rsvp server.
+func EncodeCreateMeetingRsvpRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.CreateMeetingRsvpPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "create-meeting-rsvp", "*meetingservice.CreateMeetingRsvpPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewCreateMeetingRsvpRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-meeting-rsvp", err)
+		}
+		return nil
+	}
+}
+
+// DecodeCreateMeetingRsvpResponse returns a decoder for responses returned by
+// the Meeting Service create-meeting-rsvp endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeCreateMeetingRsvpResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeCreateMeetingRsvpResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body CreateMeetingRsvpResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			err = ValidateCreateMeetingRsvpResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			res := NewCreateMeetingRsvpRSVPResponseCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CreateMeetingRsvpBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			err = ValidateCreateMeetingRsvpBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			return nil, NewCreateMeetingRsvpBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CreateMeetingRsvpInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			err = ValidateCreateMeetingRsvpInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			return nil, NewCreateMeetingRsvpInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body CreateMeetingRsvpNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			err = ValidateCreateMeetingRsvpNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			return nil, NewCreateMeetingRsvpNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body CreateMeetingRsvpServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			err = ValidateCreateMeetingRsvpServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-meeting-rsvp", err)
+			}
+			return nil, NewCreateMeetingRsvpServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-meeting-rsvp", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetMeetingRsvpsRequest instantiates a HTTP request object with method
+// and path set to call the "Meeting Service" service "get-meeting-rsvps"
+// endpoint
+func (c *Client) BuildGetMeetingRsvpsRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingUID string
+	)
+	{
+		p, ok := v.(*meetingservice.GetMeetingRsvpsPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-meeting-rsvps", "*meetingservice.GetMeetingRsvpsPayload", v)
+		}
+		meetingUID = p.MeetingUID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetMeetingRsvpsMeetingServicePath(meetingUID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-meeting-rsvps", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetMeetingRsvpsRequest returns an encoder for requests sent to the
+// Meeting Service get-meeting-rsvps server.
+func EncodeGetMeetingRsvpsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetMeetingRsvpsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-meeting-rsvps", "*meetingservice.GetMeetingRsvpsPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetMeetingRsvpsResponse returns a decoder for responses returned by
+// the Meeting Service get-meeting-rsvps endpoint. restoreBody controls whether
+// the response body should be restored after having been read.
+// DecodeGetMeetingRsvpsResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetMeetingRsvpsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetMeetingRsvpsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			err = ValidateGetMeetingRsvpsResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			res := NewGetMeetingRsvpsRSVPListResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetMeetingRsvpsBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			err = ValidateGetMeetingRsvpsBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			return nil, NewGetMeetingRsvpsBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetMeetingRsvpsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			err = ValidateGetMeetingRsvpsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			return nil, NewGetMeetingRsvpsInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetMeetingRsvpsNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			err = ValidateGetMeetingRsvpsNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			return nil, NewGetMeetingRsvpsNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetMeetingRsvpsServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			err = ValidateGetMeetingRsvpsServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-meeting-rsvps", err)
+			}
+			return nil, NewGetMeetingRsvpsServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-meeting-rsvps", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildZoomWebhookRequest instantiates a HTTP request object with method and
 // path set to call the "Meeting Service" service "zoom-webhook" endpoint
 func (c *Client) BuildZoomWebhookRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -4449,30 +4759,28 @@ func DecodeLivezResponse(decoder func(*http.Response) goahttp.Decoder, restoreBo
 // *MeetingFullResponseBody.
 func unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull(v *MeetingFullResponseBody) *meetingservice.MeetingFull {
 	res := &meetingservice.MeetingFull{
-		UID:                             v.UID,
-		ProjectUID:                      v.ProjectUID,
-		StartTime:                       v.StartTime,
-		Duration:                        v.Duration,
-		Timezone:                        v.Timezone,
-		Title:                           v.Title,
-		Description:                     v.Description,
-		Platform:                        v.Platform,
-		EarlyJoinTimeMinutes:            v.EarlyJoinTimeMinutes,
-		MeetingType:                     v.MeetingType,
-		Visibility:                      v.Visibility,
-		Restricted:                      v.Restricted,
-		ArtifactVisibility:              v.ArtifactVisibility,
-		PublicLink:                      v.PublicLink,
-		Password:                        v.Password,
-		EmailDeliveryErrorCount:         v.EmailDeliveryErrorCount,
-		RecordingEnabled:                v.RecordingEnabled,
-		TranscriptEnabled:               v.TranscriptEnabled,
-		YoutubeUploadEnabled:            v.YoutubeUploadEnabled,
-		RegistrantCount:                 v.RegistrantCount,
-		RegistrantResponseDeclinedCount: v.RegistrantResponseDeclinedCount,
-		RegistrantResponseAcceptedCount: v.RegistrantResponseAcceptedCount,
-		CreatedAt:                       v.CreatedAt,
-		UpdatedAt:                       v.UpdatedAt,
+		UID:                     v.UID,
+		ProjectUID:              v.ProjectUID,
+		StartTime:               v.StartTime,
+		Duration:                v.Duration,
+		Timezone:                v.Timezone,
+		Title:                   v.Title,
+		Description:             v.Description,
+		Platform:                v.Platform,
+		EarlyJoinTimeMinutes:    v.EarlyJoinTimeMinutes,
+		MeetingType:             v.MeetingType,
+		Visibility:              v.Visibility,
+		Restricted:              v.Restricted,
+		ArtifactVisibility:      v.ArtifactVisibility,
+		PublicLink:              v.PublicLink,
+		Password:                v.Password,
+		EmailDeliveryErrorCount: v.EmailDeliveryErrorCount,
+		RecordingEnabled:        v.RecordingEnabled,
+		TranscriptEnabled:       v.TranscriptEnabled,
+		YoutubeUploadEnabled:    v.YoutubeUploadEnabled,
+		RegistrantCount:         v.RegistrantCount,
+		CreatedAt:               v.CreatedAt,
+		UpdatedAt:               v.UpdatedAt,
 	}
 	if v.Recurrence != nil {
 		res.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v.Recurrence)
@@ -4563,15 +4871,16 @@ func unmarshalOccurrenceResponseBodyToMeetingserviceOccurrence(v *OccurrenceResp
 		return nil
 	}
 	res := &meetingservice.Occurrence{
-		OccurrenceID:     v.OccurrenceID,
-		StartTime:        v.StartTime,
-		Title:            v.Title,
-		Description:      v.Description,
-		Duration:         v.Duration,
-		RegistrantCount:  v.RegistrantCount,
-		ResponseCountNo:  v.ResponseCountNo,
-		ResponseCountYes: v.ResponseCountYes,
-		IsCancelled:      v.IsCancelled,
+		OccurrenceID:       v.OccurrenceID,
+		StartTime:          v.StartTime,
+		Title:              v.Title,
+		Description:        v.Description,
+		Duration:           v.Duration,
+		RegistrantCount:    v.RegistrantCount,
+		ResponseCountNo:    v.ResponseCountNo,
+		ResponseCountYes:   v.ResponseCountYes,
+		ResponseCountMaybe: v.ResponseCountMaybe,
+		IsCancelled:        v.IsCancelled,
 	}
 	if v.Recurrence != nil {
 		res.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v.Recurrence)
@@ -4713,6 +5022,26 @@ func unmarshalRegistrantResponseBodyToMeetingserviceRegistrant(v *RegistrantResp
 		Username:           v.Username,
 		CreatedAt:          v.CreatedAt,
 		UpdatedAt:          v.UpdatedAt,
+	}
+
+	return res
+}
+
+// unmarshalRSVPResponseResponseBodyToMeetingserviceRSVPResponse builds a value
+// of type *meetingservice.RSVPResponse from a value of type
+// *RSVPResponseResponseBody.
+func unmarshalRSVPResponseResponseBodyToMeetingserviceRSVPResponse(v *RSVPResponseResponseBody) *meetingservice.RSVPResponse {
+	res := &meetingservice.RSVPResponse{
+		ID:           *v.ID,
+		MeetingUID:   *v.MeetingUID,
+		RegistrantID: *v.RegistrantID,
+		Username:     *v.Username,
+		Email:        *v.Email,
+		Response:     *v.Response,
+		Scope:        *v.Scope,
+		OccurrenceID: v.OccurrenceID,
+		CreatedAt:    v.CreatedAt,
+		UpdatedAt:    v.UpdatedAt,
 	}
 
 	return res

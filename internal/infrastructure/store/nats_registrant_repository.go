@@ -133,6 +133,23 @@ func (r *NatsRegistrantRepository) GetByMeetingAndEmail(ctx context.Context, mee
 	return nil, 0, domain.NewNotFoundError(fmt.Sprintf("registrant with meeting '%s' and email '%s' not found", meetingUID, email))
 }
 
+// GetByMeetingAndUsername retrieves a registrant by meeting and username
+func (r *NatsRegistrantRepository) GetByMeetingAndUsername(ctx context.Context, meetingUID, username string) (*models.Registrant, uint64, error) {
+	registrants, err := r.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for _, registrant := range registrants {
+		if registrant.Username == username {
+			// Get with revision
+			return r.GetWithRevision(ctx, registrant.UID)
+		}
+	}
+
+	return nil, 0, domain.NewNotFoundError(fmt.Sprintf("registrant with meeting '%s' and username '%s' not found", meetingUID, username))
+}
+
 // ListByMeeting retrieves all registrants for a meeting
 func (r *NatsRegistrantRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.Registrant, error) {
 	allRegistrants, err := r.ListAll(ctx)

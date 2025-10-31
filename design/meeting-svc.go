@@ -616,6 +616,77 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// POST meeting RSVP endpoint
+	Method("create-meeting-rsvp", func() {
+		Description("Create or update an RSVP response for a meeting. Username is automatically extracted from the JWT token. The most recent RSVP takes precedence.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			RSVPMeetingUIDAttribute()
+			RSVPRegistrantIDAttribute()
+			RSVPUsernameAttribute()
+			RSVPResponseAttribute()
+			RSVPScopeAttribute()
+			RSVPOccurrenceIDAttribute()
+			Required("meeting_uid", "response", "scope")
+		})
+
+		Result(RSVPResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request - invalid scope or missing occurrence_id")
+		Error("NotFound", NotFoundError, "Meeting or registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/meetings/{meeting_uid}/rsvp")
+			Param("version:v")
+			Param("meeting_uid")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET meeting RSVPs endpoint (for organizers)
+	Method("get-meeting-rsvps", func() {
+		Description("Get all RSVP responses for a meeting (organizers only)")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			RSVPMeetingUIDAttribute()
+			Required("meeting_uid")
+		})
+
+		Result(RSVPListResult)
+
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{meeting_uid}/rsvp")
+			Param("version:v")
+			Param("meeting_uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("NotFound", StatusNotFound)
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("zoom-webhook", func() {
 		Description("Handle Zoom webhook events for meeting lifecycle, participants, and recordings.")
 

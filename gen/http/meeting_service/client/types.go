@@ -163,6 +163,23 @@ type UpdateMeetingRegistrantRequestBody struct {
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 }
 
+// CreateMeetingRsvpRequestBody is the type of the "Meeting Service" service
+// "create-meeting-rsvp" endpoint HTTP request body.
+type CreateMeetingRsvpRequestBody struct {
+	// The ID of the registrant submitting this RSVP
+	RegistrantID *string `form:"registrant_id,omitempty" json:"registrant_id,omitempty" xml:"registrant_id,omitempty"`
+	// The username of the registrant
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// The RSVP response
+	Response string `form:"response" json:"response" xml:"response"`
+	// The scope of the RSVP (single occurrence, all occurrences, or this and
+	// following)
+	Scope string `form:"scope" json:"scope" xml:"scope"`
+	// The ID of the specific occurrence (required for 'single' and
+	// 'this_and_following' scopes)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+}
+
 // ZoomWebhookRequestBody is the type of the "Meeting Service" service
 // "zoom-webhook" endpoint HTTP request body.
 type ZoomWebhookRequestBody struct {
@@ -362,10 +379,6 @@ type CreateMeetingResponseBody struct {
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
-	// The number of registrants that have declined the meeting invitation
-	RegistrantResponseDeclinedCount *int `form:"registrant_response_declined_count,omitempty" json:"registrant_response_declined_count,omitempty" xml:"registrant_response_declined_count,omitempty"`
-	// The number of registrants that have accepted the meeting invitation
-	RegistrantResponseAcceptedCount *int `form:"registrant_response_accepted_count,omitempty" json:"registrant_response_accepted_count,omitempty" xml:"registrant_response_accepted_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*OccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
 	// The date and time the resource was created
@@ -454,10 +467,6 @@ type UpdateMeetingBaseResponseBody struct {
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
-	// The number of registrants that have declined the meeting invitation
-	RegistrantResponseDeclinedCount *int `form:"registrant_response_declined_count,omitempty" json:"registrant_response_declined_count,omitempty" xml:"registrant_response_declined_count,omitempty"`
-	// The number of registrants that have accepted the meeting invitation
-	RegistrantResponseAcceptedCount *int `form:"registrant_response_accepted_count,omitempty" json:"registrant_response_accepted_count,omitempty" xml:"registrant_response_accepted_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*OccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
 	// The date and time the resource was created
@@ -575,6 +584,40 @@ type UpdateMeetingRegistrantResponseBody struct {
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// CreateMeetingRsvpResponseBody is the type of the "Meeting Service" service
+// "create-meeting-rsvp" endpoint HTTP response body.
+type CreateMeetingRsvpResponseBody struct {
+	// The unique identifier for this RSVP
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// The UID of the meeting this RSVP is for
+	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
+	// The ID of the registrant submitting this RSVP
+	RegistrantID *string `form:"registrant_id,omitempty" json:"registrant_id,omitempty" xml:"registrant_id,omitempty"`
+	// The username of the registrant
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// The email of the registrant
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// The RSVP response
+	Response *string `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
+	// The scope of the RSVP (single occurrence, all occurrences, or this and
+	// following)
+	Scope *string `form:"scope,omitempty" json:"scope,omitempty" xml:"scope,omitempty"`
+	// The ID of the specific occurrence (required for 'single' and
+	// 'this_and_following' scopes)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// GetMeetingRsvpsResponseBody is the type of the "Meeting Service" service
+// "get-meeting-rsvps" endpoint HTTP response body.
+type GetMeetingRsvpsResponseBody struct {
+	// List of RSVP responses
+	Rsvps []*RSVPResponseResponseBody `form:"rsvps,omitempty" json:"rsvps,omitempty" xml:"rsvps,omitempty"`
 }
 
 // ZoomWebhookResponseBody is the type of the "Meeting Service" service
@@ -1408,6 +1451,86 @@ type ResendMeetingRegistrantInvitationServiceUnavailableResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// CreateMeetingRsvpBadRequestResponseBody is the type of the "Meeting Service"
+// service "create-meeting-rsvp" endpoint HTTP response body for the
+// "BadRequest" error.
+type CreateMeetingRsvpBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateMeetingRsvpInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "create-meeting-rsvp" endpoint HTTP response body for the
+// "InternalServerError" error.
+type CreateMeetingRsvpInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateMeetingRsvpNotFoundResponseBody is the type of the "Meeting Service"
+// service "create-meeting-rsvp" endpoint HTTP response body for the "NotFound"
+// error.
+type CreateMeetingRsvpNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateMeetingRsvpServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "create-meeting-rsvp" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type CreateMeetingRsvpServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingRsvpsBadRequestResponseBody is the type of the "Meeting Service"
+// service "get-meeting-rsvps" endpoint HTTP response body for the "BadRequest"
+// error.
+type GetMeetingRsvpsBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingRsvpsInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "get-meeting-rsvps" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetMeetingRsvpsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingRsvpsNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-meeting-rsvps" endpoint HTTP response body for the "NotFound"
+// error.
+type GetMeetingRsvpsNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingRsvpsServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-meeting-rsvps" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetMeetingRsvpsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // ZoomWebhookBadRequestResponseBody is the type of the "Meeting Service"
 // service "zoom-webhook" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -1947,10 +2070,6 @@ type MeetingFullResponseBody struct {
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
-	// The number of registrants that have declined the meeting invitation
-	RegistrantResponseDeclinedCount *int `form:"registrant_response_declined_count,omitempty" json:"registrant_response_declined_count,omitempty" xml:"registrant_response_declined_count,omitempty"`
-	// The number of registrants that have accepted the meeting invitation
-	RegistrantResponseAcceptedCount *int `form:"registrant_response_accepted_count,omitempty" json:"registrant_response_accepted_count,omitempty" xml:"registrant_response_accepted_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*OccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
 	// The date and time the resource was created
@@ -2065,6 +2184,8 @@ type OccurrenceResponseBody struct {
 	ResponseCountNo *int `form:"response_count_no,omitempty" json:"response_count_no,omitempty" xml:"response_count_no,omitempty"`
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
+	// Number of registrants who responded maybe to the invite for this occurrence
+	ResponseCountMaybe *int `form:"response_count_maybe,omitempty" json:"response_count_maybe,omitempty" xml:"response_count_maybe,omitempty"`
 	// Whether the occurrence is cancelled
 	IsCancelled *bool `form:"is_cancelled,omitempty" json:"is_cancelled,omitempty" xml:"is_cancelled,omitempty"`
 }
@@ -2205,10 +2326,6 @@ type MeetingBaseResponseBody struct {
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
-	// The number of registrants that have declined the meeting invitation
-	RegistrantResponseDeclinedCount *int `form:"registrant_response_declined_count,omitempty" json:"registrant_response_declined_count,omitempty" xml:"registrant_response_declined_count,omitempty"`
-	// The number of registrants that have accepted the meeting invitation
-	RegistrantResponseAcceptedCount *int `form:"registrant_response_accepted_count,omitempty" json:"registrant_response_accepted_count,omitempty" xml:"registrant_response_accepted_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*OccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
 	// The date and time the resource was created
@@ -2266,6 +2383,32 @@ type RegistrantResponseBody struct {
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// The date and time the resource was created
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// The date and time the resource was last updated
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+}
+
+// RSVPResponseResponseBody is used to define fields on response body types.
+type RSVPResponseResponseBody struct {
+	// The unique identifier for this RSVP
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// The UID of the meeting this RSVP is for
+	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
+	// The ID of the registrant submitting this RSVP
+	RegistrantID *string `form:"registrant_id,omitempty" json:"registrant_id,omitempty" xml:"registrant_id,omitempty"`
+	// The username of the registrant
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// The email of the registrant
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// The RSVP response
+	Response *string `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
+	// The scope of the RSVP (single occurrence, all occurrences, or this and
+	// following)
+	Scope *string `form:"scope,omitempty" json:"scope,omitempty" xml:"scope,omitempty"`
+	// The ID of the specific occurrence (required for 'single' and
+	// 'this_and_following' scopes)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// The date and time the resource was created
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// The date and time the resource was last updated
@@ -2610,6 +2753,20 @@ func NewUpdateMeetingRegistrantRequestBody(p *meetingservice.UpdateMeetingRegist
 	return body
 }
 
+// NewCreateMeetingRsvpRequestBody builds the HTTP request body from the
+// payload of the "create-meeting-rsvp" endpoint of the "Meeting Service"
+// service.
+func NewCreateMeetingRsvpRequestBody(p *meetingservice.CreateMeetingRsvpPayload) *CreateMeetingRsvpRequestBody {
+	body := &CreateMeetingRsvpRequestBody{
+		RegistrantID: p.RegistrantID,
+		Username:     p.Username,
+		Response:     p.Response,
+		Scope:        p.Scope,
+		OccurrenceID: p.OccurrenceID,
+	}
+	return body
+}
+
 // NewZoomWebhookRequestBody builds the HTTP request body from the payload of
 // the "zoom-webhook" endpoint of the "Meeting Service" service.
 func NewZoomWebhookRequestBody(p *meetingservice.ZoomWebhookPayload) *ZoomWebhookRequestBody {
@@ -2768,30 +2925,28 @@ func NewGetMeetingsServiceUnavailable(body *GetMeetingsServiceUnavailableRespons
 // "create-meeting" endpoint result from a HTTP "Created" response.
 func NewCreateMeetingMeetingFullCreated(body *CreateMeetingResponseBody) *meetingservice.MeetingFull {
 	v := &meetingservice.MeetingFull{
-		UID:                             body.UID,
-		ProjectUID:                      body.ProjectUID,
-		StartTime:                       body.StartTime,
-		Duration:                        body.Duration,
-		Timezone:                        body.Timezone,
-		Title:                           body.Title,
-		Description:                     body.Description,
-		Platform:                        body.Platform,
-		EarlyJoinTimeMinutes:            body.EarlyJoinTimeMinutes,
-		MeetingType:                     body.MeetingType,
-		Visibility:                      body.Visibility,
-		Restricted:                      body.Restricted,
-		ArtifactVisibility:              body.ArtifactVisibility,
-		PublicLink:                      body.PublicLink,
-		Password:                        body.Password,
-		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
-		RecordingEnabled:                body.RecordingEnabled,
-		TranscriptEnabled:               body.TranscriptEnabled,
-		YoutubeUploadEnabled:            body.YoutubeUploadEnabled,
-		RegistrantCount:                 body.RegistrantCount,
-		RegistrantResponseDeclinedCount: body.RegistrantResponseDeclinedCount,
-		RegistrantResponseAcceptedCount: body.RegistrantResponseAcceptedCount,
-		CreatedAt:                       body.CreatedAt,
-		UpdatedAt:                       body.UpdatedAt,
+		UID:                     body.UID,
+		ProjectUID:              body.ProjectUID,
+		StartTime:               body.StartTime,
+		Duration:                body.Duration,
+		Timezone:                body.Timezone,
+		Title:                   body.Title,
+		Description:             body.Description,
+		Platform:                body.Platform,
+		EarlyJoinTimeMinutes:    body.EarlyJoinTimeMinutes,
+		MeetingType:             body.MeetingType,
+		Visibility:              body.Visibility,
+		Restricted:              body.Restricted,
+		ArtifactVisibility:      body.ArtifactVisibility,
+		PublicLink:              body.PublicLink,
+		Password:                body.Password,
+		EmailDeliveryErrorCount: body.EmailDeliveryErrorCount,
+		RecordingEnabled:        body.RecordingEnabled,
+		TranscriptEnabled:       body.TranscriptEnabled,
+		YoutubeUploadEnabled:    body.YoutubeUploadEnabled,
+		RegistrantCount:         body.RegistrantCount,
+		CreatedAt:               body.CreatedAt,
+		UpdatedAt:               body.UpdatedAt,
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
@@ -2869,30 +3024,28 @@ func NewCreateMeetingServiceUnavailable(body *CreateMeetingServiceUnavailableRes
 // "get-meeting-base" endpoint result from a HTTP "OK" response.
 func NewGetMeetingBaseResultOK(body *GetMeetingBaseResponseBody, etag *string) *meetingservice.GetMeetingBaseResult {
 	v := &meetingservice.MeetingBase{
-		UID:                             body.UID,
-		ProjectUID:                      body.ProjectUID,
-		StartTime:                       body.StartTime,
-		Duration:                        body.Duration,
-		Timezone:                        body.Timezone,
-		Title:                           body.Title,
-		Description:                     body.Description,
-		Platform:                        body.Platform,
-		EarlyJoinTimeMinutes:            body.EarlyJoinTimeMinutes,
-		MeetingType:                     body.MeetingType,
-		Visibility:                      body.Visibility,
-		Restricted:                      body.Restricted,
-		ArtifactVisibility:              body.ArtifactVisibility,
-		PublicLink:                      body.PublicLink,
-		Password:                        body.Password,
-		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
-		RecordingEnabled:                body.RecordingEnabled,
-		TranscriptEnabled:               body.TranscriptEnabled,
-		YoutubeUploadEnabled:            body.YoutubeUploadEnabled,
-		RegistrantCount:                 body.RegistrantCount,
-		RegistrantResponseDeclinedCount: body.RegistrantResponseDeclinedCount,
-		RegistrantResponseAcceptedCount: body.RegistrantResponseAcceptedCount,
-		CreatedAt:                       body.CreatedAt,
-		UpdatedAt:                       body.UpdatedAt,
+		UID:                     body.UID,
+		ProjectUID:              body.ProjectUID,
+		StartTime:               body.StartTime,
+		Duration:                body.Duration,
+		Timezone:                body.Timezone,
+		Title:                   body.Title,
+		Description:             body.Description,
+		Platform:                body.Platform,
+		EarlyJoinTimeMinutes:    body.EarlyJoinTimeMinutes,
+		MeetingType:             body.MeetingType,
+		Visibility:              body.Visibility,
+		Restricted:              body.Restricted,
+		ArtifactVisibility:      body.ArtifactVisibility,
+		PublicLink:              body.PublicLink,
+		Password:                body.Password,
+		EmailDeliveryErrorCount: body.EmailDeliveryErrorCount,
+		RecordingEnabled:        body.RecordingEnabled,
+		TranscriptEnabled:       body.TranscriptEnabled,
+		YoutubeUploadEnabled:    body.YoutubeUploadEnabled,
+		RegistrantCount:         body.RegistrantCount,
+		CreatedAt:               body.CreatedAt,
+		UpdatedAt:               body.UpdatedAt,
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
@@ -3066,30 +3219,28 @@ func NewGetMeetingJoinURLUnauthorized(body *GetMeetingJoinURLUnauthorizedRespons
 // "update-meeting-base" endpoint result from a HTTP "OK" response.
 func NewUpdateMeetingBaseMeetingBaseOK(body *UpdateMeetingBaseResponseBody) *meetingservice.MeetingBase {
 	v := &meetingservice.MeetingBase{
-		UID:                             body.UID,
-		ProjectUID:                      body.ProjectUID,
-		StartTime:                       body.StartTime,
-		Duration:                        body.Duration,
-		Timezone:                        body.Timezone,
-		Title:                           body.Title,
-		Description:                     body.Description,
-		Platform:                        body.Platform,
-		EarlyJoinTimeMinutes:            body.EarlyJoinTimeMinutes,
-		MeetingType:                     body.MeetingType,
-		Visibility:                      body.Visibility,
-		Restricted:                      body.Restricted,
-		ArtifactVisibility:              body.ArtifactVisibility,
-		PublicLink:                      body.PublicLink,
-		Password:                        body.Password,
-		EmailDeliveryErrorCount:         body.EmailDeliveryErrorCount,
-		RecordingEnabled:                body.RecordingEnabled,
-		TranscriptEnabled:               body.TranscriptEnabled,
-		YoutubeUploadEnabled:            body.YoutubeUploadEnabled,
-		RegistrantCount:                 body.RegistrantCount,
-		RegistrantResponseDeclinedCount: body.RegistrantResponseDeclinedCount,
-		RegistrantResponseAcceptedCount: body.RegistrantResponseAcceptedCount,
-		CreatedAt:                       body.CreatedAt,
-		UpdatedAt:                       body.UpdatedAt,
+		UID:                     body.UID,
+		ProjectUID:              body.ProjectUID,
+		StartTime:               body.StartTime,
+		Duration:                body.Duration,
+		Timezone:                body.Timezone,
+		Title:                   body.Title,
+		Description:             body.Description,
+		Platform:                body.Platform,
+		EarlyJoinTimeMinutes:    body.EarlyJoinTimeMinutes,
+		MeetingType:             body.MeetingType,
+		Visibility:              body.Visibility,
+		Restricted:              body.Restricted,
+		ArtifactVisibility:      body.ArtifactVisibility,
+		PublicLink:              body.PublicLink,
+		Password:                body.Password,
+		EmailDeliveryErrorCount: body.EmailDeliveryErrorCount,
+		RecordingEnabled:        body.RecordingEnabled,
+		TranscriptEnabled:       body.TranscriptEnabled,
+		YoutubeUploadEnabled:    body.YoutubeUploadEnabled,
+		RegistrantCount:         body.RegistrantCount,
+		CreatedAt:               body.CreatedAt,
+		UpdatedAt:               body.UpdatedAt,
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
@@ -3694,6 +3845,125 @@ func NewResendMeetingRegistrantInvitationNotFound(body *ResendMeetingRegistrantI
 // Service service resend-meeting-registrant-invitation endpoint
 // ServiceUnavailable error.
 func NewResendMeetingRegistrantInvitationServiceUnavailable(body *ResendMeetingRegistrantInvitationServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateMeetingRsvpRSVPResponseCreated builds a "Meeting Service" service
+// "create-meeting-rsvp" endpoint result from a HTTP "Created" response.
+func NewCreateMeetingRsvpRSVPResponseCreated(body *CreateMeetingRsvpResponseBody) *meetingservice.RSVPResponse {
+	v := &meetingservice.RSVPResponse{
+		ID:           *body.ID,
+		MeetingUID:   *body.MeetingUID,
+		RegistrantID: *body.RegistrantID,
+		Username:     *body.Username,
+		Email:        *body.Email,
+		Response:     *body.Response,
+		Scope:        *body.Scope,
+		OccurrenceID: body.OccurrenceID,
+		CreatedAt:    body.CreatedAt,
+		UpdatedAt:    body.UpdatedAt,
+	}
+
+	return v
+}
+
+// NewCreateMeetingRsvpBadRequest builds a Meeting Service service
+// create-meeting-rsvp endpoint BadRequest error.
+func NewCreateMeetingRsvpBadRequest(body *CreateMeetingRsvpBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateMeetingRsvpInternalServerError builds a Meeting Service service
+// create-meeting-rsvp endpoint InternalServerError error.
+func NewCreateMeetingRsvpInternalServerError(body *CreateMeetingRsvpInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateMeetingRsvpNotFound builds a Meeting Service service
+// create-meeting-rsvp endpoint NotFound error.
+func NewCreateMeetingRsvpNotFound(body *CreateMeetingRsvpNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateMeetingRsvpServiceUnavailable builds a Meeting Service service
+// create-meeting-rsvp endpoint ServiceUnavailable error.
+func NewCreateMeetingRsvpServiceUnavailable(body *CreateMeetingRsvpServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingRsvpsRSVPListResultOK builds a "Meeting Service" service
+// "get-meeting-rsvps" endpoint result from a HTTP "OK" response.
+func NewGetMeetingRsvpsRSVPListResultOK(body *GetMeetingRsvpsResponseBody) *meetingservice.RSVPListResult {
+	v := &meetingservice.RSVPListResult{}
+	v.Rsvps = make([]*meetingservice.RSVPResponse, len(body.Rsvps))
+	for i, val := range body.Rsvps {
+		v.Rsvps[i] = unmarshalRSVPResponseResponseBodyToMeetingserviceRSVPResponse(val)
+	}
+
+	return v
+}
+
+// NewGetMeetingRsvpsBadRequest builds a Meeting Service service
+// get-meeting-rsvps endpoint BadRequest error.
+func NewGetMeetingRsvpsBadRequest(body *GetMeetingRsvpsBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingRsvpsInternalServerError builds a Meeting Service service
+// get-meeting-rsvps endpoint InternalServerError error.
+func NewGetMeetingRsvpsInternalServerError(body *GetMeetingRsvpsInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingRsvpsNotFound builds a Meeting Service service
+// get-meeting-rsvps endpoint NotFound error.
+func NewGetMeetingRsvpsNotFound(body *GetMeetingRsvpsNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingRsvpsServiceUnavailable builds a Meeting Service service
+// get-meeting-rsvps endpoint ServiceUnavailable error.
+func NewGetMeetingRsvpsServiceUnavailable(body *GetMeetingRsvpsServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
 	v := &meetingservice.ServiceUnavailableError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -5087,6 +5357,80 @@ func ValidateUpdateMeetingRegistrantResponseBody(body *UpdateMeetingRegistrantRe
 	return
 }
 
+// ValidateCreateMeetingRsvpResponseBody runs the validations defined on
+// Create-Meeting-RsvpResponseBody
+func ValidateCreateMeetingRsvpResponseBody(body *CreateMeetingRsvpResponseBody) (err error) {
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.MeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
+	}
+	if body.RegistrantID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("registrant_id", "body"))
+	}
+	if body.Username == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("username", "body"))
+	}
+	if body.Email == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
+	}
+	if body.Response == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response", "body"))
+	}
+	if body.Scope == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("scope", "body"))
+	}
+	if body.ID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.id", *body.ID, goa.FormatUUID))
+	}
+	if body.MeetingUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
+	}
+	if body.RegistrantID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.registrant_id", *body.RegistrantID, goa.FormatUUID))
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.Response != nil {
+		if !(*body.Response == "accepted" || *body.Response == "maybe" || *body.Response == "declined") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.response", *body.Response, []any{"accepted", "maybe", "declined"}))
+		}
+	}
+	if body.Scope != nil {
+		if !(*body.Scope == "single" || *body.Scope == "all" || *body.Scope == "this_and_following") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.scope", *body.Scope, []any{"single", "all", "this_and_following"}))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
+	}
+	if body.CreatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
+	}
+	if body.UpdatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateGetMeetingRsvpsResponseBody runs the validations defined on
+// Get-Meeting-RsvpsResponseBody
+func ValidateGetMeetingRsvpsResponseBody(body *GetMeetingRsvpsResponseBody) (err error) {
+	if body.Rsvps == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("rsvps", "body"))
+	}
+	for _, e := range body.Rsvps {
+		if e != nil {
+			if err2 := ValidateRSVPResponseResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
 // ValidateGetPastMeetingsResponseBody runs the validations defined on
 // Get-Past-MeetingsResponseBody
 func ValidateGetPastMeetingsResponseBody(body *GetPastMeetingsResponseBody) (err error) {
@@ -6391,6 +6735,102 @@ func ValidateResendMeetingRegistrantInvitationServiceUnavailableResponseBody(bod
 	return
 }
 
+// ValidateCreateMeetingRsvpBadRequestResponseBody runs the validations defined
+// on create-meeting-rsvp_BadRequest_response_body
+func ValidateCreateMeetingRsvpBadRequestResponseBody(body *CreateMeetingRsvpBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateMeetingRsvpInternalServerErrorResponseBody runs the
+// validations defined on create-meeting-rsvp_InternalServerError_response_body
+func ValidateCreateMeetingRsvpInternalServerErrorResponseBody(body *CreateMeetingRsvpInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateMeetingRsvpNotFoundResponseBody runs the validations defined
+// on create-meeting-rsvp_NotFound_response_body
+func ValidateCreateMeetingRsvpNotFoundResponseBody(body *CreateMeetingRsvpNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateMeetingRsvpServiceUnavailableResponseBody runs the validations
+// defined on create-meeting-rsvp_ServiceUnavailable_response_body
+func ValidateCreateMeetingRsvpServiceUnavailableResponseBody(body *CreateMeetingRsvpServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingRsvpsBadRequestResponseBody runs the validations defined
+// on get-meeting-rsvps_BadRequest_response_body
+func ValidateGetMeetingRsvpsBadRequestResponseBody(body *GetMeetingRsvpsBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingRsvpsInternalServerErrorResponseBody runs the validations
+// defined on get-meeting-rsvps_InternalServerError_response_body
+func ValidateGetMeetingRsvpsInternalServerErrorResponseBody(body *GetMeetingRsvpsInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingRsvpsNotFoundResponseBody runs the validations defined on
+// get-meeting-rsvps_NotFound_response_body
+func ValidateGetMeetingRsvpsNotFoundResponseBody(body *GetMeetingRsvpsNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingRsvpsServiceUnavailableResponseBody runs the validations
+// defined on get-meeting-rsvps_ServiceUnavailable_response_body
+func ValidateGetMeetingRsvpsServiceUnavailableResponseBody(body *GetMeetingRsvpsServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
 // ValidateZoomWebhookBadRequestResponseBody runs the validations defined on
 // zoom-webhook_BadRequest_response_body
 func ValidateZoomWebhookBadRequestResponseBody(body *ZoomWebhookBadRequestResponseBody) (err error) {
@@ -7393,6 +7833,64 @@ func ValidateRegistrantResponseBody(body *RegistrantResponseBody) (err error) {
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+	}
+	if body.CreatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
+	}
+	if body.UpdatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateRSVPResponseResponseBody runs the validations defined on
+// RSVPResponseResponseBody
+func ValidateRSVPResponseResponseBody(body *RSVPResponseResponseBody) (err error) {
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.MeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
+	}
+	if body.RegistrantID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("registrant_id", "body"))
+	}
+	if body.Username == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("username", "body"))
+	}
+	if body.Email == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("email", "body"))
+	}
+	if body.Response == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response", "body"))
+	}
+	if body.Scope == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("scope", "body"))
+	}
+	if body.ID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.id", *body.ID, goa.FormatUUID))
+	}
+	if body.MeetingUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
+	}
+	if body.RegistrantID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.registrant_id", *body.RegistrantID, goa.FormatUUID))
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.Response != nil {
+		if !(*body.Response == "accepted" || *body.Response == "maybe" || *body.Response == "declined") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.response", *body.Response, []any{"accepted", "maybe", "declined"}))
+		}
+	}
+	if body.Scope != nil {
+		if !(*body.Scope == "single" || *body.Scope == "all" || *body.Scope == "this_and_following") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.scope", *body.Scope, []any{"single", "all", "this_and_following"}))
+		}
+	}
+	if body.OccurrenceID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.occurrence_id", *body.OccurrenceID, "^[0-9]*$"))
 	}
 	if body.CreatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))

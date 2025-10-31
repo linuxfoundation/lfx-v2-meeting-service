@@ -23,6 +23,7 @@ const (
 	KeyPrefixRecording   = "recording"
 	KeyPrefixTranscript  = "transcript"
 	KeyPrefixSummary     = "summary"
+	KeyPrefixRSVP        = "rsvp"
 
 	// Index prefixes
 	KeyPrefixIndex           = "index"
@@ -32,6 +33,7 @@ const (
 	KeyPrefixIndexProject    = "project"
 	KeyPrefixIndexPlatform   = "platform"
 	KeyPrefixIndexOccurrence = "occurrence"
+	KeyPrefixIndexRegistrant = "registrant"
 )
 
 // KeyBuilder provides utilities for building consistent NATS KV keys

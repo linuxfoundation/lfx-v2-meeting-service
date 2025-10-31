@@ -50,6 +50,11 @@ type Service interface {
 	DeleteMeetingRegistrant(context.Context, *DeleteMeetingRegistrantPayload) (err error)
 	// Resend an invitation email to a meeting registrant
 	ResendMeetingRegistrantInvitation(context.Context, *ResendMeetingRegistrantInvitationPayload) (err error)
+	// Create or update an RSVP response for a meeting. Username is automatically
+	// extracted from the JWT token. The most recent RSVP takes precedence.
+	CreateMeetingRsvp(context.Context, *CreateMeetingRsvpPayload) (res *RSVPResponse, err error)
+	// Get all RSVP responses for a meeting (organizers only)
+	GetMeetingRsvps(context.Context, *GetMeetingRsvpsPayload) (res *RSVPListResult, err error)
 	// Handle Zoom webhook events for meeting lifecycle, participants, and
 	// recordings.
 	ZoomWebhook(context.Context, *ZoomWebhookPayload) (res *ZoomWebhookResponse, err error)
@@ -104,7 +109,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [30]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
+var MethodNames = [32]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -209,6 +214,29 @@ type CreateMeetingRegistrantPayload struct {
 	AvatarURL *string
 	// User's LF ID
 	Username *string
+}
+
+// CreateMeetingRsvpPayload is the payload type of the Meeting Service service
+// create-meeting-rsvp method.
+type CreateMeetingRsvpPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting this RSVP is for
+	MeetingUID string
+	// The ID of the registrant submitting this RSVP
+	RegistrantID *string
+	// The username of the registrant
+	Username *string
+	// The RSVP response
+	Response string
+	// The scope of the RSVP (single occurrence, all occurrences, or this and
+	// following)
+	Scope string
+	// The ID of the specific occurrence (required for 'single' and
+	// 'this_and_following' scopes)
+	OccurrenceID *string
 }
 
 // CreatePastMeetingParticipantPayload is the payload type of the Meeting
@@ -461,6 +489,17 @@ type GetMeetingRegistrantsResult struct {
 	CacheControl *string
 }
 
+// GetMeetingRsvpsPayload is the payload type of the Meeting Service service
+// get-meeting-rsvps method.
+type GetMeetingRsvpsPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting this RSVP is for
+	MeetingUID string
+}
+
 // GetMeetingSettingsPayload is the payload type of the Meeting Service service
 // get-meeting-settings method.
 type GetMeetingSettingsPayload struct {
@@ -686,10 +725,6 @@ type MeetingBase struct {
 	ZoomConfig *ZoomConfigFull
 	// The number of registrants for the meeting
 	RegistrantCount *int
-	// The number of registrants that have declined the meeting invitation
-	RegistrantResponseDeclinedCount *int
-	// The number of registrants that have accepted the meeting invitation
-	RegistrantResponseAcceptedCount *int
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*Occurrence
 	// The date and time the resource was created
@@ -758,10 +793,6 @@ type MeetingFull struct {
 	ZoomConfig *ZoomConfigFull
 	// The number of registrants for the meeting
 	RegistrantCount *int
-	// The number of registrants that have declined the meeting invitation
-	RegistrantResponseDeclinedCount *int
-	// The number of registrants that have accepted the meeting invitation
-	RegistrantResponseAcceptedCount *int
 	// Array of meeting occurrences (read-only from platform API)
 	Occurrences []*Occurrence
 	// The date and time the resource was created
@@ -814,6 +845,8 @@ type Occurrence struct {
 	ResponseCountNo *int
 	// Number of registrants who accepted the invite for this occurrence
 	ResponseCountYes *int
+	// Number of registrants who responded maybe to the invite for this occurrence
+	ResponseCountMaybe *int
 	// Whether the occurrence is cancelled
 	IsCancelled *bool
 }
@@ -976,6 +1009,40 @@ type PastMeetingSummaryZoomConfig struct {
 	MeetingID *string
 	// Zoom meeting UUID
 	MeetingUUID *string
+}
+
+// RSVPListResult is the result type of the Meeting Service service
+// get-meeting-rsvps method.
+type RSVPListResult struct {
+	// List of RSVP responses
+	Rsvps []*RSVPResponse
+}
+
+// RSVPResponse is the result type of the Meeting Service service
+// create-meeting-rsvp method.
+type RSVPResponse struct {
+	// The unique identifier for this RSVP
+	ID string
+	// The UID of the meeting this RSVP is for
+	MeetingUID string
+	// The ID of the registrant submitting this RSVP
+	RegistrantID string
+	// The username of the registrant
+	Username string
+	// The email of the registrant
+	Email string
+	// The RSVP response
+	Response string
+	// The scope of the RSVP (single occurrence, all occurrences, or this and
+	// following)
+	Scope string
+	// The ID of the specific occurrence (required for 'single' and
+	// 'this_and_following' scopes)
+	OccurrenceID *string
+	// The date and time the resource was created
+	CreatedAt *string
+	// The date and time the resource was last updated
+	UpdatedAt *string
 }
 
 // Meeting recurrence object

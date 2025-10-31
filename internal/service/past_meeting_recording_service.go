@@ -20,7 +20,7 @@ type PastMeetingRecordingService struct {
 	pastMeetingRecordingRepository   domain.PastMeetingRecordingRepository
 	pastMeetingRepository            domain.PastMeetingRepository
 	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository
-	messageBuilder                   domain.MessageBuilder
+	messageSender                    domain.PastMeetingRecordingMessageSender
 	config                           ServiceConfig
 }
 
@@ -29,14 +29,14 @@ func NewPastMeetingRecordingService(
 	pastMeetingRecordingRepository domain.PastMeetingRecordingRepository,
 	pastMeetingRepository domain.PastMeetingRepository,
 	pastMeetingParticipantRepository domain.PastMeetingParticipantRepository,
-	messageBuilder domain.MessageBuilder,
+	messageSender domain.PastMeetingRecordingMessageSender,
 	serviceConfig ServiceConfig,
 ) *PastMeetingRecordingService {
 	return &PastMeetingRecordingService{
 		pastMeetingRecordingRepository:   pastMeetingRecordingRepository,
 		pastMeetingRepository:            pastMeetingRepository,
 		pastMeetingParticipantRepository: pastMeetingParticipantRepository,
-		messageBuilder:                   messageBuilder,
+		messageSender:                    messageSender,
 		config:                           serviceConfig,
 	}
 }
@@ -46,7 +46,7 @@ func (s *PastMeetingRecordingService) ServiceReady() bool {
 	return s.pastMeetingRecordingRepository != nil &&
 		s.pastMeetingRepository != nil &&
 		s.pastMeetingParticipantRepository != nil &&
-		s.messageBuilder != nil
+		s.messageSender != nil
 }
 
 // ListRecordingsByPastMeeting returns all recordings for a given past meeting.
@@ -92,7 +92,7 @@ func (s *PastMeetingRecordingService) CreateRecording(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording)
+			return s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -116,7 +116,7 @@ func (s *PastMeetingRecordingService) CreateRecording(
 				}
 			}
 
-			return s.messageBuilder.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
+			return s.messageSender.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
 				UID:                recording.UID,
 				PastMeetingUID:     recording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
@@ -224,7 +224,7 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording)
+			return s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -248,7 +248,7 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 				}
 			}
 
-			return s.messageBuilder.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
+			return s.messageSender.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
 				UID:                currentRecording.UID,
 				PastMeetingUID:     currentRecording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
@@ -298,7 +298,7 @@ func (s *PastMeetingRecordingService) DeleteRecording(ctx context.Context, recor
 	}
 
 	// Send indexing message for deleted recording
-	err = s.messageBuilder.SendIndexPastMeetingRecording(ctx, models.ActionDeleted, *recording)
+	err = s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionDeleted, *recording)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for deleted recording", logging.ErrKey, err, "recording_uid", recordingUID)
 		// Don't fail the operation if indexing fails

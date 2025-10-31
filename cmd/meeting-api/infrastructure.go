@@ -118,6 +118,7 @@ func setupNATS(ctx context.Context, env environment, gracefulCloseWG *sync.WaitG
 type Repositories struct {
 	Meeting                *store.NatsMeetingRepository
 	Registrant             *store.NatsRegistrantRepository
+	MeetingRSVP            *store.NatsMeetingRSVPRepository
 	PastMeeting            *store.NatsPastMeetingRepository
 	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
 	PastMeetingRecording   *store.NatsPastMeetingRecordingRepository
@@ -139,6 +140,7 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		store.KVStoreNameMeetings,
 		store.KVStoreNameMeetingSettings,
 		store.KVStoreNameMeetingRegistrants,
+		store.KVStoreNameMeetingRSVPs,
 		store.KVStoreNamePastMeetings,
 		store.KVStoreNamePastMeetingParticipants,
 		store.KVStoreNamePastMeetingRecordings,
@@ -158,6 +160,7 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 	repos := &Repositories{
 		Meeting:                store.NewNatsMeetingRepository(kvStores[store.KVStoreNameMeetings], kvStores[store.KVStoreNameMeetingSettings]),
 		Registrant:             store.NewNatsRegistrantRepository(kvStores[store.KVStoreNameMeetingRegistrants]),
+		MeetingRSVP:            store.NewNatsMeetingRSVPRepository(kvStores[store.KVStoreNameMeetingRSVPs]),
 		PastMeeting:            store.NewNatsPastMeetingRepository(kvStores[store.KVStoreNamePastMeetings]),
 		PastMeetingParticipant: store.NewNatsPastMeetingParticipantRepository(kvStores[store.KVStoreNamePastMeetingParticipants]),
 		PastMeetingRecording:   store.NewNatsPastMeetingRecordingRepository(kvStores[store.KVStoreNamePastMeetingRecordings]),

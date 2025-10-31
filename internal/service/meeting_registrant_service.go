@@ -27,7 +27,8 @@ type MeetingRegistrantService struct {
 	meetingRepository    domain.MeetingRepository
 	registrantRepository domain.RegistrantRepository
 	emailService         domain.EmailService
-	messageBuilder       domain.MessageBuilder
+	messageSender        domain.MeetingRegistrantMessageSender
+	externalClient       domain.ExternalServiceClient
 	occurrenceService    *OccurrenceService
 	config               ServiceConfig
 }
@@ -37,7 +38,8 @@ func NewMeetingRegistrantService(
 	meetingRepository domain.MeetingRepository,
 	registrantRepository domain.RegistrantRepository,
 	emailService domain.EmailService,
-	messageBuilder domain.MessageBuilder,
+	messageSender domain.MeetingRegistrantMessageSender,
+	externalClient domain.ExternalServiceClient,
 	occurrenceService *OccurrenceService,
 	config ServiceConfig,
 ) *MeetingRegistrantService {
@@ -46,7 +48,8 @@ func NewMeetingRegistrantService(
 		meetingRepository:    meetingRepository,
 		registrantRepository: registrantRepository,
 		emailService:         emailService,
-		messageBuilder:       messageBuilder,
+		messageSender:        messageSender,
+		externalClient:       externalClient,
 		occurrenceService:    occurrenceService,
 	}
 }
@@ -55,7 +58,8 @@ func NewMeetingRegistrantService(
 func (s *MeetingRegistrantService) ServiceReady() bool {
 	return s.meetingRepository != nil &&
 		s.registrantRepository != nil &&
-		s.messageBuilder != nil &&
+		s.messageSender != nil &&
+		s.externalClient != nil &&
 		s.emailService != nil &&
 		s.occurrenceService != nil
 }
@@ -179,7 +183,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 		// Send indexing message for the new registrant
 		func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.messageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *reqRegistrant)
+			err := s.messageSender.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for new registrant", logging.ErrKey, err)
 			}
@@ -200,7 +204,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 	if reqRegistrant.Username != "" {
 		tasks = append(tasks, func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.messageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+			err := s.messageSender.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        reqRegistrant.UID,
 				Username:   reqRegistrant.Username,
 				MeetingUID: reqRegistrant.MeetingUID,
@@ -342,7 +346,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 		// Send indexing message for the updated registrant
 		func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.messageBuilder.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *reqRegistrant)
+			err := s.messageSender.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *reqRegistrant)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for updated registrant", logging.ErrKey, err)
 			}
@@ -354,7 +358,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 	if reqRegistrant.Username != "" {
 		tasks = append(tasks, func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.messageBuilder.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+			err := s.messageSender.SendPutMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        reqRegistrant.UID,
 				Username:   reqRegistrant.Username,
 				MeetingUID: reqRegistrant.MeetingUID,
@@ -417,7 +421,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 	functions = append(functions, func() error {
 		msgCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-		err := s.messageBuilder.SendDeleteIndexMeetingRegistrant(msgCtx, registrant.UID)
+		err := s.messageSender.SendDeleteIndexMeetingRegistrant(msgCtx, registrant.UID)
 		if err != nil {
 			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
@@ -429,7 +433,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 		functions = append(functions, func() error {
 			msgCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-			err := s.messageBuilder.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
+			err := s.messageSender.SendRemoveMeetingRegistrantAccess(msgCtx, models.MeetingRegistrantAccessMessage{
 				UID:        registrant.UID,
 				Username:   registrant.Username,
 				MeetingUID: registrant.MeetingUID,
@@ -567,9 +571,9 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		passcode = meetingDB.ZoomConfig.Passcode
 	}
 
-	projectName, _ := s.messageBuilder.GetProjectName(ctx, meetingDB.ProjectUID)
-	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meetingDB.ProjectUID)
-	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meetingDB.ProjectUID)
+	projectName, _ := s.externalClient.GetProjectName(ctx, meetingDB.ProjectUID)
+	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meetingDB.ProjectUID)
+	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meetingDB.ProjectUID)
 
 	// Try to get the project logo as a PNG image.
 	// If there is a project logo and it is in .svg format, then use the .png format of the logo image instead.
@@ -642,9 +646,9 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 
 	recipientName := registrant.GetFullName()
 
-	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
-	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
-	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
+	projectName, _ := s.externalClient.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
+	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
 	updatedInvitation := domain.EmailUpdatedInvitation{
 		MeetingUID:         meeting.UID,
@@ -691,9 +695,9 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 
 	recipientName := registrant.GetFullName()
 
-	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
-	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
-	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
+	projectName, _ := s.externalClient.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
+	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
 	cancellation := domain.EmailCancellation{
 		MeetingUID:         meeting.UID,
@@ -733,9 +737,9 @@ func (s *MeetingRegistrantService) SendOccurrenceCancellationEmail(
 	}
 
 	// Get project information for email branding
-	projectName, _ := s.messageBuilder.GetProjectName(ctx, meeting.ProjectUID)
-	projectLogo, _ := s.messageBuilder.GetProjectLogo(ctx, meeting.ProjectUID)
-	projectSlug, _ := s.messageBuilder.GetProjectSlug(ctx, meeting.ProjectUID)
+	projectName, _ := s.externalClient.GetProjectName(ctx, meeting.ProjectUID)
+	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
+	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
 	// Get the occurrence start time
 	if occurrence.StartTime == nil {

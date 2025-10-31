@@ -20,6 +20,7 @@ import (
 // setupHandlerForTesting creates a MeetingHandler with all mock dependencies for testing
 func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *mocks.MockRegistrantRepository, *mocks.MockMessageBuilder, *mocks.MockEmailService) {
 	mockMeetingRepo := new(mocks.MockMeetingRepository)
+	mockRSVPRepo := new(mocks.MockMeetingRSVPRepository)
 	mockRegistrantRepo := new(mocks.MockRegistrantRepository)
 	mockMessageBuilder := new(mocks.MockMessageBuilder)
 	mockEmailService := new(mocks.MockEmailService)
@@ -30,9 +31,16 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 	}
 
 	occurrenceService := service.NewOccurrenceService()
+
+	// Set up default expectations for RSVP repository
+	// By default, return empty RSVP list for any meeting (tests can override this)
+	mockRSVPRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.RSVPResponse{}, nil).Maybe()
+
 	meetingService := service.NewMeetingService(
 		mockMeetingRepo,
 		mockRegistrantRepo,
+		mockRSVPRepo,
+		mockMessageBuilder,
 		mockMessageBuilder,
 		mockPlatformRegistry,
 		occurrenceService,
@@ -45,6 +53,7 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 		mockRegistrantRepo,
 		mockEmailService,
 		mockMessageBuilder,
+		mockMessageBuilder,
 		occurrenceService,
 		config,
 	)
@@ -54,6 +63,7 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 		mockMeetingRepo,
 		mockRegistrantRepo,
 		registrantService, // registrant service is needed for ServiceReady check
+		mockMessageBuilder,
 		mockMessageBuilder,
 	)
 

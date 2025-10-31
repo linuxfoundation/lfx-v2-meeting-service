@@ -433,3 +433,25 @@ func ConvertUpdatePastMeetingSummaryPayloadToDomain(payload *meetingservice.Upda
 
 	return summary
 }
+
+// ConvertCreateRSVPPayloadToDomain converts a Goa CreateMeetingRsvpPayload to domain CreateRSVPRequest model
+func ConvertCreateRSVPPayloadToDomain(payload *meetingservice.CreateMeetingRsvpPayload) *models.CreateRSVPRequest {
+	req := &models.CreateRSVPRequest{
+		MeetingUID:   payload.MeetingUID,
+		Response:     models.RSVPResponseType(payload.Response),
+		Scope:        models.RSVPScope(payload.Scope),
+		OccurrenceID: payload.OccurrenceID,
+	}
+
+	// Set optional RegistrantID if provided
+	if payload.RegistrantID != nil {
+		req.RegistrantID = *payload.RegistrantID
+	}
+
+	// Set optional Username if provided
+	if payload.Username != nil {
+		req.Username = *payload.Username
+	}
+
+	return req
+}

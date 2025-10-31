@@ -18,7 +18,7 @@ import (
 
 // ZoomWebhookService handles Zoom webhook event processing
 type ZoomWebhookService struct {
-	messageBuilder   domain.MessageBuilder
+	messageSender    domain.WebhookEventSender
 	webhookValidator domain.WebhookValidator
 }
 
@@ -42,18 +42,18 @@ type WebhookResponse struct {
 
 // NewZoomWebhookService creates a new ZoomWebhookService
 func NewZoomWebhookService(
-	messageBuilder domain.MessageBuilder,
+	messageSender domain.WebhookEventSender,
 	webhookValidator domain.WebhookValidator,
 ) *ZoomWebhookService {
 	return &ZoomWebhookService{
-		messageBuilder:   messageBuilder,
+		messageSender:    messageSender,
 		webhookValidator: webhookValidator,
 	}
 }
 
 // ServiceReady checks if the service is ready to process requests
 func (s *ZoomWebhookService) ServiceReady() bool {
-	return s.messageBuilder != nil && s.webhookValidator != nil
+	return s.messageSender != nil && s.webhookValidator != nil
 }
 
 // ProcessWebhookEvent processes a Zoom webhook event
@@ -163,7 +163,7 @@ func (s *ZoomWebhookService) processRegularEvent(ctx context.Context, req Webhoo
 	}
 
 	// Publish to NATS for async processing
-	if err := s.messageBuilder.PublishZoomWebhookEvent(ctx, subject, webhookMessage); err != nil {
+	if err := s.messageSender.PublishZoomWebhookEvent(ctx, subject, webhookMessage); err != nil {
 		logger.ErrorContext(ctx, "Failed to publish webhook event to NATS", "error", err, "event_type", req.Event, "subject", subject)
 		return nil, domain.NewInternalError("failed to process webhook event", err)
 	}
