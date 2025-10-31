@@ -455,3 +455,21 @@ func ConvertCreateRSVPPayloadToDomain(payload *meetingservice.CreateMeetingRsvpP
 
 	return req
 }
+
+// ConvertUploadAttachmentPayloadToDomain converts a Goa UploadMeetingAttachmentPayload to domain UploadAttachmentRequest model
+func ConvertUploadAttachmentPayloadToDomain(payload *meetingservice.UploadMeetingAttachmentPayload, username, fileName, contentType string) *models.UploadAttachmentRequest {
+	req := &models.UploadAttachmentRequest{
+		MeetingUID:  payload.MeetingUID,
+		Username:    username,
+		FileName:    fileName,
+		ContentType: contentType,
+		FileData:    payload.File,
+	}
+
+	// Set optional Description if provided
+	if payload.Description != nil {
+		req.Description = *payload.Description
+	}
+
+	return req
+}

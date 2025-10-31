@@ -119,6 +119,7 @@ type Repositories struct {
 	Meeting                *store.NatsMeetingRepository
 	Registrant             *store.NatsRegistrantRepository
 	MeetingRSVP            *store.NatsMeetingRSVPRepository
+	Attachment             *store.NatsAttachmentRepository
 	PastMeeting            *store.NatsPastMeetingRepository
 	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
 	PastMeetingRecording   *store.NatsPastMeetingRecordingRepository
@@ -157,10 +158,18 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		kvStores[storeName] = kv
 	}
 
+	// Initialize Object Store for meeting attachments
+	objectStore, err := js.ObjectStore(ctx, store.ObjectStoreNameMeetingAttachments)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting NATS JetStream object store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", store.ObjectStoreNameMeetingAttachments)
+		return nil, err
+	}
+
 	repos := &Repositories{
 		Meeting:                store.NewNatsMeetingRepository(kvStores[store.KVStoreNameMeetings], kvStores[store.KVStoreNameMeetingSettings]),
 		Registrant:             store.NewNatsRegistrantRepository(kvStores[store.KVStoreNameMeetingRegistrants]),
 		MeetingRSVP:            store.NewNatsMeetingRSVPRepository(kvStores[store.KVStoreNameMeetingRSVPs]),
+		Attachment:             store.NewNatsAttachmentRepository(objectStore),
 		PastMeeting:            store.NewNatsPastMeetingRepository(kvStores[store.KVStoreNamePastMeetings]),
 		PastMeetingParticipant: store.NewNatsPastMeetingParticipantRepository(kvStores[store.KVStoreNamePastMeetingParticipants]),
 		PastMeetingRecording:   store.NewNatsPastMeetingRecordingRepository(kvStores[store.KVStoreNamePastMeetingRecordings]),

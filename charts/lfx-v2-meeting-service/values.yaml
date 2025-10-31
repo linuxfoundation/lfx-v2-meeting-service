@@ -299,6 +299,21 @@ nats:
     # compression is a boolean to determine if the KV bucket should be compressed
     compression: true
 
+  # object_store_meeting_attachments is the configuration for the Object Store for storing meeting attachments
+  object_store_meeting_attachments:
+    # creation is a boolean to determine if the Object Store should be created via the helm chart.
+    # set it to false if you want to use an existing Object Store.
+    creation: true
+    # keep is a boolean to determine if the Object Store should be preserved during helm uninstall
+    # set it to false if you want the store to be deleted when the chart is uninstalled
+    keep: true
+    # name is the name of the Object Store for storing meeting attachments
+    name: meeting-attachments
+    # storage is the storage type for the Object Store
+    storage: file
+    # maxBytes is the maximum number of bytes in the Object Store
+    maxBytes: 1073741824  # 1GB
+
 # openfga is the configuration for the OpenFGA server
 openfga:
   # enabled is a boolean to determine if the OpenFGA server should be enabled for authorization

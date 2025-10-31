@@ -45,12 +45,15 @@ type Client struct {
 	GetPastMeetingSummariesEndpoint           goa.Endpoint
 	GetPastMeetingSummaryEndpoint             goa.Endpoint
 	UpdatePastMeetingSummaryEndpoint          goa.Endpoint
+	UploadMeetingAttachmentEndpoint           goa.Endpoint
+	GetMeetingAttachmentEndpoint              goa.Endpoint
+	DeleteMeetingAttachmentEndpoint           goa.Endpoint
 	ReadyzEndpoint                            goa.Endpoint
 	LivezEndpoint                             goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, uploadMeetingAttachment, getMeetingAttachment, deleteMeetingAttachment, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -82,6 +85,9 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		GetPastMeetingSummariesEndpoint:           getPastMeetingSummaries,
 		GetPastMeetingSummaryEndpoint:             getPastMeetingSummary,
 		UpdatePastMeetingSummaryEndpoint:          updatePastMeetingSummary,
+		UploadMeetingAttachmentEndpoint:           uploadMeetingAttachment,
+		GetMeetingAttachmentEndpoint:              getMeetingAttachment,
+		DeleteMeetingAttachmentEndpoint:           deleteMeetingAttachment,
 		ReadyzEndpoint:                            readyz,
 		LivezEndpoint:                             livez,
 	}
@@ -567,6 +573,53 @@ func (c *Client) UpdatePastMeetingSummary(ctx context.Context, p *UpdatePastMeet
 		return
 	}
 	return ires.(*PastMeetingSummary), nil
+}
+
+// UploadMeetingAttachment calls the "upload-meeting-attachment" endpoint of
+// the "Meeting Service" service.
+// UploadMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UploadMeetingAttachment(ctx context.Context, p *UploadMeetingAttachmentPayload) (res *MeetingAttachment, err error) {
+	var ires any
+	ires, err = c.UploadMeetingAttachmentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*MeetingAttachment), nil
+}
+
+// GetMeetingAttachment calls the "get-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+// GetMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetMeetingAttachment(ctx context.Context, p *GetMeetingAttachmentPayload) (res []byte, err error) {
+	var ires any
+	ires, err = c.GetMeetingAttachmentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]byte), nil
+}
+
+// DeleteMeetingAttachment calls the "delete-meeting-attachment" endpoint of
+// the "Meeting Service" service.
+// DeleteMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteMeetingAttachment(ctx context.Context, p *DeleteMeetingAttachmentPayload) (err error) {
+	_, err = c.DeleteMeetingAttachmentEndpoint(ctx, p)
+	return
 }
 
 // Readyz calls the "readyz" endpoint of the "Meeting Service" service.

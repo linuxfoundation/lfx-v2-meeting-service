@@ -46,6 +46,9 @@ type Endpoints struct {
 	GetPastMeetingSummaries           goa.Endpoint
 	GetPastMeetingSummary             goa.Endpoint
 	UpdatePastMeetingSummary          goa.Endpoint
+	UploadMeetingAttachment           goa.Endpoint
+	GetMeetingAttachment              goa.Endpoint
+	DeleteMeetingAttachment           goa.Endpoint
 	Readyz                            goa.Endpoint
 	Livez                             goa.Endpoint
 }
@@ -86,6 +89,9 @@ func NewEndpoints(s Service) *Endpoints {
 		GetPastMeetingSummaries:           NewGetPastMeetingSummariesEndpoint(s, a.JWTAuth),
 		GetPastMeetingSummary:             NewGetPastMeetingSummaryEndpoint(s, a.JWTAuth),
 		UpdatePastMeetingSummary:          NewUpdatePastMeetingSummaryEndpoint(s, a.JWTAuth),
+		UploadMeetingAttachment:           NewUploadMeetingAttachmentEndpoint(s, a.JWTAuth),
+		GetMeetingAttachment:              NewGetMeetingAttachmentEndpoint(s, a.JWTAuth),
+		DeleteMeetingAttachment:           NewDeleteMeetingAttachmentEndpoint(s, a.JWTAuth),
 		Readyz:                            NewReadyzEndpoint(s),
 		Livez:                             NewLivezEndpoint(s),
 	}
@@ -124,6 +130,9 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetPastMeetingSummaries = m(e.GetPastMeetingSummaries)
 	e.GetPastMeetingSummary = m(e.GetPastMeetingSummary)
 	e.UpdatePastMeetingSummary = m(e.UpdatePastMeetingSummary)
+	e.UploadMeetingAttachment = m(e.UploadMeetingAttachment)
+	e.GetMeetingAttachment = m(e.GetMeetingAttachment)
+	e.DeleteMeetingAttachment = m(e.DeleteMeetingAttachment)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
 }
@@ -806,6 +815,75 @@ func NewUpdatePastMeetingSummaryEndpoint(s Service, authJWTFn security.AuthJWTFu
 			return nil, err
 		}
 		return s.UpdatePastMeetingSummary(ctx, p)
+	}
+}
+
+// NewUploadMeetingAttachmentEndpoint returns an endpoint function that calls
+// the method "upload-meeting-attachment" of service "Meeting Service".
+func NewUploadMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UploadMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.UploadMeetingAttachment(ctx, p)
+	}
+}
+
+// NewGetMeetingAttachmentEndpoint returns an endpoint function that calls the
+// method "get-meeting-attachment" of service "Meeting Service".
+func NewGetMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetMeetingAttachment(ctx, p)
+	}
+}
+
+// NewDeleteMeetingAttachmentEndpoint returns an endpoint function that calls
+// the method "delete-meeting-attachment" of service "Meeting Service".
+func NewDeleteMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeleteMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeleteMeetingAttachment(ctx, p)
 	}
 }
 

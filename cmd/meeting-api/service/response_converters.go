@@ -575,3 +575,30 @@ func ConvertRSVPToResponse(rsvp *models.RSVPResponse) *meetingservice.RSVPRespon
 
 	return resp
 }
+
+// ConvertDomainToAttachmentResponse converts a domain attachment model to an API response
+func ConvertDomainToAttachmentResponse(attachment *models.MeetingAttachment) *meetingservice.MeetingAttachment {
+	if attachment == nil {
+		return nil
+	}
+
+	response := &meetingservice.MeetingAttachment{
+		UID:         attachment.UID,
+		MeetingUID:  attachment.MeetingUID,
+		FileName:    attachment.FileName,
+		FileSize:    attachment.FileSize,
+		ContentType: attachment.ContentType,
+		UploadedBy:  attachment.UploadedBy,
+	}
+
+	if attachment.UploadedAt != nil {
+		uploadedAt := attachment.UploadedAt.Format(time.RFC3339)
+		response.UploadedAt = &uploadedAt
+	}
+
+	if attachment.Description != "" {
+		response.Description = &attachment.Description
+	}
+
+	return response
+}

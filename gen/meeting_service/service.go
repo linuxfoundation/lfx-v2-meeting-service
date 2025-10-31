@@ -83,6 +83,12 @@ type Service interface {
 	GetPastMeetingSummary(context.Context, *GetPastMeetingSummaryPayload) (res *GetPastMeetingSummaryResult, err error)
 	// Update an existing past meeting summary
 	UpdatePastMeetingSummary(context.Context, *UpdatePastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
+	// Upload a file attachment for a meeting
+	UploadMeetingAttachment(context.Context, *UploadMeetingAttachmentPayload) (res *MeetingAttachment, err error)
+	// Download a file attachment for a meeting
+	GetMeetingAttachment(context.Context, *GetMeetingAttachmentPayload) (res []byte, err error)
+	// Delete a file attachment for a meeting
+	DeleteMeetingAttachment(context.Context, *DeleteMeetingAttachmentPayload) (err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -109,7 +115,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [32]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "readyz", "livez"}
+var MethodNames = [35]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "upload-meeting-attachment", "get-meeting-attachment", "delete-meeting-attachment", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -336,6 +342,19 @@ type CreatePastMeetingPayload struct {
 	Sessions []*Session
 }
 
+// DeleteMeetingAttachmentPayload is the payload type of the Meeting Service
+// service delete-meeting-attachment method.
+type DeleteMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting this attachment belongs to
+	MeetingUID string
+	// The UID of the attachment
+	UID string
+}
+
 // DeleteMeetingOccurrencePayload is the payload type of the Meeting Service
 // service delete-meeting-occurrence method.
 type DeleteMeetingOccurrencePayload struct {
@@ -405,6 +424,19 @@ type DeletePastMeetingPayload struct {
 	Version *string
 	// The unique identifier of the past meeting
 	UID *string
+}
+
+// GetMeetingAttachmentPayload is the payload type of the Meeting Service
+// service get-meeting-attachment method.
+type GetMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting this attachment belongs to
+	MeetingUID string
+	// The UID of the attachment
+	UID string
 }
 
 // GetMeetingBasePayload is the payload type of the Meeting Service service
@@ -663,6 +695,27 @@ type InternalServerError struct {
 	Code string
 	// Error message
 	Message string
+}
+
+// MeetingAttachment is the result type of the Meeting Service service
+// upload-meeting-attachment method.
+type MeetingAttachment struct {
+	// The UID of the attachment
+	UID string
+	// The UID of the meeting this attachment belongs to
+	MeetingUID string
+	// The name of the uploaded file
+	FileName string
+	// The size of the file in bytes
+	FileSize int64
+	// The MIME type of the file
+	ContentType string
+	// The username of the user who uploaded the file
+	UploadedBy string
+	// RFC3339 timestamp when the file was uploaded
+	UploadedAt *string
+	// Optional description of the attachment
+	Description *string
 }
 
 // MeetingBase is the result type of the Meeting Service service
@@ -1356,6 +1409,21 @@ type UpdatePastMeetingSummaryPayload struct {
 	EditedContent *string
 	// Whether the summary has been approved
 	Approved *bool
+}
+
+// UploadMeetingAttachmentPayload is the payload type of the Meeting Service
+// service upload-meeting-attachment method.
+type UploadMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting this attachment belongs to
+	MeetingUID string
+	// Optional description of the attachment
+	Description *string
+	// The file data to upload
+	File []byte
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and

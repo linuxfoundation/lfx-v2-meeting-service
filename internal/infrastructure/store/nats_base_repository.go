@@ -29,6 +29,11 @@ const (
 	KVStoreNamePastMeetingSummaries    = "past-meeting-summaries"
 )
 
+// NATS Object Store names
+const (
+	ObjectStoreNameMeetingAttachments = "meeting-attachments"
+)
+
 // INatsKeyValue is a NATS KV interface needed for the [MeetingsService].
 type INatsKeyValue interface {
 	ListKeys(context.Context, ...jetstream.WatchOpt) (jetstream.KeyLister, error)

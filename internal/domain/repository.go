@@ -149,3 +149,19 @@ type MeetingRSVPRepository interface {
 	// Query operations
 	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.RSVPResponse, error)
 }
+
+// MeetingAttachmentRepository defines the interface for meeting attachment storage operations.
+// This interface uses NATS JetStream Object Store for file storage.
+type MeetingAttachmentRepository interface {
+	// Put uploads a file attachment with metadata to the object store
+	Put(ctx context.Context, attachment *models.MeetingAttachment, fileData []byte) error
+
+	// Get retrieves a file attachment and its metadata from the object store
+	Get(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, []byte, error)
+
+	// GetInfo retrieves only the metadata for an attachment without downloading the file
+	GetInfo(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, error)
+
+	// Delete removes a file attachment from the object store
+	Delete(ctx context.Context, attachmentUID string) error
+}

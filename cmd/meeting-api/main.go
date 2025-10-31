@@ -103,6 +103,10 @@ func main() {
 		occurrenceService,
 		messageBuilder, // Implements MeetingRSVPIndexSender
 	)
+	attachmentService := service.NewMeetingAttachmentService(
+		repos.Attachment,
+		repos.Meeting,
+	)
 	pastMeetingService := service.NewPastMeetingService(
 		repos.Meeting,
 		repos.PastMeeting,
@@ -184,6 +188,7 @@ func main() {
 		meetingService,
 		registrantService,
 		meetingRSVPService,
+		attachmentService,
 		pastMeetingService,
 		pastMeetingParticipantService,
 		pastMeetingSummaryService,

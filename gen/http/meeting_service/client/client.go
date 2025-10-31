@@ -9,8 +9,10 @@ package client
 
 import (
 	"context"
+	"mime/multipart"
 	"net/http"
 
+	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -137,6 +139,18 @@ type Client struct {
 	// the update-past-meeting-summary endpoint.
 	UpdatePastMeetingSummaryDoer goahttp.Doer
 
+	// UploadMeetingAttachment Doer is the HTTP client used to make requests to the
+	// upload-meeting-attachment endpoint.
+	UploadMeetingAttachmentDoer goahttp.Doer
+
+	// GetMeetingAttachment Doer is the HTTP client used to make requests to the
+	// get-meeting-attachment endpoint.
+	GetMeetingAttachmentDoer goahttp.Doer
+
+	// DeleteMeetingAttachment Doer is the HTTP client used to make requests to the
+	// delete-meeting-attachment endpoint.
+	DeleteMeetingAttachmentDoer goahttp.Doer
+
 	// Readyz Doer is the HTTP client used to make requests to the readyz endpoint.
 	ReadyzDoer goahttp.Doer
 
@@ -152,6 +166,11 @@ type Client struct {
 	encoder func(*http.Request) goahttp.Encoder
 	decoder func(*http.Response) goahttp.Decoder
 }
+
+// MeetingServiceUploadMeetingAttachmentEncoderFunc is the type to encode
+// multipart request for the "Meeting Service" service
+// "upload-meeting-attachment" endpoint.
+type MeetingServiceUploadMeetingAttachmentEncoderFunc func(*multipart.Writer, *meetingservice.UploadMeetingAttachmentPayload) error
 
 // NewClient instantiates HTTP clients for all the Meeting Service service
 // servers.
@@ -194,6 +213,9 @@ func NewClient(
 		GetPastMeetingSummariesDoer:           doer,
 		GetPastMeetingSummaryDoer:             doer,
 		UpdatePastMeetingSummaryDoer:          doer,
+		UploadMeetingAttachmentDoer:           doer,
+		GetMeetingAttachmentDoer:              doer,
+		DeleteMeetingAttachmentDoer:           doer,
 		ReadyzDoer:                            doer,
 		LivezDoer:                             doer,
 		RestoreResponseBody:                   restoreBody,
@@ -920,6 +942,78 @@ func (c *Client) UpdatePastMeetingSummary() goa.Endpoint {
 		resp, err := c.UpdatePastMeetingSummaryDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "update-past-meeting-summary", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UploadMeetingAttachment returns an endpoint that makes HTTP requests to the
+// Meeting Service service upload-meeting-attachment server.
+func (c *Client) UploadMeetingAttachment(meetingServiceUploadMeetingAttachmentEncoderFn MeetingServiceUploadMeetingAttachmentEncoderFunc) goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUploadMeetingAttachmentRequest(NewMeetingServiceUploadMeetingAttachmentEncoder(meetingServiceUploadMeetingAttachmentEncoderFn))
+		decodeResponse = DecodeUploadMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUploadMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UploadMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "upload-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetMeetingAttachment returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-meeting-attachment server.
+func (c *Client) GetMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeGetMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteMeetingAttachment returns an endpoint that makes HTTP requests to the
+// Meeting Service service delete-meeting-attachment server.
+func (c *Client) DeleteMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeDeleteMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-meeting-attachment", err)
 		}
 		return decodeResponse(resp)
 	}

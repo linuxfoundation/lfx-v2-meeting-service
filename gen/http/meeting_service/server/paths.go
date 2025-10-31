@@ -161,6 +161,21 @@ func UpdatePastMeetingSummaryMeetingServicePath(pastMeetingUID string, summaryUI
 	return fmt.Sprintf("/past_meetings/%v/summaries/%v", pastMeetingUID, summaryUID)
 }
 
+// UploadMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service upload-meeting-attachment HTTP endpoint.
+func UploadMeetingAttachmentMeetingServicePath(meetingUID string) string {
+	return fmt.Sprintf("/meetings/%v/attachments", meetingUID)
+}
+
+// GetMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service get-meeting-attachment HTTP endpoint.
+func GetMeetingAttachmentMeetingServicePath(meetingUID string, uid string) string {
+	return fmt.Sprintf("/meetings/%v/attachments/%v", meetingUID, uid)
+}
+
+// DeleteMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service delete-meeting-attachment HTTP endpoint.
+func DeleteMeetingAttachmentMeetingServicePath(meetingUID string, uid string) string {
+	return fmt.Sprintf("/meetings/%v/attachments/%v", meetingUID, uid)
+}
+
 // ReadyzMeetingServicePath returns the URL path to the Meeting Service service readyz HTTP endpoint.
 func ReadyzMeetingServicePath() string {
 	return "/readyz"
