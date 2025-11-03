@@ -10,7 +10,7 @@ import (
 
 // UploadAttachmentRequest represents a request to upload a file attachment for a meeting
 type UploadAttachmentRequest struct {
-	MeetingUID  string // Meeting this attachment is for
+	MeetingUID  string // Meeting this attachment is for (used to update meeting's attachment list)
 	Username    string // Username of the user uploading the file
 	FileName    string // Name of the file being uploaded
 	ContentType string // MIME type of the file
@@ -18,8 +18,10 @@ type UploadAttachmentRequest struct {
 	Description string // Optional description of the attachment
 }
 
-// MeetingAttachment represents a file attachment associated with a meeting.
-// Files are stored in NATS JetStream Object Store with metadata.
+// MeetingAttachment represents a file attachment that can be referenced by meetings or past meetings.
+// Each metadata record in KV store associates a meeting with a file in Object Store.
+// Multiple metadata records can reference the same file, allowing file reuse across meetings.
+// Metadata is stored in NATS KV store, while actual files are in NATS Object Store.
 type MeetingAttachment struct {
 	UID         string     `json:"uid"`
 	MeetingUID  string     `json:"meeting_uid"`
@@ -46,11 +48,6 @@ func (a *MeetingAttachment) Tags() []string {
 		tags = append(tags, a.UID)
 		// with prefix
 		tag := fmt.Sprintf("attachment_uid:%s", a.UID)
-		tags = append(tags, tag)
-	}
-
-	if a.MeetingUID != "" {
-		tag := fmt.Sprintf("meeting_uid:%s", a.MeetingUID)
 		tags = append(tags, tag)
 	}
 

@@ -881,6 +881,28 @@ type UploadMeetingAttachmentResponseBody struct {
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 }
 
+// GetMeetingAttachmentMetadataResponseBody is the type of the "Meeting
+// Service" service "get-meeting-attachment-metadata" endpoint HTTP response
+// body.
+type GetMeetingAttachmentMetadataResponseBody struct {
+	// The UID of the attachment
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// The UID of the meeting this attachment belongs to
+	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
+	// The name of the uploaded file
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// The size of the file in bytes
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// The MIME type of the file
+	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
+	// The username of the user who uploaded the file
+	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
+	// RFC3339 timestamp when the file was uploaded
+	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -2105,6 +2127,46 @@ type GetMeetingAttachmentNotFoundResponseBody struct {
 // "Meeting Service" service "get-meeting-attachment" endpoint HTTP response
 // body for the "ServiceUnavailable" error.
 type GetMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingAttachmentMetadataBadRequestResponseBody is the type of the
+// "Meeting Service" service "get-meeting-attachment-metadata" endpoint HTTP
+// response body for the "BadRequest" error.
+type GetMeetingAttachmentMetadataBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingAttachmentMetadataInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "get-meeting-attachment-metadata" endpoint
+// HTTP response body for the "InternalServerError" error.
+type GetMeetingAttachmentMetadataInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingAttachmentMetadataNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-meeting-attachment-metadata" endpoint HTTP response
+// body for the "NotFound" error.
+type GetMeetingAttachmentMetadataNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetMeetingAttachmentMetadataServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "get-meeting-attachment-metadata" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type GetMeetingAttachmentMetadataServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -5065,6 +5127,68 @@ func NewGetMeetingAttachmentServiceUnavailable(body *GetMeetingAttachmentService
 	return v
 }
 
+// NewGetMeetingAttachmentMetadataMeetingAttachmentOK builds a "Meeting
+// Service" service "get-meeting-attachment-metadata" endpoint result from a
+// HTTP "OK" response.
+func NewGetMeetingAttachmentMetadataMeetingAttachmentOK(body *GetMeetingAttachmentMetadataResponseBody) *meetingservice.MeetingAttachment {
+	v := &meetingservice.MeetingAttachment{
+		UID:         *body.UID,
+		MeetingUID:  *body.MeetingUID,
+		FileName:    *body.FileName,
+		FileSize:    *body.FileSize,
+		ContentType: *body.ContentType,
+		UploadedBy:  *body.UploadedBy,
+		UploadedAt:  body.UploadedAt,
+		Description: body.Description,
+	}
+
+	return v
+}
+
+// NewGetMeetingAttachmentMetadataBadRequest builds a Meeting Service service
+// get-meeting-attachment-metadata endpoint BadRequest error.
+func NewGetMeetingAttachmentMetadataBadRequest(body *GetMeetingAttachmentMetadataBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingAttachmentMetadataInternalServerError builds a Meeting Service
+// service get-meeting-attachment-metadata endpoint InternalServerError error.
+func NewGetMeetingAttachmentMetadataInternalServerError(body *GetMeetingAttachmentMetadataInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingAttachmentMetadataNotFound builds a Meeting Service service
+// get-meeting-attachment-metadata endpoint NotFound error.
+func NewGetMeetingAttachmentMetadataNotFound(body *GetMeetingAttachmentMetadataNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetMeetingAttachmentMetadataServiceUnavailable builds a Meeting Service
+// service get-meeting-attachment-metadata endpoint ServiceUnavailable error.
+func NewGetMeetingAttachmentMetadataServiceUnavailable(body *GetMeetingAttachmentMetadataServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewDeleteMeetingAttachmentBadRequest builds a Meeting Service service
 // delete-meeting-attachment endpoint BadRequest error.
 func NewDeleteMeetingAttachmentBadRequest(body *DeleteMeetingAttachmentBadRequestResponseBody) *meetingservice.BadRequestError {
@@ -6311,6 +6435,69 @@ func ValidateUpdatePastMeetingSummaryResponseBody(body *UpdatePastMeetingSummary
 // ValidateUploadMeetingAttachmentResponseBody runs the validations defined on
 // Upload-Meeting-AttachmentResponseBody
 func ValidateUploadMeetingAttachmentResponseBody(body *UploadMeetingAttachmentResponseBody) (err error) {
+	if body.UID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
+	}
+	if body.MeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
+	}
+	if body.FileName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_name", "body"))
+	}
+	if body.FileSize == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
+	}
+	if body.ContentType == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content_type", "body"))
+	}
+	if body.UploadedBy == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uploaded_by", "body"))
+	}
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
+	}
+	if body.MeetingUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
+	}
+	if body.FileName != nil {
+		if utf8.RuneCountInString(*body.FileName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.file_name", *body.FileName, utf8.RuneCountInString(*body.FileName), 1, true))
+		}
+	}
+	if body.FileName != nil {
+		if utf8.RuneCountInString(*body.FileName) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.file_name", *body.FileName, utf8.RuneCountInString(*body.FileName), 255, false))
+		}
+	}
+	if body.FileSize != nil {
+		if *body.FileSize < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.file_size", *body.FileSize, 0, true))
+		}
+	}
+	if body.ContentType != nil {
+		if utf8.RuneCountInString(*body.ContentType) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content_type", *body.ContentType, utf8.RuneCountInString(*body.ContentType), 1, true))
+		}
+	}
+	if body.UploadedBy != nil {
+		if utf8.RuneCountInString(*body.UploadedBy) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.uploaded_by", *body.UploadedBy, utf8.RuneCountInString(*body.UploadedBy), 1, true))
+		}
+	}
+	if body.UploadedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.uploaded_at", *body.UploadedAt, goa.FormatDateTime))
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 500 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 500, false))
+		}
+	}
+	return
+}
+
+// ValidateGetMeetingAttachmentMetadataResponseBody runs the validations
+// defined on Get-Meeting-Attachment-MetadataResponseBody
+func ValidateGetMeetingAttachmentMetadataResponseBody(body *GetMeetingAttachmentMetadataResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
 	}
@@ -7879,6 +8066,57 @@ func ValidateGetMeetingAttachmentNotFoundResponseBody(body *GetMeetingAttachment
 // validations defined on
 // get-meeting-attachment_ServiceUnavailable_response_body
 func ValidateGetMeetingAttachmentServiceUnavailableResponseBody(body *GetMeetingAttachmentServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingAttachmentMetadataBadRequestResponseBody runs the
+// validations defined on
+// get-meeting-attachment-metadata_BadRequest_response_body
+func ValidateGetMeetingAttachmentMetadataBadRequestResponseBody(body *GetMeetingAttachmentMetadataBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingAttachmentMetadataInternalServerErrorResponseBody runs the
+// validations defined on
+// get-meeting-attachment-metadata_InternalServerError_response_body
+func ValidateGetMeetingAttachmentMetadataInternalServerErrorResponseBody(body *GetMeetingAttachmentMetadataInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingAttachmentMetadataNotFoundResponseBody runs the
+// validations defined on get-meeting-attachment-metadata_NotFound_response_body
+func ValidateGetMeetingAttachmentMetadataNotFoundResponseBody(body *GetMeetingAttachmentMetadataNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetMeetingAttachmentMetadataServiceUnavailableResponseBody runs the
+// validations defined on
+// get-meeting-attachment-metadata_ServiceUnavailable_response_body
+func ValidateGetMeetingAttachmentMetadataServiceUnavailableResponseBody(body *GetMeetingAttachmentMetadataServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

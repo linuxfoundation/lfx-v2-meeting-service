@@ -881,6 +881,28 @@ type UploadMeetingAttachmentResponseBody struct {
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 }
 
+// GetMeetingAttachmentMetadataResponseBody is the type of the "Meeting
+// Service" service "get-meeting-attachment-metadata" endpoint HTTP response
+// body.
+type GetMeetingAttachmentMetadataResponseBody struct {
+	// The UID of the attachment
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// The UID of the meeting this attachment belongs to
+	MeetingUID string `form:"meeting_uid" json:"meeting_uid" xml:"meeting_uid"`
+	// The name of the uploaded file
+	FileName string `form:"file_name" json:"file_name" xml:"file_name"`
+	// The size of the file in bytes
+	FileSize int64 `form:"file_size" json:"file_size" xml:"file_size"`
+	// The MIME type of the file
+	ContentType string `form:"content_type" json:"content_type" xml:"content_type"`
+	// The username of the user who uploaded the file
+	UploadedBy string `form:"uploaded_by" json:"uploaded_by" xml:"uploaded_by"`
+	// RFC3339 timestamp when the file was uploaded
+	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -2105,6 +2127,46 @@ type GetMeetingAttachmentNotFoundResponseBody struct {
 // "Meeting Service" service "get-meeting-attachment" endpoint HTTP response
 // body for the "ServiceUnavailable" error.
 type GetMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingAttachmentMetadataBadRequestResponseBody is the type of the
+// "Meeting Service" service "get-meeting-attachment-metadata" endpoint HTTP
+// response body for the "BadRequest" error.
+type GetMeetingAttachmentMetadataBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingAttachmentMetadataInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "get-meeting-attachment-metadata" endpoint
+// HTTP response body for the "InternalServerError" error.
+type GetMeetingAttachmentMetadataInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingAttachmentMetadataNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-meeting-attachment-metadata" endpoint HTTP response
+// body for the "NotFound" error.
+type GetMeetingAttachmentMetadataNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetMeetingAttachmentMetadataServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "get-meeting-attachment-metadata" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type GetMeetingAttachmentMetadataServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
@@ -3425,6 +3487,23 @@ func NewUpdatePastMeetingSummaryResponseBody(res *meetingservice.PastMeetingSumm
 // Service" service.
 func NewUploadMeetingAttachmentResponseBody(res *meetingservice.MeetingAttachment) *UploadMeetingAttachmentResponseBody {
 	body := &UploadMeetingAttachmentResponseBody{
+		UID:         res.UID,
+		MeetingUID:  res.MeetingUID,
+		FileName:    res.FileName,
+		FileSize:    res.FileSize,
+		ContentType: res.ContentType,
+		UploadedBy:  res.UploadedBy,
+		UploadedAt:  res.UploadedAt,
+		Description: res.Description,
+	}
+	return body
+}
+
+// NewGetMeetingAttachmentMetadataResponseBody builds the HTTP response body
+// from the result of the "get-meeting-attachment-metadata" endpoint of the
+// "Meeting Service" service.
+func NewGetMeetingAttachmentMetadataResponseBody(res *meetingservice.MeetingAttachment) *GetMeetingAttachmentMetadataResponseBody {
+	body := &GetMeetingAttachmentMetadataResponseBody{
 		UID:         res.UID,
 		MeetingUID:  res.MeetingUID,
 		FileName:    res.FileName,
@@ -4783,6 +4862,50 @@ func NewGetMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.S
 	return body
 }
 
+// NewGetMeetingAttachmentMetadataBadRequestResponseBody builds the HTTP
+// response body from the result of the "get-meeting-attachment-metadata"
+// endpoint of the "Meeting Service" service.
+func NewGetMeetingAttachmentMetadataBadRequestResponseBody(res *meetingservice.BadRequestError) *GetMeetingAttachmentMetadataBadRequestResponseBody {
+	body := &GetMeetingAttachmentMetadataBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingAttachmentMetadataInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the "get-meeting-attachment-metadata"
+// endpoint of the "Meeting Service" service.
+func NewGetMeetingAttachmentMetadataInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetMeetingAttachmentMetadataInternalServerErrorResponseBody {
+	body := &GetMeetingAttachmentMetadataInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingAttachmentMetadataNotFoundResponseBody builds the HTTP response
+// body from the result of the "get-meeting-attachment-metadata" endpoint of
+// the "Meeting Service" service.
+func NewGetMeetingAttachmentMetadataNotFoundResponseBody(res *meetingservice.NotFoundError) *GetMeetingAttachmentMetadataNotFoundResponseBody {
+	body := &GetMeetingAttachmentMetadataNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetMeetingAttachmentMetadataServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the "get-meeting-attachment-metadata"
+// endpoint of the "Meeting Service" service.
+func NewGetMeetingAttachmentMetadataServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetMeetingAttachmentMetadataServiceUnavailableResponseBody {
+	body := &GetMeetingAttachmentMetadataServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewDeleteMeetingAttachmentBadRequestResponseBody builds the HTTP response
 // body from the result of the "delete-meeting-attachment" endpoint of the
 // "Meeting Service" service.
@@ -5365,6 +5488,18 @@ func NewUploadMeetingAttachmentPayload(body *UploadMeetingAttachmentRequestBody,
 // get-meeting-attachment endpoint payload.
 func NewGetMeetingAttachmentPayload(meetingUID string, uid string, version *string, bearerToken *string) *meetingservice.GetMeetingAttachmentPayload {
 	v := &meetingservice.GetMeetingAttachmentPayload{}
+	v.MeetingUID = meetingUID
+	v.UID = uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetMeetingAttachmentMetadataPayload builds a Meeting Service service
+// get-meeting-attachment-metadata endpoint payload.
+func NewGetMeetingAttachmentMetadataPayload(meetingUID string, uid string, version *string, bearerToken *string) *meetingservice.GetMeetingAttachmentMetadataPayload {
+	v := &meetingservice.GetMeetingAttachmentMetadataPayload{}
 	v.MeetingUID = meetingUID
 	v.UID = uid
 	v.Version = version

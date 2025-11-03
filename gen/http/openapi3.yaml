@@ -973,6 +973,99 @@ paths:
                                 message: The service is unavailable.
             security:
                 - jwt_header_Authorization: []
+    /meetings/{meeting_uid}/attachments/{uid}/metadata:
+        get:
+            tags:
+                - Meeting Service
+            summary: get-meeting-attachment-metadata Meeting Service
+            description: Get metadata for a meeting attachment without downloading the file
+            operationId: Meeting Service#get-meeting-attachment-metadata
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: meeting_uid
+                  in: path
+                  description: The UID of the meeting this attachment belongs to
+                  required: true
+                  schema:
+                    type: string
+                    description: The UID of the meeting this attachment belongs to
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
+                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: uid
+                  in: path
+                  description: The UID of the attachment
+                  required: true
+                  schema:
+                    type: string
+                    description: The UID of the attachment
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    format: uuid
+                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MeetingAttachment'
+                            example:
+                                content_type: application/pdf
+                                description: Meeting agenda for Q1 2024
+                                file_name: meeting-agenda.pdf
+                                file_size: 1024000
+                                meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                uploaded_at: "2024-01-15T10:00:00Z"
+                                uploaded_by: john.doe
+                "400":
+                    description: 'BadRequest: Bad request'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BadRequestError'
+                            example:
+                                code: "400"
+                                message: The request was invalid.
+                "404":
+                    description: 'NotFound: Attachment not found'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
     /meetings/{meeting_uid}/registrants:
         post:
             tags:

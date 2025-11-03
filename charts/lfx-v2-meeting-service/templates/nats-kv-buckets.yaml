@@ -171,3 +171,23 @@ spec:
   maxBytes: {{ .Values.nats.kv_bucket_past_meeting_summaries.maxBytes }}
   compression: {{ .Values.nats.kv_bucket_past_meeting_summaries.compression }}
 {{- end }}
+
+---
+{{- if .Values.nats.kv_bucket_meeting_attachments_metadata.creation }}
+apiVersion: jetstream.nats.io/v1beta2
+kind: KeyValue
+metadata:
+  name: {{ .Values.nats.kv_bucket_meeting_attachments_metadata.name }}
+  namespace: lfx
+  {{- if .Values.nats.kv_bucket_meeting_attachments_metadata.keep }}
+  annotations:
+    "helm.sh/resource-policy": keep
+  {{- end }}
+spec:
+  bucket: {{ .Values.nats.kv_bucket_meeting_attachments_metadata.name }}
+  history: {{ .Values.nats.kv_bucket_meeting_attachments_metadata.history }}
+  storage: {{ .Values.nats.kv_bucket_meeting_attachments_metadata.storage }}
+  maxValueSize: {{ .Values.nats.kv_bucket_meeting_attachments_metadata.maxValueSize }}
+  maxBytes: {{ .Values.nats.kv_bucket_meeting_attachments_metadata.maxBytes }}
+  compression: {{ .Values.nats.kv_bucket_meeting_attachments_metadata.compression }}
+{{- end }}

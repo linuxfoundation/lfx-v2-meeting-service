@@ -123,6 +123,21 @@ func deleteDownloadAttachmentMetadata(ctx context.Context) {
 // downloadMetadataStore temporarily stores attachment metadata for response encoding
 var downloadMetadataStore sync.Map
 
+// GetMeetingAttachmentMetadata retrieves only the metadata for an attachment
+func (s *MeetingsAPI) GetMeetingAttachmentMetadata(ctx context.Context, payload *meetingsvc.GetMeetingAttachmentMetadataPayload) (*meetingsvc.MeetingAttachment, error) {
+	if payload == nil {
+		return nil, handleError(domain.NewValidationError("validation failed"))
+	}
+
+	// Get attachment metadata via service
+	attachment, err := s.attachmentService.GetAttachmentMetadata(ctx, payload.MeetingUID, payload.UID)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return service.ConvertDomainToAttachmentResponse(attachment), nil
+}
+
 // DeleteMeetingAttachment handles deletion of a file attachment
 func (s *MeetingsAPI) DeleteMeetingAttachment(ctx context.Context, payload *meetingsvc.DeleteMeetingAttachmentPayload) error {
 	if payload == nil {

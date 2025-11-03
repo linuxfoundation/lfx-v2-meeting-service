@@ -81,7 +81,7 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 		return nil, err
 	}
 
-	// Create attachment metadata
+	// Create attachment metadata (includes meeting_uid to associate it with the meeting)
 	now := time.Now()
 	attachment := &models.MeetingAttachment{
 		UID:         uuid.New().String(),
@@ -94,9 +94,17 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 		Description: req.Description,
 	}
 
-	// Store the attachment
-	if err := s.attachmentRepository.Put(ctx, attachment, req.FileData); err != nil {
-		slog.ErrorContext(ctx, "failed to upload attachment", logging.ErrKey, err, "attachment_uid", attachment.UID)
+	// Upload file to Object Store first
+	if err := s.attachmentRepository.PutObject(ctx, attachment.UID, req.FileData); err != nil {
+		slog.ErrorContext(ctx, "failed to upload attachment file", logging.ErrKey, err, "attachment_uid", attachment.UID)
+		return nil, err
+	}
+
+	// Create metadata in KV store
+	if err := s.attachmentRepository.PutMetadata(ctx, attachment); err != nil {
+		slog.ErrorContext(ctx, "failed to create attachment metadata", logging.ErrKey, err, "attachment_uid", attachment.UID)
+		// Note: File remains in Object Store even if metadata creation fails
+		// This is acceptable as orphaned files can be cleaned up separately
 		return nil, err
 	}
 
@@ -123,8 +131,8 @@ func (s *MeetingAttachmentService) GetAttachment(ctx context.Context, meetingUID
 		return nil, nil, domain.NewValidationError("attachment UID is required")
 	}
 
-	// Get attachment metadata and file data
-	attachment, fileData, err := s.attachmentRepository.Get(ctx, attachmentUID)
+	// Get attachment metadata
+	attachment, err := s.attachmentRepository.GetMetadata(ctx, attachmentUID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -134,7 +142,45 @@ func (s *MeetingAttachmentService) GetAttachment(ctx context.Context, meetingUID
 		return nil, nil, domain.NewNotFoundError("attachment not found for this meeting")
 	}
 
+	// Get file data
+	fileData, err := s.attachmentRepository.GetObject(ctx, attachmentUID)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return attachment, fileData, nil
+}
+
+// GetAttachmentMetadata retrieves only the metadata for an attachment without downloading the file
+func (s *MeetingAttachmentService) GetAttachmentMetadata(ctx context.Context, meetingUID, attachmentUID string) (*models.MeetingAttachment, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("attachment service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+	ctx = logging.AppendCtx(ctx, slog.String("attachment_uid", attachmentUID))
+
+	// Validate inputs
+	if meetingUID == "" {
+		return nil, domain.NewValidationError("meeting UID is required")
+	}
+	if attachmentUID == "" {
+		return nil, domain.NewValidationError("attachment UID is required")
+	}
+
+	// Get attachment metadata
+	attachment, err := s.attachmentRepository.GetMetadata(ctx, attachmentUID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify attachment belongs to the requested meeting
+	if attachment.MeetingUID != meetingUID {
+		return nil, domain.NewNotFoundError("attachment not found for this meeting")
+	}
+
+	return attachment, nil
 }
 
 // DeleteAttachment deletes a file attachment by UID
@@ -156,7 +202,7 @@ func (s *MeetingAttachmentService) DeleteAttachment(ctx context.Context, meeting
 	}
 
 	// First verify the attachment exists and belongs to this meeting
-	attachment, err := s.attachmentRepository.GetInfo(ctx, attachmentUID)
+	attachment, err := s.attachmentRepository.GetMetadata(ctx, attachmentUID)
 	if err != nil {
 		return err
 	}

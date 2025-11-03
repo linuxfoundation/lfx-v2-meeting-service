@@ -53,6 +53,7 @@ type Server struct {
 	UpdatePastMeetingSummary          http.Handler
 	UploadMeetingAttachment           http.Handler
 	GetMeetingAttachment              http.Handler
+	GetMeetingAttachmentMetadata      http.Handler
 	DeleteMeetingAttachment           http.Handler
 	Readyz                            http.Handler
 	Livez                             http.Handler
@@ -147,6 +148,7 @@ func New(
 			{"UpdatePastMeetingSummary", "PUT", "/past_meetings/{past_meeting_uid}/summaries/{summary_uid}"},
 			{"UploadMeetingAttachment", "POST", "/meetings/{meeting_uid}/attachments"},
 			{"GetMeetingAttachment", "GET", "/meetings/{meeting_uid}/attachments/{uid}"},
+			{"GetMeetingAttachmentMetadata", "GET", "/meetings/{meeting_uid}/attachments/{uid}/metadata"},
 			{"DeleteMeetingAttachment", "DELETE", "/meetings/{meeting_uid}/attachments/{uid}"},
 			{"Readyz", "GET", "/readyz"},
 			{"Livez", "GET", "/livez"},
@@ -187,6 +189,7 @@ func New(
 		UpdatePastMeetingSummary:          NewUpdatePastMeetingSummaryHandler(e.UpdatePastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
 		UploadMeetingAttachment:           NewUploadMeetingAttachmentHandler(e.UploadMeetingAttachment, mux, NewMeetingServiceUploadMeetingAttachmentDecoder(mux, meetingServiceUploadMeetingAttachmentDecoderFn), encoder, errhandler, formatter),
 		GetMeetingAttachment:              NewGetMeetingAttachmentHandler(e.GetMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		GetMeetingAttachmentMetadata:      NewGetMeetingAttachmentMetadataHandler(e.GetMeetingAttachmentMetadata, mux, decoder, encoder, errhandler, formatter),
 		DeleteMeetingAttachment:           NewDeleteMeetingAttachmentHandler(e.DeleteMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
 		Readyz:                            NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
 		Livez:                             NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
@@ -234,6 +237,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UpdatePastMeetingSummary = m(s.UpdatePastMeetingSummary)
 	s.UploadMeetingAttachment = m(s.UploadMeetingAttachment)
 	s.GetMeetingAttachment = m(s.GetMeetingAttachment)
+	s.GetMeetingAttachmentMetadata = m(s.GetMeetingAttachmentMetadata)
 	s.DeleteMeetingAttachment = m(s.DeleteMeetingAttachment)
 	s.Readyz = m(s.Readyz)
 	s.Livez = m(s.Livez)
@@ -276,6 +280,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountUpdatePastMeetingSummaryHandler(mux, h.UpdatePastMeetingSummary)
 	MountUploadMeetingAttachmentHandler(mux, h.UploadMeetingAttachment)
 	MountGetMeetingAttachmentHandler(mux, h.GetMeetingAttachment)
+	MountGetMeetingAttachmentMetadataHandler(mux, h.GetMeetingAttachmentMetadata)
 	MountDeleteMeetingAttachmentHandler(mux, h.DeleteMeetingAttachment)
 	MountReadyzHandler(mux, h.Readyz)
 	MountLivezHandler(mux, h.Livez)
@@ -1926,6 +1931,58 @@ func NewGetMeetingAttachmentHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetMeetingAttachmentMetadataHandler configures the mux to serve the
+// "Meeting Service" service "get-meeting-attachment-metadata" endpoint.
+func MountGetMeetingAttachmentMetadataHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/meetings/{meeting_uid}/attachments/{uid}/metadata", f)
+}
+
+// NewGetMeetingAttachmentMetadataHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "get-meeting-attachment-metadata" endpoint.
+func NewGetMeetingAttachmentMetadataHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetMeetingAttachmentMetadataRequest(mux, decoder)
+		encodeResponse = EncodeGetMeetingAttachmentMetadataResponse(encoder)
+		encodeError    = EncodeGetMeetingAttachmentMetadataError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-meeting-attachment-metadata")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

@@ -48,6 +48,7 @@ type Endpoints struct {
 	UpdatePastMeetingSummary          goa.Endpoint
 	UploadMeetingAttachment           goa.Endpoint
 	GetMeetingAttachment              goa.Endpoint
+	GetMeetingAttachmentMetadata      goa.Endpoint
 	DeleteMeetingAttachment           goa.Endpoint
 	Readyz                            goa.Endpoint
 	Livez                             goa.Endpoint
@@ -91,6 +92,7 @@ func NewEndpoints(s Service) *Endpoints {
 		UpdatePastMeetingSummary:          NewUpdatePastMeetingSummaryEndpoint(s, a.JWTAuth),
 		UploadMeetingAttachment:           NewUploadMeetingAttachmentEndpoint(s, a.JWTAuth),
 		GetMeetingAttachment:              NewGetMeetingAttachmentEndpoint(s, a.JWTAuth),
+		GetMeetingAttachmentMetadata:      NewGetMeetingAttachmentMetadataEndpoint(s, a.JWTAuth),
 		DeleteMeetingAttachment:           NewDeleteMeetingAttachmentEndpoint(s, a.JWTAuth),
 		Readyz:                            NewReadyzEndpoint(s),
 		Livez:                             NewLivezEndpoint(s),
@@ -132,6 +134,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UpdatePastMeetingSummary = m(e.UpdatePastMeetingSummary)
 	e.UploadMeetingAttachment = m(e.UploadMeetingAttachment)
 	e.GetMeetingAttachment = m(e.GetMeetingAttachment)
+	e.GetMeetingAttachmentMetadata = m(e.GetMeetingAttachmentMetadata)
 	e.DeleteMeetingAttachment = m(e.DeleteMeetingAttachment)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
@@ -861,6 +864,30 @@ func NewGetMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) 
 			return nil, err
 		}
 		return s.GetMeetingAttachment(ctx, p)
+	}
+}
+
+// NewGetMeetingAttachmentMetadataEndpoint returns an endpoint function that
+// calls the method "get-meeting-attachment-metadata" of service "Meeting
+// Service".
+func NewGetMeetingAttachmentMetadataEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetMeetingAttachmentMetadataPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetMeetingAttachmentMetadata(ctx, p)
 	}
 }
 

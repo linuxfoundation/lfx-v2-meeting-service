@@ -26,89 +26,90 @@ type INatsObjectStore interface {
 	Delete(ctx context.Context, name string) error
 }
 
-// NatsAttachmentRepository provides NATS Object Store operations for meeting attachments
+// NatsAttachmentRepository provides NATS storage operations for meeting attachments
+// Metadata is stored in KV store, while actual files are stored in Object Store
 type NatsAttachmentRepository struct {
+	metadataKV  jetstream.KeyValue
 	objectStore INatsObjectStore
 }
 
-// NewNatsAttachmentRepository creates a new repository for meeting attachments using NATS Object Store
-func NewNatsAttachmentRepository(objectStore INatsObjectStore) *NatsAttachmentRepository {
+// NewNatsAttachmentRepository creates a new repository for meeting attachments
+// metadataKV stores attachment metadata, objectStore stores the actual files
+func NewNatsAttachmentRepository(metadataKV jetstream.KeyValue, objectStore INatsObjectStore) *NatsAttachmentRepository {
 	return &NatsAttachmentRepository{
+		metadataKV:  metadataKV,
 		objectStore: objectStore,
 	}
 }
 
-// Put uploads a file attachment with metadata to the object store
-func (r *NatsAttachmentRepository) Put(ctx context.Context, attachment *models.MeetingAttachment, fileData []byte) error {
+// PutObject stores file in Object Store
+func (r *NatsAttachmentRepository) PutObject(ctx context.Context, attachmentUID string, fileData []byte) error {
+	if attachmentUID == "" {
+		return domain.NewValidationError("attachment UID is required")
+	}
+	if len(fileData) == 0 {
+		return domain.NewValidationError("file data is required")
+	}
+
+	// Store file in Object Store (no meeting reference in object store)
+	objectMeta := jetstream.ObjectMeta{
+		Name:        attachmentUID,
+		Description: fmt.Sprintf("File for attachment %s", attachmentUID),
+	}
+
+	reader := bytes.NewReader(fileData)
+	_, err := r.objectStore.Put(ctx, objectMeta, reader)
+	if err != nil {
+		slog.ErrorContext(ctx, "error putting file to Object Store",
+			logging.ErrKey, err,
+			"attachment_uid", attachmentUID)
+		return domain.NewInternalError(fmt.Sprintf("failed to upload attachment file: %v", err))
+	}
+
+	return nil
+}
+
+// PutMetadata stores metadata in KV store
+func (r *NatsAttachmentRepository) PutMetadata(ctx context.Context, attachment *models.MeetingAttachment) error {
 	if attachment == nil {
 		return domain.NewValidationError("attachment cannot be nil")
 	}
 	if attachment.UID == "" {
 		return domain.NewValidationError("attachment UID is required")
 	}
-	if attachment.MeetingUID == "" {
-		return domain.NewValidationError("meeting UID is required")
-	}
 
-	// Serialize metadata to JSON
+	// Serialize metadata to JSON (includes meeting_uid field)
 	metadataJSON, err := json.Marshal(attachment)
 	if err != nil {
 		slog.ErrorContext(ctx, "error marshaling attachment metadata", logging.ErrKey, err)
 		return domain.NewInternalError(fmt.Sprintf("failed to marshal attachment metadata: %v", err))
 	}
 
-	// Create object metadata with custom headers for attachment metadata
-	objectMeta := jetstream.ObjectMeta{
-		Name:        attachment.UID,
-		Description: attachment.Description,
-		Headers: map[string][]string{
-			"Attachment-Metadata": {string(metadataJSON)},
-			"Content-Type":        {attachment.ContentType},
-		},
-	}
-
-	// Upload the file
-	reader := bytes.NewReader(fileData)
-	_, err = r.objectStore.Put(ctx, objectMeta, reader)
+	// Store metadata in KV store
+	_, err = r.metadataKV.Put(ctx, attachment.UID, metadataJSON)
 	if err != nil {
-		slog.ErrorContext(ctx, "error putting object to NATS Object Store",
+		slog.ErrorContext(ctx, "error putting attachment metadata to KV store",
 			logging.ErrKey, err,
-			"attachment_uid", attachment.UID,
-			"meeting_uid", attachment.MeetingUID)
-		return domain.NewInternalError(fmt.Sprintf("failed to upload attachment: %v", err))
+			"attachment_uid", attachment.UID)
+		return domain.NewInternalError(fmt.Sprintf("failed to store attachment metadata: %v", err))
 	}
 
 	return nil
 }
 
-// Get retrieves a file attachment and its metadata from the object store
-func (r *NatsAttachmentRepository) Get(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, []byte, error) {
+// GetObject retrieves file from Object Store
+func (r *NatsAttachmentRepository) GetObject(ctx context.Context, attachmentUID string) ([]byte, error) {
 	if attachmentUID == "" {
-		return nil, nil, domain.NewValidationError("attachment UID is required")
+		return nil, domain.NewValidationError("attachment UID is required")
 	}
 
-	// First get the info to extract metadata
-	info, err := r.objectStore.GetInfo(ctx, attachmentUID)
-	if err != nil {
-		slog.ErrorContext(ctx, "error getting object info from NATS Object Store",
-			logging.ErrKey, err,
-			"attachment_uid", attachmentUID)
-		return nil, nil, domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
-	}
-
-	// Parse metadata from headers
-	attachment, err := r.parseAttachmentMetadata(info)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Get the object data
+	// Get file from Object Store
 	result, err := r.objectStore.Get(ctx, attachmentUID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error getting object from NATS Object Store",
+		slog.ErrorContext(ctx, "error getting file from Object Store",
 			logging.ErrKey, err,
 			"attachment_uid", attachmentUID)
-		return nil, nil, domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
+		return nil, domain.NewNotFoundError(fmt.Sprintf("attachment file not found: %s", attachmentUID))
 	}
 	defer func() {
 		if closeErr := result.Close(); closeErr != nil {
@@ -121,60 +122,59 @@ func (r *NatsAttachmentRepository) Get(ctx context.Context, attachmentUID string
 	// Read all data
 	fileData, err := io.ReadAll(result)
 	if err != nil {
-		slog.ErrorContext(ctx, "error reading object data",
+		slog.ErrorContext(ctx, "error reading file data",
 			logging.ErrKey, err,
 			"attachment_uid", attachmentUID)
-		return nil, nil, domain.NewInternalError("failed to read attachment data")
+		return nil, domain.NewInternalError("failed to read attachment file")
 	}
 
-	return attachment, fileData, nil
+	return fileData, nil
 }
 
-// GetInfo retrieves only the metadata for an attachment without downloading the file
-func (r *NatsAttachmentRepository) GetInfo(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, error) {
+// GetMetadata retrieves only the metadata from KV store
+func (r *NatsAttachmentRepository) GetMetadata(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, error) {
 	if attachmentUID == "" {
 		return nil, domain.NewValidationError("attachment UID is required")
 	}
 
-	info, err := r.objectStore.GetInfo(ctx, attachmentUID)
+	// Get metadata from KV store
+	entry, err := r.metadataKV.Get(ctx, attachmentUID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error getting object info from NATS Object Store",
+		slog.ErrorContext(ctx, "error getting attachment metadata from KV store",
 			logging.ErrKey, err,
 			"attachment_uid", attachmentUID)
 		return nil, domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
 	}
 
-	return r.parseAttachmentMetadata(info)
+	// Parse metadata
+	var attachment models.MeetingAttachment
+	if err := json.Unmarshal(entry.Value(), &attachment); err != nil {
+		slog.ErrorContext(ctx, "error unmarshaling attachment metadata",
+			logging.ErrKey, err,
+			"attachment_uid", attachmentUID)
+		return nil, domain.NewInternalError("failed to parse attachment metadata")
+	}
+
+	return &attachment, nil
 }
 
-// Delete removes a file attachment from the object store
+// Delete removes only the metadata from KV store (file persists in Object Store)
 func (r *NatsAttachmentRepository) Delete(ctx context.Context, attachmentUID string) error {
 	if attachmentUID == "" {
 		return domain.NewValidationError("attachment UID is required")
 	}
 
-	err := r.objectStore.Delete(ctx, attachmentUID)
+	// Delete metadata from KV store
+	err := r.metadataKV.Delete(ctx, attachmentUID)
 	if err != nil {
-		slog.ErrorContext(ctx, "error deleting object from NATS Object Store",
+		slog.ErrorContext(ctx, "error deleting attachment metadata from KV store",
 			logging.ErrKey, err,
 			"attachment_uid", attachmentUID)
 		return domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
 	}
 
+	slog.InfoContext(ctx, "deleted attachment metadata (file preserved in Object Store)",
+		"attachment_uid", attachmentUID)
+
 	return nil
-}
-
-// parseAttachmentMetadata extracts attachment metadata from object info headers
-func (r *NatsAttachmentRepository) parseAttachmentMetadata(info *jetstream.ObjectInfo) (*models.MeetingAttachment, error) {
-	metadataJSON, ok := info.Headers["Attachment-Metadata"]
-	if !ok || len(metadataJSON) == 0 {
-		return nil, domain.NewInternalError("attachment metadata not found in object headers")
-	}
-
-	var attachment models.MeetingAttachment
-	if err := json.Unmarshal([]byte(metadataJSON[0]), &attachment); err != nil {
-		return nil, domain.NewInternalError("failed to parse attachment metadata")
-	}
-
-	return &attachment, nil
 }

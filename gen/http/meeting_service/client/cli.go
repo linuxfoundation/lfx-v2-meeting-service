@@ -1937,6 +1937,53 @@ func BuildGetMeetingAttachmentPayload(meetingServiceGetMeetingAttachmentMeetingU
 	return v, nil
 }
 
+// BuildGetMeetingAttachmentMetadataPayload builds the payload for the Meeting
+// Service get-meeting-attachment-metadata endpoint from CLI flags.
+func BuildGetMeetingAttachmentMetadataPayload(meetingServiceGetMeetingAttachmentMetadataMeetingUID string, meetingServiceGetMeetingAttachmentMetadataUID string, meetingServiceGetMeetingAttachmentMetadataVersion string, meetingServiceGetMeetingAttachmentMetadataBearerToken string) (*meetingservice.GetMeetingAttachmentMetadataPayload, error) {
+	var err error
+	var meetingUID string
+	{
+		meetingUID = meetingServiceGetMeetingAttachmentMetadataMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("meeting_uid", meetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var uid string
+	{
+		uid = meetingServiceGetMeetingAttachmentMetadataUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceGetMeetingAttachmentMetadataVersion != "" {
+			version = &meetingServiceGetMeetingAttachmentMetadataVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetMeetingAttachmentMetadataBearerToken != "" {
+			bearerToken = &meetingServiceGetMeetingAttachmentMetadataBearerToken
+		}
+	}
+	v := &meetingservice.GetMeetingAttachmentMetadataPayload{}
+	v.MeetingUID = meetingUID
+	v.UID = uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildDeleteMeetingAttachmentPayload builds the payload for the Meeting
 // Service delete-meeting-attachment endpoint from CLI flags.
 func BuildDeleteMeetingAttachmentPayload(meetingServiceDeleteMeetingAttachmentMeetingUID string, meetingServiceDeleteMeetingAttachmentUID string, meetingServiceDeleteMeetingAttachmentVersion string, meetingServiceDeleteMeetingAttachmentBearerToken string) (*meetingservice.DeleteMeetingAttachmentPayload, error) {

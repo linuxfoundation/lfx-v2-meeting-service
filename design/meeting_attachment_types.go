@@ -7,7 +7,10 @@ import (
 	. "goa.design/goa/v3/dsl" //nolint:staticcheck // ST1001: the recommended way of using the goa DSL package is with the . import
 )
 
-// MeetingAttachment represents a file attachment associated with a meeting
+// MeetingAttachment represents a file attachment that can be referenced by meetings or past meetings.
+// Each metadata record in KV store associates a meeting with a file in Object Store.
+// Multiple metadata records can reference the same file, allowing file reuse across meetings.
+// Metadata is stored in NATS KV store, while actual files are in NATS Object Store.
 var MeetingAttachment = Type("MeetingAttachment", func() {
 	Description("Meeting attachment metadata")
 	AttachmentUIDAttribute()

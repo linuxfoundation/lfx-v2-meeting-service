@@ -147,6 +147,10 @@ type Client struct {
 	// get-meeting-attachment endpoint.
 	GetMeetingAttachmentDoer goahttp.Doer
 
+	// GetMeetingAttachmentMetadata Doer is the HTTP client used to make requests
+	// to the get-meeting-attachment-metadata endpoint.
+	GetMeetingAttachmentMetadataDoer goahttp.Doer
+
 	// DeleteMeetingAttachment Doer is the HTTP client used to make requests to the
 	// delete-meeting-attachment endpoint.
 	DeleteMeetingAttachmentDoer goahttp.Doer
@@ -215,6 +219,7 @@ func NewClient(
 		UpdatePastMeetingSummaryDoer:          doer,
 		UploadMeetingAttachmentDoer:           doer,
 		GetMeetingAttachmentDoer:              doer,
+		GetMeetingAttachmentMetadataDoer:      doer,
 		DeleteMeetingAttachmentDoer:           doer,
 		ReadyzDoer:                            doer,
 		LivezDoer:                             doer,
@@ -990,6 +995,30 @@ func (c *Client) GetMeetingAttachment() goa.Endpoint {
 		resp, err := c.GetMeetingAttachmentDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetMeetingAttachmentMetadata returns an endpoint that makes HTTP requests to
+// the Meeting Service service get-meeting-attachment-metadata server.
+func (c *Client) GetMeetingAttachmentMetadata() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetMeetingAttachmentMetadataRequest(c.encoder)
+		decodeResponse = DecodeGetMeetingAttachmentMetadataResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetMeetingAttachmentMetadataRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetMeetingAttachmentMetadataDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-meeting-attachment-metadata", err)
 		}
 		return decodeResponse(resp)
 	}

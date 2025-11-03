@@ -151,17 +151,21 @@ type MeetingRSVPRepository interface {
 }
 
 // MeetingAttachmentRepository defines the interface for meeting attachment storage operations.
-// This interface uses NATS JetStream Object Store for file storage.
+// Metadata is stored in NATS KV store (includes meeting_uid field), while actual files are stored in NATS Object Store.
+// Each metadata record associates a meeting with a file. Multiple metadata records can reference the same file.
 type MeetingAttachmentRepository interface {
-	// Put uploads a file attachment with metadata to the object store
-	Put(ctx context.Context, attachment *models.MeetingAttachment, fileData []byte) error
+	// PutObject stores file in Object Store
+	PutObject(ctx context.Context, attachmentUID string, fileData []byte) error
 
-	// Get retrieves a file attachment and its metadata from the object store
-	Get(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, []byte, error)
+	// PutMetadata stores metadata in KV store
+	PutMetadata(ctx context.Context, attachment *models.MeetingAttachment) error
 
-	// GetInfo retrieves only the metadata for an attachment without downloading the file
-	GetInfo(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, error)
+	// GetObject retrieves file from Object Store
+	GetObject(ctx context.Context, attachmentUID string) ([]byte, error)
 
-	// Delete removes a file attachment from the object store
+	// GetMetadata retrieves only the metadata from KV store
+	GetMetadata(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, error)
+
+	// Delete removes only the metadata from KV store (file persists in Object Store)
 	Delete(ctx context.Context, attachmentUID string) error
 }

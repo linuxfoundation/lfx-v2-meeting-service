@@ -1222,6 +1222,41 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// GET meeting attachment metadata endpoint
+	Method("get-meeting-attachment-metadata", func() {
+		Description("Get metadata for a meeting attachment without downloading the file")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			AttachmentMeetingUIDAttribute()
+			AttachmentUIDAttribute()
+			Required("meeting_uid", "uid")
+		})
+
+		Result(MeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{meeting_uid}/attachments/{uid}/metadata")
+			Param("version:v")
+			Param("meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("delete-meeting-attachment", func() {
 		Description("Delete a file attachment for a meeting")
 
