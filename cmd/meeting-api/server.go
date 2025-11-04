@@ -86,6 +86,70 @@ func uploadMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Upload
 // attachmentMetadataStore temporarily stores file metadata during request processing
 var attachmentMetadataStore sync.Map
 
+// createPastMeetingAttachmentDecoder decodes multipart form data for past meeting attachment creation
+func createPastMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.CreatePastMeetingAttachmentPayload) error {
+	// Initialize the payload if it's nil
+	if *p == nil {
+		*p = &genquerysvc.CreatePastMeetingAttachmentPayload{}
+	}
+
+	var metadata uploadPastMeetingAttachmentMetadata
+
+	// Read all parts from the multipart form
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		switch part.FormName() {
+		case "file":
+			// Capture file metadata from the part
+			metadata.FileName = part.FileName()
+			metadata.ContentType = part.Header.Get("Content-Type")
+			if metadata.ContentType == "" {
+				metadata.ContentType = "application/octet-stream"
+			}
+
+			// Read the file data
+			fileData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			(*p).File = fileData
+		case "description":
+			// Read the description field
+			descData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			desc := string(descData)
+			(*p).Description = &desc
+		case "source_object_uid":
+			// Read the source_object_uid field
+			sourceData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			sourceUID := string(sourceData)
+			(*p).SourceObjectUID = &sourceUID
+		}
+	}
+
+	// Store metadata in a way the handler can access it
+	if metadata.FileName != "" {
+		pastMeetingAttachmentMetadataStore.Store(*p, metadata)
+	}
+
+	return nil
+}
+
+// pastMeetingAttachmentMetadataStore temporarily stores file metadata during request processing for past meeting attachments
+var pastMeetingAttachmentMetadataStore sync.Map
+
 // setupHTTPServer configures and starts the HTTP server
 func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGroup) *http.Server {
 	// Wrap it in the generated endpoints
@@ -144,6 +208,7 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 		nil,
 		nil,
 		uploadMeetingAttachmentDecoder,
+		createPastMeetingAttachmentDecoder,
 		koDataDir,
 		koDataDir,
 		koDataDir,

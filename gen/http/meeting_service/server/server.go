@@ -55,6 +55,7 @@ type Server struct {
 	GetMeetingAttachment              http.Handler
 	GetMeetingAttachmentMetadata      http.Handler
 	DeleteMeetingAttachment           http.Handler
+	CreatePastMeetingAttachment       http.Handler
 	GetPastMeetingAttachments         http.Handler
 	DeletePastMeetingAttachment       http.Handler
 	Readyz                            http.Handler
@@ -81,6 +82,11 @@ type MountPoint struct {
 // "upload-meeting-attachment" endpoint.
 type MeetingServiceUploadMeetingAttachmentDecoderFunc func(*multipart.Reader, **meetingservice.UploadMeetingAttachmentPayload) error
 
+// MeetingServiceCreatePastMeetingAttachmentDecoderFunc is the type to decode
+// multipart request for the "Meeting Service" service
+// "create-past-meeting-attachment" endpoint.
+type MeetingServiceCreatePastMeetingAttachmentDecoderFunc func(*multipart.Reader, **meetingservice.CreatePastMeetingAttachmentPayload) error
+
 // New instantiates HTTP handlers for all the Meeting Service service endpoints
 // using the provided encoder and decoder. The handlers are mounted on the
 // given mux using the HTTP verb and path defined in the design. errhandler is
@@ -95,6 +101,7 @@ func New(
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 	meetingServiceUploadMeetingAttachmentDecoderFn MeetingServiceUploadMeetingAttachmentDecoderFunc,
+	meetingServiceCreatePastMeetingAttachmentDecoderFn MeetingServiceCreatePastMeetingAttachmentDecoderFunc,
 	fileSystemGenHTTPOpenapiJSON http.FileSystem,
 	fileSystemGenHTTPOpenapiYaml http.FileSystem,
 	fileSystemGenHTTPOpenapi3JSON http.FileSystem,
@@ -152,6 +159,7 @@ func New(
 			{"GetMeetingAttachment", "GET", "/meetings/{meeting_uid}/attachments/{uid}"},
 			{"GetMeetingAttachmentMetadata", "GET", "/meetings/{meeting_uid}/attachments/{uid}/metadata"},
 			{"DeleteMeetingAttachment", "DELETE", "/meetings/{meeting_uid}/attachments/{uid}"},
+			{"CreatePastMeetingAttachment", "POST", "/past_meetings/{past_meeting_uid}/attachments"},
 			{"GetPastMeetingAttachments", "GET", "/past_meetings/{uid}/attachments"},
 			{"DeletePastMeetingAttachment", "DELETE", "/past_meetings/{past_meeting_uid}/attachments/{uid}"},
 			{"Readyz", "GET", "/readyz"},
@@ -195,6 +203,7 @@ func New(
 		GetMeetingAttachment:              NewGetMeetingAttachmentHandler(e.GetMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
 		GetMeetingAttachmentMetadata:      NewGetMeetingAttachmentMetadataHandler(e.GetMeetingAttachmentMetadata, mux, decoder, encoder, errhandler, formatter),
 		DeleteMeetingAttachment:           NewDeleteMeetingAttachmentHandler(e.DeleteMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		CreatePastMeetingAttachment:       NewCreatePastMeetingAttachmentHandler(e.CreatePastMeetingAttachment, mux, NewMeetingServiceCreatePastMeetingAttachmentDecoder(mux, meetingServiceCreatePastMeetingAttachmentDecoderFn), encoder, errhandler, formatter),
 		GetPastMeetingAttachments:         NewGetPastMeetingAttachmentsHandler(e.GetPastMeetingAttachments, mux, decoder, encoder, errhandler, formatter),
 		DeletePastMeetingAttachment:       NewDeletePastMeetingAttachmentHandler(e.DeletePastMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
 		Readyz:                            NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
@@ -245,6 +254,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.GetMeetingAttachment = m(s.GetMeetingAttachment)
 	s.GetMeetingAttachmentMetadata = m(s.GetMeetingAttachmentMetadata)
 	s.DeleteMeetingAttachment = m(s.DeleteMeetingAttachment)
+	s.CreatePastMeetingAttachment = m(s.CreatePastMeetingAttachment)
 	s.GetPastMeetingAttachments = m(s.GetPastMeetingAttachments)
 	s.DeletePastMeetingAttachment = m(s.DeletePastMeetingAttachment)
 	s.Readyz = m(s.Readyz)
@@ -290,6 +300,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetMeetingAttachmentHandler(mux, h.GetMeetingAttachment)
 	MountGetMeetingAttachmentMetadataHandler(mux, h.GetMeetingAttachmentMetadata)
 	MountDeleteMeetingAttachmentHandler(mux, h.DeleteMeetingAttachment)
+	MountCreatePastMeetingAttachmentHandler(mux, h.CreatePastMeetingAttachment)
 	MountGetPastMeetingAttachmentsHandler(mux, h.GetPastMeetingAttachments)
 	MountDeletePastMeetingAttachmentHandler(mux, h.DeletePastMeetingAttachment)
 	MountReadyzHandler(mux, h.Readyz)
@@ -2045,6 +2056,58 @@ func NewDeleteMeetingAttachmentHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "delete-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountCreatePastMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "create-past-meeting-attachment" endpoint.
+func MountCreatePastMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/past_meetings/{past_meeting_uid}/attachments", f)
+}
+
+// NewCreatePastMeetingAttachmentHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "create-past-meeting-attachment" endpoint.
+func NewCreatePastMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreatePastMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeCreatePastMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeCreatePastMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "create-past-meeting-attachment")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

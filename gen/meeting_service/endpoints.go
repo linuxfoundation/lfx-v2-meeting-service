@@ -50,6 +50,7 @@ type Endpoints struct {
 	GetMeetingAttachment              goa.Endpoint
 	GetMeetingAttachmentMetadata      goa.Endpoint
 	DeleteMeetingAttachment           goa.Endpoint
+	CreatePastMeetingAttachment       goa.Endpoint
 	GetPastMeetingAttachments         goa.Endpoint
 	DeletePastMeetingAttachment       goa.Endpoint
 	Readyz                            goa.Endpoint
@@ -96,6 +97,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetMeetingAttachment:              NewGetMeetingAttachmentEndpoint(s, a.JWTAuth),
 		GetMeetingAttachmentMetadata:      NewGetMeetingAttachmentMetadataEndpoint(s, a.JWTAuth),
 		DeleteMeetingAttachment:           NewDeleteMeetingAttachmentEndpoint(s, a.JWTAuth),
+		CreatePastMeetingAttachment:       NewCreatePastMeetingAttachmentEndpoint(s, a.JWTAuth),
 		GetPastMeetingAttachments:         NewGetPastMeetingAttachmentsEndpoint(s, a.JWTAuth),
 		DeletePastMeetingAttachment:       NewDeletePastMeetingAttachmentEndpoint(s, a.JWTAuth),
 		Readyz:                            NewReadyzEndpoint(s),
@@ -140,6 +142,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetMeetingAttachment = m(e.GetMeetingAttachment)
 	e.GetMeetingAttachmentMetadata = m(e.GetMeetingAttachmentMetadata)
 	e.DeleteMeetingAttachment = m(e.DeleteMeetingAttachment)
+	e.CreatePastMeetingAttachment = m(e.CreatePastMeetingAttachment)
 	e.GetPastMeetingAttachments = m(e.GetPastMeetingAttachments)
 	e.DeletePastMeetingAttachment = m(e.DeletePastMeetingAttachment)
 	e.Readyz = m(e.Readyz)
@@ -917,6 +920,30 @@ func NewDeleteMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFun
 			return nil, err
 		}
 		return nil, s.DeleteMeetingAttachment(ctx, p)
+	}
+}
+
+// NewCreatePastMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "create-past-meeting-attachment" of service "Meeting
+// Service".
+func NewCreatePastMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreatePastMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreatePastMeetingAttachment(ctx, p)
 	}
 }
 

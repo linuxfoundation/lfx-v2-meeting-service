@@ -104,6 +104,12 @@ func (r *NatsPastMeetingAttachmentRepository) ListByPastMeeting(ctx context.Cont
 	// Get all keys from the KV store
 	keys, err := r.kv.Keys(ctx)
 	if err != nil {
+		// Check if error is due to empty bucket (no keys found)
+		if err == jetstream.ErrNoKeysFound {
+			slog.DebugContext(ctx, "no attachments found in KV store",
+				"past_meeting_uid", pastMeetingUID)
+			return []*models.PastMeetingAttachment{}, nil
+		}
 		slog.ErrorContext(ctx, "error listing keys from KV store",
 			logging.ErrKey, err,
 			"past_meeting_uid", pastMeetingUID)

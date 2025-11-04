@@ -2031,6 +2031,66 @@ func BuildDeleteMeetingAttachmentPayload(meetingServiceDeleteMeetingAttachmentMe
 	return v, nil
 }
 
+// BuildCreatePastMeetingAttachmentPayload builds the payload for the Meeting
+// Service create-past-meeting-attachment endpoint from CLI flags.
+func BuildCreatePastMeetingAttachmentPayload(meetingServiceCreatePastMeetingAttachmentBody string, meetingServiceCreatePastMeetingAttachmentPastMeetingUID string, meetingServiceCreatePastMeetingAttachmentVersion string, meetingServiceCreatePastMeetingAttachmentBearerToken string) (*meetingservice.CreatePastMeetingAttachmentPayload, error) {
+	var err error
+	var body CreatePastMeetingAttachmentRequestBody
+	{
+		err = json.Unmarshal([]byte(meetingServiceCreatePastMeetingAttachmentBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"description\": \"Meeting recording for Q1 2024\",\n      \"file\": \"RXVtIHZlbGl0IGFuaW1pIGV0IHF1aWEgbWludXMgcXVpLg==\",\n      \"source_object_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n   }'")
+		}
+		if body.Description != nil {
+			if utf8.RuneCountInString(*body.Description) > 500 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 500, false))
+			}
+		}
+		if body.SourceObjectUID != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.source_object_uid", *body.SourceObjectUID, goa.FormatUUID))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var pastMeetingUID string
+	{
+		pastMeetingUID = meetingServiceCreatePastMeetingAttachmentPastMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("past_meeting_uid", pastMeetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceCreatePastMeetingAttachmentVersion != "" {
+			version = &meetingServiceCreatePastMeetingAttachmentVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceCreatePastMeetingAttachmentBearerToken != "" {
+			bearerToken = &meetingServiceCreatePastMeetingAttachmentBearerToken
+		}
+	}
+	v := &meetingservice.CreatePastMeetingAttachmentPayload{
+		Description:     body.Description,
+		SourceObjectUID: body.SourceObjectUID,
+		File:            body.File,
+	}
+	v.PastMeetingUID = pastMeetingUID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildGetPastMeetingAttachmentsPayload builds the payload for the Meeting
 // Service get-past-meeting-attachments endpoint from CLI flags.
 func BuildGetPastMeetingAttachmentsPayload(meetingServiceGetPastMeetingAttachmentsUID string, meetingServiceGetPastMeetingAttachmentsVersion string, meetingServiceGetPastMeetingAttachmentsBearerToken string) (*meetingservice.GetPastMeetingAttachmentsPayload, error) {

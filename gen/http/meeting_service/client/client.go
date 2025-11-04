@@ -155,6 +155,10 @@ type Client struct {
 	// delete-meeting-attachment endpoint.
 	DeleteMeetingAttachmentDoer goahttp.Doer
 
+	// CreatePastMeetingAttachment Doer is the HTTP client used to make requests to
+	// the create-past-meeting-attachment endpoint.
+	CreatePastMeetingAttachmentDoer goahttp.Doer
+
 	// GetPastMeetingAttachments Doer is the HTTP client used to make requests to
 	// the get-past-meeting-attachments endpoint.
 	GetPastMeetingAttachmentsDoer goahttp.Doer
@@ -183,6 +187,11 @@ type Client struct {
 // multipart request for the "Meeting Service" service
 // "upload-meeting-attachment" endpoint.
 type MeetingServiceUploadMeetingAttachmentEncoderFunc func(*multipart.Writer, *meetingservice.UploadMeetingAttachmentPayload) error
+
+// MeetingServiceCreatePastMeetingAttachmentEncoderFunc is the type to encode
+// multipart request for the "Meeting Service" service
+// "create-past-meeting-attachment" endpoint.
+type MeetingServiceCreatePastMeetingAttachmentEncoderFunc func(*multipart.Writer, *meetingservice.CreatePastMeetingAttachmentPayload) error
 
 // NewClient instantiates HTTP clients for all the Meeting Service service
 // servers.
@@ -229,6 +238,7 @@ func NewClient(
 		GetMeetingAttachmentDoer:              doer,
 		GetMeetingAttachmentMetadataDoer:      doer,
 		DeleteMeetingAttachmentDoer:           doer,
+		CreatePastMeetingAttachmentDoer:       doer,
 		GetPastMeetingAttachmentsDoer:         doer,
 		DeletePastMeetingAttachmentDoer:       doer,
 		ReadyzDoer:                            doer,
@@ -1053,6 +1063,30 @@ func (c *Client) DeleteMeetingAttachment() goa.Endpoint {
 		resp, err := c.DeleteMeetingAttachmentDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreatePastMeetingAttachment returns an endpoint that makes HTTP requests to
+// the Meeting Service service create-past-meeting-attachment server.
+func (c *Client) CreatePastMeetingAttachment(meetingServiceCreatePastMeetingAttachmentEncoderFn MeetingServiceCreatePastMeetingAttachmentEncoderFunc) goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreatePastMeetingAttachmentRequest(NewMeetingServiceCreatePastMeetingAttachmentEncoder(meetingServiceCreatePastMeetingAttachmentEncoderFn))
+		decodeResponse = DecodeCreatePastMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreatePastMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreatePastMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-past-meeting-attachment", err)
 		}
 		return decodeResponse(resp)
 	}

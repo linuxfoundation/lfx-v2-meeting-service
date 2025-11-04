@@ -91,6 +91,9 @@ type Service interface {
 	GetMeetingAttachmentMetadata(context.Context, *GetMeetingAttachmentMetadataPayload) (res *MeetingAttachment, err error)
 	// Delete a file attachment for a meeting
 	DeleteMeetingAttachment(context.Context, *DeleteMeetingAttachmentPayload) (err error)
+	// Create a file attachment for a past meeting. Can upload a new file or
+	// reference an existing one.
+	CreatePastMeetingAttachment(context.Context, *CreatePastMeetingAttachmentPayload) (res *PastMeetingAttachment, err error)
 	// Get all attachments for a past meeting
 	GetPastMeetingAttachments(context.Context, *GetPastMeetingAttachmentsPayload) (res *GetPastMeetingAttachmentsResult, err error)
 	// Delete a past meeting attachment
@@ -121,7 +124,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [38]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "upload-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "get-past-meeting-attachments", "delete-past-meeting-attachment", "readyz", "livez"}
+var MethodNames = [39]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "upload-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "delete-past-meeting-attachment", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -249,6 +252,24 @@ type CreateMeetingRsvpPayload struct {
 	// The ID of the specific occurrence (required for 'single' and
 	// 'this_and_following' scopes)
 	OccurrenceID *string
+}
+
+// CreatePastMeetingAttachmentPayload is the payload type of the Meeting
+// Service service create-past-meeting-attachment method.
+type CreatePastMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the past meeting this attachment belongs to
+	PastMeetingUID string
+	// Optional description of the attachment
+	Description *string
+	// Optional: UID of an existing file in Object Store to reference
+	SourceObjectUID *string
+	// Optional: The file data to upload (required if source_object_uid is not
+	// provided)
+	File []byte
 }
 
 // CreatePastMeetingParticipantPayload is the payload type of the Meeting
@@ -1035,7 +1056,8 @@ type PastMeeting struct {
 	UpdatedAt *string
 }
 
-// Past meeting attachment metadata
+// PastMeetingAttachment is the result type of the Meeting Service service
+// create-past-meeting-attachment method.
 type PastMeetingAttachment struct {
 	// The UID of the attachment
 	UID string

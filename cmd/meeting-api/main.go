@@ -150,6 +150,7 @@ func main() {
 	pastMeetingAttachmentService := service.NewPastMeetingAttachmentService(
 		repos.PastMeeting,
 		repos.PastMeetingAttachment,
+		repos.Attachment,
 		serviceConfig,
 	)
 	committeeSyncService := service.NewCommitteeSyncService(

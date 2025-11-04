@@ -22,13 +22,13 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|get-past-meeting-attachments|delete-past-meeting-attachment|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|delete-past-meeting-attachment|readyz|livez)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` meeting-service get-meetings --version "1" --include-cancelled-occurrences false --bearer-token "eyJhbGci..."` + "\n" +
+	return os.Args[0] + ` meeting-service get-meetings --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."` + "\n" +
 		""
 }
 
@@ -41,6 +41,7 @@ func ParseEndpoint(
 	dec func(*http.Response) goahttp.Decoder,
 	restore bool,
 	meetingServiceUploadMeetingAttachmentEncoderFn meetingservicec.MeetingServiceUploadMeetingAttachmentEncoderFunc,
+	meetingServiceCreatePastMeetingAttachmentEncoderFn meetingservicec.MeetingServiceCreatePastMeetingAttachmentEncoderFunc,
 ) (goa.Endpoint, any, error) {
 	var (
 		meetingServiceFlags = flag.NewFlagSet("meeting-service", flag.ContinueOnError)
@@ -247,6 +248,12 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingAttachmentVersionFlag     = meetingServiceDeleteMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceDeleteMeetingAttachmentBearerTokenFlag = meetingServiceDeleteMeetingAttachmentFlags.String("bearer-token", "", "")
 
+		meetingServiceCreatePastMeetingAttachmentFlags              = flag.NewFlagSet("create-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceCreatePastMeetingAttachmentBodyFlag           = meetingServiceCreatePastMeetingAttachmentFlags.String("body", "REQUIRED", "")
+		meetingServiceCreatePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceCreatePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
+		meetingServiceCreatePastMeetingAttachmentVersionFlag        = meetingServiceCreatePastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceCreatePastMeetingAttachmentBearerTokenFlag    = meetingServiceCreatePastMeetingAttachmentFlags.String("bearer-token", "", "")
+
 		meetingServiceGetPastMeetingAttachmentsFlags           = flag.NewFlagSet("get-past-meeting-attachments", flag.ExitOnError)
 		meetingServiceGetPastMeetingAttachmentsUIDFlag         = meetingServiceGetPastMeetingAttachmentsFlags.String("uid", "REQUIRED", "The unique identifier of the resource")
 		meetingServiceGetPastMeetingAttachmentsVersionFlag     = meetingServiceGetPastMeetingAttachmentsFlags.String("version", "", "")
@@ -297,6 +304,7 @@ func ParseEndpoint(
 	meetingServiceGetMeetingAttachmentFlags.Usage = meetingServiceGetMeetingAttachmentUsage
 	meetingServiceGetMeetingAttachmentMetadataFlags.Usage = meetingServiceGetMeetingAttachmentMetadataUsage
 	meetingServiceDeleteMeetingAttachmentFlags.Usage = meetingServiceDeleteMeetingAttachmentUsage
+	meetingServiceCreatePastMeetingAttachmentFlags.Usage = meetingServiceCreatePastMeetingAttachmentUsage
 	meetingServiceGetPastMeetingAttachmentsFlags.Usage = meetingServiceGetPastMeetingAttachmentsUsage
 	meetingServiceDeletePastMeetingAttachmentFlags.Usage = meetingServiceDeletePastMeetingAttachmentUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
@@ -438,6 +446,9 @@ func ParseEndpoint(
 			case "delete-meeting-attachment":
 				epf = meetingServiceDeleteMeetingAttachmentFlags
 
+			case "create-past-meeting-attachment":
+				epf = meetingServiceCreatePastMeetingAttachmentFlags
+
 			case "get-past-meeting-attachments":
 				epf = meetingServiceGetPastMeetingAttachmentsFlags
 
@@ -577,6 +588,9 @@ func ParseEndpoint(
 			case "delete-meeting-attachment":
 				endpoint = c.DeleteMeetingAttachment()
 				data, err = meetingservicec.BuildDeleteMeetingAttachmentPayload(*meetingServiceDeleteMeetingAttachmentMeetingUIDFlag, *meetingServiceDeleteMeetingAttachmentUIDFlag, *meetingServiceDeleteMeetingAttachmentVersionFlag, *meetingServiceDeleteMeetingAttachmentBearerTokenFlag)
+			case "create-past-meeting-attachment":
+				endpoint = c.CreatePastMeetingAttachment(meetingServiceCreatePastMeetingAttachmentEncoderFn)
+				data, err = meetingservicec.BuildCreatePastMeetingAttachmentPayload(*meetingServiceCreatePastMeetingAttachmentBodyFlag, *meetingServiceCreatePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceCreatePastMeetingAttachmentVersionFlag, *meetingServiceCreatePastMeetingAttachmentBearerTokenFlag)
 			case "get-past-meeting-attachments":
 				endpoint = c.GetPastMeetingAttachments()
 				data, err = meetingservicec.BuildGetPastMeetingAttachmentsPayload(*meetingServiceGetPastMeetingAttachmentsUIDFlag, *meetingServiceGetPastMeetingAttachmentsVersionFlag, *meetingServiceGetPastMeetingAttachmentsBearerTokenFlag)
@@ -640,6 +654,7 @@ COMMAND:
     get-meeting-attachment: Download a file attachment for a meeting
     get-meeting-attachment-metadata: Get metadata for a meeting attachment without downloading the file
     delete-meeting-attachment: Delete a file attachment for a meeting
+    create-past-meeting-attachment: Create a file attachment for a past meeting. Can upload a new file or reference an existing one.
     get-past-meeting-attachments: Get all attachments for a past meeting
     delete-past-meeting-attachment: Delete a past meeting attachment
     readyz: Check if the service is able to take inbound requests.
@@ -658,7 +673,7 @@ Get all meetings.
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-meetings --version "1" --include-cancelled-occurrences false --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-meetings --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -1396,6 +1411,24 @@ Delete a file attachment for a meeting
 
 Example:
     %[1]s meeting-service delete-meeting-attachment --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceCreatePastMeetingAttachmentUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting-attachment -body JSON -past-meeting-uid STRING -version STRING -bearer-token STRING
+
+Create a file attachment for a past meeting. Can upload a new file or reference an existing one.
+    -body JSON: 
+    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service create-past-meeting-attachment --body '{
+      "description": "Meeting recording for Q1 2024",
+      "file": "RXVtIHZlbGl0IGFuaW1pIGV0IHF1aWEgbWludXMgcXVpLg==",
+      "source_object_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
+   }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
