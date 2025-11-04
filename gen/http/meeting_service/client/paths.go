@@ -196,6 +196,11 @@ func DeletePastMeetingAttachmentMeetingServicePath(pastMeetingUID string, uid st
 	return fmt.Sprintf("/past_meetings/%v/attachments/%v", pastMeetingUID, uid)
 }
 
+// GetPastMeetingAttachmentMetadataMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-attachment-metadata HTTP endpoint.
+func GetPastMeetingAttachmentMetadataMeetingServicePath(pastMeetingUID string, uid string) string {
+	return fmt.Sprintf("/past_meetings/%v/attachments/%v/metadata", pastMeetingUID, uid)
+}
+
 // ReadyzMeetingServicePath returns the URL path to the Meeting Service service readyz HTTP endpoint.
 func ReadyzMeetingServicePath() string {
 	return "/readyz"

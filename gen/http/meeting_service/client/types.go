@@ -945,6 +945,30 @@ type GetPastMeetingAttachmentsResponseBody struct {
 	Attachments []*PastMeetingAttachmentResponseBody `form:"attachments,omitempty" json:"attachments,omitempty" xml:"attachments,omitempty"`
 }
 
+// GetPastMeetingAttachmentMetadataResponseBody is the type of the "Meeting
+// Service" service "get-past-meeting-attachment-metadata" endpoint HTTP
+// response body.
+type GetPastMeetingAttachmentMetadataResponseBody struct {
+	// The UID of the attachment
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// The UID of the past meeting this attachment belongs to
+	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
+	// The name of the file
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// The size of the file in bytes
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// The MIME type of the file
+	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
+	// The username of the user who uploaded the file
+	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
+	// RFC3339 timestamp when the file was uploaded
+	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The UID of the file in the shared Object Store
+	SourceObjectUID *string `form:"source_object_uid,omitempty" json:"source_object_uid,omitempty" xml:"source_object_uid,omitempty"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -2359,6 +2383,46 @@ type DeletePastMeetingAttachmentNotFoundResponseBody struct {
 // "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
 // response body for the "ServiceUnavailable" error.
 type DeletePastMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetPastMeetingAttachmentMetadataBadRequestResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-attachment-metadata" endpoint
+// HTTP response body for the "BadRequest" error.
+type GetPastMeetingAttachmentMetadataBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody is the type
+// of the "Meeting Service" service "get-past-meeting-attachment-metadata"
+// endpoint HTTP response body for the "InternalServerError" error.
+type GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetPastMeetingAttachmentMetadataNotFoundResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-attachment-metadata" endpoint
+// HTTP response body for the "NotFound" error.
+type GetPastMeetingAttachmentMetadataNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody is the type
+// of the "Meeting Service" service "get-past-meeting-attachment-metadata"
+// endpoint HTTP response body for the "ServiceUnavailable" error.
+type GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -5573,6 +5637,71 @@ func NewDeletePastMeetingAttachmentServiceUnavailable(body *DeletePastMeetingAtt
 	return v
 }
 
+// NewGetPastMeetingAttachmentMetadataPastMeetingAttachmentOK builds a "Meeting
+// Service" service "get-past-meeting-attachment-metadata" endpoint result from
+// a HTTP "OK" response.
+func NewGetPastMeetingAttachmentMetadataPastMeetingAttachmentOK(body *GetPastMeetingAttachmentMetadataResponseBody) *meetingservice.PastMeetingAttachment {
+	v := &meetingservice.PastMeetingAttachment{
+		UID:             *body.UID,
+		PastMeetingUID:  *body.PastMeetingUID,
+		FileName:        *body.FileName,
+		FileSize:        *body.FileSize,
+		ContentType:     *body.ContentType,
+		UploadedBy:      *body.UploadedBy,
+		UploadedAt:      body.UploadedAt,
+		Description:     body.Description,
+		SourceObjectUID: *body.SourceObjectUID,
+	}
+
+	return v
+}
+
+// NewGetPastMeetingAttachmentMetadataBadRequest builds a Meeting Service
+// service get-past-meeting-attachment-metadata endpoint BadRequest error.
+func NewGetPastMeetingAttachmentMetadataBadRequest(body *GetPastMeetingAttachmentMetadataBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetPastMeetingAttachmentMetadataInternalServerError builds a Meeting
+// Service service get-past-meeting-attachment-metadata endpoint
+// InternalServerError error.
+func NewGetPastMeetingAttachmentMetadataInternalServerError(body *GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetPastMeetingAttachmentMetadataNotFound builds a Meeting Service service
+// get-past-meeting-attachment-metadata endpoint NotFound error.
+func NewGetPastMeetingAttachmentMetadataNotFound(body *GetPastMeetingAttachmentMetadataNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetPastMeetingAttachmentMetadataServiceUnavailable builds a Meeting
+// Service service get-past-meeting-attachment-metadata endpoint
+// ServiceUnavailable error.
+func NewGetPastMeetingAttachmentMetadataServiceUnavailable(body *GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewReadyzServiceUnavailable builds a Meeting Service service readyz endpoint
 // ServiceUnavailable error.
 func NewReadyzServiceUnavailable(body *ReadyzServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
@@ -6979,6 +7108,75 @@ func ValidateGetPastMeetingAttachmentsResponseBody(body *GetPastMeetingAttachmen
 				err = goa.MergeErrors(err, err2)
 			}
 		}
+	}
+	return
+}
+
+// ValidateGetPastMeetingAttachmentMetadataResponseBody runs the validations
+// defined on Get-Past-Meeting-Attachment-MetadataResponseBody
+func ValidateGetPastMeetingAttachmentMetadataResponseBody(body *GetPastMeetingAttachmentMetadataResponseBody) (err error) {
+	if body.UID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
+	}
+	if body.PastMeetingUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
+	}
+	if body.FileName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_name", "body"))
+	}
+	if body.FileSize == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
+	}
+	if body.ContentType == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content_type", "body"))
+	}
+	if body.UploadedBy == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uploaded_by", "body"))
+	}
+	if body.SourceObjectUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("source_object_uid", "body"))
+	}
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
+	}
+	if body.PastMeetingUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", *body.PastMeetingUID, goa.FormatUUID))
+	}
+	if body.FileName != nil {
+		if utf8.RuneCountInString(*body.FileName) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.file_name", *body.FileName, utf8.RuneCountInString(*body.FileName), 1, true))
+		}
+	}
+	if body.FileName != nil {
+		if utf8.RuneCountInString(*body.FileName) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.file_name", *body.FileName, utf8.RuneCountInString(*body.FileName), 255, false))
+		}
+	}
+	if body.FileSize != nil {
+		if *body.FileSize < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.file_size", *body.FileSize, 0, true))
+		}
+	}
+	if body.ContentType != nil {
+		if utf8.RuneCountInString(*body.ContentType) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content_type", *body.ContentType, utf8.RuneCountInString(*body.ContentType), 1, true))
+		}
+	}
+	if body.UploadedBy != nil {
+		if utf8.RuneCountInString(*body.UploadedBy) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.uploaded_by", *body.UploadedBy, utf8.RuneCountInString(*body.UploadedBy), 1, true))
+		}
+	}
+	if body.UploadedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.uploaded_at", *body.UploadedAt, goa.FormatDateTime))
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 500 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 500, false))
+		}
+	}
+	if body.SourceObjectUID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.source_object_uid", *body.SourceObjectUID, goa.FormatUUID))
 	}
 	return
 }
@@ -8732,6 +8930,58 @@ func ValidateDeletePastMeetingAttachmentNotFoundResponseBody(body *DeletePastMee
 // validations defined on
 // delete-past-meeting-attachment_ServiceUnavailable_response_body
 func ValidateDeletePastMeetingAttachmentServiceUnavailableResponseBody(body *DeletePastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetPastMeetingAttachmentMetadataBadRequestResponseBody runs the
+// validations defined on
+// get-past-meeting-attachment-metadata_BadRequest_response_body
+func ValidateGetPastMeetingAttachmentMetadataBadRequestResponseBody(body *GetPastMeetingAttachmentMetadataBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetPastMeetingAttachmentMetadataInternalServerErrorResponseBody runs
+// the validations defined on
+// get-past-meeting-attachment-metadata_InternalServerError_response_body
+func ValidateGetPastMeetingAttachmentMetadataInternalServerErrorResponseBody(body *GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetPastMeetingAttachmentMetadataNotFoundResponseBody runs the
+// validations defined on
+// get-past-meeting-attachment-metadata_NotFound_response_body
+func ValidateGetPastMeetingAttachmentMetadataNotFoundResponseBody(body *GetPastMeetingAttachmentMetadataNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetPastMeetingAttachmentMetadataServiceUnavailableResponseBody runs
+// the validations defined on
+// get-past-meeting-attachment-metadata_ServiceUnavailable_response_body
+func ValidateGetPastMeetingAttachmentMetadataServiceUnavailableResponseBody(body *GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

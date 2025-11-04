@@ -945,6 +945,30 @@ type GetPastMeetingAttachmentsResponseBody struct {
 	Attachments []*PastMeetingAttachmentResponseBody `form:"attachments" json:"attachments" xml:"attachments"`
 }
 
+// GetPastMeetingAttachmentMetadataResponseBody is the type of the "Meeting
+// Service" service "get-past-meeting-attachment-metadata" endpoint HTTP
+// response body.
+type GetPastMeetingAttachmentMetadataResponseBody struct {
+	// The UID of the attachment
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// The UID of the past meeting this attachment belongs to
+	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
+	// The name of the file
+	FileName string `form:"file_name" json:"file_name" xml:"file_name"`
+	// The size of the file in bytes
+	FileSize int64 `form:"file_size" json:"file_size" xml:"file_size"`
+	// The MIME type of the file
+	ContentType string `form:"content_type" json:"content_type" xml:"content_type"`
+	// The username of the user who uploaded the file
+	UploadedBy string `form:"uploaded_by" json:"uploaded_by" xml:"uploaded_by"`
+	// RFC3339 timestamp when the file was uploaded
+	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The UID of the file in the shared Object Store
+	SourceObjectUID string `form:"source_object_uid" json:"source_object_uid" xml:"source_object_uid"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -2365,6 +2389,46 @@ type DeletePastMeetingAttachmentServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// GetPastMeetingAttachmentMetadataBadRequestResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-attachment-metadata" endpoint
+// HTTP response body for the "BadRequest" error.
+type GetPastMeetingAttachmentMetadataBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody is the type
+// of the "Meeting Service" service "get-past-meeting-attachment-metadata"
+// endpoint HTTP response body for the "InternalServerError" error.
+type GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingAttachmentMetadataNotFoundResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-attachment-metadata" endpoint
+// HTTP response body for the "NotFound" error.
+type GetPastMeetingAttachmentMetadataNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody is the type
+// of the "Meeting Service" service "get-past-meeting-attachment-metadata"
+// endpoint HTTP response body for the "ServiceUnavailable" error.
+type GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
 // service "readyz" endpoint HTTP response body for the "ServiceUnavailable"
 // error.
@@ -3721,6 +3785,24 @@ func NewGetPastMeetingAttachmentsResponseBody(res *meetingservice.GetPastMeeting
 		}
 	} else {
 		body.Attachments = []*PastMeetingAttachmentResponseBody{}
+	}
+	return body
+}
+
+// NewGetPastMeetingAttachmentMetadataResponseBody builds the HTTP response
+// body from the result of the "get-past-meeting-attachment-metadata" endpoint
+// of the "Meeting Service" service.
+func NewGetPastMeetingAttachmentMetadataResponseBody(res *meetingservice.PastMeetingAttachment) *GetPastMeetingAttachmentMetadataResponseBody {
+	body := &GetPastMeetingAttachmentMetadataResponseBody{
+		UID:             res.UID,
+		PastMeetingUID:  res.PastMeetingUID,
+		FileName:        res.FileName,
+		FileSize:        res.FileSize,
+		ContentType:     res.ContentType,
+		UploadedBy:      res.UploadedBy,
+		UploadedAt:      res.UploadedAt,
+		Description:     res.Description,
+		SourceObjectUID: res.SourceObjectUID,
 	}
 	return body
 }
@@ -5280,6 +5362,52 @@ func NewDeletePastMeetingAttachmentServiceUnavailableResponseBody(res *meetingse
 	return body
 }
 
+// NewGetPastMeetingAttachmentMetadataBadRequestResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-attachment-metadata"
+// endpoint of the "Meeting Service" service.
+func NewGetPastMeetingAttachmentMetadataBadRequestResponseBody(res *meetingservice.BadRequestError) *GetPastMeetingAttachmentMetadataBadRequestResponseBody {
+	body := &GetPastMeetingAttachmentMetadataBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingAttachmentMetadataInternalServerErrorResponseBody builds
+// the HTTP response body from the result of the
+// "get-past-meeting-attachment-metadata" endpoint of the "Meeting Service"
+// service.
+func NewGetPastMeetingAttachmentMetadataInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody {
+	body := &GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingAttachmentMetadataNotFoundResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-attachment-metadata"
+// endpoint of the "Meeting Service" service.
+func NewGetPastMeetingAttachmentMetadataNotFoundResponseBody(res *meetingservice.NotFoundError) *GetPastMeetingAttachmentMetadataNotFoundResponseBody {
+	body := &GetPastMeetingAttachmentMetadataNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingAttachmentMetadataServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the
+// "get-past-meeting-attachment-metadata" endpoint of the "Meeting Service"
+// service.
+func NewGetPastMeetingAttachmentMetadataServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody {
+	body := &GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewReadyzServiceUnavailableResponseBody builds the HTTP response body from
 // the result of the "readyz" endpoint of the "Meeting Service" service.
 func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *ReadyzServiceUnavailableResponseBody {
@@ -5880,6 +6008,18 @@ func NewGetPastMeetingAttachmentsPayload(uid string, version *string, bearerToke
 // delete-past-meeting-attachment endpoint payload.
 func NewDeletePastMeetingAttachmentPayload(pastMeetingUID string, uid string, version *string, bearerToken *string) *meetingservice.DeletePastMeetingAttachmentPayload {
 	v := &meetingservice.DeletePastMeetingAttachmentPayload{}
+	v.PastMeetingUID = pastMeetingUID
+	v.UID = uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetPastMeetingAttachmentMetadataPayload builds a Meeting Service service
+// get-past-meeting-attachment-metadata endpoint payload.
+func NewGetPastMeetingAttachmentMetadataPayload(pastMeetingUID string, uid string, version *string, bearerToken *string) *meetingservice.GetPastMeetingAttachmentMetadataPayload {
+	v := &meetingservice.GetPastMeetingAttachmentMetadataPayload{}
 	v.PastMeetingUID = pastMeetingUID
 	v.UID = uid
 	v.Version = version

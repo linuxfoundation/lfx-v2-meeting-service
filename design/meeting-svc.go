@@ -1402,6 +1402,41 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// GET past meeting attachment metadata endpoint
+	Method("get-past-meeting-attachment-metadata", func() {
+		Description("Get metadata for a past meeting attachment without downloading the file")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentUIDAttribute()
+			Required("past_meeting_uid", "uid")
+		})
+
+		Result(PastMeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{past_meeting_uid}/attachments/{uid}/metadata")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
 		Meta("swagger:generate", "false")

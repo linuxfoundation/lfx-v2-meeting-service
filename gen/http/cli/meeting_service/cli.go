@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|delete-past-meeting-attachment|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|delete-past-meeting-attachment|get-past-meeting-attachment-metadata|readyz|livez)
 `
 }
 
@@ -265,6 +265,12 @@ func ParseEndpoint(
 		meetingServiceDeletePastMeetingAttachmentVersionFlag        = meetingServiceDeletePastMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceDeletePastMeetingAttachmentBearerTokenFlag    = meetingServiceDeletePastMeetingAttachmentFlags.String("bearer-token", "", "")
 
+		meetingServiceGetPastMeetingAttachmentMetadataFlags              = flag.NewFlagSet("get-past-meeting-attachment-metadata", flag.ExitOnError)
+		meetingServiceGetPastMeetingAttachmentMetadataPastMeetingUIDFlag = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
+		meetingServiceGetPastMeetingAttachmentMetadataUIDFlag            = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("uid", "REQUIRED", "The UID of the attachment")
+		meetingServiceGetPastMeetingAttachmentMetadataVersionFlag        = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("version", "", "")
+		meetingServiceGetPastMeetingAttachmentMetadataBearerTokenFlag    = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("bearer-token", "", "")
+
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
@@ -307,6 +313,7 @@ func ParseEndpoint(
 	meetingServiceCreatePastMeetingAttachmentFlags.Usage = meetingServiceCreatePastMeetingAttachmentUsage
 	meetingServiceGetPastMeetingAttachmentsFlags.Usage = meetingServiceGetPastMeetingAttachmentsUsage
 	meetingServiceDeletePastMeetingAttachmentFlags.Usage = meetingServiceDeletePastMeetingAttachmentUsage
+	meetingServiceGetPastMeetingAttachmentMetadataFlags.Usage = meetingServiceGetPastMeetingAttachmentMetadataUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -455,6 +462,9 @@ func ParseEndpoint(
 			case "delete-past-meeting-attachment":
 				epf = meetingServiceDeletePastMeetingAttachmentFlags
 
+			case "get-past-meeting-attachment-metadata":
+				epf = meetingServiceGetPastMeetingAttachmentMetadataFlags
+
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
@@ -597,6 +607,9 @@ func ParseEndpoint(
 			case "delete-past-meeting-attachment":
 				endpoint = c.DeletePastMeetingAttachment()
 				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag)
+			case "get-past-meeting-attachment-metadata":
+				endpoint = c.GetPastMeetingAttachmentMetadata()
+				data, err = meetingservicec.BuildGetPastMeetingAttachmentMetadataPayload(*meetingServiceGetPastMeetingAttachmentMetadataPastMeetingUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataVersionFlag, *meetingServiceGetPastMeetingAttachmentMetadataBearerTokenFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -657,6 +670,7 @@ COMMAND:
     create-past-meeting-attachment: Create a file attachment for a past meeting. Can upload a new file or reference an existing one.
     get-past-meeting-attachments: Get all attachments for a past meeting
     delete-past-meeting-attachment: Delete a past meeting attachment
+    get-past-meeting-attachment-metadata: Get metadata for a past meeting attachment without downloading the file
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -1456,6 +1470,20 @@ Delete a past meeting attachment
 
 Example:
     %[1]s meeting-service delete-past-meeting-attachment --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceGetPastMeetingAttachmentMetadataUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting-attachment-metadata -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
+
+Get metadata for a past meeting attachment without downloading the file
+    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
+    -uid STRING: The UID of the attachment
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-past-meeting-attachment-metadata --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 

@@ -167,6 +167,10 @@ type Client struct {
 	// the delete-past-meeting-attachment endpoint.
 	DeletePastMeetingAttachmentDoer goahttp.Doer
 
+	// GetPastMeetingAttachmentMetadata Doer is the HTTP client used to make
+	// requests to the get-past-meeting-attachment-metadata endpoint.
+	GetPastMeetingAttachmentMetadataDoer goahttp.Doer
+
 	// Readyz Doer is the HTTP client used to make requests to the readyz endpoint.
 	ReadyzDoer goahttp.Doer
 
@@ -241,6 +245,7 @@ func NewClient(
 		CreatePastMeetingAttachmentDoer:       doer,
 		GetPastMeetingAttachmentsDoer:         doer,
 		DeletePastMeetingAttachmentDoer:       doer,
+		GetPastMeetingAttachmentMetadataDoer:  doer,
 		ReadyzDoer:                            doer,
 		LivezDoer:                             doer,
 		RestoreResponseBody:                   restoreBody,
@@ -1135,6 +1140,31 @@ func (c *Client) DeletePastMeetingAttachment() goa.Endpoint {
 		resp, err := c.DeletePastMeetingAttachmentDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-past-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetPastMeetingAttachmentMetadata returns an endpoint that makes HTTP
+// requests to the Meeting Service service get-past-meeting-attachment-metadata
+// server.
+func (c *Client) GetPastMeetingAttachmentMetadata() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetPastMeetingAttachmentMetadataRequest(c.encoder)
+		decodeResponse = DecodeGetPastMeetingAttachmentMetadataResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetPastMeetingAttachmentMetadataRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetPastMeetingAttachmentMetadataDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-past-meeting-attachment-metadata", err)
 		}
 		return decodeResponse(resp)
 	}

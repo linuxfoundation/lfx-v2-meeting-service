@@ -16,21 +16,6 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
-// getAttachmentMetadata retrieves file metadata from the temporary store
-func getAttachmentMetadata(payload *meetingsvc.UploadMeetingAttachmentPayload) (uploadMeetingAttachmentMetadata, bool) {
-	if value, ok := attachmentMetadataStore.Load(payload); ok {
-		if metadata, ok := value.(uploadMeetingAttachmentMetadata); ok {
-			return metadata, true
-		}
-	}
-	return uploadMeetingAttachmentMetadata{}, false
-}
-
-// deleteAttachmentMetadata removes file metadata from the temporary store
-func deleteAttachmentMetadata(payload *meetingsvc.UploadMeetingAttachmentPayload) {
-	attachmentMetadataStore.Delete(payload)
-}
-
 // UploadMeetingAttachment handles file upload for a meeting
 func (s *MeetingsAPI) UploadMeetingAttachment(ctx context.Context, payload *meetingsvc.UploadMeetingAttachmentPayload) (*meetingsvc.MeetingAttachment, error) {
 	if payload == nil {
@@ -57,7 +42,7 @@ func (s *MeetingsAPI) UploadMeetingAttachment(ctx context.Context, payload *meet
 			contentType = metadata.ContentType
 		}
 		// Clean up the metadata after use
-		deleteAttachmentMetadata(payload)
+		attachmentMetadataStore.Delete(payload)
 	}
 
 	// Convert payload to domain request
@@ -86,42 +71,12 @@ func (s *MeetingsAPI) GetMeetingAttachment(ctx context.Context, payload *meeting
 
 	// Store attachment metadata for the encoder to access
 	// We use the request context's unique identifier to key the metadata
-	setDownloadAttachmentMetadata(ctx, attachment)
-
-	return fileData, nil
-}
-
-// setDownloadAttachmentMetadata stores attachment metadata for the response encoder
-func setDownloadAttachmentMetadata(ctx context.Context, attachment *models.MeetingAttachment) {
-	// Use request ID as the key so we can retrieve it in the encoder
 	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
 		downloadMetadataStore.Store(requestID, attachment)
 	}
-}
 
-// getDownloadAttachmentMetadata retrieves attachment metadata for the response encoder
-func getDownloadAttachmentMetadata(ctx context.Context) (*models.MeetingAttachment, bool) {
-	// Use request ID to look up the metadata
-	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
-		if value, ok := downloadMetadataStore.Load(requestID); ok {
-			if attachment, ok := value.(*models.MeetingAttachment); ok {
-				return attachment, true
-			}
-		}
-	}
-	return nil, false
+	return fileData, nil
 }
-
-// deleteDownloadAttachmentMetadata cleans up attachment metadata after encoding
-func deleteDownloadAttachmentMetadata(ctx context.Context) {
-	// Use request ID to delete the metadata
-	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
-		downloadMetadataStore.Delete(requestID)
-	}
-}
-
-// downloadMetadataStore temporarily stores attachment metadata for response encoding
-var downloadMetadataStore sync.Map
 
 // GetMeetingAttachmentMetadata retrieves only the metadata for an attachment
 func (s *MeetingsAPI) GetMeetingAttachmentMetadata(ctx context.Context, payload *meetingsvc.GetMeetingAttachmentMetadataPayload) (*meetingsvc.MeetingAttachment, error) {
@@ -151,4 +106,38 @@ func (s *MeetingsAPI) DeleteMeetingAttachment(ctx context.Context, payload *meet
 	}
 
 	return nil
+}
+
+// downloadMetadataStore temporarily stores attachment metadata for response encoding
+var downloadMetadataStore sync.Map
+
+// getDownloadAttachmentMetadata retrieves attachment metadata for the response encoder
+func getDownloadAttachmentMetadata(ctx context.Context) (*models.MeetingAttachment, bool) {
+	// Use request ID to look up the metadata
+	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
+		if value, ok := downloadMetadataStore.Load(requestID); ok {
+			if attachment, ok := value.(*models.MeetingAttachment); ok {
+				return attachment, true
+			}
+		}
+	}
+	return nil, false
+}
+
+// getAttachmentMetadata retrieves file metadata from the temporary store
+func getAttachmentMetadata(payload *meetingsvc.UploadMeetingAttachmentPayload) (uploadMeetingAttachmentMetadata, bool) {
+	if value, ok := attachmentMetadataStore.Load(payload); ok {
+		if metadata, ok := value.(uploadMeetingAttachmentMetadata); ok {
+			return metadata, true
+		}
+	}
+	return uploadMeetingAttachmentMetadata{}, false
+}
+
+// deleteDownloadAttachmentMetadata cleans up attachment metadata after encoding
+func deleteDownloadAttachmentMetadata(ctx context.Context) {
+	// Use request ID to delete the metadata
+	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
+		downloadMetadataStore.Delete(requestID)
+	}
 }

@@ -194,6 +194,42 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 	return attachment, nil
 }
 
+// GetPastMeetingAttachmentMetadata retrieves only the metadata for a past meeting attachment
+func (s *PastMeetingAttachmentService) GetPastMeetingAttachmentMetadata(ctx context.Context, pastMeetingUID, attachmentUID string) (*models.PastMeetingAttachment, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	if pastMeetingUID == "" {
+		return nil, domain.NewValidationError("past meeting UID is required")
+	}
+	if attachmentUID == "" {
+		return nil, domain.NewValidationError("attachment UID is required")
+	}
+
+	// Get attachment metadata
+	attachment, err := s.pastMeetingAttachmentRepository.GetMetadata(ctx, attachmentUID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify attachment belongs to the requested past meeting
+	if attachment.PastMeetingUID != pastMeetingUID {
+		slog.WarnContext(ctx, "attachment does not belong to past meeting",
+			"attachment_uid", attachmentUID,
+			"past_meeting_uid", pastMeetingUID,
+			"attachment_past_meeting_uid", attachment.PastMeetingUID)
+		return nil, domain.NewNotFoundError("attachment not found for this past meeting")
+	}
+
+	slog.InfoContext(ctx, "retrieved past meeting attachment metadata",
+		"past_meeting_uid", pastMeetingUID,
+		"attachment_uid", attachmentUID)
+
+	return attachment, nil
+}
+
 // DeletePastMeetingAttachment deletes a past meeting attachment
 func (s *PastMeetingAttachmentService) DeletePastMeetingAttachment(ctx context.Context, pastMeetingUID, attachmentUID string) error {
 	if !s.ServiceReady() {

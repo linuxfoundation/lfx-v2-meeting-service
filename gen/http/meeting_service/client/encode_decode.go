@@ -5730,6 +5730,164 @@ func DecodeDeletePastMeetingAttachmentResponse(decoder func(*http.Response) goah
 	}
 }
 
+// BuildGetPastMeetingAttachmentMetadataRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "get-past-meeting-attachment-metadata" endpoint
+func (c *Client) BuildGetPastMeetingAttachmentMetadataRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		pastMeetingUID string
+		uid            string
+	)
+	{
+		p, ok := v.(*meetingservice.GetPastMeetingAttachmentMetadataPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-attachment-metadata", "*meetingservice.GetPastMeetingAttachmentMetadataPayload", v)
+		}
+		pastMeetingUID = p.PastMeetingUID
+		uid = p.UID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetPastMeetingAttachmentMetadataMeetingServicePath(pastMeetingUID, uid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-past-meeting-attachment-metadata", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetPastMeetingAttachmentMetadataRequest returns an encoder for
+// requests sent to the Meeting Service get-past-meeting-attachment-metadata
+// server.
+func EncodeGetPastMeetingAttachmentMetadataRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetPastMeetingAttachmentMetadataPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-attachment-metadata", "*meetingservice.GetPastMeetingAttachmentMetadataPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetPastMeetingAttachmentMetadataResponse returns a decoder for
+// responses returned by the Meeting Service
+// get-past-meeting-attachment-metadata endpoint. restoreBody controls whether
+// the response body should be restored after having been read.
+// DecodeGetPastMeetingAttachmentMetadataResponse may return the following
+// errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetPastMeetingAttachmentMetadataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetPastMeetingAttachmentMetadataResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			err = ValidateGetPastMeetingAttachmentMetadataResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			res := NewGetPastMeetingAttachmentMetadataPastMeetingAttachmentOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetPastMeetingAttachmentMetadataBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			err = ValidateGetPastMeetingAttachmentMetadataBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			return nil, NewGetPastMeetingAttachmentMetadataBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetPastMeetingAttachmentMetadataInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			err = ValidateGetPastMeetingAttachmentMetadataInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			return nil, NewGetPastMeetingAttachmentMetadataInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetPastMeetingAttachmentMetadataNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			err = ValidateGetPastMeetingAttachmentMetadataNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			return nil, NewGetPastMeetingAttachmentMetadataNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			err = ValidateGetPastMeetingAttachmentMetadataServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachment-metadata", err)
+			}
+			return nil, NewGetPastMeetingAttachmentMetadataServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-past-meeting-attachment-metadata", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildReadyzRequest instantiates a HTTP request object with method and path
 // set to call the "Meeting Service" service "readyz" endpoint
 func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, error) {

@@ -8,6 +8,17 @@ import (
 	"time"
 )
 
+// CreatePastMeetingAttachmentRequest represents a request to create a past meeting attachment
+type CreatePastMeetingAttachmentRequest struct {
+	PastMeetingUID  string
+	SourceObjectUID string // Optional: UID of existing file in Object Store
+	FileData        []byte // Optional: file data for new upload
+	FileName        string
+	ContentType     string
+	Username        string
+	Description     string
+}
+
 // PastMeetingAttachment represents a file attachment for a past meeting.
 // Similar to MeetingAttachment, metadata records in KV store associate a past meeting with a file in Object Store.
 // The actual files are stored in the same Object Store as meeting attachments, allowing file reuse.
