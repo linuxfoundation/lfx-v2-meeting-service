@@ -49,12 +49,13 @@ type Client struct {
 	GetMeetingAttachmentEndpoint              goa.Endpoint
 	GetMeetingAttachmentMetadataEndpoint      goa.Endpoint
 	DeleteMeetingAttachmentEndpoint           goa.Endpoint
+	GetPastMeetingAttachmentsEndpoint         goa.Endpoint
 	ReadyzEndpoint                            goa.Endpoint
 	LivezEndpoint                             goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, uploadMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, uploadMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, getPastMeetingAttachments, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -90,6 +91,7 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		GetMeetingAttachmentEndpoint:              getMeetingAttachment,
 		GetMeetingAttachmentMetadataEndpoint:      getMeetingAttachmentMetadata,
 		DeleteMeetingAttachmentEndpoint:           deleteMeetingAttachment,
+		GetPastMeetingAttachmentsEndpoint:         getPastMeetingAttachments,
 		ReadyzEndpoint:                            readyz,
 		LivezEndpoint:                             livez,
 	}
@@ -639,6 +641,22 @@ func (c *Client) GetMeetingAttachmentMetadata(ctx context.Context, p *GetMeeting
 func (c *Client) DeleteMeetingAttachment(ctx context.Context, p *DeleteMeetingAttachmentPayload) (err error) {
 	_, err = c.DeleteMeetingAttachmentEndpoint(ctx, p)
 	return
+}
+
+// GetPastMeetingAttachments calls the "get-past-meeting-attachments" endpoint
+// of the "Meeting Service" service.
+// GetPastMeetingAttachments may return the following errors:
+//   - "NotFound" (type *NotFoundError): Past meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetPastMeetingAttachments(ctx context.Context, p *GetPastMeetingAttachmentsPayload) (res *GetPastMeetingAttachmentsResult, err error) {
+	var ires any
+	ires, err = c.GetPastMeetingAttachmentsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*GetPastMeetingAttachmentsResult), nil
 }
 
 // Readyz calls the "readyz" endpoint of the "Meeting Service" service.

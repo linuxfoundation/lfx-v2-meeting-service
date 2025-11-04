@@ -116,15 +116,16 @@ func setupNATS(ctx context.Context, env environment, gracefulCloseWG *sync.WaitG
 }
 
 type Repositories struct {
-	Meeting                *store.NatsMeetingRepository
-	Registrant             *store.NatsRegistrantRepository
-	MeetingRSVP            *store.NatsMeetingRSVPRepository
-	Attachment             *store.NatsAttachmentRepository
-	PastMeeting            *store.NatsPastMeetingRepository
-	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
-	PastMeetingRecording   *store.NatsPastMeetingRecordingRepository
-	PastMeetingTranscript  *store.NatsPastMeetingTranscriptRepository
-	PastMeetingSummary     *store.NatsPastMeetingSummaryRepository
+	Meeting                   *store.NatsMeetingRepository
+	Registrant                *store.NatsRegistrantRepository
+	MeetingRSVP               *store.NatsMeetingRSVPRepository
+	Attachment                *store.NatsAttachmentRepository
+	PastMeeting               *store.NatsPastMeetingRepository
+	PastMeetingParticipant    *store.NatsPastMeetingParticipantRepository
+	PastMeetingRecording      *store.NatsPastMeetingRecordingRepository
+	PastMeetingTranscript     *store.NatsPastMeetingTranscriptRepository
+	PastMeetingSummary        *store.NatsPastMeetingSummaryRepository
+	PastMeetingAttachment     *store.NatsPastMeetingAttachmentRepository
 }
 
 // getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.
@@ -148,6 +149,7 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		store.KVStoreNamePastMeetingRecordings,
 		store.KVStoreNamePastMeetingTranscripts,
 		store.KVStoreNamePastMeetingSummaries,
+		store.KVStoreNamePastMeetingAttachmentsMetadata,
 	}
 
 	for _, storeName := range storeNames {
@@ -176,6 +178,7 @@ func getKeyValueStores(ctx context.Context, natsConn *nats.Conn) (*Repositories,
 		PastMeetingRecording:   store.NewNatsPastMeetingRecordingRepository(kvStores[store.KVStoreNamePastMeetingRecordings]),
 		PastMeetingTranscript:  store.NewNatsPastMeetingTranscriptRepository(kvStores[store.KVStoreNamePastMeetingTranscripts]),
 		PastMeetingSummary:     store.NewNatsPastMeetingSummaryRepository(kvStores[store.KVStoreNamePastMeetingSummaries]),
+		PastMeetingAttachment:  store.NewNatsPastMeetingAttachmentRepository(kvStores[store.KVStoreNamePastMeetingAttachmentsMetadata]),
 	}
 
 	return repos, nil

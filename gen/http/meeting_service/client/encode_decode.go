@@ -5263,6 +5263,154 @@ func DecodeDeleteMeetingAttachmentResponse(decoder func(*http.Response) goahttp.
 	}
 }
 
+// BuildGetPastMeetingAttachmentsRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "get-past-meeting-attachments" endpoint
+func (c *Client) BuildGetPastMeetingAttachmentsRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		uid string
+	)
+	{
+		p, ok := v.(*meetingservice.GetPastMeetingAttachmentsPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-attachments", "*meetingservice.GetPastMeetingAttachmentsPayload", v)
+		}
+		if p.UID != nil {
+			uid = *p.UID
+		}
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetPastMeetingAttachmentsMeetingServicePath(uid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-past-meeting-attachments", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetPastMeetingAttachmentsRequest returns an encoder for requests sent
+// to the Meeting Service get-past-meeting-attachments server.
+func EncodeGetPastMeetingAttachmentsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetPastMeetingAttachmentsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-past-meeting-attachments", "*meetingservice.GetPastMeetingAttachmentsPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetPastMeetingAttachmentsResponse returns a decoder for responses
+// returned by the Meeting Service get-past-meeting-attachments endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeGetPastMeetingAttachmentsResponse may return the following errors:
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - error: internal error
+func DecodeGetPastMeetingAttachmentsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetPastMeetingAttachmentsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			err = ValidateGetPastMeetingAttachmentsResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			var (
+				cacheControl *string
+			)
+			cacheControlRaw := resp.Header.Get("Cache-Control")
+			if cacheControlRaw != "" {
+				cacheControl = &cacheControlRaw
+			}
+			res := NewGetPastMeetingAttachmentsResultOK(&body, cacheControl)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetPastMeetingAttachmentsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			err = ValidateGetPastMeetingAttachmentsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			return nil, NewGetPastMeetingAttachmentsInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetPastMeetingAttachmentsNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			err = ValidateGetPastMeetingAttachmentsNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			return nil, NewGetPastMeetingAttachmentsNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetPastMeetingAttachmentsServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			err = ValidateGetPastMeetingAttachmentsServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-past-meeting-attachments", err)
+			}
+			return nil, NewGetPastMeetingAttachmentsServiceUnavailable(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-past-meeting-attachments", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildReadyzRequest instantiates a HTTP request object with method and path
 // set to call the "Meeting Service" service "readyz" endpoint
 func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -5903,6 +6051,25 @@ func unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(v *SummaryDataR
 		Content:       v.Content,
 		DocURL:        v.DocURL,
 		EditedContent: v.EditedContent,
+	}
+
+	return res
+}
+
+// unmarshalPastMeetingAttachmentResponseBodyToMeetingservicePastMeetingAttachment
+// builds a value of type *meetingservice.PastMeetingAttachment from a value of
+// type *PastMeetingAttachmentResponseBody.
+func unmarshalPastMeetingAttachmentResponseBodyToMeetingservicePastMeetingAttachment(v *PastMeetingAttachmentResponseBody) *meetingservice.PastMeetingAttachment {
+	res := &meetingservice.PastMeetingAttachment{
+		UID:             *v.UID,
+		PastMeetingUID:  *v.PastMeetingUID,
+		FileName:        *v.FileName,
+		FileSize:        *v.FileSize,
+		ContentType:     *v.ContentType,
+		UploadedBy:      *v.UploadedBy,
+		UploadedAt:      v.UploadedAt,
+		Description:     v.Description,
+		SourceObjectUID: *v.SourceObjectUID,
 	}
 
 	return res

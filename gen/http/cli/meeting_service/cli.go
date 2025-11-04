@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|get-past-meeting-attachments|readyz|livez)
 `
 }
 
@@ -247,6 +247,11 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingAttachmentVersionFlag     = meetingServiceDeleteMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceDeleteMeetingAttachmentBearerTokenFlag = meetingServiceDeleteMeetingAttachmentFlags.String("bearer-token", "", "")
 
+		meetingServiceGetPastMeetingAttachmentsFlags           = flag.NewFlagSet("get-past-meeting-attachments", flag.ExitOnError)
+		meetingServiceGetPastMeetingAttachmentsUIDFlag         = meetingServiceGetPastMeetingAttachmentsFlags.String("uid", "REQUIRED", "The unique identifier of the resource")
+		meetingServiceGetPastMeetingAttachmentsVersionFlag     = meetingServiceGetPastMeetingAttachmentsFlags.String("version", "", "")
+		meetingServiceGetPastMeetingAttachmentsBearerTokenFlag = meetingServiceGetPastMeetingAttachmentsFlags.String("bearer-token", "", "")
+
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
@@ -286,6 +291,7 @@ func ParseEndpoint(
 	meetingServiceGetMeetingAttachmentFlags.Usage = meetingServiceGetMeetingAttachmentUsage
 	meetingServiceGetMeetingAttachmentMetadataFlags.Usage = meetingServiceGetMeetingAttachmentMetadataUsage
 	meetingServiceDeleteMeetingAttachmentFlags.Usage = meetingServiceDeleteMeetingAttachmentUsage
+	meetingServiceGetPastMeetingAttachmentsFlags.Usage = meetingServiceGetPastMeetingAttachmentsUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -425,6 +431,9 @@ func ParseEndpoint(
 			case "delete-meeting-attachment":
 				epf = meetingServiceDeleteMeetingAttachmentFlags
 
+			case "get-past-meeting-attachments":
+				epf = meetingServiceGetPastMeetingAttachmentsFlags
+
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
@@ -558,6 +567,9 @@ func ParseEndpoint(
 			case "delete-meeting-attachment":
 				endpoint = c.DeleteMeetingAttachment()
 				data, err = meetingservicec.BuildDeleteMeetingAttachmentPayload(*meetingServiceDeleteMeetingAttachmentMeetingUIDFlag, *meetingServiceDeleteMeetingAttachmentUIDFlag, *meetingServiceDeleteMeetingAttachmentVersionFlag, *meetingServiceDeleteMeetingAttachmentBearerTokenFlag)
+			case "get-past-meeting-attachments":
+				endpoint = c.GetPastMeetingAttachments()
+				data, err = meetingservicec.BuildGetPastMeetingAttachmentsPayload(*meetingServiceGetPastMeetingAttachmentsUIDFlag, *meetingServiceGetPastMeetingAttachmentsVersionFlag, *meetingServiceGetPastMeetingAttachmentsBearerTokenFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -615,6 +627,7 @@ COMMAND:
     get-meeting-attachment: Download a file attachment for a meeting
     get-meeting-attachment-metadata: Get metadata for a meeting attachment without downloading the file
     delete-meeting-attachment: Delete a file attachment for a meeting
+    get-past-meeting-attachments: Get all attachments for a past meeting
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -650,43 +663,39 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          }
       ],
-      "description": "Distinctio quis est est.",
-      "duration": 582,
+      "description": "Nobis libero nihil aliquam deleniti.",
+      "duration": 115,
       "early_join_time_minutes": 12,
       "meeting_type": "None",
       "organizers": [
@@ -698,19 +707,19 @@ Example:
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1987-11-05T01:00:22Z",
-         "end_times": 8318910668245858315,
-         "monthly_day": 24,
-         "monthly_week": -1,
-         "monthly_week_day": 2,
-         "repeat_interval": 8279229032718800673,
-         "type": 2,
+         "end_date_time": "2011-08-19T18:52:38Z",
+         "end_times": 295409726269402937,
+         "monthly_day": 4,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 3423590977722818127,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
       "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Molestias quis sit quia quasi dolor.",
-      "title": "Quo laboriosam provident et.",
+      "timezone": "Enim doloremque.",
+      "title": "Est molestias eligendi nulla porro necessitatibus et.",
       "transcript_enabled": false,
       "visibility": "public",
       "youtube_upload_enabled": false,
@@ -778,21 +787,19 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          }
       ],
       "description": "Repudiandae et.",
@@ -803,13 +810,13 @@ Example:
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1987-11-05T01:00:22Z",
-         "end_times": 8318910668245858315,
-         "monthly_day": 24,
-         "monthly_week": -1,
-         "monthly_week_day": 2,
-         "repeat_interval": 8279229032718800673,
-         "type": 2,
+         "end_date_time": "2011-08-19T18:52:38Z",
+         "end_times": 295409726269402937,
+         "monthly_day": 4,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 3423590977722818127,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
@@ -1059,39 +1066,35 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          },
          {
             "allowed_voting_statuses": [
-               "Aliquam deleniti omnis.",
-               "Et nemo.",
-               "Voluptatum ut ut voluptatem odio debitis et.",
-               "Consectetur nihil vel consequatur perspiciatis."
+               "Ut ut voluptatem.",
+               "Debitis et et.",
+               "Nihil vel consequatur perspiciatis."
             ],
-            "uid": "Nulla porro necessitatibus et ab nobis."
+            "uid": "Et nemo."
          }
       ],
       "description": "Modi fugit architecto.",
@@ -1106,13 +1109,13 @@ Example:
       "public_link": "http://predovic.org/leila",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "1987-11-05T01:00:22Z",
-         "end_times": 8318910668245858315,
-         "monthly_day": 24,
-         "monthly_week": -1,
-         "monthly_week_day": 2,
-         "repeat_interval": 8279229032718800673,
-         "type": 2,
+         "end_date_time": "2011-08-19T18:52:38Z",
+         "end_times": 295409726269402937,
+         "monthly_day": 4,
+         "monthly_week": 1,
+         "monthly_week_day": 5,
+         "repeat_interval": 3423590977722818127,
+         "type": 1,
          "weekly_days": "1,3,5"
       },
       "restricted": false,
@@ -1379,6 +1382,19 @@ Delete a file attachment for a meeting
 
 Example:
     %[1]s meeting-service delete-meeting-attachment --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceGetPastMeetingAttachmentsUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting-attachments -uid STRING -version STRING -bearer-token STRING
+
+Get all attachments for a past meeting
+    -uid STRING: The unique identifier of the resource
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-past-meeting-attachments --uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 

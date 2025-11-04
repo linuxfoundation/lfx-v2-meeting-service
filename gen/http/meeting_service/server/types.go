@@ -903,6 +903,13 @@ type GetMeetingAttachmentMetadataResponseBody struct {
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 }
 
+// GetPastMeetingAttachmentsResponseBody is the type of the "Meeting Service"
+// service "get-past-meeting-attachments" endpoint HTTP response body.
+type GetPastMeetingAttachmentsResponseBody struct {
+	// Past meeting attachments
+	Attachments []*PastMeetingAttachmentResponseBody `form:"attachments" json:"attachments" xml:"attachments"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -2213,6 +2220,36 @@ type DeleteMeetingAttachmentServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// GetPastMeetingAttachmentsInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-attachments" endpoint HTTP
+// response body for the "InternalServerError" error.
+type GetPastMeetingAttachmentsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingAttachmentsNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-past-meeting-attachments" endpoint HTTP response body
+// for the "NotFound" error.
+type GetPastMeetingAttachmentsNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetPastMeetingAttachmentsServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-past-meeting-attachments" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetPastMeetingAttachmentsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
 // service "readyz" endpoint HTTP response body for the "ServiceUnavailable"
 // error.
@@ -2735,6 +2772,29 @@ type SummaryDataResponseBody struct {
 	DocURL *string `form:"doc_url,omitempty" json:"doc_url,omitempty" xml:"doc_url,omitempty"`
 	// User-edited summary content
 	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
+}
+
+// PastMeetingAttachmentResponseBody is used to define fields on response body
+// types.
+type PastMeetingAttachmentResponseBody struct {
+	// The UID of the attachment
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// The UID of the past meeting this attachment belongs to
+	PastMeetingUID string `form:"past_meeting_uid" json:"past_meeting_uid" xml:"past_meeting_uid"`
+	// The name of the file
+	FileName string `form:"file_name" json:"file_name" xml:"file_name"`
+	// The size of the file in bytes
+	FileSize int64 `form:"file_size" json:"file_size" xml:"file_size"`
+	// The MIME type of the file
+	ContentType string `form:"content_type" json:"content_type" xml:"content_type"`
+	// The username of the user who uploaded the file
+	UploadedBy string `form:"uploaded_by" json:"uploaded_by" xml:"uploaded_by"`
+	// RFC3339 timestamp when the file was uploaded
+	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The UID of the file in the shared Object Store
+	SourceObjectUID string `form:"source_object_uid" json:"source_object_uid" xml:"source_object_uid"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -3512,6 +3572,22 @@ func NewGetMeetingAttachmentMetadataResponseBody(res *meetingservice.MeetingAtta
 		UploadedBy:  res.UploadedBy,
 		UploadedAt:  res.UploadedAt,
 		Description: res.Description,
+	}
+	return body
+}
+
+// NewGetPastMeetingAttachmentsResponseBody builds the HTTP response body from
+// the result of the "get-past-meeting-attachments" endpoint of the "Meeting
+// Service" service.
+func NewGetPastMeetingAttachmentsResponseBody(res *meetingservice.GetPastMeetingAttachmentsResult) *GetPastMeetingAttachmentsResponseBody {
+	body := &GetPastMeetingAttachmentsResponseBody{}
+	if res.Attachments != nil {
+		body.Attachments = make([]*PastMeetingAttachmentResponseBody, len(res.Attachments))
+		for i, val := range res.Attachments {
+			body.Attachments[i] = marshalMeetingservicePastMeetingAttachmentToPastMeetingAttachmentResponseBody(val)
+		}
+	} else {
+		body.Attachments = []*PastMeetingAttachmentResponseBody{}
 	}
 	return body
 }
@@ -4950,6 +5026,39 @@ func NewDeleteMeetingAttachmentServiceUnavailableResponseBody(res *meetingservic
 	return body
 }
 
+// NewGetPastMeetingAttachmentsInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-attachments" endpoint
+// of the "Meeting Service" service.
+func NewGetPastMeetingAttachmentsInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetPastMeetingAttachmentsInternalServerErrorResponseBody {
+	body := &GetPastMeetingAttachmentsInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingAttachmentsNotFoundResponseBody builds the HTTP response
+// body from the result of the "get-past-meeting-attachments" endpoint of the
+// "Meeting Service" service.
+func NewGetPastMeetingAttachmentsNotFoundResponseBody(res *meetingservice.NotFoundError) *GetPastMeetingAttachmentsNotFoundResponseBody {
+	body := &GetPastMeetingAttachmentsNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetPastMeetingAttachmentsServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "get-past-meeting-attachments" endpoint
+// of the "Meeting Service" service.
+func NewGetPastMeetingAttachmentsServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetPastMeetingAttachmentsServiceUnavailableResponseBody {
+	body := &GetPastMeetingAttachmentsServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewReadyzServiceUnavailableResponseBody builds the HTTP response body from
 // the result of the "readyz" endpoint of the "Meeting Service" service.
 func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *ReadyzServiceUnavailableResponseBody {
@@ -5514,6 +5623,17 @@ func NewDeleteMeetingAttachmentPayload(meetingUID string, uid string, version *s
 	v := &meetingservice.DeleteMeetingAttachmentPayload{}
 	v.MeetingUID = meetingUID
 	v.UID = uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetPastMeetingAttachmentsPayload builds a Meeting Service service
+// get-past-meeting-attachments endpoint payload.
+func NewGetPastMeetingAttachmentsPayload(uid string, version *string, bearerToken *string) *meetingservice.GetPastMeetingAttachmentsPayload {
+	v := &meetingservice.GetPastMeetingAttachmentsPayload{}
+	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
 

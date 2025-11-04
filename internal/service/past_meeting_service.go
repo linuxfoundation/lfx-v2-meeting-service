@@ -20,24 +20,30 @@ import (
 
 // PastMeetingService implements the meetingsvc.Service interface and domain.MessageHandler
 type PastMeetingService struct {
-	meetingRepository     domain.MeetingRepository
-	pastMeetingRepository domain.PastMeetingRepository
-	messageSender         domain.PastMeetingBasicMessageSender
-	config                ServiceConfig
+	meetingRepository               domain.MeetingRepository
+	pastMeetingRepository           domain.PastMeetingRepository
+	meetingAttachmentRepository     domain.MeetingAttachmentRepository
+	pastMeetingAttachmentRepository domain.PastMeetingAttachmentRepository
+	messageSender                   domain.PastMeetingBasicMessageSender
+	config                          ServiceConfig
 }
 
 // NewPastMeetingService creates a new PastMeetingService.
 func NewPastMeetingService(
 	meetingRepository domain.MeetingRepository,
 	pastMeetingRepository domain.PastMeetingRepository,
+	meetingAttachmentRepository domain.MeetingAttachmentRepository,
+	pastMeetingAttachmentRepository domain.PastMeetingAttachmentRepository,
 	messageSender domain.PastMeetingBasicMessageSender,
 	config ServiceConfig,
 ) *PastMeetingService {
 	return &PastMeetingService{
-		config:                config,
-		meetingRepository:     meetingRepository,
-		pastMeetingRepository: pastMeetingRepository,
-		messageSender:         messageSender,
+		config:                          config,
+		meetingRepository:               meetingRepository,
+		pastMeetingRepository:           pastMeetingRepository,
+		meetingAttachmentRepository:     meetingAttachmentRepository,
+		pastMeetingAttachmentRepository: pastMeetingAttachmentRepository,
+		messageSender:                   messageSender,
 	}
 }
 
@@ -169,7 +175,67 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 		// Don't fail the operation if messaging fails
 	}
 
+	// Create past meeting attachments from meeting attachments
+	if s.meetingAttachmentRepository != nil && s.pastMeetingAttachmentRepository != nil {
+		if err := s.createPastMeetingAttachmentsFromMeeting(ctx, pastMeetingReq.MeetingUID, pastMeetingReq.UID); err != nil {
+			slog.ErrorContext(ctx, "error creating past meeting attachments", logging.ErrKey, err)
+			// Don't fail the operation if attachment creation fails
+		}
+	}
+
 	return pastMeetingReq, nil
+}
+
+// createPastMeetingAttachmentsFromMeeting creates past meeting attachment records from meeting attachments
+func (s *PastMeetingService) createPastMeetingAttachmentsFromMeeting(ctx context.Context, meetingUID, pastMeetingUID string) error {
+	// Get all attachments for the meeting
+	meetingAttachments, err := s.meetingAttachmentRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		return fmt.Errorf("failed to list meeting attachments: %w", err)
+	}
+
+	if len(meetingAttachments) == 0 {
+		slog.InfoContext(ctx, "no meeting attachments to copy",
+			"meeting_uid", meetingUID,
+			"past_meeting_uid", pastMeetingUID)
+		return nil
+	}
+
+	// Create past meeting attachment records
+	for _, meetingAttachment := range meetingAttachments {
+		pastAttachment := &models.PastMeetingAttachment{
+			UID:             uuid.New().String(),
+			PastMeetingUID:  pastMeetingUID,
+			FileName:        meetingAttachment.FileName,
+			FileSize:        meetingAttachment.FileSize,
+			ContentType:     meetingAttachment.ContentType,
+			UploadedBy:      meetingAttachment.UploadedBy,
+			UploadedAt:      meetingAttachment.UploadedAt,
+			Description:     meetingAttachment.Description,
+			SourceObjectUID: meetingAttachment.UID, // Reference the original file in Object Store
+		}
+
+		if err := s.pastMeetingAttachmentRepository.PutMetadata(ctx, pastAttachment); err != nil {
+			slog.ErrorContext(ctx, "error creating past meeting attachment",
+				logging.ErrKey, err,
+				"meeting_attachment_uid", meetingAttachment.UID,
+				"past_meeting_attachment_uid", pastAttachment.UID)
+			// Continue with other attachments even if one fails
+			continue
+		}
+
+		slog.InfoContext(ctx, "created past meeting attachment",
+			"past_meeting_uid", pastMeetingUID,
+			"past_meeting_attachment_uid", pastAttachment.UID,
+			"source_object_uid", pastAttachment.SourceObjectUID)
+	}
+
+	slog.InfoContext(ctx, "created past meeting attachments from meeting attachments",
+		"meeting_uid", meetingUID,
+		"past_meeting_uid", pastMeetingUID,
+		"count", len(meetingAttachments))
+
+	return nil
 }
 
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, uid string) (*models.PastMeeting, string, error) {

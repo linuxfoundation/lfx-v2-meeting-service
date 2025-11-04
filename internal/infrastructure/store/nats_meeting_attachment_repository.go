@@ -158,6 +158,53 @@ func (r *NatsAttachmentRepository) GetMetadata(ctx context.Context, attachmentUI
 	return &attachment, nil
 }
 
+// ListByMeeting retrieves all attachment metadata for a meeting
+func (r *NatsAttachmentRepository) ListByMeeting(ctx context.Context, meetingUID string) ([]*models.MeetingAttachment, error) {
+	if meetingUID == "" {
+		return nil, domain.NewValidationError("meeting UID is required")
+	}
+
+	// Get all keys from the KV store
+	keys, err := r.metadataKV.Keys(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "error listing keys from KV store",
+			logging.ErrKey, err,
+			"meeting_uid", meetingUID)
+		return nil, domain.NewInternalError("failed to list attachments")
+	}
+
+	// Fetch and filter attachments
+	var attachments []*models.MeetingAttachment
+	for _, key := range keys {
+		entry, err := r.metadataKV.Get(ctx, key)
+		if err != nil {
+			slog.WarnContext(ctx, "error getting attachment metadata",
+				logging.ErrKey, err,
+				"key", key)
+			continue
+		}
+
+		var attachment models.MeetingAttachment
+		if err := json.Unmarshal(entry.Value(), &attachment); err != nil {
+			slog.WarnContext(ctx, "error unmarshaling attachment metadata",
+				logging.ErrKey, err,
+				"key", key)
+			continue
+		}
+
+		// Filter by meeting UID
+		if attachment.MeetingUID == meetingUID {
+			attachments = append(attachments, &attachment)
+		}
+	}
+
+	slog.InfoContext(ctx, "listed meeting attachments",
+		"meeting_uid", meetingUID,
+		"count", len(attachments))
+
+	return attachments, nil
+}
+
 // Delete removes only the metadata from KV store (file persists in Object Store)
 func (r *NatsAttachmentRepository) Delete(ctx context.Context, attachmentUID string) error {
 	if attachmentUID == "" {

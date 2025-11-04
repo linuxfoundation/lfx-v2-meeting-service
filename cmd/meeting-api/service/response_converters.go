@@ -548,6 +548,33 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 	return result
 }
 
+// ConvertDomainToPastMeetingAttachmentResponse converts a domain past meeting attachment model to an API response
+func ConvertDomainToPastMeetingAttachmentResponse(attachment *models.PastMeetingAttachment) *meetingservice.PastMeetingAttachment {
+	if attachment == nil {
+		return nil
+	}
+
+	result := &meetingservice.PastMeetingAttachment{
+		UID:             attachment.UID,
+		PastMeetingUID:  attachment.PastMeetingUID,
+		FileName:        attachment.FileName,
+		FileSize:        attachment.FileSize,
+		ContentType:     attachment.ContentType,
+		UploadedBy:      attachment.UploadedBy,
+		SourceObjectUID: attachment.SourceObjectUID,
+	}
+
+	if attachment.UploadedAt != nil {
+		result.UploadedAt = utils.StringPtr(attachment.UploadedAt.Format(time.RFC3339))
+	}
+
+	if attachment.Description != "" {
+		result.Description = utils.StringPtr(attachment.Description)
+	}
+
+	return result
+}
+
 // ConvertRSVPToResponse converts a domain RSVPResponse to Goa RSVPResponse
 func ConvertRSVPToResponse(rsvp *models.RSVPResponse) *meetingservice.RSVPResponse {
 	if rsvp == nil {

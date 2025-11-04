@@ -4459,6 +4459,119 @@ func EncodeDeleteMeetingAttachmentError(encoder func(context.Context, http.Respo
 	}
 }
 
+// EncodeGetPastMeetingAttachmentsResponse returns an encoder for responses
+// returned by the Meeting Service get-past-meeting-attachments endpoint.
+func EncodeGetPastMeetingAttachmentsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*meetingservice.GetPastMeetingAttachmentsResult)
+		enc := encoder(ctx, w)
+		body := NewGetPastMeetingAttachmentsResponseBody(res)
+		if res.CacheControl != nil {
+			w.Header().Set("Cache-Control", *res.CacheControl)
+		}
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetPastMeetingAttachmentsRequest returns a decoder for requests sent
+// to the Meeting Service get-past-meeting-attachments endpoint.
+func DecodeGetPastMeetingAttachmentsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			uid         string
+			version     *string
+			bearerToken *string
+			err         error
+
+			params = mux.Vars(r)
+		)
+		uid = params["uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		versionRaw := r.URL.Query().Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetPastMeetingAttachmentsPayload(uid, version, bearerToken)
+		if payload.BearerToken != nil {
+			if strings.Contains(*payload.BearerToken, " ") {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeGetPastMeetingAttachmentsError returns an encoder for errors returned
+// by the get-past-meeting-attachments Meeting Service endpoint.
+func EncodeGetPastMeetingAttachmentsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetPastMeetingAttachmentsInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetPastMeetingAttachmentsNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetPastMeetingAttachmentsServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeReadyzResponse returns an encoder for responses returned by the
 // Meeting Service readyz endpoint.
 func EncodeReadyzResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
@@ -4951,6 +5064,25 @@ func marshalMeetingserviceSummaryDataToSummaryDataResponseBody(v *meetingservice
 		Content:       v.Content,
 		DocURL:        v.DocURL,
 		EditedContent: v.EditedContent,
+	}
+
+	return res
+}
+
+// marshalMeetingservicePastMeetingAttachmentToPastMeetingAttachmentResponseBody
+// builds a value of type *PastMeetingAttachmentResponseBody from a value of
+// type *meetingservice.PastMeetingAttachment.
+func marshalMeetingservicePastMeetingAttachmentToPastMeetingAttachmentResponseBody(v *meetingservice.PastMeetingAttachment) *PastMeetingAttachmentResponseBody {
+	res := &PastMeetingAttachmentResponseBody{
+		UID:             v.UID,
+		PastMeetingUID:  v.PastMeetingUID,
+		FileName:        v.FileName,
+		FileSize:        v.FileSize,
+		ContentType:     v.ContentType,
+		UploadedBy:      v.UploadedBy,
+		UploadedAt:      v.UploadedAt,
+		Description:     v.Description,
+		SourceObjectUID: v.SourceObjectUID,
 	}
 
 	return res

@@ -166,6 +166,24 @@ type MeetingAttachmentRepository interface {
 	// GetMetadata retrieves only the metadata from KV store
 	GetMetadata(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, error)
 
+	// ListByMeeting retrieves all attachment metadata for a meeting
+	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.MeetingAttachment, error)
+
 	// Delete removes only the metadata from KV store (file persists in Object Store)
 	Delete(ctx context.Context, attachmentUID string) error
+}
+
+// PastMeetingAttachmentRepository defines the interface for past meeting attachment storage operations.
+// Metadata is stored in NATS KV store (includes past_meeting_uid and source_object_uid fields).
+// Files are stored in the same Object Store as meeting attachments, allowing reuse via source_object_uid.
+// This repository only manages metadata - files are accessed via the shared Object Store.
+type PastMeetingAttachmentRepository interface {
+	// PutMetadata stores metadata in KV store
+	PutMetadata(ctx context.Context, attachment *models.PastMeetingAttachment) error
+
+	// GetMetadata retrieves only the metadata from KV store
+	GetMetadata(ctx context.Context, attachmentUID string) (*models.PastMeetingAttachment, error)
+
+	// ListByPastMeeting retrieves all attachment metadata for a past meeting
+	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingAttachment, error)
 }

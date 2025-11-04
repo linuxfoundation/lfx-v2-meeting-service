@@ -2176,6 +2176,68 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
+    /past_meetings/{uid}/attachments:
+        get:
+            tags:
+                - Meeting Service
+            summary: get-past-meeting-attachments Meeting Service
+            description: Get all attachments for a past meeting
+            operationId: Meeting Service#get-past-meeting-attachments
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: uid
+                  in: path
+                  description: The unique identifier of the resource
+                  required: true
+                  type: string
+                  format: uuid
+                - name: Authorization
+                  in: header
+                  description: JWT token issued by Heimdall
+                  required: false
+                  type: string
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/MeetingServiceGetPastMeetingAttachmentsResponseBody'
+                        required:
+                            - attachments
+                    headers:
+                        Cache-Control:
+                            description: Cache control header
+                            type: string
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: Service Unavailable response.
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
     /past_meetings/{uid}/participants:
         get:
             tags:
@@ -2604,17 +2666,13 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -2661,63 +2719,63 @@ definitions:
                     $ref: '#/definitions/Occurrence'
                 description: Array of meeting occurrences (read-only from platform API)
                 example:
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
+                      title: Beatae natus.
             password:
                 type: string
                 description: Unique, non-guessable, password for the meeting - is needed to join a meeting and is included in invites
@@ -2799,29 +2857,21 @@ definitions:
             artifact_visibility: public
             committees:
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
             created_at: "2021-01-01T00:00:00Z"
             description: Id ut quibusdam autem.
             duration: 587
@@ -2829,57 +2879,57 @@ definitions:
             email_delivery_error_count: 7967177036709019000
             meeting_type: Technical
             occurrences:
-                - description: Suscipit aliquid qui.
-                  duration: 6246090133785653541
-                  is_cancelled: true
+                - description: Aliquid qui eligendi dolorem.
+                  duration: 5924982354164289498
+                  is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 2275795559282432862
-                  response_count_maybe: 7323979981551859816
-                  response_count_no: 5924982354164289498
-                  response_count_yes: 1059783170136508550
+                  registrant_count: 1059783170136508550
+                  response_count_maybe: 2323794702427202478
+                  response_count_no: 7323979981551859816
+                  response_count_yes: 8249684219979795716
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Iusto delectus beatae.
-                - description: Suscipit aliquid qui.
-                  duration: 6246090133785653541
-                  is_cancelled: true
+                  title: Beatae natus.
+                - description: Aliquid qui eligendi dolorem.
+                  duration: 5924982354164289498
+                  is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 2275795559282432862
-                  response_count_maybe: 7323979981551859816
-                  response_count_no: 5924982354164289498
-                  response_count_yes: 1059783170136508550
+                  registrant_count: 1059783170136508550
+                  response_count_maybe: 2323794702427202478
+                  response_count_no: 7323979981551859816
+                  response_count_yes: 8249684219979795716
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Iusto delectus beatae.
+                  title: Beatae natus.
             password: ef22cb6a-a3a9-4026-ae33-fc7d6bb3698a
             platform: Zoom
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             public_link: http://hyattgraham.org/bette.wilkinson
             recording_enabled: false
             recurrence:
-                end_date_time: "2008-03-04T04:55:46Z"
-                end_times: 1930574206310923017
-                monthly_day: 19
-                monthly_week: 4
-                monthly_week_day: 2
-                repeat_interval: 375033934054733619
-                type: 2
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 744432119613956755
+                monthly_day: 30
+                monthly_week: 1
+                monthly_week_day: 6
+                repeat_interval: 7437170462115027755
+                type: 1
                 weekly_days: 1,3,5
             registrant_count: 4960990750750056416
             restricted: true
@@ -2915,23 +2965,17 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -2944,7 +2988,7 @@ definitions:
             duration:
                 type: integer
                 description: The duration of the meeting in minutes
-                example: 146
+                example: 298
                 format: int64
                 minimum: 0
                 maximum: 600
@@ -2978,44 +3022,44 @@ definitions:
                     $ref: '#/definitions/Occurrence'
                 description: Array of meeting occurrences (read-only from platform API)
                 example:
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
+                      title: Beatae natus.
             organizers:
                 type: array
                 items:
@@ -3071,7 +3115,7 @@ definitions:
             timezone:
                 type: string
                 description: The timezone of the meeting (e.g. 'America/New_York')
-                example: Velit animi et quia.
+                example: Animi et quia.
             title:
                 type: string
                 description: The title of the meeting
@@ -3108,29 +3152,21 @@ definitions:
             artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
             created_at: "2021-01-01T00:00:00Z"
             description: Pariatur dolores quod sed.
             duration: 391
@@ -3138,44 +3174,44 @@ definitions:
             email_delivery_error_count: 9066844172955537007
             meeting_type: Legal
             occurrences:
-                - description: Suscipit aliquid qui.
-                  duration: 6246090133785653541
-                  is_cancelled: true
+                - description: Aliquid qui eligendi dolorem.
+                  duration: 5924982354164289498
+                  is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 2275795559282432862
-                  response_count_maybe: 7323979981551859816
-                  response_count_no: 5924982354164289498
-                  response_count_yes: 1059783170136508550
+                  registrant_count: 1059783170136508550
+                  response_count_maybe: 2323794702427202478
+                  response_count_no: 7323979981551859816
+                  response_count_yes: 8249684219979795716
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Iusto delectus beatae.
-                - description: Suscipit aliquid qui.
-                  duration: 6246090133785653541
-                  is_cancelled: true
+                  title: Beatae natus.
+                - description: Aliquid qui eligendi dolorem.
+                  duration: 5924982354164289498
+                  is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 2275795559282432862
-                  response_count_maybe: 7323979981551859816
-                  response_count_no: 5924982354164289498
-                  response_count_yes: 1059783170136508550
+                  registrant_count: 1059783170136508550
+                  response_count_maybe: 2323794702427202478
+                  response_count_no: 7323979981551859816
+                  response_count_yes: 8249684219979795716
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Iusto delectus beatae.
+                  title: Beatae natus.
             organizers:
                 - Enim ea natus quod velit.
                 - Ullam distinctio accusantium.
@@ -3185,13 +3221,13 @@ definitions:
             public_link: http://durgan.org/eriberto.koss
             recording_enabled: false
             recurrence:
-                end_date_time: "2008-03-04T04:55:46Z"
-                end_times: 1930574206310923017
-                monthly_day: 19
-                monthly_week: 4
-                monthly_week_day: 2
-                repeat_interval: 375033934054733619
-                type: 2
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 744432119613956755
+                monthly_day: 30
+                monthly_week: 1
+                monthly_week_day: 6
+                repeat_interval: 7437170462115027755
+                type: 1
                 weekly_days: 1,3,5
             registrant_count: 4306541817862693821
             restricted: false
@@ -3286,23 +3322,20 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
             description:
                 type: string
                 description: The description of the meeting
@@ -3397,23 +3430,20 @@ definitions:
             artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
             description: Quam molestiae ut.
             duration: 498
             early_join_time_minutes: 14
@@ -3425,13 +3455,13 @@ definitions:
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: false
             recurrence:
-                end_date_time: "1987-11-05T01:00:22Z"
-                end_times: 8318910668245858315
-                monthly_day: 24
-                monthly_week: -1
-                monthly_week_day: 2
-                repeat_interval: 8279229032718800673
-                type: 2
+                end_date_time: "2011-08-19T18:52:38Z"
+                end_times: 295409726269402937
+                monthly_day: 4
+                monthly_week: 1
+                monthly_week_day: 5
+                repeat_interval: 3423590977722818127
+                type: 1
                 weekly_days: 1,3,5
             restricted: false
             start_time: "2021-01-01T00:00:00Z"
@@ -3582,23 +3612,20 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
             description:
                 type: string
                 description: The description of the meeting
@@ -3719,17 +3746,15 @@ definitions:
             artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
             description: Id dolor praesentium laboriosam beatae illo occaecati.
             duration: 331
             early_join_time_minutes: 46
@@ -3742,13 +3767,13 @@ definitions:
             public_link: http://leschreilly.biz/mariana
             recording_enabled: false
             recurrence:
-                end_date_time: "1987-11-05T01:00:22Z"
-                end_times: 8318910668245858315
-                monthly_day: 24
-                monthly_week: -1
-                monthly_week_day: 2
-                repeat_interval: 8279229032718800673
-                type: 2
+                end_date_time: "2011-08-19T18:52:38Z"
+                end_times: 295409726269402937
+                monthly_day: 4
+                monthly_week: 1
+                monthly_week_day: 5
+                repeat_interval: 3423590977722818127
+                type: 1
                 weekly_days: 1,3,5
             restricted: true
             scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -3962,274 +3987,406 @@ definitions:
                     $ref: '#/definitions/MeetingFull'
                 description: Resources found
                 example:
-                    - artifact_visibility: meeting_hosts
+                    - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Qui modi non.
-                      duration: 117
-                      early_join_time_minutes: 21
-                      email_delivery_error_count: 3839386338345829979
-                      meeting_type: Technical
+                      description: Iure vero ipsa possimus sint et.
+                      duration: 470
+                      early_join_time_minutes: 49
+                      email_delivery_error_count: 9175101536347037250
+                      meeting_type: Legal
                       occurrences:
-                        - description: Suscipit aliquid qui.
-                          duration: 6246090133785653541
-                          is_cancelled: true
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2008-03-04T04:55:46Z"
-                            end_times: 1930574206310923017
-                            monthly_day: 19
-                            monthly_week: 4
-                            monthly_week_day: 2
-                            repeat_interval: 375033934054733619
-                            type: 2
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
                             weekly_days: 1,3,5
-                          registrant_count: 2275795559282432862
-                          response_count_maybe: 7323979981551859816
-                          response_count_no: 5924982354164289498
-                          response_count_yes: 1059783170136508550
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Iusto delectus beatae.
-                        - description: Suscipit aliquid qui.
-                          duration: 6246090133785653541
-                          is_cancelled: true
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2008-03-04T04:55:46Z"
-                            end_times: 1930574206310923017
-                            monthly_day: 19
-                            monthly_week: 4
-                            monthly_week_day: 2
-                            repeat_interval: 375033934054733619
-                            type: 2
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
                             weekly_days: 1,3,5
-                          registrant_count: 2275795559282432862
-                          response_count_maybe: 7323979981551859816
-                          response_count_no: 5924982354164289498
-                          response_count_yes: 1059783170136508550
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Iusto delectus beatae.
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Beatae natus.
                       organizers:
-                        - Natus modi est.
-                        - Officia sint soluta aut nesciunt.
-                      password: 6f81852f-c4ea-49db-a720-214e737e966f
+                        - Est laboriosam officia sint soluta aut.
+                        - Quaerat et.
+                        - Molestias quis sit quia quasi dolor.
+                        - Exercitationem rem unde.
+                      password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: http://larkin.com/moshe.mckenzie
+                      public_link: http://mcdermott.info/fermin_shanahan
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 5716787336795423675
+                      registrant_count: 6899912874666998650
                       restricted: false
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Laudantium deleniti.
-                      title: Ut quaerat.
-                      transcript_enabled: true
+                      timezone: Deleniti et nostrum numquam aliquid voluptas.
+                      title: Modi non et cupiditate.
+                      transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       visibility: public
-                      youtube_upload_enabled: false
+                      youtube_upload_enabled: true
                       zoom_config:
                         ai_companion_enabled: false
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_hosts
+                    - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Qui modi non.
-                      duration: 117
-                      early_join_time_minutes: 21
-                      email_delivery_error_count: 3839386338345829979
-                      meeting_type: Technical
+                      description: Iure vero ipsa possimus sint et.
+                      duration: 470
+                      early_join_time_minutes: 49
+                      email_delivery_error_count: 9175101536347037250
+                      meeting_type: Legal
                       occurrences:
-                        - description: Suscipit aliquid qui.
-                          duration: 6246090133785653541
-                          is_cancelled: true
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2008-03-04T04:55:46Z"
-                            end_times: 1930574206310923017
-                            monthly_day: 19
-                            monthly_week: 4
-                            monthly_week_day: 2
-                            repeat_interval: 375033934054733619
-                            type: 2
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
                             weekly_days: 1,3,5
-                          registrant_count: 2275795559282432862
-                          response_count_maybe: 7323979981551859816
-                          response_count_no: 5924982354164289498
-                          response_count_yes: 1059783170136508550
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Iusto delectus beatae.
-                        - description: Suscipit aliquid qui.
-                          duration: 6246090133785653541
-                          is_cancelled: true
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2008-03-04T04:55:46Z"
-                            end_times: 1930574206310923017
-                            monthly_day: 19
-                            monthly_week: 4
-                            monthly_week_day: 2
-                            repeat_interval: 375033934054733619
-                            type: 2
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
                             weekly_days: 1,3,5
-                          registrant_count: 2275795559282432862
-                          response_count_maybe: 7323979981551859816
-                          response_count_no: 5924982354164289498
-                          response_count_yes: 1059783170136508550
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Iusto delectus beatae.
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Beatae natus.
                       organizers:
-                        - Natus modi est.
-                        - Officia sint soluta aut nesciunt.
-                      password: 6f81852f-c4ea-49db-a720-214e737e966f
+                        - Est laboriosam officia sint soluta aut.
+                        - Quaerat et.
+                        - Molestias quis sit quia quasi dolor.
+                        - Exercitationem rem unde.
+                      password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: http://larkin.com/moshe.mckenzie
+                      public_link: http://mcdermott.info/fermin_shanahan
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 5716787336795423675
+                      registrant_count: 6899912874666998650
                       restricted: false
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Laudantium deleniti.
-                      title: Ut quaerat.
-                      transcript_enabled: true
+                      timezone: Deleniti et nostrum numquam aliquid voluptas.
+                      title: Modi non et cupiditate.
+                      transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       visibility: public
-                      youtube_upload_enabled: false
+                      youtube_upload_enabled: true
                       zoom_config:
                         ai_companion_enabled: false
                         ai_summary_require_approval: true
                         meeting_id: "1234567890"
                         passcode: "147258"
-                    - artifact_visibility: meeting_hosts
+                    - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
+                        - allowed_voting_statuses:
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Qui modi non.
-                      duration: 117
-                      early_join_time_minutes: 21
-                      email_delivery_error_count: 3839386338345829979
-                      meeting_type: Technical
+                      description: Iure vero ipsa possimus sint et.
+                      duration: 470
+                      early_join_time_minutes: 49
+                      email_delivery_error_count: 9175101536347037250
+                      meeting_type: Legal
                       occurrences:
-                        - description: Suscipit aliquid qui.
-                          duration: 6246090133785653541
-                          is_cancelled: true
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2008-03-04T04:55:46Z"
-                            end_times: 1930574206310923017
-                            monthly_day: 19
-                            monthly_week: 4
-                            monthly_week_day: 2
-                            repeat_interval: 375033934054733619
-                            type: 2
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
                             weekly_days: 1,3,5
-                          registrant_count: 2275795559282432862
-                          response_count_maybe: 7323979981551859816
-                          response_count_no: 5924982354164289498
-                          response_count_yes: 1059783170136508550
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Iusto delectus beatae.
-                        - description: Suscipit aliquid qui.
-                          duration: 6246090133785653541
-                          is_cancelled: true
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "2008-03-04T04:55:46Z"
-                            end_times: 1930574206310923017
-                            monthly_day: 19
-                            monthly_week: 4
-                            monthly_week_day: 2
-                            repeat_interval: 375033934054733619
-                            type: 2
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
                             weekly_days: 1,3,5
-                          registrant_count: 2275795559282432862
-                          response_count_maybe: 7323979981551859816
-                          response_count_no: 5924982354164289498
-                          response_count_yes: 1059783170136508550
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Iusto delectus beatae.
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Beatae natus.
+                        - description: Aliquid qui eligendi dolorem.
+                          duration: 5924982354164289498
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1999-11-28T21:30:47Z"
+                            end_times: 744432119613956755
+                            monthly_day: 30
+                            monthly_week: 1
+                            monthly_week_day: 6
+                            repeat_interval: 7437170462115027755
+                            type: 1
+                            weekly_days: 1,3,5
+                          registrant_count: 1059783170136508550
+                          response_count_maybe: 2323794702427202478
+                          response_count_no: 7323979981551859816
+                          response_count_yes: 8249684219979795716
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Beatae natus.
                       organizers:
-                        - Natus modi est.
-                        - Officia sint soluta aut nesciunt.
-                      password: 6f81852f-c4ea-49db-a720-214e737e966f
+                        - Est laboriosam officia sint soluta aut.
+                        - Quaerat et.
+                        - Molestias quis sit quia quasi dolor.
+                        - Exercitationem rem unde.
+                      password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: http://larkin.com/moshe.mckenzie
+                      public_link: http://mcdermott.info/fermin_shanahan
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 5716787336795423675
+                      registrant_count: 6899912874666998650
                       restricted: false
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Laudantium deleniti.
-                      title: Ut quaerat.
-                      transcript_enabled: true
+                      timezone: Deleniti et nostrum numquam aliquid voluptas.
+                      title: Modi non et cupiditate.
+                      transcript_enabled: false
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       visibility: public
-                      youtube_upload_enabled: false
+                      youtube_upload_enabled: true
                       zoom_config:
                         ai_companion_enabled: false
                         ai_summary_require_approval: true
@@ -4237,365 +4394,541 @@ definitions:
                         passcode: "147258"
         example:
             meetings:
-                - artifact_visibility: meeting_hosts
+                - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Qui modi non.
-                  duration: 117
-                  early_join_time_minutes: 21
-                  email_delivery_error_count: 3839386338345829979
-                  meeting_type: Technical
+                  description: Iure vero ipsa possimus sint et.
+                  duration: 470
+                  early_join_time_minutes: 49
+                  email_delivery_error_count: 9175101536347037250
+                  meeting_type: Legal
                   occurrences:
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
                   organizers:
-                    - Natus modi est.
-                    - Officia sint soluta aut nesciunt.
-                  password: 6f81852f-c4ea-49db-a720-214e737e966f
+                    - Est laboriosam officia sint soluta aut.
+                    - Quaerat et.
+                    - Molestias quis sit quia quasi dolor.
+                    - Exercitationem rem unde.
+                  password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://larkin.com/moshe.mckenzie
+                  public_link: http://mcdermott.info/fermin_shanahan
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 5716787336795423675
+                  registrant_count: 6899912874666998650
                   restricted: false
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Laudantium deleniti.
-                  title: Ut quaerat.
-                  transcript_enabled: true
+                  timezone: Deleniti et nostrum numquam aliquid voluptas.
+                  title: Modi non et cupiditate.
+                  transcript_enabled: false
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   visibility: public
-                  youtube_upload_enabled: false
+                  youtube_upload_enabled: true
                   zoom_config:
                     ai_companion_enabled: false
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
-                - artifact_visibility: meeting_hosts
+                - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Qui modi non.
-                  duration: 117
-                  early_join_time_minutes: 21
-                  email_delivery_error_count: 3839386338345829979
-                  meeting_type: Technical
+                  description: Iure vero ipsa possimus sint et.
+                  duration: 470
+                  early_join_time_minutes: 49
+                  email_delivery_error_count: 9175101536347037250
+                  meeting_type: Legal
                   occurrences:
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
                   organizers:
-                    - Natus modi est.
-                    - Officia sint soluta aut nesciunt.
-                  password: 6f81852f-c4ea-49db-a720-214e737e966f
+                    - Est laboriosam officia sint soluta aut.
+                    - Quaerat et.
+                    - Molestias quis sit quia quasi dolor.
+                    - Exercitationem rem unde.
+                  password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://larkin.com/moshe.mckenzie
+                  public_link: http://mcdermott.info/fermin_shanahan
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 5716787336795423675
+                  registrant_count: 6899912874666998650
                   restricted: false
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Laudantium deleniti.
-                  title: Ut quaerat.
-                  transcript_enabled: true
+                  timezone: Deleniti et nostrum numquam aliquid voluptas.
+                  title: Modi non et cupiditate.
+                  transcript_enabled: false
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   visibility: public
-                  youtube_upload_enabled: false
+                  youtube_upload_enabled: true
                   zoom_config:
                     ai_companion_enabled: false
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
-                - artifact_visibility: meeting_hosts
+                - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Qui modi non.
-                  duration: 117
-                  early_join_time_minutes: 21
-                  email_delivery_error_count: 3839386338345829979
-                  meeting_type: Technical
+                  description: Iure vero ipsa possimus sint et.
+                  duration: 470
+                  early_join_time_minutes: 49
+                  email_delivery_error_count: 9175101536347037250
+                  meeting_type: Legal
                   occurrences:
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
                   organizers:
-                    - Natus modi est.
-                    - Officia sint soluta aut nesciunt.
-                  password: 6f81852f-c4ea-49db-a720-214e737e966f
+                    - Est laboriosam officia sint soluta aut.
+                    - Quaerat et.
+                    - Molestias quis sit quia quasi dolor.
+                    - Exercitationem rem unde.
+                  password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://larkin.com/moshe.mckenzie
+                  public_link: http://mcdermott.info/fermin_shanahan
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 5716787336795423675
+                  registrant_count: 6899912874666998650
                   restricted: false
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Laudantium deleniti.
-                  title: Ut quaerat.
-                  transcript_enabled: true
+                  timezone: Deleniti et nostrum numquam aliquid voluptas.
+                  title: Modi non et cupiditate.
+                  transcript_enabled: false
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   visibility: public
-                  youtube_upload_enabled: false
+                  youtube_upload_enabled: true
                   zoom_config:
                     ai_companion_enabled: false
                     ai_summary_require_approval: true
                     meeting_id: "1234567890"
                     passcode: "147258"
-                - artifact_visibility: meeting_hosts
+                - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
+                    - allowed_voting_statuses:
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Qui modi non.
-                  duration: 117
-                  early_join_time_minutes: 21
-                  email_delivery_error_count: 3839386338345829979
-                  meeting_type: Technical
+                  description: Iure vero ipsa possimus sint et.
+                  duration: 470
+                  early_join_time_minutes: 49
+                  email_delivery_error_count: 9175101536347037250
+                  meeting_type: Legal
                   occurrences:
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
-                    - description: Suscipit aliquid qui.
-                      duration: 6246090133785653541
-                      is_cancelled: true
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
-                      registrant_count: 2275795559282432862
-                      response_count_maybe: 7323979981551859816
-                      response_count_no: 5924982354164289498
-                      response_count_yes: 1059783170136508550
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Iusto delectus beatae.
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
+                    - description: Aliquid qui eligendi dolorem.
+                      duration: 5924982354164289498
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
+                        weekly_days: 1,3,5
+                      registrant_count: 1059783170136508550
+                      response_count_maybe: 2323794702427202478
+                      response_count_no: 7323979981551859816
+                      response_count_yes: 8249684219979795716
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Beatae natus.
                   organizers:
-                    - Natus modi est.
-                    - Officia sint soluta aut nesciunt.
-                  password: 6f81852f-c4ea-49db-a720-214e737e966f
+                    - Est laboriosam officia sint soluta aut.
+                    - Quaerat et.
+                    - Molestias quis sit quia quasi dolor.
+                    - Exercitationem rem unde.
+                  password: 536ffa7a-cb02-4d6b-9b46-9764883d486d
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://larkin.com/moshe.mckenzie
+                  public_link: http://mcdermott.info/fermin_shanahan
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
-                  registrant_count: 5716787336795423675
+                  registrant_count: 6899912874666998650
                   restricted: false
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Laudantium deleniti.
-                  title: Ut quaerat.
-                  transcript_enabled: true
+                  timezone: Deleniti et nostrum numquam aliquid voluptas.
+                  title: Modi non et cupiditate.
+                  transcript_enabled: false
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   visibility: public
-                  youtube_upload_enabled: false
+                  youtube_upload_enabled: true
                   zoom_config:
                     ai_companion_enabled: false
                     ai_summary_require_approval: true
@@ -4603,6 +4936,56 @@ definitions:
                     passcode: "147258"
         required:
             - meetings
+    MeetingServiceGetPastMeetingAttachmentsResponseBody:
+        title: MeetingServiceGetPastMeetingAttachmentsResponseBody
+        type: object
+        properties:
+            attachments:
+                type: array
+                items:
+                    $ref: '#/definitions/PastMeetingAttachment'
+                description: Past meeting attachments
+                example:
+                    - content_type: video/mp4
+                      description: Meeting recording for Q1 2024
+                      file_name: meeting-recording.mp4
+                      file_size: 1024000
+                      past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uploaded_at: "2024-01-15T10:00:00Z"
+                      uploaded_by: john.doe
+                    - content_type: video/mp4
+                      description: Meeting recording for Q1 2024
+                      file_name: meeting-recording.mp4
+                      file_size: 1024000
+                      past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      uploaded_at: "2024-01-15T10:00:00Z"
+                      uploaded_by: john.doe
+        example:
+            attachments:
+                - content_type: video/mp4
+                  description: Meeting recording for Q1 2024
+                  file_name: meeting-recording.mp4
+                  file_size: 1024000
+                  past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uploaded_at: "2024-01-15T10:00:00Z"
+                  uploaded_by: john.doe
+                - content_type: video/mp4
+                  description: Meeting recording for Q1 2024
+                  file_name: meeting-recording.mp4
+                  file_size: 1024000
+                  past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  uploaded_at: "2024-01-15T10:00:00Z"
+                  uploaded_by: john.doe
+        required:
+            - attachments
     MeetingServiceGetPastMeetingParticipantResponseBody:
         title: MeetingServiceGetPastMeetingParticipantResponseBody
         $ref: '#/definitions/PastMeetingParticipant'
@@ -4893,17 +5276,13 @@ definitions:
                     - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Voluptates veritatis praesentium deserunt vel.
                       duration: 553
@@ -4917,13 +5296,13 @@ definitions:
                       public_link: http://strosinsawayn.biz/bud
                       recording_enabled: true
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
                       restricted: true
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -4950,17 +5329,13 @@ definitions:
                     - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Voluptates veritatis praesentium deserunt vel.
                       duration: 553
@@ -4974,13 +5349,13 @@ definitions:
                       public_link: http://strosinsawayn.biz/bud
                       recording_enabled: true
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
                       restricted: true
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5007,17 +5382,13 @@ definitions:
                     - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                         - allowed_voting_statuses:
-                            - Quod vero.
-                            - Esse repellat sunt.
-                            - Aperiam deleniti ea sunt nihil nam.
-                            - Earum nulla unde quis voluptate.
-                          uid: A iure vero ipsa possimus sint.
+                            - Ea sunt nihil nam nesciunt earum nulla.
+                            - Quis voluptate est qui sint nobis.
+                          uid: Vero ipsa esse repellat sunt eveniet.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Voluptates veritatis praesentium deserunt vel.
                       duration: 553
@@ -5031,13 +5402,13 @@ definitions:
                       public_link: http://strosinsawayn.biz/bud
                       recording_enabled: true
                       recurrence:
-                        end_date_time: "2008-03-04T04:55:46Z"
-                        end_times: 1930574206310923017
-                        monthly_day: 19
-                        monthly_week: 4
-                        monthly_week_day: 2
-                        repeat_interval: 375033934054733619
-                        type: 2
+                        end_date_time: "1999-11-28T21:30:47Z"
+                        end_times: 744432119613956755
+                        monthly_day: 30
+                        monthly_week: 1
+                        monthly_week_day: 6
+                        repeat_interval: 7437170462115027755
+                        type: 1
                         weekly_days: 1,3,5
                       restricted: true
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5066,17 +5437,13 @@ definitions:
                 - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
                   description: Voluptates veritatis praesentium deserunt vel.
                   duration: 553
@@ -5090,13 +5457,13 @@ definitions:
                   public_link: http://strosinsawayn.biz/bud
                   recording_enabled: true
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
                   restricted: true
                   scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5123,17 +5490,13 @@ definitions:
                 - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                   created_at: "2021-01-01T00:00:00Z"
                   description: Voluptates veritatis praesentium deserunt vel.
                   duration: 553
@@ -5147,13 +5510,13 @@ definitions:
                   public_link: http://strosinsawayn.biz/bud
                   recording_enabled: true
                   recurrence:
-                    end_date_time: "2008-03-04T04:55:46Z"
-                    end_times: 1930574206310923017
-                    monthly_day: 19
-                    monthly_week: 4
-                    monthly_week_day: 2
-                    repeat_interval: 375033934054733619
-                    type: 2
+                    end_date_time: "1999-11-28T21:30:47Z"
+                    end_times: 744432119613956755
+                    monthly_day: 30
+                    monthly_week: 1
+                    monthly_week_day: 6
+                    repeat_interval: 7437170462115027755
+                    type: 1
                     weekly_days: 1,3,5
                   restricted: true
                   scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5198,29 +5561,25 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
                     - allowed_voting_statuses:
-                        - Aliquam deleniti omnis.
-                        - Et nemo.
-                        - Voluptatum ut ut voluptatem odio debitis et.
-                        - Consectetur nihil vel consequatur perspiciatis.
-                      uid: Nulla porro necessitatibus et ab nobis.
+                        - Ut ut voluptatem.
+                        - Debitis et et.
+                        - Nihil vel consequatur perspiciatis.
+                      uid: Et nemo.
             description:
                 type: string
                 description: The description of the meeting
@@ -5306,23 +5665,20 @@ definitions:
             artifact_visibility: meeting_participants
             committees:
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
                 - allowed_voting_statuses:
-                    - Aliquam deleniti omnis.
-                    - Et nemo.
-                    - Voluptatum ut ut voluptatem odio debitis et.
-                    - Consectetur nihil vel consequatur perspiciatis.
-                  uid: Nulla porro necessitatibus et ab nobis.
+                    - Ut ut voluptatem.
+                    - Debitis et et.
+                    - Nihil vel consequatur perspiciatis.
+                  uid: Et nemo.
             description: Esse distinctio asperiores aut.
             duration: 538
             early_join_time_minutes: 53
@@ -5331,13 +5687,13 @@ definitions:
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: true
             recurrence:
-                end_date_time: "1987-11-05T01:00:22Z"
-                end_times: 8318910668245858315
-                monthly_day: 24
-                monthly_week: -1
-                monthly_week_day: 2
-                repeat_interval: 8279229032718800673
-                type: 2
+                end_date_time: "2011-08-19T18:52:38Z"
+                end_times: 295409726269402937
+                monthly_day: 4
+                monthly_week: 1
+                monthly_week_day: 5
+                repeat_interval: 3423590977722818127
+                type: 1
                 weekly_days: 1,3,5
             restricted: true
             start_time: "2021-01-01T00:00:00Z"
@@ -5704,13 +6060,13 @@ definitions:
             is_cancelled: true
             occurrence_id: "1640995200"
             recurrence:
-                end_date_time: "2008-03-04T04:55:46Z"
-                end_times: 1930574206310923017
-                monthly_day: 19
-                monthly_week: 4
-                monthly_week_day: 2
-                repeat_interval: 375033934054733619
-                type: 2
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 744432119613956755
+                monthly_day: 30
+                monthly_week: 1
+                monthly_week_day: 6
+                repeat_interval: 7437170462115027755
+                type: 1
                 weekly_days: 1,3,5
             registrant_count: 8465500082141967484
             response_count_maybe: 3306015401237376798
@@ -5768,23 +6124,17 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
                     - allowed_voting_statuses:
-                        - Quod vero.
-                        - Esse repellat sunt.
-                        - Aperiam deleniti ea sunt nihil nam.
-                        - Earum nulla unde quis voluptate.
-                      uid: A iure vero ipsa possimus sint.
+                        - Ea sunt nihil nam nesciunt earum nulla.
+                        - Quis voluptate est qui sint nobis.
+                      uid: Vero ipsa esse repellat sunt eveniet.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -5924,29 +6274,21 @@ definitions:
             artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
                 - allowed_voting_statuses:
-                    - Quod vero.
-                    - Esse repellat sunt.
-                    - Aperiam deleniti ea sunt nihil nam.
-                    - Earum nulla unde quis voluptate.
-                  uid: A iure vero ipsa possimus sint.
+                    - Ea sunt nihil nam nesciunt earum nulla.
+                    - Quis voluptate est qui sint nobis.
+                  uid: Vero ipsa esse repellat sunt eveniet.
             created_at: "2021-01-01T00:00:00Z"
             description: Ut maxime architecto.
             duration: 243
@@ -5960,13 +6302,13 @@ definitions:
             public_link: http://kassulke.com/norval
             recording_enabled: true
             recurrence:
-                end_date_time: "2008-03-04T04:55:46Z"
-                end_times: 1930574206310923017
-                monthly_day: 19
-                monthly_week: 4
-                monthly_week_day: 2
-                repeat_interval: 375033934054733619
-                type: 2
+                end_date_time: "1999-11-28T21:30:47Z"
+                end_times: 744432119613956755
+                monthly_day: 30
+                monthly_week: 1
+                monthly_week_day: 6
+                repeat_interval: 7437170462115027755
+                type: 1
                 weekly_days: 1,3,5
             restricted: true
             scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5990,6 +6332,76 @@ definitions:
                 ai_summary_require_approval: true
                 meeting_id: "1234567890"
                 passcode: "147258"
+    PastMeetingAttachment:
+        title: PastMeetingAttachment
+        type: object
+        properties:
+            content_type:
+                type: string
+                description: The MIME type of the file
+                example: video/mp4
+                minLength: 1
+            description:
+                type: string
+                description: Optional description of the attachment
+                example: Meeting recording for Q1 2024
+                maxLength: 500
+            file_name:
+                type: string
+                description: The name of the file
+                example: meeting-recording.mp4
+                minLength: 1
+                maxLength: 255
+            file_size:
+                type: integer
+                description: The size of the file in bytes
+                example: 1024000
+                format: int64
+                minimum: 0
+            past_meeting_uid:
+                type: string
+                description: The UID of the past meeting this attachment belongs to
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
+            source_object_uid:
+                type: string
+                description: The UID of the file in the shared Object Store
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
+            uid:
+                type: string
+                description: The UID of the attachment
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
+            uploaded_at:
+                type: string
+                description: RFC3339 timestamp when the file was uploaded
+                example: "2024-01-15T10:00:00Z"
+                format: date-time
+            uploaded_by:
+                type: string
+                description: The username of the user who uploaded the file
+                example: john.doe
+                minLength: 1
+        description: Past meeting attachment metadata
+        example:
+            content_type: video/mp4
+            description: Meeting recording for Q1 2024
+            file_name: meeting-recording.mp4
+            file_size: 1024000
+            past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            uploaded_at: "2024-01-15T10:00:00Z"
+            uploaded_by: john.doe
+        required:
+            - uid
+            - past_meeting_uid
+            - file_name
+            - file_size
+            - content_type
+            - uploaded_by
+            - source_object_uid
     PastMeetingParticipant:
         title: PastMeetingParticipant
         type: object

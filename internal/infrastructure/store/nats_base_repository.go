@@ -18,16 +18,17 @@ import (
 
 // NATS Key-Value store bucket names
 const (
-	KVStoreNameMeetings                   = "meetings"
-	KVStoreNameMeetingSettings            = "meeting-settings"
-	KVStoreNameMeetingRegistrants         = "meeting-registrants"
-	KVStoreNameMeetingRSVPs               = "meeting-rsvps"
-	KVStoreNameMeetingAttachmentsMetadata = "meeting-attachments-metadata"
-	KVStoreNamePastMeetings               = "past-meetings"
-	KVStoreNamePastMeetingParticipants    = "past-meeting-participants"
-	KVStoreNamePastMeetingRecordings      = "past-meeting-recordings"
-	KVStoreNamePastMeetingTranscripts     = "past-meeting-transcripts"
-	KVStoreNamePastMeetingSummaries       = "past-meeting-summaries"
+	KVStoreNameMeetings                        = "meetings"
+	KVStoreNameMeetingSettings                 = "meeting-settings"
+	KVStoreNameMeetingRegistrants              = "meeting-registrants"
+	KVStoreNameMeetingRSVPs                    = "meeting-rsvps"
+	KVStoreNameMeetingAttachmentsMetadata      = "meeting-attachments-metadata"
+	KVStoreNamePastMeetings                    = "past-meetings"
+	KVStoreNamePastMeetingParticipants         = "past-meeting-participants"
+	KVStoreNamePastMeetingRecordings           = "past-meeting-recordings"
+	KVStoreNamePastMeetingTranscripts          = "past-meeting-transcripts"
+	KVStoreNamePastMeetingSummaries            = "past-meeting-summaries"
+	KVStoreNamePastMeetingAttachmentsMetadata  = "past-meeting-attachments-metadata"
 )
 
 // NATS Object Store names

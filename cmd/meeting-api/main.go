@@ -110,6 +110,8 @@ func main() {
 	pastMeetingService := service.NewPastMeetingService(
 		repos.Meeting,
 		repos.PastMeeting,
+		repos.Attachment,
+		repos.PastMeetingAttachment,
 		messageBuilder, // Implements PastMeetingBasicMessageSender
 		serviceConfig,
 	)
@@ -143,6 +145,11 @@ func main() {
 		emailService,
 		messageBuilder, // Implements PastMeetingSummaryMessageSender
 		messageBuilder, // Implements ExternalServiceClient
+		serviceConfig,
+	)
+	pastMeetingAttachmentService := service.NewPastMeetingAttachmentService(
+		repos.PastMeeting,
+		repos.PastMeetingAttachment,
 		serviceConfig,
 	)
 	committeeSyncService := service.NewCommitteeSyncService(
@@ -192,6 +199,7 @@ func main() {
 		pastMeetingService,
 		pastMeetingParticipantService,
 		pastMeetingSummaryService,
+		pastMeetingAttachmentService,
 		zoomWebhookService,
 		zoomWebhookHandler,
 		meetingHandler,
