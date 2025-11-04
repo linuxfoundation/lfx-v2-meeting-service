@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|get-past-meeting-attachments|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|get-past-meeting-attachments|delete-past-meeting-attachment|readyz|livez)
 `
 }
 
@@ -252,6 +252,12 @@ func ParseEndpoint(
 		meetingServiceGetPastMeetingAttachmentsVersionFlag     = meetingServiceGetPastMeetingAttachmentsFlags.String("version", "", "")
 		meetingServiceGetPastMeetingAttachmentsBearerTokenFlag = meetingServiceGetPastMeetingAttachmentsFlags.String("bearer-token", "", "")
 
+		meetingServiceDeletePastMeetingAttachmentFlags              = flag.NewFlagSet("delete-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceDeletePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
+		meetingServiceDeletePastMeetingAttachmentUIDFlag            = meetingServiceDeletePastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
+		meetingServiceDeletePastMeetingAttachmentVersionFlag        = meetingServiceDeletePastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceDeletePastMeetingAttachmentBearerTokenFlag    = meetingServiceDeletePastMeetingAttachmentFlags.String("bearer-token", "", "")
+
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
@@ -292,6 +298,7 @@ func ParseEndpoint(
 	meetingServiceGetMeetingAttachmentMetadataFlags.Usage = meetingServiceGetMeetingAttachmentMetadataUsage
 	meetingServiceDeleteMeetingAttachmentFlags.Usage = meetingServiceDeleteMeetingAttachmentUsage
 	meetingServiceGetPastMeetingAttachmentsFlags.Usage = meetingServiceGetPastMeetingAttachmentsUsage
+	meetingServiceDeletePastMeetingAttachmentFlags.Usage = meetingServiceDeletePastMeetingAttachmentUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -434,6 +441,9 @@ func ParseEndpoint(
 			case "get-past-meeting-attachments":
 				epf = meetingServiceGetPastMeetingAttachmentsFlags
 
+			case "delete-past-meeting-attachment":
+				epf = meetingServiceDeletePastMeetingAttachmentFlags
+
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
@@ -570,6 +580,9 @@ func ParseEndpoint(
 			case "get-past-meeting-attachments":
 				endpoint = c.GetPastMeetingAttachments()
 				data, err = meetingservicec.BuildGetPastMeetingAttachmentsPayload(*meetingServiceGetPastMeetingAttachmentsUIDFlag, *meetingServiceGetPastMeetingAttachmentsVersionFlag, *meetingServiceGetPastMeetingAttachmentsBearerTokenFlag)
+			case "delete-past-meeting-attachment":
+				endpoint = c.DeletePastMeetingAttachment()
+				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -628,6 +641,7 @@ COMMAND:
     get-meeting-attachment-metadata: Get metadata for a meeting attachment without downloading the file
     delete-meeting-attachment: Delete a file attachment for a meeting
     get-past-meeting-attachments: Get all attachments for a past meeting
+    delete-past-meeting-attachment: Delete a past meeting attachment
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -1395,6 +1409,20 @@ Get all attachments for a past meeting
 
 Example:
     %[1]s meeting-service get-past-meeting-attachments --uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceDeletePastMeetingAttachmentUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting-attachment -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
+
+Delete a past meeting attachment
+    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
+    -uid STRING: The UID of the attachment
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service delete-past-meeting-attachment --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 

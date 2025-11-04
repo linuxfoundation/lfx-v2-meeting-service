@@ -141,3 +141,24 @@ func (r *NatsPastMeetingAttachmentRepository) ListByPastMeeting(ctx context.Cont
 
 	return attachments, nil
 }
+
+// Delete removes only the metadata from KV store (file persists in Object Store)
+func (r *NatsPastMeetingAttachmentRepository) Delete(ctx context.Context, attachmentUID string) error {
+	if attachmentUID == "" {
+		return domain.NewValidationError("attachment UID is required")
+	}
+
+	// Delete metadata from KV store
+	err := r.kv.Delete(ctx, attachmentUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error deleting past meeting attachment metadata from KV store",
+			logging.ErrKey, err,
+			"attachment_uid", attachmentUID)
+		return domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
+	}
+
+	slog.InfoContext(ctx, "deleted past meeting attachment metadata (file preserved in Object Store)",
+		"attachment_uid", attachmentUID)
+
+	return nil
+}

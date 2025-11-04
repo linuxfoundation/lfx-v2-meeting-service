@@ -2250,6 +2250,46 @@ type GetPastMeetingAttachmentsServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// DeletePastMeetingAttachmentBadRequestResponseBody is the type of the
+// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "BadRequest" error.
+type DeletePastMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeletePastMeetingAttachmentInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "InternalServerError" error.
+type DeletePastMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeletePastMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "delete-past-meeting-attachment" endpoint HTTP response
+// body for the "NotFound" error.
+type DeletePastMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeletePastMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type DeletePastMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
 // service "readyz" endpoint HTTP response body for the "ServiceUnavailable"
 // error.
@@ -5059,6 +5099,50 @@ func NewGetPastMeetingAttachmentsServiceUnavailableResponseBody(res *meetingserv
 	return body
 }
 
+// NewDeletePastMeetingAttachmentBadRequestResponseBody builds the HTTP
+// response body from the result of the "delete-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeletePastMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *DeletePastMeetingAttachmentBadRequestResponseBody {
+	body := &DeletePastMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeletePastMeetingAttachmentInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the "delete-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeletePastMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *DeletePastMeetingAttachmentInternalServerErrorResponseBody {
+	body := &DeletePastMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeletePastMeetingAttachmentNotFoundResponseBody builds the HTTP response
+// body from the result of the "delete-past-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewDeletePastMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *DeletePastMeetingAttachmentNotFoundResponseBody {
+	body := &DeletePastMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeletePastMeetingAttachmentServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "delete-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeletePastMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *DeletePastMeetingAttachmentServiceUnavailableResponseBody {
+	body := &DeletePastMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewReadyzServiceUnavailableResponseBody builds the HTTP response body from
 // the result of the "readyz" endpoint of the "Meeting Service" service.
 func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *ReadyzServiceUnavailableResponseBody {
@@ -5634,6 +5718,18 @@ func NewDeleteMeetingAttachmentPayload(meetingUID string, uid string, version *s
 func NewGetPastMeetingAttachmentsPayload(uid string, version *string, bearerToken *string) *meetingservice.GetPastMeetingAttachmentsPayload {
 	v := &meetingservice.GetPastMeetingAttachmentsPayload{}
 	v.UID = &uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentPayload builds a Meeting Service service
+// delete-past-meeting-attachment endpoint payload.
+func NewDeletePastMeetingAttachmentPayload(pastMeetingUID string, uid string, version *string, bearerToken *string) *meetingservice.DeletePastMeetingAttachmentPayload {
+	v := &meetingservice.DeletePastMeetingAttachmentPayload{}
+	v.PastMeetingUID = pastMeetingUID
+	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
 

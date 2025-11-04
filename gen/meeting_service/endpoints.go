@@ -51,6 +51,7 @@ type Endpoints struct {
 	GetMeetingAttachmentMetadata      goa.Endpoint
 	DeleteMeetingAttachment           goa.Endpoint
 	GetPastMeetingAttachments         goa.Endpoint
+	DeletePastMeetingAttachment       goa.Endpoint
 	Readyz                            goa.Endpoint
 	Livez                             goa.Endpoint
 }
@@ -96,6 +97,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetMeetingAttachmentMetadata:      NewGetMeetingAttachmentMetadataEndpoint(s, a.JWTAuth),
 		DeleteMeetingAttachment:           NewDeleteMeetingAttachmentEndpoint(s, a.JWTAuth),
 		GetPastMeetingAttachments:         NewGetPastMeetingAttachmentsEndpoint(s, a.JWTAuth),
+		DeletePastMeetingAttachment:       NewDeletePastMeetingAttachmentEndpoint(s, a.JWTAuth),
 		Readyz:                            NewReadyzEndpoint(s),
 		Livez:                             NewLivezEndpoint(s),
 	}
@@ -139,6 +141,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetMeetingAttachmentMetadata = m(e.GetMeetingAttachmentMetadata)
 	e.DeleteMeetingAttachment = m(e.DeleteMeetingAttachment)
 	e.GetPastMeetingAttachments = m(e.GetPastMeetingAttachments)
+	e.DeletePastMeetingAttachment = m(e.DeletePastMeetingAttachment)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
 }
@@ -937,6 +940,30 @@ func NewGetPastMeetingAttachmentsEndpoint(s Service, authJWTFn security.AuthJWTF
 			return nil, err
 		}
 		return s.GetPastMeetingAttachments(ctx, p)
+	}
+}
+
+// NewDeletePastMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "delete-past-meeting-attachment" of service "Meeting
+// Service".
+func NewDeletePastMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeletePastMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeletePastMeetingAttachment(ctx, p)
 	}
 }
 

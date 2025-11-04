@@ -186,4 +186,7 @@ type PastMeetingAttachmentRepository interface {
 
 	// ListByPastMeeting retrieves all attachment metadata for a past meeting
 	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingAttachment, error)
+
+	// Delete removes the metadata from KV store (file persists in Object Store)
+	Delete(ctx context.Context, attachmentUID string) error
 }

@@ -73,3 +73,58 @@ func (s *PastMeetingAttachmentService) ListPastMeetingAttachments(ctx context.Co
 
 	return attachments, nil
 }
+
+// DeletePastMeetingAttachment deletes a past meeting attachment
+func (s *PastMeetingAttachmentService) DeletePastMeetingAttachment(ctx context.Context, pastMeetingUID, attachmentUID string) error {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return domain.NewUnavailableError("service not initialized")
+	}
+
+	if pastMeetingUID == "" {
+		return domain.NewValidationError("past meeting UID is required")
+	}
+	if attachmentUID == "" {
+		return domain.NewValidationError("attachment UID is required")
+	}
+
+	// Check if the past meeting exists
+	exists, err := s.pastMeetingRepository.Exists(ctx, pastMeetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error checking if past meeting exists", logging.ErrKey, err)
+		return err
+	}
+	if !exists {
+		slog.WarnContext(ctx, "past meeting not found", "past_meeting_uid", pastMeetingUID)
+		return domain.NewNotFoundError("past meeting not found")
+	}
+
+	// Get attachment to verify it belongs to this past meeting
+	attachment, err := s.pastMeetingAttachmentRepository.GetMetadata(ctx, attachmentUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting past meeting attachment", logging.ErrKey, err)
+		return err
+	}
+
+	// Verify attachment belongs to the specified past meeting
+	if attachment.PastMeetingUID != pastMeetingUID {
+		slog.WarnContext(ctx, "attachment does not belong to past meeting",
+			"attachment_uid", attachmentUID,
+			"past_meeting_uid", pastMeetingUID,
+			"attachment_past_meeting_uid", attachment.PastMeetingUID)
+		return domain.NewNotFoundError("attachment not found for this past meeting")
+	}
+
+	// Delete the attachment metadata
+	err = s.pastMeetingAttachmentRepository.Delete(ctx, attachmentUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error deleting past meeting attachment", logging.ErrKey, err)
+		return err
+	}
+
+	slog.InfoContext(ctx, "deleted past meeting attachment",
+		"past_meeting_uid", pastMeetingUID,
+		"attachment_uid", attachmentUID)
+
+	return nil
+}

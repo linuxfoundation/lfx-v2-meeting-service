@@ -2250,6 +2250,46 @@ type GetPastMeetingAttachmentsServiceUnavailableResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// DeletePastMeetingAttachmentBadRequestResponseBody is the type of the
+// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "BadRequest" error.
+type DeletePastMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeletePastMeetingAttachmentInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "InternalServerError" error.
+type DeletePastMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeletePastMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "delete-past-meeting-attachment" endpoint HTTP response
+// body for the "NotFound" error.
+type DeletePastMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeletePastMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type DeletePastMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
 // service "readyz" endpoint HTTP response body for the "ServiceUnavailable"
 // error.
@@ -5339,6 +5379,50 @@ func NewGetPastMeetingAttachmentsServiceUnavailable(body *GetPastMeetingAttachme
 	return v
 }
 
+// NewDeletePastMeetingAttachmentBadRequest builds a Meeting Service service
+// delete-past-meeting-attachment endpoint BadRequest error.
+func NewDeletePastMeetingAttachmentBadRequest(body *DeletePastMeetingAttachmentBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentInternalServerError builds a Meeting Service
+// service delete-past-meeting-attachment endpoint InternalServerError error.
+func NewDeletePastMeetingAttachmentInternalServerError(body *DeletePastMeetingAttachmentInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentNotFound builds a Meeting Service service
+// delete-past-meeting-attachment endpoint NotFound error.
+func NewDeletePastMeetingAttachmentNotFound(body *DeletePastMeetingAttachmentNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentServiceUnavailable builds a Meeting Service
+// service delete-past-meeting-attachment endpoint ServiceUnavailable error.
+func NewDeletePastMeetingAttachmentServiceUnavailable(body *DeletePastMeetingAttachmentServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewReadyzServiceUnavailable builds a Meeting Service service readyz endpoint
 // ServiceUnavailable error.
 func NewReadyzServiceUnavailable(body *ReadyzServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
@@ -8327,6 +8411,57 @@ func ValidateGetPastMeetingAttachmentsNotFoundResponseBody(body *GetPastMeetingA
 // validations defined on
 // get-past-meeting-attachments_ServiceUnavailable_response_body
 func ValidateGetPastMeetingAttachmentsServiceUnavailableResponseBody(body *GetPastMeetingAttachmentsServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentBadRequestResponseBody runs the
+// validations defined on
+// delete-past-meeting-attachment_BadRequest_response_body
+func ValidateDeletePastMeetingAttachmentBadRequestResponseBody(body *DeletePastMeetingAttachmentBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentInternalServerErrorResponseBody runs the
+// validations defined on
+// delete-past-meeting-attachment_InternalServerError_response_body
+func ValidateDeletePastMeetingAttachmentInternalServerErrorResponseBody(body *DeletePastMeetingAttachmentInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentNotFoundResponseBody runs the validations
+// defined on delete-past-meeting-attachment_NotFound_response_body
+func ValidateDeletePastMeetingAttachmentNotFoundResponseBody(body *DeletePastMeetingAttachmentNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentServiceUnavailableResponseBody runs the
+// validations defined on
+// delete-past-meeting-attachment_ServiceUnavailable_response_body
+func ValidateDeletePastMeetingAttachmentServiceUnavailableResponseBody(body *DeletePastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

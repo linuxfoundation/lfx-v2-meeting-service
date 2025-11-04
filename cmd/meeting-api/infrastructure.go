@@ -116,16 +116,16 @@ func setupNATS(ctx context.Context, env environment, gracefulCloseWG *sync.WaitG
 }
 
 type Repositories struct {
-	Meeting                   *store.NatsMeetingRepository
-	Registrant                *store.NatsRegistrantRepository
-	MeetingRSVP               *store.NatsMeetingRSVPRepository
-	Attachment                *store.NatsAttachmentRepository
-	PastMeeting               *store.NatsPastMeetingRepository
-	PastMeetingParticipant    *store.NatsPastMeetingParticipantRepository
-	PastMeetingRecording      *store.NatsPastMeetingRecordingRepository
-	PastMeetingTranscript     *store.NatsPastMeetingTranscriptRepository
-	PastMeetingSummary        *store.NatsPastMeetingSummaryRepository
-	PastMeetingAttachment     *store.NatsPastMeetingAttachmentRepository
+	Meeting                *store.NatsMeetingRepository
+	Registrant             *store.NatsRegistrantRepository
+	MeetingRSVP            *store.NatsMeetingRSVPRepository
+	Attachment             *store.NatsAttachmentRepository
+	PastMeeting            *store.NatsPastMeetingRepository
+	PastMeetingParticipant *store.NatsPastMeetingParticipantRepository
+	PastMeetingRecording   *store.NatsPastMeetingRecordingRepository
+	PastMeetingTranscript  *store.NatsPastMeetingTranscriptRepository
+	PastMeetingSummary     *store.NatsPastMeetingSummaryRepository
+	PastMeetingAttachment  *store.NatsPastMeetingAttachmentRepository
 }
 
 // getKeyValueStores creates a JetStream client and gets separate repositories for meetings and registrants.

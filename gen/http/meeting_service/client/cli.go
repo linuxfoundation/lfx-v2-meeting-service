@@ -2068,3 +2068,50 @@ func BuildGetPastMeetingAttachmentsPayload(meetingServiceGetPastMeetingAttachmen
 
 	return v, nil
 }
+
+// BuildDeletePastMeetingAttachmentPayload builds the payload for the Meeting
+// Service delete-past-meeting-attachment endpoint from CLI flags.
+func BuildDeletePastMeetingAttachmentPayload(meetingServiceDeletePastMeetingAttachmentPastMeetingUID string, meetingServiceDeletePastMeetingAttachmentUID string, meetingServiceDeletePastMeetingAttachmentVersion string, meetingServiceDeletePastMeetingAttachmentBearerToken string) (*meetingservice.DeletePastMeetingAttachmentPayload, error) {
+	var err error
+	var pastMeetingUID string
+	{
+		pastMeetingUID = meetingServiceDeletePastMeetingAttachmentPastMeetingUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("past_meeting_uid", pastMeetingUID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var uid string
+	{
+		uid = meetingServiceDeletePastMeetingAttachmentUID
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var version *string
+	{
+		if meetingServiceDeletePastMeetingAttachmentVersion != "" {
+			version = &meetingServiceDeletePastMeetingAttachmentVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceDeletePastMeetingAttachmentBearerToken != "" {
+			bearerToken = &meetingServiceDeletePastMeetingAttachmentBearerToken
+		}
+	}
+	v := &meetingservice.DeletePastMeetingAttachmentPayload{}
+	v.PastMeetingUID = pastMeetingUID
+	v.UID = uid
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
