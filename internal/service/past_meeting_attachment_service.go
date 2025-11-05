@@ -194,6 +194,53 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 	return attachment, nil
 }
 
+// GetPastMeetingAttachment retrieves attachment metadata and file data
+func (s *PastMeetingAttachmentService) GetPastMeetingAttachment(ctx context.Context, pastMeetingUID, attachmentUID string) (*models.PastMeetingAttachment, []byte, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, nil, domain.NewUnavailableError("service not initialized")
+	}
+
+	if pastMeetingUID == "" {
+		return nil, nil, domain.NewValidationError("past meeting UID is required")
+	}
+	if attachmentUID == "" {
+		return nil, nil, domain.NewValidationError("attachment UID is required")
+	}
+
+	// Get attachment metadata
+	attachment, err := s.pastMeetingAttachmentRepository.GetMetadata(ctx, attachmentUID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Verify attachment belongs to the requested past meeting
+	if attachment.PastMeetingUID != pastMeetingUID {
+		slog.WarnContext(ctx, "attachment does not belong to past meeting",
+			"attachment_uid", attachmentUID,
+			"past_meeting_uid", pastMeetingUID,
+			"attachment_past_meeting_uid", attachment.PastMeetingUID)
+		return nil, nil, domain.NewNotFoundError("attachment not found for this past meeting")
+	}
+
+	// Get file data from Object Store using the source_object_uid
+	fileData, err := s.meetingAttachmentRepository.GetObject(ctx, attachment.SourceObjectUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting file from object store",
+			logging.ErrKey, err,
+			"source_object_uid", attachment.SourceObjectUID)
+		return nil, nil, err
+	}
+
+	slog.InfoContext(ctx, "retrieved past meeting attachment with file data",
+		"past_meeting_uid", pastMeetingUID,
+		"attachment_uid", attachmentUID,
+		"source_object_uid", attachment.SourceObjectUID,
+		"file_size", len(fileData))
+
+	return attachment, fileData, nil
+}
+
 // GetPastMeetingAttachmentMetadata retrieves only the metadata for a past meeting attachment
 func (s *PastMeetingAttachmentService) GetPastMeetingAttachmentMetadata(ctx context.Context, pastMeetingUID, attachmentUID string) (*models.PastMeetingAttachment, error) {
 	if !s.ServiceReady() {

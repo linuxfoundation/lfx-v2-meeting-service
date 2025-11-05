@@ -51,6 +51,7 @@ type Client struct {
 	DeleteMeetingAttachmentEndpoint           goa.Endpoint
 	CreatePastMeetingAttachmentEndpoint       goa.Endpoint
 	GetPastMeetingAttachmentsEndpoint         goa.Endpoint
+	GetPastMeetingAttachmentEndpoint          goa.Endpoint
 	DeletePastMeetingAttachmentEndpoint       goa.Endpoint
 	GetPastMeetingAttachmentMetadataEndpoint  goa.Endpoint
 	ReadyzEndpoint                            goa.Endpoint
@@ -58,7 +59,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, uploadMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, deletePastMeetingAttachment, getPastMeetingAttachmentMetadata, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, uploadMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, deletePastMeetingAttachment, getPastMeetingAttachmentMetadata, readyz, livez goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -96,6 +97,7 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		DeleteMeetingAttachmentEndpoint:           deleteMeetingAttachment,
 		CreatePastMeetingAttachmentEndpoint:       createPastMeetingAttachment,
 		GetPastMeetingAttachmentsEndpoint:         getPastMeetingAttachments,
+		GetPastMeetingAttachmentEndpoint:          getPastMeetingAttachment,
 		DeletePastMeetingAttachmentEndpoint:       deletePastMeetingAttachment,
 		GetPastMeetingAttachmentMetadataEndpoint:  getPastMeetingAttachmentMetadata,
 		ReadyzEndpoint:                            readyz,
@@ -680,6 +682,23 @@ func (c *Client) GetPastMeetingAttachments(ctx context.Context, p *GetPastMeetin
 		return
 	}
 	return ires.(*GetPastMeetingAttachmentsResult), nil
+}
+
+// GetPastMeetingAttachment calls the "get-past-meeting-attachment" endpoint of
+// the "Meeting Service" service.
+// GetPastMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetPastMeetingAttachment(ctx context.Context, p *GetPastMeetingAttachmentPayload) (res []byte, err error) {
+	var ires any
+	ires, err = c.GetPastMeetingAttachmentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]byte), nil
 }
 
 // DeletePastMeetingAttachment calls the "delete-past-meeting-attachment"

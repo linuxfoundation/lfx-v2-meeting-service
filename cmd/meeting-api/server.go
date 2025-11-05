@@ -190,6 +190,26 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 			})
 		}
 
+		// Check if we have past meeting attachment metadata for file downloads
+		if metadata, ok := getPastMeetingDownloadAttachmentMetadata(ctx); ok {
+			// Set the correct Content-Type based on the file's actual type
+			w.Header().Set("Content-Type", metadata.ContentType)
+			// Set Content-Disposition header with the original filename
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", metadata.FileName))
+			// Clean up the metadata after use
+			deletePastMeetingDownloadAttachmentMetadata(ctx)
+
+			// Return a custom encoder that writes raw bytes instead of JSON-encoding them
+			return goahttp.EncodingFunc(func(v any) error {
+				if bytes, ok := v.([]byte); ok {
+					_, err := w.Write(bytes)
+					return err
+				}
+				// Fallback to regular encoding if not bytes
+				return encoder.Encode(v)
+			})
+		}
+
 		return encoder
 	}
 

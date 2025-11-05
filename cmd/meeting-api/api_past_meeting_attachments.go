@@ -6,12 +6,14 @@ package main
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 // GetPastMeetingAttachments gets all attachments for a past meeting
@@ -63,7 +65,7 @@ func (s *MeetingsAPI) CreatePastMeetingAttachment(ctx context.Context, payload *
 				contentType = metadata.ContentType
 			}
 			// Clean up the metadata after use
-			deletePastMeetingAttachmentMetadata(payload)
+			pastMeetingAttachmentMetadataStore.Delete(payload)
 		} else {
 			fileName = "attachment"
 		}
@@ -93,6 +95,27 @@ func (s *MeetingsAPI) CreatePastMeetingAttachment(ctx context.Context, payload *
 	}
 
 	return service.ConvertDomainToPastMeetingAttachmentResponse(attachment), nil
+}
+
+// GetPastMeetingAttachment downloads a past meeting attachment file
+func (s *MeetingsAPI) GetPastMeetingAttachment(ctx context.Context, payload *meetingsvc.GetPastMeetingAttachmentPayload) ([]byte, error) {
+	if payload == nil {
+		return nil, handleError(domain.NewValidationError("validation failed"))
+	}
+
+	// Get attachment via service
+	attachment, fileData, err := s.pastMeetingAttachmentService.GetPastMeetingAttachment(ctx, payload.PastMeetingUID, payload.UID)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	// Store attachment metadata for the encoder to access
+	// We use the request context's unique identifier to key the metadata
+	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
+		pastMeetingDownloadMetadataStore.Store(requestID, attachment)
+	}
+
+	return fileData, nil
 }
 
 // GetPastMeetingAttachmentMetadata retrieves only the metadata for a past meeting attachment
@@ -140,7 +163,26 @@ func getPastMeetingAttachmentMetadata(payload *meetingsvc.CreatePastMeetingAttac
 	return uploadPastMeetingAttachmentMetadata{}, false
 }
 
-// deletePastMeetingAttachmentMetadata removes file metadata from the temporary store
-func deletePastMeetingAttachmentMetadata(payload *meetingsvc.CreatePastMeetingAttachmentPayload) {
-	pastMeetingAttachmentMetadataStore.Delete(payload)
+// pastMeetingDownloadMetadataStore temporarily stores attachment metadata for response encoding
+var pastMeetingDownloadMetadataStore sync.Map
+
+// getPastMeetingDownloadAttachmentMetadata retrieves attachment metadata for the response encoder
+func getPastMeetingDownloadAttachmentMetadata(ctx context.Context) (*models.PastMeetingAttachment, bool) {
+	// Use request ID to look up the metadata
+	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
+		if value, ok := pastMeetingDownloadMetadataStore.Load(requestID); ok {
+			if attachment, ok := value.(*models.PastMeetingAttachment); ok {
+				return attachment, true
+			}
+		}
+	}
+	return nil, false
+}
+
+// deletePastMeetingDownloadAttachmentMetadata cleans up attachment metadata after encoding
+func deletePastMeetingDownloadAttachmentMetadata(ctx context.Context) {
+	// Use request ID to delete the metadata
+	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
+		pastMeetingDownloadMetadataStore.Delete(requestID)
+	}
 }

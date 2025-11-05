@@ -1369,6 +1369,43 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// GET past meeting attachment file endpoint
+	Method("get-past-meeting-attachment", func() {
+		Description("Download a file attachment for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentUIDAttribute()
+			Required("past_meeting_uid", "uid")
+		})
+
+		Result(Bytes)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{past_meeting_uid}/attachments/{uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				ContentType("application/octet-stream")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// DELETE past meeting attachment endpoint
 	Method("delete-past-meeting-attachment", func() {
 		Description("Delete a past meeting attachment")

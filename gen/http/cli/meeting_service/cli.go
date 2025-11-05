@@ -22,13 +22,13 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|delete-past-meeting-attachment|get-past-meeting-attachment-metadata|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|delete-past-meeting-attachment|get-past-meeting-attachment-metadata|readyz|livez)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` meeting-service get-meetings --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."` + "\n" +
+	return os.Args[0] + ` meeting-service get-meetings --version "1" --include-cancelled-occurrences false --bearer-token "eyJhbGci..."` + "\n" +
 		""
 }
 
@@ -259,6 +259,12 @@ func ParseEndpoint(
 		meetingServiceGetPastMeetingAttachmentsVersionFlag     = meetingServiceGetPastMeetingAttachmentsFlags.String("version", "", "")
 		meetingServiceGetPastMeetingAttachmentsBearerTokenFlag = meetingServiceGetPastMeetingAttachmentsFlags.String("bearer-token", "", "")
 
+		meetingServiceGetPastMeetingAttachmentFlags              = flag.NewFlagSet("get-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceGetPastMeetingAttachmentPastMeetingUIDFlag = meetingServiceGetPastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
+		meetingServiceGetPastMeetingAttachmentUIDFlag            = meetingServiceGetPastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
+		meetingServiceGetPastMeetingAttachmentVersionFlag        = meetingServiceGetPastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceGetPastMeetingAttachmentBearerTokenFlag    = meetingServiceGetPastMeetingAttachmentFlags.String("bearer-token", "", "")
+
 		meetingServiceDeletePastMeetingAttachmentFlags              = flag.NewFlagSet("delete-past-meeting-attachment", flag.ExitOnError)
 		meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceDeletePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
 		meetingServiceDeletePastMeetingAttachmentUIDFlag            = meetingServiceDeletePastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
@@ -312,6 +318,7 @@ func ParseEndpoint(
 	meetingServiceDeleteMeetingAttachmentFlags.Usage = meetingServiceDeleteMeetingAttachmentUsage
 	meetingServiceCreatePastMeetingAttachmentFlags.Usage = meetingServiceCreatePastMeetingAttachmentUsage
 	meetingServiceGetPastMeetingAttachmentsFlags.Usage = meetingServiceGetPastMeetingAttachmentsUsage
+	meetingServiceGetPastMeetingAttachmentFlags.Usage = meetingServiceGetPastMeetingAttachmentUsage
 	meetingServiceDeletePastMeetingAttachmentFlags.Usage = meetingServiceDeletePastMeetingAttachmentUsage
 	meetingServiceGetPastMeetingAttachmentMetadataFlags.Usage = meetingServiceGetPastMeetingAttachmentMetadataUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
@@ -459,6 +466,9 @@ func ParseEndpoint(
 			case "get-past-meeting-attachments":
 				epf = meetingServiceGetPastMeetingAttachmentsFlags
 
+			case "get-past-meeting-attachment":
+				epf = meetingServiceGetPastMeetingAttachmentFlags
+
 			case "delete-past-meeting-attachment":
 				epf = meetingServiceDeletePastMeetingAttachmentFlags
 
@@ -604,6 +614,9 @@ func ParseEndpoint(
 			case "get-past-meeting-attachments":
 				endpoint = c.GetPastMeetingAttachments()
 				data, err = meetingservicec.BuildGetPastMeetingAttachmentsPayload(*meetingServiceGetPastMeetingAttachmentsUIDFlag, *meetingServiceGetPastMeetingAttachmentsVersionFlag, *meetingServiceGetPastMeetingAttachmentsBearerTokenFlag)
+			case "get-past-meeting-attachment":
+				endpoint = c.GetPastMeetingAttachment()
+				data, err = meetingservicec.BuildGetPastMeetingAttachmentPayload(*meetingServiceGetPastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceGetPastMeetingAttachmentUIDFlag, *meetingServiceGetPastMeetingAttachmentVersionFlag, *meetingServiceGetPastMeetingAttachmentBearerTokenFlag)
 			case "delete-past-meeting-attachment":
 				endpoint = c.DeletePastMeetingAttachment()
 				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag)
@@ -669,6 +682,7 @@ COMMAND:
     delete-meeting-attachment: Delete a file attachment for a meeting
     create-past-meeting-attachment: Create a file attachment for a past meeting. Can upload a new file or reference an existing one.
     get-past-meeting-attachments: Get all attachments for a past meeting
+    get-past-meeting-attachment: Download a file attachment for a past meeting
     delete-past-meeting-attachment: Delete a past meeting attachment
     get-past-meeting-attachment-metadata: Get metadata for a past meeting attachment without downloading the file
     readyz: Check if the service is able to take inbound requests.
@@ -687,7 +701,7 @@ Get all meetings.
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-meetings --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-meetings --version "1" --include-cancelled-occurrences false --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -702,73 +716,74 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "meeting_hosts",
+      "artifact_visibility": "public",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          },
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          },
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          },
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          }
       ],
-      "description": "Nobis libero nihil aliquam deleniti.",
-      "duration": 115,
+      "description": "Consectetur nihil vel consequatur perspiciatis.",
+      "duration": 595,
       "early_join_time_minutes": 12,
-      "meeting_type": "None",
+      "meeting_type": "Legal",
       "organizers": [
-         "Ratione et nam et illo.",
-         "Qui est quod nihil voluptas.",
-         "Et ex sapiente libero."
+         "Quod voluptatibus in necessitatibus rerum ut doloribus.",
+         "Mollitia explicabo aperiam.",
+         "Quos porro praesentium possimus quia est voluptatem.",
+         "Molestiae qui."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "2011-08-19T18:52:38Z",
-         "end_times": 295409726269402937,
-         "monthly_day": 4,
-         "monthly_week": 1,
+         "end_date_time": "1984-03-23T23:43:53Z",
+         "end_times": 7524797859284713762,
+         "monthly_day": 7,
+         "monthly_week": 3,
          "monthly_week_day": 5,
-         "repeat_interval": 3423590977722818127,
-         "type": 1,
+         "repeat_interval": 7100557969254103168,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": false,
+      "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Enim doloremque.",
-      "title": "Est molestias eligendi nulla porro necessitatibus et.",
+      "timezone": "Fugiat et unde molestiae.",
+      "title": "Voluptatum ut ut voluptatem odio debitis et.",
       "transcript_enabled": false,
       "visibility": "public",
-      "youtube_upload_enabled": false,
+      "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": false,
-         "ai_summary_require_approval": true
+         "ai_summary_require_approval": false
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -784,7 +799,7 @@ Get a meeting by ID
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-meeting-base --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-meeting-base --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --include-cancelled-occurrences false --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -826,52 +841,52 @@ Update an existing meeting base.
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
-      "artifact_visibility": "meeting_participants",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          },
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          }
       ],
-      "description": "Repudiandae et.",
-      "duration": 295,
-      "early_join_time_minutes": 40,
-      "meeting_type": "Board",
+      "description": "Repellat totam officiis enim veritatis est.",
+      "duration": 135,
+      "early_join_time_minutes": 21,
+      "meeting_type": "Maintainers",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "recording_enabled": false,
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "2011-08-19T18:52:38Z",
-         "end_times": 295409726269402937,
-         "monthly_day": 4,
-         "monthly_week": 1,
+         "end_date_time": "1984-03-23T23:43:53Z",
+         "end_times": 7524797859284713762,
+         "monthly_day": 7,
+         "monthly_week": 3,
          "monthly_week_day": 5,
-         "repeat_interval": 3423590977722818127,
-         "type": 1,
+         "repeat_interval": 7100557969254103168,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Repellendus reiciendis sint laboriosam ea qui.",
-      "title": "Maiores veniam dolore omnis.",
-      "transcript_enabled": true,
+      "timezone": "Maiores veniam dolore omnis.",
+      "title": "Repudiandae et.",
+      "transcript_enabled": false,
       "visibility": "public",
       "youtube_upload_enabled": false,
       "zoom_config": {
          "ai_companion_enabled": false,
-         "ai_summary_require_approval": true
+         "ai_summary_require_approval": false
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -890,9 +905,10 @@ Update an existing meeting's settings.
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
       "organizers": [
-         "Similique natus minus voluptas ut corrupti.",
-         "Blanditiis qui explicabo quae quae.",
-         "Sed asperiores ipsa eveniet sed."
+         "Quae rerum sed asperiores.",
+         "Eveniet sed eos molestiae et facilis.",
+         "Sint odio.",
+         "Asperiores est rerum."
       ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -958,8 +974,8 @@ Example:
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Ut possimus aut quo.",
-      "username": "Commodi vel ullam quo porro."
+      "org_name": "Quia mollitia.",
+      "username": "Totam aut vel."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -994,12 +1010,12 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": false,
+      "host": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Tenetur voluptas in veritatis.",
-      "username": "Est placeat."
+      "org_name": "Sapiente est cupiditate pariatur soluta quaerat eius.",
+      "username": "Aut optio et soluta accusantium magni."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
@@ -1078,8 +1094,8 @@ Example:
     %[1]s meeting-service zoom-webhook --body '{
       "event": "meeting.started",
       "event_ts": 1609459200000,
-      "payload": "Voluptas consequatur."
-   }' --zoom-signature "Ut accusantium quaerat illum aperiam dolor." --zoom-timestamp "Id amet est laboriosam."
+      "payload": "Amet est laboriosam enim sit."
+   }' --zoom-signature "Consequatur maiores eaque dolor maxime." --zoom-timestamp "Labore consequatur aspernatur alias voluptates."
 `, os.Args[0])
 }
 
@@ -1109,59 +1125,59 @@ Example:
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          },
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          },
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          },
          {
             "allowed_voting_statuses": [
-               "Ut ut voluptatem.",
-               "Debitis et et.",
-               "Nihil vel consequatur perspiciatis."
+               "Maiores id velit ratione.",
+               "Nam et.",
+               "Similique qui est quod nihil voluptas."
             ],
-            "uid": "Et nemo."
+            "uid": "Laudantium quasi officia fuga."
          }
       ],
-      "description": "Modi fugit architecto.",
-      "duration": 204,
-      "early_join_time_minutes": 56,
-      "meeting_type": "Marketing",
+      "description": "Ea velit.",
+      "duration": 289,
+      "early_join_time_minutes": 49,
+      "meeting_type": "Maintainers",
       "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "occurrence_id": "1640995200",
       "platform": "Zoom",
       "platform_meeting_id": "1234567890",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "http://predovic.org/leila",
+      "public_link": "http://aufderharchristiansen.name/laurel_krajcik",
       "recording_enabled": false,
       "recurrence": {
-         "end_date_time": "2011-08-19T18:52:38Z",
-         "end_times": 295409726269402937,
-         "monthly_day": 4,
-         "monthly_week": 1,
+         "end_date_time": "1984-03-23T23:43:53Z",
+         "end_times": 7524797859284713762,
+         "monthly_day": 7,
+         "monthly_week": 3,
          "monthly_week_day": 5,
-         "repeat_interval": 3423590977722818127,
-         "type": 1,
+         "repeat_interval": 7100557969254103168,
+         "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": false,
+      "restricted": true,
       "scheduled_end_time": "2021-01-01T11:00:00Z",
       "scheduled_start_time": "2021-01-01T10:00:00Z",
       "sessions": [
@@ -1174,26 +1190,16 @@ Example:
             "end_time": "2021-01-01T11:00:00Z",
             "start_time": "2021-01-01T10:00:00Z",
             "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
-         },
-         {
-            "end_time": "2021-01-01T11:00:00Z",
-            "start_time": "2021-01-01T10:00:00Z",
-            "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
-         },
-         {
-            "end_time": "2021-01-01T11:00:00Z",
-            "start_time": "2021-01-01T10:00:00Z",
-            "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
          }
       ],
-      "timezone": "Atque dolores consequatur qui quod qui.",
-      "title": "Repellendus eos ut labore quia aut.",
+      "timezone": "Labore quia aut asperiores modi fugit architecto.",
+      "title": "Fugiat reiciendis omnis ipsa eveniet dolor labore.",
       "transcript_enabled": true,
       "visibility": "public",
-      "youtube_upload_enabled": true,
+      "youtube_upload_enabled": false,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": true,
+         "ai_summary_require_approval": false,
          "meeting_id": "1234567890",
          "passcode": "147258"
       }
@@ -1260,9 +1266,9 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Consectetur rerum expedita omnis dolorum.",
+      "org_name": "Sunt harum sed.",
       "past_meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "username": "Qui repellat laborum nesciunt."
+      "username": "Vitae in voluptatem repellendus dolorem explicabo."
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -1297,13 +1303,13 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": false,
+      "host": true,
       "is_attended": true,
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Quo vel tempore aliquid iure.",
-      "username": "Autem corrupti iusto quaerat a cupiditate incidunt."
+      "org_name": "Quisquam dolorem et dignissimos incidunt excepturi.",
+      "username": "Eligendi incidunt praesentium sed non."
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
@@ -1381,7 +1387,7 @@ Upload a file attachment for a meeting
 Example:
     %[1]s meeting-service upload-meeting-attachment --body '{
       "description": "Meeting agenda for Q1 2024",
-      "file": "U2VkIG5vbi4="
+      "file": "TmVjZXNzaXRhdGlidXMgbGFib3J1bSBkb2xvcnVtLg=="
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -1440,7 +1446,7 @@ Create a file attachment for a past meeting. Can upload a new file or reference 
 Example:
     %[1]s meeting-service create-past-meeting-attachment --body '{
       "description": "Meeting recording for Q1 2024",
-      "file": "RXVtIHZlbGl0IGFuaW1pIGV0IHF1aWEgbWludXMgcXVpLg==",
+      "file": "UGVyZmVyZW5kaXMgdGVtcG9yaWJ1cyBsYWJvcmlvc2FtIHZlbCBlb3Mu",
       "source_object_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -1456,6 +1462,20 @@ Get all attachments for a past meeting
 
 Example:
     %[1]s meeting-service get-past-meeting-attachments --uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceGetPastMeetingAttachmentUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting-attachment -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
+
+Download a file attachment for a past meeting
+    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
+    -uid STRING: The UID of the attachment
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service get-past-meeting-attachment --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
