@@ -74,6 +74,8 @@ func (s *MeetingsAPI) CreatePastMeetingAttachment(ctx context.Context, payload *
 	// Build request
 	req := &models.CreatePastMeetingAttachmentRequest{
 		PastMeetingUID: payload.PastMeetingUID,
+		Type:           payload.Type,
+		Name:           payload.Name,
 		Username:       username,
 		FileName:       fileName,
 		ContentType:    contentType,
@@ -86,6 +88,10 @@ func (s *MeetingsAPI) CreatePastMeetingAttachment(ctx context.Context, payload *
 
 	if payload.SourceObjectUID != nil {
 		req.SourceObjectUID = *payload.SourceObjectUID
+	}
+
+	if payload.Link != nil {
+		req.Link = *payload.Link
 	}
 
 	// Create attachment via service

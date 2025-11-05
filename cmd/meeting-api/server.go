@@ -49,6 +49,27 @@ func uploadMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Upload
 		}
 
 		switch part.FormName() {
+		case "type":
+			typeData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			attachmentType := string(typeData)
+			(*p).Type = attachmentType
+		case "name":
+			nameData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			name := string(nameData)
+			(*p).Name = name
+		case "link":
+			linkData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			link := string(linkData)
+			(*p).Link = &link
 		case "file":
 			// Capture file metadata from the part
 			metadata.FileName = part.FileName()
@@ -106,6 +127,30 @@ func createPastMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Cr
 		}
 
 		switch part.FormName() {
+		case "type":
+			// Read the type field
+			typeData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			attachmentType := string(typeData)
+			(*p).Type = attachmentType
+		case "name":
+			// Read the name field
+			nameData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			name := string(nameData)
+			(*p).Name = name
+		case "link":
+			// Read the link field
+			linkData, err := io.ReadAll(part)
+			if err != nil {
+				return err
+			}
+			link := string(linkData)
+			(*p).Link = &link
 		case "file":
 			// Capture file metadata from the part
 			metadata.FileName = part.FileName()

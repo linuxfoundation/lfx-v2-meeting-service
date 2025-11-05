@@ -1839,10 +1839,24 @@ func BuildUploadMeetingAttachmentPayload(meetingServiceUploadMeetingAttachmentBo
 	{
 		err = json.Unmarshal([]byte(meetingServiceUploadMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"description\": \"Meeting agenda for Q1 2024\",\n      \"file\": \"TmVjZXNzaXRhdGlidXMgbGFib3J1bSBkb2xvcnVtLg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"description\": \"Meeting agenda for Q1 2024\",\n      \"file\": \"TmVjZXNzaXRhdGlidXMgbGFib3J1bSBkb2xvcnVtLg==\",\n      \"link\": \"https://example.com/meeting-notes\",\n      \"name\": \"Q1 Meeting Agenda\",\n      \"type\": \"file\"\n   }'")
 		}
-		if body.File == nil {
-			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+		if !(body.Type == "file" || body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
+		}
+		if body.Link != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
+		}
+		if body.Link != nil {
+			if utf8.RuneCountInString(*body.Link) > 2048 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.link", *body.Link, utf8.RuneCountInString(*body.Link), 2048, false))
+			}
+		}
+		if utf8.RuneCountInString(body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", body.Name, utf8.RuneCountInString(body.Name), 1, true))
+		}
+		if utf8.RuneCountInString(body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", body.Name, utf8.RuneCountInString(body.Name), 255, false))
 		}
 		if body.Description != nil {
 			if utf8.RuneCountInString(*body.Description) > 500 {
@@ -1880,6 +1894,9 @@ func BuildUploadMeetingAttachmentPayload(meetingServiceUploadMeetingAttachmentBo
 		}
 	}
 	v := &meetingservice.UploadMeetingAttachmentPayload{
+		Type:        body.Type,
+		Link:        body.Link,
+		Name:        body.Name,
 		Description: body.Description,
 		File:        body.File,
 	}
@@ -2039,7 +2056,24 @@ func BuildCreatePastMeetingAttachmentPayload(meetingServiceCreatePastMeetingAtta
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreatePastMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"description\": \"Meeting recording for Q1 2024\",\n      \"file\": \"UGVyZmVyZW5kaXMgdGVtcG9yaWJ1cyBsYWJvcmlvc2FtIHZlbCBlb3Mu\",\n      \"source_object_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"description\": \"Meeting recording for Q1 2024\",\n      \"file\": \"UGVyZmVyZW5kaXMgdGVtcG9yaWJ1cyBsYWJvcmlvc2FtIHZlbCBlb3Mu\",\n      \"link\": \"https://example.com/meeting-notes\",\n      \"name\": \"Q1 Meeting Recording\",\n      \"source_object_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"type\": \"file\"\n   }'")
+		}
+		if !(body.Type == "file" || body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
+		}
+		if body.Link != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
+		}
+		if body.Link != nil {
+			if utf8.RuneCountInString(*body.Link) > 2048 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.link", *body.Link, utf8.RuneCountInString(*body.Link), 2048, false))
+			}
+		}
+		if utf8.RuneCountInString(body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", body.Name, utf8.RuneCountInString(body.Name), 1, true))
+		}
+		if utf8.RuneCountInString(body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", body.Name, utf8.RuneCountInString(body.Name), 255, false))
 		}
 		if body.Description != nil {
 			if utf8.RuneCountInString(*body.Description) > 500 {
@@ -2080,6 +2114,9 @@ func BuildCreatePastMeetingAttachmentPayload(meetingServiceCreatePastMeetingAtta
 		}
 	}
 	v := &meetingservice.CreatePastMeetingAttachmentPayload{
+		Type:            body.Type,
+		Link:            body.Link,
+		Name:            body.Name,
 		Description:     body.Description,
 		SourceObjectUID: body.SourceObjectUID,
 		File:            body.File,

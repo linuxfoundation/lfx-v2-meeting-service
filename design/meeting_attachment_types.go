@@ -7,21 +7,24 @@ import (
 	. "goa.design/goa/v3/dsl" //nolint:staticcheck // ST1001: the recommended way of using the goa DSL package is with the . import
 )
 
-// MeetingAttachment represents a file attachment that can be referenced by meetings or past meetings.
+// MeetingAttachment represents a file or link attachment that can be referenced by meetings or past meetings.
 // Each metadata record in KV store associates a meeting with a file in Object Store.
 // Multiple metadata records can reference the same file, allowing file reuse across meetings.
 // Metadata is stored in NATS KV store, while actual files are in NATS Object Store.
 var MeetingAttachment = Type("MeetingAttachment", func() {
-	Description("Meeting attachment metadata")
+	Description("Meeting attachment metadata - can be a file or a link")
 	AttachmentUIDAttribute()
 	AttachmentMeetingUIDAttribute()
+	AttachmentTypeAttribute()
+	AttachmentLinkAttribute()
+	AttachmentNameAttribute()
 	AttachmentFileNameAttribute()
 	AttachmentFileSizeAttribute()
 	AttachmentContentTypeAttribute()
 	AttachmentUploadedByAttribute()
 	AttachmentUploadedAtAttribute()
 	AttachmentDescriptionAttribute()
-	Required("uid", "meeting_uid", "file_name", "file_size", "content_type", "uploaded_by")
+	Required("uid", "meeting_uid", "type", "name", "uploaded_by")
 })
 
 //
@@ -36,6 +39,32 @@ func AttachmentUIDAttribute() {
 	})
 }
 
+// AttachmentTypeAttribute is the DSL attribute for attachment type
+func AttachmentTypeAttribute() {
+	Attribute("type", String, "The type of attachment: 'file' or 'link'", func() {
+		Enum("file", "link")
+		Example("file")
+	})
+}
+
+// AttachmentLinkAttribute is the DSL attribute for link URL
+func AttachmentLinkAttribute() {
+	Attribute("link", String, "URL for link-type attachments (required if type is 'link')", func() {
+		Example("https://example.com/meeting-notes")
+		Format(FormatURI)
+		MaxLength(2048)
+	})
+}
+
+// AttachmentNameAttribute is the DSL attribute for attachment name
+func AttachmentNameAttribute() {
+	Attribute("name", String, "Custom name for the attachment", func() {
+		Example("Q1 Meeting Agenda")
+		MinLength(1)
+		MaxLength(255)
+	})
+}
+
 // AttachmentMeetingUIDAttribute is the DSL attribute for attachment meeting UID.
 func AttachmentMeetingUIDAttribute() {
 	Attribute("meeting_uid", String, "The UID of the meeting this attachment belongs to", func() {
@@ -46,7 +75,7 @@ func AttachmentMeetingUIDAttribute() {
 
 // AttachmentFileNameAttribute is the DSL attribute for attachment file name.
 func AttachmentFileNameAttribute() {
-	Attribute("file_name", String, "The name of the uploaded file", func() {
+	Attribute("file_name", String, "The name of the uploaded file (only for type='file')", func() {
 		Example("meeting-agenda.pdf")
 		MinLength(1)
 		MaxLength(255)
@@ -55,7 +84,7 @@ func AttachmentFileNameAttribute() {
 
 // AttachmentFileSizeAttribute is the DSL attribute for attachment file size.
 func AttachmentFileSizeAttribute() {
-	Attribute("file_size", Int64, "The size of the file in bytes", func() {
+	Attribute("file_size", Int64, "The size of the file in bytes (only for type='file')", func() {
 		Example(1024000)
 		Minimum(0)
 	})
@@ -63,7 +92,7 @@ func AttachmentFileSizeAttribute() {
 
 // AttachmentContentTypeAttribute is the DSL attribute for attachment content type.
 func AttachmentContentTypeAttribute() {
-	Attribute("content_type", String, "The MIME type of the file", func() {
+	Attribute("content_type", String, "The MIME type of the file (only for type='file')", func() {
 		Example("application/pdf")
 		MinLength(1)
 	})

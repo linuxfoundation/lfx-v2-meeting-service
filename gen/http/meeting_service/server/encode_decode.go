@@ -5607,6 +5607,9 @@ func marshalMeetingservicePastMeetingAttachmentToPastMeetingAttachmentResponseBo
 	res := &PastMeetingAttachmentResponseBody{
 		UID:             v.UID,
 		PastMeetingUID:  v.PastMeetingUID,
+		Type:            v.Type,
+		Link:            v.Link,
+		Name:            v.Name,
 		FileName:        v.FileName,
 		FileSize:        v.FileSize,
 		ContentType:     v.ContentType,

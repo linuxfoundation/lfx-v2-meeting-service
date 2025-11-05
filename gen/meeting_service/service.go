@@ -83,7 +83,7 @@ type Service interface {
 	GetPastMeetingSummary(context.Context, *GetPastMeetingSummaryPayload) (res *GetPastMeetingSummaryResult, err error)
 	// Update an existing past meeting summary
 	UpdatePastMeetingSummary(context.Context, *UpdatePastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
-	// Upload a file attachment for a meeting
+	// Upload a file or link attachment for a meeting
 	UploadMeetingAttachment(context.Context, *UploadMeetingAttachmentPayload) (res *MeetingAttachment, err error)
 	// Download a file attachment for a meeting
 	GetMeetingAttachment(context.Context, *GetMeetingAttachmentPayload) (res []byte, err error)
@@ -91,8 +91,8 @@ type Service interface {
 	GetMeetingAttachmentMetadata(context.Context, *GetMeetingAttachmentMetadataPayload) (res *MeetingAttachment, err error)
 	// Delete a file attachment for a meeting
 	DeleteMeetingAttachment(context.Context, *DeleteMeetingAttachmentPayload) (err error)
-	// Create a file attachment for a past meeting. Can upload a new file or
-	// reference an existing one.
+	// Create a file or link attachment for a past meeting. Can upload a new file,
+	// reference an existing one, or create a link.
 	CreatePastMeetingAttachment(context.Context, *CreatePastMeetingAttachmentPayload) (res *PastMeetingAttachment, err error)
 	// Get all attachments for a past meeting
 	GetPastMeetingAttachments(context.Context, *GetPastMeetingAttachmentsPayload) (res *GetPastMeetingAttachmentsResult, err error)
@@ -267,12 +267,19 @@ type CreatePastMeetingAttachmentPayload struct {
 	Version *string
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID string
+	// The type of attachment: 'file' or 'link'
+	Type string
+	// URL for link-type attachments (required if type is 'link')
+	Link *string
+	// Custom name for the attachment
+	Name string
 	// Optional description of the attachment
 	Description *string
-	// Optional: UID of an existing file in Object Store to reference
+	// Optional: UID of an existing file in Object Store to reference (for
+	// type='file')
 	SourceObjectUID *string
-	// Optional: The file data to upload (required if source_object_uid is not
-	// provided)
+	// Optional: The file data to upload (for type='file', required if
+	// source_object_uid is not provided)
 	File []byte
 }
 
@@ -807,12 +814,18 @@ type MeetingAttachment struct {
 	UID string
 	// The UID of the meeting this attachment belongs to
 	MeetingUID string
-	// The name of the uploaded file
-	FileName string
-	// The size of the file in bytes
-	FileSize int64
-	// The MIME type of the file
-	ContentType string
+	// The type of attachment: 'file' or 'link'
+	Type string
+	// URL for link-type attachments (required if type is 'link')
+	Link *string
+	// Custom name for the attachment
+	Name string
+	// The name of the uploaded file (only for type='file')
+	FileName *string
+	// The size of the file in bytes (only for type='file')
+	FileSize *int64
+	// The MIME type of the file (only for type='file')
+	ContentType *string
 	// The username of the user who uploaded the file
 	UploadedBy string
 	// RFC3339 timestamp when the file was uploaded
@@ -1093,20 +1106,26 @@ type PastMeetingAttachment struct {
 	UID string
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID string
-	// The name of the file
-	FileName string
-	// The size of the file in bytes
-	FileSize int64
-	// The MIME type of the file
-	ContentType string
+	// The type of attachment: 'file' or 'link'
+	Type string
+	// URL for link-type attachments (required if type is 'link')
+	Link *string
+	// Custom name for the attachment
+	Name string
+	// The name of the file (only for type='file')
+	FileName *string
+	// The size of the file in bytes (only for type='file')
+	FileSize *int64
+	// The MIME type of the file (only for type='file')
+	ContentType *string
 	// The username of the user who uploaded the file
 	UploadedBy string
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string
 	// Optional description of the attachment
 	Description *string
-	// The UID of the file in the shared Object Store
-	SourceObjectUID string
+	// The UID of the file in the shared Object Store (only for type='file')
+	SourceObjectUID *string
 }
 
 // PastMeetingParticipant is the result type of the Meeting Service service
@@ -1546,9 +1565,15 @@ type UploadMeetingAttachmentPayload struct {
 	Version *string
 	// The UID of the meeting this attachment belongs to
 	MeetingUID string
+	// The type of attachment: 'file' or 'link'
+	Type string
+	// URL for link-type attachments (required if type is 'link')
+	Link *string
+	// Custom name for the attachment
+	Name string
 	// Optional description of the attachment
 	Description *string
-	// The file data to upload
+	// Optional: The file data to upload (for type='file')
 	File []byte
 }
 

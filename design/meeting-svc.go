@@ -1149,7 +1149,7 @@ var _ = Service("Meeting Service", func() {
 
 	// POST meeting attachment upload endpoint
 	Method("upload-meeting-attachment", func() {
-		Description("Upload a file attachment for a meeting")
+		Description("Upload a file or link attachment for a meeting")
 
 		Security(JWTAuth)
 
@@ -1157,11 +1157,14 @@ var _ = Service("Meeting Service", func() {
 			BearerTokenAttribute()
 			VersionAttribute()
 			AttachmentMeetingUIDAttribute()
+			AttachmentTypeAttribute()
+			AttachmentLinkAttribute()
+			AttachmentNameAttribute()
 			AttachmentDescriptionAttribute()
-			Attribute("file", Bytes, "The file data to upload", func() {
+			Attribute("file", Bytes, "Optional: The file data to upload (for type='file')", func() {
 				Meta("swagger:type", "file")
 			})
-			Required("meeting_uid", "file")
+			Required("meeting_uid", "type", "name")
 		})
 
 		Result(MeetingAttachment)
@@ -1291,7 +1294,7 @@ var _ = Service("Meeting Service", func() {
 
 	// POST past meeting attachment endpoint
 	Method("create-past-meeting-attachment", func() {
-		Description("Create a file attachment for a past meeting. Can upload a new file or reference an existing one.")
+		Description("Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.")
 
 		Security(JWTAuth)
 
@@ -1299,15 +1302,18 @@ var _ = Service("Meeting Service", func() {
 			BearerTokenAttribute()
 			VersionAttribute()
 			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentTypeAttribute()
+			PastMeetingAttachmentLinkAttribute()
+			PastMeetingAttachmentNameAttribute()
 			PastMeetingAttachmentDescriptionAttribute()
-			Attribute("source_object_uid", String, "Optional: UID of an existing file in Object Store to reference", func() {
+			Attribute("source_object_uid", String, "Optional: UID of an existing file in Object Store to reference (for type='file')", func() {
 				Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
 				Format(FormatUUID)
 			})
-			Attribute("file", Bytes, "Optional: The file data to upload (required if source_object_uid is not provided)", func() {
+			Attribute("file", Bytes, "Optional: The file data to upload (for type='file', required if source_object_uid is not provided)", func() {
 				Meta("swagger:type", "file")
 			})
-			Required("past_meeting_uid")
+			Required("past_meeting_uid", "type", "name")
 		})
 
 		Result(PastMeetingAttachment)

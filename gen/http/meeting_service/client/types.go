@@ -315,21 +315,34 @@ type UpdatePastMeetingSummaryRequestBody struct {
 // UploadMeetingAttachmentRequestBody is the type of the "Meeting Service"
 // service "upload-meeting-attachment" endpoint HTTP request body.
 type UploadMeetingAttachmentRequestBody struct {
+	// The type of attachment: 'file' or 'link'
+	Type string `form:"type" json:"type" xml:"type"`
+	// URL for link-type attachments (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Custom name for the attachment
+	Name string `form:"name" json:"name" xml:"name"`
 	// Optional description of the attachment
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// The file data to upload
-	File []byte `form:"file" json:"file" xml:"file"`
+	// Optional: The file data to upload (for type='file')
+	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
 }
 
 // CreatePastMeetingAttachmentRequestBody is the type of the "Meeting Service"
 // service "create-past-meeting-attachment" endpoint HTTP request body.
 type CreatePastMeetingAttachmentRequestBody struct {
+	// The type of attachment: 'file' or 'link'
+	Type string `form:"type" json:"type" xml:"type"`
+	// URL for link-type attachments (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Custom name for the attachment
+	Name string `form:"name" json:"name" xml:"name"`
 	// Optional description of the attachment
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// Optional: UID of an existing file in Object Store to reference
+	// Optional: UID of an existing file in Object Store to reference (for
+	// type='file')
 	SourceObjectUID *string `form:"source_object_uid,omitempty" json:"source_object_uid,omitempty" xml:"source_object_uid,omitempty"`
-	// Optional: The file data to upload (required if source_object_uid is not
-	// provided)
+	// Optional: The file data to upload (for type='file', required if
+	// source_object_uid is not provided)
 	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
 }
 
@@ -879,11 +892,17 @@ type UploadMeetingAttachmentResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the meeting this attachment belongs to
 	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
-	// The name of the uploaded file
+	// The type of attachment: 'file' or 'link'
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// URL for link-type attachments (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Custom name for the attachment
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// The name of the uploaded file (only for type='file')
 	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
-	// The size of the file in bytes
+	// The size of the file in bytes (only for type='file')
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
-	// The MIME type of the file
+	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
 	// The username of the user who uploaded the file
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
@@ -901,11 +920,17 @@ type GetMeetingAttachmentMetadataResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the meeting this attachment belongs to
 	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
-	// The name of the uploaded file
+	// The type of attachment: 'file' or 'link'
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// URL for link-type attachments (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Custom name for the attachment
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// The name of the uploaded file (only for type='file')
 	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
-	// The size of the file in bytes
+	// The size of the file in bytes (only for type='file')
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
-	// The MIME type of the file
+	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
 	// The username of the user who uploaded the file
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
@@ -922,11 +947,17 @@ type CreatePastMeetingAttachmentResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// The name of the file
+	// The type of attachment: 'file' or 'link'
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// URL for link-type attachments (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Custom name for the attachment
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// The name of the file (only for type='file')
 	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
-	// The size of the file in bytes
+	// The size of the file in bytes (only for type='file')
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
-	// The MIME type of the file
+	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
 	// The username of the user who uploaded the file
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
@@ -934,7 +965,7 @@ type CreatePastMeetingAttachmentResponseBody struct {
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
 	// Optional description of the attachment
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// The UID of the file in the shared Object Store
+	// The UID of the file in the shared Object Store (only for type='file')
 	SourceObjectUID *string `form:"source_object_uid,omitempty" json:"source_object_uid,omitempty" xml:"source_object_uid,omitempty"`
 }
 
@@ -953,11 +984,17 @@ type GetPastMeetingAttachmentMetadataResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// The name of the file
+	// The type of attachment: 'file' or 'link'
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// URL for link-type attachments (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Custom name for the attachment
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// The name of the file (only for type='file')
 	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
-	// The size of the file in bytes
+	// The size of the file in bytes (only for type='file')
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
-	// The MIME type of the file
+	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
 	// The username of the user who uploaded the file
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
@@ -965,7 +1002,7 @@ type GetPastMeetingAttachmentMetadataResponseBody struct {
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
 	// Optional description of the attachment
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// The UID of the file in the shared Object Store
+	// The UID of the file in the shared Object Store (only for type='file')
 	SourceObjectUID *string `form:"source_object_uid,omitempty" json:"source_object_uid,omitempty" xml:"source_object_uid,omitempty"`
 }
 
@@ -3101,11 +3138,17 @@ type PastMeetingAttachmentResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// The name of the file
+	// The type of attachment: 'file' or 'link'
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// URL for link-type attachments (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Custom name for the attachment
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// The name of the file (only for type='file')
 	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
-	// The size of the file in bytes
+	// The size of the file in bytes (only for type='file')
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
-	// The MIME type of the file
+	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
 	// The username of the user who uploaded the file
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
@@ -3113,7 +3156,7 @@ type PastMeetingAttachmentResponseBody struct {
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
 	// Optional description of the attachment
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// The UID of the file in the shared Object Store
+	// The UID of the file in the shared Object Store (only for type='file')
 	SourceObjectUID *string `form:"source_object_uid,omitempty" json:"source_object_uid,omitempty" xml:"source_object_uid,omitempty"`
 }
 
@@ -3371,6 +3414,9 @@ func NewUpdatePastMeetingSummaryRequestBody(p *meetingservice.UpdatePastMeetingS
 // service.
 func NewUploadMeetingAttachmentRequestBody(p *meetingservice.UploadMeetingAttachmentPayload) *UploadMeetingAttachmentRequestBody {
 	body := &UploadMeetingAttachmentRequestBody{
+		Type:        p.Type,
+		Link:        p.Link,
+		Name:        p.Name,
 		Description: p.Description,
 		File:        p.File,
 	}
@@ -3382,6 +3428,9 @@ func NewUploadMeetingAttachmentRequestBody(p *meetingservice.UploadMeetingAttach
 // Service" service.
 func NewCreatePastMeetingAttachmentRequestBody(p *meetingservice.CreatePastMeetingAttachmentPayload) *CreatePastMeetingAttachmentRequestBody {
 	body := &CreatePastMeetingAttachmentRequestBody{
+		Type:            p.Type,
+		Link:            p.Link,
+		Name:            p.Name,
 		Description:     p.Description,
 		SourceObjectUID: p.SourceObjectUID,
 		File:            p.File,
@@ -5319,9 +5368,12 @@ func NewUploadMeetingAttachmentMeetingAttachmentCreated(body *UploadMeetingAttac
 	v := &meetingservice.MeetingAttachment{
 		UID:         *body.UID,
 		MeetingUID:  *body.MeetingUID,
-		FileName:    *body.FileName,
-		FileSize:    *body.FileSize,
-		ContentType: *body.ContentType,
+		Type:        *body.Type,
+		Link:        body.Link,
+		Name:        *body.Name,
+		FileName:    body.FileName,
+		FileSize:    body.FileSize,
+		ContentType: body.ContentType,
 		UploadedBy:  *body.UploadedBy,
 		UploadedAt:  body.UploadedAt,
 		Description: body.Description,
@@ -5425,9 +5477,12 @@ func NewGetMeetingAttachmentMetadataMeetingAttachmentOK(body *GetMeetingAttachme
 	v := &meetingservice.MeetingAttachment{
 		UID:         *body.UID,
 		MeetingUID:  *body.MeetingUID,
-		FileName:    *body.FileName,
-		FileSize:    *body.FileSize,
-		ContentType: *body.ContentType,
+		Type:        *body.Type,
+		Link:        body.Link,
+		Name:        *body.Name,
+		FileName:    body.FileName,
+		FileSize:    body.FileSize,
+		ContentType: body.ContentType,
 		UploadedBy:  *body.UploadedBy,
 		UploadedAt:  body.UploadedAt,
 		Description: body.Description,
@@ -5531,13 +5586,16 @@ func NewCreatePastMeetingAttachmentPastMeetingAttachmentCreated(body *CreatePast
 	v := &meetingservice.PastMeetingAttachment{
 		UID:             *body.UID,
 		PastMeetingUID:  *body.PastMeetingUID,
-		FileName:        *body.FileName,
-		FileSize:        *body.FileSize,
-		ContentType:     *body.ContentType,
+		Type:            *body.Type,
+		Link:            body.Link,
+		Name:            *body.Name,
+		FileName:        body.FileName,
+		FileSize:        body.FileSize,
+		ContentType:     body.ContentType,
 		UploadedBy:      *body.UploadedBy,
 		UploadedAt:      body.UploadedAt,
 		Description:     body.Description,
-		SourceObjectUID: *body.SourceObjectUID,
+		SourceObjectUID: body.SourceObjectUID,
 	}
 
 	return v
@@ -5728,13 +5786,16 @@ func NewGetPastMeetingAttachmentMetadataPastMeetingAttachmentOK(body *GetPastMee
 	v := &meetingservice.PastMeetingAttachment{
 		UID:             *body.UID,
 		PastMeetingUID:  *body.PastMeetingUID,
-		FileName:        *body.FileName,
-		FileSize:        *body.FileSize,
-		ContentType:     *body.ContentType,
+		Type:            *body.Type,
+		Link:            body.Link,
+		Name:            *body.Name,
+		FileName:        body.FileName,
+		FileSize:        body.FileSize,
+		ContentType:     body.ContentType,
 		UploadedBy:      *body.UploadedBy,
 		UploadedAt:      body.UploadedAt,
 		Description:     body.Description,
-		SourceObjectUID: *body.SourceObjectUID,
+		SourceObjectUID: body.SourceObjectUID,
 	}
 
 	return v
@@ -6994,14 +7055,11 @@ func ValidateUploadMeetingAttachmentResponseBody(body *UploadMeetingAttachmentRe
 	if body.MeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
 	}
-	if body.FileName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_name", "body"))
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
 	}
-	if body.FileSize == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
-	}
-	if body.ContentType == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("content_type", "body"))
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
 	if body.UploadedBy == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uploaded_by", "body"))
@@ -7011,6 +7069,29 @@ func ValidateUploadMeetingAttachmentResponseBody(body *UploadMeetingAttachmentRe
 	}
 	if body.MeetingUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Link != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
+	}
+	if body.Link != nil {
+		if utf8.RuneCountInString(*body.Link) > 2048 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.link", *body.Link, utf8.RuneCountInString(*body.Link), 2048, false))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 255, false))
+		}
 	}
 	if body.FileName != nil {
 		if utf8.RuneCountInString(*body.FileName) < 1 {
@@ -7057,14 +7138,11 @@ func ValidateGetMeetingAttachmentMetadataResponseBody(body *GetMeetingAttachment
 	if body.MeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_uid", "body"))
 	}
-	if body.FileName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_name", "body"))
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
 	}
-	if body.FileSize == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
-	}
-	if body.ContentType == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("content_type", "body"))
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
 	if body.UploadedBy == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uploaded_by", "body"))
@@ -7074,6 +7152,29 @@ func ValidateGetMeetingAttachmentMetadataResponseBody(body *GetMeetingAttachment
 	}
 	if body.MeetingUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_uid", *body.MeetingUID, goa.FormatUUID))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Link != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
+	}
+	if body.Link != nil {
+		if utf8.RuneCountInString(*body.Link) > 2048 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.link", *body.Link, utf8.RuneCountInString(*body.Link), 2048, false))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 255, false))
+		}
 	}
 	if body.FileName != nil {
 		if utf8.RuneCountInString(*body.FileName) < 1 {
@@ -7120,26 +7221,43 @@ func ValidateCreatePastMeetingAttachmentResponseBody(body *CreatePastMeetingAtta
 	if body.PastMeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
 	}
-	if body.FileName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_name", "body"))
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
 	}
-	if body.FileSize == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
-	}
-	if body.ContentType == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("content_type", "body"))
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
 	if body.UploadedBy == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uploaded_by", "body"))
-	}
-	if body.SourceObjectUID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("source_object_uid", "body"))
 	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
 	if body.PastMeetingUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", *body.PastMeetingUID, goa.FormatUUID))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Link != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
+	}
+	if body.Link != nil {
+		if utf8.RuneCountInString(*body.Link) > 2048 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.link", *body.Link, utf8.RuneCountInString(*body.Link), 2048, false))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 255, false))
+		}
 	}
 	if body.FileName != nil {
 		if utf8.RuneCountInString(*body.FileName) < 1 {
@@ -7205,26 +7323,43 @@ func ValidateGetPastMeetingAttachmentMetadataResponseBody(body *GetPastMeetingAt
 	if body.PastMeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
 	}
-	if body.FileName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_name", "body"))
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
 	}
-	if body.FileSize == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
-	}
-	if body.ContentType == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("content_type", "body"))
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
 	if body.UploadedBy == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uploaded_by", "body"))
-	}
-	if body.SourceObjectUID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("source_object_uid", "body"))
 	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
 	if body.PastMeetingUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", *body.PastMeetingUID, goa.FormatUUID))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Link != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
+	}
+	if body.Link != nil {
+		if utf8.RuneCountInString(*body.Link) > 2048 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.link", *body.Link, utf8.RuneCountInString(*body.Link), 2048, false))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 255, false))
+		}
 	}
 	if body.FileName != nil {
 		if utf8.RuneCountInString(*body.FileName) < 1 {
@@ -9965,26 +10100,43 @@ func ValidatePastMeetingAttachmentResponseBody(body *PastMeetingAttachmentRespon
 	if body.PastMeetingUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("past_meeting_uid", "body"))
 	}
-	if body.FileName == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_name", "body"))
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
 	}
-	if body.FileSize == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
-	}
-	if body.ContentType == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("content_type", "body"))
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
 	if body.UploadedBy == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uploaded_by", "body"))
-	}
-	if body.SourceObjectUID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("source_object_uid", "body"))
 	}
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
 	if body.PastMeetingUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", *body.PastMeetingUID, goa.FormatUUID))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Link != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
+	}
+	if body.Link != nil {
+		if utf8.RuneCountInString(*body.Link) > 2048 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.link", *body.Link, utf8.RuneCountInString(*body.Link), 2048, false))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 255, false))
+		}
 	}
 	if body.FileName != nil {
 		if utf8.RuneCountInString(*body.FileName) < 1 {

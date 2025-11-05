@@ -42,7 +42,7 @@ func (s *MeetingAttachmentService) ServiceReady() bool {
 	return s.attachmentRepository != nil && s.meetingRepository != nil
 }
 
-// UploadAttachment uploads a file attachment for a meeting
+// UploadAttachment uploads a file or link attachment for a meeting
 func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *models.UploadAttachmentRequest) (*models.MeetingAttachment, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
@@ -63,16 +63,37 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 	if req.Username == "" {
 		return nil, domain.NewValidationError("username is required")
 	}
-	if req.FileName == "" {
-		return nil, domain.NewValidationError("file name is required")
-	}
-	if len(req.FileData) == 0 {
-		return nil, domain.NewValidationError("file data is required")
+
+	// Validate type
+	if req.Type != "file" && req.Type != "link" {
+		return nil, domain.NewValidationError("type must be either 'file' or 'link'")
 	}
 
-	// Check file size
-	if len(req.FileData) > MaxAttachmentSize {
-		return nil, domain.NewValidationError(fmt.Sprintf("file size exceeds maximum allowed size of %d bytes", MaxAttachmentSize))
+	// Type-specific validation
+	if req.Type == "link" {
+		if req.Link == "" {
+			return nil, domain.NewValidationError("link is required when type is 'link'")
+		}
+		// Link-type attachments should not have file-related fields
+		if len(req.FileData) > 0 {
+			return nil, domain.NewValidationError("link-type attachments cannot have file data")
+		}
+	} else if req.Type == "file" {
+		if req.FileName == "" {
+			return nil, domain.NewValidationError("file name is required when type is 'file'")
+		}
+		if len(req.FileData) == 0 {
+			return nil, domain.NewValidationError("file data is required when type is 'file'")
+		}
+		// Check file size
+		if len(req.FileData) > MaxAttachmentSize {
+			return nil, domain.NewValidationError(fmt.Sprintf("file size exceeds maximum allowed size of %d bytes", MaxAttachmentSize))
+		}
+	}
+
+	// Validate name is provided
+	if req.Name == "" {
+		return nil, domain.NewValidationError("name is required")
 	}
 
 	// Verify meeting exists
@@ -81,23 +102,42 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 		return nil, err
 	}
 
-	// Create attachment metadata (includes meeting_uid to associate it with the meeting)
+	// Create attachment metadata
 	now := time.Now()
-	attachment := &models.MeetingAttachment{
-		UID:         uuid.New().String(),
-		MeetingUID:  req.MeetingUID,
-		FileName:    req.FileName,
-		FileSize:    int64(len(req.FileData)),
-		ContentType: req.ContentType,
-		UploadedBy:  req.Username,
-		UploadedAt:  &now,
-		Description: req.Description,
-	}
+	var attachment *models.MeetingAttachment
 
-	// Upload file to Object Store first
-	if err := s.attachmentRepository.PutObject(ctx, attachment.UID, req.FileData); err != nil {
-		slog.ErrorContext(ctx, "failed to upload attachment file", logging.ErrKey, err, "attachment_uid", attachment.UID)
-		return nil, err
+	if req.Type == "link" {
+		// Create link-type attachment (metadata only, no file storage)
+		attachment = &models.MeetingAttachment{
+			UID:         uuid.New().String(),
+			MeetingUID:  req.MeetingUID,
+			Type:        "link",
+			Link:        req.Link,
+			Name:        req.Name,
+			UploadedBy:  req.Username,
+			UploadedAt:  &now,
+			Description: req.Description,
+		}
+	} else {
+		// Create file-type attachment
+		attachment = &models.MeetingAttachment{
+			UID:         uuid.New().String(),
+			MeetingUID:  req.MeetingUID,
+			Type:        "file",
+			Name:        req.Name,
+			FileName:    req.FileName,
+			FileSize:    int64(len(req.FileData)),
+			ContentType: req.ContentType,
+			UploadedBy:  req.Username,
+			UploadedAt:  &now,
+			Description: req.Description,
+		}
+
+		// Upload file to Object Store first
+		if err := s.attachmentRepository.PutObject(ctx, attachment.UID, req.FileData); err != nil {
+			slog.ErrorContext(ctx, "failed to upload attachment file", logging.ErrKey, err, "attachment_uid", attachment.UID)
+			return nil, err
+		}
 	}
 
 	// Create metadata in KV store
@@ -108,7 +148,11 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 		return nil, err
 	}
 
-	slog.InfoContext(ctx, "uploaded attachment", "attachment_uid", attachment.UID, "file_size", attachment.FileSize)
+	slog.InfoContext(ctx, "uploaded attachment",
+		"attachment_uid", attachment.UID,
+		"type", attachment.Type,
+		"file_size", attachment.FileSize,
+		"link", attachment.Link)
 
 	return attachment, nil
 }
@@ -140,6 +184,14 @@ func (s *MeetingAttachmentService) GetAttachment(ctx context.Context, meetingUID
 	// Verify attachment belongs to the requested meeting
 	if attachment.MeetingUID != meetingUID {
 		return nil, nil, domain.NewNotFoundError("attachment not found for this meeting")
+	}
+
+	// Cannot download link-type attachments
+	if attachment.Type == "link" {
+		slog.WarnContext(ctx, "attempted to download link-type attachment",
+			"attachment_uid", attachmentUID,
+			"link", attachment.Link)
+		return nil, nil, domain.NewValidationError("cannot download link-type attachments, use get metadata endpoint instead")
 	}
 
 	// Get file data

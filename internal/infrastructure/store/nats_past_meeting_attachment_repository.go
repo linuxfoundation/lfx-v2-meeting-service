@@ -39,9 +39,6 @@ func (r *NatsPastMeetingAttachmentRepository) PutMetadata(ctx context.Context, a
 	if attachment.PastMeetingUID == "" {
 		return domain.NewValidationError("past meeting UID is required")
 	}
-	if attachment.SourceObjectUID == "" {
-		return domain.NewValidationError("source object UID is required")
-	}
 
 	// Serialize metadata to JSON
 	metadataJSON, err := json.Marshal(attachment)

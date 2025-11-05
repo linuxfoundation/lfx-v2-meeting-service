@@ -6691,13 +6691,16 @@ func unmarshalPastMeetingAttachmentResponseBodyToMeetingservicePastMeetingAttach
 	res := &meetingservice.PastMeetingAttachment{
 		UID:             *v.UID,
 		PastMeetingUID:  *v.PastMeetingUID,
-		FileName:        *v.FileName,
-		FileSize:        *v.FileSize,
-		ContentType:     *v.ContentType,
+		Type:            *v.Type,
+		Link:            v.Link,
+		Name:            *v.Name,
+		FileName:        v.FileName,
+		FileSize:        v.FileSize,
+		ContentType:     v.ContentType,
 		UploadedBy:      *v.UploadedBy,
 		UploadedAt:      v.UploadedAt,
 		Description:     v.Description,
-		SourceObjectUID: *v.SourceObjectUID,
+		SourceObjectUID: v.SourceObjectUID,
 	}
 
 	return res

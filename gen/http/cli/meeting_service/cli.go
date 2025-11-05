@@ -676,11 +676,11 @@ COMMAND:
     get-past-meeting-summaries: Get all summaries for a past meeting
     get-past-meeting-summary: Get a specific summary for a past meeting
     update-past-meeting-summary: Update an existing past meeting summary
-    upload-meeting-attachment: Upload a file attachment for a meeting
+    upload-meeting-attachment: Upload a file or link attachment for a meeting
     get-meeting-attachment: Download a file attachment for a meeting
     get-meeting-attachment-metadata: Get metadata for a meeting attachment without downloading the file
     delete-meeting-attachment: Delete a file attachment for a meeting
-    create-past-meeting-attachment: Create a file attachment for a past meeting. Can upload a new file or reference an existing one.
+    create-past-meeting-attachment: Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.
     get-past-meeting-attachments: Get all attachments for a past meeting
     get-past-meeting-attachment: Download a file attachment for a past meeting
     delete-past-meeting-attachment: Delete a past meeting attachment
@@ -1378,7 +1378,7 @@ Example:
 func meetingServiceUploadMeetingAttachmentUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service upload-meeting-attachment -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
 
-Upload a file attachment for a meeting
+Upload a file or link attachment for a meeting
     -body JSON: 
     -meeting-uid STRING: The UID of the meeting this attachment belongs to
     -version STRING: 
@@ -1387,7 +1387,10 @@ Upload a file attachment for a meeting
 Example:
     %[1]s meeting-service upload-meeting-attachment --body '{
       "description": "Meeting agenda for Q1 2024",
-      "file": "TmVjZXNzaXRhdGlidXMgbGFib3J1bSBkb2xvcnVtLg=="
+      "file": "TmVjZXNzaXRhdGlidXMgbGFib3J1bSBkb2xvcnVtLg==",
+      "link": "https://example.com/meeting-notes",
+      "name": "Q1 Meeting Agenda",
+      "type": "file"
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -1437,7 +1440,7 @@ Example:
 func meetingServiceCreatePastMeetingAttachmentUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting-attachment -body JSON -past-meeting-uid STRING -version STRING -bearer-token STRING
 
-Create a file attachment for a past meeting. Can upload a new file or reference an existing one.
+Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.
     -body JSON: 
     -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
     -version STRING: 
@@ -1447,7 +1450,10 @@ Example:
     %[1]s meeting-service create-past-meeting-attachment --body '{
       "description": "Meeting recording for Q1 2024",
       "file": "UGVyZmVyZW5kaXMgdGVtcG9yaWJ1cyBsYWJvcmlvc2FtIHZlbCBlb3Mu",
-      "source_object_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
+      "link": "https://example.com/meeting-notes",
+      "name": "Q1 Meeting Recording",
+      "source_object_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
+      "type": "file"
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }

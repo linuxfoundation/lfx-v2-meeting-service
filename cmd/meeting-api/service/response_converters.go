@@ -555,13 +555,32 @@ func ConvertDomainToPastMeetingAttachmentResponse(attachment *models.PastMeeting
 	}
 
 	result := &meetingservice.PastMeetingAttachment{
-		UID:             attachment.UID,
-		PastMeetingUID:  attachment.PastMeetingUID,
-		FileName:        attachment.FileName,
-		FileSize:        attachment.FileSize,
-		ContentType:     attachment.ContentType,
-		UploadedBy:      attachment.UploadedBy,
-		SourceObjectUID: attachment.SourceObjectUID,
+		UID:            attachment.UID,
+		PastMeetingUID: attachment.PastMeetingUID,
+		Type:           attachment.Type,
+		Name:           attachment.Name,
+		UploadedBy:     attachment.UploadedBy,
+	}
+
+	if attachment.Link != "" {
+		result.Link = utils.StringPtr(attachment.Link)
+	}
+
+	if attachment.FileName != "" {
+		result.FileName = utils.StringPtr(attachment.FileName)
+	}
+
+	if attachment.FileSize > 0 {
+		fileSize := attachment.FileSize
+		result.FileSize = &fileSize
+	}
+
+	if attachment.ContentType != "" {
+		result.ContentType = utils.StringPtr(attachment.ContentType)
+	}
+
+	if attachment.SourceObjectUID != "" {
+		result.SourceObjectUID = utils.StringPtr(attachment.SourceObjectUID)
 	}
 
 	if attachment.UploadedAt != nil {
@@ -610,12 +629,30 @@ func ConvertDomainToAttachmentResponse(attachment *models.MeetingAttachment) *me
 	}
 
 	response := &meetingservice.MeetingAttachment{
-		UID:         attachment.UID,
-		MeetingUID:  attachment.MeetingUID,
-		FileName:    attachment.FileName,
-		FileSize:    attachment.FileSize,
-		ContentType: attachment.ContentType,
-		UploadedBy:  attachment.UploadedBy,
+		UID:        attachment.UID,
+		MeetingUID: attachment.MeetingUID,
+		Type:       attachment.Type,
+		Name:       attachment.Name,
+		UploadedBy: attachment.UploadedBy,
+	}
+
+	// Type-specific fields (file-type only)
+	if attachment.Type == "file" {
+		if attachment.FileName != "" {
+			response.FileName = &attachment.FileName
+		}
+		if attachment.FileSize > 0 {
+			fileSize := attachment.FileSize
+			response.FileSize = &fileSize
+		}
+		if attachment.ContentType != "" {
+			response.ContentType = &attachment.ContentType
+		}
+	}
+
+	// Link field (link-type only)
+	if attachment.Type == "link" && attachment.Link != "" {
+		response.Link = &attachment.Link
 	}
 
 	if attachment.UploadedAt != nil {

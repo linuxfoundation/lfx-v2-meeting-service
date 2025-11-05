@@ -460,10 +460,17 @@ func ConvertCreateRSVPPayloadToDomain(payload *meetingservice.CreateMeetingRsvpP
 func ConvertUploadAttachmentPayloadToDomain(payload *meetingservice.UploadMeetingAttachmentPayload, username, fileName, contentType string) *models.UploadAttachmentRequest {
 	req := &models.UploadAttachmentRequest{
 		MeetingUID:  payload.MeetingUID,
+		Type:        payload.Type,
+		Name:        payload.Name,
 		Username:    username,
 		FileName:    fileName,
 		ContentType: contentType,
 		FileData:    payload.File,
+	}
+
+	// Set optional Link if provided
+	if payload.Link != nil {
+		req.Link = *payload.Link
 	}
 
 	// Set optional Description if provided

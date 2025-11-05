@@ -714,7 +714,7 @@ paths:
             tags:
                 - Meeting Service
             summary: upload-meeting-attachment Meeting Service
-            description: Upload a file attachment for a meeting
+            description: Upload a file or link attachment for a meeting
             operationId: Meeting Service#upload-meeting-attachment
             parameters:
                 - name: v
@@ -778,6 +778,9 @@ paths:
                                 - 117
                                 - 109
                                 - 46
+                            link: https://example.com/meeting-notes
+                            name: Q1 Meeting Agenda
+                            type: file
             responses:
                 "201":
                     description: Created response.
@@ -790,7 +793,10 @@ paths:
                                 description: Meeting agenda for Q1 2024
                                 file_name: meeting-agenda.pdf
                                 file_size: 1024000
+                                link: https://example.com/meeting-notes
                                 meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                name: Q1 Meeting Agenda
+                                type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 uploaded_at: "2024-01-15T10:00:00Z"
                                 uploaded_by: john.doe
@@ -1083,7 +1089,10 @@ paths:
                                 description: Meeting agenda for Q1 2024
                                 file_name: meeting-agenda.pdf
                                 file_size: 1024000
+                                link: https://example.com/meeting-notes
                                 meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                name: Q1 Meeting Agenda
+                                type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 uploaded_at: "2024-01-15T10:00:00Z"
                                 uploaded_by: john.doe
@@ -3271,7 +3280,7 @@ paths:
             tags:
                 - Meeting Service
             summary: create-past-meeting-attachment Meeting Service
-            description: Create a file attachment for a past meeting. Can upload a new file or reference an existing one.
+            description: Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.
             operationId: Meeting Service#create-past-meeting-attachment
             parameters:
                 - name: v
@@ -3346,7 +3355,10 @@ paths:
                                 - 111
                                 - 115
                                 - 46
+                            link: https://example.com/meeting-notes
+                            name: Q1 Meeting Recording
                             source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                            type: file
             responses:
                 "201":
                     description: Created response.
@@ -3359,8 +3371,11 @@ paths:
                                 description: Meeting recording for Q1 2024
                                 file_name: meeting-recording.mp4
                                 file_size: 1024000
+                                link: https://example.com/meeting-notes
+                                name: Q1 Meeting Recording
                                 past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 uploaded_at: "2024-01-15T10:00:00Z"
                                 uploaded_by: john.doe
@@ -3669,8 +3684,11 @@ paths:
                                 description: Meeting recording for Q1 2024
                                 file_name: meeting-recording.mp4
                                 file_size: 1024000
+                                link: https://example.com/meeting-notes
+                                name: Q1 Meeting Recording
                                 past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 uploaded_at: "2024-01-15T10:00:00Z"
                                 uploaded_by: john.doe
@@ -4559,8 +4577,11 @@ paths:
                                       description: Meeting recording for Q1 2024
                                       file_name: meeting-recording.mp4
                                       file_size: 1024000
+                                      link: https://example.com/meeting-notes
+                                      name: Q1 Meeting Recording
                                       past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                      type: file
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       uploaded_at: "2024-01-15T10:00:00Z"
                                       uploaded_by: john.doe
@@ -4568,8 +4589,11 @@ paths:
                                       description: Meeting recording for Q1 2024
                                       file_name: meeting-recording.mp4
                                       file_size: 1024000
+                                      link: https://example.com/meeting-notes
+                                      name: Q1 Meeting Recording
                                       past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                      type: file
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       uploaded_at: "2024-01-15T10:00:00Z"
                                       uploaded_by: john.doe
@@ -4577,8 +4601,11 @@ paths:
                                       description: Meeting recording for Q1 2024
                                       file_name: meeting-recording.mp4
                                       file_size: 1024000
+                                      link: https://example.com/meeting-notes
+                                      name: Q1 Meeting Recording
                                       past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                      type: file
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       uploaded_at: "2024-01-15T10:00:00Z"
                                       uploaded_by: john.doe
@@ -4586,8 +4613,11 @@ paths:
                                       description: Meeting recording for Q1 2024
                                       file_name: meeting-recording.mp4
                                       file_size: 1024000
+                                      link: https://example.com/meeting-notes
+                                      name: Q1 Meeting Recording
                                       past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                      type: file
                                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                       uploaded_at: "2024-01-15T10:00:00Z"
                                       uploaded_by: john.doe
@@ -5463,7 +5493,7 @@ components:
                     maxLength: 500
                 file:
                     type: string
-                    description: 'Optional: The file data to upload (required if source_object_uid is not provided)'
+                    description: 'Optional: The file data to upload (for type=''file'', required if source_object_uid is not provided)'
                     example:
                         - 68
                         - 101
@@ -5507,11 +5537,30 @@ components:
                         - 109
                         - 46
                     format: binary
+                link:
+                    type: string
+                    description: URL for link-type attachments (required if type is 'link')
+                    example: https://example.com/meeting-notes
+                    format: uri
+                    maxLength: 2048
+                name:
+                    type: string
+                    description: Custom name for the attachment
+                    example: Q1 Meeting Recording
+                    minLength: 1
+                    maxLength: 255
                 source_object_uid:
                     type: string
-                    description: 'Optional: UID of an existing file in Object Store to reference'
+                    description: 'Optional: UID of an existing file in Object Store to reference (for type=''file'')'
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
+                type:
+                    type: string
+                    description: 'The type of attachment: ''file'' or ''link'''
+                    example: file
+                    enum:
+                        - file
+                        - link
             example:
                 description: Meeting recording for Q1 2024
                 file:
@@ -5551,7 +5600,13 @@ components:
                     - 97
                     - 101
                     - 46
+                link: https://example.com/meeting-notes
+                name: Q1 Meeting Recording
                 source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                type: file
+            required:
+                - type
+                - name
         CreatePastMeetingParticipantPayload:
             type: object
             properties:
@@ -6675,8 +6730,11 @@ components:
                           description: Meeting recording for Q1 2024
                           file_name: meeting-recording.mp4
                           file_size: 1024000
+                          link: https://example.com/meeting-notes
+                          name: Q1 Meeting Recording
                           past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          type: file
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           uploaded_at: "2024-01-15T10:00:00Z"
                           uploaded_by: john.doe
@@ -6684,8 +6742,11 @@ components:
                           description: Meeting recording for Q1 2024
                           file_name: meeting-recording.mp4
                           file_size: 1024000
+                          link: https://example.com/meeting-notes
+                          name: Q1 Meeting Recording
                           past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          type: file
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           uploaded_at: "2024-01-15T10:00:00Z"
                           uploaded_by: john.doe
@@ -6693,8 +6754,11 @@ components:
                           description: Meeting recording for Q1 2024
                           file_name: meeting-recording.mp4
                           file_size: 1024000
+                          link: https://example.com/meeting-notes
+                          name: Q1 Meeting Recording
                           past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          type: file
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           uploaded_at: "2024-01-15T10:00:00Z"
                           uploaded_by: john.doe
@@ -6702,8 +6766,11 @@ components:
                           description: Meeting recording for Q1 2024
                           file_name: meeting-recording.mp4
                           file_size: 1024000
+                          link: https://example.com/meeting-notes
+                          name: Q1 Meeting Recording
                           past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                          type: file
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                           uploaded_at: "2024-01-15T10:00:00Z"
                           uploaded_by: john.doe
@@ -6713,8 +6780,11 @@ components:
                       description: Meeting recording for Q1 2024
                       file_name: meeting-recording.mp4
                       file_size: 1024000
+                      link: https://example.com/meeting-notes
+                      name: Q1 Meeting Recording
                       past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      type: file
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       uploaded_at: "2024-01-15T10:00:00Z"
                       uploaded_by: john.doe
@@ -6722,8 +6792,11 @@ components:
                       description: Meeting recording for Q1 2024
                       file_name: meeting-recording.mp4
                       file_size: 1024000
+                      link: https://example.com/meeting-notes
+                      name: Q1 Meeting Recording
                       past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                      type: file
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       uploaded_at: "2024-01-15T10:00:00Z"
                       uploaded_by: john.doe
@@ -7538,7 +7611,7 @@ components:
             properties:
                 content_type:
                     type: string
-                    description: The MIME type of the file
+                    description: The MIME type of the file (only for type='file')
                     example: application/pdf
                     minLength: 1
                 description:
@@ -7548,21 +7621,40 @@ components:
                     maxLength: 500
                 file_name:
                     type: string
-                    description: The name of the uploaded file
+                    description: The name of the uploaded file (only for type='file')
                     example: meeting-agenda.pdf
                     minLength: 1
                     maxLength: 255
                 file_size:
                     type: integer
-                    description: The size of the file in bytes
+                    description: The size of the file in bytes (only for type='file')
                     example: 1024000
                     format: int64
                     minimum: 0
+                link:
+                    type: string
+                    description: URL for link-type attachments (required if type is 'link')
+                    example: https://example.com/meeting-notes
+                    format: uri
+                    maxLength: 2048
                 meeting_uid:
                     type: string
                     description: The UID of the meeting this attachment belongs to
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
+                name:
+                    type: string
+                    description: Custom name for the attachment
+                    example: Q1 Meeting Agenda
+                    minLength: 1
+                    maxLength: 255
+                type:
+                    type: string
+                    description: 'The type of attachment: ''file'' or ''link'''
+                    example: file
+                    enum:
+                        - file
+                        - link
                 uid:
                     type: string
                     description: The UID of the attachment
@@ -7578,22 +7670,24 @@ components:
                     description: The username of the user who uploaded the file
                     example: john.doe
                     minLength: 1
-            description: Meeting attachment metadata
+            description: Meeting attachment metadata - can be a file or a link
             example:
                 content_type: application/pdf
                 description: Meeting agenda for Q1 2024
                 file_name: meeting-agenda.pdf
                 file_size: 1024000
+                link: https://example.com/meeting-notes
                 meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                name: Q1 Meeting Agenda
+                type: file
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 uploaded_at: "2024-01-15T10:00:00Z"
                 uploaded_by: john.doe
             required:
                 - uid
                 - meeting_uid
-                - file_name
-                - file_size
-                - content_type
+                - type
+                - name
                 - uploaded_by
         MeetingBase:
             type: object
@@ -8679,7 +8773,7 @@ components:
             properties:
                 content_type:
                     type: string
-                    description: The MIME type of the file
+                    description: The MIME type of the file (only for type='file')
                     example: video/mp4
                     minLength: 1
                 description:
@@ -8689,16 +8783,28 @@ components:
                     maxLength: 500
                 file_name:
                     type: string
-                    description: The name of the file
+                    description: The name of the file (only for type='file')
                     example: meeting-recording.mp4
                     minLength: 1
                     maxLength: 255
                 file_size:
                     type: integer
-                    description: The size of the file in bytes
+                    description: The size of the file in bytes (only for type='file')
                     example: 1024000
                     format: int64
                     minimum: 0
+                link:
+                    type: string
+                    description: URL for link-type attachments (required if type is 'link')
+                    example: https://example.com/meeting-notes
+                    format: uri
+                    maxLength: 2048
+                name:
+                    type: string
+                    description: Custom name for the attachment
+                    example: Q1 Meeting Recording
+                    minLength: 1
+                    maxLength: 255
                 past_meeting_uid:
                     type: string
                     description: The UID of the past meeting this attachment belongs to
@@ -8706,9 +8812,16 @@ components:
                     format: uuid
                 source_object_uid:
                     type: string
-                    description: The UID of the file in the shared Object Store
+                    description: The UID of the file in the shared Object Store (only for type='file')
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
+                type:
+                    type: string
+                    description: 'The type of attachment: ''file'' or ''link'''
+                    example: file
+                    enum:
+                        - file
+                        - link
                 uid:
                     type: string
                     description: The UID of the attachment
@@ -8724,25 +8837,26 @@ components:
                     description: The username of the user who uploaded the file
                     example: john.doe
                     minLength: 1
-            description: Past meeting attachment metadata
+            description: Past meeting attachment metadata - can be a file or a link
             example:
                 content_type: video/mp4
                 description: Meeting recording for Q1 2024
                 file_name: meeting-recording.mp4
                 file_size: 1024000
+                link: https://example.com/meeting-notes
+                name: Q1 Meeting Recording
                 past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 source_object_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                type: file
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 uploaded_at: "2024-01-15T10:00:00Z"
                 uploaded_by: john.doe
             required:
                 - uid
                 - past_meeting_uid
-                - file_name
-                - file_size
-                - content_type
+                - type
+                - name
                 - uploaded_by
-                - source_object_uid
         PastMeetingParticipant:
             type: object
             properties:
@@ -10011,7 +10125,7 @@ components:
                     maxLength: 500
                 file:
                     type: string
-                    description: The file data to upload
+                    description: 'Optional: The file data to upload (for type=''file'')'
                     example:
                         - 76
                         - 105
@@ -10034,6 +10148,25 @@ components:
                         - 105
                         - 46
                     format: binary
+                link:
+                    type: string
+                    description: URL for link-type attachments (required if type is 'link')
+                    example: https://example.com/meeting-notes
+                    format: uri
+                    maxLength: 2048
+                name:
+                    type: string
+                    description: Custom name for the attachment
+                    example: Q1 Meeting Agenda
+                    minLength: 1
+                    maxLength: 255
+                type:
+                    type: string
+                    description: 'The type of attachment: ''file'' or ''link'''
+                    example: file
+                    enum:
+                        - file
+                        - link
             example:
                 description: Meeting agenda for Q1 2024
                 file:
@@ -10070,8 +10203,12 @@ components:
                     - 97
                     - 116
                     - 46
+                link: https://example.com/meeting-notes
+                name: Q1 Meeting Agenda
+                type: file
             required:
-                - file
+                - type
+                - name
         ZoomConfigFull:
             type: object
             properties:
