@@ -31,12 +31,12 @@ type CreatePastMeetingAttachmentRequest struct {
 type PastMeetingAttachment struct {
 	UID             string     `json:"uid"`
 	PastMeetingUID  string     `json:"past_meeting_uid"`
-	Type            string     `json:"type"`                          // "file" or "link"
-	Link            string     `json:"link,omitempty"`                // URL for link-type attachments
-	Name            string     `json:"name"`                          // Custom name for the attachment
-	FileName        string     `json:"file_name,omitempty"`           // File name (for file-type only)
-	FileSize        int64      `json:"file_size,omitempty"`           // File size in bytes (for file-type only)
-	ContentType     string     `json:"content_type,omitempty"`        // MIME type (for file-type only)
+	Type            string     `json:"type"`                   // "file" or "link"
+	Link            string     `json:"link,omitempty"`         // URL for link-type attachments
+	Name            string     `json:"name"`                   // Custom name for the attachment
+	FileName        string     `json:"file_name,omitempty"`    // File name (for file-type only)
+	FileSize        int64      `json:"file_size,omitempty"`    // File size in bytes (for file-type only)
+	ContentType     string     `json:"content_type,omitempty"` // MIME type (for file-type only)
 	UploadedBy      string     `json:"uploaded_by"`
 	UploadedAt      *time.Time `json:"uploaded_at,omitempty"`
 	Description     string     `json:"description,omitempty"`

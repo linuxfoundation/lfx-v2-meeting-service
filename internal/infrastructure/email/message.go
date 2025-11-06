@@ -65,19 +65,6 @@ func buildEmailMessage(recipient, subject, htmlContent, textContent string, conf
 	})
 }
 
-// buildEmailMessageWithAttachment builds the complete email message with optional attachment
-func buildEmailMessageWithAttachment(recipient, subject, htmlContent, textContent string, attachment *domain.EmailAttachment, metadata *EmailMetadata, config SMTPConfig) string {
-	return buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   recipient,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  attachment,
-		Config:      config,
-		Metadata:    metadata,
-	})
-}
-
 // buildEmailMessageWithParams builds the complete email message using structured parameters
 func buildEmailMessageWithParams(params EmailMessageParams) string {
 	messageID := generateMessageID(params.Config)

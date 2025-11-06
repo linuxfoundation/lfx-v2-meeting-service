@@ -70,7 +70,8 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 	}
 
 	// Type-specific validation
-	if req.Type == "link" {
+	switch req.Type {
+	case "link":
 		if req.Link == "" {
 			return nil, domain.NewValidationError("link is required when type is 'link'")
 		}
@@ -78,7 +79,7 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 		if len(req.FileData) > 0 {
 			return nil, domain.NewValidationError("link-type attachments cannot have file data")
 		}
-	} else if req.Type == "file" {
+	case "file":
 		if req.FileName == "" {
 			return nil, domain.NewValidationError("file name is required when type is 'file'")
 		}
@@ -106,7 +107,8 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 	now := time.Now()
 	var attachment *models.MeetingAttachment
 
-	if req.Type == "link" {
+	switch req.Type {
+	case "link":
 		// Create link-type attachment (metadata only, no file storage)
 		attachment = &models.MeetingAttachment{
 			UID:         uuid.New().String(),
@@ -118,7 +120,7 @@ func (s *MeetingAttachmentService) UploadAttachment(ctx context.Context, req *mo
 			UploadedAt:  &now,
 			Description: req.Description,
 		}
-	} else {
+	case "file":
 		// Create file-type attachment
 		attachment = &models.MeetingAttachment{
 			UID:         uuid.New().String(),

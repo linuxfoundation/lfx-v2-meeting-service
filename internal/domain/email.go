@@ -32,12 +32,12 @@ type EmailInvitation struct {
 	MeetingType              string
 	Visibility               string
 	JoinLink                 string
-	MeetingDetailsLink       string             // URL to meeting details in LFX One
-	ProjectName              string             // Optional project name for context
-	ProjectLogo              string             // Optional project logo URL
-	Platform                 string             // Meeting platform (e.g., "Zoom")
-	MeetingID                string             // Zoom meeting ID for dial-in
-	Passcode                 string             // Zoom passcode
+	MeetingDetailsLink       string                      // URL to meeting details in LFX One
+	ProjectName              string                      // Optional project name for context
+	ProjectLogo              string                      // Optional project logo URL
+	Platform                 string                      // Meeting platform (e.g., "Zoom")
+	MeetingID                string                      // Zoom meeting ID for dial-in
+	Passcode                 string                      // Zoom passcode
 	Recurrence               *models.Recurrence          // Recurrence pattern for ICS
 	IcsSequence              int                         // ICS sequence number for calendar updates
 	ICSAttachment            *EmailAttachment            // ICS calendar attachment
@@ -105,11 +105,11 @@ type EmailUpdatedInvitation struct {
 	MeetingDetailsLink string // URL to meeting details in LFX One
 	Visibility         string
 	MeetingType        string
-	ProjectName        string             // Optional project name for context
-	ProjectLogo        string             // Optional project logo URL
-	Platform           string             // Meeting platform (e.g., "Zoom")
-	MeetingID          string             // Zoom meeting ID for dial-in
-	Passcode           string             // Zoom passcode
+	ProjectName        string                      // Optional project name for context
+	ProjectLogo        string                      // Optional project logo URL
+	Platform           string                      // Meeting platform (e.g., "Zoom")
+	MeetingID          string                      // Zoom meeting ID for dial-in
+	Passcode           string                      // Zoom passcode
 	Recurrence         *models.Recurrence          // Recurrence pattern for ICS
 	Changes            map[string]any              // Map of what changed (field names to new values)
 	IcsSequence        int                         // ICS sequence number for calendar updates

@@ -159,8 +159,8 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		Subject:     subject,
 		HTMLContent: htmlContent,
 		TextContent: textContent,
-		Attachment:  attachment,                    // ICS calendar attachment
-		Attachments: invitation.FileAttachments,    // Meeting file attachments
+		Attachment:  attachment,                 // ICS calendar attachment
+		Attachments: invitation.FileAttachments, // Meeting file attachments
 		Config:      s.config,
 		Metadata:    metadata,
 	})
@@ -378,7 +378,7 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 		Subject:     subject,
 		HTMLContent: htmlContent,
 		TextContent: textContent,
-		Attachment:  attachment,                       // ICS calendar attachment
+		Attachment:  attachment,                        // ICS calendar attachment
 		Attachments: updatedInvitation.FileAttachments, // Meeting file attachments
 		Config:      s.config,
 		Metadata: &EmailMetadata{

@@ -398,9 +398,9 @@ func TestBuildDescription(t *testing.T) {
 				Description: "Slide deck",
 			},
 			{
-				Type:     "link",
-				Link:     "https://example.com/notes",
-				Name:     "",
+				Type: "link",
+				Link: "https://example.com/notes",
+				Name: "",
 			},
 			{
 				Type:     "file",

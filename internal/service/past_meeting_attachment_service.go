@@ -104,7 +104,8 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 	}
 
 	// Type-specific validation
-	if req.Type == "link" {
+	switch req.Type {
+	case "link":
 		if req.Link == "" {
 			return nil, domain.NewValidationError("link is required when type is 'link'")
 		}
@@ -112,7 +113,7 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 		if req.SourceObjectUID != "" || len(req.FileData) > 0 {
 			return nil, domain.NewValidationError("link-type attachments cannot have source_object_uid or file data")
 		}
-	} else if req.Type == "file" {
+	case "file":
 		// File-type attachments must have either source_object_uid or file data
 		if req.SourceObjectUID == "" && len(req.FileData) == 0 {
 			return nil, domain.NewValidationError("file-type attachments require either source_object_uid or file data")
@@ -142,7 +143,8 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 	var attachment *models.PastMeetingAttachment
 	now := time.Now()
 
-	if req.Type == "link" {
+	switch req.Type {
+	case "link":
 		// Create link-type attachment (metadata only, no file storage)
 		if req.Username == "" {
 			return nil, domain.NewValidationError("username is required")
@@ -158,65 +160,67 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 			UploadedAt:     &now,
 			Description:    req.Description,
 		}
-	} else if req.SourceObjectUID != "" {
-		// Reference existing file - need to get metadata from the source attachment
-		sourceAttachment, err := s.meetingAttachmentRepository.GetMetadata(ctx, req.SourceObjectUID)
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting source attachment metadata", logging.ErrKey, err)
-			return nil, domain.NewNotFoundError("source attachment not found")
-		}
+	case "file":
+		if req.SourceObjectUID != "" {
+			// Reference existing file - need to get metadata from the source attachment
+			sourceAttachment, err := s.meetingAttachmentRepository.GetMetadata(ctx, req.SourceObjectUID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error getting source attachment metadata", logging.ErrKey, err)
+				return nil, domain.NewNotFoundError("source attachment not found")
+			}
 
-		// Create past meeting attachment metadata referencing the existing file
-		attachment = &models.PastMeetingAttachment{
-			UID:             uuid.New().String(),
-			PastMeetingUID:  req.PastMeetingUID,
-			Type:            "file",
-			Name:            req.Name,
-			FileName:        sourceAttachment.FileName,
-			FileSize:        sourceAttachment.FileSize,
-			ContentType:     sourceAttachment.ContentType,
-			UploadedBy:      req.Username,
-			UploadedAt:      &now,
-			Description:     req.Description,
-			SourceObjectUID: req.SourceObjectUID,
-		}
-	} else {
-		// Upload new file
-		if req.FileName == "" {
-			return nil, domain.NewValidationError("file name is required when uploading new file")
-		}
-		if req.Username == "" {
-			return nil, domain.NewValidationError("username is required")
-		}
+			// Create past meeting attachment metadata referencing the existing file
+			attachment = &models.PastMeetingAttachment{
+				UID:             uuid.New().String(),
+				PastMeetingUID:  req.PastMeetingUID,
+				Type:            "file",
+				Name:            req.Name,
+				FileName:        sourceAttachment.FileName,
+				FileSize:        sourceAttachment.FileSize,
+				ContentType:     sourceAttachment.ContentType,
+				UploadedBy:      req.Username,
+				UploadedAt:      &now,
+				Description:     req.Description,
+				SourceObjectUID: req.SourceObjectUID,
+			}
+		} else {
+			// Upload new file
+			if req.FileName == "" {
+				return nil, domain.NewValidationError("file name is required when uploading new file")
+			}
+			if req.Username == "" {
+				return nil, domain.NewValidationError("username is required")
+			}
 
-		// Check file size (100MB max)
-		const maxFileSize = 100 * 1024 * 1024
-		if len(req.FileData) > maxFileSize {
-			return nil, domain.NewValidationError(fmt.Sprintf("file size exceeds maximum allowed size of %d bytes", maxFileSize))
-		}
+			// Check file size (100MB max)
+			const maxFileSize = 100 * 1024 * 1024
+			if len(req.FileData) > maxFileSize {
+				return nil, domain.NewValidationError(fmt.Sprintf("file size exceeds maximum allowed size of %d bytes", maxFileSize))
+			}
 
-		// Generate new UID for the file
-		fileUID := uuid.New().String()
+			// Generate new UID for the file
+			fileUID := uuid.New().String()
 
-		// Upload file to Object Store
-		if err := s.meetingAttachmentRepository.PutObject(ctx, fileUID, req.FileData); err != nil {
-			slog.ErrorContext(ctx, "failed to upload attachment file", logging.ErrKey, err, "file_uid", fileUID)
-			return nil, err
-		}
+			// Upload file to Object Store
+			if err := s.meetingAttachmentRepository.PutObject(ctx, fileUID, req.FileData); err != nil {
+				slog.ErrorContext(ctx, "failed to upload attachment file", logging.ErrKey, err, "file_uid", fileUID)
+				return nil, err
+			}
 
-		// Create past meeting attachment metadata
-		attachment = &models.PastMeetingAttachment{
-			UID:             uuid.New().String(),
-			PastMeetingUID:  req.PastMeetingUID,
-			Type:            "file",
-			Name:            req.Name,
-			FileName:        req.FileName,
-			FileSize:        int64(len(req.FileData)),
-			ContentType:     req.ContentType,
-			UploadedBy:      req.Username,
-			UploadedAt:      &now,
-			Description:     req.Description,
-			SourceObjectUID: fileUID, // Reference the newly uploaded file
+			// Create past meeting attachment metadata
+			attachment = &models.PastMeetingAttachment{
+				UID:             uuid.New().String(),
+				PastMeetingUID:  req.PastMeetingUID,
+				Type:            "file",
+				Name:            req.Name,
+				FileName:        req.FileName,
+				FileSize:        int64(len(req.FileData)),
+				ContentType:     req.ContentType,
+				UploadedBy:      req.Username,
+				UploadedAt:      &now,
+				Description:     req.Description,
+				SourceObjectUID: fileUID, // Reference the newly uploaded file
+			}
 		}
 	}
 
