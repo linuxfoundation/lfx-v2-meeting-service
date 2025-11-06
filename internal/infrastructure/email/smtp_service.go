@@ -114,6 +114,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		Recurrence:               invitation.Recurrence,
 		Sequence:                 invitation.IcsSequence,
 		CancelledOccurrenceTimes: invitation.CancelledOccurrenceTimes,
+		Attachments:              invitation.Attachments,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to generate ICS file", logging.ErrKey, err)
@@ -148,12 +149,21 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		return fmt.Errorf("failed to render text template: %w", err)
 	}
 
-	// Build and send the email with attachment
+	// Build and send the email with attachments (ICS + file attachments)
 	subject := fmt.Sprintf("Invitation: %s", invitation.MeetingTitle)
 	metadata := &EmailMetadata{
 		ProjectName: invitation.ProjectName,
 	}
-	message := buildEmailMessageWithAttachment(invitation.RecipientEmail, subject, htmlContent, textContent, attachment, metadata, s.config)
+	message := buildEmailMessageWithParams(EmailMessageParams{
+		Recipient:   invitation.RecipientEmail,
+		Subject:     subject,
+		HTMLContent: htmlContent,
+		TextContent: textContent,
+		Attachment:  attachment,                    // ICS calendar attachment
+		Attachments: invitation.FileAttachments,    // Meeting file attachments
+		Config:      s.config,
+		Metadata:    metadata,
+	})
 	err = sendEmailMessage(invitation.RecipientEmail, message, s.config)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send invitation email", logging.ErrKey, err)
@@ -332,6 +342,7 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 			ProjectName:    updatedInvitation.ProjectName,
 			Recurrence:     updatedInvitation.Recurrence,
 			Sequence:       updatedInvitation.IcsSequence,
+			Attachments:    updatedInvitation.Attachments,
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS update", logging.ErrKey, err)
@@ -360,14 +371,15 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 		return fmt.Errorf("failed to render updated invitation text template: %w", err)
 	}
 
-	// Build and send the email with attachment
+	// Build and send the email with attachments (ICS + file attachments)
 	subject := fmt.Sprintf("Meeting Updated: %s", updatedInvitation.MeetingTitle)
 	message := buildEmailMessageWithParams(EmailMessageParams{
 		Recipient:   updatedInvitation.RecipientEmail,
 		Subject:     subject,
 		HTMLContent: htmlContent,
 		TextContent: textContent,
-		Attachment:  attachment,
+		Attachment:  attachment,                       // ICS calendar attachment
+		Attachments: updatedInvitation.FileAttachments, // Meeting file attachments
 		Config:      s.config,
 		Metadata: &EmailMetadata{
 			ProjectName: updatedInvitation.ProjectName,

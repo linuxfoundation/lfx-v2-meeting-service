@@ -47,7 +47,8 @@ type EmailMessageParams struct {
 	Subject     string
 	HTMLContent string
 	TextContent string
-	Attachment  *domain.EmailAttachment
+	Attachment  *domain.EmailAttachment   // ICS calendar attachment (legacy, for backwards compat)
+	Attachments []*domain.EmailAttachment // Multiple file attachments
 	Config      SMTPConfig
 	Metadata    *EmailMetadata // Optional metadata for email customization
 }
@@ -96,7 +97,16 @@ func buildEmailMessageWithParams(params EmailMessageParams) string {
 	message.WriteString(fmt.Sprintf("Message-ID: %s\r\n", messageID))
 	message.WriteString("MIME-Version: 1.0\r\n")
 
+	// Collect all attachments (ICS + file attachments)
+	allAttachments := []*domain.EmailAttachment{}
 	if params.Attachment != nil {
+		allAttachments = append(allAttachments, params.Attachment)
+	}
+	if len(params.Attachments) > 0 {
+		allAttachments = append(allAttachments, params.Attachments...)
+	}
+
+	if len(allAttachments) > 0 {
 		// With attachment: use multipart/mixed
 		mixedBoundary := generateBoundary()
 		message.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", mixedBoundary))
@@ -129,20 +139,22 @@ func buildEmailMessageWithParams(params EmailMessageParams) string {
 		// End alternative boundary
 		message.WriteString(fmt.Sprintf("--%s--\r\n", alternativeBoundary))
 
-		// Attachment part
-		message.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
-		message.WriteString(fmt.Sprintf("Content-Type: %s; name=\"%s\"\r\n", params.Attachment.ContentType, params.Attachment.Filename))
-		message.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", params.Attachment.Filename))
-		message.WriteString("Content-Transfer-Encoding: base64\r\n")
+		// Attachment parts - loop through all attachments
+		for _, attachment := range allAttachments {
+			message.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
+			message.WriteString(fmt.Sprintf("Content-Type: %s; name=\"%s\"\r\n", attachment.ContentType, attachment.Filename))
+			message.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", attachment.Filename))
+			message.WriteString("Content-Transfer-Encoding: base64\r\n")
 
-		// Add method=REQUEST for calendar files
-		if params.Attachment.ContentType == "text/calendar" {
-			message.WriteString("Content-Type: text/calendar; charset=UTF-8; method=REQUEST\r\n")
+			// Add method=REQUEST for calendar files
+			if attachment.ContentType == "text/calendar" {
+				message.WriteString("Content-Type: text/calendar; charset=UTF-8; method=REQUEST\r\n")
+			}
+
+			message.WriteString("\r\n")
+			message.WriteString(attachment.Content)
+			message.WriteString("\r\n")
 		}
-
-		message.WriteString("\r\n")
-		message.WriteString(params.Attachment.Content)
-		message.WriteString("\r\n")
 
 		// End mixed boundary
 		message.WriteString(fmt.Sprintf("--%s--\r\n", mixedBoundary))

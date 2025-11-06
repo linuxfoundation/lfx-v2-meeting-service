@@ -90,6 +90,7 @@ func main() {
 	registrantService := service.NewMeetingRegistrantService(
 		repos.Meeting,
 		repos.Registrant,
+		repos.Attachment,
 		emailService,
 		messageBuilder,
 		messageBuilder,

@@ -38,10 +38,12 @@ type EmailInvitation struct {
 	Platform                 string             // Meeting platform (e.g., "Zoom")
 	MeetingID                string             // Zoom meeting ID for dial-in
 	Passcode                 string             // Zoom passcode
-	Recurrence               *models.Recurrence // Recurrence pattern for ICS
-	IcsSequence              int                // ICS sequence number for calendar updates
-	ICSAttachment            *EmailAttachment   // ICS calendar attachment
-	CancelledOccurrenceTimes []time.Time        // Cancelled occurrence start times to exclude from ICS
+	Recurrence               *models.Recurrence          // Recurrence pattern for ICS
+	IcsSequence              int                         // ICS sequence number for calendar updates
+	ICSAttachment            *EmailAttachment            // ICS calendar attachment
+	CancelledOccurrenceTimes []time.Time                 // Cancelled occurrence start times to exclude from ICS
+	Attachments              []*models.MeetingAttachment // Meeting attachments to display in email
+	FileAttachments          []*EmailAttachment          // File attachments to include in email
 }
 
 // EmailCancellation contains the data needed to send a meeting cancellation email
@@ -108,10 +110,12 @@ type EmailUpdatedInvitation struct {
 	Platform           string             // Meeting platform (e.g., "Zoom")
 	MeetingID          string             // Zoom meeting ID for dial-in
 	Passcode           string             // Zoom passcode
-	Recurrence         *models.Recurrence // Recurrence pattern for ICS
-	Changes            map[string]any     // Map of what changed (field names to new values)
-	IcsSequence        int                // ICS sequence number for calendar updates
-	ICSAttachment      *EmailAttachment   // Updated ICS calendar attachment
+	Recurrence         *models.Recurrence          // Recurrence pattern for ICS
+	Changes            map[string]any              // Map of what changed (field names to new values)
+	IcsSequence        int                         // ICS sequence number for calendar updates
+	ICSAttachment      *EmailAttachment            // Updated ICS calendar attachment
+	Attachments        []*models.MeetingAttachment // Meeting attachments to display in email
+	FileAttachments    []*EmailAttachment          // File attachments to include in email
 
 	// Previous meeting data for showing what changed
 	OldStartTime   time.Time          // Previous start time

@@ -55,8 +55,9 @@ type ICSMeetingInvitationParams struct {
 	RecipientEmail           string
 	ProjectName              string
 	Recurrence               *models.Recurrence
-	Sequence                 int         // ICS sequence number for calendar updates
-	CancelledOccurrenceTimes []time.Time // List of cancelled occurrence start times to exclude via EXDATE
+	Sequence                 int                         // ICS sequence number for calendar updates
+	CancelledOccurrenceTimes []time.Time                 // List of cancelled occurrence start times to exclude via EXDATE
+	Attachments              []*models.MeetingAttachment // Meeting attachments to include in description
 }
 
 // GenerateMeetingICS generates an ICS file content for a meeting invitation
@@ -124,7 +125,7 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	ics.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICSText(param.MeetingTitle)))
 
 	// Build enhanced description with meeting details
-	descriptionText := buildDescription(param.Description, param.MeetingID, param.Passcode, param.JoinLink, param.ProjectName)
+	descriptionText := buildDescription(param.Description, param.MeetingID, param.Passcode, param.JoinLink, param.ProjectName, param.Attachments)
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
 	// Location (Zoom URL) - only add if join link exists
@@ -186,7 +187,8 @@ type ICSMeetingUpdateParams struct {
 	RecipientEmail string
 	ProjectName    string
 	Recurrence     *models.Recurrence
-	Sequence       int // Incremented sequence number for updates
+	Sequence       int                         // Incremented sequence number for updates
+	Attachments    []*models.MeetingAttachment // Meeting attachments to include in description
 }
 
 // GenerateMeetingUpdateICS generates an ICS file for updating a meeting
@@ -242,7 +244,7 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 	ics.WriteString(fmt.Sprintf("SUMMARY:%s\r\n", escapeICSText(params.MeetingTitle)))
 
 	// Build enhanced description with meeting details
-	descriptionText := buildDescription(params.Description, params.MeetingID, params.Passcode, params.JoinLink, params.ProjectName)
+	descriptionText := buildDescription(params.Description, params.MeetingID, params.Passcode, params.JoinLink, params.ProjectName, params.Attachments)
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
 	// Location (Zoom URL) - only add if join link exists
@@ -489,14 +491,56 @@ func getWeekdayName(weekday int) string {
 	return ""
 }
 
+// buildAttachmentsSection formats the attachments list for ICS description
+func buildAttachmentsSection(attachments []*models.MeetingAttachment) string {
+	if len(attachments) == 0 {
+		return ""
+	}
+
+	var section strings.Builder
+	section.WriteString("Attachments:\n")
+	for _, attachment := range attachments {
+		if attachment.Type == "link" {
+			// For link attachments, always show the URL (so it's copyable/clickable)
+			section.WriteString(fmt.Sprintf("• %s", attachment.Link))
+			if attachment.Description != "" {
+				section.WriteString(fmt.Sprintf(" - %s", attachment.Description))
+			}
+			section.WriteString("\n")
+		} else {
+			// For file attachments, show name (or filename if no name)
+			if attachment.Name != "" {
+				section.WriteString(fmt.Sprintf("• %s", attachment.Name))
+				if attachment.FileName != "" {
+					section.WriteString(fmt.Sprintf(" (%s)", attachment.FileName))
+				}
+			} else if attachment.FileName != "" {
+				section.WriteString(fmt.Sprintf("• %s", attachment.FileName))
+			}
+			if attachment.Description != "" {
+				section.WriteString(fmt.Sprintf(" - %s", attachment.Description))
+			}
+			section.WriteString("\n")
+		}
+	}
+	section.WriteString("\n")
+	return section.String()
+}
+
 // buildDescription builds the enhanced description with meeting details
-func buildDescription(description, meetingID, passcode, joinLink, projectName string) string {
+func buildDescription(description, meetingID, passcode, joinLink, projectName string, attachments []*models.MeetingAttachment) string {
 	var desc strings.Builder
 
 	if projectName != "" {
 		desc.WriteString(projectName)
 		desc.WriteString(" Meeting")
 		desc.WriteString("\n\n")
+	}
+
+	// Add attachments section before the description
+	attachmentsSection := buildAttachmentsSection(attachments)
+	if attachmentsSection != "" {
+		desc.WriteString(attachmentsSection)
 	}
 
 	if description != "" {

@@ -323,6 +323,23 @@
                     {{end}}
                 </div>
 
+                {{if .Attachments}}
+                <div class="description-section">
+                    <div class="description-title">Attachments</div>
+                    {{range .Attachments}}
+                    <div class="method-text">
+                        {{if eq .Type "link"}}
+                        📎 <a href="{{.Link}}" class="text-link">{{if .Name}}{{.Name}}{{else}}{{.Link}}{{end}}</a>
+                        {{if .Description}} - {{.Description}}{{end}}
+                        {{else}}
+                        📎 {{if .Name}}{{.Name}}{{if .FileName}} ({{.FileName}}){{end}}{{else}}{{.FileName}}{{end}}
+                        {{if .Description}} - {{.Description}}{{end}}
+                        {{end}}
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+
                 {{if .Description}}
                 <div class="description-section">
                     <div class="description-title">Meeting Description</div>

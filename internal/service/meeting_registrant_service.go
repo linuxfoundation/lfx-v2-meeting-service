@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -24,19 +25,21 @@ import (
 
 // MeetingRegistrantService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingRegistrantService struct {
-	meetingRepository    domain.MeetingRepository
-	registrantRepository domain.RegistrantRepository
-	emailService         domain.EmailService
-	messageSender        domain.MeetingRegistrantMessageSender
-	externalClient       domain.ExternalServiceClient
-	occurrenceService    *OccurrenceService
-	config               ServiceConfig
+	meetingRepository           domain.MeetingRepository
+	registrantRepository        domain.RegistrantRepository
+	meetingAttachmentRepository domain.MeetingAttachmentRepository
+	emailService                domain.EmailService
+	messageSender               domain.MeetingRegistrantMessageSender
+	externalClient              domain.ExternalServiceClient
+	occurrenceService           *OccurrenceService
+	config                      ServiceConfig
 }
 
 // NewMeetingRegistrantService creates a new MeetingRegistrantService.
 func NewMeetingRegistrantService(
 	meetingRepository domain.MeetingRepository,
 	registrantRepository domain.RegistrantRepository,
+	meetingAttachmentRepository domain.MeetingAttachmentRepository,
 	emailService domain.EmailService,
 	messageSender domain.MeetingRegistrantMessageSender,
 	externalClient domain.ExternalServiceClient,
@@ -44,13 +47,14 @@ func NewMeetingRegistrantService(
 	config ServiceConfig,
 ) *MeetingRegistrantService {
 	return &MeetingRegistrantService{
-		config:               config,
-		meetingRepository:    meetingRepository,
-		registrantRepository: registrantRepository,
-		emailService:         emailService,
-		messageSender:        messageSender,
-		externalClient:       externalClient,
-		occurrenceService:    occurrenceService,
+		config:                      config,
+		meetingRepository:           meetingRepository,
+		registrantRepository:        registrantRepository,
+		meetingAttachmentRepository: meetingAttachmentRepository,
+		emailService:                emailService,
+		messageSender:               messageSender,
+		externalClient:              externalClient,
+		occurrenceService:           occurrenceService,
 	}
 }
 
@@ -602,6 +606,35 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		}
 	}
 
+	// Fetch meeting attachments to include in the email
+	var attachments []*models.MeetingAttachment
+	var fileAttachments []*domain.EmailAttachment
+	if s.meetingAttachmentRepository != nil {
+		attachments, _ = s.meetingAttachmentRepository.ListByMeeting(ctx, meetingDB.UID)
+		// Ignore error - attachments are optional, email should still be sent without them
+
+		// Fetch file data for file-type attachments to include as email attachments
+		for _, attachment := range attachments {
+			if attachment.Type == "file" {
+				fileData, err := s.meetingAttachmentRepository.GetObject(ctx, attachment.UID)
+				if err != nil {
+					slog.WarnContext(ctx, "failed to fetch file attachment data, skipping",
+						"attachment_uid", attachment.UID,
+						"error", err)
+					continue
+				}
+
+				// Encode file data to base64
+				encodedContent := base64.StdEncoding.EncodeToString(fileData)
+				fileAttachments = append(fileAttachments, &domain.EmailAttachment{
+					Filename:    attachment.FileName,
+					ContentType: attachment.ContentType,
+					Content:     encodedContent,
+				})
+			}
+		}
+	}
+
 	invitation := domain.EmailInvitation{
 		MeetingUID:               meetingDB.UID,
 		RecipientEmail:           registrant.Email,
@@ -623,6 +656,8 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		Recurrence:               meetingDB.Recurrence,
 		IcsSequence:              meetingDB.IcsSequence,
 		CancelledOccurrenceTimes: cancelledOccurrenceTimes,
+		Attachments:              attachments,
+		FileAttachments:          fileAttachments,
 	}
 
 	return s.emailService.SendRegistrantInvitation(ctx, invitation)
@@ -650,6 +685,35 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
 	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
+	// Fetch meeting attachments to include in the email
+	var attachments []*models.MeetingAttachment
+	var fileAttachments []*domain.EmailAttachment
+	if s.meetingAttachmentRepository != nil {
+		attachments, _ = s.meetingAttachmentRepository.ListByMeeting(ctx, meeting.UID)
+		// Ignore error - attachments are optional, email should still be sent without them
+
+		// Fetch file data for file-type attachments to include as email attachments
+		for _, attachment := range attachments {
+			if attachment.Type == "file" {
+				fileData, err := s.meetingAttachmentRepository.GetObject(ctx, attachment.UID)
+				if err != nil {
+					slog.WarnContext(ctx, "failed to fetch file attachment data, skipping",
+						"attachment_uid", attachment.UID,
+						"error", err)
+					continue
+				}
+
+				// Encode file data to base64
+				encodedContent := base64.StdEncoding.EncodeToString(fileData)
+				fileAttachments = append(fileAttachments, &domain.EmailAttachment{
+					Filename:    attachment.FileName,
+					ContentType: attachment.ContentType,
+					Content:     encodedContent,
+				})
+			}
+		}
+	}
+
 	updatedInvitation := domain.EmailUpdatedInvitation{
 		MeetingUID:         meeting.UID,
 		RecipientEmail:     registrant.Email,
@@ -671,6 +735,8 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 		ProjectName:        projectName,
 		ProjectLogo:        projectLogo,
 		IcsSequence:        meeting.IcsSequence,
+		Attachments:        attachments,
+		FileAttachments:    fileAttachments,
 		// Previous meeting data
 		OldStartTime:   oldMeeting.StartTime,
 		OldDuration:    oldMeeting.Duration,

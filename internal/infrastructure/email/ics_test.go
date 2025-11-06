@@ -340,6 +340,7 @@ func TestBuildDescription(t *testing.T) {
 			"abc123",
 			"https://zoom.us/j/123456789",
 			"Test Project",
+			nil,
 		)
 
 		assert.Contains(t, desc, "Test Project Meeting")
@@ -357,6 +358,7 @@ func TestBuildDescription(t *testing.T) {
 			"",
 			"https://zoom.us/j/987654321",
 			"",
+			nil,
 		)
 
 		assert.Contains(t, desc, "Meeting ID: 987654321")
@@ -371,6 +373,7 @@ func TestBuildDescription(t *testing.T) {
 			"",
 			"",
 			"",
+			nil,
 		)
 
 		assert.Contains(t, desc, "Simple meeting")
@@ -378,6 +381,60 @@ func TestBuildDescription(t *testing.T) {
 		assert.NotContains(t, desc, "Passcode:")
 		assert.NotContains(t, desc, "Join Meeting:")
 		assert.NotContains(t, desc, "find your local number")
+	})
+
+	t.Run("with attachments", func(t *testing.T) {
+		attachments := []*models.MeetingAttachment{
+			{
+				Type:        "link",
+				Name:        "Agenda",
+				Link:        "https://example.com/agenda",
+				Description: "Meeting agenda",
+			},
+			{
+				Type:        "file",
+				Name:        "Presentation",
+				FileName:    "slides.pdf",
+				Description: "Slide deck",
+			},
+			{
+				Type:     "link",
+				Link:     "https://example.com/notes",
+				Name:     "",
+			},
+			{
+				Type:     "file",
+				FileName: "document.docx",
+				Name:     "",
+			},
+		}
+
+		desc := buildDescription(
+			"Meeting with attachments",
+			"123456789",
+			"abc123",
+			"https://zoom.us/j/123456789",
+			"Test Project",
+			attachments,
+		)
+
+		// Check that attachments section is present and appears before description
+		assert.Contains(t, desc, "Attachments:")
+		// Link attachments always show the URL with description (name is ignored for clickability)
+		assert.Contains(t, desc, "• https://example.com/agenda - Meeting agenda")
+		assert.NotContains(t, desc, "Agenda:")
+		// File with name should show name and filename
+		assert.Contains(t, desc, "• Presentation (slides.pdf) - Slide deck")
+		// Link without name and description should show just URL
+		assert.Contains(t, desc, "• https://example.com/notes")
+		// File without name should show just filename
+		assert.Contains(t, desc, "• document.docx")
+		assert.Contains(t, desc, "Meeting with attachments")
+
+		// Verify attachments appear before description
+		attachmentsIndex := strings.Index(desc, "Attachments:")
+		descriptionIndex := strings.Index(desc, "Meeting with attachments")
+		assert.Less(t, attachmentsIndex, descriptionIndex, "Attachments should appear before description")
 	})
 }
 
