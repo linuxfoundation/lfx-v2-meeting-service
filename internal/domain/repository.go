@@ -176,7 +176,7 @@ type MeetingAttachmentRepository interface {
 // PastMeetingAttachmentRepository defines the interface for past meeting attachment storage operations.
 // Metadata is stored in NATS KV store (includes past_meeting_uid and source_object_uid fields).
 // Files are stored in the same Object Store as meeting attachments, allowing reuse via source_object_uid.
-// This repository only manages metadata - files are accessed via the shared Object Store.
+// This repository only manages metadata - files are accessed via the shared Object Store on the [MeetingAttachmentRepository].
 type PastMeetingAttachmentRepository interface {
 	// PutMetadata stores metadata in KV store
 	PutMetadata(ctx context.Context, attachment *models.PastMeetingAttachment) error

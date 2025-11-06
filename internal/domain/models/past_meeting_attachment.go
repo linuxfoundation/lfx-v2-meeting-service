@@ -31,19 +31,21 @@ type CreatePastMeetingAttachmentRequest struct {
 type PastMeetingAttachment struct {
 	UID             string     `json:"uid"`
 	PastMeetingUID  string     `json:"past_meeting_uid"`
-	Type            string     `json:"type"`                   // "file" or "link"
+	Type            string     `json:"type"`                   // The type of attachment
 	Link            string     `json:"link,omitempty"`         // URL for link-type attachments
-	Name            string     `json:"name"`                   // Custom name for the attachment
+	Name            string     `json:"name"`                   // Name for the attachment
+	Description     string     `json:"description,omitempty"`  // Description for the attachment
 	FileName        string     `json:"file_name,omitempty"`    // File name (for file-type only)
 	FileSize        int64      `json:"file_size,omitempty"`    // File size in bytes (for file-type only)
 	ContentType     string     `json:"content_type,omitempty"` // MIME type (for file-type only)
 	UploadedBy      string     `json:"uploaded_by"`
 	UploadedAt      *time.Time `json:"uploaded_at,omitempty"`
-	Description     string     `json:"description,omitempty"`
 	SourceObjectUID string     `json:"source_object_uid,omitempty"` // UID of the file in Object Store (for file-type only)
 }
 
 // Tags generates a consistent set of tags for the past meeting attachment.
+// IMPORTANT: If you modify this method, please update the Tags documentation in the README.md
+// to ensure consumers understand how to use these tags for searching.
 func (a *PastMeetingAttachment) Tags() []string {
 	tags := []string{}
 
@@ -71,6 +73,11 @@ func (a *PastMeetingAttachment) Tags() []string {
 
 	if a.Name != "" {
 		tag := fmt.Sprintf("name:%s", a.Name)
+		tags = append(tags, tag)
+	}
+
+	if a.Link != "" {
+		tag := fmt.Sprintf("link:%s", a.Link)
 		tags = append(tags, tag)
 	}
 

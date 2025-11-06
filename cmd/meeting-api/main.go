@@ -61,7 +61,7 @@ func main() {
 	}
 
 	// Get the key-value stores for the service.
-	repos, err := getKeyValueStores(ctx, natsConn)
+	repos, err := getStorageRepos(ctx, natsConn)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error getting key-value stores")
 		return
@@ -87,13 +87,17 @@ func main() {
 		emailService,
 		serviceConfig,
 	)
+	attachmentService := service.NewMeetingAttachmentService(
+		repos.Attachment,
+		repos.Meeting,
+	)
 	registrantService := service.NewMeetingRegistrantService(
 		repos.Meeting,
 		repos.Registrant,
-		repos.Attachment,
 		emailService,
 		messageBuilder,
 		messageBuilder,
+		attachmentService,
 		occurrenceService,
 		serviceConfig,
 	)
@@ -103,10 +107,6 @@ func main() {
 		repos.Registrant,
 		occurrenceService,
 		messageBuilder, // Implements MeetingRSVPIndexSender
-	)
-	attachmentService := service.NewMeetingAttachmentService(
-		repos.Attachment,
-		repos.Meeting,
 	)
 	pastMeetingService := service.NewPastMeetingService(
 		repos.Meeting,

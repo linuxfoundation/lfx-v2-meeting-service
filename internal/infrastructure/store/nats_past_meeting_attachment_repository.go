@@ -6,6 +6,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -18,13 +19,13 @@ import (
 // NatsPastMeetingAttachmentRepository provides NATS storage operations for past meeting attachments
 // Metadata is stored in KV store, while actual files are stored in the shared Object Store
 type NatsPastMeetingAttachmentRepository struct {
-	kv jetstream.KeyValue
+	metadataKV INatsKeyValue
 }
 
 // NewNatsPastMeetingAttachmentRepository creates a new repository for past meeting attachments
 func NewNatsPastMeetingAttachmentRepository(kv jetstream.KeyValue) *NatsPastMeetingAttachmentRepository {
 	return &NatsPastMeetingAttachmentRepository{
-		kv: kv,
+		metadataKV: kv,
 	}
 }
 
@@ -48,7 +49,7 @@ func (r *NatsPastMeetingAttachmentRepository) PutMetadata(ctx context.Context, a
 	}
 
 	// Store metadata in KV store with tags
-	_, err = r.kv.Put(ctx, attachment.UID, metadataJSON)
+	_, err = r.metadataKV.Put(ctx, attachment.UID, metadataJSON)
 	if err != nil {
 		slog.ErrorContext(ctx, "error putting past meeting attachment metadata to KV store",
 			logging.ErrKey, err,
@@ -72,12 +73,18 @@ func (r *NatsPastMeetingAttachmentRepository) GetMetadata(ctx context.Context, a
 	}
 
 	// Get metadata from KV store
-	entry, err := r.kv.Get(ctx, attachmentUID)
+	entry, err := r.metadataKV.Get(ctx, attachmentUID)
 	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrKeyDeleted) {
+			slog.WarnContext(ctx, "past meeting attachment metadata not found in KV store",
+				logging.ErrKey, err,
+				"attachment_uid", attachmentUID)
+			return nil, domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
+		}
 		slog.ErrorContext(ctx, "error getting past meeting attachment metadata from KV store",
 			logging.ErrKey, err,
 			"attachment_uid", attachmentUID)
-		return nil, domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
+		return nil, domain.NewInternalError("failed to retrieve attachment metadata")
 	}
 
 	// Parse metadata
@@ -99,24 +106,23 @@ func (r *NatsPastMeetingAttachmentRepository) ListByPastMeeting(ctx context.Cont
 	}
 
 	// Get all keys from the KV store
-	keys, err := r.kv.Keys(ctx)
+	keyLister, err := r.metadataKV.ListKeys(ctx)
 	if err != nil {
-		// Check if error is due to empty bucket (no keys found)
-		if err == jetstream.ErrNoKeysFound {
-			slog.DebugContext(ctx, "no attachments found in KV store",
-				"past_meeting_uid", pastMeetingUID)
-			return []*models.PastMeetingAttachment{}, nil
-		}
 		slog.ErrorContext(ctx, "error listing keys from KV store",
 			logging.ErrKey, err,
 			"past_meeting_uid", pastMeetingUID)
 		return nil, domain.NewInternalError("failed to list attachments")
 	}
 
+	var keys []string
+	for key := range keyLister.Keys() {
+		keys = append(keys, key)
+	}
+
 	// Fetch and filter attachments
 	var attachments []*models.PastMeetingAttachment
 	for _, key := range keys {
-		entry, err := r.kv.Get(ctx, key)
+		entry, err := r.metadataKV.Get(ctx, key)
 		if err != nil {
 			slog.WarnContext(ctx, "error getting attachment metadata",
 				logging.ErrKey, err,
@@ -152,12 +158,18 @@ func (r *NatsPastMeetingAttachmentRepository) Delete(ctx context.Context, attach
 	}
 
 	// Delete metadata from KV store
-	err := r.kv.Delete(ctx, attachmentUID)
+	err := r.metadataKV.Delete(ctx, attachmentUID)
 	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrKeyDeleted) {
+			slog.WarnContext(ctx, "past meeting attachment metadata already absent in KV store",
+				logging.ErrKey, err,
+				"attachment_uid", attachmentUID)
+			return domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
+		}
 		slog.ErrorContext(ctx, "error deleting past meeting attachment metadata from KV store",
 			logging.ErrKey, err,
 			"attachment_uid", attachmentUID)
-		return domain.NewNotFoundError(fmt.Sprintf("attachment not found: %s", attachmentUID))
+		return domain.NewInternalError("failed to delete attachment metadata")
 	}
 
 	slog.InfoContext(ctx, "deleted past meeting attachment metadata (file preserved in Object Store)",

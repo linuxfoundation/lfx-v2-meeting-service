@@ -17,28 +17,19 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-// INatsObjectStore is a NATS Object Store interface for file storage
-// This interface matches jetstream.ObjectStore and allows for mocking in tests
-type INatsObjectStore interface {
-	Put(ctx context.Context, obj jetstream.ObjectMeta, reader io.Reader) (*jetstream.ObjectInfo, error)
-	Get(ctx context.Context, name string, opts ...jetstream.GetObjectOpt) (jetstream.ObjectResult, error)
-	GetInfo(ctx context.Context, name string, opts ...jetstream.GetObjectInfoOpt) (*jetstream.ObjectInfo, error)
-	Delete(ctx context.Context, name string) error
-}
-
 // NatsAttachmentRepository provides NATS storage operations for meeting attachments
 // Metadata is stored in KV store, while actual files are stored in Object Store
 type NatsAttachmentRepository struct {
-	metadataKV  jetstream.KeyValue
-	objectStore INatsObjectStore
+	metadataKV      INatsKeyValue
+	fileObjectStore INatsObjectStore
 }
 
 // NewNatsAttachmentRepository creates a new repository for meeting attachments
 // metadataKV stores attachment metadata, objectStore stores the actual files
-func NewNatsAttachmentRepository(metadataKV jetstream.KeyValue, objectStore INatsObjectStore) *NatsAttachmentRepository {
+func NewNatsAttachmentRepository(metadataKV INatsKeyValue, objectStore INatsObjectStore) *NatsAttachmentRepository {
 	return &NatsAttachmentRepository{
-		metadataKV:  metadataKV,
-		objectStore: objectStore,
+		metadataKV:      metadataKV,
+		fileObjectStore: objectStore,
 	}
 }
 
@@ -52,13 +43,14 @@ func (r *NatsAttachmentRepository) PutObject(ctx context.Context, attachmentUID 
 	}
 
 	// Store file in Object Store (no meeting reference in object store)
+	// TODO: Put jetstream object API calls in a separate interface that is reusable across all the nats repos.
 	objectMeta := jetstream.ObjectMeta{
 		Name:        attachmentUID,
 		Description: fmt.Sprintf("File for attachment %s", attachmentUID),
 	}
 
 	reader := bytes.NewReader(fileData)
-	_, err := r.objectStore.Put(ctx, objectMeta, reader)
+	_, err := r.fileObjectStore.Put(ctx, objectMeta, reader)
 	if err != nil {
 		slog.ErrorContext(ctx, "error putting file to Object Store",
 			logging.ErrKey, err,
@@ -104,7 +96,7 @@ func (r *NatsAttachmentRepository) GetObject(ctx context.Context, attachmentUID 
 	}
 
 	// Get file from Object Store
-	result, err := r.objectStore.Get(ctx, attachmentUID)
+	result, err := r.fileObjectStore.Get(ctx, attachmentUID)
 	if err != nil {
 		slog.ErrorContext(ctx, "error getting file from Object Store",
 			logging.ErrKey, err,
@@ -165,12 +157,17 @@ func (r *NatsAttachmentRepository) ListByMeeting(ctx context.Context, meetingUID
 	}
 
 	// Get all keys from the KV store
-	keys, err := r.metadataKV.Keys(ctx)
+	keyLister, err := r.metadataKV.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "error listing keys from KV store",
 			logging.ErrKey, err,
 			"meeting_uid", meetingUID)
 		return nil, domain.NewInternalError("failed to list attachments")
+	}
+
+	var keys []string
+	for key := range keyLister.Keys() {
+		keys = append(keys, key)
 	}
 
 	// Fetch and filter attachments
@@ -194,7 +191,8 @@ func (r *NatsAttachmentRepository) ListByMeeting(ctx context.Context, meetingUID
 
 		// Filter by meeting UID
 		if attachment.MeetingUID == meetingUID {
-			attachments = append(attachments, &attachment)
+			attachmentCopy := attachment
+			attachments = append(attachments, &attachmentCopy)
 		}
 	}
 

@@ -22,7 +22,7 @@ import (
 //
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() string {
-	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|upload-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|delete-past-meeting-attachment|get-past-meeting-attachment-metadata|readyz|livez)
+	return `meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|create-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|get-past-meeting-attachment-metadata|delete-past-meeting-attachment|readyz|livez)
 `
 }
 
@@ -40,7 +40,7 @@ func ParseEndpoint(
 	enc func(*http.Request) goahttp.Encoder,
 	dec func(*http.Response) goahttp.Decoder,
 	restore bool,
-	meetingServiceUploadMeetingAttachmentEncoderFn meetingservicec.MeetingServiceUploadMeetingAttachmentEncoderFunc,
+	meetingServiceCreateMeetingAttachmentEncoderFn meetingservicec.MeetingServiceCreateMeetingAttachmentEncoderFunc,
 	meetingServiceCreatePastMeetingAttachmentEncoderFn meetingservicec.MeetingServiceCreatePastMeetingAttachmentEncoderFunc,
 ) (goa.Endpoint, any, error) {
 	var (
@@ -224,11 +224,11 @@ func ParseEndpoint(
 		meetingServiceUpdatePastMeetingSummaryBearerTokenFlag    = meetingServiceUpdatePastMeetingSummaryFlags.String("bearer-token", "", "")
 		meetingServiceUpdatePastMeetingSummaryIfMatchFlag        = meetingServiceUpdatePastMeetingSummaryFlags.String("if-match", "", "")
 
-		meetingServiceUploadMeetingAttachmentFlags           = flag.NewFlagSet("upload-meeting-attachment", flag.ExitOnError)
-		meetingServiceUploadMeetingAttachmentBodyFlag        = meetingServiceUploadMeetingAttachmentFlags.String("body", "REQUIRED", "")
-		meetingServiceUploadMeetingAttachmentMeetingUIDFlag  = meetingServiceUploadMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
-		meetingServiceUploadMeetingAttachmentVersionFlag     = meetingServiceUploadMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceUploadMeetingAttachmentBearerTokenFlag = meetingServiceUploadMeetingAttachmentFlags.String("bearer-token", "", "")
+		meetingServiceCreateMeetingAttachmentFlags           = flag.NewFlagSet("create-meeting-attachment", flag.ExitOnError)
+		meetingServiceCreateMeetingAttachmentBodyFlag        = meetingServiceCreateMeetingAttachmentFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateMeetingAttachmentMeetingUIDFlag  = meetingServiceCreateMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
+		meetingServiceCreateMeetingAttachmentVersionFlag     = meetingServiceCreateMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceCreateMeetingAttachmentBearerTokenFlag = meetingServiceCreateMeetingAttachmentFlags.String("bearer-token", "", "")
 
 		meetingServiceGetMeetingAttachmentFlags           = flag.NewFlagSet("get-meeting-attachment", flag.ExitOnError)
 		meetingServiceGetMeetingAttachmentMeetingUIDFlag  = meetingServiceGetMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
@@ -265,17 +265,17 @@ func ParseEndpoint(
 		meetingServiceGetPastMeetingAttachmentVersionFlag        = meetingServiceGetPastMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceGetPastMeetingAttachmentBearerTokenFlag    = meetingServiceGetPastMeetingAttachmentFlags.String("bearer-token", "", "")
 
-		meetingServiceDeletePastMeetingAttachmentFlags              = flag.NewFlagSet("delete-past-meeting-attachment", flag.ExitOnError)
-		meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceDeletePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
-		meetingServiceDeletePastMeetingAttachmentUIDFlag            = meetingServiceDeletePastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
-		meetingServiceDeletePastMeetingAttachmentVersionFlag        = meetingServiceDeletePastMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceDeletePastMeetingAttachmentBearerTokenFlag    = meetingServiceDeletePastMeetingAttachmentFlags.String("bearer-token", "", "")
-
 		meetingServiceGetPastMeetingAttachmentMetadataFlags              = flag.NewFlagSet("get-past-meeting-attachment-metadata", flag.ExitOnError)
 		meetingServiceGetPastMeetingAttachmentMetadataPastMeetingUIDFlag = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
 		meetingServiceGetPastMeetingAttachmentMetadataUIDFlag            = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("uid", "REQUIRED", "The UID of the attachment")
 		meetingServiceGetPastMeetingAttachmentMetadataVersionFlag        = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("version", "", "")
 		meetingServiceGetPastMeetingAttachmentMetadataBearerTokenFlag    = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("bearer-token", "", "")
+
+		meetingServiceDeletePastMeetingAttachmentFlags              = flag.NewFlagSet("delete-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceDeletePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
+		meetingServiceDeletePastMeetingAttachmentUIDFlag            = meetingServiceDeletePastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
+		meetingServiceDeletePastMeetingAttachmentVersionFlag        = meetingServiceDeletePastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceDeletePastMeetingAttachmentBearerTokenFlag    = meetingServiceDeletePastMeetingAttachmentFlags.String("bearer-token", "", "")
 
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
@@ -312,15 +312,15 @@ func ParseEndpoint(
 	meetingServiceGetPastMeetingSummariesFlags.Usage = meetingServiceGetPastMeetingSummariesUsage
 	meetingServiceGetPastMeetingSummaryFlags.Usage = meetingServiceGetPastMeetingSummaryUsage
 	meetingServiceUpdatePastMeetingSummaryFlags.Usage = meetingServiceUpdatePastMeetingSummaryUsage
-	meetingServiceUploadMeetingAttachmentFlags.Usage = meetingServiceUploadMeetingAttachmentUsage
+	meetingServiceCreateMeetingAttachmentFlags.Usage = meetingServiceCreateMeetingAttachmentUsage
 	meetingServiceGetMeetingAttachmentFlags.Usage = meetingServiceGetMeetingAttachmentUsage
 	meetingServiceGetMeetingAttachmentMetadataFlags.Usage = meetingServiceGetMeetingAttachmentMetadataUsage
 	meetingServiceDeleteMeetingAttachmentFlags.Usage = meetingServiceDeleteMeetingAttachmentUsage
 	meetingServiceCreatePastMeetingAttachmentFlags.Usage = meetingServiceCreatePastMeetingAttachmentUsage
 	meetingServiceGetPastMeetingAttachmentsFlags.Usage = meetingServiceGetPastMeetingAttachmentsUsage
 	meetingServiceGetPastMeetingAttachmentFlags.Usage = meetingServiceGetPastMeetingAttachmentUsage
-	meetingServiceDeletePastMeetingAttachmentFlags.Usage = meetingServiceDeletePastMeetingAttachmentUsage
 	meetingServiceGetPastMeetingAttachmentMetadataFlags.Usage = meetingServiceGetPastMeetingAttachmentMetadataUsage
+	meetingServiceDeletePastMeetingAttachmentFlags.Usage = meetingServiceDeletePastMeetingAttachmentUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
 
@@ -448,8 +448,8 @@ func ParseEndpoint(
 			case "update-past-meeting-summary":
 				epf = meetingServiceUpdatePastMeetingSummaryFlags
 
-			case "upload-meeting-attachment":
-				epf = meetingServiceUploadMeetingAttachmentFlags
+			case "create-meeting-attachment":
+				epf = meetingServiceCreateMeetingAttachmentFlags
 
 			case "get-meeting-attachment":
 				epf = meetingServiceGetMeetingAttachmentFlags
@@ -469,11 +469,11 @@ func ParseEndpoint(
 			case "get-past-meeting-attachment":
 				epf = meetingServiceGetPastMeetingAttachmentFlags
 
-			case "delete-past-meeting-attachment":
-				epf = meetingServiceDeletePastMeetingAttachmentFlags
-
 			case "get-past-meeting-attachment-metadata":
 				epf = meetingServiceGetPastMeetingAttachmentMetadataFlags
+
+			case "delete-past-meeting-attachment":
+				epf = meetingServiceDeletePastMeetingAttachmentFlags
 
 			case "readyz":
 				epf = meetingServiceReadyzFlags
@@ -596,9 +596,9 @@ func ParseEndpoint(
 			case "update-past-meeting-summary":
 				endpoint = c.UpdatePastMeetingSummary()
 				data, err = meetingservicec.BuildUpdatePastMeetingSummaryPayload(*meetingServiceUpdatePastMeetingSummaryBodyFlag, *meetingServiceUpdatePastMeetingSummaryPastMeetingUIDFlag, *meetingServiceUpdatePastMeetingSummarySummaryUIDFlag, *meetingServiceUpdatePastMeetingSummaryVersionFlag, *meetingServiceUpdatePastMeetingSummaryBearerTokenFlag, *meetingServiceUpdatePastMeetingSummaryIfMatchFlag)
-			case "upload-meeting-attachment":
-				endpoint = c.UploadMeetingAttachment(meetingServiceUploadMeetingAttachmentEncoderFn)
-				data, err = meetingservicec.BuildUploadMeetingAttachmentPayload(*meetingServiceUploadMeetingAttachmentBodyFlag, *meetingServiceUploadMeetingAttachmentMeetingUIDFlag, *meetingServiceUploadMeetingAttachmentVersionFlag, *meetingServiceUploadMeetingAttachmentBearerTokenFlag)
+			case "create-meeting-attachment":
+				endpoint = c.CreateMeetingAttachment(meetingServiceCreateMeetingAttachmentEncoderFn)
+				data, err = meetingservicec.BuildCreateMeetingAttachmentPayload(*meetingServiceCreateMeetingAttachmentBodyFlag, *meetingServiceCreateMeetingAttachmentMeetingUIDFlag, *meetingServiceCreateMeetingAttachmentVersionFlag, *meetingServiceCreateMeetingAttachmentBearerTokenFlag)
 			case "get-meeting-attachment":
 				endpoint = c.GetMeetingAttachment()
 				data, err = meetingservicec.BuildGetMeetingAttachmentPayload(*meetingServiceGetMeetingAttachmentMeetingUIDFlag, *meetingServiceGetMeetingAttachmentUIDFlag, *meetingServiceGetMeetingAttachmentVersionFlag, *meetingServiceGetMeetingAttachmentBearerTokenFlag)
@@ -617,12 +617,12 @@ func ParseEndpoint(
 			case "get-past-meeting-attachment":
 				endpoint = c.GetPastMeetingAttachment()
 				data, err = meetingservicec.BuildGetPastMeetingAttachmentPayload(*meetingServiceGetPastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceGetPastMeetingAttachmentUIDFlag, *meetingServiceGetPastMeetingAttachmentVersionFlag, *meetingServiceGetPastMeetingAttachmentBearerTokenFlag)
-			case "delete-past-meeting-attachment":
-				endpoint = c.DeletePastMeetingAttachment()
-				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag)
 			case "get-past-meeting-attachment-metadata":
 				endpoint = c.GetPastMeetingAttachmentMetadata()
 				data, err = meetingservicec.BuildGetPastMeetingAttachmentMetadataPayload(*meetingServiceGetPastMeetingAttachmentMetadataPastMeetingUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataVersionFlag, *meetingServiceGetPastMeetingAttachmentMetadataBearerTokenFlag)
+			case "delete-past-meeting-attachment":
+				endpoint = c.DeletePastMeetingAttachment()
+				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -676,15 +676,15 @@ COMMAND:
     get-past-meeting-summaries: Get all summaries for a past meeting
     get-past-meeting-summary: Get a specific summary for a past meeting
     update-past-meeting-summary: Update an existing past meeting summary
-    upload-meeting-attachment: Upload a file or link attachment for a meeting
+    create-meeting-attachment: Create a file or link attachment for a meeting
     get-meeting-attachment: Download a file attachment for a meeting
     get-meeting-attachment-metadata: Get metadata for a meeting attachment without downloading the file
     delete-meeting-attachment: Delete a file attachment for a meeting
     create-past-meeting-attachment: Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.
     get-past-meeting-attachments: Get all attachments for a past meeting
     get-past-meeting-attachment: Download a file attachment for a past meeting
-    delete-past-meeting-attachment: Delete a past meeting attachment
     get-past-meeting-attachment-metadata: Get metadata for a past meeting attachment without downloading the file
+    delete-past-meeting-attachment: Delete a past meeting attachment
     readyz: Check if the service is able to take inbound requests.
     livez: Check if the service is alive.
 
@@ -716,74 +716,63 @@ Create a new meeting for a project. An actual meeting in the specific platform w
 
 Example:
     %[1]s meeting-service create-meeting --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
             ],
-            "uid": "Laudantium quasi officia fuga."
+            "uid": "Est quod nihil voluptas."
          },
          {
             "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
             ],
-            "uid": "Laudantium quasi officia fuga."
+            "uid": "Est quod nihil voluptas."
          },
          {
             "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
             ],
-            "uid": "Laudantium quasi officia fuga."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
-            ],
-            "uid": "Laudantium quasi officia fuga."
+            "uid": "Est quod nihil voluptas."
          }
       ],
-      "description": "Consectetur nihil vel consequatur perspiciatis.",
-      "duration": 595,
-      "early_join_time_minutes": 12,
+      "description": "Id velit ratione et nam et illo.",
+      "duration": 275,
+      "early_join_time_minutes": 16,
       "meeting_type": "Legal",
       "organizers": [
-         "Quod voluptatibus in necessitatibus rerum ut doloribus.",
-         "Mollitia explicabo aperiam.",
          "Quos porro praesentium possimus quia est voluptatem.",
-         "Molestiae qui."
+         "Molestiae qui.",
+         "Ratione mollitia nemo est aut.",
+         "Quam officia provident perspiciatis nihil."
       ],
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1984-03-23T23:43:53Z",
-         "end_times": 7524797859284713762,
-         "monthly_day": 7,
+         "end_date_time": "2015-08-31T10:05:43Z",
+         "end_times": 5954965436118576578,
+         "monthly_day": 11,
          "monthly_week": 3,
-         "monthly_week_day": 5,
-         "repeat_interval": 7100557969254103168,
+         "monthly_week_day": 7,
+         "repeat_interval": 7418953500629859380,
          "type": 3,
          "weekly_days": "1,3,5"
       },
       "restricted": true,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Fugiat et unde molestiae.",
-      "title": "Voluptatum ut ut voluptatem odio debitis et.",
-      "transcript_enabled": false,
-      "visibility": "public",
+      "timezone": "Perferendis facilis.",
+      "title": "Officia fuga sit ad.",
+      "transcript_enabled": true,
+      "visibility": "private",
       "youtube_upload_enabled": true,
       "zoom_config": {
-         "ai_companion_enabled": false,
-         "ai_summary_require_approval": false
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": true
       }
    }' --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
@@ -799,7 +788,7 @@ Get a meeting by ID
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service get-meeting-base --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --include-cancelled-occurrences false --bearer-token "eyJhbGci..."
+    %[1]s meeting-service get-meeting-base --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --include-cancelled-occurrences true --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 
@@ -841,52 +830,64 @@ Update an existing meeting base.
 
 Example:
     %[1]s meeting-service update-meeting-base --body '{
-      "artifact_visibility": "meeting_hosts",
+      "artifact_visibility": "meeting_participants",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
             ],
-            "uid": "Laudantium quasi officia fuga."
+            "uid": "Est quod nihil voluptas."
          },
          {
             "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
             ],
-            "uid": "Laudantium quasi officia fuga."
+            "uid": "Est quod nihil voluptas."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
+            ],
+            "uid": "Est quod nihil voluptas."
+         },
+         {
+            "allowed_voting_statuses": [
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
+            ],
+            "uid": "Est quod nihil voluptas."
          }
       ],
-      "description": "Repellat totam officiis enim veritatis est.",
-      "duration": 135,
-      "early_join_time_minutes": 21,
-      "meeting_type": "Maintainers",
+      "description": "Dignissimos animi molestiae autem.",
+      "duration": 297,
+      "early_join_time_minutes": 45,
+      "meeting_type": "Marketing",
       "platform": "Zoom",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1984-03-23T23:43:53Z",
-         "end_times": 7524797859284713762,
-         "monthly_day": 7,
+         "end_date_time": "2015-08-31T10:05:43Z",
+         "end_times": 5954965436118576578,
+         "monthly_day": 11,
          "monthly_week": 3,
-         "monthly_week_day": 5,
-         "repeat_interval": 7100557969254103168,
+         "monthly_week_day": 7,
+         "repeat_interval": 7418953500629859380,
          "type": 3,
          "weekly_days": "1,3,5"
       },
       "restricted": false,
       "start_time": "2021-01-01T00:00:00Z",
-      "timezone": "Maiores veniam dolore omnis.",
-      "title": "Repudiandae et.",
+      "timezone": "Aliquam id est eligendi.",
+      "title": "Molestiae eum nesciunt nobis.",
       "transcript_enabled": false,
       "visibility": "public",
-      "youtube_upload_enabled": false,
+      "youtube_upload_enabled": true,
       "zoom_config": {
-         "ai_companion_enabled": false,
-         "ai_summary_require_approval": false
+         "ai_companion_enabled": true,
+         "ai_summary_require_approval": true
       }
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -905,10 +906,9 @@ Update an existing meeting's settings.
 Example:
     %[1]s meeting-service update-meeting-settings --body '{
       "organizers": [
-         "Quae rerum sed asperiores.",
-         "Eveniet sed eos molestiae et facilis.",
-         "Sint odio.",
-         "Asperiores est rerum."
+         "Possimus aut.",
+         "Ipsum commodi vel ullam quo porro.",
+         "Autem repellendus quia."
       ]
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
@@ -970,12 +970,12 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": false,
+      "host": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Quia mollitia.",
-      "username": "Totam aut vel."
+      "org_name": "Illum aperiam dolor.",
+      "username": "Id amet est laboriosam."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -1010,12 +1010,12 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": true,
+      "host": false,
       "job_title": "Software Engineer",
       "last_name": "Doe",
       "occurrence_id": "1640995200",
-      "org_name": "Sapiente est cupiditate pariatur soluta quaerat eius.",
-      "username": "Aut optio et soluta accusantium magni."
+      "org_name": "Voluptates veritatis praesentium deserunt vel.",
+      "username": "Sed et nesciunt ipsam."
    }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
@@ -1094,8 +1094,8 @@ Example:
     %[1]s meeting-service zoom-webhook --body '{
       "event": "meeting.started",
       "event_ts": 1609459200000,
-      "payload": "Amet est laboriosam enim sit."
-   }' --zoom-signature "Consequatur maiores eaque dolor maxime." --zoom-timestamp "Labore consequatur aspernatur alias voluptates."
+      "payload": "Natus sequi aut quidem rem."
+   }' --zoom-signature "Natus quod quidem id." --zoom-timestamp "Qui sit quidem veniam qui neque nisi."
 `, os.Args[0])
 }
 
@@ -1121,63 +1121,45 @@ Create a new past meeting record. This allows manual addition of past meetings t
 
 Example:
     %[1]s meeting-service create-past-meeting --body '{
-      "artifact_visibility": "public",
+      "artifact_visibility": "meeting_hosts",
       "committees": [
          {
             "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
             ],
-            "uid": "Laudantium quasi officia fuga."
+            "uid": "Est quod nihil voluptas."
          },
          {
             "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
+               "Ex sapiente libero enim ut.",
+               "At facere consectetur quod."
             ],
-            "uid": "Laudantium quasi officia fuga."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
-            ],
-            "uid": "Laudantium quasi officia fuga."
-         },
-         {
-            "allowed_voting_statuses": [
-               "Maiores id velit ratione.",
-               "Nam et.",
-               "Similique qui est quod nihil voluptas."
-            ],
-            "uid": "Laudantium quasi officia fuga."
+            "uid": "Est quod nihil voluptas."
          }
       ],
-      "description": "Ea velit.",
-      "duration": 289,
-      "early_join_time_minutes": 49,
-      "meeting_type": "Maintainers",
+      "description": "Sint sed est libero est.",
+      "duration": 364,
+      "early_join_time_minutes": 20,
+      "meeting_type": "None",
       "meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "occurrence_id": "1640995200",
       "platform": "Zoom",
       "platform_meeting_id": "1234567890",
       "project_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "public_link": "http://aufderharchristiansen.name/laurel_krajcik",
-      "recording_enabled": false,
+      "public_link": "http://thompsonbeer.biz/anita_simonis",
+      "recording_enabled": true,
       "recurrence": {
-         "end_date_time": "1984-03-23T23:43:53Z",
-         "end_times": 7524797859284713762,
-         "monthly_day": 7,
+         "end_date_time": "2015-08-31T10:05:43Z",
+         "end_times": 5954965436118576578,
+         "monthly_day": 11,
          "monthly_week": 3,
-         "monthly_week_day": 5,
-         "repeat_interval": 7100557969254103168,
+         "monthly_week_day": 7,
+         "repeat_interval": 7418953500629859380,
          "type": 3,
          "weekly_days": "1,3,5"
       },
-      "restricted": true,
+      "restricted": false,
       "scheduled_end_time": "2021-01-01T11:00:00Z",
       "scheduled_start_time": "2021-01-01T10:00:00Z",
       "sessions": [
@@ -1192,14 +1174,14 @@ Example:
             "uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee"
          }
       ],
-      "timezone": "Labore quia aut asperiores modi fugit architecto.",
-      "title": "Fugiat reiciendis omnis ipsa eveniet dolor labore.",
-      "transcript_enabled": true,
-      "visibility": "public",
-      "youtube_upload_enabled": false,
+      "timezone": "Aliquam neque quasi ipsam fugiat.",
+      "title": "Qui quam explicabo molestiae porro iste non.",
+      "transcript_enabled": false,
+      "visibility": "private",
+      "youtube_upload_enabled": true,
       "zoom_config": {
          "ai_companion_enabled": true,
-         "ai_summary_require_approval": false,
+         "ai_summary_require_approval": true,
          "meeting_id": "1234567890",
          "passcode": "147258"
       }
@@ -1266,9 +1248,9 @@ Example:
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Sunt harum sed.",
+      "org_name": "Et dignissimos incidunt.",
       "past_meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
-      "username": "Vitae in voluptatem repellendus dolorem explicabo."
+      "username": "Dolores eligendi incidunt praesentium sed non."
    }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
@@ -1303,13 +1285,13 @@ Example:
       "avatar_url": "https://example.com/avatar.jpg",
       "email": "user@example.com",
       "first_name": "John",
-      "host": true,
+      "host": false,
       "is_attended": true,
       "is_invited": true,
       "job_title": "Software Engineer",
       "last_name": "Doe",
-      "org_name": "Quisquam dolorem et dignissimos incidunt excepturi.",
-      "username": "Eligendi incidunt praesentium sed non."
+      "org_name": "Minus qui necessitatibus laborum dolorum.",
+      "username": "Voluptatem qui velit doloremque alias."
    }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
 `, os.Args[0])
 }
@@ -1375,19 +1357,21 @@ Example:
 `, os.Args[0])
 }
 
-func meetingServiceUploadMeetingAttachmentUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service upload-meeting-attachment -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
+func meetingServiceCreateMeetingAttachmentUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-attachment -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
 
-Upload a file or link attachment for a meeting
+Create a file or link attachment for a meeting
     -body JSON: 
     -meeting-uid STRING: The UID of the meeting this attachment belongs to
     -version STRING: 
     -bearer-token STRING: 
 
 Example:
-    %[1]s meeting-service upload-meeting-attachment --body '{
+    %[1]s meeting-service create-meeting-attachment --body '{
       "description": "Meeting agenda for Q1 2024",
-      "file": "TmVjZXNzaXRhdGlidXMgbGFib3J1bSBkb2xvcnVtLg==",
+      "file": "RWl1cyBleCBhc3N1bWVuZGEu",
+      "file_content_type": "Eveniet distinctio.",
+      "file_name": "Consequatur ullam.",
       "link": "https://example.com/meeting-notes",
       "name": "Q1 Meeting Agenda",
       "type": "file"
@@ -1449,7 +1433,9 @@ Create a file or link attachment for a past meeting. Can upload a new file, refe
 Example:
     %[1]s meeting-service create-past-meeting-attachment --body '{
       "description": "Meeting recording for Q1 2024",
-      "file": "UGVyZmVyZW5kaXMgdGVtcG9yaWJ1cyBsYWJvcmlvc2FtIHZlbCBlb3Mu",
+      "file": "T2RpbyBjb3JydXB0aSBuaWhpbCBjb25zZXF1YXR1ciBuZW1vLg==",
+      "file_content_type": "Suscipit et.",
+      "file_name": "Laboriosam veritatis in.",
       "link": "https://example.com/meeting-notes",
       "name": "Q1 Meeting Recording",
       "source_object_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
@@ -1485,20 +1471,6 @@ Example:
 `, os.Args[0])
 }
 
-func meetingServiceDeletePastMeetingAttachmentUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting-attachment -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
-
-Delete a past meeting attachment
-    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
-    -uid STRING: The UID of the attachment
-    -version STRING: 
-    -bearer-token STRING: 
-
-Example:
-    %[1]s meeting-service delete-past-meeting-attachment --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
-`, os.Args[0])
-}
-
 func meetingServiceGetPastMeetingAttachmentMetadataUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service get-past-meeting-attachment-metadata -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
 
@@ -1510,6 +1482,20 @@ Get metadata for a past meeting attachment without downloading the file
 
 Example:
     %[1]s meeting-service get-past-meeting-attachment-metadata --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+`, os.Args[0])
+}
+
+func meetingServiceDeletePastMeetingAttachmentUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting-attachment -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
+
+Delete a past meeting attachment
+    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
+    -uid STRING: The UID of the attachment
+    -version STRING: 
+    -bearer-token STRING: 
+
+Example:
+    %[1]s meeting-service delete-past-meeting-attachment --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
 `, os.Args[0])
 }
 

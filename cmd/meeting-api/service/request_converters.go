@@ -456,9 +456,9 @@ func ConvertCreateRSVPPayloadToDomain(payload *meetingservice.CreateMeetingRsvpP
 	return req
 }
 
-// ConvertUploadAttachmentPayloadToDomain converts a Goa UploadMeetingAttachmentPayload to domain UploadAttachmentRequest model
-func ConvertUploadAttachmentPayloadToDomain(payload *meetingservice.UploadMeetingAttachmentPayload, username, fileName, contentType string) *models.UploadAttachmentRequest {
-	req := &models.UploadAttachmentRequest{
+// ConvertCreateMeetingAttachmentPayloadToDomain converts a Goa CreateMeetingAttachmentPayload to domain CreateMeetingAttachmentRequest model
+func ConvertCreateMeetingAttachmentPayloadToDomain(payload *meetingservice.CreateMeetingAttachmentPayload, username, fileName, contentType string) *models.CreateMeetingAttachmentRequest {
+	req := &models.CreateMeetingAttachmentRequest{
 		MeetingUID:  payload.MeetingUID,
 		Type:        payload.Type,
 		Name:        payload.Name,
@@ -468,14 +468,39 @@ func ConvertUploadAttachmentPayloadToDomain(payload *meetingservice.UploadMeetin
 		FileData:    payload.File,
 	}
 
-	// Set optional Link if provided
 	if payload.Link != nil {
 		req.Link = *payload.Link
 	}
 
-	// Set optional Description if provided
 	if payload.Description != nil {
 		req.Description = *payload.Description
+	}
+
+	return req
+}
+
+// ConvertCreatePastMeetingAttachmentPayloadToDomain converts a Goa CreatePastMeetingAttachmentPayload to domain CreatePastMeetingAttachmentRequest model
+func ConvertCreatePastMeetingAttachmentPayloadToDomain(payload *meetingservice.CreatePastMeetingAttachmentPayload, username, fileName, contentType string) *models.CreatePastMeetingAttachmentRequest {
+	req := &models.CreatePastMeetingAttachmentRequest{
+		PastMeetingUID: payload.PastMeetingUID,
+		Type:           payload.Type,
+		Name:           payload.Name,
+		Username:       username,
+		FileName:       fileName,
+		ContentType:    contentType,
+		FileData:       payload.File,
+	}
+
+	if payload.Description != nil {
+		req.Description = *payload.Description
+	}
+
+	if payload.SourceObjectUID != nil {
+		req.SourceObjectUID = *payload.SourceObjectUID
+	}
+
+	if payload.Link != nil {
+		req.Link = *payload.Link
 	}
 
 	return req

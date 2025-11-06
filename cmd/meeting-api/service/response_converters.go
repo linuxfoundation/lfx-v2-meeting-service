@@ -622,8 +622,8 @@ func ConvertRSVPToResponse(rsvp *models.RSVPResponse) *meetingservice.RSVPRespon
 	return resp
 }
 
-// ConvertDomainToAttachmentResponse converts a domain attachment model to an API response
-func ConvertDomainToAttachmentResponse(attachment *models.MeetingAttachment) *meetingservice.MeetingAttachment {
+// ConvertDomainToMeetingAttachmentResponse converts a domain attachment model to an API response
+func ConvertDomainToMeetingAttachmentResponse(attachment *models.MeetingAttachment) *meetingservice.MeetingAttachment {
 	if attachment == nil {
 		return nil
 	}

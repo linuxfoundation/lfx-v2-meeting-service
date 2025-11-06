@@ -1147,9 +1147,9 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
-	// POST meeting attachment upload endpoint
-	Method("upload-meeting-attachment", func() {
-		Description("Upload a file or link attachment for a meeting")
+	// POST meeting attachment create endpoint
+	Method("create-meeting-attachment", func() {
+		Description("Create a file or link attachment for a meeting")
 
 		Security(JWTAuth)
 
@@ -1164,6 +1164,8 @@ var _ = Service("Meeting Service", func() {
 			Attribute("file", Bytes, "Optional: The file data to upload (for type='file')", func() {
 				Meta("swagger:type", "file")
 			})
+			Attribute("file_name", String, "The filename extracted from multipart form data (populated by decoder)")
+			Attribute("file_content_type", String, "The content type extracted from multipart form data (populated by decoder)")
 			Required("meeting_uid", "type", "name")
 		})
 
@@ -1313,6 +1315,8 @@ var _ = Service("Meeting Service", func() {
 			Attribute("file", Bytes, "Optional: The file data to upload (for type='file', required if source_object_uid is not provided)", func() {
 				Meta("swagger:type", "file")
 			})
+			Attribute("file_name", String, "The filename extracted from multipart form data (populated by decoder)")
+			Attribute("file_content_type", String, "The content type extracted from multipart form data (populated by decoder)")
 			Required("past_meeting_uid", "type", "name")
 		})
 
@@ -1412,39 +1416,6 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
-	// DELETE past meeting attachment endpoint
-	Method("delete-past-meeting-attachment", func() {
-		Description("Delete a past meeting attachment")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			PastMeetingAttachmentPastMeetingUIDAttribute()
-			PastMeetingAttachmentUIDAttribute()
-			Required("past_meeting_uid", "uid")
-		})
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Attachment not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/past_meetings/{past_meeting_uid}/attachments/{uid}")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusNoContent)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
 	// GET past meeting attachment metadata endpoint
 	Method("get-past-meeting-attachment-metadata", func() {
 		Description("Get metadata for a past meeting attachment without downloading the file")
@@ -1473,6 +1444,39 @@ var _ = Service("Meeting Service", func() {
 			Param("uid")
 			Header("bearer_token:Authorization")
 			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE past meeting attachment endpoint
+	Method("delete-past-meeting-attachment", func() {
+		Description("Delete a past meeting attachment")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentUIDAttribute()
+			Required("past_meeting_uid", "uid")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/past_meetings/{past_meeting_uid}/attachments/{uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)

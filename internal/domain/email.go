@@ -13,6 +13,7 @@ import (
 // EmailService defines the interface for sending emails
 type EmailService interface {
 	SendRegistrantInvitation(ctx context.Context, invitation EmailInvitation) error
+	// TODO: Rename this method and audit the parameter to make sure it's as concise as possible
 	SendRegistrantCancellation(ctx context.Context, cancellation EmailCancellation) error
 	SendOccurrenceCancellation(ctx context.Context, cancellation EmailOccurrenceCancellation) error
 	SendRegistrantUpdatedInvitation(ctx context.Context, updatedInvitation EmailUpdatedInvitation) error
@@ -42,8 +43,8 @@ type EmailInvitation struct {
 	IcsSequence              int                         // ICS sequence number for calendar updates
 	ICSAttachment            *EmailAttachment            // ICS calendar attachment
 	CancelledOccurrenceTimes []time.Time                 // Cancelled occurrence start times to exclude from ICS
-	Attachments              []*models.MeetingAttachment // Meeting attachments to display in email
-	FileAttachments          []*EmailAttachment          // File attachments to include in email
+	MeetingAttachments       []*models.MeetingAttachment // Meeting attachments to display in email
+	EmailFileAttachments     []*EmailAttachment          // File attachments to include in email attachments
 }
 
 // EmailCancellation contains the data needed to send a meeting cancellation email
@@ -93,29 +94,29 @@ type EmailOccurrenceCancellation struct {
 
 // EmailUpdatedInvitation contains the data needed to send a meeting update notification email
 type EmailUpdatedInvitation struct {
-	MeetingUID         string // Meeting UID for consistent calendar event identification
-	RecipientEmail     string
-	RecipientName      string
-	MeetingTitle       string
-	StartTime          time.Time
-	Duration           int // Duration in minutes
-	Timezone           string
-	Description        string
-	JoinLink           string
-	MeetingDetailsLink string // URL to meeting details in LFX One
-	Visibility         string
-	MeetingType        string
-	ProjectName        string                      // Optional project name for context
-	ProjectLogo        string                      // Optional project logo URL
-	Platform           string                      // Meeting platform (e.g., "Zoom")
-	MeetingID          string                      // Zoom meeting ID for dial-in
-	Passcode           string                      // Zoom passcode
-	Recurrence         *models.Recurrence          // Recurrence pattern for ICS
-	Changes            map[string]any              // Map of what changed (field names to new values)
-	IcsSequence        int                         // ICS sequence number for calendar updates
-	ICSAttachment      *EmailAttachment            // Updated ICS calendar attachment
-	Attachments        []*models.MeetingAttachment // Meeting attachments to display in email
-	FileAttachments    []*EmailAttachment          // File attachments to include in email
+	MeetingUID           string // Meeting UID for consistent calendar event identification
+	RecipientEmail       string
+	RecipientName        string
+	MeetingTitle         string
+	StartTime            time.Time
+	Duration             int // Duration in minutes
+	Timezone             string
+	Description          string
+	JoinLink             string
+	MeetingDetailsLink   string // URL to meeting details in LFX One
+	Visibility           string
+	MeetingType          string
+	ProjectName          string                      // Optional project name for context
+	ProjectLogo          string                      // Optional project logo URL
+	Platform             string                      // Meeting platform (e.g., "Zoom")
+	MeetingID            string                      // Zoom meeting ID for dial-in
+	Passcode             string                      // Zoom passcode
+	Recurrence           *models.Recurrence          // Recurrence pattern for ICS
+	Changes              map[string]any              // Map of what changed (field names to new values)
+	IcsSequence          int                         // ICS sequence number for calendar updates
+	ICSAttachment        *EmailAttachment            // Updated ICS calendar attachment
+	MeetingAttachments   []*models.MeetingAttachment // Meeting attachments to display in email
+	EmailFileAttachments []*EmailAttachment          // File attachments to include in email attachments
 
 	// Previous meeting data for showing what changed
 	OldStartTime   time.Time          // Previous start time

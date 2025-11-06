@@ -83,8 +83,8 @@ type Service interface {
 	GetPastMeetingSummary(context.Context, *GetPastMeetingSummaryPayload) (res *GetPastMeetingSummaryResult, err error)
 	// Update an existing past meeting summary
 	UpdatePastMeetingSummary(context.Context, *UpdatePastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
-	// Upload a file or link attachment for a meeting
-	UploadMeetingAttachment(context.Context, *UploadMeetingAttachmentPayload) (res *MeetingAttachment, err error)
+	// Create a file or link attachment for a meeting
+	CreateMeetingAttachment(context.Context, *CreateMeetingAttachmentPayload) (res *MeetingAttachment, err error)
 	// Download a file attachment for a meeting
 	GetMeetingAttachment(context.Context, *GetMeetingAttachmentPayload) (res []byte, err error)
 	// Get metadata for a meeting attachment without downloading the file
@@ -98,10 +98,10 @@ type Service interface {
 	GetPastMeetingAttachments(context.Context, *GetPastMeetingAttachmentsPayload) (res *GetPastMeetingAttachmentsResult, err error)
 	// Download a file attachment for a past meeting
 	GetPastMeetingAttachment(context.Context, *GetPastMeetingAttachmentPayload) (res []byte, err error)
-	// Delete a past meeting attachment
-	DeletePastMeetingAttachment(context.Context, *DeletePastMeetingAttachmentPayload) (err error)
 	// Get metadata for a past meeting attachment without downloading the file
 	GetPastMeetingAttachmentMetadata(context.Context, *GetPastMeetingAttachmentMetadataPayload) (res *PastMeetingAttachment, err error)
+	// Delete a past meeting attachment
+	DeletePastMeetingAttachment(context.Context, *DeletePastMeetingAttachmentPayload) (err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
@@ -128,7 +128,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [41]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "upload-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "delete-past-meeting-attachment", "get-past-meeting-attachment-metadata", "readyz", "livez"}
+var MethodNames = [41]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -151,6 +151,31 @@ type ConflictError struct {
 	Code string
 	// Error message
 	Message string
+}
+
+// CreateMeetingAttachmentPayload is the payload type of the Meeting Service
+// service create-meeting-attachment method.
+type CreateMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The UID of the meeting this attachment belongs to
+	MeetingUID string
+	// The type of attachment
+	Type string
+	// URL for link-type attachments (required if type is 'link')
+	Link *string
+	// Custom name for the attachment
+	Name string
+	// Optional description of the attachment
+	Description *string
+	// Optional: The file data to upload (for type='file')
+	File []byte
+	// The filename extracted from multipart form data (populated by decoder)
+	FileName *string
+	// The content type extracted from multipart form data (populated by decoder)
+	FileContentType *string
 }
 
 // CreateMeetingPayload is the payload type of the Meeting Service service
@@ -267,7 +292,7 @@ type CreatePastMeetingAttachmentPayload struct {
 	Version *string
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID string
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type string
 	// URL for link-type attachments (required if type is 'link')
 	Link *string
@@ -281,6 +306,10 @@ type CreatePastMeetingAttachmentPayload struct {
 	// Optional: The file data to upload (for type='file', required if
 	// source_object_uid is not provided)
 	File []byte
+	// The filename extracted from multipart form data (populated by decoder)
+	FileName *string
+	// The content type extracted from multipart form data (populated by decoder)
+	FileContentType *string
 }
 
 // CreatePastMeetingParticipantPayload is the payload type of the Meeting
@@ -808,13 +837,13 @@ type InternalServerError struct {
 }
 
 // MeetingAttachment is the result type of the Meeting Service service
-// upload-meeting-attachment method.
+// create-meeting-attachment method.
 type MeetingAttachment struct {
 	// The UID of the attachment
 	UID string
 	// The UID of the meeting this attachment belongs to
 	MeetingUID string
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type string
 	// URL for link-type attachments (required if type is 'link')
 	Link *string
@@ -826,7 +855,7 @@ type MeetingAttachment struct {
 	FileSize *int64
 	// The MIME type of the file (only for type='file')
 	ContentType *string
-	// The username of the user who uploaded the file
+	// The username of the user who uploaded the file or link
 	UploadedBy string
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string
@@ -1106,7 +1135,7 @@ type PastMeetingAttachment struct {
 	UID string
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID string
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type string
 	// URL for link-type attachments (required if type is 'link')
 	Link *string
@@ -1118,7 +1147,7 @@ type PastMeetingAttachment struct {
 	FileSize *int64
 	// The MIME type of the file (only for type='file')
 	ContentType *string
-	// The username of the user who uploaded the file
+	// The username of the user who uploaded the file or link
 	UploadedBy string
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string
@@ -1554,27 +1583,6 @@ type UpdatePastMeetingSummaryPayload struct {
 	EditedContent *string
 	// Whether the summary has been approved
 	Approved *bool
-}
-
-// UploadMeetingAttachmentPayload is the payload type of the Meeting Service
-// service upload-meeting-attachment method.
-type UploadMeetingAttachmentPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The UID of the meeting this attachment belongs to
-	MeetingUID string
-	// The type of attachment: 'file' or 'link'
-	Type string
-	// URL for link-type attachments (required if type is 'link')
-	Link *string
-	// Custom name for the attachment
-	Name string
-	// Optional description of the attachment
-	Description *string
-	// Optional: The file data to upload (for type='file')
-	File []byte
 }
 
 // Meeting attributes specific to Zoom platform that contain both writable and

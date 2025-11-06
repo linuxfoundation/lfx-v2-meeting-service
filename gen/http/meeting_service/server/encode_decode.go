@@ -3930,23 +3930,23 @@ func EncodeUpdatePastMeetingSummaryError(encoder func(context.Context, http.Resp
 	}
 }
 
-// EncodeUploadMeetingAttachmentResponse returns an encoder for responses
-// returned by the Meeting Service upload-meeting-attachment endpoint.
-func EncodeUploadMeetingAttachmentResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+// EncodeCreateMeetingAttachmentResponse returns an encoder for responses
+// returned by the Meeting Service create-meeting-attachment endpoint.
+func EncodeCreateMeetingAttachmentResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
 		res, _ := v.(*meetingservice.MeetingAttachment)
 		enc := encoder(ctx, w)
-		body := NewUploadMeetingAttachmentResponseBody(res)
+		body := NewCreateMeetingAttachmentResponseBody(res)
 		w.WriteHeader(http.StatusCreated)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeUploadMeetingAttachmentRequest returns a decoder for requests sent to
-// the Meeting Service upload-meeting-attachment endpoint.
-func DecodeUploadMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+// DecodeCreateMeetingAttachmentRequest returns a decoder for requests sent to
+// the Meeting Service create-meeting-attachment endpoint.
+func DecodeCreateMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
 	return func(r *http.Request) (any, error) {
-		var payload *meetingservice.UploadMeetingAttachmentPayload
+		var payload *meetingservice.CreateMeetingAttachmentPayload
 		if err := decoder(r).Decode(&payload); err != nil {
 			var gerr *goa.ServiceError
 			if errors.As(err, &gerr) {
@@ -3966,18 +3966,18 @@ func DecodeUploadMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.
 	}
 }
 
-// NewMeetingServiceUploadMeetingAttachmentDecoder returns a decoder to decode
+// NewMeetingServiceCreateMeetingAttachmentDecoder returns a decoder to decode
 // the multipart request for the "Meeting Service" service
-// "upload-meeting-attachment" endpoint.
-func NewMeetingServiceUploadMeetingAttachmentDecoder(mux goahttp.Muxer, meetingServiceUploadMeetingAttachmentDecoderFn MeetingServiceUploadMeetingAttachmentDecoderFunc) func(r *http.Request) goahttp.Decoder {
+// "create-meeting-attachment" endpoint.
+func NewMeetingServiceCreateMeetingAttachmentDecoder(mux goahttp.Muxer, meetingServiceCreateMeetingAttachmentDecoderFn MeetingServiceCreateMeetingAttachmentDecoderFunc) func(r *http.Request) goahttp.Decoder {
 	return func(r *http.Request) goahttp.Decoder {
 		return goahttp.EncodingFunc(func(v any) error {
 			mr, merr := r.MultipartReader()
 			if merr != nil {
 				return merr
 			}
-			p := v.(**meetingservice.UploadMeetingAttachmentPayload)
-			if err := meetingServiceUploadMeetingAttachmentDecoderFn(mr, p); err != nil {
+			p := v.(**meetingservice.CreateMeetingAttachmentPayload)
+			if err := meetingServiceCreateMeetingAttachmentDecoderFn(mr, p); err != nil {
 				return err
 			}
 
@@ -4015,9 +4015,9 @@ func NewMeetingServiceUploadMeetingAttachmentDecoder(mux goahttp.Muxer, meetingS
 	}
 }
 
-// EncodeUploadMeetingAttachmentError returns an encoder for errors returned by
-// the upload-meeting-attachment Meeting Service endpoint.
-func EncodeUploadMeetingAttachmentError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeCreateMeetingAttachmentError returns an encoder for errors returned by
+// the create-meeting-attachment Meeting Service endpoint.
+func EncodeCreateMeetingAttachmentError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		var en goa.GoaErrorNamer
@@ -4033,7 +4033,7 @@ func EncodeUploadMeetingAttachmentError(encoder func(context.Context, http.Respo
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewUploadMeetingAttachmentBadRequestResponseBody(res)
+				body = NewCreateMeetingAttachmentBadRequestResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusBadRequest)
@@ -4046,7 +4046,7 @@ func EncodeUploadMeetingAttachmentError(encoder func(context.Context, http.Respo
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewUploadMeetingAttachmentInternalServerErrorResponseBody(res)
+				body = NewCreateMeetingAttachmentInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -4059,7 +4059,7 @@ func EncodeUploadMeetingAttachmentError(encoder func(context.Context, http.Respo
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewUploadMeetingAttachmentNotFoundResponseBody(res)
+				body = NewCreateMeetingAttachmentNotFoundResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusNotFound)
@@ -4072,7 +4072,7 @@ func EncodeUploadMeetingAttachmentError(encoder func(context.Context, http.Respo
 			if formatter != nil {
 				body = formatter(ctx, res)
 			} else {
-				body = NewUploadMeetingAttachmentServiceUnavailableResponseBody(res)
+				body = NewCreateMeetingAttachmentServiceUnavailableResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -4852,129 +4852,6 @@ func EncodeGetPastMeetingAttachmentError(encoder func(context.Context, http.Resp
 	}
 }
 
-// EncodeDeletePastMeetingAttachmentResponse returns an encoder for responses
-// returned by the Meeting Service delete-past-meeting-attachment endpoint.
-func EncodeDeletePastMeetingAttachmentResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
-	return func(ctx context.Context, w http.ResponseWriter, v any) error {
-		w.WriteHeader(http.StatusNoContent)
-		return nil
-	}
-}
-
-// DecodeDeletePastMeetingAttachmentRequest returns a decoder for requests sent
-// to the Meeting Service delete-past-meeting-attachment endpoint.
-func DecodeDeletePastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
-	return func(r *http.Request) (any, error) {
-		var (
-			pastMeetingUID string
-			uid            string
-			version        *string
-			bearerToken    *string
-			err            error
-
-			params = mux.Vars(r)
-		)
-		pastMeetingUID = params["past_meeting_uid"]
-		err = goa.MergeErrors(err, goa.ValidateFormat("past_meeting_uid", pastMeetingUID, goa.FormatUUID))
-		uid = params["uid"]
-		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
-		versionRaw := r.URL.Query().Get("v")
-		if versionRaw != "" {
-			version = &versionRaw
-		}
-		if version != nil {
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
-			}
-		}
-		bearerTokenRaw := r.Header.Get("Authorization")
-		if bearerTokenRaw != "" {
-			bearerToken = &bearerTokenRaw
-		}
-		if err != nil {
-			return nil, err
-		}
-		payload := NewDeletePastMeetingAttachmentPayload(pastMeetingUID, uid, version, bearerToken)
-		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
-				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
-				payload.BearerToken = &cred
-			}
-		}
-
-		return payload, nil
-	}
-}
-
-// EncodeDeletePastMeetingAttachmentError returns an encoder for errors
-// returned by the delete-past-meeting-attachment Meeting Service endpoint.
-func EncodeDeletePastMeetingAttachmentError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
-	encodeError := goahttp.ErrorEncoder(encoder, formatter)
-	return func(ctx context.Context, w http.ResponseWriter, v error) error {
-		var en goa.GoaErrorNamer
-		if !errors.As(v, &en) {
-			return encodeError(ctx, w, v)
-		}
-		switch en.GoaErrorName() {
-		case "BadRequest":
-			var res *meetingservice.BadRequestError
-			errors.As(v, &res)
-			enc := encoder(ctx, w)
-			var body any
-			if formatter != nil {
-				body = formatter(ctx, res)
-			} else {
-				body = NewDeletePastMeetingAttachmentBadRequestResponseBody(res)
-			}
-			w.Header().Set("goa-error", res.GoaErrorName())
-			w.WriteHeader(http.StatusBadRequest)
-			return enc.Encode(body)
-		case "InternalServerError":
-			var res *meetingservice.InternalServerError
-			errors.As(v, &res)
-			enc := encoder(ctx, w)
-			var body any
-			if formatter != nil {
-				body = formatter(ctx, res)
-			} else {
-				body = NewDeletePastMeetingAttachmentInternalServerErrorResponseBody(res)
-			}
-			w.Header().Set("goa-error", res.GoaErrorName())
-			w.WriteHeader(http.StatusInternalServerError)
-			return enc.Encode(body)
-		case "NotFound":
-			var res *meetingservice.NotFoundError
-			errors.As(v, &res)
-			enc := encoder(ctx, w)
-			var body any
-			if formatter != nil {
-				body = formatter(ctx, res)
-			} else {
-				body = NewDeletePastMeetingAttachmentNotFoundResponseBody(res)
-			}
-			w.Header().Set("goa-error", res.GoaErrorName())
-			w.WriteHeader(http.StatusNotFound)
-			return enc.Encode(body)
-		case "ServiceUnavailable":
-			var res *meetingservice.ServiceUnavailableError
-			errors.As(v, &res)
-			enc := encoder(ctx, w)
-			var body any
-			if formatter != nil {
-				body = formatter(ctx, res)
-			} else {
-				body = NewDeletePastMeetingAttachmentServiceUnavailableResponseBody(res)
-			}
-			w.Header().Set("goa-error", res.GoaErrorName())
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return enc.Encode(body)
-		default:
-			return encodeError(ctx, w, v)
-		}
-	}
-}
-
 // EncodeGetPastMeetingAttachmentMetadataResponse returns an encoder for
 // responses returned by the Meeting Service
 // get-past-meeting-attachment-metadata endpoint.
@@ -5093,6 +4970,129 @@ func EncodeGetPastMeetingAttachmentMetadataError(encoder func(context.Context, h
 				body = formatter(ctx, res)
 			} else {
 				body = NewGetPastMeetingAttachmentMetadataServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeDeletePastMeetingAttachmentResponse returns an encoder for responses
+// returned by the Meeting Service delete-past-meeting-attachment endpoint.
+func EncodeDeletePastMeetingAttachmentResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+}
+
+// DecodeDeletePastMeetingAttachmentRequest returns a decoder for requests sent
+// to the Meeting Service delete-past-meeting-attachment endpoint.
+func DecodeDeletePastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (any, error) {
+	return func(r *http.Request) (any, error) {
+		var (
+			pastMeetingUID string
+			uid            string
+			version        *string
+			bearerToken    *string
+			err            error
+
+			params = mux.Vars(r)
+		)
+		pastMeetingUID = params["past_meeting_uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("past_meeting_uid", pastMeetingUID, goa.FormatUUID))
+		uid = params["uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("uid", uid, goa.FormatUUID))
+		versionRaw := r.URL.Query().Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewDeletePastMeetingAttachmentPayload(pastMeetingUID, uid, version, bearerToken)
+		if payload.BearerToken != nil {
+			if strings.Contains(*payload.BearerToken, " ") {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeDeletePastMeetingAttachmentError returns an encoder for errors
+// returned by the delete-past-meeting-attachment Meeting Service endpoint.
+func EncodeDeletePastMeetingAttachmentError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeletePastMeetingAttachmentBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeletePastMeetingAttachmentInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeletePastMeetingAttachmentNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeletePastMeetingAttachmentServiceUnavailableResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusServiceUnavailable)

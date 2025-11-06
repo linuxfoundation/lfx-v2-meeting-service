@@ -178,7 +178,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	// Create past meeting attachments from meeting attachments
 	if s.meetingAttachmentRepository != nil && s.pastMeetingAttachmentRepository != nil {
 		if err := s.createPastMeetingAttachmentsFromMeeting(ctx, pastMeetingReq.MeetingUID, pastMeetingReq.UID); err != nil {
-			slog.ErrorContext(ctx, "error creating past meeting attachments", logging.ErrKey, err)
+			slog.ErrorContext(ctx, "error creating past meeting attachments", logging.ErrKey, err, logging.PriorityCritical())
 			// Don't fail the operation if attachment creation fails
 		}
 	}
@@ -204,15 +204,23 @@ func (s *PastMeetingService) createPastMeetingAttachmentsFromMeeting(ctx context
 	// Create past meeting attachment records
 	for _, meetingAttachment := range meetingAttachments {
 		pastAttachment := &models.PastMeetingAttachment{
-			UID:             uuid.New().String(),
-			PastMeetingUID:  pastMeetingUID,
-			FileName:        meetingAttachment.FileName,
-			FileSize:        meetingAttachment.FileSize,
-			ContentType:     meetingAttachment.ContentType,
-			UploadedBy:      meetingAttachment.UploadedBy,
-			UploadedAt:      meetingAttachment.UploadedAt,
-			Description:     meetingAttachment.Description,
-			SourceObjectUID: meetingAttachment.UID, // Reference the original file in Object Store
+			UID:            uuid.New().String(),
+			PastMeetingUID: pastMeetingUID,
+			Type:           meetingAttachment.Type,
+			UploadedBy:     meetingAttachment.UploadedBy,
+			UploadedAt:     meetingAttachment.UploadedAt,
+			Description:    meetingAttachment.Description,
+		}
+
+		if meetingAttachment.Type == models.AttachmentTypeFile {
+			pastAttachment.FileName = meetingAttachment.FileName
+			pastAttachment.FileSize = meetingAttachment.FileSize
+			pastAttachment.ContentType = meetingAttachment.ContentType
+			pastAttachment.SourceObjectUID = meetingAttachment.UID // Reference the original file in Object Store
+		}
+
+		if meetingAttachment.Type == models.AttachmentTypeLink {
+			pastAttachment.Link = meetingAttachment.Link
 		}
 
 		if err := s.pastMeetingAttachmentRepository.PutMetadata(ctx, pastAttachment); err != nil {

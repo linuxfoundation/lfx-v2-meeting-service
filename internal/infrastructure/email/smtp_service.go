@@ -114,7 +114,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		Recurrence:               invitation.Recurrence,
 		Sequence:                 invitation.IcsSequence,
 		CancelledOccurrenceTimes: invitation.CancelledOccurrenceTimes,
-		Attachments:              invitation.Attachments,
+		MeetingAttachments:       invitation.MeetingAttachments,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to generate ICS file", logging.ErrKey, err)
@@ -123,17 +123,18 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 	}
 
 	// Create ICS attachment if generated successfully
-	var attachment *domain.EmailAttachment
+	var icsAttachment *domain.EmailAttachment
 	if icsContent != "" {
 		// Encode ICS content to base64
 		encodedContent := base64.StdEncoding.EncodeToString([]byte(icsContent))
-		attachment = &domain.EmailAttachment{
+		icsAttachment = &domain.EmailAttachment{
 			Filename:    "meeting-invitation.ics",
 			ContentType: "text/calendar; charset=UTF-8; method=REQUEST",
 			Content:     encodedContent,
 		}
 		// Store in invitation for template access
-		invitation.ICSAttachment = attachment
+		invitation.ICSAttachment = icsAttachment
+		invitation.EmailFileAttachments = append(invitation.EmailFileAttachments, icsAttachment)
 	}
 
 	// Generate email content from templates
@@ -155,14 +156,13 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		ProjectName: invitation.ProjectName,
 	}
 	message := buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   invitation.RecipientEmail,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  attachment,                 // ICS calendar attachment
-		Attachments: invitation.FileAttachments, // Meeting file attachments
-		Config:      s.config,
-		Metadata:    metadata,
+		Recipient:       invitation.RecipientEmail,
+		Subject:         subject,
+		HTMLContent:     htmlContent,
+		TextContent:     textContent,
+		FileAttachments: invitation.EmailFileAttachments,
+		Config:          s.config,
+		Metadata:        metadata,
 	})
 	err = sendEmailMessage(invitation.RecipientEmail, message, s.config)
 	if err != nil {
@@ -171,7 +171,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 	}
 
 	slog.InfoContext(ctx, "invitation email sent successfully")
-	if attachment != nil {
+	if icsAttachment != nil {
 		slog.InfoContext(ctx, "ICS attachment included in invitation")
 	}
 	return nil
@@ -184,7 +184,7 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 
 	// Generate ICS cancellation file if the meeting series is not completed yet.
 	// Otherwise if it is completed, then we don't need to remove the series from the user's calendar.
-	var attachment *domain.EmailAttachment
+	var icsAttachment *domain.EmailAttachment
 	if cancellation.StartTime.After(time.Now()) {
 		icsContent, err := s.icsGenerator.GenerateMeetingCancellationICS(ICSMeetingCancellationParams{
 			MeetingUID:     cancellation.MeetingUID,
@@ -201,12 +201,12 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 			// Continue without ICS - don't fail the whole email
 		} else {
 			// Create attachment
-			attachment = &domain.EmailAttachment{
+			icsAttachment = &domain.EmailAttachment{
 				Filename:    fmt.Sprintf("%s-cancellation.ics", strings.ReplaceAll(cancellation.MeetingTitle, " ", "_")),
 				ContentType: "text/calendar; charset=UTF-8; method=CANCEL",
 				Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
 			}
-			cancellation.ICSAttachment = attachment
+			cancellation.ICSAttachment = icsAttachment
 		}
 	}
 
@@ -226,12 +226,12 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	// Build and send the email with attachment
 	subject := fmt.Sprintf("Meeting Cancellation: %s", cancellation.MeetingTitle)
 	message := buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   cancellation.RecipientEmail,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  attachment,
-		Config:      s.config,
+		Recipient:       cancellation.RecipientEmail,
+		Subject:         subject,
+		HTMLContent:     htmlContent,
+		TextContent:     textContent,
+		FileAttachments: []*domain.EmailAttachment{icsAttachment},
+		Config:          s.config,
 		Metadata: &EmailMetadata{
 			ProjectName: cancellation.ProjectName,
 		},
@@ -243,7 +243,7 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	}
 
 	slog.InfoContext(ctx, "cancellation email sent successfully")
-	if attachment != nil {
+	if icsAttachment != nil {
 		slog.InfoContext(ctx, "ICS cancellation attachment included")
 	}
 	return nil
@@ -256,7 +256,7 @@ func (s *SMTPService) SendOccurrenceCancellation(ctx context.Context, cancellati
 	ctx = logging.AppendCtx(ctx, slog.String("occurrence_id", cancellation.OccurrenceID))
 
 	// Generate ICS cancellation file for the specific occurrence if it's in the future
-	var attachment *domain.EmailAttachment
+	var icsAttachment *domain.EmailAttachment
 	if cancellation.OccurrenceStartTime.After(time.Now()) {
 		icsContent, err := s.icsGenerator.GenerateOccurrenceCancellationICS(ICSOccurrenceCancellationParams{
 			MeetingUID:          cancellation.MeetingUID,
@@ -272,12 +272,12 @@ func (s *SMTPService) SendOccurrenceCancellation(ctx context.Context, cancellati
 			// Continue without ICS - don't fail the whole email
 		} else {
 			// Create attachment
-			attachment = &domain.EmailAttachment{
+			icsAttachment = &domain.EmailAttachment{
 				Filename:    fmt.Sprintf("%s-occurrence-cancellation.ics", strings.ReplaceAll(cancellation.MeetingTitle, " ", "_")),
 				ContentType: "text/calendar; charset=UTF-8; method=CANCEL",
 				Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
 			}
-			cancellation.ICSAttachment = attachment
+			cancellation.ICSAttachment = icsAttachment
 		}
 	}
 
@@ -297,12 +297,12 @@ func (s *SMTPService) SendOccurrenceCancellation(ctx context.Context, cancellati
 	// Build and send the email with attachment
 	subject := fmt.Sprintf("Updated Invitation: %s", cancellation.MeetingTitle)
 	message := buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   cancellation.RecipientEmail,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  attachment,
-		Config:      s.config,
+		Recipient:       cancellation.RecipientEmail,
+		Subject:         subject,
+		HTMLContent:     htmlContent,
+		TextContent:     textContent,
+		FileAttachments: []*domain.EmailAttachment{icsAttachment},
+		Config:          s.config,
 		Metadata: &EmailMetadata{
 			ProjectName: cancellation.ProjectName,
 		},
@@ -314,7 +314,7 @@ func (s *SMTPService) SendOccurrenceCancellation(ctx context.Context, cancellati
 	}
 
 	slog.InfoContext(ctx, "occurrence cancellation email sent successfully")
-	if attachment != nil {
+	if icsAttachment != nil {
 		slog.InfoContext(ctx, "ICS occurrence cancellation attachment included")
 	}
 	return nil
@@ -326,35 +326,36 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", updatedInvitation.MeetingTitle))
 
 	// Generate ICS update file if we have the necessary data and it's a future meeting
-	var attachment *domain.EmailAttachment
+	var icsAttachment *domain.EmailAttachment
 	if updatedInvitation.StartTime.After(time.Now()) {
 		icsContent, err := s.icsGenerator.GenerateMeetingUpdateICS(ICSMeetingUpdateParams{
-			MeetingUID:     updatedInvitation.MeetingUID,
-			MeetingTitle:   updatedInvitation.MeetingTitle,
-			Description:    updatedInvitation.Description,
-			StartTime:      updatedInvitation.StartTime,
-			Duration:       updatedInvitation.Duration,
-			Timezone:       updatedInvitation.Timezone,
-			JoinLink:       updatedInvitation.JoinLink,
-			MeetingID:      updatedInvitation.MeetingID,
-			Passcode:       updatedInvitation.Passcode,
-			RecipientEmail: updatedInvitation.RecipientEmail,
-			ProjectName:    updatedInvitation.ProjectName,
-			Recurrence:     updatedInvitation.Recurrence,
-			Sequence:       updatedInvitation.IcsSequence,
-			Attachments:    updatedInvitation.Attachments,
+			MeetingUID:         updatedInvitation.MeetingUID,
+			MeetingTitle:       updatedInvitation.MeetingTitle,
+			Description:        updatedInvitation.Description,
+			StartTime:          updatedInvitation.StartTime,
+			Duration:           updatedInvitation.Duration,
+			Timezone:           updatedInvitation.Timezone,
+			JoinLink:           updatedInvitation.JoinLink,
+			MeetingID:          updatedInvitation.MeetingID,
+			Passcode:           updatedInvitation.Passcode,
+			RecipientEmail:     updatedInvitation.RecipientEmail,
+			ProjectName:        updatedInvitation.ProjectName,
+			Recurrence:         updatedInvitation.Recurrence,
+			Sequence:           updatedInvitation.IcsSequence,
+			MeetingAttachments: updatedInvitation.MeetingAttachments,
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS update", logging.ErrKey, err)
 			// Continue without ICS - don't fail the whole email
 		} else {
 			// Create attachment
-			attachment = &domain.EmailAttachment{
+			icsAttachment = &domain.EmailAttachment{
 				Filename:    fmt.Sprintf("%s-updated.ics", strings.ReplaceAll(updatedInvitation.MeetingTitle, " ", "_")),
 				ContentType: "text/calendar; charset=UTF-8; method=REQUEST",
 				Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
 			}
-			updatedInvitation.ICSAttachment = attachment
+			updatedInvitation.ICSAttachment = icsAttachment
+			updatedInvitation.EmailFileAttachments = append(updatedInvitation.EmailFileAttachments, icsAttachment)
 		}
 	}
 
@@ -374,13 +375,12 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	// Build and send the email with attachments (ICS + file attachments)
 	subject := fmt.Sprintf("Meeting Updated: %s", updatedInvitation.MeetingTitle)
 	message := buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   updatedInvitation.RecipientEmail,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  attachment,                        // ICS calendar attachment
-		Attachments: updatedInvitation.FileAttachments, // Meeting file attachments
-		Config:      s.config,
+		Recipient:       updatedInvitation.RecipientEmail,
+		Subject:         subject,
+		HTMLContent:     htmlContent,
+		TextContent:     textContent,
+		FileAttachments: updatedInvitation.EmailFileAttachments,
+		Config:          s.config,
 		Metadata: &EmailMetadata{
 			ProjectName: updatedInvitation.ProjectName,
 		},
@@ -393,7 +393,7 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	}
 
 	slog.InfoContext(ctx, "updated invitation email sent successfully")
-	if attachment != nil {
+	if icsAttachment != nil {
 		slog.InfoContext(ctx, "ICS update attachment included")
 	}
 	return nil
@@ -420,12 +420,12 @@ func (s *SMTPService) SendSummaryNotification(ctx context.Context, notification 
 	// Build and send the email
 	subject := fmt.Sprintf("Meeting Summary Available: %s", notification.MeetingTitle)
 	message := buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   notification.RecipientEmail,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  nil, // No attachments for summary notifications
-		Config:      s.config,
+		Recipient:       notification.RecipientEmail,
+		Subject:         subject,
+		HTMLContent:     htmlContent,
+		TextContent:     textContent,
+		FileAttachments: nil,
+		Config:          s.config,
 		Metadata: &EmailMetadata{
 			ProjectName: notification.ProjectName,
 		},

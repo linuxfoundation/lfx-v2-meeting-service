@@ -23,20 +23,12 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
-// uploadMeetingAttachmentMetadata holds file metadata extracted during multipart decoding
-type uploadMeetingAttachmentMetadata struct {
-	FileName    string
-	ContentType string
-}
-
-// uploadMeetingAttachmentDecoder decodes multipart form data for file uploads
-func uploadMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.UploadMeetingAttachmentPayload) error {
+// createMeetingAttachmentDecoder decodes multipart form data for file uploads
+func createMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.CreateMeetingAttachmentPayload) error {
 	// Initialize the payload if it's nil
 	if *p == nil {
-		*p = &genquerysvc.UploadMeetingAttachmentPayload{}
+		*p = &genquerysvc.CreateMeetingAttachmentPayload{}
 	}
-
-	var metadata uploadMeetingAttachmentMetadata
 
 	// Read all parts from the multipart form
 	for {
@@ -71,12 +63,14 @@ func uploadMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Upload
 			link := string(linkData)
 			(*p).Link = &link
 		case "file":
-			// Capture file metadata from the part
-			metadata.FileName = part.FileName()
-			metadata.ContentType = part.Header.Get("Content-Type")
-			if metadata.ContentType == "" {
-				metadata.ContentType = "application/octet-stream"
+			// Capture file metadata from the part and populate payload fields
+			fileName := part.FileName()
+			contentType := part.Header.Get("Content-Type")
+			if contentType == "" {
+				contentType = "application/octet-stream"
 			}
+			(*p).FileName = &fileName
+			(*p).FileContentType = &contentType
 
 			// Read the file data
 			fileData, err := io.ReadAll(part)
@@ -95,17 +89,8 @@ func uploadMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Upload
 		}
 	}
 
-	// Store metadata in a way the handler can access it
-	// We'll use a package-level map temporarily (not ideal for production, but works for now)
-	if metadata.FileName != "" {
-		attachmentMetadataStore.Store(*p, metadata)
-	}
-
 	return nil
 }
-
-// attachmentMetadataStore temporarily stores file metadata during request processing
-var attachmentMetadataStore sync.Map
 
 // createPastMeetingAttachmentDecoder decodes multipart form data for past meeting attachment creation
 func createPastMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.CreatePastMeetingAttachmentPayload) error {
@@ -113,8 +98,6 @@ func createPastMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Cr
 	if *p == nil {
 		*p = &genquerysvc.CreatePastMeetingAttachmentPayload{}
 	}
-
-	var metadata uploadPastMeetingAttachmentMetadata
 
 	// Read all parts from the multipart form
 	for {
@@ -152,12 +135,14 @@ func createPastMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Cr
 			link := string(linkData)
 			(*p).Link = &link
 		case "file":
-			// Capture file metadata from the part
-			metadata.FileName = part.FileName()
-			metadata.ContentType = part.Header.Get("Content-Type")
-			if metadata.ContentType == "" {
-				metadata.ContentType = "application/octet-stream"
+			// Capture file metadata from the part and populate payload fields
+			fileName := part.FileName()
+			contentType := part.Header.Get("Content-Type")
+			if contentType == "" {
+				contentType = "application/octet-stream"
 			}
+			(*p).FileName = &fileName
+			(*p).FileContentType = &contentType
 
 			// Read the file data
 			fileData, err := io.ReadAll(part)
@@ -184,16 +169,8 @@ func createPastMeetingAttachmentDecoder(mr *multipart.Reader, p **genquerysvc.Cr
 		}
 	}
 
-	// Store metadata in a way the handler can access it
-	if metadata.FileName != "" {
-		pastMeetingAttachmentMetadataStore.Store(*p, metadata)
-	}
-
 	return nil
 }
-
-// pastMeetingAttachmentMetadataStore temporarily stores file metadata during request processing for past meeting attachments
-var pastMeetingAttachmentMetadataStore sync.Map
 
 // setupHTTPServer configures and starts the HTTP server
 func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGroup) *http.Server {
@@ -215,14 +192,14 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 			w.Header().Set("ETag", etag)
 		}
 
-		// Check if we have attachment metadata for file downloads
-		if metadata, ok := getDownloadAttachmentMetadata(ctx); ok {
+		// Check if we have meeting attachment metadata for file downloads
+		if metadata, ok := getMeetingDownloadAttachmentMetadata(ctx); ok {
 			// Set the correct Content-Type based on the file's actual type
 			w.Header().Set("Content-Type", metadata.ContentType)
 			// Set Content-Disposition header with the original filename
 			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", metadata.FileName))
 			// Clean up the metadata after use
-			deleteDownloadAttachmentMetadata(ctx)
+			deleteMeetingDownloadAttachmentMetadata(ctx)
 
 			// Return a custom encoder that writes raw bytes instead of JSON-encoding them
 			return goahttp.EncodingFunc(func(v any) error {
@@ -272,7 +249,7 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 		customEncoder,
 		nil,
 		nil,
-		uploadMeetingAttachmentDecoder,
+		createMeetingAttachmentDecoder,
 		createPastMeetingAttachmentDecoder,
 		koDataDir,
 		koDataDir,

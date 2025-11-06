@@ -312,10 +312,10 @@ type UpdatePastMeetingSummaryRequestBody struct {
 	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
 }
 
-// UploadMeetingAttachmentRequestBody is the type of the "Meeting Service"
-// service "upload-meeting-attachment" endpoint HTTP request body.
-type UploadMeetingAttachmentRequestBody struct {
-	// The type of attachment: 'file' or 'link'
+// CreateMeetingAttachmentRequestBody is the type of the "Meeting Service"
+// service "create-meeting-attachment" endpoint HTTP request body.
+type CreateMeetingAttachmentRequestBody struct {
+	// The type of attachment
 	Type string `form:"type" json:"type" xml:"type"`
 	// URL for link-type attachments (required if type is 'link')
 	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
@@ -325,12 +325,16 @@ type UploadMeetingAttachmentRequestBody struct {
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 	// Optional: The file data to upload (for type='file')
 	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+	// The filename extracted from multipart form data (populated by decoder)
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// The content type extracted from multipart form data (populated by decoder)
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
 }
 
 // CreatePastMeetingAttachmentRequestBody is the type of the "Meeting Service"
 // service "create-past-meeting-attachment" endpoint HTTP request body.
 type CreatePastMeetingAttachmentRequestBody struct {
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type string `form:"type" json:"type" xml:"type"`
 	// URL for link-type attachments (required if type is 'link')
 	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
@@ -344,6 +348,10 @@ type CreatePastMeetingAttachmentRequestBody struct {
 	// Optional: The file data to upload (for type='file', required if
 	// source_object_uid is not provided)
 	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+	// The filename extracted from multipart form data (populated by decoder)
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// The content type extracted from multipart form data (populated by decoder)
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
 }
 
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
@@ -885,14 +893,14 @@ type UpdatePastMeetingSummaryResponseBody struct {
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
-// UploadMeetingAttachmentResponseBody is the type of the "Meeting Service"
-// service "upload-meeting-attachment" endpoint HTTP response body.
-type UploadMeetingAttachmentResponseBody struct {
+// CreateMeetingAttachmentResponseBody is the type of the "Meeting Service"
+// service "create-meeting-attachment" endpoint HTTP response body.
+type CreateMeetingAttachmentResponseBody struct {
 	// The UID of the attachment
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the meeting this attachment belongs to
 	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// URL for link-type attachments (required if type is 'link')
 	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
@@ -904,7 +912,7 @@ type UploadMeetingAttachmentResponseBody struct {
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
 	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
-	// The username of the user who uploaded the file
+	// The username of the user who uploaded the file or link
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
@@ -920,7 +928,7 @@ type GetMeetingAttachmentMetadataResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the meeting this attachment belongs to
 	MeetingUID *string `form:"meeting_uid,omitempty" json:"meeting_uid,omitempty" xml:"meeting_uid,omitempty"`
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// URL for link-type attachments (required if type is 'link')
 	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
@@ -932,7 +940,7 @@ type GetMeetingAttachmentMetadataResponseBody struct {
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
 	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
-	// The username of the user who uploaded the file
+	// The username of the user who uploaded the file or link
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
@@ -947,7 +955,7 @@ type CreatePastMeetingAttachmentResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// URL for link-type attachments (required if type is 'link')
 	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
@@ -959,7 +967,7 @@ type CreatePastMeetingAttachmentResponseBody struct {
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
 	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
-	// The username of the user who uploaded the file
+	// The username of the user who uploaded the file or link
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
@@ -984,7 +992,7 @@ type GetPastMeetingAttachmentMetadataResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// URL for link-type attachments (required if type is 'link')
 	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
@@ -996,7 +1004,7 @@ type GetPastMeetingAttachmentMetadataResponseBody struct {
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
 	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
-	// The username of the user who uploaded the file
+	// The username of the user who uploaded the file or link
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
@@ -2156,40 +2164,40 @@ type UpdatePastMeetingSummaryServiceUnavailableResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// UploadMeetingAttachmentBadRequestResponseBody is the type of the "Meeting
-// Service" service "upload-meeting-attachment" endpoint HTTP response body for
+// CreateMeetingAttachmentBadRequestResponseBody is the type of the "Meeting
+// Service" service "create-meeting-attachment" endpoint HTTP response body for
 // the "BadRequest" error.
-type UploadMeetingAttachmentBadRequestResponseBody struct {
+type CreateMeetingAttachmentBadRequestResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// UploadMeetingAttachmentInternalServerErrorResponseBody is the type of the
-// "Meeting Service" service "upload-meeting-attachment" endpoint HTTP response
+// CreateMeetingAttachmentInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "create-meeting-attachment" endpoint HTTP response
 // body for the "InternalServerError" error.
-type UploadMeetingAttachmentInternalServerErrorResponseBody struct {
+type CreateMeetingAttachmentInternalServerErrorResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// UploadMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
-// Service" service "upload-meeting-attachment" endpoint HTTP response body for
+// CreateMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "create-meeting-attachment" endpoint HTTP response body for
 // the "NotFound" error.
-type UploadMeetingAttachmentNotFoundResponseBody struct {
+type CreateMeetingAttachmentNotFoundResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// UploadMeetingAttachmentServiceUnavailableResponseBody is the type of the
-// "Meeting Service" service "upload-meeting-attachment" endpoint HTTP response
+// CreateMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "create-meeting-attachment" endpoint HTTP response
 // body for the "ServiceUnavailable" error.
-type UploadMeetingAttachmentServiceUnavailableResponseBody struct {
+type CreateMeetingAttachmentServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -2426,46 +2434,6 @@ type GetPastMeetingAttachmentServiceUnavailableResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// DeletePastMeetingAttachmentBadRequestResponseBody is the type of the
-// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
-// response body for the "BadRequest" error.
-type DeletePastMeetingAttachmentBadRequestResponseBody struct {
-	// HTTP status code
-	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
-	// Error message
-	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
-}
-
-// DeletePastMeetingAttachmentInternalServerErrorResponseBody is the type of
-// the "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
-// response body for the "InternalServerError" error.
-type DeletePastMeetingAttachmentInternalServerErrorResponseBody struct {
-	// HTTP status code
-	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
-	// Error message
-	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
-}
-
-// DeletePastMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
-// Service" service "delete-past-meeting-attachment" endpoint HTTP response
-// body for the "NotFound" error.
-type DeletePastMeetingAttachmentNotFoundResponseBody struct {
-	// HTTP status code
-	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
-	// Error message
-	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
-}
-
-// DeletePastMeetingAttachmentServiceUnavailableResponseBody is the type of the
-// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
-// response body for the "ServiceUnavailable" error.
-type DeletePastMeetingAttachmentServiceUnavailableResponseBody struct {
-	// HTTP status code
-	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
-	// Error message
-	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
-}
-
 // GetPastMeetingAttachmentMetadataBadRequestResponseBody is the type of the
 // "Meeting Service" service "get-past-meeting-attachment-metadata" endpoint
 // HTTP response body for the "BadRequest" error.
@@ -2500,6 +2468,46 @@ type GetPastMeetingAttachmentMetadataNotFoundResponseBody struct {
 // of the "Meeting Service" service "get-past-meeting-attachment-metadata"
 // endpoint HTTP response body for the "ServiceUnavailable" error.
 type GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeletePastMeetingAttachmentBadRequestResponseBody is the type of the
+// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "BadRequest" error.
+type DeletePastMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeletePastMeetingAttachmentInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "InternalServerError" error.
+type DeletePastMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeletePastMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "delete-past-meeting-attachment" endpoint HTTP response
+// body for the "NotFound" error.
+type DeletePastMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeletePastMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-past-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type DeletePastMeetingAttachmentServiceUnavailableResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -3138,7 +3146,7 @@ type PastMeetingAttachmentResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// The UID of the past meeting this attachment belongs to
 	PastMeetingUID *string `form:"past_meeting_uid,omitempty" json:"past_meeting_uid,omitempty" xml:"past_meeting_uid,omitempty"`
-	// The type of attachment: 'file' or 'link'
+	// The type of attachment
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// URL for link-type attachments (required if type is 'link')
 	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
@@ -3150,7 +3158,7 @@ type PastMeetingAttachmentResponseBody struct {
 	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
 	// The MIME type of the file (only for type='file')
 	ContentType *string `form:"content_type,omitempty" json:"content_type,omitempty" xml:"content_type,omitempty"`
-	// The username of the user who uploaded the file
+	// The username of the user who uploaded the file or link
 	UploadedBy *string `form:"uploaded_by,omitempty" json:"uploaded_by,omitempty" xml:"uploaded_by,omitempty"`
 	// RFC3339 timestamp when the file was uploaded
 	UploadedAt *string `form:"uploaded_at,omitempty" json:"uploaded_at,omitempty" xml:"uploaded_at,omitempty"`
@@ -3409,16 +3417,18 @@ func NewUpdatePastMeetingSummaryRequestBody(p *meetingservice.UpdatePastMeetingS
 	return body
 }
 
-// NewUploadMeetingAttachmentRequestBody builds the HTTP request body from the
-// payload of the "upload-meeting-attachment" endpoint of the "Meeting Service"
+// NewCreateMeetingAttachmentRequestBody builds the HTTP request body from the
+// payload of the "create-meeting-attachment" endpoint of the "Meeting Service"
 // service.
-func NewUploadMeetingAttachmentRequestBody(p *meetingservice.UploadMeetingAttachmentPayload) *UploadMeetingAttachmentRequestBody {
-	body := &UploadMeetingAttachmentRequestBody{
-		Type:        p.Type,
-		Link:        p.Link,
-		Name:        p.Name,
-		Description: p.Description,
-		File:        p.File,
+func NewCreateMeetingAttachmentRequestBody(p *meetingservice.CreateMeetingAttachmentPayload) *CreateMeetingAttachmentRequestBody {
+	body := &CreateMeetingAttachmentRequestBody{
+		Type:            p.Type,
+		Link:            p.Link,
+		Name:            p.Name,
+		Description:     p.Description,
+		File:            p.File,
+		FileName:        p.FileName,
+		FileContentType: p.FileContentType,
 	}
 	return body
 }
@@ -3434,6 +3444,8 @@ func NewCreatePastMeetingAttachmentRequestBody(p *meetingservice.CreatePastMeeti
 		Description:     p.Description,
 		SourceObjectUID: p.SourceObjectUID,
 		File:            p.File,
+		FileName:        p.FileName,
+		FileContentType: p.FileContentType,
 	}
 	return body
 }
@@ -5361,10 +5373,10 @@ func NewUpdatePastMeetingSummaryServiceUnavailable(body *UpdatePastMeetingSummar
 	return v
 }
 
-// NewUploadMeetingAttachmentMeetingAttachmentCreated builds a "Meeting
-// Service" service "upload-meeting-attachment" endpoint result from a HTTP
+// NewCreateMeetingAttachmentMeetingAttachmentCreated builds a "Meeting
+// Service" service "create-meeting-attachment" endpoint result from a HTTP
 // "Created" response.
-func NewUploadMeetingAttachmentMeetingAttachmentCreated(body *UploadMeetingAttachmentResponseBody) *meetingservice.MeetingAttachment {
+func NewCreateMeetingAttachmentMeetingAttachmentCreated(body *CreateMeetingAttachmentResponseBody) *meetingservice.MeetingAttachment {
 	v := &meetingservice.MeetingAttachment{
 		UID:         *body.UID,
 		MeetingUID:  *body.MeetingUID,
@@ -5382,9 +5394,9 @@ func NewUploadMeetingAttachmentMeetingAttachmentCreated(body *UploadMeetingAttac
 	return v
 }
 
-// NewUploadMeetingAttachmentBadRequest builds a Meeting Service service
-// upload-meeting-attachment endpoint BadRequest error.
-func NewUploadMeetingAttachmentBadRequest(body *UploadMeetingAttachmentBadRequestResponseBody) *meetingservice.BadRequestError {
+// NewCreateMeetingAttachmentBadRequest builds a Meeting Service service
+// create-meeting-attachment endpoint BadRequest error.
+func NewCreateMeetingAttachmentBadRequest(body *CreateMeetingAttachmentBadRequestResponseBody) *meetingservice.BadRequestError {
 	v := &meetingservice.BadRequestError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -5393,9 +5405,9 @@ func NewUploadMeetingAttachmentBadRequest(body *UploadMeetingAttachmentBadReques
 	return v
 }
 
-// NewUploadMeetingAttachmentInternalServerError builds a Meeting Service
-// service upload-meeting-attachment endpoint InternalServerError error.
-func NewUploadMeetingAttachmentInternalServerError(body *UploadMeetingAttachmentInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+// NewCreateMeetingAttachmentInternalServerError builds a Meeting Service
+// service create-meeting-attachment endpoint InternalServerError error.
+func NewCreateMeetingAttachmentInternalServerError(body *CreateMeetingAttachmentInternalServerErrorResponseBody) *meetingservice.InternalServerError {
 	v := &meetingservice.InternalServerError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -5404,9 +5416,9 @@ func NewUploadMeetingAttachmentInternalServerError(body *UploadMeetingAttachment
 	return v
 }
 
-// NewUploadMeetingAttachmentNotFound builds a Meeting Service service
-// upload-meeting-attachment endpoint NotFound error.
-func NewUploadMeetingAttachmentNotFound(body *UploadMeetingAttachmentNotFoundResponseBody) *meetingservice.NotFoundError {
+// NewCreateMeetingAttachmentNotFound builds a Meeting Service service
+// create-meeting-attachment endpoint NotFound error.
+func NewCreateMeetingAttachmentNotFound(body *CreateMeetingAttachmentNotFoundResponseBody) *meetingservice.NotFoundError {
 	v := &meetingservice.NotFoundError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -5415,9 +5427,9 @@ func NewUploadMeetingAttachmentNotFound(body *UploadMeetingAttachmentNotFoundRes
 	return v
 }
 
-// NewUploadMeetingAttachmentServiceUnavailable builds a Meeting Service
-// service upload-meeting-attachment endpoint ServiceUnavailable error.
-func NewUploadMeetingAttachmentServiceUnavailable(body *UploadMeetingAttachmentServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+// NewCreateMeetingAttachmentServiceUnavailable builds a Meeting Service
+// service create-meeting-attachment endpoint ServiceUnavailable error.
+func NewCreateMeetingAttachmentServiceUnavailable(body *CreateMeetingAttachmentServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
 	v := &meetingservice.ServiceUnavailableError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -5735,50 +5747,6 @@ func NewGetPastMeetingAttachmentServiceUnavailable(body *GetPastMeetingAttachmen
 	return v
 }
 
-// NewDeletePastMeetingAttachmentBadRequest builds a Meeting Service service
-// delete-past-meeting-attachment endpoint BadRequest error.
-func NewDeletePastMeetingAttachmentBadRequest(body *DeletePastMeetingAttachmentBadRequestResponseBody) *meetingservice.BadRequestError {
-	v := &meetingservice.BadRequestError{
-		Code:    *body.Code,
-		Message: *body.Message,
-	}
-
-	return v
-}
-
-// NewDeletePastMeetingAttachmentInternalServerError builds a Meeting Service
-// service delete-past-meeting-attachment endpoint InternalServerError error.
-func NewDeletePastMeetingAttachmentInternalServerError(body *DeletePastMeetingAttachmentInternalServerErrorResponseBody) *meetingservice.InternalServerError {
-	v := &meetingservice.InternalServerError{
-		Code:    *body.Code,
-		Message: *body.Message,
-	}
-
-	return v
-}
-
-// NewDeletePastMeetingAttachmentNotFound builds a Meeting Service service
-// delete-past-meeting-attachment endpoint NotFound error.
-func NewDeletePastMeetingAttachmentNotFound(body *DeletePastMeetingAttachmentNotFoundResponseBody) *meetingservice.NotFoundError {
-	v := &meetingservice.NotFoundError{
-		Code:    *body.Code,
-		Message: *body.Message,
-	}
-
-	return v
-}
-
-// NewDeletePastMeetingAttachmentServiceUnavailable builds a Meeting Service
-// service delete-past-meeting-attachment endpoint ServiceUnavailable error.
-func NewDeletePastMeetingAttachmentServiceUnavailable(body *DeletePastMeetingAttachmentServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
-	v := &meetingservice.ServiceUnavailableError{
-		Code:    *body.Code,
-		Message: *body.Message,
-	}
-
-	return v
-}
-
 // NewGetPastMeetingAttachmentMetadataPastMeetingAttachmentOK builds a "Meeting
 // Service" service "get-past-meeting-attachment-metadata" endpoint result from
 // a HTTP "OK" response.
@@ -5839,6 +5807,50 @@ func NewGetPastMeetingAttachmentMetadataNotFound(body *GetPastMeetingAttachmentM
 // Service service get-past-meeting-attachment-metadata endpoint
 // ServiceUnavailable error.
 func NewGetPastMeetingAttachmentMetadataServiceUnavailable(body *GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentBadRequest builds a Meeting Service service
+// delete-past-meeting-attachment endpoint BadRequest error.
+func NewDeletePastMeetingAttachmentBadRequest(body *DeletePastMeetingAttachmentBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentInternalServerError builds a Meeting Service
+// service delete-past-meeting-attachment endpoint InternalServerError error.
+func NewDeletePastMeetingAttachmentInternalServerError(body *DeletePastMeetingAttachmentInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentNotFound builds a Meeting Service service
+// delete-past-meeting-attachment endpoint NotFound error.
+func NewDeletePastMeetingAttachmentNotFound(body *DeletePastMeetingAttachmentNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeletePastMeetingAttachmentServiceUnavailable builds a Meeting Service
+// service delete-past-meeting-attachment endpoint ServiceUnavailable error.
+func NewDeletePastMeetingAttachmentServiceUnavailable(body *DeletePastMeetingAttachmentServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
 	v := &meetingservice.ServiceUnavailableError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -7046,9 +7058,9 @@ func ValidateUpdatePastMeetingSummaryResponseBody(body *UpdatePastMeetingSummary
 	return
 }
 
-// ValidateUploadMeetingAttachmentResponseBody runs the validations defined on
-// Upload-Meeting-AttachmentResponseBody
-func ValidateUploadMeetingAttachmentResponseBody(body *UploadMeetingAttachmentResponseBody) (err error) {
+// ValidateCreateMeetingAttachmentResponseBody runs the validations defined on
+// Create-Meeting-AttachmentResponseBody
+func ValidateCreateMeetingAttachmentResponseBody(body *CreateMeetingAttachmentResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
 	}
@@ -8817,9 +8829,9 @@ func ValidateUpdatePastMeetingSummaryServiceUnavailableResponseBody(body *Update
 	return
 }
 
-// ValidateUploadMeetingAttachmentBadRequestResponseBody runs the validations
-// defined on upload-meeting-attachment_BadRequest_response_body
-func ValidateUploadMeetingAttachmentBadRequestResponseBody(body *UploadMeetingAttachmentBadRequestResponseBody) (err error) {
+// ValidateCreateMeetingAttachmentBadRequestResponseBody runs the validations
+// defined on create-meeting-attachment_BadRequest_response_body
+func ValidateCreateMeetingAttachmentBadRequestResponseBody(body *CreateMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
@@ -8829,10 +8841,10 @@ func ValidateUploadMeetingAttachmentBadRequestResponseBody(body *UploadMeetingAt
 	return
 }
 
-// ValidateUploadMeetingAttachmentInternalServerErrorResponseBody runs the
+// ValidateCreateMeetingAttachmentInternalServerErrorResponseBody runs the
 // validations defined on
-// upload-meeting-attachment_InternalServerError_response_body
-func ValidateUploadMeetingAttachmentInternalServerErrorResponseBody(body *UploadMeetingAttachmentInternalServerErrorResponseBody) (err error) {
+// create-meeting-attachment_InternalServerError_response_body
+func ValidateCreateMeetingAttachmentInternalServerErrorResponseBody(body *CreateMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
@@ -8842,9 +8854,9 @@ func ValidateUploadMeetingAttachmentInternalServerErrorResponseBody(body *Upload
 	return
 }
 
-// ValidateUploadMeetingAttachmentNotFoundResponseBody runs the validations
-// defined on upload-meeting-attachment_NotFound_response_body
-func ValidateUploadMeetingAttachmentNotFoundResponseBody(body *UploadMeetingAttachmentNotFoundResponseBody) (err error) {
+// ValidateCreateMeetingAttachmentNotFoundResponseBody runs the validations
+// defined on create-meeting-attachment_NotFound_response_body
+func ValidateCreateMeetingAttachmentNotFoundResponseBody(body *CreateMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
@@ -8854,10 +8866,10 @@ func ValidateUploadMeetingAttachmentNotFoundResponseBody(body *UploadMeetingAtta
 	return
 }
 
-// ValidateUploadMeetingAttachmentServiceUnavailableResponseBody runs the
+// ValidateCreateMeetingAttachmentServiceUnavailableResponseBody runs the
 // validations defined on
-// upload-meeting-attachment_ServiceUnavailable_response_body
-func ValidateUploadMeetingAttachmentServiceUnavailableResponseBody(body *UploadMeetingAttachmentServiceUnavailableResponseBody) (err error) {
+// create-meeting-attachment_ServiceUnavailable_response_body
+func ValidateCreateMeetingAttachmentServiceUnavailableResponseBody(body *CreateMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
@@ -9157,57 +9169,6 @@ func ValidateGetPastMeetingAttachmentServiceUnavailableResponseBody(body *GetPas
 	return
 }
 
-// ValidateDeletePastMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on
-// delete-past-meeting-attachment_BadRequest_response_body
-func ValidateDeletePastMeetingAttachmentBadRequestResponseBody(body *DeletePastMeetingAttachmentBadRequestResponseBody) (err error) {
-	if body.Code == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
-	}
-	if body.Message == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
-	}
-	return
-}
-
-// ValidateDeletePastMeetingAttachmentInternalServerErrorResponseBody runs the
-// validations defined on
-// delete-past-meeting-attachment_InternalServerError_response_body
-func ValidateDeletePastMeetingAttachmentInternalServerErrorResponseBody(body *DeletePastMeetingAttachmentInternalServerErrorResponseBody) (err error) {
-	if body.Code == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
-	}
-	if body.Message == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
-	}
-	return
-}
-
-// ValidateDeletePastMeetingAttachmentNotFoundResponseBody runs the validations
-// defined on delete-past-meeting-attachment_NotFound_response_body
-func ValidateDeletePastMeetingAttachmentNotFoundResponseBody(body *DeletePastMeetingAttachmentNotFoundResponseBody) (err error) {
-	if body.Code == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
-	}
-	if body.Message == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
-	}
-	return
-}
-
-// ValidateDeletePastMeetingAttachmentServiceUnavailableResponseBody runs the
-// validations defined on
-// delete-past-meeting-attachment_ServiceUnavailable_response_body
-func ValidateDeletePastMeetingAttachmentServiceUnavailableResponseBody(body *DeletePastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
-	if body.Code == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
-	}
-	if body.Message == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
-	}
-	return
-}
-
 // ValidateGetPastMeetingAttachmentMetadataBadRequestResponseBody runs the
 // validations defined on
 // get-past-meeting-attachment-metadata_BadRequest_response_body
@@ -9251,6 +9212,57 @@ func ValidateGetPastMeetingAttachmentMetadataNotFoundResponseBody(body *GetPastM
 // the validations defined on
 // get-past-meeting-attachment-metadata_ServiceUnavailable_response_body
 func ValidateGetPastMeetingAttachmentMetadataServiceUnavailableResponseBody(body *GetPastMeetingAttachmentMetadataServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentBadRequestResponseBody runs the
+// validations defined on
+// delete-past-meeting-attachment_BadRequest_response_body
+func ValidateDeletePastMeetingAttachmentBadRequestResponseBody(body *DeletePastMeetingAttachmentBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentInternalServerErrorResponseBody runs the
+// validations defined on
+// delete-past-meeting-attachment_InternalServerError_response_body
+func ValidateDeletePastMeetingAttachmentInternalServerErrorResponseBody(body *DeletePastMeetingAttachmentInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentNotFoundResponseBody runs the validations
+// defined on delete-past-meeting-attachment_NotFound_response_body
+func ValidateDeletePastMeetingAttachmentNotFoundResponseBody(body *DeletePastMeetingAttachmentNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeletePastMeetingAttachmentServiceUnavailableResponseBody runs the
+// validations defined on
+// delete-past-meeting-attachment_ServiceUnavailable_response_body
+func ValidateDeletePastMeetingAttachmentServiceUnavailableResponseBody(body *DeletePastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

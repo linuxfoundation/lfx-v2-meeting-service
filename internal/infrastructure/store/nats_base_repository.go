@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"strings"
 
@@ -35,6 +36,15 @@ const (
 const (
 	ObjectStoreNameMeetingAttachments = "meeting-attachments"
 )
+
+// INatsObjectStore is a NATS Object Store interface for file storage
+// This interface matches jetstream.ObjectStore and allows for mocking in tests.
+type INatsObjectStore interface {
+	Put(ctx context.Context, obj jetstream.ObjectMeta, reader io.Reader) (*jetstream.ObjectInfo, error)
+	Get(ctx context.Context, name string, opts ...jetstream.GetObjectOpt) (jetstream.ObjectResult, error)
+	GetInfo(ctx context.Context, name string, opts ...jetstream.GetObjectInfoOpt) (*jetstream.ObjectInfo, error)
+	Delete(ctx context.Context, name string) error
+}
 
 // INatsKeyValue is a NATS KV interface needed for the [MeetingsService].
 type INatsKeyValue interface {

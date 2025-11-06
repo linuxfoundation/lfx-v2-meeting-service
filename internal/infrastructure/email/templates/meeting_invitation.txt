@@ -19,7 +19,7 @@ Platform: {{.Platform}}{{end}}
 
 {{if .Attachments}}Attachments:
 {{range .Attachments}}{{if eq .Type "link"}}• {{if .Name}}{{.Name}}: {{end}}{{.Link}}{{if .Description}} - {{.Description}}{{end}}
-{{else}}• {{if .Name}}{{.Name}}{{if .FileName}} ({{.FileName}}){{end}}{{else}}{{.FileName}}{{end}}{{if .Description}} - {{.Description}}{{end}}
+{{else}}• {{if .Name}}{{.Name}}{{else}}File{{end}} (see email file attachments){{if .Description}} - {{.Description}}{{end}}
 {{end}}{{end}}
 
 {{end}}{{if .Description}}Meeting Description:

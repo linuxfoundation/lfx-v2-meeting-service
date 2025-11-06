@@ -51,50 +51,20 @@ func (s *MeetingsAPI) CreatePastMeetingAttachment(ctx context.Context, payload *
 		return nil, handleError(domain.NewValidationError("failed to parse username from authorization token"))
 	}
 
-	// Extract filename and content type from metadata store if uploading a file
-	fileName := ""
+	// Extract filename and content type from payload fields if uploading a file
+	// (populated by the decoder during multipart form processing)
+	fileName := "attachment"
 	contentType := "application/octet-stream"
 
-	if len(payload.File) > 0 {
-		// Get metadata from the temporary store (populated by multipart decoder)
-		if metadata, ok := getPastMeetingAttachmentMetadata(payload); ok {
-			if metadata.FileName != "" {
-				fileName = metadata.FileName
-			}
-			if metadata.ContentType != "" {
-				contentType = metadata.ContentType
-			}
-			// Clean up the metadata after use
-			pastMeetingAttachmentMetadataStore.Delete(payload)
-		} else {
-			fileName = "attachment"
-		}
+	if payload.FileName != nil && *payload.FileName != "" {
+		fileName = *payload.FileName
+	}
+	if payload.FileContentType != nil && *payload.FileContentType != "" {
+		contentType = *payload.FileContentType
 	}
 
-	// Build request
-	req := &models.CreatePastMeetingAttachmentRequest{
-		PastMeetingUID: payload.PastMeetingUID,
-		Type:           payload.Type,
-		Name:           payload.Name,
-		Username:       username,
-		FileName:       fileName,
-		ContentType:    contentType,
-		FileData:       payload.File,
-	}
+	req := service.ConvertCreatePastMeetingAttachmentPayloadToDomain(payload, username, fileName, contentType)
 
-	if payload.Description != nil {
-		req.Description = *payload.Description
-	}
-
-	if payload.SourceObjectUID != nil {
-		req.SourceObjectUID = *payload.SourceObjectUID
-	}
-
-	if payload.Link != nil {
-		req.Link = *payload.Link
-	}
-
-	// Create attachment via service
 	attachment, err := s.pastMeetingAttachmentService.CreatePastMeetingAttachment(ctx, req)
 	if err != nil {
 		return nil, handleError(err)
@@ -109,7 +79,6 @@ func (s *MeetingsAPI) GetPastMeetingAttachment(ctx context.Context, payload *mee
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	// Get attachment via service
 	attachment, fileData, err := s.pastMeetingAttachmentService.GetPastMeetingAttachment(ctx, payload.PastMeetingUID, payload.UID)
 	if err != nil {
 		return nil, handleError(err)
@@ -130,7 +99,6 @@ func (s *MeetingsAPI) GetPastMeetingAttachmentMetadata(ctx context.Context, payl
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	// Get attachment metadata via service
 	attachment, err := s.pastMeetingAttachmentService.GetPastMeetingAttachmentMetadata(ctx, payload.PastMeetingUID, payload.UID)
 	if err != nil {
 		return nil, handleError(err)
@@ -151,22 +119,6 @@ func (s *MeetingsAPI) DeletePastMeetingAttachment(ctx context.Context, payload *
 	}
 
 	return nil
-}
-
-// uploadPastMeetingAttachmentMetadata stores file metadata during multipart processing
-type uploadPastMeetingAttachmentMetadata struct {
-	FileName    string
-	ContentType string
-}
-
-// getPastMeetingAttachmentMetadata retrieves file metadata from the temporary store
-func getPastMeetingAttachmentMetadata(payload *meetingsvc.CreatePastMeetingAttachmentPayload) (uploadPastMeetingAttachmentMetadata, bool) {
-	if value, ok := pastMeetingAttachmentMetadataStore.Load(payload); ok {
-		if metadata, ok := value.(uploadPastMeetingAttachmentMetadata); ok {
-			return metadata, true
-		}
-	}
-	return uploadPastMeetingAttachmentMetadata{}, false
 }
 
 // pastMeetingDownloadMetadataStore temporarily stores attachment metadata for response encoding

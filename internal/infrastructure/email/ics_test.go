@@ -334,14 +334,14 @@ func TestFoldICSLine(t *testing.T) {
 
 func TestBuildDescription(t *testing.T) {
 	t.Run("with all details", func(t *testing.T) {
-		desc := buildDescription(
-			"Original description",
-			"123456789",
-			"abc123",
-			"https://zoom.us/j/123456789",
-			"Test Project",
-			nil,
-		)
+		desc := buildDescription(DescriptionParams{
+			MeetingDescription: "Original description",
+			MeetingID:          "123456789",
+			MeetingPasscode:    "abc123",
+			JoinLink:           "https://zoom.us/j/123456789",
+			ProjectName:        "Test Project",
+			MeetingAttachments: nil,
+		})
 
 		assert.Contains(t, desc, "Test Project Meeting")
 		assert.Contains(t, desc, "Original description")
@@ -352,14 +352,14 @@ func TestBuildDescription(t *testing.T) {
 	})
 
 	t.Run("without passcode", func(t *testing.T) {
-		desc := buildDescription(
-			"",
-			"987654321",
-			"",
-			"https://zoom.us/j/987654321",
-			"",
-			nil,
-		)
+		desc := buildDescription(DescriptionParams{
+			MeetingDescription: "",
+			MeetingID:          "987654321",
+			MeetingPasscode:    "",
+			JoinLink:           "https://zoom.us/j/987654321",
+			ProjectName:        "",
+			MeetingAttachments: nil,
+		})
 
 		assert.Contains(t, desc, "Meeting ID: 987654321")
 		assert.NotContains(t, desc, "Passcode:")
@@ -367,14 +367,14 @@ func TestBuildDescription(t *testing.T) {
 	})
 
 	t.Run("without meeting details", func(t *testing.T) {
-		desc := buildDescription(
-			"Simple meeting",
-			"",
-			"",
-			"",
-			"",
-			nil,
-		)
+		desc := buildDescription(DescriptionParams{
+			MeetingDescription: "Simple meeting",
+			MeetingID:          "",
+			MeetingPasscode:    "",
+			JoinLink:           "",
+			ProjectName:        "",
+			MeetingAttachments: nil,
+		})
 
 		assert.Contains(t, desc, "Simple meeting")
 		assert.NotContains(t, desc, "Meeting ID:")
@@ -409,14 +409,14 @@ func TestBuildDescription(t *testing.T) {
 			},
 		}
 
-		desc := buildDescription(
-			"Meeting with attachments",
-			"123456789",
-			"abc123",
-			"https://zoom.us/j/123456789",
-			"Test Project",
-			attachments,
-		)
+		desc := buildDescription(DescriptionParams{
+			MeetingDescription: "Meeting with attachments",
+			MeetingID:          "123456789",
+			MeetingPasscode:    "abc123",
+			JoinLink:           "https://zoom.us/j/123456789",
+			ProjectName:        "Test Project",
+			MeetingAttachments: attachments,
+		})
 
 		// Check that attachments section is present and appears before description
 		assert.Contains(t, desc, "Attachments:")

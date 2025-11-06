@@ -41,7 +41,7 @@ func AttachmentUIDAttribute() {
 
 // AttachmentTypeAttribute is the DSL attribute for attachment type
 func AttachmentTypeAttribute() {
-	Attribute("type", String, "The type of attachment: 'file' or 'link'", func() {
+	Attribute("type", String, "The type of attachment", func() {
 		Enum("file", "link")
 		Example("file")
 	})
@@ -62,6 +62,14 @@ func AttachmentNameAttribute() {
 		Example("Q1 Meeting Agenda")
 		MinLength(1)
 		MaxLength(255)
+	})
+}
+
+// AttachmentDescriptionAttribute is the DSL attribute for attachment description.
+func AttachmentDescriptionAttribute() {
+	Attribute("description", String, "Optional description of the attachment", func() {
+		Example("Meeting agenda for Q1 2024")
+		MaxLength(500)
 	})
 }
 
@@ -100,7 +108,7 @@ func AttachmentContentTypeAttribute() {
 
 // AttachmentUploadedByAttribute is the DSL attribute for attachment uploader.
 func AttachmentUploadedByAttribute() {
-	Attribute("uploaded_by", String, "The username of the user who uploaded the file", func() {
+	Attribute("uploaded_by", String, "The username of the user who uploaded the file or link", func() {
 		Example("john.doe")
 		MinLength(1)
 	})
@@ -111,13 +119,5 @@ func AttachmentUploadedAtAttribute() {
 	Attribute("uploaded_at", String, "RFC3339 timestamp when the file was uploaded", func() {
 		Format(FormatDateTime)
 		Example("2024-01-15T10:00:00Z")
-	})
-}
-
-// AttachmentDescriptionAttribute is the DSL attribute for attachment description.
-func AttachmentDescriptionAttribute() {
-	Attribute("description", String, "Optional description of the attachment", func() {
-		Example("Meeting agenda for Q1 2024")
-		MaxLength(500)
 	})
 }

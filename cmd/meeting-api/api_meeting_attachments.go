@@ -16,8 +16,8 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
-// UploadMeetingAttachment handles file upload for a meeting
-func (s *MeetingsAPI) UploadMeetingAttachment(ctx context.Context, payload *meetingsvc.UploadMeetingAttachmentPayload) (*meetingsvc.MeetingAttachment, error) {
+// CreateMeetingAttachment handles creation of a meeting attachment
+func (s *MeetingsAPI) CreateMeetingAttachment(ctx context.Context, payload *meetingsvc.CreateMeetingAttachmentPayload) (*meetingsvc.MeetingAttachment, error) {
 	if payload == nil {
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
@@ -29,32 +29,26 @@ func (s *MeetingsAPI) UploadMeetingAttachment(ctx context.Context, payload *meet
 		return nil, handleError(domain.NewValidationError("failed to parse username from authorization token"))
 	}
 
-	// Extract filename and content type from metadata store
+	// Extract filename and content type from payload fields
 	// (populated by the decoder during multipart form processing)
 	fileName := "attachment"
 	contentType := "application/octet-stream"
 
-	if metadata, ok := getAttachmentMetadata(payload); ok {
-		if metadata.FileName != "" {
-			fileName = metadata.FileName
-		}
-		if metadata.ContentType != "" {
-			contentType = metadata.ContentType
-		}
-		// Clean up the metadata after use
-		attachmentMetadataStore.Delete(payload)
+	if payload.FileName != nil && *payload.FileName != "" {
+		fileName = *payload.FileName
+	}
+	if payload.FileContentType != nil && *payload.FileContentType != "" {
+		contentType = *payload.FileContentType
 	}
 
-	// Convert payload to domain request
-	uploadReq := service.ConvertUploadAttachmentPayloadToDomain(payload, username, fileName, contentType)
+	createReq := service.ConvertCreateMeetingAttachmentPayloadToDomain(payload, username, fileName, contentType)
 
-	// Upload attachment via service
-	attachment, err := s.attachmentService.UploadAttachment(ctx, uploadReq)
+	attachment, err := s.attachmentService.CreateMeetingAttachment(ctx, createReq)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	return service.ConvertDomainToAttachmentResponse(attachment), nil
+	return service.ConvertDomainToMeetingAttachmentResponse(attachment), nil
 }
 
 // GetMeetingAttachment retrieves a file attachment for download
@@ -63,7 +57,6 @@ func (s *MeetingsAPI) GetMeetingAttachment(ctx context.Context, payload *meeting
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	// Get attachment via service
 	attachment, fileData, err := s.attachmentService.GetAttachment(ctx, payload.MeetingUID, payload.UID)
 	if err != nil {
 		return nil, handleError(err)
@@ -84,13 +77,12 @@ func (s *MeetingsAPI) GetMeetingAttachmentMetadata(ctx context.Context, payload 
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
-	// Get attachment metadata via service
 	attachment, err := s.attachmentService.GetAttachmentMetadata(ctx, payload.MeetingUID, payload.UID)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	return service.ConvertDomainToAttachmentResponse(attachment), nil
+	return service.ConvertDomainToMeetingAttachmentResponse(attachment), nil
 }
 
 // DeleteMeetingAttachment handles deletion of a file attachment
@@ -99,7 +91,6 @@ func (s *MeetingsAPI) DeleteMeetingAttachment(ctx context.Context, payload *meet
 		return handleError(domain.NewValidationError("validation failed"))
 	}
 
-	// Delete attachment via service
 	err := s.attachmentService.DeleteAttachment(ctx, payload.MeetingUID, payload.UID)
 	if err != nil {
 		return handleError(err)
@@ -111,9 +102,8 @@ func (s *MeetingsAPI) DeleteMeetingAttachment(ctx context.Context, payload *meet
 // downloadMetadataStore temporarily stores attachment metadata for response encoding
 var downloadMetadataStore sync.Map
 
-// getDownloadAttachmentMetadata retrieves attachment metadata for the response encoder
-func getDownloadAttachmentMetadata(ctx context.Context) (*models.MeetingAttachment, bool) {
-	// Use request ID to look up the metadata
+// getMeetingDownloadAttachmentMetadata retrieves meeting attachment metadata for the response encoder
+func getMeetingDownloadAttachmentMetadata(ctx context.Context) (*models.MeetingAttachment, bool) {
 	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
 		if value, ok := downloadMetadataStore.Load(requestID); ok {
 			if attachment, ok := value.(*models.MeetingAttachment); ok {
@@ -124,19 +114,8 @@ func getDownloadAttachmentMetadata(ctx context.Context) (*models.MeetingAttachme
 	return nil, false
 }
 
-// getAttachmentMetadata retrieves file metadata from the temporary store
-func getAttachmentMetadata(payload *meetingsvc.UploadMeetingAttachmentPayload) (uploadMeetingAttachmentMetadata, bool) {
-	if value, ok := attachmentMetadataStore.Load(payload); ok {
-		if metadata, ok := value.(uploadMeetingAttachmentMetadata); ok {
-			return metadata, true
-		}
-	}
-	return uploadMeetingAttachmentMetadata{}, false
-}
-
-// deleteDownloadAttachmentMetadata cleans up attachment metadata after encoding
-func deleteDownloadAttachmentMetadata(ctx context.Context) {
-	// Use request ID to delete the metadata
+// deleteMeetingDownloadAttachmentMetadata cleans up meeting attachment metadata after encoding
+func deleteMeetingDownloadAttachmentMetadata(ctx context.Context) {
 	if requestID, ok := ctx.Value(constants.RequestIDContextID).(string); ok {
 		downloadMetadataStore.Delete(requestID)
 	}

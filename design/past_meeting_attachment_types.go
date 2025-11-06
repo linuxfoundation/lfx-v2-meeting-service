@@ -39,7 +39,7 @@ func PastMeetingAttachmentUIDAttribute() {
 
 // PastMeetingAttachmentTypeAttribute is the DSL attribute for attachment type
 func PastMeetingAttachmentTypeAttribute() {
-	Attribute("type", String, "The type of attachment: 'file' or 'link'", func() {
+	Attribute("type", String, "The type of attachment", func() {
 		Enum("file", "link")
 		Example("file")
 	})
@@ -60,6 +60,14 @@ func PastMeetingAttachmentNameAttribute() {
 		Example("Q1 Meeting Recording")
 		MinLength(1)
 		MaxLength(255)
+	})
+}
+
+// PastMeetingAttachmentDescriptionAttribute is the DSL attribute for description
+func PastMeetingAttachmentDescriptionAttribute() {
+	Attribute("description", String, "Optional description of the attachment", func() {
+		Example("Meeting recording for Q1 2024")
+		MaxLength(500)
 	})
 }
 
@@ -98,7 +106,7 @@ func PastMeetingAttachmentContentTypeAttribute() {
 
 // PastMeetingAttachmentUploadedByAttribute is the DSL attribute for uploader
 func PastMeetingAttachmentUploadedByAttribute() {
-	Attribute("uploaded_by", String, "The username of the user who uploaded the file", func() {
+	Attribute("uploaded_by", String, "The username of the user who uploaded the file or link", func() {
 		Example("john.doe")
 		MinLength(1)
 	})
@@ -109,14 +117,6 @@ func PastMeetingAttachmentUploadedAtAttribute() {
 	Attribute("uploaded_at", String, "RFC3339 timestamp when the file was uploaded", func() {
 		Format(FormatDateTime)
 		Example("2024-01-15T10:00:00Z")
-	})
-}
-
-// PastMeetingAttachmentDescriptionAttribute is the DSL attribute for description
-func PastMeetingAttachmentDescriptionAttribute() {
-	Attribute("description", String, "Optional description of the attachment", func() {
-		Example("Meeting recording for Q1 2024")
-		MaxLength(500)
 	})
 }
 

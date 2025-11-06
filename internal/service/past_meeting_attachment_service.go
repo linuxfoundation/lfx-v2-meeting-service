@@ -81,6 +81,55 @@ func (s *PastMeetingAttachmentService) ListPastMeetingAttachments(ctx context.Co
 	return attachments, nil
 }
 
+func (s *PastMeetingAttachmentService) validateCreatePastMeetingAttachmentRequest(req *models.CreatePastMeetingAttachmentRequest) error {
+	// Validate request
+	if req == nil {
+		return domain.NewValidationError("request is nil")
+	}
+
+	if req.PastMeetingUID == "" {
+		return domain.NewValidationError("past meeting UID is required")
+	}
+
+	if req.Username == "" {
+		return domain.NewValidationError("username is required")
+	}
+
+	// Validate name is provided
+	if req.Name == "" {
+		return domain.NewValidationError("name is required")
+	}
+
+	if req.Type != models.AttachmentTypeFile && req.Type != models.AttachmentTypeLink {
+		return domain.NewValidationError("type must be either 'file' or 'link'")
+	}
+
+	// Type-specific validation
+	switch req.Type {
+	case models.AttachmentTypeLink:
+		if req.Link == "" {
+			return domain.NewValidationError("link is required when type is 'link'")
+		}
+		// Link-type attachments should not have file-related fields
+		if req.SourceObjectUID != "" || len(req.FileData) > 0 {
+			return domain.NewValidationError("link-type attachments cannot have source_object_uid or file data")
+		}
+	case models.AttachmentTypeFile:
+		if req.FileName == "" {
+			return domain.NewValidationError("file name is required when type is 'file'")
+		}
+		// File-type attachments must have either source_object_uid or file data
+		if req.SourceObjectUID == "" && len(req.FileData) == 0 {
+			return domain.NewValidationError("file-type attachments require either source_object_uid or file data")
+		}
+		if req.SourceObjectUID != "" && len(req.FileData) > 0 {
+			return domain.NewValidationError("cannot specify both source_object_uid and file data")
+		}
+	}
+
+	return nil
+}
+
 // CreatePastMeetingAttachment creates a new past meeting attachment
 // Can create a link attachment or a file attachment (upload new file or reference existing file in Object Store)
 func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.Context, req *models.CreatePastMeetingAttachmentRequest) (*models.PastMeetingAttachment, error) {
@@ -90,44 +139,11 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 	}
 
 	// Validate request
-	if req == nil {
-		return nil, domain.NewValidationError("request is nil")
+	if err := s.validateCreatePastMeetingAttachmentRequest(req); err != nil {
+		return nil, err
 	}
 
-	if req.PastMeetingUID == "" {
-		return nil, domain.NewValidationError("past meeting UID is required")
-	}
-
-	// Validate type
-	if req.Type != "file" && req.Type != "link" {
-		return nil, domain.NewValidationError("type must be either 'file' or 'link'")
-	}
-
-	// Type-specific validation
-	switch req.Type {
-	case "link":
-		if req.Link == "" {
-			return nil, domain.NewValidationError("link is required when type is 'link'")
-		}
-		// Link-type attachments should not have file-related fields
-		if req.SourceObjectUID != "" || len(req.FileData) > 0 {
-			return nil, domain.NewValidationError("link-type attachments cannot have source_object_uid or file data")
-		}
-	case "file":
-		// File-type attachments must have either source_object_uid or file data
-		if req.SourceObjectUID == "" && len(req.FileData) == 0 {
-			return nil, domain.NewValidationError("file-type attachments require either source_object_uid or file data")
-		}
-		// Cannot have both
-		if req.SourceObjectUID != "" && len(req.FileData) > 0 {
-			return nil, domain.NewValidationError("cannot specify both source_object_uid and file data")
-		}
-	}
-
-	// Validate name is provided
-	if req.Name == "" {
-		return nil, domain.NewValidationError("name is required")
-	}
+	ctx = logging.AppendCtx(ctx, slog.String("past_meeting_uid", req.PastMeetingUID))
 
 	// Check if the past meeting exists
 	exists, err := s.pastMeetingRepository.Exists(ctx, req.PastMeetingUID)
@@ -144,23 +160,18 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 	now := time.Now()
 
 	switch req.Type {
-	case "link":
-		// Create link-type attachment (metadata only, no file storage)
-		if req.Username == "" {
-			return nil, domain.NewValidationError("username is required")
-		}
-
+	case models.AttachmentTypeLink:
 		attachment = &models.PastMeetingAttachment{
 			UID:            uuid.New().String(),
 			PastMeetingUID: req.PastMeetingUID,
-			Type:           "link",
+			Type:           models.AttachmentTypeLink,
 			Link:           req.Link,
 			Name:           req.Name,
 			UploadedBy:     req.Username,
 			UploadedAt:     &now,
 			Description:    req.Description,
 		}
-	case "file":
+	case models.AttachmentTypeFile:
 		if req.SourceObjectUID != "" {
 			// Reference existing file - need to get metadata from the source attachment
 			sourceAttachment, err := s.meetingAttachmentRepository.GetMetadata(ctx, req.SourceObjectUID)
@@ -173,7 +184,7 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 			attachment = &models.PastMeetingAttachment{
 				UID:             uuid.New().String(),
 				PastMeetingUID:  req.PastMeetingUID,
-				Type:            "file",
+				Type:            models.AttachmentTypeFile,
 				Name:            req.Name,
 				FileName:        sourceAttachment.FileName,
 				FileSize:        sourceAttachment.FileSize,
@@ -192,10 +203,9 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 				return nil, domain.NewValidationError("username is required")
 			}
 
-			// Check file size (100MB max)
-			const maxFileSize = 100 * 1024 * 1024
-			if len(req.FileData) > maxFileSize {
-				return nil, domain.NewValidationError(fmt.Sprintf("file size exceeds maximum allowed size of %d bytes", maxFileSize))
+			// Check file size
+			if len(req.FileData) > MaxFileAttachmentSize {
+				return nil, domain.NewValidationError(fmt.Sprintf("file size exceeds maximum allowed size of %d bytes", MaxFileAttachmentSize))
 			}
 
 			// Generate new UID for the file
@@ -211,7 +221,7 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 			attachment = &models.PastMeetingAttachment{
 				UID:             uuid.New().String(),
 				PastMeetingUID:  req.PastMeetingUID,
-				Type:            "file",
+				Type:            models.AttachmentTypeFile,
 				Name:            req.Name,
 				FileName:        req.FileName,
 				FileSize:        int64(len(req.FileData)),
@@ -224,7 +234,7 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 		}
 	}
 
-	// Store metadata in KV store
+	// Store metadata
 	if err := s.pastMeetingAttachmentRepository.PutMetadata(ctx, attachment); err != nil {
 		slog.ErrorContext(ctx, "failed to store attachment metadata", logging.ErrKey, err, "attachment_uid", attachment.UID)
 		return nil, err
@@ -269,7 +279,6 @@ func (s *PastMeetingAttachmentService) GetPastMeetingAttachment(ctx context.Cont
 		return nil, nil, domain.NewNotFoundError("attachment not found for this past meeting")
 	}
 
-	// Cannot download link-type attachments
 	if attachment.Type == "link" {
 		slog.WarnContext(ctx, "attempted to download link-type attachment",
 			"attachment_uid", attachmentUID,
