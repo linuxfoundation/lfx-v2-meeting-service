@@ -10,9 +10,11 @@ import (
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"github.com/nats-io/nats.go"
 )
 
@@ -530,7 +532,6 @@ func (m *MessageBuilder) PublishZoomWebhookEvent(ctx context.Context, subject st
 // GetCommitteeName retrieves the committee name by sending a request to committee-api.
 // Returns the committee name if it exists, or an error if it doesn't exist or there's a communication error.
 func (m *MessageBuilder) GetCommitteeName(ctx context.Context, committeeUID string) (string, error) {
-	// Send request with 5 second timeout
 	msg, err := m.request(ctx, models.CommitteeGetNameSubject, []byte(committeeUID), 5*time.Second)
 	if err != nil {
 		return "", err
@@ -556,7 +557,6 @@ func (m *MessageBuilder) GetCommitteeName(ctx context.Context, committeeUID stri
 // GetProjectName fetches project name from projects-api.
 // Returns the project name if it exists, or an error if it doesn't exist or there's a communication error.
 func (m *MessageBuilder) GetProjectName(ctx context.Context, projectUID string) (string, error) {
-	// Send request with 5 second timeout
 	msg, err := m.request(ctx, models.ProjectGetNameSubject, []byte(projectUID), 5*time.Second)
 	if err != nil {
 		return "", err
@@ -578,7 +578,6 @@ func (m *MessageBuilder) GetProjectName(ctx context.Context, projectUID string) 
 // GetProjectLogo fetches project logo URL from projects-api.
 // Returns the project logo URL if it exists, or an error if it doesn't exist or there's a communication error.
 func (m *MessageBuilder) GetProjectLogo(ctx context.Context, projectUID string) (string, error) {
-	// Send request with 5 second timeout
 	msg, err := m.request(ctx, models.ProjectGetLogoSubject, []byte(projectUID), 5*time.Second)
 	if err != nil {
 		return "", err
@@ -600,7 +599,6 @@ func (m *MessageBuilder) GetProjectLogo(ctx context.Context, projectUID string) 
 // GetProjectSlug fetches project slug from projects-api.
 // Returns the project slug if it exists, or an error if it doesn't exist or there's a communication error.
 func (m *MessageBuilder) GetProjectSlug(ctx context.Context, projectUID string) (string, error) {
-	// Send request with 5 second timeout
 	msg, err := m.request(ctx, models.ProjectGetSlugSubject, []byte(projectUID), 5*time.Second)
 	if err != nil {
 		return "", err
@@ -617,6 +615,29 @@ func (m *MessageBuilder) GetProjectSlug(ctx context.Context, projectUID string) 
 
 	slog.DebugContext(ctx, "project slug retrieved successfully", "project_uid", projectUID, "project_slug", projectSlug)
 	return projectSlug, nil
+}
+
+// EmailToUsernameLookup fetches the username for an email from the auth service.
+// Returns the username if it exists, or an error if it doesn't exist or there's a communication error.
+func (m *MessageBuilder) EmailToUsernameLookup(ctx context.Context, email string) (string, error) {
+	msg, err := m.request(ctx, models.AuthEmailToUsernameLookupSubject, []byte(email), 5*time.Second)
+	if err != nil {
+		return "", err
+	}
+
+	// Try to parse as JSON error response first
+	var errorResponse struct {
+		Success bool   `json:"success"`
+		Error   string `json:"error"`
+	}
+	if err := json.Unmarshal(msg.Data, &errorResponse); err == nil && errorResponse.Error != "" {
+		slog.WarnContext(ctx, "user not found by email", "email", redaction.RedactEmail(email), "error", errorResponse.Error)
+		return "", domain.NewNotFoundError("email to username lookup: user not found")
+	}
+
+	// If not a JSON error, treat as username
+	slog.DebugContext(ctx, "username retrieved successfully for email", "email", redaction.RedactEmail(email), "username", string(msg.Data))
+	return string(msg.Data), nil
 }
 
 // CommitteeNotFoundError represents an error when a committee is not found.
