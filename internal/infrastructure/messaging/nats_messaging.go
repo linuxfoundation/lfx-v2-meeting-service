@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -15,6 +14,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"github.com/nats-io/nats.go"
 )
 
@@ -617,16 +617,6 @@ func (m *MessageBuilder) GetProjectSlug(ctx context.Context, projectUID string) 
 	return projectSlug, nil
 }
 
-// UserNotFoundError represents an error when a user is not found.
-type UserNotFoundError struct {
-	Email   string
-	Details string
-}
-
-func (e *UserNotFoundError) Error() string {
-	return "user not found: " + e.Email
-}
-
 // EmailToUsernameLookup fetches the username for an email from the auth service.
 // Returns the username if it exists, or an error if it doesn't exist or there's a communication error.
 func (m *MessageBuilder) EmailToUsernameLookup(ctx context.Context, email string) (string, error) {
@@ -635,15 +625,19 @@ func (m *MessageBuilder) EmailToUsernameLookup(ctx context.Context, email string
 		return "", err
 	}
 
-	// Parse response
-	username := string(msg.Data)
-
-	// The auth service returns a string "user not found" if the user is not found.
-	if username == "" || strings.Contains(username, "user not found") {
+	// Try to parse as JSON error response first
+	var errorResponse struct {
+		Success bool   `json:"success"`
+		Error   string `json:"error"`
+	}
+	if err := json.Unmarshal(msg.Data, &errorResponse); err == nil && errorResponse.Error != "" {
+		slog.WarnContext(ctx, "user not found by email", "email", redaction.RedactEmail(email), "error", errorResponse.Error)
 		return "", domain.NewNotFoundError("email to username lookup: user not found")
 	}
 
-	return username, nil
+	// If not a JSON error, treat as username
+	slog.DebugContext(ctx, "username retrieved successfully for email", "email", redaction.RedactEmail(email), "username", string(msg.Data))
+	return string(msg.Data), nil
 }
 
 // CommitteeNotFoundError represents an error when a committee is not found.
