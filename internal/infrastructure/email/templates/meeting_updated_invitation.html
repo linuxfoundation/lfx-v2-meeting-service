@@ -401,6 +401,23 @@
                     {{end}}
                 </div>
 
+                {{if .Attachments}}
+                <div class="description-section">
+                    <div class="description-title">Attachments</div>
+                    {{range .Attachments}}
+                    <div class="method-text">
+                        {{if eq .Type "link"}}
+                        📎 <a href="{{.Link}}" class="text-link">{{if .Name}}{{.Name}}{{else}}{{.Link}}{{end}}</a>
+                        {{if .Description}} - {{.Description}}{{end}}
+                        {{else}}
+                        📎 {{if .Name}}{{.Name}}{{else}}File{{end}} (see email file attachments)
+                        {{if .Description}} - {{.Description}}{{end}}
+                        {{end}}
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+
                 {{if ne .Description .OldDescription}}
                 <div class="description-section">
                     <div class="description-title">Meeting Description <span class="badge badge-changed">Updated</span></div>

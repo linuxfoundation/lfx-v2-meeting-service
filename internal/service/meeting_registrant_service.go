@@ -24,13 +24,14 @@ import (
 
 // MeetingRegistrantService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingRegistrantService struct {
-	meetingRepository    domain.MeetingRepository
-	registrantRepository domain.RegistrantRepository
-	emailService         domain.EmailService
-	messageSender        domain.MeetingRegistrantMessageSender
-	externalClient       domain.ExternalServiceClient
-	occurrenceService    *OccurrenceService
-	config               ServiceConfig
+	meetingRepository        domain.MeetingRepository
+	registrantRepository     domain.RegistrantRepository
+	emailService             domain.EmailService
+	messageSender            domain.MeetingRegistrantMessageSender
+	externalClient           domain.ExternalServiceClient
+	meetingAttachmentService *MeetingAttachmentService
+	occurrenceService        *OccurrenceService
+	config                   ServiceConfig
 }
 
 // NewMeetingRegistrantService creates a new MeetingRegistrantService.
@@ -40,17 +41,19 @@ func NewMeetingRegistrantService(
 	emailService domain.EmailService,
 	messageSender domain.MeetingRegistrantMessageSender,
 	externalClient domain.ExternalServiceClient,
+	meetingAttachmentService *MeetingAttachmentService,
 	occurrenceService *OccurrenceService,
 	config ServiceConfig,
 ) *MeetingRegistrantService {
 	return &MeetingRegistrantService{
-		config:               config,
-		meetingRepository:    meetingRepository,
-		registrantRepository: registrantRepository,
-		emailService:         emailService,
-		messageSender:        messageSender,
-		externalClient:       externalClient,
-		occurrenceService:    occurrenceService,
+		config:                   config,
+		meetingRepository:        meetingRepository,
+		registrantRepository:     registrantRepository,
+		meetingAttachmentService: meetingAttachmentService,
+		emailService:             emailService,
+		messageSender:            messageSender,
+		externalClient:           externalClient,
+		occurrenceService:        occurrenceService,
 	}
 }
 
@@ -602,6 +605,12 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		}
 	}
 
+	// Get the meeting attachments to include in the email
+	meetingAttachments, fileAttachments, err := s.meetingAttachmentService.GetMeetingAttachmentsForEmail(ctx, meetingDB.UID)
+	if err != nil {
+		return fmt.Errorf("failed to get meeting attachments: %w", err)
+	}
+
 	invitation := domain.EmailInvitation{
 		MeetingUID:               meetingDB.UID,
 		RecipientEmail:           registrant.Email,
@@ -623,6 +632,8 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 		Recurrence:               meetingDB.Recurrence,
 		IcsSequence:              meetingDB.IcsSequence,
 		CancelledOccurrenceTimes: cancelledOccurrenceTimes,
+		MeetingAttachments:       meetingAttachments,
+		EmailFileAttachments:     fileAttachments,
 	}
 
 	return s.emailService.SendRegistrantInvitation(ctx, invitation)
@@ -650,27 +661,35 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
 	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
+	// Get the meeting attachments to include in the email
+	meetingAttachments, fileAttachments, err := s.meetingAttachmentService.GetMeetingAttachmentsForEmail(ctx, meeting.UID)
+	if err != nil {
+		return fmt.Errorf("failed to get meeting attachments: %w", err)
+	}
+
 	updatedInvitation := domain.EmailUpdatedInvitation{
-		MeetingUID:         meeting.UID,
-		RecipientEmail:     registrant.Email,
-		RecipientName:      recipientName,
-		MeetingTitle:       meeting.Title,
-		StartTime:          meeting.StartTime,
-		Duration:           meeting.Duration,
-		Timezone:           meeting.Timezone,
-		Description:        meeting.Description,
-		Visibility:         meeting.Visibility,
-		MeetingType:        meeting.MeetingType,
-		JoinLink:           constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
-		MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, meeting.UID, s.config.LFXEnvironment),
-		Platform:           meeting.Platform,
-		MeetingID:          meetingID,
-		Passcode:           passcode,
-		Recurrence:         meeting.Recurrence,
-		Changes:            changes,
-		ProjectName:        projectName,
-		ProjectLogo:        projectLogo,
-		IcsSequence:        meeting.IcsSequence,
+		MeetingUID:           meeting.UID,
+		RecipientEmail:       registrant.Email,
+		RecipientName:        recipientName,
+		MeetingTitle:         meeting.Title,
+		StartTime:            meeting.StartTime,
+		Duration:             meeting.Duration,
+		Timezone:             meeting.Timezone,
+		Description:          meeting.Description,
+		Visibility:           meeting.Visibility,
+		MeetingType:          meeting.MeetingType,
+		JoinLink:             constants.GenerateLFXMeetingURL(meeting.UID, meeting.Password, s.config.LFXEnvironment),
+		MeetingDetailsLink:   constants.GenerateLFXMeetingDetailsURL(projectSlug, meeting.UID, s.config.LFXEnvironment),
+		Platform:             meeting.Platform,
+		MeetingID:            meetingID,
+		Passcode:             passcode,
+		Recurrence:           meeting.Recurrence,
+		Changes:              changes,
+		ProjectName:          projectName,
+		ProjectLogo:          projectLogo,
+		IcsSequence:          meeting.IcsSequence,
+		MeetingAttachments:   meetingAttachments,
+		EmailFileAttachments: fileAttachments,
 		// Previous meeting data
 		OldStartTime:   oldMeeting.StartTime,
 		OldDuration:    oldMeeting.Duration,

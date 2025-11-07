@@ -548,6 +548,52 @@ func ConvertDomainToPastMeetingSummaryResponse(summary *models.PastMeetingSummar
 	return result
 }
 
+// ConvertDomainToPastMeetingAttachmentResponse converts a domain past meeting attachment model to an API response
+func ConvertDomainToPastMeetingAttachmentResponse(attachment *models.PastMeetingAttachment) *meetingservice.PastMeetingAttachment {
+	if attachment == nil {
+		return nil
+	}
+
+	result := &meetingservice.PastMeetingAttachment{
+		UID:            attachment.UID,
+		PastMeetingUID: attachment.PastMeetingUID,
+		Type:           attachment.Type,
+		Name:           attachment.Name,
+		UploadedBy:     attachment.UploadedBy,
+	}
+
+	if attachment.Link != "" {
+		result.Link = utils.StringPtr(attachment.Link)
+	}
+
+	if attachment.FileName != "" {
+		result.FileName = utils.StringPtr(attachment.FileName)
+	}
+
+	if attachment.FileSize > 0 {
+		fileSize := attachment.FileSize
+		result.FileSize = &fileSize
+	}
+
+	if attachment.ContentType != "" {
+		result.ContentType = utils.StringPtr(attachment.ContentType)
+	}
+
+	if attachment.SourceObjectUID != "" {
+		result.SourceObjectUID = utils.StringPtr(attachment.SourceObjectUID)
+	}
+
+	if attachment.UploadedAt != nil {
+		result.UploadedAt = utils.StringPtr(attachment.UploadedAt.Format(time.RFC3339))
+	}
+
+	if attachment.Description != "" {
+		result.Description = utils.StringPtr(attachment.Description)
+	}
+
+	return result
+}
+
 // ConvertRSVPToResponse converts a domain RSVPResponse to Goa RSVPResponse
 func ConvertRSVPToResponse(rsvp *models.RSVPResponse) *meetingservice.RSVPResponse {
 	if rsvp == nil {
@@ -574,4 +620,49 @@ func ConvertRSVPToResponse(rsvp *models.RSVPResponse) *meetingservice.RSVPRespon
 	}
 
 	return resp
+}
+
+// ConvertDomainToMeetingAttachmentResponse converts a domain attachment model to an API response
+func ConvertDomainToMeetingAttachmentResponse(attachment *models.MeetingAttachment) *meetingservice.MeetingAttachment {
+	if attachment == nil {
+		return nil
+	}
+
+	response := &meetingservice.MeetingAttachment{
+		UID:        attachment.UID,
+		MeetingUID: attachment.MeetingUID,
+		Type:       attachment.Type,
+		Name:       attachment.Name,
+		UploadedBy: attachment.UploadedBy,
+	}
+
+	// Type-specific fields (file-type only)
+	if attachment.Type == "file" {
+		if attachment.FileName != "" {
+			response.FileName = &attachment.FileName
+		}
+		if attachment.FileSize > 0 {
+			fileSize := attachment.FileSize
+			response.FileSize = &fileSize
+		}
+		if attachment.ContentType != "" {
+			response.ContentType = &attachment.ContentType
+		}
+	}
+
+	// Link field (link-type only)
+	if attachment.Type == "link" && attachment.Link != "" {
+		response.Link = &attachment.Link
+	}
+
+	if attachment.UploadedAt != nil {
+		uploadedAt := attachment.UploadedAt.Format(time.RFC3339)
+		response.UploadedAt = &uploadedAt
+	}
+
+	if attachment.Description != "" {
+		response.Description = &attachment.Description
+	}
+
+	return response
 }

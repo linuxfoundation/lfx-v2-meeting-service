@@ -22,7 +22,9 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 	mockMeetingRepo := new(mocks.MockMeetingRepository)
 	mockRSVPRepo := new(mocks.MockMeetingRSVPRepository)
 	mockRegistrantRepo := new(mocks.MockRegistrantRepository)
+	mockAttachmentRepo := new(mocks.MockMeetingAttachmentRepository)
 	mockMessageBuilder := new(mocks.MockMessageBuilder)
+	mockAttachmentService := service.NewMeetingAttachmentService(mockAttachmentRepo, mockMeetingRepo, mockMessageBuilder, mockMessageBuilder)
 	mockEmailService := new(mocks.MockEmailService)
 	mockPlatformRegistry := platform.NewRegistry()
 
@@ -35,6 +37,10 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 	// Set up default expectations for RSVP repository
 	// By default, return empty RSVP list for any meeting (tests can override this)
 	mockRSVPRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.RSVPResponse{}, nil).Maybe()
+
+	// Set up default expectations for attachment repository
+	// By default, return empty attachments list for any meeting (tests can override this)
+	mockAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 
 	meetingService := service.NewMeetingService(
 		mockMeetingRepo,
@@ -54,6 +60,7 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 		mockEmailService,
 		mockMessageBuilder,
 		mockMessageBuilder,
+		mockAttachmentService,
 		occurrenceService,
 		config,
 	)

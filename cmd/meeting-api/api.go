@@ -25,9 +25,11 @@ type MeetingsAPI struct {
 	meetingService                *service.MeetingService
 	registrantService             *service.MeetingRegistrantService
 	meetingRSVPService            *service.MeetingRSVPService
+	attachmentService             *service.MeetingAttachmentService
 	pastMeetingService            *service.PastMeetingService
 	pastMeetingParticipantService *service.PastMeetingParticipantService
 	pastMeetingSummaryService     *service.PastMeetingSummaryService
+	pastMeetingAttachmentService  *service.PastMeetingAttachmentService
 	zoomWebhookService            *service.ZoomWebhookService
 	meetingHandler                *handlers.MeetingHandler
 	committeeHandler              *handlers.CommitteeHandlers
@@ -40,9 +42,11 @@ func NewMeetingsAPI(
 	meetingService *service.MeetingService,
 	registrantService *service.MeetingRegistrantService,
 	meetingRSVPService *service.MeetingRSVPService,
+	attachmentService *service.MeetingAttachmentService,
 	pastMeetingService *service.PastMeetingService,
 	pastMeetingParticipantService *service.PastMeetingParticipantService,
 	pastMeetingSummaryService *service.PastMeetingSummaryService,
+	pastMeetingAttachmentService *service.PastMeetingAttachmentService,
 	zoomWebhookService *service.ZoomWebhookService,
 	zoomWebhookHandler *handlers.ZoomWebhookHandler,
 	meetingHandler *handlers.MeetingHandler,
@@ -53,9 +57,11 @@ func NewMeetingsAPI(
 		meetingService:                meetingService,
 		registrantService:             registrantService,
 		meetingRSVPService:            meetingRSVPService,
+		attachmentService:             attachmentService,
 		pastMeetingService:            pastMeetingService,
 		pastMeetingParticipantService: pastMeetingParticipantService,
 		pastMeetingSummaryService:     pastMeetingSummaryService,
+		pastMeetingAttachmentService:  pastMeetingAttachmentService,
 		zoomWebhookService:            zoomWebhookService,
 		zoomWebhookHandler:            zoomWebhookHandler,
 		meetingHandler:                meetingHandler,

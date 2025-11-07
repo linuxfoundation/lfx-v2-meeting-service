@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"strings"
 
@@ -18,16 +19,32 @@ import (
 
 // NATS Key-Value store bucket names
 const (
-	KVStoreNameMeetings                = "meetings"
-	KVStoreNameMeetingSettings         = "meeting-settings"
-	KVStoreNameMeetingRegistrants      = "meeting-registrants"
-	KVStoreNameMeetingRSVPs            = "meeting-rsvps"
-	KVStoreNamePastMeetings            = "past-meetings"
-	KVStoreNamePastMeetingParticipants = "past-meeting-participants"
-	KVStoreNamePastMeetingRecordings   = "past-meeting-recordings"
-	KVStoreNamePastMeetingTranscripts  = "past-meeting-transcripts"
-	KVStoreNamePastMeetingSummaries    = "past-meeting-summaries"
+	KVStoreNameMeetings                       = "meetings"
+	KVStoreNameMeetingSettings                = "meeting-settings"
+	KVStoreNameMeetingRegistrants             = "meeting-registrants"
+	KVStoreNameMeetingRSVPs                   = "meeting-rsvps"
+	KVStoreNameMeetingAttachmentsMetadata     = "meeting-attachments-metadata"
+	KVStoreNamePastMeetings                   = "past-meetings"
+	KVStoreNamePastMeetingParticipants        = "past-meeting-participants"
+	KVStoreNamePastMeetingRecordings          = "past-meeting-recordings"
+	KVStoreNamePastMeetingTranscripts         = "past-meeting-transcripts"
+	KVStoreNamePastMeetingSummaries           = "past-meeting-summaries"
+	KVStoreNamePastMeetingAttachmentsMetadata = "past-meeting-attachments-metadata"
 )
+
+// NATS Object Store names
+const (
+	ObjectStoreNameMeetingAttachments = "meeting-attachments"
+)
+
+// INatsObjectStore is a NATS Object Store interface for file storage
+// This interface matches jetstream.ObjectStore and allows for mocking in tests.
+type INatsObjectStore interface {
+	Put(ctx context.Context, obj jetstream.ObjectMeta, reader io.Reader) (*jetstream.ObjectInfo, error)
+	Get(ctx context.Context, name string, opts ...jetstream.GetObjectOpt) (jetstream.ObjectResult, error)
+	GetInfo(ctx context.Context, name string, opts ...jetstream.GetObjectInfoOpt) (*jetstream.ObjectInfo, error)
+	Delete(ctx context.Context, name string) error
+}
 
 // INatsKeyValue is a NATS KV interface needed for the [MeetingsService].
 type INatsKeyValue interface {

@@ -43,37 +43,24 @@ type EmailMetadata struct {
 
 // EmailMessageParams contains all the information needed to build an email message
 type EmailMessageParams struct {
-	Recipient   string
-	Subject     string
-	HTMLContent string
-	TextContent string
-	Attachment  *domain.EmailAttachment
-	Config      SMTPConfig
-	Metadata    *EmailMetadata // Optional metadata for email customization
+	Recipient       string
+	Subject         string
+	HTMLContent     string
+	TextContent     string
+	FileAttachments []*domain.EmailAttachment
+	Config          SMTPConfig
+	Metadata        *EmailMetadata // Optional metadata for email customization
 }
 
 // buildEmailMessage builds the complete email message with headers and multipart content
 func buildEmailMessage(recipient, subject, htmlContent, textContent string, config SMTPConfig) string {
 	return buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   recipient,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  nil,
-		Config:      config,
-	})
-}
-
-// buildEmailMessageWithAttachment builds the complete email message with optional attachment
-func buildEmailMessageWithAttachment(recipient, subject, htmlContent, textContent string, attachment *domain.EmailAttachment, metadata *EmailMetadata, config SMTPConfig) string {
-	return buildEmailMessageWithParams(EmailMessageParams{
-		Recipient:   recipient,
-		Subject:     subject,
-		HTMLContent: htmlContent,
-		TextContent: textContent,
-		Attachment:  attachment,
-		Config:      config,
-		Metadata:    metadata,
+		Recipient:       recipient,
+		Subject:         subject,
+		HTMLContent:     htmlContent,
+		TextContent:     textContent,
+		FileAttachments: nil,
+		Config:          config,
 	})
 }
 
@@ -96,7 +83,13 @@ func buildEmailMessageWithParams(params EmailMessageParams) string {
 	message.WriteString(fmt.Sprintf("Message-ID: %s\r\n", messageID))
 	message.WriteString("MIME-Version: 1.0\r\n")
 
-	if params.Attachment != nil {
+	// Collect all attachments (ICS + meeting file attachments)
+	fileAttachments := []*domain.EmailAttachment{}
+	if len(params.FileAttachments) > 0 {
+		fileAttachments = append(fileAttachments, params.FileAttachments...)
+	}
+
+	if len(fileAttachments) > 0 {
 		// With attachment: use multipart/mixed
 		mixedBoundary := generateBoundary()
 		message.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", mixedBoundary))
@@ -129,20 +122,22 @@ func buildEmailMessageWithParams(params EmailMessageParams) string {
 		// End alternative boundary
 		message.WriteString(fmt.Sprintf("--%s--\r\n", alternativeBoundary))
 
-		// Attachment part
-		message.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
-		message.WriteString(fmt.Sprintf("Content-Type: %s; name=\"%s\"\r\n", params.Attachment.ContentType, params.Attachment.Filename))
-		message.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", params.Attachment.Filename))
-		message.WriteString("Content-Transfer-Encoding: base64\r\n")
+		// Attachment parts - loop through all attachments
+		for _, attachment := range fileAttachments {
+			message.WriteString(fmt.Sprintf("--%s\r\n", mixedBoundary))
+			// Add content type
+			contentType := fmt.Sprintf("%s; name=\"%s\"", attachment.ContentType, attachment.Filename)
+			if attachment.ContentType == "text/calendar" {
+				contentType = fmt.Sprintf("text/calendar; charset=UTF-8; method=REQUEST; name=\"%s\"", attachment.Filename)
+			}
+			message.WriteString(fmt.Sprintf("Content-Type: %s\r\n", contentType))
+			message.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", attachment.Filename))
+			message.WriteString("Content-Transfer-Encoding: base64\r\n")
 
-		// Add method=REQUEST for calendar files
-		if params.Attachment.ContentType == "text/calendar" {
-			message.WriteString("Content-Type: text/calendar; charset=UTF-8; method=REQUEST\r\n")
+			message.WriteString("\r\n")
+			message.WriteString(attachment.Content)
+			message.WriteString("\r\n")
 		}
-
-		message.WriteString("\r\n")
-		message.WriteString(params.Attachment.Content)
-		message.WriteString("\r\n")
 
 		// End mixed boundary
 		message.WriteString(fmt.Sprintf("--%s--\r\n", mixedBoundary))

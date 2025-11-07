@@ -149,3 +149,44 @@ type MeetingRSVPRepository interface {
 	// Query operations
 	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.RSVPResponse, error)
 }
+
+// MeetingAttachmentRepository defines the interface for meeting attachment storage operations.
+// Metadata is stored in NATS KV store (includes meeting_uid field), while actual files are stored in NATS Object Store.
+// Each metadata record associates a meeting with a file. Multiple metadata records can reference the same file.
+type MeetingAttachmentRepository interface {
+	// PutObject stores file in Object Store
+	PutObject(ctx context.Context, attachmentUID string, fileData []byte) error
+
+	// PutMetadata stores metadata in KV store
+	PutMetadata(ctx context.Context, attachment *models.MeetingAttachment) error
+
+	// GetObject retrieves file from Object Store
+	GetObject(ctx context.Context, attachmentUID string) ([]byte, error)
+
+	// GetMetadata retrieves only the metadata from KV store
+	GetMetadata(ctx context.Context, attachmentUID string) (*models.MeetingAttachment, error)
+
+	// ListByMeeting retrieves all attachment metadata for a meeting
+	ListByMeeting(ctx context.Context, meetingUID string) ([]*models.MeetingAttachment, error)
+
+	// Delete removes only the metadata from KV store (file persists in Object Store)
+	Delete(ctx context.Context, attachmentUID string) error
+}
+
+// PastMeetingAttachmentRepository defines the interface for past meeting attachment storage operations.
+// Metadata is stored in NATS KV store (includes past_meeting_uid and source_object_uid fields).
+// Files are stored in the same Object Store as meeting attachments, allowing reuse via source_object_uid.
+// This repository only manages metadata - files are accessed via the shared Object Store on the [MeetingAttachmentRepository].
+type PastMeetingAttachmentRepository interface {
+	// PutMetadata stores metadata in KV store
+	PutMetadata(ctx context.Context, attachment *models.PastMeetingAttachment) error
+
+	// GetMetadata retrieves only the metadata from KV store
+	GetMetadata(ctx context.Context, attachmentUID string) (*models.PastMeetingAttachment, error)
+
+	// ListByPastMeeting retrieves all attachment metadata for a past meeting
+	ListByPastMeeting(ctx context.Context, pastMeetingUID string) ([]*models.PastMeetingAttachment, error)
+
+	// Delete removes the metadata from KV store (file persists in Object Store)
+	Delete(ctx context.Context, attachmentUID string) error
+}

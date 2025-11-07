@@ -27,9 +27,11 @@ func mustParseTimeForTest(timeStr string) time.Time {
 }
 
 // setupPastMeetingServiceForTesting creates a PastMeetingService with all mock dependencies for testing
-func setupPastMeetingServiceForTesting() (*PastMeetingService, *mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {
+func setupPastMeetingServiceForTesting() (*PastMeetingService, *mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMeetingAttachmentRepository, *mocks.MockPastMeetingAttachmentRepository, *mocks.MockMessageBuilder) {
 	mockMeetingRepo := new(mocks.MockMeetingRepository)
 	mockPastMeetingRepo := new(mocks.MockPastMeetingRepository)
+	mockMeetingAttachmentRepo := new(mocks.MockMeetingAttachmentRepository)
+	mockPastMeetingAttachmentRepo := new(mocks.MockPastMeetingAttachmentRepository)
 	mockBuilder := new(mocks.MockMessageBuilder)
 
 	config := ServiceConfig{
@@ -39,11 +41,13 @@ func setupPastMeetingServiceForTesting() (*PastMeetingService, *mocks.MockMeetin
 	service := NewPastMeetingService(
 		mockMeetingRepo,
 		mockPastMeetingRepo,
+		mockMeetingAttachmentRepo,
+		mockPastMeetingAttachmentRepo,
 		mockBuilder,
 		config,
 	)
 
-	return service, mockMeetingRepo, mockPastMeetingRepo, mockBuilder
+	return service, mockMeetingRepo, mockPastMeetingRepo, mockMeetingAttachmentRepo, mockPastMeetingAttachmentRepo, mockBuilder
 }
 
 func TestPastMeetingService_ServiceReady(t *testing.T) {
@@ -55,7 +59,7 @@ func TestPastMeetingService_ServiceReady(t *testing.T) {
 		{
 			name: "service ready with all dependencies",
 			setup: func() *PastMeetingService {
-				service, _, _, _ := setupPastMeetingServiceForTesting()
+				service, _, _, _, _, _ := setupPastMeetingServiceForTesting()
 				return service
 			},
 			expected: true,
@@ -63,11 +67,16 @@ func TestPastMeetingService_ServiceReady(t *testing.T) {
 		{
 			name: "service not ready - missing past meeting repository",
 			setup: func() *PastMeetingService {
-				_, mockMeetingRepo, _, mockBuilder := setupPastMeetingServiceForTesting()
 				config := ServiceConfig{SkipEtagValidation: false}
+				mockMeetingRepo := new(mocks.MockMeetingRepository)
+				mockMeetingAttachmentRepo := new(mocks.MockMeetingAttachmentRepository)
+				mockPastMeetingAttachmentRepo := new(mocks.MockPastMeetingAttachmentRepository)
+				mockBuilder := new(mocks.MockMessageBuilder)
 				return NewPastMeetingService(
 					mockMeetingRepo,
 					nil, // past meeting repository is nil
+					mockMeetingAttachmentRepo,
+					mockPastMeetingAttachmentRepo,
 					mockBuilder,
 					config,
 				)
@@ -77,11 +86,16 @@ func TestPastMeetingService_ServiceReady(t *testing.T) {
 		{
 			name: "service not ready - missing meeting repository",
 			setup: func() *PastMeetingService {
-				_, _, mockPastMeetingRepo, mockBuilder := setupPastMeetingServiceForTesting()
 				config := ServiceConfig{SkipEtagValidation: false}
+				mockPastMeetingRepo := new(mocks.MockPastMeetingRepository)
+				mockMeetingAttachmentRepo := new(mocks.MockMeetingAttachmentRepository)
+				mockPastMeetingAttachmentRepo := new(mocks.MockPastMeetingAttachmentRepository)
+				mockBuilder := new(mocks.MockMessageBuilder)
 				return NewPastMeetingService(
 					nil, // meeting repository is nil
 					mockPastMeetingRepo,
+					mockMeetingAttachmentRepo,
+					mockPastMeetingAttachmentRepo,
 					mockBuilder,
 					config,
 				)
@@ -91,11 +105,16 @@ func TestPastMeetingService_ServiceReady(t *testing.T) {
 		{
 			name: "service not ready - missing message builder",
 			setup: func() *PastMeetingService {
-				_, mockMeetingRepo, mockPastMeetingRepo, _ := setupPastMeetingServiceForTesting()
 				config := ServiceConfig{SkipEtagValidation: false}
+				mockMeetingRepo := new(mocks.MockMeetingRepository)
+				mockPastMeetingRepo := new(mocks.MockPastMeetingRepository)
+				mockMeetingAttachmentRepo := new(mocks.MockMeetingAttachmentRepository)
+				mockPastMeetingAttachmentRepo := new(mocks.MockPastMeetingAttachmentRepository)
 				return NewPastMeetingService(
 					mockMeetingRepo,
 					mockPastMeetingRepo,
+					mockMeetingAttachmentRepo,
+					mockPastMeetingAttachmentRepo,
 					nil, // message builder is nil
 					config,
 				)
@@ -121,7 +140,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 	tests := []struct {
 		name            string
 		payload         *models.PastMeeting
-		setupMocks      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder)
+		setupMocks      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMeetingAttachmentRepository, *mocks.MockPastMeetingAttachmentRepository, *mocks.MockMessageBuilder)
 		wantErr         bool
 		expectedErrType domain.ErrorType
 		validate        func(*testing.T, *models.PastMeeting)
@@ -157,7 +176,7 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					},
 				},
 			},
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
 				// Check if meeting exists
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
 
@@ -173,6 +192,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 						pm.ZoomConfig != nil &&
 						len(pm.Sessions) == 1
 				})).Return(nil)
+
+				// List meeting attachments (returns empty list)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, "meeting-123").Return([]*models.MeetingAttachment{}, nil)
 
 				// Send indexer and access messages
 				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
@@ -203,16 +225,19 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				Description:        "Test Description",
 				Platform:           models.PlatformZoom,
 			},
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// List meeting attachments (returns empty list by default)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 				// Make service not ready by not setting up mocks
 			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeUnavailable,
 		},
 		{
-			name:            "nil payload",
-			payload:         nil,
-			setupMocks:      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
+			name:    "nil payload",
+			payload: nil,
+			setupMocks: func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMeetingAttachmentRepository, *mocks.MockPastMeetingAttachmentRepository, *mocks.MockMessageBuilder) {
+			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeValidation,
 		},
@@ -222,7 +247,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				MeetingUID: "",
 				ProjectUID: "project-123",
 			},
-			setupMocks:      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
+			setupMocks: func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMeetingAttachmentRepository, *mocks.MockPastMeetingAttachmentRepository, *mocks.MockMessageBuilder) {
+			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeValidation,
 		},
@@ -237,7 +263,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				Description:        "Test Description",
 				Platform:           models.PlatformZoom,
 			},
-			setupMocks:      func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMessageBuilder) {},
+			setupMocks: func(*mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockMeetingAttachmentRepository, *mocks.MockPastMeetingAttachmentRepository, *mocks.MockMessageBuilder) {
+			},
 			wantErr:         true,
 			expectedErrType: domain.ErrorTypeValidation,
 		},
@@ -252,7 +279,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				Description:        "Test Description",
 				Platform:           models.PlatformZoom,
 			},
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// List meeting attachments (returns empty list by default)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
 				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(domain.NewInternalError("database error"))
 			},
@@ -270,7 +299,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				Description:        "Test Description",
 				Platform:           models.PlatformZoom,
 			},
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// List meeting attachments (returns empty list by default)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 				// Meeting doesn't exist
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(false, nil)
 
@@ -301,7 +332,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					},
 				}
 			}(),
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// List meeting attachments (returns empty list by default)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
 				mockPastMeetingRepo.On("Create", mock.Anything, mock.MatchedBy(func(pm *models.PastMeeting) bool {
 					return pm.Recurrence != nil &&
@@ -339,7 +372,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					},
 				},
 			},
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// List meeting attachments (returns empty list by default)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
 				mockPastMeetingRepo.On("Create", mock.Anything, mock.MatchedBy(func(pm *models.PastMeeting) bool {
 					return len(pm.Committees) == 2 &&
@@ -383,7 +418,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 					},
 				}
 			}(),
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// List meeting attachments (returns empty list by default)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
 				mockPastMeetingRepo.On("Create", mock.Anything, mock.MatchedBy(func(pm *models.PastMeeting) bool {
 					return len(pm.Sessions) == 2 &&
@@ -409,7 +446,9 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				Description:        "Test Description",
 				Platform:           models.PlatformZoom,
 			},
-			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockBuilder *mocks.MockMessageBuilder) {
+			setupMocks: func(mockMeetingRepo *mocks.MockMeetingRepository, mockPastMeetingRepo *mocks.MockPastMeetingRepository, mockMeetingAttachmentRepo *mocks.MockMeetingAttachmentRepository, mockPastMeetingAttachmentRepo *mocks.MockPastMeetingAttachmentRepository, mockBuilder *mocks.MockMessageBuilder) {
+				// List meeting attachments (returns empty list by default)
+				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, mock.Anything).Return([]*models.MeetingAttachment{}, nil).Maybe()
 				mockMeetingRepo.On("Exists", mock.Anything, "meeting-123").Return(true, nil)
 				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
 
@@ -424,16 +463,16 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, mockMeetingRepo, mockPastMeetingRepo, mockBuilder := setupPastMeetingServiceForTesting()
+			service, mockMeetingRepo, mockPastMeetingRepo, mockMeetingAttachmentRepo, mockPastMeetingAttachmentRepo, mockBuilder := setupPastMeetingServiceForTesting()
 
 			// Remove repositories to test service not ready case
 			if tt.name == "service not ready" {
 				// Create a service with nil repository for this test
-				service = NewPastMeetingService(nil, nil, mockBuilder, ServiceConfig{})
+				service = NewPastMeetingService(nil, nil, nil, nil, mockBuilder, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
-				tt.setupMocks(mockMeetingRepo, mockPastMeetingRepo, mockBuilder)
+				tt.setupMocks(mockMeetingRepo, mockPastMeetingRepo, mockMeetingAttachmentRepo, mockPastMeetingAttachmentRepo, mockBuilder)
 			}
 
 			result, err := service.CreatePastMeeting(ctx, tt.payload)
@@ -518,12 +557,12 @@ func TestPastMeetingService_GetPastMeetings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, _, mockPastMeetingRepo, _ := setupPastMeetingServiceForTesting()
+			service, _, mockPastMeetingRepo, _, _, _ := setupPastMeetingServiceForTesting()
 
 			// Test service not ready case
 			if tt.name == "service not ready" {
 				// Create a service with nil repository for this test
-				service = NewPastMeetingService(nil, nil, nil, ServiceConfig{})
+				service = NewPastMeetingService(nil, nil, nil, nil, nil, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
@@ -615,12 +654,12 @@ func TestPastMeetingService_GetPastMeeting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, _, mockPastMeetingRepo, _ := setupPastMeetingServiceForTesting()
+			service, _, mockPastMeetingRepo, _, _, _ := setupPastMeetingServiceForTesting()
 
 			// Test service not ready case
 			if tt.name == "service not ready" {
 				// Create a service with nil repository for this test
-				service = NewPastMeetingService(nil, nil, nil, ServiceConfig{})
+				service = NewPastMeetingService(nil, nil, nil, nil, nil, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
@@ -760,15 +799,19 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, _, mockPastMeetingRepo, mockBuilder := setupPastMeetingServiceForTesting()
+			service, _, mockPastMeetingRepo, _, _, mockBuilder := setupPastMeetingServiceForTesting()
 
 			if tt.skipEtag {
 				// Create a service with SkipEtagValidation enabled
 				config := ServiceConfig{SkipEtagValidation: true}
-				_, mockMeetingRepo, _, _ := setupPastMeetingServiceForTesting()
+				_, mockMeetingRepo, _, _, _, _ := setupPastMeetingServiceForTesting()
+				mockMeetingAttachmentRepo := new(mocks.MockMeetingAttachmentRepository)
+				mockPastMeetingAttachmentRepo := new(mocks.MockPastMeetingAttachmentRepository)
 				service = NewPastMeetingService(
 					mockMeetingRepo,
 					mockPastMeetingRepo,
+					mockMeetingAttachmentRepo,
+					mockPastMeetingAttachmentRepo,
 					mockBuilder,
 					config,
 				)
@@ -777,7 +820,7 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 			// Test service not ready case
 			if tt.name == "service not ready" {
 				// Create a service with nil repository for this test
-				service = NewPastMeetingService(nil, nil, nil, ServiceConfig{})
+				service = NewPastMeetingService(nil, nil, nil, nil, nil, ServiceConfig{})
 			}
 
 			if tt.setupMocks != nil {
@@ -1000,7 +1043,7 @@ func TestPastMeetingService_validateCreatePastMeetingPayload(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, _, _, _ := setupPastMeetingServiceForTesting()
+			service, _, _, _, _, _ := setupPastMeetingServiceForTesting()
 
 			err := service.validateCreatePastMeetingPayload(ctx, tt.payload)
 

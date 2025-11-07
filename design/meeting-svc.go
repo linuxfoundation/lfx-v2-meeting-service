@@ -1147,6 +1147,343 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// POST meeting attachment create endpoint
+	Method("create-meeting-attachment", func() {
+		Description("Create a file or link attachment for a meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			AttachmentMeetingUIDAttribute()
+			AttachmentTypeAttribute()
+			AttachmentLinkAttribute()
+			AttachmentNameAttribute()
+			AttachmentDescriptionAttribute()
+			Attribute("file", Bytes, "Optional: The file data to upload (for type='file')", func() {
+				Meta("swagger:type", "file")
+			})
+			Attribute("file_name", String, "The filename extracted from multipart form data (populated by decoder)")
+			Attribute("file_content_type", String, "The content type extracted from multipart form data (populated by decoder)")
+			Required("meeting_uid", "type", "name")
+		})
+
+		Result(MeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/meetings/{meeting_uid}/attachments")
+			Param("version:v")
+			Param("meeting_uid")
+			Header("bearer_token:Authorization")
+			MultipartRequest()
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET meeting attachment endpoint
+	Method("get-meeting-attachment", func() {
+		Description("Download a file attachment for a meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			AttachmentMeetingUIDAttribute()
+			AttachmentUIDAttribute()
+			Required("meeting_uid", "uid")
+		})
+
+		Result(Bytes)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{meeting_uid}/attachments/{uid}")
+			Param("version:v")
+			Param("meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				ContentType("application/octet-stream")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET meeting attachment metadata endpoint
+	Method("get-meeting-attachment-metadata", func() {
+		Description("Get metadata for a meeting attachment without downloading the file")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			AttachmentMeetingUIDAttribute()
+			AttachmentUIDAttribute()
+			Required("meeting_uid", "uid")
+		})
+
+		Result(MeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/meetings/{meeting_uid}/attachments/{uid}/metadata")
+			Param("version:v")
+			Param("meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-meeting-attachment", func() {
+		Description("Delete a file attachment for a meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			AttachmentMeetingUIDAttribute()
+			AttachmentUIDAttribute()
+			Required("meeting_uid", "uid")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/meetings/{meeting_uid}/attachments/{uid}")
+			Param("version:v")
+			Param("meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// POST past meeting attachment endpoint
+	Method("create-past-meeting-attachment", func() {
+		Description("Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentTypeAttribute()
+			PastMeetingAttachmentLinkAttribute()
+			PastMeetingAttachmentNameAttribute()
+			PastMeetingAttachmentDescriptionAttribute()
+			Attribute("source_object_uid", String, "Optional: UID of an existing file in Object Store to reference (for type='file')", func() {
+				Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+				Format(FormatUUID)
+			})
+			Attribute("file", Bytes, "Optional: The file data to upload (for type='file', required if source_object_uid is not provided)", func() {
+				Meta("swagger:type", "file")
+			})
+			Attribute("file_name", String, "The filename extracted from multipart form data (populated by decoder)")
+			Attribute("file_content_type", String, "The content type extracted from multipart form data (populated by decoder)")
+			Required("past_meeting_uid", "type", "name")
+		})
+
+		Result(PastMeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/past_meetings/{past_meeting_uid}/attachments")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Header("bearer_token:Authorization")
+			MultipartRequest()
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET past meeting attachments endpoint
+	Method("get-past-meeting-attachments", func() {
+		Description("Get all attachments for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			UIDAttribute()
+		})
+
+		Result(func() {
+			Attribute("attachments", ArrayOf(PastMeetingAttachment), "Past meeting attachments")
+			Attribute("cache_control", String, "Cache control header", func() {
+				Example("public, max-age=300")
+			})
+			Required("attachments")
+		})
+
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{uid}/attachments")
+			Param("version:v")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				Header("cache_control:Cache-Control")
+			})
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET past meeting attachment file endpoint
+	Method("get-past-meeting-attachment", func() {
+		Description("Download a file attachment for a past meeting")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentUIDAttribute()
+			Required("past_meeting_uid", "uid")
+		})
+
+		Result(Bytes)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{past_meeting_uid}/attachments/{uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				ContentType("application/octet-stream")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// GET past meeting attachment metadata endpoint
+	Method("get-past-meeting-attachment-metadata", func() {
+		Description("Get metadata for a past meeting attachment without downloading the file")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentUIDAttribute()
+			Required("past_meeting_uid", "uid")
+		})
+
+		Result(PastMeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/past_meetings/{past_meeting_uid}/attachments/{uid}/metadata")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// DELETE past meeting attachment endpoint
+	Method("delete-past-meeting-attachment", func() {
+		Description("Delete a past meeting attachment")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			PastMeetingAttachmentPastMeetingUIDAttribute()
+			PastMeetingAttachmentUIDAttribute()
+			Required("past_meeting_uid", "uid")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/past_meetings/{past_meeting_uid}/attachments/{uid}")
+			Param("version:v")
+			Param("past_meeting_uid")
+			Param("uid")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
 		Meta("swagger:generate", "false")

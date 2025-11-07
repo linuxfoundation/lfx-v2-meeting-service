@@ -61,7 +61,7 @@ func main() {
 	}
 
 	// Get the key-value stores for the service.
-	repos, err := getKeyValueStores(ctx, natsConn)
+	repos, err := getStorageRepos(ctx, natsConn)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error getting key-value stores")
 		return
@@ -87,12 +87,19 @@ func main() {
 		emailService,
 		serviceConfig,
 	)
+	attachmentService := service.NewMeetingAttachmentService(
+		repos.Attachment,
+		repos.Meeting,
+		messageBuilder, // Implements MeetingAttachmentIndexSender
+		messageBuilder, // Implements MeetingAttachmentAccessSender
+	)
 	registrantService := service.NewMeetingRegistrantService(
 		repos.Meeting,
 		repos.Registrant,
 		emailService,
 		messageBuilder,
 		messageBuilder,
+		attachmentService,
 		occurrenceService,
 		serviceConfig,
 	)
@@ -106,6 +113,8 @@ func main() {
 	pastMeetingService := service.NewPastMeetingService(
 		repos.Meeting,
 		repos.PastMeeting,
+		repos.Attachment,
+		repos.PastMeetingAttachment,
 		messageBuilder, // Implements PastMeetingBasicMessageSender
 		serviceConfig,
 	)
@@ -139,6 +148,14 @@ func main() {
 		emailService,
 		messageBuilder, // Implements PastMeetingSummaryMessageSender
 		messageBuilder, // Implements ExternalServiceClient
+		serviceConfig,
+	)
+	pastMeetingAttachmentService := service.NewPastMeetingAttachmentService(
+		repos.PastMeeting,
+		repos.PastMeetingAttachment,
+		repos.Attachment,
+		messageBuilder, // Implements PastMeetingAttachmentIndexSender
+		messageBuilder, // Implements PastMeetingAttachmentAccessSender
 		serviceConfig,
 	)
 	committeeSyncService := service.NewCommitteeSyncService(
@@ -184,9 +201,11 @@ func main() {
 		meetingService,
 		registrantService,
 		meetingRSVPService,
+		attachmentService,
 		pastMeetingService,
 		pastMeetingParticipantService,
 		pastMeetingSummaryService,
+		pastMeetingAttachmentService,
 		zoomWebhookService,
 		zoomWebhookHandler,
 		meetingHandler,
