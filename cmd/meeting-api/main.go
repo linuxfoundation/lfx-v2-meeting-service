@@ -90,6 +90,8 @@ func main() {
 	attachmentService := service.NewMeetingAttachmentService(
 		repos.Attachment,
 		repos.Meeting,
+		messageBuilder, // Implements MeetingAttachmentIndexSender
+		messageBuilder, // Implements MeetingAttachmentAccessSender
 	)
 	registrantService := service.NewMeetingRegistrantService(
 		repos.Meeting,
@@ -152,6 +154,8 @@ func main() {
 		repos.PastMeeting,
 		repos.PastMeetingAttachment,
 		repos.Attachment,
+		messageBuilder, // Implements PastMeetingAttachmentIndexSender
+		messageBuilder, // Implements PastMeetingAttachmentAccessSender
 		serviceConfig,
 	)
 	committeeSyncService := service.NewCommitteeSyncService(

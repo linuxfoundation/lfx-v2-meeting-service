@@ -43,6 +43,14 @@ const (
 	// The subject is of the form: lfx.index.past_meeting_summary
 	IndexPastMeetingSummarySubject = "lfx.index.past_meeting_summary"
 
+	// IndexMeetingAttachmentSubject is the subject for the meeting attachment indexing.
+	// The subject is of the form: lfx.index.meeting_attachment
+	IndexMeetingAttachmentSubject = "lfx.index.meeting_attachment"
+
+	// IndexPastMeetingAttachmentSubject is the subject for the past meeting attachment indexing.
+	// The subject is of the form: lfx.index.past_meeting_attachment
+	IndexPastMeetingAttachmentSubject = "lfx.index.past_meeting_attachment"
+
 	// UpdateAccessMeetingSubject is the subject for the meeting access control updates.
 	// The subject is of the form: lfx.update_access.meeting
 	UpdateAccessMeetingSubject = "lfx.update_access.meeting"
@@ -50,6 +58,14 @@ const (
 	// DeleteAllAccessMeetingSubject is the subject for the meeting access control deletion.
 	// The subject is of the form: lfx.delete_all_access.meeting
 	DeleteAllAccessMeetingSubject = "lfx.delete_all_access.meeting"
+
+	// UpdateAccessMeetingAttachmentSubject is the subject for the meeting attachment access control updates.
+	// The subject is of the form: lfx.update_access.meeting_attachment
+	UpdateAccessMeetingAttachmentSubject = "lfx.update_access.meeting_attachment"
+
+	// DeleteAccessMeetingAttachmentSubject is the subject for the meeting attachment access control deletion.
+	// The subject is of the form: lfx.delete_access.meeting_attachment
+	DeleteAccessMeetingAttachmentSubject = "lfx.delete_access.meeting_attachment"
 
 	// PutRegistrantMeetingSubject is the subject for the meeting registrant access control updates.
 	// The subject is of the form: lfx.put_registrant.meeting
@@ -78,6 +94,14 @@ const (
 	// DeleteAllAccessPastMeetingSubject is the subject for the past meeting access control deletion.
 	// The subject is of the form: lfx.delete_all_access.past_meeting
 	DeleteAllAccessPastMeetingSubject = "lfx.delete_all_access.past_meeting"
+
+	// UpdateAccessPastMeetingAttachmentSubject is the subject for the past meeting attachment access control updates.
+	// The subject is of the form: lfx.update_access.past_meeting_attachment
+	UpdateAccessPastMeetingAttachmentSubject = "lfx.update_access.past_meeting_attachment"
+
+	// DeleteAccessPastMeetingAttachmentSubject is the subject for the past meeting attachment access control deletion.
+	// The subject is of the form: lfx.delete_access.past_meeting_attachment
+	DeleteAccessPastMeetingAttachmentSubject = "lfx.delete_access.past_meeting_attachment"
 
 	// PutParticipantPastMeetingSubject is the subject for the past meeting participant access control updates.
 	// The subject is of the form: lfx.put_participant.past_meeting
@@ -191,6 +215,13 @@ type MeetingAccessMessage struct {
 	Committees []string `json:"committees"`
 }
 
+// MeetingAttachmentAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
+type MeetingAttachmentAccessMessage struct {
+	UID        string `json:"uid"`
+	MeetingUID string `json:"meeting_uid"`
+}
+
 // MeetingRegistrantAccessMessage is the schema for the data in the message sent to the fga-sync service.
 // These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
 type MeetingRegistrantAccessMessage struct {
@@ -296,6 +327,13 @@ type PastMeetingAccessMessage struct {
 	Public     bool     `json:"public"`
 	ProjectUID string   `json:"project_uid"`
 	Committees []string `json:"committees"`
+}
+
+// PastMeetingAttachmentAccessMessage is the schema for the data in the message sent to the fga-sync service.
+// These are the fields that the fga-sync service needs in order to update the OpenFGA permissions.
+type PastMeetingAttachmentAccessMessage struct {
+	UID            string `json:"uid"`
+	PastMeetingUID string `json:"past_meeting_uid"`
 }
 
 // PastMeetingParticipantAccessMessage is the schema for the data in the message sent to the fga-sync service.

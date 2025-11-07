@@ -13,6 +13,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
 // PastMeetingAttachmentService implements the service for past meeting attachments
@@ -20,6 +21,8 @@ type PastMeetingAttachmentService struct {
 	pastMeetingRepository           domain.PastMeetingRepository
 	pastMeetingAttachmentRepository domain.PastMeetingAttachmentRepository
 	meetingAttachmentRepository     domain.MeetingAttachmentRepository
+	indexSender                     domain.PastMeetingAttachmentIndexSender
+	accessSender                    domain.PastMeetingAttachmentAccessSender
 	config                          ServiceConfig
 }
 
@@ -28,12 +31,16 @@ func NewPastMeetingAttachmentService(
 	pastMeetingRepository domain.PastMeetingRepository,
 	pastMeetingAttachmentRepository domain.PastMeetingAttachmentRepository,
 	meetingAttachmentRepository domain.MeetingAttachmentRepository,
+	indexSender domain.PastMeetingAttachmentIndexSender,
+	accessSender domain.PastMeetingAttachmentAccessSender,
 	config ServiceConfig,
 ) *PastMeetingAttachmentService {
 	return &PastMeetingAttachmentService{
 		pastMeetingRepository:           pastMeetingRepository,
 		pastMeetingAttachmentRepository: pastMeetingAttachmentRepository,
 		meetingAttachmentRepository:     meetingAttachmentRepository,
+		indexSender:                     indexSender,
+		accessSender:                    accessSender,
 		config:                          config,
 	}
 }
@@ -247,6 +254,46 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 		"source_object_uid", attachment.SourceObjectUID,
 		"link", attachment.Link)
 
+	// Send indexer and access control messages concurrently
+	pool := concurrent.NewWorkerPool(2)
+	errors := pool.RunAll(ctx,
+		func() error {
+			if s.indexSender == nil {
+				return nil
+			}
+			if err := s.indexSender.SendIndexPastMeetingAttachment(ctx, models.ActionCreated, *attachment); err != nil {
+				slog.WarnContext(ctx, "failed to send index message for past meeting attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachment.UID)
+				return err
+			}
+			return nil
+		},
+		func() error {
+			if s.accessSender == nil {
+				return nil
+			}
+			accessMsg := models.PastMeetingAttachmentAccessMessage{
+				UID:            attachment.UID,
+				PastMeetingUID: attachment.PastMeetingUID,
+			}
+			if err := s.accessSender.SendUpdateAccessPastMeetingAttachment(ctx, accessMsg); err != nil {
+				slog.WarnContext(ctx, "failed to send access control message for past meeting attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachment.UID)
+				return err
+			}
+			return nil
+		},
+	)
+
+	// Log any errors but don't fail the operation - attachment was created successfully
+	if len(errors) > 0 {
+		slog.WarnContext(ctx, "some messaging operations failed for past meeting attachment",
+			"attachment_uid", attachment.UID,
+			"error_count", len(errors))
+	}
+
 	return attachment, nil
 }
 
@@ -391,6 +438,42 @@ func (s *PastMeetingAttachmentService) DeletePastMeetingAttachment(ctx context.C
 	slog.InfoContext(ctx, "deleted past meeting attachment",
 		"past_meeting_uid", pastMeetingUID,
 		"attachment_uid", attachmentUID)
+
+	// Send indexer and access control delete messages concurrently
+	pool := concurrent.NewWorkerPool(2)
+	errors := pool.RunAll(ctx,
+		func() error {
+			if s.indexSender == nil {
+				return nil
+			}
+			if err := s.indexSender.SendDeleteIndexPastMeetingAttachment(ctx, attachmentUID); err != nil {
+				slog.WarnContext(ctx, "failed to send delete index message for past meeting attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachmentUID)
+				return err
+			}
+			return nil
+		},
+		func() error {
+			if s.accessSender == nil {
+				return nil
+			}
+			if err := s.accessSender.SendDeleteAccessPastMeetingAttachment(ctx, attachmentUID); err != nil {
+				slog.WarnContext(ctx, "failed to send delete access control message for past meeting attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachmentUID)
+				return err
+			}
+			return nil
+		},
+	)
+
+	// Log any errors but don't fail the operation - attachment was deleted successfully
+	if len(errors) > 0 {
+		slog.WarnContext(ctx, "some messaging operations failed for past meeting attachment deletion",
+			"attachment_uid", attachmentUID,
+			"error_count", len(errors))
+	}
 
 	return nil
 }

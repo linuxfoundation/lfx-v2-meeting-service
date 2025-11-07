@@ -23,8 +23,8 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 	mockRSVPRepo := new(mocks.MockMeetingRSVPRepository)
 	mockRegistrantRepo := new(mocks.MockRegistrantRepository)
 	mockAttachmentRepo := new(mocks.MockMeetingAttachmentRepository)
-	mockAttachmentService := service.NewMeetingAttachmentService(mockAttachmentRepo, mockMeetingRepo)
 	mockMessageBuilder := new(mocks.MockMessageBuilder)
+	mockAttachmentService := service.NewMeetingAttachmentService(mockAttachmentRepo, mockMeetingRepo, mockMessageBuilder, mockMessageBuilder)
 	mockEmailService := new(mocks.MockEmailService)
 	mockPlatformRegistry := platform.NewRegistry()
 

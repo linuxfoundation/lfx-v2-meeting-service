@@ -14,6 +14,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
 const (
@@ -25,16 +26,22 @@ const (
 type MeetingAttachmentService struct {
 	attachmentRepository domain.MeetingAttachmentRepository
 	meetingRepository    domain.MeetingRepository
+	indexSender          domain.MeetingAttachmentIndexSender
+	accessSender         domain.MeetingAttachmentAccessSender
 }
 
 // NewMeetingAttachmentService creates a new MeetingAttachmentService.
 func NewMeetingAttachmentService(
 	attachmentRepository domain.MeetingAttachmentRepository,
 	meetingRepository domain.MeetingRepository,
+	indexSender domain.MeetingAttachmentIndexSender,
+	accessSender domain.MeetingAttachmentAccessSender,
 ) *MeetingAttachmentService {
 	return &MeetingAttachmentService{
 		attachmentRepository: attachmentRepository,
 		meetingRepository:    meetingRepository,
+		indexSender:          indexSender,
+		accessSender:         accessSender,
 	}
 }
 
@@ -164,6 +171,46 @@ func (s *MeetingAttachmentService) CreateMeetingAttachment(ctx context.Context, 
 		"type", attachment.Type,
 		"file_size", attachment.FileSize,
 		"link", attachment.Link)
+
+	// Send indexer and access control messages concurrently
+	pool := concurrent.NewWorkerPool(2)
+	errors := pool.RunAll(ctx,
+		func() error {
+			if s.indexSender == nil {
+				return nil
+			}
+			if err := s.indexSender.SendIndexMeetingAttachment(ctx, models.ActionCreated, *attachment); err != nil {
+				slog.WarnContext(ctx, "failed to send index message for attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachment.UID)
+				return err
+			}
+			return nil
+		},
+		func() error {
+			if s.accessSender == nil {
+				return nil
+			}
+			accessMsg := models.MeetingAttachmentAccessMessage{
+				UID:        attachment.UID,
+				MeetingUID: attachment.MeetingUID,
+			}
+			if err := s.accessSender.SendUpdateAccessMeetingAttachment(ctx, accessMsg); err != nil {
+				slog.WarnContext(ctx, "failed to send access control message for attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachment.UID)
+				return err
+			}
+			return nil
+		},
+	)
+
+	// Log any errors but don't fail the operation - attachment was created successfully
+	if len(errors) > 0 {
+		slog.WarnContext(ctx, "some messaging operations failed for attachment",
+			"attachment_uid", attachment.UID,
+			"error_count", len(errors))
+	}
 
 	return attachment, nil
 }
@@ -321,6 +368,42 @@ func (s *MeetingAttachmentService) DeleteAttachment(ctx context.Context, meeting
 	}
 
 	slog.InfoContext(ctx, "deleted attachment", "attachment_uid", attachmentUID)
+
+	// Send indexer and access control delete messages concurrently
+	pool := concurrent.NewWorkerPool(2)
+	errors := pool.RunAll(ctx,
+		func() error {
+			if s.indexSender == nil {
+				return nil
+			}
+			if err := s.indexSender.SendDeleteIndexMeetingAttachment(ctx, attachmentUID); err != nil {
+				slog.WarnContext(ctx, "failed to send delete index message for attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachmentUID)
+				return err
+			}
+			return nil
+		},
+		func() error {
+			if s.accessSender == nil {
+				return nil
+			}
+			if err := s.accessSender.SendDeleteAccessMeetingAttachment(ctx, attachmentUID); err != nil {
+				slog.WarnContext(ctx, "failed to send delete access control message for attachment",
+					logging.ErrKey, err,
+					"attachment_uid", attachmentUID)
+				return err
+			}
+			return nil
+		},
+	)
+
+	// Log any errors but don't fail the operation - attachment was deleted successfully
+	if len(errors) > 0 {
+		slog.WarnContext(ctx, "some messaging operations failed for attachment deletion",
+			"attachment_uid", attachmentUID,
+			"error_count", len(errors))
+	}
 
 	return nil
 }

@@ -300,6 +300,42 @@ func (m *MessageBuilder) SendDeleteIndexPastMeetingSummary(ctx context.Context, 
 	return m.sendIndexerMessage(ctx, models.IndexPastMeetingSummarySubject, models.ActionDeleted, []byte(data), nil)
 }
 
+// SendIndexMeetingAttachment sends the message to the NATS server for the meeting attachment indexing.
+func (m *MessageBuilder) SendIndexMeetingAttachment(ctx context.Context, action models.MessageAction, data models.MeetingAttachment) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.Tags()...)
+
+	return m.sendIndexerMessage(ctx, models.IndexMeetingAttachmentSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexMeetingAttachment sends the message to the NATS server for the meeting attachment deletion indexing.
+func (m *MessageBuilder) SendDeleteIndexMeetingAttachment(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexMeetingAttachmentSubject, models.ActionDeleted, []byte(data), nil)
+}
+
+// SendIndexPastMeetingAttachment sends the message to the NATS server for the past meeting attachment indexing.
+func (m *MessageBuilder) SendIndexPastMeetingAttachment(ctx context.Context, action models.MessageAction, data models.PastMeetingAttachment) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	tags := m.setIndexerTags(data.Tags()...)
+
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingAttachmentSubject, action, dataBytes, tags)
+}
+
+// SendDeleteIndexPastMeetingAttachment sends the message to the NATS server for the past meeting attachment deletion indexing.
+func (m *MessageBuilder) SendDeleteIndexPastMeetingAttachment(ctx context.Context, data string) error {
+	return m.sendIndexerMessage(ctx, models.IndexPastMeetingAttachmentSubject, models.ActionDeleted, []byte(data), nil)
+}
+
 // SendUpdateAccessPastMeeting sends the message to the NATS server for the past meeting access control updates.
 func (m *MessageBuilder) SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error {
 	dataBytes, err := json.Marshal(data)
@@ -314,6 +350,22 @@ func (m *MessageBuilder) SendUpdateAccessPastMeeting(ctx context.Context, data m
 // SendDeleteAllAccessPastMeeting sends the message to the NATS server for the past meeting access control deletion.
 func (m *MessageBuilder) SendDeleteAllAccessPastMeeting(ctx context.Context, data string) error {
 	return m.publish(ctx, models.DeleteAllAccessPastMeetingSubject, []byte(data))
+}
+
+// SendUpdateAccessPastMeetingAttachment sends the message to the NATS server for the past meeting attachment access control updates.
+func (m *MessageBuilder) SendUpdateAccessPastMeetingAttachment(ctx context.Context, data models.PastMeetingAttachmentAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.publish(ctx, models.UpdateAccessPastMeetingAttachmentSubject, dataBytes)
+}
+
+// SendDeleteAccessPastMeetingAttachment sends the message to the NATS server for the past meeting attachment access control deletion.
+func (m *MessageBuilder) SendDeleteAccessPastMeetingAttachment(ctx context.Context, data string) error {
+	return m.publish(ctx, models.DeleteAccessPastMeetingAttachmentSubject, []byte(data))
 }
 
 // SendUpdateAccessPastMeetingRecording sends the message to the NATS server for the past meeting recording access control updates.
@@ -385,6 +437,22 @@ func (m *MessageBuilder) SendUpdateAccessMeeting(ctx context.Context, data model
 // SendDeleteAllAccessMeeting sends the message to the NATS server for the access control deletion.
 func (m *MessageBuilder) SendDeleteAllAccessMeeting(ctx context.Context, data string) error {
 	return m.publish(ctx, models.DeleteAllAccessMeetingSubject, []byte(data))
+}
+
+// SendUpdateAccessMeetingAttachment sends the message to the NATS server for the meeting attachment access control updates.
+func (m *MessageBuilder) SendUpdateAccessMeetingAttachment(ctx context.Context, data models.MeetingAttachmentAccessMessage) error {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		slog.ErrorContext(ctx, "error marshalling data into JSON", logging.ErrKey, err)
+		return err
+	}
+
+	return m.publish(ctx, models.UpdateAccessMeetingAttachmentSubject, dataBytes)
+}
+
+// SendDeleteAccessMeetingAttachment sends the message to the NATS server for the meeting attachment access control deletion.
+func (m *MessageBuilder) SendDeleteAccessMeetingAttachment(ctx context.Context, data string) error {
+	return m.publish(ctx, models.DeleteAccessMeetingAttachmentSubject, []byte(data))
 }
 
 // SendPutMeetingRegistrantAccess sends a message about a new registrant being added to a meeting.

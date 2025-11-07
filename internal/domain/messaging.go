@@ -77,10 +77,28 @@ type PastMeetingSummaryIndexSender interface {
 	SendDeleteIndexPastMeetingSummary(ctx context.Context, data string) error
 }
 
+// MeetingAttachmentIndexSender handles indexing operations for meeting attachments.
+type MeetingAttachmentIndexSender interface {
+	SendIndexMeetingAttachment(ctx context.Context, action models.MessageAction, data models.MeetingAttachment) error
+	SendDeleteIndexMeetingAttachment(ctx context.Context, data string) error
+}
+
+// PastMeetingAttachmentIndexSender handles indexing operations for past meeting attachments.
+type PastMeetingAttachmentIndexSender interface {
+	SendIndexPastMeetingAttachment(ctx context.Context, action models.MessageAction, data models.PastMeetingAttachment) error
+	SendDeleteIndexPastMeetingAttachment(ctx context.Context, data string) error
+}
+
 // MeetingAccessSender handles access control operations for meetings.
 type MeetingAccessSender interface {
 	SendUpdateAccessMeeting(ctx context.Context, data models.MeetingAccessMessage) error
 	SendDeleteAllAccessMeeting(ctx context.Context, data string) error
+}
+
+// MeetingAttachmentAccessSender handles access control operations for meeting attachments.
+type MeetingAttachmentAccessSender interface {
+	SendUpdateAccessMeetingAttachment(ctx context.Context, data models.MeetingAttachmentAccessMessage) error
+	SendDeleteAccessMeetingAttachment(ctx context.Context, data string) error
 }
 
 // MeetingRegistrantAccessSender handles access control operations for meeting registrants.
@@ -93,6 +111,12 @@ type MeetingRegistrantAccessSender interface {
 type PastMeetingAccessSender interface {
 	SendUpdateAccessPastMeeting(ctx context.Context, data models.PastMeetingAccessMessage) error
 	SendDeleteAllAccessPastMeeting(ctx context.Context, data string) error
+}
+
+// PastMeetingAttachmentAccessSender handles access control operations for past meeting attachments.
+type PastMeetingAttachmentAccessSender interface {
+	SendUpdateAccessPastMeetingAttachment(ctx context.Context, data models.PastMeetingAttachmentAccessMessage) error
+	SendDeleteAccessPastMeetingAttachment(ctx context.Context, data string) error
 }
 
 // PastMeetingRecordingAccessSender handles access control operations for past meeting recordings.
