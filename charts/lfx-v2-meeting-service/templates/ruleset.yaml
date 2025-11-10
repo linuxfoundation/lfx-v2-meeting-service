@@ -505,7 +505,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: writer
+              relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else }}
         {{/*
@@ -598,7 +598,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: writer
+              relation: organizer
               object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else }}
         {{/*
@@ -975,7 +975,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: writer
+              relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else }}
         {{/*
@@ -1102,7 +1102,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: writer
+              relation: organizer
               object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
         {{- else }}
         {{/*
