@@ -17,8 +17,8 @@ Repeats: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
 Duration: {{formatDuration .Duration}}{{if .Platform}}
 Platform: {{.Platform}}{{end}}
 
-{{if .Attachments}}Attachments:
-{{range .Attachments}}{{if eq .Type "link"}}• {{if .Name}}{{.Name}}: {{end}}{{.Link}}{{if .Description}} - {{.Description}}{{end}}
+{{if .MeetingAttachments}}Attachments:
+{{range .MeetingAttachments}}{{if eq .Type "link"}}• {{if .Name}}{{.Name}}: {{end}}{{.Link}}{{if .Description}} - {{.Description}}{{end}}
 {{else}}• {{if .Name}}{{.Name}}{{else}}File{{end}} (see email file attachments){{if .Description}} - {{.Description}}{{end}}
 {{end}}{{end}}
 

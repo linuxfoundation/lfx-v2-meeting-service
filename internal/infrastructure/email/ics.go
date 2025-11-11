@@ -513,6 +513,8 @@ func buildMeetingAttachmentsDescription(meetingAttachments []*models.MeetingAtta
 
 	var section strings.Builder
 	section.WriteString("Attachments:\n")
+
+	// First, display all link attachments
 	for _, attachment := range meetingAttachments {
 		if attachment.Type == models.AttachmentTypeLink {
 			// For link attachments, always show the URL (so it's copyable/clickable)
@@ -521,20 +523,34 @@ func buildMeetingAttachmentsDescription(meetingAttachments []*models.MeetingAtta
 				section.WriteString(fmt.Sprintf(" - %s", attachment.Description))
 			}
 			section.WriteString("\n")
-		} else {
-			// For file attachments, show name (or filename if no name)
-			if attachment.Name != "" {
-				section.WriteString(fmt.Sprintf("• %s", attachment.Name))
-				if attachment.FileName != "" {
-					section.WriteString(fmt.Sprintf(" (%s)", attachment.FileName))
+		}
+	}
+
+	// Check if there are any file attachments
+	hasFiles := false
+	for _, attachment := range meetingAttachments {
+		if attachment.Type != models.AttachmentTypeLink {
+			hasFiles = true
+			break
+		}
+	}
+
+	// Then, display all file attachments with instructional message
+	if hasFiles {
+		section.WriteString("\nTo download files, click on the 'Join meeting' link:\n")
+		for _, attachment := range meetingAttachments {
+			if attachment.Type != models.AttachmentTypeLink {
+				// For file attachments, show name (or filename if no name)
+				if attachment.Name != "" {
+					section.WriteString(fmt.Sprintf("• %s", attachment.Name))
+				} else if attachment.FileName != "" {
+					section.WriteString(fmt.Sprintf("• %s", attachment.FileName))
 				}
-			} else if attachment.FileName != "" {
-				section.WriteString(fmt.Sprintf("• %s", attachment.FileName))
+				if attachment.Description != "" {
+					section.WriteString(fmt.Sprintf(" - %s", attachment.Description))
+				}
+				section.WriteString("\n")
 			}
-			if attachment.Description != "" {
-				section.WriteString(fmt.Sprintf(" - %s", attachment.Description))
-			}
-			section.WriteString("\n")
 		}
 	}
 	section.WriteString("\n")
