@@ -423,13 +423,15 @@ func TestBuildDescription(t *testing.T) {
 		// Link attachments always show the URL with description (name is ignored for clickability)
 		assert.Contains(t, desc, "• https://example.com/agenda - Meeting agenda")
 		assert.NotContains(t, desc, "Agenda:")
-		// File with name should show name and filename
-		assert.Contains(t, desc, "• Presentation (slides.pdf) - Slide deck")
+		// File with name should show just the name (filename is not shown)
+		assert.Contains(t, desc, "• Presentation - Slide deck")
 		// Link without name and description should show just URL
 		assert.Contains(t, desc, "• https://example.com/notes")
 		// File without name should show just filename
 		assert.Contains(t, desc, "• document.docx")
 		assert.Contains(t, desc, "Meeting with attachments")
+		// Verify instructional message is present for files
+		assert.Contains(t, desc, "To download files, click on the 'Join meeting' link:")
 
 		// Verify attachments appear before description
 		attachmentsIndex := strings.Index(desc, "Attachments:")

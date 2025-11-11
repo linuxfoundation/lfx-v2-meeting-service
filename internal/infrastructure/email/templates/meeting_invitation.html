@@ -238,6 +238,13 @@
             margin-top: 12px;
         }
 
+        .attachment-files-header {
+            color: #6b7280;
+            font-style: italic;
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+
         .footer {
             background-color: #f9fafb;
             padding: 20px 32px;
@@ -264,7 +271,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{.ProjectLogo}}" alt="{{.ProjectName}}" width="360" height="60">
+            <img src="{{.ProjectLogo}}" alt="{{.ProjectName}}" width="170" height="60">
         </div>
 
         <div class="content">
@@ -345,7 +352,7 @@
 
                     {{/* Display files with header message */}}
                     {{if $hasFiles}}
-                    <div class="method-text" style="color: #6b7280; font-style: italic; margin-top: 12px; margin-bottom: 8px;">
+                    <div class="attachment-files-header">
                         The following files are attached to this email:
                     </div>
                     {{range .MeetingAttachments}}

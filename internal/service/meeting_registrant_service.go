@@ -596,22 +596,8 @@ func (s *MeetingRegistrantService) SendRegistrantInvitationEmail(ctx context.Con
 	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meetingDB.ProjectUID)
 	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meetingDB.ProjectUID)
 
-	// Try to get the project logo as a PNG image.
-	// If there is a project logo and it is in .svg format, then use the .png format of the logo image instead.
-	if projectLogo == "" || strings.HasSuffix(projectLogo, ".svg") {
-		projectLogoUrl := fmt.Sprintf("%s/%s.png", s.config.ProjectLogoBaseURL, meetingDB.ProjectUID)
-
-		// Check that the project logo is reachable
-		resp, err := http.Get(projectLogoUrl)
-		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			projectLogo = projectLogoUrl
-		} else {
-			slog.WarnContext(ctx, "unable to confirm that the project logo url is accessible", "url", projectLogoUrl, "status_code", resp.StatusCode)
-		}
-		if resp != nil {
-			_ = resp.Body.Close()
-		}
-	}
+	// Resolve PNG version of project logo
+	projectLogo = s.resolveProjectLogoPNG(ctx, projectLogo, meetingDB.ProjectUID)
 
 	// Extract cancelled occurrence times for EXDATE in ICS file
 	var cancelledOccurrenceTimes []time.Time
@@ -679,22 +665,8 @@ func (s *MeetingRegistrantService) SendRegistrantUpdatedInvitation(ctx context.C
 	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
 	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
-	// Try to get the project logo as a PNG image.
-	// If there is a project logo and it is in .svg format, then use the .png format of the logo image instead.
-	if projectLogo == "" || strings.HasSuffix(projectLogo, ".svg") {
-		projectLogoUrl := fmt.Sprintf("%s/%s.png", s.config.ProjectLogoBaseURL, meeting.ProjectUID)
-
-		// Check that the project logo is reachable
-		resp, err := http.Get(projectLogoUrl)
-		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			projectLogo = projectLogoUrl
-		} else {
-			slog.WarnContext(ctx, "unable to confirm that the project logo url is accessible", "url", projectLogoUrl, "status_code", resp.StatusCode)
-		}
-		if resp != nil {
-			_ = resp.Body.Close()
-		}
-	}
+	// Resolve PNG version of project logo
+	projectLogo = s.resolveProjectLogoPNG(ctx, projectLogo, meeting.ProjectUID)
 
 	// Get the meeting attachments to include in the email
 	meetingAttachments, fileAttachments, err := s.meetingAttachmentService.GetMeetingAttachmentsForEmail(ctx, meeting.UID)
@@ -753,22 +725,8 @@ func (s *MeetingRegistrantService) SendRegistrantCancellationEmail(
 	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
 	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
-	// Try to get the project logo as a PNG image.
-	// If there is a project logo and it is in .svg format, then use the .png format of the logo image instead.
-	if projectLogo == "" || strings.HasSuffix(projectLogo, ".svg") {
-		projectLogoUrl := fmt.Sprintf("%s/%s.png", s.config.ProjectLogoBaseURL, meeting.ProjectUID)
-
-		// Check that the project logo is reachable
-		resp, err := http.Get(projectLogoUrl)
-		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			projectLogo = projectLogoUrl
-		} else {
-			slog.WarnContext(ctx, "unable to confirm that the project logo url is accessible", "url", projectLogoUrl, "status_code", resp.StatusCode)
-		}
-		if resp != nil {
-			_ = resp.Body.Close()
-		}
-	}
+	// Resolve PNG version of project logo
+	projectLogo = s.resolveProjectLogoPNG(ctx, projectLogo, meeting.ProjectUID)
 
 	cancellation := domain.EmailCancellation{
 		MeetingUID:         meeting.UID,
@@ -812,22 +770,8 @@ func (s *MeetingRegistrantService) SendOccurrenceCancellationEmail(
 	projectLogo, _ := s.externalClient.GetProjectLogo(ctx, meeting.ProjectUID)
 	projectSlug, _ := s.externalClient.GetProjectSlug(ctx, meeting.ProjectUID)
 
-	// Try to get the project logo as a PNG image.
-	// If there is a project logo and it is in .svg format, then use the .png format of the logo image instead.
-	if projectLogo == "" || strings.HasSuffix(projectLogo, ".svg") {
-		projectLogoUrl := fmt.Sprintf("%s/%s.png", s.config.ProjectLogoBaseURL, meeting.ProjectUID)
-
-		// Check that the project logo is reachable
-		resp, err := http.Get(projectLogoUrl)
-		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			projectLogo = projectLogoUrl
-		} else {
-			slog.WarnContext(ctx, "unable to confirm that the project logo url is accessible", "url", projectLogoUrl, "status_code", resp.StatusCode)
-		}
-		if resp != nil {
-			_ = resp.Body.Close()
-		}
-	}
+	// Resolve PNG version of project logo
+	projectLogo = s.resolveProjectLogoPNG(ctx, projectLogo, meeting.ProjectUID)
 
 	// Get the occurrence start time
 	if occurrence.StartTime == nil {
@@ -864,4 +808,40 @@ func (s *MeetingRegistrantService) SendOccurrenceCancellationEmail(
 	}
 
 	return s.emailService.SendOccurrenceCancellation(ctx, cancellation)
+}
+
+// resolveProjectLogoPNG attempts to resolve a PNG version of the project logo.
+// If the provided logo is empty or is an SVG file, it tries to fetch a PNG version
+// from the configured base URL. Returns the original logo if PNG resolution fails.
+func (s *MeetingRegistrantService) resolveProjectLogoPNG(ctx context.Context, projectLogo, projectUID string) string {
+	// If logo exists and is not SVG, return as-is
+	if projectLogo != "" && !strings.HasSuffix(projectLogo, ".svg") {
+		return projectLogo
+	}
+
+	// Try to get PNG version
+	projectLogoURL := fmt.Sprintf("%s/%s.png", s.config.ProjectLogoBaseURL, projectUID)
+
+	// Check that the project logo is reachable
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(projectLogoURL)
+	if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
+		if resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+		return projectLogoURL
+	}
+
+	// Log warning if PNG is not accessible
+	if resp != nil {
+		slog.WarnContext(ctx, "unable to confirm that the project logo url is accessible", "url", projectLogoURL, "status_code", resp.StatusCode)
+		if resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+	} else {
+		slog.WarnContext(ctx, "unable to confirm that the project logo url is accessible", "url", projectLogoURL, "error", err)
+	}
+
+	// Return original logo if PNG resolution failed
+	return projectLogo
 }
