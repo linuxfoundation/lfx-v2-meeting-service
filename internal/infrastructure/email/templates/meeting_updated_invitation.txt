@@ -1,7 +1,7 @@
 {{/* Copyright The Linux Foundation and each contributor to LFX. */}}
 {{/* SPDX-License-Identifier: MIT */}}
 
-⚠️  Meeting Updated
+Meeting Updated
 ==================
 
 {{if .RecipientName}}{{.RecipientName}}{{else}}Attendee{{end}}, the meeting has been updated:
@@ -35,8 +35,8 @@ Repeats: {{formatRecurrence .Recurrence .StartTime .Timezone}}{{end}}
 Duration: {{formatDuration .Duration}}{{if .Platform}}
 Platform: {{.Platform}}{{end}}
 
-{{if .Attachments}}Attachments:
-{{range .Attachments}}{{if eq .Type "link"}}• {{if .Name}}{{.Name}}: {{end}}{{.Link}}{{if .Description}} - {{.Description}}{{end}}
+{{if .MeetingAttachments}}Attachments:
+{{range .MeetingAttachments}}{{if eq .Type "link"}}• {{if .Name}}{{.Name}}: {{end}}{{.Link}}{{if .Description}} - {{.Description}}{{end}}
 {{else}}• {{if .Name}}{{.Name}}{{else}}File{{end}} (see email file attachments){{if .Description}} - {{.Description}}{{end}}
 {{end}}{{end}}
 

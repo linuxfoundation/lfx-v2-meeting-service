@@ -33,10 +33,12 @@
         }
 
         .header img {
-            max-width: 170px;
+            max-width: 100%;
             max-height: 60px;
-            width: 170px;
-            height: 60px;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: 0 auto;
         }
 
         .content {
@@ -262,9 +264,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{.ProjectLogo}}" alt="{{.ProjectName}}" width="170" height="60">
+            <img src="{{.ProjectLogo}}" alt="{{.ProjectName}}" width="360" height="60">
         </div>
-        
+
         <div class="content">
             <div class="invitation-header">
                 <p class="invitation-text">{{.RecipientName}}, you've been invited to</p>
@@ -323,19 +325,36 @@
                     {{end}}
                 </div>
 
-                {{if .Attachments}}
+                {{if .MeetingAttachments}}
                 <div class="description-section">
                     <div class="description-title">Attachments</div>
-                    {{range .Attachments}}
+
+                    {{/* Display links first */}}
+                    {{range .MeetingAttachments}}
+                    {{if eq .Type "link"}}
                     <div class="method-text">
-                        {{if eq .Type "link"}}
-                        📎 <a href="{{.Link}}" class="text-link">{{if .Name}}{{.Name}}{{else}}{{.Link}}{{end}}</a>
+                        🔗 <a href="{{.Link}}" class="text-link">{{if .Name}}{{.Name}}{{else}}{{.Link}}{{end}}</a>
                         {{if .Description}} - {{.Description}}{{end}}
-                        {{else}}
-                        📎 {{if .Name}}{{.Name}}{{else}}File{{end}} (see email file attachments)
-                        {{if .Description}} - {{.Description}}{{end}}
-                        {{end}}
                     </div>
+                    {{end}}
+                    {{end}}
+
+                    {{/* Check if there are any file attachments */}}
+                    {{$hasFiles := false}}
+                    {{range .MeetingAttachments}}{{if ne .Type "link"}}{{$hasFiles = true}}{{end}}{{end}}
+
+                    {{/* Display files with header message */}}
+                    {{if $hasFiles}}
+                    <div class="method-text" style="color: #6b7280; font-style: italic; margin-top: 12px; margin-bottom: 8px;">
+                        The following files are attached to this email:
+                    </div>
+                    {{range .MeetingAttachments}}
+                    {{if ne .Type "link"}}
+                    <div class="method-text">
+                        📄 {{if .Name}}{{.Name}}{{else}}File{{end}}{{if .Description}} - {{.Description}}{{end}}
+                    </div>
+                    {{end}}
+                    {{end}}
                     {{end}}
                 </div>
                 {{end}}
@@ -360,10 +379,11 @@
 
             <div class="alternative-section">
                 <div class="alternative-title">Alternative ways to join</div>
-                
+
                 <div class="alternative-method">
                     <div class="method-title">1. Join from any device</div>
-                    <div class="method-text">If the button above doesn't work, copy and paste this link into your browser:</div>
+                    <div class="method-text">If the button above doesn't work, copy and paste this link into your
+                        browser:</div>
                     <div><a href="{{.JoinLink}}" class="text-link">{{.JoinLink}}</a></div>
                 </div>
 
@@ -372,12 +392,14 @@
                     <div class="method-title">2. Join by phone</div>
                     <div class="method-text">One-tap mobile (US):</div>
                     <div>
-                        <a href="tel:+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#" class="text-link">+1 253 215 8782,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
+                        <a href="tel:+12532158782,,{{.MeetingID}}#,,,,*{{.Passcode}}#" class="text-link">+1 253 215
+                            8782,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
                     </div>
                     <div>
-                        <a href="tel:+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#" class="text-link">+1 346 248 7799,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
+                        <a href="tel:+13462487799,,{{.MeetingID}}#,,,,*{{.Passcode}}#" class="text-link">+1 346 248
+                            7799,,{{.MeetingID}}#,,,,*{{.Passcode}}#</a>
                     </div>
-                    
+
                     <div class="method-text method-text-margin">Or dial manually:</div>
                     <div class="method-text">US: +1 253 215 8782 | Canada: +1 647 374 4685</div>
                     <div class="method-text">Meeting ID: {{.MeetingID}}</div>
