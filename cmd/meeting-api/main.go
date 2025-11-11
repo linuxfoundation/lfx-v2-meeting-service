@@ -19,6 +19,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 func main() {
@@ -70,8 +71,8 @@ func main() {
 	// Initialize services
 	serviceConfig := service.ServiceConfig{
 		SkipEtagValidation: env.SkipEtagValidation,
-		LFXEnvironment:     env.LFXEnvironment,
 		ProjectLogoBaseURL: env.ProjectLogoBaseURL,
+		LfxURLGenerator:    constants.NewLfxURLGenerator(env.LFXEnvironment, env.LFXAppOrigin),
 	}
 	messageBuilder := messaging.NewMessageBuilder(natsConn)
 	authService := service.NewAuthService(jwtAuth)

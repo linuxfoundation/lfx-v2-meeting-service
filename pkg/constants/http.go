@@ -72,14 +72,34 @@ func GetLFXAppDomain(environment string) string {
 	}
 }
 
-// GenerateLFXMeetingURL generates the LFX app meeting URL with the given meeting UID and password
-func GenerateLFXMeetingURL(meetingUID, password, environment string) string {
-	domain := GetLFXAppDomain(environment)
+// LfxURLGenerator generates LFX app URLs with environment-specific domains or custom app origins
+type LfxURLGenerator struct {
+	environment     string
+	customAppOrigin string
+}
+
+// NewLfxURLGenerator creates a new LfxURLGenerator with the given environment and optional custom app origin
+func NewLfxURLGenerator(environment, customAppOrigin string) *LfxURLGenerator {
+	return &LfxURLGenerator{
+		environment:     environment,
+		customAppOrigin: customAppOrigin,
+	}
+}
+
+// GenerateMeetingURL generates the LFX app meeting URL with the given meeting UID and password
+func (g *LfxURLGenerator) GenerateMeetingURL(meetingUID, password string) string {
+	if g.customAppOrigin != "" {
+		return fmt.Sprintf("%s/meetings/%s?password=%s", g.customAppOrigin, meetingUID, url.QueryEscape(password))
+	}
+	domain := GetLFXAppDomain(g.environment)
 	return fmt.Sprintf("https://%s/meetings/%s?password=%s", domain, meetingUID, url.QueryEscape(password))
 }
 
-// GenerateLFXMeetingDetailsURL generates the LFX app project meetings page URL with the given project slug and meeting UID
-func GenerateLFXMeetingDetailsURL(projectSlug, meetingUID, environment string) string {
-	domain := GetLFXAppDomain(environment)
+// GenerateMeetingDetailsURL generates the LFX app project meetings page URL with the given project slug and meeting UID
+func (g *LfxURLGenerator) GenerateMeetingDetailsURL(projectSlug, meetingUID string) string {
+	if g.customAppOrigin != "" {
+		return fmt.Sprintf("%s/project/%s/meetings#meeting-%s", g.customAppOrigin, projectSlug, meetingUID)
+	}
+	domain := GetLFXAppDomain(g.environment)
 	return fmt.Sprintf("https://%s/project/%s/meetings#meeting-%s", domain, projectSlug, meetingUID)
 }

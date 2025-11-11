@@ -1123,7 +1123,7 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 				Visibility:          meetingDB.Visibility,
 				MeetingType:         meetingDB.MeetingType,
 				Platform:            meetingDB.Platform,
-				MeetingDetailsLink:  constants.GenerateLFXMeetingDetailsURL(projectSlug, meetingDB.UID, s.config.LFXEnvironment),
+				MeetingDetailsLink:  s.config.LfxURLGenerator.GenerateMeetingDetailsURL(projectSlug, meetingDB.UID),
 				ProjectName:         projectName,
 				ProjectLogo:         projectLogo,
 				Reason:              "This specific occurrence of the recurring meeting has been cancelled by an organizer.",

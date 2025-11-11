@@ -367,7 +367,7 @@ func (s *PastMeetingSummaryService) sendSummaryNotificationEmails(ctx context.Co
 			ProjectLogo:        projectLogo,
 			SummaryContent:     summary.SummaryData.Content,
 			SummaryTitle:       summary.SummaryData.Title,
-			MeetingDetailsLink: constants.GenerateLFXMeetingDetailsURL(projectSlug, pastMeeting.UID, s.config.LFXEnvironment),
+			MeetingDetailsLink: s.config.LfxURLGenerator.GenerateMeetingDetailsURL(projectSlug, pastMeeting.UID),
 		}
 
 		err := s.emailService.SendSummaryNotification(ctx, notification)

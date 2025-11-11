@@ -13,6 +13,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/platform"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -30,6 +31,7 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 
 	config := service.ServiceConfig{
 		SkipEtagValidation: false,
+		LfxURLGenerator:    constants.NewLfxURLGenerator("dev", ""),
 	}
 
 	occurrenceService := service.NewOccurrenceService()
