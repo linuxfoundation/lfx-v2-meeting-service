@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"html/template"
 	"log/slog"
 	"strings"
 	"time"
@@ -19,9 +18,9 @@ import (
 
 // SMTPService implements the EmailService interface using SMTP
 type SMTPService struct {
-	config       SMTPConfig
-	templates    Templates
-	icsGenerator *ICSGenerator
+	config          SMTPConfig
+	icsGenerator    ICSGeneratorI
+	templateManager TemplateManagerI
 }
 
 // SMTPConfig holds the SMTP server configuration
@@ -35,59 +34,16 @@ type SMTPConfig struct {
 
 // NewSMTPService creates a new SMTP email service
 func NewSMTPService(config SMTPConfig) (*SMTPService, error) {
+	// Initialize template manager with all templates loaded
+	templateManager, err := NewTemplateManager()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize template manager: %w", err)
+	}
+
 	service := &SMTPService{
-		config:       config,
-		icsGenerator: NewICSGenerator(),
-	}
-
-	// Define all templates to load
-	templateConfigs := map[string]templateConfig{
-		"invitationHTML":             {"meeting_invitation.html", "templates/meeting_invitation.html"},
-		"invitationText":             {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
-		"cancellationHTML":           {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
-		"cancellationText":           {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
-		"occurrenceCancellationHTML": {"meeting_occurrence_cancellation.html", "templates/meeting_occurrence_cancellation.html"},
-		"occurrenceCancellationText": {"meeting_occurrence_cancellation.txt", "templates/meeting_occurrence_cancellation.txt"},
-		"updatedInvitationHTML":      {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
-		"updatedInvitationText":      {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},
-		"summaryNotificationHTML":    {"meeting_summary_notification.html", "templates/meeting_summary_notification.html"},
-		"summaryNotificationText":    {"meeting_summary_notification.txt", "templates/meeting_summary_notification.txt"},
-	}
-
-	// Load all templates
-	loadedTemplates := make(map[string]*template.Template)
-	for key, cfg := range templateConfigs {
-		tmpl, err := loadTemplate(cfg)
-		if err != nil {
-			return nil, err
-		}
-		loadedTemplates[key] = tmpl
-	}
-
-	// Organize templates into the service structure
-	service.templates = Templates{
-		Meeting: MeetingTemplates{
-			Invitation: TemplateSet{
-				HTML: loadedTemplates["invitationHTML"],
-				Text: loadedTemplates["invitationText"],
-			},
-			Cancellation: TemplateSet{
-				HTML: loadedTemplates["cancellationHTML"],
-				Text: loadedTemplates["cancellationText"],
-			},
-			OccurrenceCancellation: TemplateSet{
-				HTML: loadedTemplates["occurrenceCancellationHTML"],
-				Text: loadedTemplates["occurrenceCancellationText"],
-			},
-			UpdatedInvitation: TemplateSet{
-				HTML: loadedTemplates["updatedInvitationHTML"],
-				Text: loadedTemplates["updatedInvitationText"],
-			},
-			SummaryNotification: TemplateSet{
-				HTML: loadedTemplates["summaryNotificationHTML"],
-				Text: loadedTemplates["summaryNotificationText"],
-			},
-		},
+		config:          config,
+		icsGenerator:    NewICSGenerator(),
+		templateManager: templateManager,
 	}
 
 	return service, nil
@@ -138,16 +94,10 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 	}
 
 	// Generate email content from templates
-	htmlContent, err := renderTemplate(s.templates.Meeting.Invitation.HTML, invitation)
+	rendered, err := s.templateManager.RenderInvitation(invitation)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to render HTML template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render HTML template: %w", err)
-	}
-
-	textContent, err := renderTemplate(s.templates.Meeting.Invitation.Text, invitation)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to render text template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render text template: %w", err)
+		slog.ErrorContext(ctx, "failed to render invitation template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render invitation template: %w", err)
 	}
 
 	// Build and send the email with attachments (ICS + file attachments)
@@ -158,8 +108,8 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 	message := buildEmailMessageWithParams(EmailMessageParams{
 		Recipient:       invitation.RecipientEmail,
 		Subject:         subject,
-		HTMLContent:     htmlContent,
-		TextContent:     textContent,
+		HTMLContent:     rendered.HTML,
+		TextContent:     rendered.Text,
 		FileAttachments: invitation.EmailFileAttachments,
 		Config:          s.config,
 		Metadata:        metadata,
@@ -211,26 +161,24 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	}
 
 	// Generate email content from templates
-	htmlContent, err := renderTemplate(s.templates.Meeting.Cancellation.HTML, cancellation)
+	rendered, err := s.templateManager.RenderCancellation(cancellation)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to render cancellation HTML template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render cancellation HTML template: %w", err)
-	}
-
-	textContent, err := renderTemplate(s.templates.Meeting.Cancellation.Text, cancellation)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to render cancellation text template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render cancellation text template: %w", err)
+		slog.ErrorContext(ctx, "failed to render cancellation template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render cancellation template: %w", err)
 	}
 
 	// Build and send the email with attachment
 	subject := fmt.Sprintf("Meeting Cancellation: %s", cancellation.MeetingTitle)
+	var attachments []*domain.EmailAttachment
+	if icsAttachment != nil {
+		attachments = []*domain.EmailAttachment{icsAttachment}
+	}
 	message := buildEmailMessageWithParams(EmailMessageParams{
 		Recipient:       cancellation.RecipientEmail,
 		Subject:         subject,
-		HTMLContent:     htmlContent,
-		TextContent:     textContent,
-		FileAttachments: []*domain.EmailAttachment{icsAttachment},
+		HTMLContent:     rendered.HTML,
+		TextContent:     rendered.Text,
+		FileAttachments: attachments,
 		Config:          s.config,
 		Metadata: &EmailMetadata{
 			ProjectName: cancellation.ProjectName,
@@ -282,26 +230,24 @@ func (s *SMTPService) SendOccurrenceCancellation(ctx context.Context, cancellati
 	}
 
 	// Generate email content from templates
-	htmlContent, err := renderTemplate(s.templates.Meeting.OccurrenceCancellation.HTML, cancellation)
+	rendered, err := s.templateManager.RenderOccurrenceCancellation(cancellation)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to render occurrence cancellation HTML template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render occurrence cancellation HTML template: %w", err)
-	}
-
-	textContent, err := renderTemplate(s.templates.Meeting.OccurrenceCancellation.Text, cancellation)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to render occurrence cancellation text template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render occurrence cancellation text template: %w", err)
+		slog.ErrorContext(ctx, "failed to render occurrence cancellation template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render occurrence cancellation template: %w", err)
 	}
 
 	// Build and send the email with attachment
 	subject := fmt.Sprintf("Updated Invitation: %s", cancellation.MeetingTitle)
+	var attachments []*domain.EmailAttachment
+	if icsAttachment != nil {
+		attachments = []*domain.EmailAttachment{icsAttachment}
+	}
 	message := buildEmailMessageWithParams(EmailMessageParams{
 		Recipient:       cancellation.RecipientEmail,
 		Subject:         subject,
-		HTMLContent:     htmlContent,
-		TextContent:     textContent,
-		FileAttachments: []*domain.EmailAttachment{icsAttachment},
+		HTMLContent:     rendered.HTML,
+		TextContent:     rendered.Text,
+		FileAttachments: attachments,
 		Config:          s.config,
 		Metadata: &EmailMetadata{
 			ProjectName: cancellation.ProjectName,
@@ -360,16 +306,10 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	}
 
 	// Generate email content from templates
-	htmlContent, err := renderTemplate(s.templates.Meeting.UpdatedInvitation.HTML, updatedInvitation)
+	rendered, err := s.templateManager.RenderUpdatedInvitation(updatedInvitation)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to render updated invitation HTML template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render updated invitation HTML template: %w", err)
-	}
-
-	textContent, err := renderTemplate(s.templates.Meeting.UpdatedInvitation.Text, updatedInvitation)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to render updated invitation text template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render updated invitation text template: %w", err)
+		slog.ErrorContext(ctx, "failed to render updated invitation template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render updated invitation template: %w", err)
 	}
 
 	// Build and send the email with attachments (ICS + file attachments)
@@ -377,8 +317,8 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	message := buildEmailMessageWithParams(EmailMessageParams{
 		Recipient:       updatedInvitation.RecipientEmail,
 		Subject:         subject,
-		HTMLContent:     htmlContent,
-		TextContent:     textContent,
+		HTMLContent:     rendered.HTML,
+		TextContent:     rendered.Text,
 		FileAttachments: updatedInvitation.EmailFileAttachments,
 		Config:          s.config,
 		Metadata: &EmailMetadata{
@@ -405,16 +345,10 @@ func (s *SMTPService) SendSummaryNotification(ctx context.Context, notification 
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", notification.MeetingTitle))
 
 	// Generate email content from templates
-	htmlContent, err := renderTemplate(s.templates.Meeting.SummaryNotification.HTML, notification)
+	rendered, err := s.templateManager.RenderSummaryNotification(notification)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to render summary notification HTML template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render summary notification HTML template: %w", err)
-	}
-
-	textContent, err := renderTemplate(s.templates.Meeting.SummaryNotification.Text, notification)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to render summary notification text template", logging.ErrKey, err)
-		return fmt.Errorf("failed to render summary notification text template: %w", err)
+		slog.ErrorContext(ctx, "failed to render summary notification template", logging.ErrKey, err)
+		return fmt.Errorf("failed to render summary notification template: %w", err)
 	}
 
 	// Build and send the email
@@ -422,8 +356,8 @@ func (s *SMTPService) SendSummaryNotification(ctx context.Context, notification 
 	message := buildEmailMessageWithParams(EmailMessageParams{
 		Recipient:       notification.RecipientEmail,
 		Subject:         subject,
-		HTMLContent:     htmlContent,
-		TextContent:     textContent,
+		HTMLContent:     rendered.HTML,
+		TextContent:     rendered.Text,
 		FileAttachments: nil,
 		Config:          s.config,
 		Metadata: &EmailMetadata{

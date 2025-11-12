@@ -31,6 +31,14 @@ const (
 	UTF8ContinuationPrefix = 0x80 // UTF-8 continuation byte prefix (10000000)
 )
 
+// ICSGeneratorI is the interface for generating ICS calendar files
+type ICSGeneratorI interface {
+	GenerateMeetingInvitationICS(param ICSMeetingInvitationParams) (string, error)
+	GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (string, error)
+	GenerateMeetingCancellationICS(params ICSMeetingCancellationParams) (string, error)
+	GenerateOccurrenceCancellationICS(params ICSOccurrenceCancellationParams) (string, error)
+}
+
 // ICSGenerator generates ICS (iCalendar) files for meeting invitations
 type ICSGenerator struct{}
 
@@ -38,6 +46,9 @@ type ICSGenerator struct{}
 func NewICSGenerator() *ICSGenerator {
 	return &ICSGenerator{}
 }
+
+// Ensure ICSGenerator implements ICSGeneratorI
+var _ ICSGeneratorI = (*ICSGenerator)(nil)
 
 // ICSMeetingInvitationParams contains all the information needed to generate an ICS file
 // for a meeting invitation
@@ -168,18 +179,6 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	return ics.String(), nil
 }
 
-// ICSMeetingCancellationParams holds parameters for generating a meeting cancellation ICS file
-type ICSMeetingCancellationParams struct {
-	MeetingUID     string // Unique meeting identifier for consistent ICS UID
-	MeetingTitle   string
-	StartTime      time.Time
-	Duration       int // Duration in minutes
-	Timezone       string
-	RecipientEmail string
-	Recurrence     *models.Recurrence
-	Sequence       int // ICS sequence number for calendar updates
-}
-
 // ICSMeetingUpdateParams holds parameters for generating a meeting update ICS file
 type ICSMeetingUpdateParams struct {
 	MeetingUID         string // Unique meeting identifier for consistent ICS UID
@@ -292,6 +291,18 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 	ics.WriteString("END:VCALENDAR\r\n")
 
 	return ics.String(), nil
+}
+
+// ICSMeetingCancellationParams holds parameters for generating a meeting cancellation ICS file
+type ICSMeetingCancellationParams struct {
+	MeetingUID     string // Unique meeting identifier for consistent ICS UID
+	MeetingTitle   string
+	StartTime      time.Time
+	Duration       int // Duration in minutes
+	Timezone       string
+	RecipientEmail string
+	Recurrence     *models.Recurrence
+	Sequence       int // ICS sequence number for calendar updates
 }
 
 // GenerateMeetingCancellationICS generates an ICS file for cancelling a meeting

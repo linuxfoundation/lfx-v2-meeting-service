@@ -10,8 +10,89 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
+// MockICSGenerator is a mock implementation of ICSGeneratorI
+type MockICSGenerator struct {
+	mock.Mock
+}
+
+// GenerateMeetingInvitationICS is a mock method
+func (m *MockICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationParams) (string, error) {
+	args := m.Called(param)
+	return args.String(0), args.Error(1)
+}
+
+// GenerateMeetingUpdateICS is a mock method
+func (m *MockICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (string, error) {
+	args := m.Called(params)
+	return args.String(0), args.Error(1)
+}
+
+// GenerateMeetingCancellationICS is a mock method
+func (m *MockICSGenerator) GenerateMeetingCancellationICS(params ICSMeetingCancellationParams) (string, error) {
+	args := m.Called(params)
+	return args.String(0), args.Error(1)
+}
+
+// GenerateOccurrenceCancellationICS is a mock method
+func (m *MockICSGenerator) GenerateOccurrenceCancellationICS(params ICSOccurrenceCancellationParams) (string, error) {
+	args := m.Called(params)
+	return args.String(0), args.Error(1)
+}
+
+// MockTemplateManager is a mock implementation of TemplateManagerI
+type MockTemplateManager struct {
+	mock.Mock
+}
+
+// RenderInvitation is a mock method
+func (m *MockTemplateManager) RenderInvitation(data domain.EmailInvitation) (*RenderedEmail, error) {
+	args := m.Called(data)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*RenderedEmail), args.Error(1)
+}
+
+// RenderCancellation is a mock method
+func (m *MockTemplateManager) RenderCancellation(data domain.EmailCancellation) (*RenderedEmail, error) {
+	args := m.Called(data)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*RenderedEmail), args.Error(1)
+}
+
+// RenderOccurrenceCancellation is a mock method
+func (m *MockTemplateManager) RenderOccurrenceCancellation(data domain.EmailOccurrenceCancellation) (*RenderedEmail, error) {
+	args := m.Called(data)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*RenderedEmail), args.Error(1)
+}
+
+// RenderUpdatedInvitation is a mock method
+func (m *MockTemplateManager) RenderUpdatedInvitation(data domain.EmailUpdatedInvitation) (*RenderedEmail, error) {
+	args := m.Called(data)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*RenderedEmail), args.Error(1)
+}
+
+// RenderSummaryNotification is a mock method
+func (m *MockTemplateManager) RenderSummaryNotification(data domain.EmailSummaryNotification) (*RenderedEmail, error) {
+	args := m.Called(data)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*RenderedEmail), args.Error(1)
+}
 
 // MockSMTPServer provides a simple mock SMTP server for testing and development
 type MockSMTPServer struct {
