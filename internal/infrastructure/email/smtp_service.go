@@ -19,8 +19,8 @@ import (
 // SMTPService implements the EmailService interface using SMTP
 type SMTPService struct {
 	config          SMTPConfig
-	icsGenerator    ICSGeneratorI
-	templateManager TemplateManagerI
+	icsGenerator    MeetingICSGenerator
+	templateManager MeetingTemplateManager
 }
 
 // SMTPConfig holds the SMTP server configuration
@@ -60,7 +60,7 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		MeetingTitle:             invitation.MeetingTitle,
 		Description:              invitation.Description,
 		StartTime:                invitation.StartTime,
-		Duration:                 invitation.Duration,
+		DurationMinutes:          invitation.Duration,
 		Timezone:                 invitation.Timezone,
 		JoinLink:                 invitation.JoinLink,
 		MeetingID:                invitation.MeetingID,
@@ -137,14 +137,14 @@ func (s *SMTPService) SendRegistrantCancellation(ctx context.Context, cancellati
 	var icsAttachment *domain.EmailAttachment
 	if cancellation.StartTime.After(time.Now()) {
 		icsContent, err := s.icsGenerator.GenerateMeetingCancellationICS(ICSMeetingCancellationParams{
-			MeetingUID:     cancellation.MeetingUID,
-			MeetingTitle:   cancellation.MeetingTitle,
-			StartTime:      cancellation.StartTime,
-			Duration:       cancellation.Duration,
-			Timezone:       cancellation.Timezone,
-			RecipientEmail: cancellation.RecipientEmail,
-			Recurrence:     cancellation.Recurrence,
-			Sequence:       cancellation.IcsSequence,
+			MeetingUID:      cancellation.MeetingUID,
+			MeetingTitle:    cancellation.MeetingTitle,
+			StartTime:       cancellation.StartTime,
+			DurationMinutes: cancellation.Duration,
+			Timezone:        cancellation.Timezone,
+			RecipientEmail:  cancellation.RecipientEmail,
+			Recurrence:      cancellation.Recurrence,
+			Sequence:        cancellation.IcsSequence,
 		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to generate ICS cancellation", logging.ErrKey, err)

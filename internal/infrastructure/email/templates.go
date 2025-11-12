@@ -24,8 +24,8 @@ type RenderedEmail struct {
 	Text string
 }
 
-// TemplateManagerI defines the interface for rendering meeting email templates
-type TemplateManagerI interface {
+// MeetingTemplateManager defines the interface for rendering meeting email templates
+type MeetingTemplateManager interface {
 	RenderInvitation(data domain.EmailInvitation) (*RenderedEmail, error)
 	RenderCancellation(data domain.EmailCancellation) (*RenderedEmail, error)
 	RenderOccurrenceCancellation(data domain.EmailOccurrenceCancellation) (*RenderedEmail, error)
@@ -33,7 +33,7 @@ type TemplateManagerI interface {
 	RenderSummaryNotification(data domain.EmailSummaryNotification) (*RenderedEmail, error)
 }
 
-// TemplateManager is the default implementation of TemplateManagerI
+// TemplateManager is the default implementation of MeetingTemplateManager
 type TemplateManager struct {
 	templates Templates
 }
@@ -95,8 +95,8 @@ func NewTemplateManager() (*TemplateManager, error) {
 	return tm, nil
 }
 
-// Ensure TemplateManager implements TemplateManagerI
-var _ TemplateManagerI = (*TemplateManager)(nil)
+// Ensure TemplateManager implements MeetingTemplateManager
+var _ MeetingTemplateManager = (*TemplateManager)(nil)
 
 // RenderInvitation renders an invitation email with both HTML and text versions
 func (tm *TemplateManager) RenderInvitation(data domain.EmailInvitation) (*RenderedEmail, error) {

@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockICSGenerator is a mock implementation of ICSGeneratorI
+// MockICSGenerator is a mock implementation of MeetingICSGenerator
 type MockICSGenerator struct {
 	mock.Mock
 }
@@ -44,7 +44,7 @@ func (m *MockICSGenerator) GenerateOccurrenceCancellationICS(params ICSOccurrenc
 	return args.String(0), args.Error(1)
 }
 
-// MockTemplateManager is a mock implementation of TemplateManagerI
+// MockTemplateManager is a mock implementation of MeetingTemplateManager
 type MockTemplateManager struct {
 	mock.Mock
 }

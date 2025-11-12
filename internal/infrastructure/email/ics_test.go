@@ -21,19 +21,19 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 
 	t.Run("basic meeting without recurrence", func(t *testing.T) {
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-			MeetingUID:     "meeting-123",
-			MeetingTitle:   "Team Standup",
-			Description:    "Weekly team sync meeting",
-			StartTime:      startTime,
-			Duration:       60,
-			Timezone:       "America/New_York",
-			JoinLink:       "https://zoom.us/j/123456789",
-			MeetingID:      "123456789",
-			Passcode:       "abc123",
-			RecipientEmail: "user@example.com",
-			ProjectName:    "Test Project",
-			Recurrence:     nil,
-			Sequence:       0,
+			MeetingUID:      "meeting-123",
+			MeetingTitle:    "Team Standup",
+			Description:     "Weekly team sync meeting",
+			StartTime:       startTime,
+			DurationMinutes: 60,
+			Timezone:        "America/New_York",
+			JoinLink:        "https://zoom.us/j/123456789",
+			MeetingID:       "123456789",
+			Passcode:        "abc123",
+			RecipientEmail:  "user@example.com",
+			ProjectName:     "Test Project",
+			Recurrence:      nil,
+			Sequence:        0,
 		})
 
 		require.NoError(t, err)
@@ -61,19 +61,19 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-			MeetingUID:     "daily-meeting-456",
-			MeetingTitle:   "Daily Standup",
-			Description:    "Daily team sync",
-			StartTime:      startTime,
-			Duration:       30,
-			Timezone:       "UTC",
-			JoinLink:       "https://zoom.us/j/987654321",
-			MeetingID:      "987654321",
-			Passcode:       "xyz789",
-			RecipientEmail: "team@example.com",
-			ProjectName:    "",
-			Recurrence:     recurrence,
-			Sequence:       0,
+			MeetingUID:      "daily-meeting-456",
+			MeetingTitle:    "Daily Standup",
+			Description:     "Daily team sync",
+			StartTime:       startTime,
+			DurationMinutes: 30,
+			Timezone:        "UTC",
+			JoinLink:        "https://zoom.us/j/987654321",
+			MeetingID:       "987654321",
+			Passcode:        "xyz789",
+			RecipientEmail:  "team@example.com",
+			ProjectName:     "",
+			Recurrence:      recurrence,
+			Sequence:        0,
 		})
 
 		require.NoError(t, err)
@@ -90,19 +90,19 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-			MeetingUID:     "biweekly-meeting-789",
-			MeetingTitle:   "Bi-weekly Meeting",
-			Description:    "Bi-weekly team meeting",
-			StartTime:      startTime,
-			Duration:       45,
-			Timezone:       "Europe/London",
-			JoinLink:       "https://zoom.us/j/555555555",
-			MeetingID:      "555555555",
-			Passcode:       "",
-			RecipientEmail: "group@example.com",
-			ProjectName:    "",
-			Recurrence:     recurrence,
-			Sequence:       0,
+			MeetingUID:      "biweekly-meeting-789",
+			MeetingTitle:    "Bi-weekly Meeting",
+			Description:     "Bi-weekly team meeting",
+			StartTime:       startTime,
+			DurationMinutes: 45,
+			Timezone:        "Europe/London",
+			JoinLink:        "https://zoom.us/j/555555555",
+			MeetingID:       "555555555",
+			Passcode:        "",
+			RecipientEmail:  "group@example.com",
+			ProjectName:     "",
+			Recurrence:      recurrence,
+			Sequence:        0,
 		})
 
 		require.NoError(t, err)
@@ -118,19 +118,19 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-			MeetingUID:     "monthly-review-101",
-			MeetingTitle:   "Monthly Review",
-			Description:    "Monthly project review",
-			StartTime:      startTime,
-			Duration:       90,
-			Timezone:       "Asia/Tokyo",
-			JoinLink:       "",
-			MeetingID:      "",
-			Passcode:       "",
-			RecipientEmail: "manager@example.com",
-			ProjectName:    "",
-			Recurrence:     recurrence,
-			Sequence:       0,
+			MeetingUID:      "monthly-review-101",
+			MeetingTitle:    "Monthly Review",
+			Description:     "Monthly project review",
+			StartTime:       startTime,
+			DurationMinutes: 90,
+			Timezone:        "Asia/Tokyo",
+			JoinLink:        "",
+			MeetingID:       "",
+			Passcode:        "",
+			RecipientEmail:  "manager@example.com",
+			ProjectName:     "",
+			Recurrence:      recurrence,
+			Sequence:        0,
 		})
 
 		require.NoError(t, err)
@@ -148,19 +148,19 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 		}
 
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-			MeetingUID:     "board-meeting-202",
-			MeetingTitle:   "Monthly Board Meeting",
-			Description:    "Board meeting",
-			StartTime:      startTime,
-			Duration:       120,
-			Timezone:       "America/Los_Angeles",
-			JoinLink:       "https://zoom.us/j/111111111",
-			MeetingID:      "111111111",
-			Passcode:       "secure",
-			RecipientEmail: "board@example.com",
-			ProjectName:    "",
-			Recurrence:     recurrence,
-			Sequence:       0,
+			MeetingUID:      "board-meeting-202",
+			MeetingTitle:    "Monthly Board Meeting",
+			Description:     "Board meeting",
+			StartTime:       startTime,
+			DurationMinutes: 120,
+			Timezone:        "America/Los_Angeles",
+			JoinLink:        "https://zoom.us/j/111111111",
+			MeetingID:       "111111111",
+			Passcode:        "secure",
+			RecipientEmail:  "board@example.com",
+			ProjectName:     "",
+			Recurrence:      recurrence,
+			Sequence:        0,
 		})
 
 		require.NoError(t, err)
@@ -169,19 +169,19 @@ func TestICSGenerator_GenerateMeetingICS(t *testing.T) {
 
 	t.Run("meeting without join link", func(t *testing.T) {
 		ics, err := generator.GenerateMeetingInvitationICS(ICSMeetingInvitationParams{
-			MeetingUID:     "inperson-meeting-303",
-			MeetingTitle:   "In-Person Meeting",
-			Description:    "Meet at the office",
-			StartTime:      startTime,
-			Duration:       60,
-			Timezone:       "America/Chicago",
-			JoinLink:       "",
-			MeetingID:      "",
-			Passcode:       "",
-			RecipientEmail: "office@example.com",
-			ProjectName:    "",
-			Recurrence:     nil,
-			Sequence:       0,
+			MeetingUID:      "inperson-meeting-303",
+			MeetingTitle:    "In-Person Meeting",
+			Description:     "Meet at the office",
+			StartTime:       startTime,
+			DurationMinutes: 60,
+			Timezone:        "America/Chicago",
+			JoinLink:        "",
+			MeetingID:       "",
+			Passcode:        "",
+			RecipientEmail:  "office@example.com",
+			ProjectName:     "",
+			Recurrence:      nil,
+			Sequence:        0,
 		})
 
 		require.NoError(t, err)
@@ -446,14 +446,14 @@ func TestGenerateMeetingCancellationICS(t *testing.T) {
 	startTime := time.Date(2024, 10, 25, 10, 0, 0, 0, time.UTC)
 
 	params := ICSMeetingCancellationParams{
-		MeetingUID:     "test-meeting-cancel-123",
-		MeetingTitle:   "Test Meeting",
-		StartTime:      startTime,
-		Duration:       60,
-		Timezone:       "America/New_York",
-		RecipientEmail: "test@example.com",
-		Recurrence:     nil,
-		Sequence:       2,
+		MeetingUID:      "test-meeting-cancel-123",
+		MeetingTitle:    "Test Meeting",
+		StartTime:       startTime,
+		DurationMinutes: 60,
+		Timezone:        "America/New_York",
+		RecipientEmail:  "test@example.com",
+		Recurrence:      nil,
+		Sequence:        2,
 	}
 
 	icsContent, err := generator.GenerateMeetingCancellationICS(params)
@@ -485,14 +485,14 @@ func TestGenerateMeetingCancellationICS_WithRecurrence(t *testing.T) {
 	}
 
 	params := ICSMeetingCancellationParams{
-		MeetingUID:     "weekly-staff-cancel-456",
-		MeetingTitle:   "Weekly Staff Meeting",
-		StartTime:      startTime,
-		Duration:       30,
-		Timezone:       "UTC",
-		RecipientEmail: "staff@example.com",
-		Recurrence:     recurrence,
-		Sequence:       1,
+		MeetingUID:      "weekly-staff-cancel-456",
+		MeetingTitle:    "Weekly Staff Meeting",
+		StartTime:       startTime,
+		DurationMinutes: 30,
+		Timezone:        "UTC",
+		RecipientEmail:  "staff@example.com",
+		Recurrence:      recurrence,
+		Sequence:        1,
 	}
 
 	icsContent, err := generator.GenerateMeetingCancellationICS(params)

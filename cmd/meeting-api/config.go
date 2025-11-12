@@ -118,9 +118,9 @@ func parseEnv() environment {
 		NatsURL:            natsURL,
 		Port:               port,
 		SkipEtagValidation: skipEtagValidation,
-		LFXEnvironment:     lfxEnvironment, // Used by ServiceConfig initialization
+		LFXEnvironment:     lfxEnvironment,
 		ProjectLogoBaseURL: projectLogoBaseURL,
-		LFXAppOrigin:       lfxAppOrigin, // Used by ServiceConfig initialization
+		LFXAppOrigin:       lfxAppOrigin,
 		EmailConfig:        parseEmailConfig(),
 	}
 }
