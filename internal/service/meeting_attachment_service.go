@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log/slog"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -309,14 +308,8 @@ func (s *MeetingAttachmentService) GetMeetingAttachmentsForEmail(ctx context.Con
 		meetingAttachments, _ = s.attachmentRepository.ListByMeeting(ctx, meetingUID)
 		// Ignore error - attachments are optional, email should still be sent without them
 
-		// Filter out attachments that do not belong to the meeting
-		meetingAttachments = slices.DeleteFunc(meetingAttachments, func(attachment *models.MeetingAttachment) bool {
-			return attachment.MeetingUID != meetingUID
-		})
-
 		// Fetch file data for file-type attachments to include as email attachments
 		for _, attachment := range meetingAttachments {
-			// Ensure that the attachment belongs to the meeting
 			if attachment.Type == models.AttachmentTypeFile {
 				fileData, err := s.attachmentRepository.GetObject(ctx, attachment.UID)
 				if err != nil {

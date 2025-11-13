@@ -4,6 +4,7 @@
 package platform
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
@@ -134,14 +135,21 @@ func TestRegistry_ConcurrentAccess(t *testing.T) {
 	var wg sync.WaitGroup
 	iterations := 100
 
+	// Channels to collect results from goroutines
+	type readResult struct {
+		provider domain.PlatformProvider
+		err      error
+	}
+	readResults := make(chan readResult, iterations)
+	missingResults := make(chan error, iterations)
+
 	// Concurrent reads
 	for i := 0; i < iterations; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			provider, err := registry.GetProvider("Zoom")
-			assert.NoError(t, err)
-			assert.NotNil(t, provider)
+			readResults <- readResult{provider: provider, err: err}
 		}()
 	}
 
@@ -152,7 +160,7 @@ func TestRegistry_ConcurrentAccess(t *testing.T) {
 			defer wg.Done()
 			newProvider := &mocks.MockPlatformProvider{}
 			// Register to different platforms to avoid contention
-			registry.RegisterProvider("Platform"+string(rune(idx)), newProvider)
+			registry.RegisterProvider(fmt.Sprintf("Platform%d", idx), newProvider)
 		}(i)
 	}
 
@@ -162,11 +170,23 @@ func TestRegistry_ConcurrentAccess(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			_, err := registry.GetProvider("NonExistent")
-			assert.Error(t, err)
+			missingResults <- err
 		}()
 	}
 
 	wg.Wait()
+	close(readResults)
+	close(missingResults)
+
+	// Assert on results in main goroutine
+	for result := range readResults {
+		assert.NoError(t, result.err)
+		assert.NotNil(t, result.provider)
+	}
+
+	for err := range missingResults {
+		assert.Error(t, err)
+	}
 }
 
 func TestRegistry_ConcurrentOverwrite(t *testing.T) {
