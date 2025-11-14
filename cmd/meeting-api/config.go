@@ -27,6 +27,7 @@ type environment struct {
 	SkipEtagValidation bool
 	LFXEnvironment     string
 	ProjectLogoBaseURL string
+	LFXAppOrigin       string
 	EmailConfig        emailConfig
 }
 
@@ -111,12 +112,15 @@ func parseEnv() environment {
 		projectLogoBaseURL = "https://lfx-one-project-logos-png-" + lfxEnvironment + ".s3.us-west-2.amazonaws.com"
 	}
 
+	lfxAppOrigin := os.Getenv("LFX_APP_ORIGIN")
+
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,
 		SkipEtagValidation: skipEtagValidation,
 		LFXEnvironment:     lfxEnvironment,
 		ProjectLogoBaseURL: projectLogoBaseURL,
+		LFXAppOrigin:       lfxAppOrigin,
 		EmailConfig:        parseEmailConfig(),
 	}
 }

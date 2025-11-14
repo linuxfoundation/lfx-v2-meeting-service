@@ -11,11 +11,167 @@ import (
 	"strings"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 )
 
 //go:embed templates/*
 var templateFS embed.FS
+
+// RenderedEmail holds both HTML and text versions of a rendered email
+type RenderedEmail struct {
+	HTML string
+	Text string
+}
+
+// MeetingTemplateManager defines the interface for rendering meeting email templates
+type MeetingTemplateManager interface {
+	RenderInvitation(data domain.EmailInvitation) (*RenderedEmail, error)
+	RenderCancellation(data domain.EmailCancellation) (*RenderedEmail, error)
+	RenderOccurrenceCancellation(data domain.EmailOccurrenceCancellation) (*RenderedEmail, error)
+	RenderUpdatedInvitation(data domain.EmailUpdatedInvitation) (*RenderedEmail, error)
+	RenderSummaryNotification(data domain.EmailSummaryNotification) (*RenderedEmail, error)
+}
+
+// TemplateManager is the default implementation of MeetingTemplateManager
+type TemplateManager struct {
+	templates Templates
+}
+
+// NewTemplateManager creates a new template manager with all templates loaded
+func NewTemplateManager() (*TemplateManager, error) {
+	tm := &TemplateManager{}
+
+	// Define all templates to load
+	templateConfigs := map[string]templateConfig{
+		"invitationHTML":             {"meeting_invitation.html", "templates/meeting_invitation.html"},
+		"invitationText":             {"meeting_invitation.txt", "templates/meeting_invitation.txt"},
+		"cancellationHTML":           {"meeting_invitation_cancellation.html", "templates/meeting_invitation_cancellation.html"},
+		"cancellationText":           {"meeting_invitation_cancellation.txt", "templates/meeting_invitation_cancellation.txt"},
+		"occurrenceCancellationHTML": {"meeting_occurrence_cancellation.html", "templates/meeting_occurrence_cancellation.html"},
+		"occurrenceCancellationText": {"meeting_occurrence_cancellation.txt", "templates/meeting_occurrence_cancellation.txt"},
+		"updatedInvitationHTML":      {"meeting_updated_invitation.html", "templates/meeting_updated_invitation.html"},
+		"updatedInvitationText":      {"meeting_updated_invitation.txt", "templates/meeting_updated_invitation.txt"},
+		"summaryNotificationHTML":    {"meeting_summary_notification.html", "templates/meeting_summary_notification.html"},
+		"summaryNotificationText":    {"meeting_summary_notification.txt", "templates/meeting_summary_notification.txt"},
+	}
+
+	// Load all templates
+	loadedTemplates := make(map[string]*template.Template)
+	for key, cfg := range templateConfigs {
+		tmpl, err := loadTemplate(cfg)
+		if err != nil {
+			return nil, err
+		}
+		loadedTemplates[key] = tmpl
+	}
+
+	// Organize templates into the structure
+	tm.templates = Templates{
+		Meeting: MeetingTemplates{
+			Invitation: TemplateSet{
+				HTML: loadedTemplates["invitationHTML"],
+				Text: loadedTemplates["invitationText"],
+			},
+			Cancellation: TemplateSet{
+				HTML: loadedTemplates["cancellationHTML"],
+				Text: loadedTemplates["cancellationText"],
+			},
+			OccurrenceCancellation: TemplateSet{
+				HTML: loadedTemplates["occurrenceCancellationHTML"],
+				Text: loadedTemplates["occurrenceCancellationText"],
+			},
+			UpdatedInvitation: TemplateSet{
+				HTML: loadedTemplates["updatedInvitationHTML"],
+				Text: loadedTemplates["updatedInvitationText"],
+			},
+			SummaryNotification: TemplateSet{
+				HTML: loadedTemplates["summaryNotificationHTML"],
+				Text: loadedTemplates["summaryNotificationText"],
+			},
+		},
+	}
+
+	return tm, nil
+}
+
+// Ensure TemplateManager implements MeetingTemplateManager
+var _ MeetingTemplateManager = (*TemplateManager)(nil)
+
+// RenderInvitation renders an invitation email with both HTML and text versions
+func (tm *TemplateManager) RenderInvitation(data domain.EmailInvitation) (*RenderedEmail, error) {
+	html, err := renderTemplate(tm.templates.Meeting.Invitation.HTML, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render invitation HTML: %w", err)
+	}
+
+	text, err := renderTemplate(tm.templates.Meeting.Invitation.Text, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render invitation text: %w", err)
+	}
+
+	return &RenderedEmail{HTML: html, Text: text}, nil
+}
+
+// RenderCancellation renders a cancellation email with both HTML and text versions
+func (tm *TemplateManager) RenderCancellation(data domain.EmailCancellation) (*RenderedEmail, error) {
+	html, err := renderTemplate(tm.templates.Meeting.Cancellation.HTML, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render cancellation HTML: %w", err)
+	}
+
+	text, err := renderTemplate(tm.templates.Meeting.Cancellation.Text, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render cancellation text: %w", err)
+	}
+
+	return &RenderedEmail{HTML: html, Text: text}, nil
+}
+
+// RenderOccurrenceCancellation renders an occurrence cancellation email with both HTML and text versions
+func (tm *TemplateManager) RenderOccurrenceCancellation(data domain.EmailOccurrenceCancellation) (*RenderedEmail, error) {
+	html, err := renderTemplate(tm.templates.Meeting.OccurrenceCancellation.HTML, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render occurrence cancellation HTML: %w", err)
+	}
+
+	text, err := renderTemplate(tm.templates.Meeting.OccurrenceCancellation.Text, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render occurrence cancellation text: %w", err)
+	}
+
+	return &RenderedEmail{HTML: html, Text: text}, nil
+}
+
+// RenderUpdatedInvitation renders an updated invitation email with both HTML and text versions
+func (tm *TemplateManager) RenderUpdatedInvitation(data domain.EmailUpdatedInvitation) (*RenderedEmail, error) {
+	html, err := renderTemplate(tm.templates.Meeting.UpdatedInvitation.HTML, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render updated invitation HTML: %w", err)
+	}
+
+	text, err := renderTemplate(tm.templates.Meeting.UpdatedInvitation.Text, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render updated invitation text: %w", err)
+	}
+
+	return &RenderedEmail{HTML: html, Text: text}, nil
+}
+
+// RenderSummaryNotification renders a summary notification email with both HTML and text versions
+func (tm *TemplateManager) RenderSummaryNotification(data domain.EmailSummaryNotification) (*RenderedEmail, error) {
+	html, err := renderTemplate(tm.templates.Meeting.SummaryNotification.HTML, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render summary notification HTML: %w", err)
+	}
+
+	text, err := renderTemplate(tm.templates.Meeting.SummaryNotification.Text, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render summary notification text: %w", err)
+	}
+
+	return &RenderedEmail{HTML: html, Text: text}, nil
+}
 
 // TemplateSet holds HTML and text versions of a template
 type TemplateSet struct {
@@ -41,6 +197,16 @@ type Templates struct {
 type templateConfig struct {
 	name string
 	path string
+}
+
+// LoadTemplate loads a single template with the shared function map
+func (tm *TemplateManager) LoadTemplate(config templateConfig) (*template.Template, error) {
+	return loadTemplate(config)
+}
+
+// RenderTemplate renders any template with the provided data
+func (tm *TemplateManager) RenderTemplate(tmpl *template.Template, data any) (string, error) {
+	return renderTemplate(tmpl, data)
 }
 
 // loadTemplate loads a single template with the shared function map

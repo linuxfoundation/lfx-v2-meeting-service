@@ -3,6 +3,8 @@
 
 package service
 
+import "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+
 type Service interface {
 	ServiceReady() bool
 }
@@ -11,8 +13,8 @@ type Service interface {
 type ServiceConfig struct {
 	// SkipEtagValidation is a flag to skip the Etag validation - only meant for local development.
 	SkipEtagValidation bool
-	// LFXEnvironment is the environment name for LFX app domain generation.
-	LFXEnvironment string
 	// ProjectLogoBaseURL is the base URL for project logo PNG images.
 	ProjectLogoBaseURL string
+	// LfxURLGenerator generates LFX app URLs with the configured environment and custom origin.
+	LfxURLGenerator *constants.LfxURLGenerator
 }

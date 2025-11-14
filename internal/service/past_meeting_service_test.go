@@ -15,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 // mustParseTime is a helper function for tests
@@ -36,6 +37,7 @@ func setupPastMeetingServiceForTesting() (*PastMeetingService, *mocks.MockMeetin
 
 	config := ServiceConfig{
 		SkipEtagValidation: false,
+		LfxURLGenerator:    constants.NewLfxURLGenerator("dev", ""),
 	}
 
 	service := NewPastMeetingService(

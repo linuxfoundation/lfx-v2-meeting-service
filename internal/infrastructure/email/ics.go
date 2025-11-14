@@ -31,6 +31,14 @@ const (
 	UTF8ContinuationPrefix = 0x80 // UTF-8 continuation byte prefix (10000000)
 )
 
+// MeetingICSGenerator is the interface for generating ICS calendar files
+type MeetingICSGenerator interface {
+	GenerateMeetingInvitationICS(param ICSMeetingInvitationParams) (string, error)
+	GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (string, error)
+	GenerateMeetingCancellationICS(params ICSMeetingCancellationParams) (string, error)
+	GenerateOccurrenceCancellationICS(params ICSOccurrenceCancellationParams) (string, error)
+}
+
 // ICSGenerator generates ICS (iCalendar) files for meeting invitations
 type ICSGenerator struct{}
 
@@ -38,6 +46,9 @@ type ICSGenerator struct{}
 func NewICSGenerator() *ICSGenerator {
 	return &ICSGenerator{}
 }
+
+// Ensure [ICSGenerator] implements [MeetingICSGenerator]
+var _ MeetingICSGenerator = (*ICSGenerator)(nil)
 
 // ICSMeetingInvitationParams contains all the information needed to generate an ICS file
 // for a meeting invitation
@@ -47,7 +58,7 @@ type ICSMeetingInvitationParams struct {
 	MeetingType              string
 	Description              string
 	StartTime                time.Time
-	Duration                 int // Duration in minutes
+	DurationMinutes          int
 	Timezone                 string
 	JoinLink                 string
 	MeetingID                string
@@ -74,7 +85,7 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 
 	// Convert times to the meeting timezone
 	startLocal := param.StartTime.In(loc)
-	endLocal := startLocal.Add(time.Duration(param.Duration) * time.Minute)
+	endLocal := startLocal.Add(time.Duration(param.DurationMinutes) * time.Minute)
 
 	// Format times in YYYYMMDDTHHMMSS format
 	dtstart := startLocal.Format("20060102T150405")
@@ -166,18 +177,6 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 	ics.WriteString("END:VCALENDAR\r\n")
 
 	return ics.String(), nil
-}
-
-// ICSMeetingCancellationParams holds parameters for generating a meeting cancellation ICS file
-type ICSMeetingCancellationParams struct {
-	MeetingUID     string // Unique meeting identifier for consistent ICS UID
-	MeetingTitle   string
-	StartTime      time.Time
-	Duration       int // Duration in minutes
-	Timezone       string
-	RecipientEmail string
-	Recurrence     *models.Recurrence
-	Sequence       int // ICS sequence number for calendar updates
 }
 
 // ICSMeetingUpdateParams holds parameters for generating a meeting update ICS file
@@ -294,6 +293,18 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 	return ics.String(), nil
 }
 
+// ICSMeetingCancellationParams holds parameters for generating a meeting cancellation ICS file
+type ICSMeetingCancellationParams struct {
+	MeetingUID      string // Unique meeting identifier for consistent ICS UID
+	MeetingTitle    string
+	StartTime       time.Time
+	DurationMinutes int
+	Timezone        string
+	RecipientEmail  string
+	Recurrence      *models.Recurrence
+	Sequence        int // ICS sequence number for calendar updates
+}
+
 // GenerateMeetingCancellationICS generates an ICS file for cancelling a meeting
 func (g *ICSGenerator) GenerateMeetingCancellationICS(params ICSMeetingCancellationParams) (string, error) {
 	loc, err := time.LoadLocation(params.Timezone)
@@ -302,7 +313,7 @@ func (g *ICSGenerator) GenerateMeetingCancellationICS(params ICSMeetingCancellat
 	}
 
 	startTime := params.StartTime.In(loc)
-	endTime := startTime.Add(time.Duration(params.Duration) * time.Minute)
+	endTime := startTime.Add(time.Duration(params.DurationMinutes) * time.Minute)
 
 	// Use the same UID as the invitation for proper cancellation matching
 	uid := params.MeetingUID

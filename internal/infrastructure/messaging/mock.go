@@ -31,6 +31,15 @@ func (m *MockNATSConn) Publish(subj string, data []byte) error {
 	return args.Error(0)
 }
 
+// Request is a mock method for the [INatsConn] interface.
+func (m *MockNATSConn) Request(subj string, data []byte, timeout time.Duration) (*nats.Msg, error) {
+	args := m.Called(subj, data, timeout)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*nats.Msg), args.Error(1)
+}
+
 // INatsMsg is an interface for [nats.Msg] that allows for mocking.
 type INatsMsg interface {
 	Respond(data []byte) error

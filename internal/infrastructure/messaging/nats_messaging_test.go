@@ -5,7 +5,6 @@ package messaging
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -14,96 +13,45 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/nats-io/nats.go"
+	"github.com/stretchr/testify/mock"
 )
-
-// mockNatsConn implements INatsConn for testing
-type mockNatsConn struct {
-	connected     bool
-	publishedMsgs []publishedMessage
-	publishError  error
-}
-
-type publishedMessage struct {
-	subject string
-	data    []byte
-}
-
-func (m *mockNatsConn) IsConnected() bool {
-	return m.connected
-}
-
-func (m *mockNatsConn) Publish(subj string, data []byte) error {
-	m.publishedMsgs = append(m.publishedMsgs, publishedMessage{
-		subject: subj,
-		data:    data,
-	})
-	if m.publishError != nil {
-		return m.publishError
-	}
-	return nil
-}
-
-func (m *mockNatsConn) Request(subj string, data []byte, timeout time.Duration) (*nats.Msg, error) {
-	// For testing purposes, return a simple mock response
-	m.publishedMsgs = append(m.publishedMsgs, publishedMessage{
-		subject: subj,
-		data:    data,
-	})
-	if m.publishError != nil {
-		return nil, m.publishError
-	}
-	// Return a mock response message
-	return &nats.Msg{
-		Subject: subj,
-		Data:    []byte("mock response"),
-	}, nil
-}
 
 func TestMessageBuilder_publish(t *testing.T) {
 	tests := []struct {
-		name          string
-		connected     bool
-		publishError  error
-		subject       string
-		data          []byte
-		expectError   bool
-		expectedCalls int
+		name         string
+		publishError error
+		subject      string
+		data         []byte
+		expectError  bool
 	}{
 		{
-			name:          "successful send",
-			connected:     true,
-			publishError:  nil,
-			subject:       "test.subject",
-			data:          []byte("test data"),
-			expectError:   false,
-			expectedCalls: 1,
+			name:         "successful send",
+			publishError: nil,
+			subject:      "test.subject",
+			data:         []byte("test data"),
+			expectError:  false,
 		},
 		{
-			name:          "publish error",
-			connected:     true,
-			publishError:  errors.New("publish failed"),
-			subject:       "test.subject",
-			data:          []byte("test data"),
-			expectError:   true,
-			expectedCalls: 1,
+			name:         "publish error",
+			publishError: errors.New("publish failed"),
+			subject:      "test.subject",
+			data:         []byte("test data"),
+			expectError:  true,
 		},
 		{
-			name:          "disconnected",
-			connected:     false,
-			publishError:  nil,
-			subject:       "test.subject",
-			data:          []byte("test data"),
-			expectError:   false,
-			expectedCalls: 1,
+			name:         "disconnected",
+			publishError: nil,
+			subject:      "test.subject",
+			data:         []byte("test data"),
+			expectError:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockConn := &mockNatsConn{
-				connected:    tt.connected,
-				publishError: tt.publishError,
-			}
+			mockConn := new(MockNATSConn)
+			mockConn.On("Publish", tt.subject, tt.data).Return(tt.publishError)
+
 			builder := &MessageBuilder{
 				NatsConn: mockConn,
 			}
@@ -117,881 +65,14 @@ func TestMessageBuilder_publish(t *testing.T) {
 			if !tt.expectError && err != nil {
 				t.Errorf("expected no error but got: %v", err)
 			}
-			if len(mockConn.publishedMsgs) != tt.expectedCalls {
-				t.Errorf("expected %d publish calls, got %d", tt.expectedCalls, len(mockConn.publishedMsgs))
-			}
-			if len(mockConn.publishedMsgs) > 0 {
-				msg := mockConn.publishedMsgs[0]
-				if msg.subject != tt.subject {
-					t.Errorf("expected subject %q, got %q", tt.subject, msg.subject)
-				}
-				if string(msg.data) != string(tt.data) {
-					t.Errorf("expected data %q, got %q", string(tt.data), string(msg.data))
-				}
-			}
+
+			mockConn.AssertExpectations(t)
 		})
 	}
 }
 
-func TestMessageBuilder_SendIndexMeeting(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	meeting := models.MeetingBase{
-		UID:         "test-meeting-uid",
-		Title:       "Test Meeting",
-		ProjectUID:  "project-123",
-		Description: "Test Description",
-	}
-
-	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.IndexMeetingSubject {
-		t.Errorf("expected subject %q, got %q", models.IndexMeetingSubject, msg.subject)
-	}
-
-	// Parse the message to verify structure
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	if indexerMsg.Action != models.ActionCreated {
-		t.Errorf("expected action %q, got %q", models.ActionCreated, indexerMsg.Action)
-	}
-}
-
-func TestMessageBuilder_SendIndexMeeting_WithContext(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	// Create context with authorization and principal
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, constants.AuthorizationContextID, "Bearer token123")
-	ctx = context.WithValue(ctx, constants.PrincipalContextID, "user123")
-
-	meeting := models.MeetingBase{
-		UID:   "test-meeting-uid",
-		Title: "Test Meeting",
-	}
-
-	err := builder.SendIndexMeeting(ctx, models.ActionUpdated, meeting)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	// Check headers
-	if indexerMsg.Headers[constants.AuthorizationHeader] != "Bearer token123" {
-		t.Errorf("expected authorization header %q, got %q", "Bearer token123", indexerMsg.Headers[constants.AuthorizationHeader])
-	}
-	if indexerMsg.Headers[constants.XOnBehalfOfHeader] != "user123" {
-		t.Errorf("expected x-on-behalf-of header %q, got %q", "user123", indexerMsg.Headers[constants.XOnBehalfOfHeader])
-	}
-}
-
-func TestMessageBuilder_SendDeleteIndexMeeting(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	meetingUID := "delete-meeting-uid"
-
-	err := builder.SendDeleteIndexMeeting(ctx, meetingUID)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.IndexMeetingSubject {
-		t.Errorf("expected subject %q, got %q", models.IndexMeetingSubject, msg.subject)
-	}
-
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	if indexerMsg.Action != models.ActionDeleted {
-		t.Errorf("expected action %q, got %q", models.ActionDeleted, indexerMsg.Action)
-	}
-
-	// Check that data contains the meeting UID
-	// The data might be base64 encoded, so we need to decode it
-	if dataStr, ok := indexerMsg.Data.(string); ok {
-		// Try to decode from base64 first
-		if decoded, err := base64.StdEncoding.DecodeString(dataStr); err == nil {
-			decodedStr := string(decoded)
-			if decodedStr != meetingUID {
-				t.Errorf("expected decoded data %q, got %q", meetingUID, decodedStr)
-			}
-		} else if dataStr != meetingUID {
-			// If not base64, compare directly
-			t.Errorf("expected data %q, got %q", meetingUID, dataStr)
-		}
-	} else {
-		t.Errorf("expected data to be string, got %T", indexerMsg.Data)
-	}
-}
-
-func TestMessageBuilder_SendUpdateAccessMeeting(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	accessMsg := models.MeetingAccessMessage{
-		UID:        "access-meeting-uid",
-		Public:     true,
-		ProjectUID: "project-123",
-		Organizers: []string{"organizer1", "organizer2"},
-		Committees: []string{"committee1", "committee2"},
-	}
-
-	err := builder.SendUpdateAccessMeeting(ctx, accessMsg)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.UpdateAccessMeetingSubject {
-		t.Errorf("expected subject %q, got %q", models.UpdateAccessMeetingSubject, msg.subject)
-	}
-
-	// Parse and verify the access message
-	var receivedMsg models.MeetingAccessMessage
-	err = json.Unmarshal(msg.data, &receivedMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal access message: %v", err)
-		return
-	}
-
-	if receivedMsg.UID != accessMsg.UID {
-		t.Errorf("expected UID %q, got %q", accessMsg.UID, receivedMsg.UID)
-	}
-	if receivedMsg.Public != accessMsg.Public {
-		t.Errorf("expected Public %t, got %t", accessMsg.Public, receivedMsg.Public)
-	}
-	if receivedMsg.ProjectUID != accessMsg.ProjectUID {
-		t.Errorf("expected ProjectUID %q, got %q", accessMsg.ProjectUID, receivedMsg.ProjectUID)
-	}
-	if len(receivedMsg.Organizers) != len(accessMsg.Organizers) {
-		t.Errorf("expected %d organizers, got %d", len(accessMsg.Organizers), len(receivedMsg.Organizers))
-	}
-	for i, organizer := range receivedMsg.Organizers {
-		if organizer != accessMsg.Organizers[i] {
-			t.Errorf("expected organizer %q, got %q", accessMsg.Organizers[i], organizer)
-		}
-	}
-	if len(receivedMsg.Committees) != len(accessMsg.Committees) {
-		t.Errorf("expected %d committees, got %d", len(accessMsg.Committees), len(receivedMsg.Committees))
-	}
-	for i, committee := range receivedMsg.Committees {
-		if committee != accessMsg.Committees[i] {
-			t.Errorf("expected committee %q, got %q", accessMsg.Committees[i], committee)
-		}
-	}
-}
-
-func TestMessageBuilder_SendDeleteAllAccessMeeting(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	meetingUID := "delete-access-meeting-uid"
-
-	err := builder.SendDeleteAllAccessMeeting(ctx, meetingUID)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.DeleteAllAccessMeetingSubject {
-		t.Errorf("expected subject %q, got %q", models.DeleteAllAccessMeetingSubject, msg.subject)
-	}
-
-	// Check that data contains the meeting UID
-	if string(msg.data) != meetingUID {
-		t.Errorf("expected data %q, got %q", meetingUID, string(msg.data))
-	}
-}
-
-func TestMessageBuilder_PublishErrors(t *testing.T) {
-	publishError := errors.New("publish failed")
-	mockConn := &mockNatsConn{
-		connected:    true,
-		publishError: publishError,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	meeting := models.MeetingBase{UID: "test-uid", Title: "Test"}
-
-	// Test SendIndexMeeting error
-	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
-	if err == nil {
-		t.Error("expected error from SendIndexMeeting but got none")
-	}
-
-	// Test SendDeleteIndexMeeting error
-	err = builder.SendDeleteIndexMeeting(ctx, "test-uid")
-	if err == nil {
-		t.Error("expected error from SendDeleteIndexMeeting but got none")
-	}
-
-	// Test SendUpdateAccessMeeting error
-	accessMsg := models.MeetingAccessMessage{UID: "test-uid"}
-	err = builder.SendUpdateAccessMeeting(ctx, accessMsg)
-	if err == nil {
-		t.Error("expected error from SendUpdateAccessMeeting but got none")
-	}
-
-	// Test SendDeleteAllAccessMeeting error
-	err = builder.SendDeleteAllAccessMeeting(ctx, "test-uid")
-	if err == nil {
-		t.Error("expected error from SendDeleteAllAccessMeeting but got none")
-	}
-
-	// Test SendIndexMeetingSettings error
-	settings := models.MeetingSettings{UID: "test-uid", Organizers: []string{"org1"}}
-	err = builder.SendIndexMeetingSettings(ctx, models.ActionCreated, settings)
-	if err == nil {
-		t.Error("expected error from SendIndexMeetingSettings but got none")
-	}
-
-	// Test SendDeleteIndexMeetingSettings error
-	err = builder.SendDeleteIndexMeetingSettings(ctx, "test-uid")
-	if err == nil {
-		t.Error("expected error from SendDeleteIndexMeetingSettings but got none")
-	}
-
-	// Test SendPutMeetingRegistrantAccess error
-	registrantMsg := models.MeetingRegistrantAccessMessage{MeetingUID: "meeting-uid", UID: "registrant-uid"}
-	err = builder.SendPutMeetingRegistrantAccess(ctx, registrantMsg)
-	if err == nil {
-		t.Error("expected error from SendPutMeetingRegistrantAccess but got none")
-	}
-
-	// Test SendRemoveMeetingRegistrantAccess error
-	err = builder.SendRemoveMeetingRegistrantAccess(ctx, registrantMsg)
-	if err == nil {
-		t.Error("expected error from SendRemoveMeetingRegistrantAccess but got none")
-	}
-}
-
-func TestMessageBuilder_SendIndexMeetingSettings(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	settings := models.MeetingSettings{
-		UID:        "test-settings-uid",
-		Organizers: []string{"organizer1", "organizer2"},
-	}
-
-	err := builder.SendIndexMeetingSettings(ctx, models.ActionCreated, settings)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.IndexMeetingSettingsSubject {
-		t.Errorf("expected subject %q, got %q", models.IndexMeetingSettingsSubject, msg.subject)
-	}
-
-	// Parse the message to verify structure
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	if indexerMsg.Action != models.ActionCreated {
-		t.Errorf("expected action %q, got %q", models.ActionCreated, indexerMsg.Action)
-	}
-}
-
-func TestMessageBuilder_SendDeleteIndexMeetingSettings(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	settingsUID := "delete-settings-uid"
-
-	err := builder.SendDeleteIndexMeetingSettings(ctx, settingsUID)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.IndexMeetingSettingsSubject {
-		t.Errorf("expected subject %q, got %q", models.IndexMeetingSettingsSubject, msg.subject)
-	}
-
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	if indexerMsg.Action != models.ActionDeleted {
-		t.Errorf("expected action %q, got %q", models.ActionDeleted, indexerMsg.Action)
-	}
-
-	// Check that data contains the settings UID
-	if dataStr, ok := indexerMsg.Data.(string); ok {
-		if dataStr != settingsUID {
-			t.Errorf("expected data %q, got %q", settingsUID, dataStr)
-		}
-	} else {
-		t.Errorf("expected data to be string, got %T", indexerMsg.Data)
-	}
-}
-
-func TestMessageBuilder_SendPutMeetingRegistrantAccess(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	registrantMsg := models.MeetingRegistrantAccessMessage{
-		MeetingUID: "meeting-uid-123",
-		UID:        "registrant-uid-456",
-		Username:   "john.doe",
-		Host:       false,
-	}
-
-	err := builder.SendPutMeetingRegistrantAccess(ctx, registrantMsg)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.PutRegistrantMeetingSubject {
-		t.Errorf("expected subject %q, got %q", models.PutRegistrantMeetingSubject, msg.subject)
-	}
-
-	// Parse and verify the registrant message
-	var receivedMsg models.MeetingRegistrantAccessMessage
-	err = json.Unmarshal(msg.data, &receivedMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal registrant message: %v", err)
-		return
-	}
-
-	if receivedMsg.MeetingUID != registrantMsg.MeetingUID {
-		t.Errorf("expected MeetingUID %q, got %q", registrantMsg.MeetingUID, receivedMsg.MeetingUID)
-	}
-	if receivedMsg.UID != registrantMsg.UID {
-		t.Errorf("expected UID %q, got %q", registrantMsg.UID, receivedMsg.UID)
-	}
-	if receivedMsg.Username != registrantMsg.Username {
-		t.Errorf("expected Username %q, got %q", registrantMsg.Username, receivedMsg.Username)
-	}
-	if receivedMsg.Host != registrantMsg.Host {
-		t.Errorf("expected Host %t, got %t", registrantMsg.Host, receivedMsg.Host)
-	}
-}
-
-func TestMessageBuilder_SendRemoveMeetingRegistrantAccess(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	registrantMsg := models.MeetingRegistrantAccessMessage{
-		MeetingUID: "meeting-uid-789",
-		UID:        "registrant-uid-012",
-		Username:   "jane.smith",
-		Host:       true,
-	}
-
-	err := builder.SendRemoveMeetingRegistrantAccess(ctx, registrantMsg)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	if msg.subject != models.RemoveRegistrantMeetingSubject {
-		t.Errorf("expected subject %q, got %q", models.RemoveRegistrantMeetingSubject, msg.subject)
-	}
-
-	// Parse and verify the registrant message
-	var receivedMsg models.MeetingRegistrantAccessMessage
-	err = json.Unmarshal(msg.data, &receivedMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal registrant message: %v", err)
-		return
-	}
-
-	if receivedMsg.MeetingUID != registrantMsg.MeetingUID {
-		t.Errorf("expected MeetingUID %q, got %q", registrantMsg.MeetingUID, receivedMsg.MeetingUID)
-	}
-	if receivedMsg.UID != registrantMsg.UID {
-		t.Errorf("expected UID %q, got %q", registrantMsg.UID, receivedMsg.UID)
-	}
-	if receivedMsg.Username != registrantMsg.Username {
-		t.Errorf("expected Username %q, got %q", registrantMsg.Username, receivedMsg.Username)
-	}
-	if receivedMsg.Host != registrantMsg.Host {
-		t.Errorf("expected Host %t, got %t", registrantMsg.Host, receivedMsg.Host)
-	}
-}
-
-// Tests for Tags() functionality in messaging methods
-
-func TestMessageBuilder_SendIndexMeeting_TagsGeneration(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	meeting := models.MeetingBase{
-		UID:         "meeting-123",
-		ProjectUID:  "project-456",
-		Title:       "Weekly Standup",
-		Description: "Team sync meeting",
-		Committees: []models.Committee{
-			{UID: "committee-789"},
-			{UID: "committee-101"},
-		},
-	}
-
-	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	// Verify tags are included and match expected values
-	expectedTags := []string{
-		"meeting-123",
-		"meeting_uid:meeting-123",
-		"project_uid:project-456",
-		"committee_uid:committee-789",
-		"committee_uid:committee-101",
-		"title:Weekly Standup",
-		"description:Team sync meeting",
-	}
-
-	if len(indexerMsg.Tags) != len(expectedTags) {
-		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
-	}
-
-	for i, expectedTag := range expectedTags {
-		if i >= len(indexerMsg.Tags) {
-			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
-		} else if indexerMsg.Tags[i] != expectedTag {
-			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
-		}
-	}
-}
-
-func TestMessageBuilder_SendIndexMeetingSettings_TagsGeneration(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	settings := models.MeetingSettings{
-		UID:        "meeting-settings-123",
-		Organizers: []string{"user1", "user2"},
-	}
-
-	err := builder.SendIndexMeetingSettings(ctx, models.ActionUpdated, settings)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	// Verify tags are included and match expected values
-	expectedTags := []string{
-		"meeting-settings-123",
-		"meeting_uid:meeting-settings-123",
-	}
-
-	if len(indexerMsg.Tags) != len(expectedTags) {
-		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
-	}
-
-	for i, expectedTag := range expectedTags {
-		if i >= len(indexerMsg.Tags) {
-			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
-		} else if indexerMsg.Tags[i] != expectedTag {
-			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
-		}
-	}
-}
-
-func TestMessageBuilder_SendIndexMeetingRegistrant_TagsGeneration(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	registrant := models.Registrant{
-		UID:        "registrant-123",
-		MeetingUID: "meeting-456",
-		FirstName:  "John",
-		LastName:   "Doe",
-		Email:      "john.doe@example.com",
-		Username:   "johndoe",
-	}
-
-	err := builder.SendIndexMeetingRegistrant(ctx, models.ActionCreated, registrant)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	// Verify tags are included and match expected values
-	expectedTags := []string{
-		"registrant-123",
-		"registrant_uid:registrant-123",
-		"meeting_uid:meeting-456",
-		"first_name:John",
-		"last_name:Doe",
-		"email:john.doe@example.com",
-		"username:johndoe",
-	}
-
-	if len(indexerMsg.Tags) != len(expectedTags) {
-		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
-	}
-
-	for i, expectedTag := range expectedTags {
-		if i >= len(indexerMsg.Tags) {
-			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
-		} else if indexerMsg.Tags[i] != expectedTag {
-			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
-		}
-	}
-}
-
-func TestMessageBuilder_SendIndexPastMeeting_TagsGeneration(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	pastMeeting := models.PastMeeting{
-		UID:          "past-meeting-123",
-		MeetingUID:   "meeting-456",
-		ProjectUID:   "project-789",
-		OccurrenceID: "occurrence-101",
-		Title:        "Past Weekly Standup",
-		Description:  "Past team sync meeting",
-	}
-
-	err := builder.SendIndexPastMeeting(ctx, models.ActionCreated, pastMeeting)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	// Verify tags are included and match expected values
-	expectedTags := []string{
-		"past-meeting-123",
-		"past_meeting_uid:past-meeting-123",
-		"meeting_uid:meeting-456",
-		"project_uid:project-789",
-		"occurrence_id:occurrence-101",
-		"title:Past Weekly Standup",
-		"description:Past team sync meeting",
-	}
-
-	if len(indexerMsg.Tags) != len(expectedTags) {
-		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
-	}
-
-	for i, expectedTag := range expectedTags {
-		if i >= len(indexerMsg.Tags) {
-			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
-		} else if indexerMsg.Tags[i] != expectedTag {
-			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
-		}
-	}
-}
-
-func TestMessageBuilder_SendIndexPastMeetingParticipant_TagsGeneration(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-	participant := models.PastMeetingParticipant{
-		UID:            "participant-123",
-		PastMeetingUID: "past-meeting-456",
-		MeetingUID:     "meeting-789",
-		FirstName:      "Jane",
-		LastName:       "Smith",
-		Username:       "janesmith",
-		Email:          "jane.smith@example.com",
-	}
-
-	err := builder.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, participant)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	// Verify tags are included and match expected values
-	expectedTags := []string{
-		"participant-123",
-		"past_meeting_participant_uid:participant-123",
-		"past_meeting_uid:past-meeting-456",
-		"meeting_uid:meeting-789",
-		"first_name:Jane",
-		"last_name:Smith",
-		"username:janesmith",
-		"email:jane.smith@example.com",
-	}
-
-	if len(indexerMsg.Tags) != len(expectedTags) {
-		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
-	}
-
-	for i, expectedTag := range expectedTags {
-		if i >= len(indexerMsg.Tags) {
-			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
-		} else if indexerMsg.Tags[i] != expectedTag {
-			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
-		}
-	}
-}
-
-func TestMessageBuilder_TagsGeneration_EmptyFields(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
-
-	ctx := context.Background()
-
-	// Test with meeting having only UID
-	meeting := models.MeetingBase{
-		UID: "meeting-only-uid",
-	}
-
-	err := builder.SendIndexMeeting(ctx, models.ActionCreated, meeting)
-	if err != nil {
-		t.Errorf("expected no error, got: %v", err)
-	}
-
-	if len(mockConn.publishedMsgs) != 1 {
-		t.Errorf("expected 1 published message, got %d", len(mockConn.publishedMsgs))
-		return
-	}
-
-	msg := mockConn.publishedMsgs[0]
-	var indexerMsg models.MeetingIndexerMessage
-	err = json.Unmarshal(msg.data, &indexerMsg)
-	if err != nil {
-		t.Errorf("failed to unmarshal message: %v", err)
-		return
-	}
-
-	// Should only have UID-related tags
-	expectedTags := []string{
-		"meeting-only-uid",
-		"meeting_uid:meeting-only-uid",
-	}
-
-	if len(indexerMsg.Tags) != len(expectedTags) {
-		t.Errorf("expected %d tags, got %d", len(expectedTags), len(indexerMsg.Tags))
-	}
-
-	for i, expectedTag := range expectedTags {
-		if i >= len(indexerMsg.Tags) {
-			t.Errorf("missing tag at index %d: expected %q", i, expectedTag)
-		} else if indexerMsg.Tags[i] != expectedTag {
-			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, indexerMsg.Tags[i])
-		}
-	}
-}
-
-func TestMessageBuilder_TagsGeneration_NilData(t *testing.T) {
-	mockConn := &mockNatsConn{
-		connected: true,
-	}
-	builder := &MessageBuilder{
-		NatsConn: mockConn,
-	}
+func TestMessageBuilder_setIndexerTags(t *testing.T) {
+	builder := &MessageBuilder{}
 
 	// Test setIndexerTags with empty input
 	tags := builder.setIndexerTags()
@@ -1014,4 +95,661 @@ func TestMessageBuilder_TagsGeneration_NilData(t *testing.T) {
 			t.Errorf("tag at index %d: expected %q, got %q", i, expectedTag, tags[i])
 		}
 	}
+}
+
+// Core function tests
+
+func TestMessageBuilder_request(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful request", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", "test.request", []byte("request data"), 5*time.Second).Return(&nats.Msg{
+			Subject: "test.request",
+			Data:    []byte(`{"result":"success"}`),
+		}, nil)
+
+		builder := &MessageBuilder{
+			NatsConn: mockConn,
+		}
+
+		msg, err := builder.request(ctx, "test.request", []byte("request data"), 5*time.Second)
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if msg == nil {
+			t.Fatal("expected non-nil message")
+		}
+		if string(msg.Data) != `{"result":"success"}` {
+			t.Errorf("expected response data %q, got %q", `{"result":"success"}`, string(msg.Data))
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("request with error", func(t *testing.T) {
+		expectedErr := nats.ErrTimeout
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", "test.request", []byte("request data"), 5*time.Second).Return(nil, expectedErr)
+
+		builder := &MessageBuilder{
+			NatsConn: mockConn,
+		}
+
+		msg, err := builder.request(ctx, "test.request", []byte("request data"), 5*time.Second)
+		if err != expectedErr {
+			t.Errorf("expected error %v, got: %v", expectedErr, err)
+		}
+		if msg != nil {
+			t.Errorf("expected nil message on error, got: %v", msg)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("request with disconnected connection", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", "test.request", []byte("request data"), 5*time.Second).Return(nil, nats.ErrDisconnected)
+
+		builder := &MessageBuilder{
+			NatsConn: mockConn,
+		}
+
+		msg, err := builder.request(ctx, "test.request", []byte("request data"), 5*time.Second)
+		if err != nats.ErrDisconnected {
+			t.Errorf("expected disconnected error, got: %v", err)
+		}
+		if msg != nil {
+			t.Errorf("expected nil message on error, got: %v", msg)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+}
+
+func TestMessageBuilder_sendIndexerMessage(t *testing.T) {
+	t.Run("send created action with authorization", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+
+		// Use mock.MatchedBy to capture and verify the published message
+		mockConn.On("Publish", "test.subject", mock.MatchedBy(func(data []byte) bool {
+			var indexerMsg models.MeetingIndexerMessage
+			err := json.Unmarshal(data, &indexerMsg)
+			if err != nil {
+				t.Errorf("failed to unmarshal message: %v", err)
+				return false
+			}
+
+			if indexerMsg.Action != models.ActionCreated {
+				t.Errorf("expected action %v, got %v", models.ActionCreated, indexerMsg.Action)
+				return false
+			}
+			if indexerMsg.Headers[constants.AuthorizationHeader] != "Bearer test-token" {
+				t.Errorf("expected authorization header %q, got %q", "Bearer test-token", indexerMsg.Headers[constants.AuthorizationHeader])
+				return false
+			}
+			if indexerMsg.Headers[constants.XOnBehalfOfHeader] != "test-user" {
+				t.Errorf("expected on-behalf-of header %q, got %q", "test-user", indexerMsg.Headers[constants.XOnBehalfOfHeader])
+				return false
+			}
+			if len(indexerMsg.Tags) != 2 {
+				t.Errorf("expected 2 tags, got %d", len(indexerMsg.Tags))
+				return false
+			}
+			return true
+		})).Return(nil)
+
+		builder := &MessageBuilder{
+			NatsConn: mockConn,
+		}
+
+		ctx := context.WithValue(context.Background(), constants.AuthorizationContextID, "Bearer test-token")
+		ctx = context.WithValue(ctx, constants.PrincipalContextID, "test-user")
+
+		data := map[string]string{"uid": "test-123", "title": "Test Meeting"}
+		dataBytes, _ := json.Marshal(data)
+		tags := []string{"tag1", "tag2"}
+
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, dataBytes, tags)
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("send deleted action without authorization", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		uid := "meeting-123"
+
+		// Use mock.MatchedBy to capture and verify the published message
+		mockConn.On("Publish", "test.subject", mock.MatchedBy(func(data []byte) bool {
+			var indexerMsg models.MeetingIndexerMessage
+			err := json.Unmarshal(data, &indexerMsg)
+			if err != nil {
+				t.Errorf("failed to unmarshal message: %v", err)
+				return false
+			}
+
+			if indexerMsg.Action != models.ActionDeleted {
+				t.Errorf("expected action %v, got %v", models.ActionDeleted, indexerMsg.Action)
+				return false
+			}
+			// Should have fallback authorization for system-generated events
+			if indexerMsg.Headers[constants.AuthorizationHeader] != "Bearer meeting-service" {
+				t.Errorf("expected fallback authorization header %q, got %q", "Bearer meeting-service", indexerMsg.Headers[constants.AuthorizationHeader])
+				return false
+			}
+			// Payload should be the UID string
+			if dataStr, ok := indexerMsg.Data.(string); !ok || dataStr != uid {
+				t.Errorf("expected data %q, got %v", uid, indexerMsg.Data)
+				return false
+			}
+			return true
+		})).Return(nil)
+
+		builder := &MessageBuilder{
+			NatsConn: mockConn,
+		}
+
+		ctx := context.Background()
+		tags := []string{"meeting_uid:meeting-123"}
+
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionDeleted, []byte(uid), tags)
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("send with invalid JSON data", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		// No publish expected for invalid JSON
+
+		builder := &MessageBuilder{
+			NatsConn: mockConn,
+		}
+
+		ctx := context.Background()
+		invalidJSON := []byte("{invalid json")
+		tags := []string{"tag1"}
+
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, invalidJSON, tags)
+		if err == nil {
+			t.Error("expected error for invalid JSON, got nil")
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("send with publish error", func(t *testing.T) {
+		expectedErr := errors.New("publish failed")
+		mockConn := new(MockNATSConn)
+		mockConn.On("Publish", "test.subject", mock.Anything).Return(expectedErr)
+
+		builder := &MessageBuilder{
+			NatsConn: mockConn,
+		}
+
+		ctx := context.Background()
+		data := map[string]string{"uid": "test-123"}
+		dataBytes, _ := json.Marshal(data)
+		tags := []string{"tag1"}
+
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, dataBytes, tags)
+		if err == nil {
+			t.Error("expected publish error, got nil")
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+}
+
+func TestMessageBuilder_prepareMeetingBaseForIndexing(t *testing.T) {
+	builder := &MessageBuilder{}
+
+	t.Run("clears sensitive fields", func(t *testing.T) {
+		meeting := models.MeetingBase{
+			UID:     "meeting-123",
+			Title:   "Test Meeting",
+			JoinURL: "https://zoom.us/j/123456?pwd=secret",
+		}
+
+		result := builder.prepareMeetingBaseForIndexing(meeting)
+
+		if result.JoinURL != "" {
+			t.Errorf("expected JoinURL to be cleared, got %q", result.JoinURL)
+		}
+		if result.UID != "meeting-123" {
+			t.Errorf("expected UID to be preserved, got %q", result.UID)
+		}
+		if result.Title != "Test Meeting" {
+			t.Errorf("expected Title to be preserved, got %q", result.Title)
+		}
+	})
+
+	t.Run("handles empty meeting", func(t *testing.T) {
+		meeting := models.MeetingBase{}
+		result := builder.prepareMeetingBaseForIndexing(meeting)
+
+		if result.JoinURL != "" {
+			t.Errorf("expected JoinURL to be empty, got %q", result.JoinURL)
+		}
+	})
+
+	t.Run("does not modify original meeting", func(t *testing.T) {
+		meeting := models.MeetingBase{
+			UID:     "meeting-123",
+			JoinURL: "https://zoom.us/j/123456?pwd=secret",
+		}
+		originalJoinURL := meeting.JoinURL
+
+		_ = builder.prepareMeetingBaseForIndexing(meeting)
+
+		if meeting.JoinURL != originalJoinURL {
+			t.Errorf("original meeting should not be modified, JoinURL changed from %q to %q", originalJoinURL, meeting.JoinURL)
+		}
+	})
+}
+
+// Request-reply function tests
+
+func TestMessageBuilder_GetCommitteeName(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful lookup", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeGetNameSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.CommitteeGetNameSubject,
+			Data:    []byte("Technical Committee"),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		name, err := builder.GetCommitteeName(ctx, "committee-123")
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if name != "Technical Committee" {
+			t.Errorf("expected name %q, got %q", "Technical Committee", name)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("committee not found - JSON error response", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeGetNameSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.CommitteeGetNameSubject,
+			Data:    []byte(`{"error":"committee not found"}`),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		name, err := builder.GetCommitteeName(ctx, "nonexistent-committee")
+		if err == nil {
+			t.Error("expected error for committee not found, got nil")
+		}
+		if name != "" {
+			t.Errorf("expected empty name, got %q", name)
+		}
+		var committeeErr *CommitteeNotFoundError
+		if !errors.As(err, &committeeErr) {
+			t.Errorf("expected CommitteeNotFoundError, got %T", err)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("request timeout", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeGetNameSubject, mock.Anything, mock.Anything).Return(nil, nats.ErrTimeout)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		name, err := builder.GetCommitteeName(ctx, "committee-123")
+		if err != nats.ErrTimeout {
+			t.Errorf("expected timeout error, got: %v", err)
+		}
+		if name != "" {
+			t.Errorf("expected empty name on error, got %q", name)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+}
+
+func TestMessageBuilder_GetProjectName(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful lookup", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.ProjectGetNameSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.ProjectGetNameSubject,
+			Data:    []byte("LFX Platform"),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		name, err := builder.GetProjectName(ctx, "project-123")
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if name != "LFX Platform" {
+			t.Errorf("expected name %q, got %q", "LFX Platform", name)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("project not found - empty response", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.ProjectGetNameSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.ProjectGetNameSubject,
+			Data:    []byte(""),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		name, err := builder.GetProjectName(ctx, "nonexistent-project")
+		if err == nil {
+			t.Error("expected error for project not found, got nil")
+		}
+		if name != "" {
+			t.Errorf("expected empty name, got %q", name)
+		}
+		var projectErr *ProjectNotFoundError
+		if !errors.As(err, &projectErr) {
+			t.Errorf("expected ProjectNotFoundError, got %T", err)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("request error", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.ProjectGetNameSubject, mock.Anything, mock.Anything).Return(nil, errors.New("network error"))
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		name, err := builder.GetProjectName(ctx, "project-123")
+		if err == nil {
+			t.Error("expected error, got nil")
+		}
+		if name != "" {
+			t.Errorf("expected empty name on error, got %q", name)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+}
+
+func TestMessageBuilder_GetProjectLogo(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful lookup", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.ProjectGetLogoSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.ProjectGetLogoSubject,
+			Data:    []byte("https://example.com/logo.png"),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		logo, err := builder.GetProjectLogo(ctx, "project-123")
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if logo != "https://example.com/logo.png" {
+			t.Errorf("expected logo URL %q, got %q", "https://example.com/logo.png", logo)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("project logo not found - empty response", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.ProjectGetLogoSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.ProjectGetLogoSubject,
+			Data:    []byte(""),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		logo, err := builder.GetProjectLogo(ctx, "project-without-logo")
+		if err == nil {
+			t.Error("expected error for logo not found, got nil")
+		}
+		if logo != "" {
+			t.Errorf("expected empty logo URL, got %q", logo)
+		}
+		var projectErr *ProjectNotFoundError
+		if !errors.As(err, &projectErr) {
+			t.Errorf("expected ProjectNotFoundError, got %T", err)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+}
+
+func TestMessageBuilder_GetProjectSlug(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful lookup", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.ProjectGetSlugSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.ProjectGetSlugSubject,
+			Data:    []byte("lfx-platform"),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		slug, err := builder.GetProjectSlug(ctx, "project-123")
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if slug != "lfx-platform" {
+			t.Errorf("expected slug %q, got %q", "lfx-platform", slug)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("project slug not found - empty response", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.ProjectGetSlugSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.ProjectGetSlugSubject,
+			Data:    []byte(""),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		slug, err := builder.GetProjectSlug(ctx, "project-without-slug")
+		if err == nil {
+			t.Error("expected error for slug not found, got nil")
+		}
+		if slug != "" {
+			t.Errorf("expected empty slug, got %q", slug)
+		}
+		var projectErr *ProjectNotFoundError
+		if !errors.As(err, &projectErr) {
+			t.Errorf("expected ProjectNotFoundError, got %T", err)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+}
+
+func TestMessageBuilder_EmailToUsernameLookup(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful lookup", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.AuthEmailToUsernameLookupSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.AuthEmailToUsernameLookupSubject,
+			Data:    []byte("johndoe"),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		username, err := builder.EmailToUsernameLookup(ctx, "john.doe@example.com")
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if username != "johndoe" {
+			t.Errorf("expected username %q, got %q", "johndoe", username)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("user not found - JSON error response", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.AuthEmailToUsernameLookupSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.AuthEmailToUsernameLookupSubject,
+			Data:    []byte(`{"success":false,"error":"user not found"}`),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		username, err := builder.EmailToUsernameLookup(ctx, "nonexistent@example.com")
+		if err == nil {
+			t.Error("expected error for user not found, got nil")
+		}
+		if username != "" {
+			t.Errorf("expected empty username, got %q", username)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("request error", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.AuthEmailToUsernameLookupSubject, mock.Anything, mock.Anything).Return(nil, errors.New("auth service unavailable"))
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		username, err := builder.EmailToUsernameLookup(ctx, "test@example.com")
+		if err == nil {
+			t.Error("expected error, got nil")
+		}
+		if username != "" {
+			t.Errorf("expected empty username on error, got %q", username)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+}
+
+func TestMessageBuilder_GetCommitteeMembers(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("successful lookup", func(t *testing.T) {
+		membersJSON := `[
+			{"username":"alice","email":"alice@example.com","role":{"name":"chair"},"status":"active","voting":{"status":"active"},"appointed_by":"","uid":"member-1","first_name":"Alice","last_name":"Smith","job_title":""},
+			{"username":"bob","email":"bob@example.com","role":{"name":"member"},"status":"active","voting":{"status":"active"},"appointed_by":"","uid":"member-2","first_name":"Bob","last_name":"Jones","job_title":""}
+		]`
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeListMembersSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.CommitteeListMembersSubject,
+			Data:    []byte(membersJSON),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		members, err := builder.GetCommitteeMembers(ctx, "committee-123")
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if len(members) != 2 {
+			t.Errorf("expected 2 members, got %d", len(members))
+		}
+		if len(members) > 0 && members[0].Username != "alice" {
+			t.Errorf("expected first member username %q, got %q", "alice", members[0].Username)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("committee not found - JSON error response", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeListMembersSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.CommitteeListMembersSubject,
+			Data:    []byte(`{"error":"committee not found"}`),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		members, err := builder.GetCommitteeMembers(ctx, "nonexistent-committee")
+		if err == nil {
+			t.Error("expected error for committee not found, got nil")
+		}
+		if members != nil {
+			t.Errorf("expected nil members, got %d members", len(members))
+		}
+		var committeeErr *CommitteeNotFoundError
+		if !errors.As(err, &committeeErr) {
+			t.Errorf("expected CommitteeNotFoundError, got %T", err)
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("invalid JSON response", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeListMembersSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.CommitteeListMembersSubject,
+			Data:    []byte(`{invalid json}`),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		members, err := builder.GetCommitteeMembers(ctx, "committee-123")
+		if err == nil {
+			t.Error("expected error for invalid JSON, got nil")
+		}
+		if members != nil {
+			t.Errorf("expected nil members on error, got %d members", len(members))
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("empty members list", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeListMembersSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.CommitteeListMembersSubject,
+			Data:    []byte(`[]`),
+		}, nil)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		members, err := builder.GetCommitteeMembers(ctx, "committee-empty")
+		if err != nil {
+			t.Errorf("expected no error, got: %v", err)
+		}
+		if len(members) != 0 {
+			t.Errorf("expected empty members list, got %d members", len(members))
+		}
+
+		mockConn.AssertExpectations(t)
+	})
+
+	t.Run("request error", func(t *testing.T) {
+		mockConn := new(MockNATSConn)
+		mockConn.On("Request", models.CommitteeListMembersSubject, mock.Anything, mock.Anything).Return(nil, nats.ErrTimeout)
+
+		builder := &MessageBuilder{NatsConn: mockConn}
+
+		members, err := builder.GetCommitteeMembers(ctx, "committee-123")
+		if err != nats.ErrTimeout {
+			t.Errorf("expected timeout error, got: %v", err)
+		}
+		if members != nil {
+			t.Errorf("expected nil members on error, got %d members", len(members))
+		}
+
+		mockConn.AssertExpectations(t)
+	})
 }

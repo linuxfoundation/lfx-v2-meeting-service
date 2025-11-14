@@ -198,3 +198,60 @@ func TestWorkerPool_Run_WithCancelledContext(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 }
+
+func TestWorkerPool_RunAll_WithCancelledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	pool := NewWorkerPool(2)
+
+	// Cancel context immediately
+	cancel()
+
+	functions := []func() error{
+		func() error {
+			return nil
+		},
+	}
+
+	errors := pool.RunAll(ctx, functions...)
+
+	// RunAll should still attempt to execute, but get context.Canceled error
+	require.Len(t, errors, 1)
+	assert.Equal(t, context.Canceled, errors[0])
+}
+
+func TestNewWorkerPool_InvalidWorkerCount(t *testing.T) {
+	tests := []struct {
+		name        string
+		workerCount int
+		expected    int
+	}{
+		{
+			name:        "zero workers defaults to 1",
+			workerCount: 0,
+			expected:    1,
+		},
+		{
+			name:        "negative workers defaults to 1",
+			workerCount: -1,
+			expected:    1,
+		},
+		{
+			name:        "negative large number defaults to 1",
+			workerCount: -100,
+			expected:    1,
+		},
+		{
+			name:        "positive workers returns same count",
+			workerCount: 5,
+			expected:    5,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pool := NewWorkerPool(tt.workerCount)
+			require.NotNil(t, pool)
+			assert.Equal(t, tt.expected, pool.workerCount)
+		})
+	}
+}

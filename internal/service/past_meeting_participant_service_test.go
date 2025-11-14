@@ -15,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 func setupPastMeetingParticipantServiceForTesting() (*PastMeetingParticipantService, *mocks.MockMeetingRepository, *mocks.MockPastMeetingRepository, *mocks.MockPastMeetingParticipantRepository, *mocks.MockMessageBuilder) {
@@ -22,7 +23,10 @@ func setupPastMeetingParticipantServiceForTesting() (*PastMeetingParticipantServ
 	mockPastMeetingRepo := &mocks.MockPastMeetingRepository{}
 	mockParticipantRepo := &mocks.MockPastMeetingParticipantRepository{}
 	mockBuilder := &mocks.MockMessageBuilder{}
-	config := ServiceConfig{SkipEtagValidation: false}
+	config := ServiceConfig{
+		SkipEtagValidation: false,
+		LfxURLGenerator:    constants.NewLfxURLGenerator("dev", ""),
+	}
 
 	service := NewPastMeetingParticipantService(
 		mockMeetingRepo,
@@ -55,7 +59,10 @@ func TestPastMeetingParticipantService_ServiceReady(t *testing.T) {
 				mockMeetingRepo := &mocks.MockMeetingRepository{}
 				mockParticipantRepo := &mocks.MockPastMeetingParticipantRepository{}
 				mockBuilder := &mocks.MockMessageBuilder{}
-				config := ServiceConfig{SkipEtagValidation: false}
+				config := ServiceConfig{
+					SkipEtagValidation: false,
+					LfxURLGenerator:    constants.NewLfxURLGenerator("dev", ""),
+				}
 				return NewPastMeetingParticipantService(
 					mockMeetingRepo,
 					nil, // past meeting repository is nil
@@ -72,7 +79,10 @@ func TestPastMeetingParticipantService_ServiceReady(t *testing.T) {
 				mockMeetingRepo := &mocks.MockMeetingRepository{}
 				mockPastMeetingRepo := &mocks.MockPastMeetingRepository{}
 				mockBuilder := &mocks.MockMessageBuilder{}
-				config := ServiceConfig{SkipEtagValidation: false}
+				config := ServiceConfig{
+					SkipEtagValidation: false,
+					LfxURLGenerator:    constants.NewLfxURLGenerator("dev", ""),
+				}
 				return NewPastMeetingParticipantService(
 					mockMeetingRepo,
 					mockPastMeetingRepo,
@@ -89,7 +99,10 @@ func TestPastMeetingParticipantService_ServiceReady(t *testing.T) {
 				mockMeetingRepo := &mocks.MockMeetingRepository{}
 				mockPastMeetingRepo := &mocks.MockPastMeetingRepository{}
 				mockParticipantRepo := &mocks.MockPastMeetingParticipantRepository{}
-				config := ServiceConfig{SkipEtagValidation: false}
+				config := ServiceConfig{
+					SkipEtagValidation: false,
+					LfxURLGenerator:    constants.NewLfxURLGenerator("dev", ""),
+				}
 				return NewPastMeetingParticipantService(
 					mockMeetingRepo,
 					mockPastMeetingRepo,

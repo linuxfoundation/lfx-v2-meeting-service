@@ -11,6 +11,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/mocks"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,6 +29,7 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 
 	config := ServiceConfig{
 		SkipEtagValidation: false,
+		LfxURLGenerator:    constants.NewLfxURLGenerator("dev", ""),
 	}
 
 	// Set up default expectations for RSVP repository
