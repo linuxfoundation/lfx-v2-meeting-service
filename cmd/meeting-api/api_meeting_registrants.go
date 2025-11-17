@@ -39,9 +39,11 @@ func (s *MeetingsAPI) CreateMeetingRegistrant(ctx context.Context, payload *meet
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	createRegistrantReq := service.ConvertCreateRegistrantPayloadToDomain(payload)
 
-	registrant, err := s.registrantService.CreateMeetingRegistrant(ctx, createRegistrantReq)
+	registrant, err := s.registrantService.CreateMeetingRegistrant(ctx, createRegistrantReq, sync)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -72,6 +74,8 @@ func (s *MeetingsAPI) UpdateMeetingRegistrant(ctx context.Context, payload *meet
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	etag, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {
 		return nil, handleError(err)
@@ -79,7 +83,7 @@ func (s *MeetingsAPI) UpdateMeetingRegistrant(ctx context.Context, payload *meet
 
 	updateRegistrantReq := service.ConvertUpdateRegistrantPayloadToDomain(payload)
 
-	registrant, err := s.registrantService.UpdateMeetingRegistrant(ctx, updateRegistrantReq, etag)
+	registrant, err := s.registrantService.UpdateMeetingRegistrant(ctx, updateRegistrantReq, etag, sync)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -93,12 +97,14 @@ func (s *MeetingsAPI) DeleteMeetingRegistrant(ctx context.Context, payload *meet
 		return handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	etag, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {
 		return handleError(err)
 	}
 
-	err = s.registrantService.DeleteMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID, etag)
+	err = s.registrantService.DeleteMeetingRegistrant(ctx, *payload.MeetingUID, *payload.UID, etag, sync)
 	if err != nil {
 		return handleError(err)
 	}

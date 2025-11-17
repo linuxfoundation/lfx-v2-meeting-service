@@ -150,7 +150,7 @@ func createRegistrantContext(ctx context.Context, registrantUID, meetingUID stri
 }
 
 // CreateMeetingRegistrant creates a new registrant for a meeting
-func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant) (*models.Registrant, error) {
+func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, sync bool) (*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
@@ -194,7 +194,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 		// Send indexing message for the new registrant
 		func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.messageSender.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *reqRegistrant)
+			err := s.messageSender.SendIndexMeetingRegistrant(msgCtx, models.ActionCreated, *reqRegistrant, sync)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for new registrant", logging.ErrKey, err)
 			}
@@ -220,7 +220,7 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 				Username:   reqRegistrant.Username,
 				MeetingUID: reqRegistrant.MeetingUID,
 				Host:       reqRegistrant.Host,
-			})
+			}, sync)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about new registrant", logging.ErrKey, err)
 			}
@@ -310,7 +310,7 @@ func (s *MeetingRegistrantService) validateUpdateMeetingRegistrantRequest(ctx co
 }
 
 // UpdateMeetingRegistrant updates an existing registrant
-func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, revision uint64) (*models.Registrant, error) {
+func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, reqRegistrant *models.Registrant, revision uint64, sync bool) (*models.Registrant, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting registrant service is not ready")
@@ -367,7 +367,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 		// Send indexing message for the updated registrant
 		func() error {
 			msgCtx := createRegistrantContext(ctx, reqRegistrant.UID, reqRegistrant.MeetingUID)
-			err := s.messageSender.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *reqRegistrant)
+			err := s.messageSender.SendIndexMeetingRegistrant(msgCtx, models.ActionUpdated, *reqRegistrant, sync)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending indexing message for updated registrant", logging.ErrKey, err)
 			}
@@ -384,7 +384,7 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 				Username:   reqRegistrant.Username,
 				MeetingUID: reqRegistrant.MeetingUID,
 				Host:       reqRegistrant.Host,
-			})
+			}, sync)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about updated registrant", logging.ErrKey, err)
 			}
@@ -412,6 +412,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 	meeting *models.MeetingBase,
 	revision uint64,
 	skipRevisionCheck bool,
+	sync bool,
 ) error {
 	ctx = logging.AppendCtx(ctx, slog.String("registrant_uid", registrant.UID))
 
@@ -442,7 +443,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 	functions = append(functions, func() error {
 		msgCtx := createRegistrantContext(ctx, registrant.UID, registrant.MeetingUID)
 
-		err := s.messageSender.SendDeleteIndexMeetingRegistrant(msgCtx, registrant.UID)
+		err := s.messageSender.SendDeleteIndexMeetingRegistrant(msgCtx, registrant.UID, sync)
 		if err != nil {
 			slog.ErrorContext(msgCtx, "error sending delete indexing message for registrant", logging.ErrKey, err, logging.PriorityCritical())
 		}
@@ -459,7 +460,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 				Username:   registrant.Username,
 				MeetingUID: registrant.MeetingUID,
 				Host:       registrant.Host,
-			})
+			}, sync)
 			if err != nil {
 				slog.ErrorContext(msgCtx, "error sending message about deleted registrant", logging.ErrKey, err, logging.PriorityCritical())
 			}
@@ -493,7 +494,7 @@ func (s *MeetingRegistrantService) DeleteRegistrantWithCleanup(
 }
 
 // DeleteMeetingRegistrant deletes a registrant from a meeting
-func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string, revision uint64) error {
+func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, meetingUID, registrantUID string, revision uint64, sync bool) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.NewUnavailableError("meeting registrant service is not ready")
@@ -526,7 +527,7 @@ func (s *MeetingRegistrantService) DeleteMeetingRegistrant(ctx context.Context, 
 	}
 
 	// Use the helper to delete the registrant with cleanup
-	return s.DeleteRegistrantWithCleanup(ctx, registrant, meeting, revision, false)
+	return s.DeleteRegistrantWithCleanup(ctx, registrant, meeting, revision, false, sync)
 }
 
 // SendRegistrantEmailChangeNotifications sends notification emails when a registrant's email changes

@@ -179,6 +179,7 @@ func DecodeCreateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 		var (
 			version     *string
 			bearerToken *string
+			xSync       *bool
 		)
 		versionRaw := r.URL.Query().Get("v")
 		if versionRaw != "" {
@@ -193,10 +194,20 @@ func DecodeCreateMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreateMeetingPayload(&body, version, bearerToken)
+		payload := NewCreateMeetingPayload(&body, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -678,6 +689,7 @@ func DecodeUpdateMeetingBaseRequest(mux goahttp.Muxer, decoder func(*http.Reques
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 			ifMatch     *string
 
 			params = mux.Vars(r)
@@ -697,6 +709,16 @@ func DecodeUpdateMeetingBaseRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -704,7 +726,7 @@ func DecodeUpdateMeetingBaseRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdateMeetingBasePayload(&body, uid, version, bearerToken, ifMatch)
+		payload := NewUpdateMeetingBasePayload(&body, uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -834,6 +856,7 @@ func DecodeUpdateMeetingSettingsRequest(mux goahttp.Muxer, decoder func(*http.Re
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 			ifMatch     *string
 
 			params = mux.Vars(r)
@@ -853,6 +876,16 @@ func DecodeUpdateMeetingSettingsRequest(mux goahttp.Muxer, decoder func(*http.Re
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -860,7 +893,7 @@ func DecodeUpdateMeetingSettingsRequest(mux goahttp.Muxer, decoder func(*http.Re
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdateMeetingSettingsPayload(&body, uid, version, bearerToken, ifMatch)
+		payload := NewUpdateMeetingSettingsPayload(&body, uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -958,6 +991,7 @@ func DecodeDeleteMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 			ifMatch     *string
 			err         error
 
@@ -978,6 +1012,16 @@ func DecodeDeleteMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -985,7 +1029,7 @@ func DecodeDeleteMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDeleteMeetingPayload(uid, version, bearerToken, ifMatch)
+		payload := NewDeleteMeetingPayload(uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -1084,6 +1128,7 @@ func DecodeDeleteMeetingOccurrenceRequest(mux goahttp.Muxer, decoder func(*http.
 			occurrenceID string
 			version      *string
 			bearerToken  *string
+			xSync        *bool
 			ifMatch      *string
 			err          error
 
@@ -1105,6 +1150,16 @@ func DecodeDeleteMeetingOccurrenceRequest(mux goahttp.Muxer, decoder func(*http.
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -1112,7 +1167,7 @@ func DecodeDeleteMeetingOccurrenceRequest(mux goahttp.Muxer, decoder func(*http.
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDeleteMeetingOccurrencePayload(uid, occurrenceID, version, bearerToken, ifMatch)
+		payload := NewDeleteMeetingOccurrencePayload(uid, occurrenceID, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -1359,6 +1414,7 @@ func DecodeCreateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 			meetingUID  string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 
 			params = mux.Vars(r)
 		)
@@ -1377,10 +1433,20 @@ func DecodeCreateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreateMeetingRegistrantPayload(&body, meetingUID, version, bearerToken)
+		payload := NewCreateMeetingRegistrantPayload(&body, meetingUID, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -1631,6 +1697,7 @@ func DecodeUpdateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 			ifMatch     *string
 
 			params = mux.Vars(r)
@@ -1652,6 +1719,16 @@ func DecodeUpdateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -1659,7 +1736,7 @@ func DecodeUpdateMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdateMeetingRegistrantPayload(&body, meetingUID, uid, version, bearerToken, ifMatch)
+		payload := NewUpdateMeetingRegistrantPayload(&body, meetingUID, uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -1771,6 +1848,7 @@ func DecodeDeleteMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 			ifMatch     *string
 			err         error
 
@@ -1793,6 +1871,16 @@ func DecodeDeleteMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -1800,7 +1888,7 @@ func DecodeDeleteMeetingRegistrantRequest(mux goahttp.Muxer, decoder func(*http.
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDeleteMeetingRegistrantPayload(meetingUID, uid, version, bearerToken, ifMatch)
+		payload := NewDeleteMeetingRegistrantPayload(meetingUID, uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -2060,6 +2148,7 @@ func DecodeCreateMeetingRsvpRequest(mux goahttp.Muxer, decoder func(*http.Reques
 			meetingUID  string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 
 			params = mux.Vars(r)
 		)
@@ -2078,10 +2167,20 @@ func DecodeCreateMeetingRsvpRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreateMeetingRsvpPayload(&body, meetingUID, version, bearerToken)
+		payload := NewCreateMeetingRsvpPayload(&body, meetingUID, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -2544,6 +2643,7 @@ func DecodeCreatePastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		var (
 			version     *string
 			bearerToken *string
+			xSync       *bool
 		)
 		versionRaw := r.URL.Query().Get("v")
 		if versionRaw != "" {
@@ -2558,10 +2658,20 @@ func DecodeCreatePastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreatePastMeetingPayload(&body, version, bearerToken)
+		payload := NewCreatePastMeetingPayload(&body, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -2772,6 +2882,7 @@ func DecodeDeletePastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Reques
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 			ifMatch     *string
 			err         error
 
@@ -2792,6 +2903,16 @@ func DecodeDeletePastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -2799,7 +2920,7 @@ func DecodeDeletePastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDeletePastMeetingPayload(uid, version, bearerToken, ifMatch)
+		payload := NewDeletePastMeetingPayload(uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -3033,6 +3154,7 @@ func DecodeCreatePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 
 			params = mux.Vars(r)
 		)
@@ -3051,10 +3173,20 @@ func DecodeCreatePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewCreatePastMeetingParticipantPayload(&body, uid, version, bearerToken)
+		payload := NewCreatePastMeetingParticipantPayload(&body, uid, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -3305,6 +3437,7 @@ func DecodeUpdatePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 			uid            string
 			version        *string
 			bearerToken    *string
+			xSync          *bool
 			ifMatch        *string
 
 			params = mux.Vars(r)
@@ -3326,6 +3459,16 @@ func DecodeUpdatePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -3333,7 +3476,7 @@ func DecodeUpdatePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdatePastMeetingParticipantPayload(&body, pastMeetingUID, uid, version, bearerToken, ifMatch)
+		payload := NewUpdatePastMeetingParticipantPayload(&body, pastMeetingUID, uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -3445,6 +3588,7 @@ func DecodeDeletePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 			uid            string
 			version        *string
 			bearerToken    *string
+			xSync          *bool
 			ifMatch        *string
 			err            error
 
@@ -3467,6 +3611,16 @@ func DecodeDeletePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -3474,7 +3628,7 @@ func DecodeDeletePastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDeletePastMeetingParticipantPayload(pastMeetingUID, uid, version, bearerToken, ifMatch)
+		payload := NewDeletePastMeetingParticipantPayload(pastMeetingUID, uid, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -3821,6 +3975,7 @@ func DecodeUpdatePastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 			summaryUID     string
 			version        *string
 			bearerToken    *string
+			xSync          *bool
 			ifMatch        *string
 
 			params = mux.Vars(r)
@@ -3842,6 +3997,16 @@ func DecodeUpdatePastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		ifMatchRaw := r.Header.Get("If-Match")
 		if ifMatchRaw != "" {
 			ifMatch = &ifMatchRaw
@@ -3849,7 +4014,7 @@ func DecodeUpdatePastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdatePastMeetingSummaryPayload(&body, pastMeetingUID, summaryUID, version, bearerToken, ifMatch)
+		payload := NewUpdatePastMeetingSummaryPayload(&body, pastMeetingUID, summaryUID, version, bearerToken, xSync, ifMatch)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -3985,6 +4150,7 @@ func NewMeetingServiceCreateMeetingAttachmentDecoder(mux goahttp.Muxer, meetingS
 				meetingUID  string
 				version     *string
 				bearerToken *string
+				xSync       *bool
 				err         error
 
 				params = mux.Vars(r)
@@ -4004,12 +4170,23 @@ func NewMeetingServiceCreateMeetingAttachmentDecoder(mux goahttp.Muxer, meetingS
 			if bearerTokenRaw != "" {
 				bearerToken = &bearerTokenRaw
 			}
+			{
+				xSyncRaw := r.Header.Get("X-Sync")
+				if xSyncRaw != "" {
+					v, err2 := strconv.ParseBool(xSyncRaw)
+					if err2 != nil {
+						err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+					}
+					xSync = &v
+				}
+			}
 			if err != nil {
 				return err
 			}
 			(*p).MeetingUID = meetingUID
 			(*p).Version = version
 			(*p).BearerToken = bearerToken
+			(*p).XSync = xSync
 			return nil
 		})
 	}
@@ -4354,6 +4531,7 @@ func DecodeDeleteMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.
 			uid         string
 			version     *string
 			bearerToken *string
+			xSync       *bool
 			err         error
 
 			params = mux.Vars(r)
@@ -4375,10 +4553,20 @@ func DecodeDeleteMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDeleteMeetingAttachmentPayload(meetingUID, uid, version, bearerToken)
+		payload := NewDeleteMeetingAttachmentPayload(meetingUID, uid, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -4514,6 +4702,7 @@ func NewMeetingServiceCreatePastMeetingAttachmentDecoder(mux goahttp.Muxer, meet
 				pastMeetingUID string
 				version        *string
 				bearerToken    *string
+				xSync          *bool
 				err            error
 
 				params = mux.Vars(r)
@@ -4533,12 +4722,23 @@ func NewMeetingServiceCreatePastMeetingAttachmentDecoder(mux goahttp.Muxer, meet
 			if bearerTokenRaw != "" {
 				bearerToken = &bearerTokenRaw
 			}
+			{
+				xSyncRaw := r.Header.Get("X-Sync")
+				if xSyncRaw != "" {
+					v, err2 := strconv.ParseBool(xSyncRaw)
+					if err2 != nil {
+						err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+					}
+					xSync = &v
+				}
+			}
 			if err != nil {
 				return err
 			}
 			(*p).PastMeetingUID = pastMeetingUID
 			(*p).Version = version
 			(*p).BearerToken = bearerToken
+			(*p).XSync = xSync
 			return nil
 		})
 	}
@@ -4998,6 +5198,7 @@ func DecodeDeletePastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*h
 			uid            string
 			version        *string
 			bearerToken    *string
+			xSync          *bool
 			err            error
 
 			params = mux.Vars(r)
@@ -5019,10 +5220,20 @@ func DecodeDeletePastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*h
 		if bearerTokenRaw != "" {
 			bearerToken = &bearerTokenRaw
 		}
+		{
+			xSyncRaw := r.Header.Get("X-Sync")
+			if xSyncRaw != "" {
+				v, err2 := strconv.ParseBool(xSyncRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("x_sync", xSyncRaw, "boolean"))
+				}
+				xSync = &v
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDeletePastMeetingAttachmentPayload(pastMeetingUID, uid, version, bearerToken)
+		payload := NewDeletePastMeetingAttachmentPayload(pastMeetingUID, uid, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")

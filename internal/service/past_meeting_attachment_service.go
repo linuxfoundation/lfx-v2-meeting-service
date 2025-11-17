@@ -261,7 +261,7 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 			if s.indexSender == nil {
 				return nil
 			}
-			if err := s.indexSender.SendIndexPastMeetingAttachment(ctx, models.ActionCreated, *attachment); err != nil {
+			if err := s.indexSender.SendIndexPastMeetingAttachment(ctx, models.ActionCreated, *attachment, false); err != nil {
 				slog.WarnContext(ctx, "failed to send index message for past meeting attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachment.UID)
@@ -277,7 +277,7 @@ func (s *PastMeetingAttachmentService) CreatePastMeetingAttachment(ctx context.C
 				UID:            attachment.UID,
 				PastMeetingUID: attachment.PastMeetingUID,
 			}
-			if err := s.accessSender.SendUpdateAccessPastMeetingAttachment(ctx, accessMsg); err != nil {
+			if err := s.accessSender.SendUpdateAccessPastMeetingAttachment(ctx, accessMsg, false); err != nil {
 				slog.WarnContext(ctx, "failed to send access control message for past meeting attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachment.UID)
@@ -446,7 +446,7 @@ func (s *PastMeetingAttachmentService) DeletePastMeetingAttachment(ctx context.C
 			if s.indexSender == nil {
 				return nil
 			}
-			if err := s.indexSender.SendDeleteIndexPastMeetingAttachment(ctx, attachmentUID); err != nil {
+			if err := s.indexSender.SendDeleteIndexPastMeetingAttachment(ctx, attachmentUID, false); err != nil {
 				slog.WarnContext(ctx, "failed to send delete index message for past meeting attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachmentUID)
@@ -458,7 +458,7 @@ func (s *PastMeetingAttachmentService) DeletePastMeetingAttachment(ctx context.C
 			if s.accessSender == nil {
 				return nil
 			}
-			if err := s.accessSender.SendDeleteAccessPastMeetingAttachment(ctx, attachmentUID); err != nil {
+			if err := s.accessSender.SendDeleteAccessPastMeetingAttachment(ctx, attachmentUID, false); err != nil {
 				slog.WarnContext(ctx, "failed to send delete access control message for past meeting attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachmentUID)

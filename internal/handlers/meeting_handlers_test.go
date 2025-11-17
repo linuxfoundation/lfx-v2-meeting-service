@@ -137,10 +137,10 @@ func TestMeetingHandler_HandleMessage(t *testing.T) {
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-to-delete").Return(&models.MeetingBase{UID: "meeting-to-delete"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-to-delete").Return(registrants, nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil)
-				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil)
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1", mock.Anything).Return(nil)
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
 					return msg.UID == "registrant-1"
-				})).Return(nil)
+				}), mock.Anything).Return(nil)
 				// Mock GetBase for cancellation email (called in goroutine)
 				mockMeetingRepo.On("GetBaseWithRevision", mock.Anything, "meeting-to-delete").Return(&models.MeetingBase{
 					UID:         "meeting-to-delete",
@@ -350,10 +350,10 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				mockMeetingRepo.On("GetBase", mock.Anything, "meeting-123").Return(&models.MeetingBase{UID: "meeting-123"}, nil)
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-123").Return(registrants, nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil)
-				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil)
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1", mock.Anything).Return(nil)
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
 					return msg.UID == "registrant-1"
-				})).Return(nil)
+				}), mock.Anything).Return(nil)
 				// Mock for cancellation email (called in goroutine)
 				mockMeetingRepo.On("GetBaseWithRevision", mock.Anything, "meeting-123").Return(&models.MeetingBase{
 					UID:         "meeting-123",
@@ -397,11 +397,11 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				mockRegistrantRepo.On("ListByMeeting", mock.Anything, "meeting-456").Return(registrants, nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil)
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(nil)
-				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil)
-				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-2").Return(nil)
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1", mock.Anything).Return(nil)
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-2", mock.Anything).Return(nil)
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
 					return msg.UID == "registrant-1" || msg.UID == "registrant-2"
-				})).Return(nil).Times(2)
+				}), mock.Anything).Return(nil).Times(2)
 				// Mock for cancellation emails (called in goroutines)
 				mockMeetingRepo.On("GetBaseWithRevision", mock.Anything, "meeting-456").Return(&models.MeetingBase{
 					UID:         "meeting-456",
@@ -489,10 +489,10 @@ func TestMeetingHandler_HandleMeetingDeletedMessage(t *testing.T) {
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-1", uint64(0)).Return(nil).Maybe()
 				mockRegistrantRepo.On("Delete", mock.Anything, "registrant-2", uint64(0)).Return(domain.NewInternalError("internal error"))
 				// Messaging calls may or may not happen due to concurrent execution and fail-fast behavior
-				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1").Return(nil).Maybe()
+				mockBuilder.On("SendDeleteIndexMeetingRegistrant", mock.Anything, "registrant-1", mock.Anything).Return(nil).Maybe()
 				mockBuilder.On("SendRemoveMeetingRegistrantAccess", mock.Anything, mock.MatchedBy(func(msg models.MeetingRegistrantAccessMessage) bool {
 					return msg.UID == "registrant-1"
-				})).Return(nil).Maybe()
+				}), mock.Anything).Return(nil).Maybe()
 				// Email sending might be attempted for successful deletion
 				mockMeetingRepo.On("GetBaseWithRevision", mock.Anything, "meeting-partial").Return(&models.MeetingBase{
 					UID:        "meeting-partial",

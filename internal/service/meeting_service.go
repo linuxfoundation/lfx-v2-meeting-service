@@ -399,7 +399,7 @@ func (s *MeetingService) validateProject(ctx context.Context, projectUID string)
 }
 
 // CreateMeeting creates a new meeting
-func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.MeetingFull) (*models.MeetingFull, error) {
+func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.MeetingFull, sync bool) (*models.MeetingFull, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting service is not ready")
@@ -486,10 +486,10 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexMeeting(ctx, models.ActionCreated, *reqMeeting.Base)
+			return s.messageSender.SendIndexMeeting(ctx, models.ActionCreated, *reqMeeting.Base, sync)
 		},
 		func() error {
-			return s.messageSender.SendIndexMeetingSettings(ctx, models.ActionCreated, *reqMeeting.Settings)
+			return s.messageSender.SendIndexMeetingSettings(ctx, models.ActionCreated, *reqMeeting.Settings, sync)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -504,7 +504,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 				ProjectUID: reqMeeting.Base.ProjectUID,
 				Organizers: reqMeeting.Settings.Organizers,
 				Committees: committees,
-			})
+			}, sync)
 		},
 		func() error {
 			return s.messageSender.SendMeetingCreated(ctx, models.MeetingCreatedMessage{
@@ -666,7 +666,7 @@ func (s *MeetingService) validateUpdateMeetingRequest(ctx context.Context, req *
 }
 
 // Update a meeting's base information.
-func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *models.MeetingBase, revision uint64) (*models.MeetingBase, error) {
+func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *models.MeetingBase, revision uint64, sync bool) (*models.MeetingBase, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting service is not ready")
@@ -777,7 +777,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting)
+			return s.messageSender.SendIndexMeeting(ctx, models.ActionUpdated, *reqMeeting, sync)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -792,7 +792,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 				ProjectUID: reqMeeting.ProjectUID,
 				Organizers: settingsDB.Organizers,
 				Committees: committees,
-			})
+			}, sync)
 		},
 		func() error {
 			return s.messageSender.SendMeetingUpdated(ctx, models.MeetingUpdatedMessage{
@@ -816,7 +816,7 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 }
 
 // UpdateMeetingSettings updates a meeting's settings
-func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings *models.MeetingSettings, revision uint64) (*models.MeetingSettings, error) {
+func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings *models.MeetingSettings, revision uint64, sync bool) (*models.MeetingSettings, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("meeting service is not ready")
@@ -858,7 +858,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexMeetingSettings(ctx, models.ActionUpdated, *reqSettings)
+			return s.messageSender.SendIndexMeetingSettings(ctx, models.ActionUpdated, *reqSettings, sync)
 		},
 		func() error {
 			// Get the meeting base data to send access update message
@@ -882,7 +882,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 				ProjectUID: meetingDB.ProjectUID,
 				Organizers: reqSettings.Organizers,
 				Committees: committees,
-			})
+			}, sync)
 		},
 	}
 
@@ -897,7 +897,7 @@ func (s *MeetingService) UpdateMeetingSettings(ctx context.Context, reqSettings 
 }
 
 // Delete a meeting.
-func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision uint64) error {
+func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision uint64, sync bool) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.NewUnavailableError("meeting service is not ready")
@@ -969,13 +969,13 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendDeleteIndexMeeting(ctx, uid)
+			return s.messageSender.SendDeleteIndexMeeting(ctx, uid, sync)
 		},
 		func() error {
-			return s.messageSender.SendDeleteIndexMeetingSettings(ctx, uid)
+			return s.messageSender.SendDeleteIndexMeetingSettings(ctx, uid, sync)
 		},
 		func() error {
-			return s.messageSender.SendDeleteAllAccessMeeting(ctx, uid)
+			return s.messageSender.SendDeleteAllAccessMeeting(ctx, uid, sync)
 		},
 	}
 
@@ -989,7 +989,7 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, uid string, revision
 }
 
 // CancelMeetingOccurrence cancels a specific occurrence of a meeting by setting its IsCancelled field to true
-func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID string, occurrenceID string, revision uint64) error {
+func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID string, occurrenceID string, revision uint64, sync bool) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.NewUnavailableError("meeting service is not ready")
@@ -1068,7 +1068,7 @@ func (s *MeetingService) CancelMeetingOccurrence(ctx context.Context, meetingUID
 	}
 
 	// Send update to indexer
-	err = s.messageSender.SendIndexMeeting(ctx, models.ActionUpdated, *meetingDB)
+	err = s.messageSender.SendIndexMeeting(ctx, models.ActionUpdated, *meetingDB, sync)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send NATS message for cancelled occurrence", logging.ErrKey, err)
 		return domain.NewInternalError("failed to publish occurrence cancellation event", err)

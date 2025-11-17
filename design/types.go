@@ -37,6 +37,13 @@ func VersionAttribute() {
 	})
 }
 
+// XSyncAttribute is a reusable X-Sync header attribute for synchronous operations.
+func XSyncAttribute() {
+	Attribute("x_sync", Boolean, "Determines if the operation should be synchronous (true) or asynchronous (false, default)", func() {
+		Example(true)
+	})
+}
+
 // CreatedAtAttribute is a reusable created timestamp attribute.
 func CreatedAtAttribute() {
 	// Read-only attribute

@@ -186,7 +186,7 @@ Tags serve multiple important purposes in the LFX system:
 
 3. **Multiple Access Patterns**: Both plain value and prefixed tags support different query patterns:
    - Plain values support general text search (e.g., "find meetings containing 'TSC'")
-   - Prefixed values support field-specific search (e.g., "find registrants with email 'john@example.com'")
+   - Prefixed values support field-specific search (e.g., "find registrants with email '<john@example.com>'")
 
 4. **Historical Tracking**: Past meetings and participants maintain references to original meetings via `meeting_uid` tags, enabling historical analysis and reporting
 
@@ -469,6 +469,36 @@ make docker-build
 # Run with Docker
 docker run -p 8080:8080 linuxfoundation/lfx-v2-meeting-service:latest
 ```
+
+## 🔄 HTTP Header Conventions
+
+### X-Sync Header for Synchronous Operations
+
+All POST, PUT, and DELETE endpoints support the `X-Sync` header to control whether operations are processed synchronously or asynchronously:
+
+**Header Format:**
+
+```text
+X-Sync: true   # Synchronous - waits for downstream services
+X-Sync: false  # Asynchronous (default) - returns immediately
+```
+
+**Behavior:**
+
+- **Asynchronous (default)**: The API returns immediately after persisting data. Indexing and access control messages are sent to NATS without waiting for responses.
+- **Synchronous (`X-Sync: true`)**: The API waits for confirmation from downstream services (indexer and FGA-sync) before responding. Uses NATS request/reply pattern with a 10-second timeout.
+
+**When to Use Synchronous Mode:**
+
+- Integration tests that need to verify downstream effects
+- Critical operations requiring confirmation before proceeding
+- Admin operations where consistency is more important than performance
+
+**When to Use Asynchronous Mode (default):**
+
+- Normal user operations where speed is important
+- Bulk operations where eventual consistency is acceptable
+- High-throughput scenarios
 
 ## 📡 NATS Messaging
 

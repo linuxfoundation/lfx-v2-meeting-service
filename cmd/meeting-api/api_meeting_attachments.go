@@ -22,6 +22,8 @@ func (s *MeetingsAPI) CreateMeetingAttachment(ctx context.Context, payload *meet
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	// Parse username from JWT token
 	username, err := s.authService.ParsePrincipal(ctx, *payload.BearerToken, slog.Default())
 	if err != nil {
@@ -43,7 +45,7 @@ func (s *MeetingsAPI) CreateMeetingAttachment(ctx context.Context, payload *meet
 
 	createReq := service.ConvertCreateMeetingAttachmentPayloadToDomain(payload, username, fileName, contentType)
 
-	attachment, err := s.attachmentService.CreateMeetingAttachment(ctx, createReq)
+	attachment, err := s.attachmentService.CreateMeetingAttachment(ctx, createReq, sync)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -91,7 +93,9 @@ func (s *MeetingsAPI) DeleteMeetingAttachment(ctx context.Context, payload *meet
 		return handleError(domain.NewValidationError("validation failed"))
 	}
 
-	err := s.attachmentService.DeleteAttachment(ctx, payload.MeetingUID, payload.UID)
+	sync := payload.XSync != nil && *payload.XSync
+
+	err := s.attachmentService.DeleteAttachment(ctx, payload.MeetingUID, payload.UID, sync)
 	if err != nil {
 		return handleError(err)
 	}

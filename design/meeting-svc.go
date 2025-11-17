@@ -65,6 +65,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			// Meeting fields from CreateMeetingPayload
 			ProjectUIDAttribute()
@@ -100,6 +101,7 @@ var _ = Service("Meeting Service", func() {
 			POST("/meetings")
 			Param("version:v")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)
 			Response("Conflict", StatusConflict)
@@ -229,6 +231,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			// Meeting fields from UpdateMeetingPayload
@@ -269,6 +272,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
@@ -286,6 +290,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
@@ -306,6 +311,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
@@ -323,6 +329,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
@@ -340,6 +347,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
@@ -357,6 +365,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			MeetingUIDAttribute()
@@ -380,6 +389,7 @@ var _ = Service("Meeting Service", func() {
 				Param("occurrence_id")
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
@@ -438,6 +448,7 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			Extend(CreateRegistrantPayload)
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			RegistrantMeetingUIDAttribute()
 		})
@@ -455,6 +466,7 @@ var _ = Service("Meeting Service", func() {
 			Param("version:v")
 			Param("meeting_uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
@@ -512,6 +524,7 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			Extend(UpdateRegistrantPayload)
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			RegistrantMeetingUIDAttribute()
@@ -534,6 +547,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
@@ -552,6 +566,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			RegistrantMeetingUIDAttribute()
@@ -572,6 +587,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
@@ -624,6 +640,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			RSVPMeetingUIDAttribute()
 			RSVPRegistrantIDAttribute()
@@ -646,6 +663,7 @@ var _ = Service("Meeting Service", func() {
 			Param("version:v")
 			Param("meeting_uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
@@ -757,6 +775,7 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			Extend(CreatePastMeetingPayload)
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 		})
 
@@ -771,6 +790,7 @@ var _ = Service("Meeting Service", func() {
 			POST("/past_meetings")
 			Param("version:v")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)
 			Response("Conflict", StatusConflict)
@@ -824,6 +844,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			PastMeetingUIDAttribute()
@@ -841,6 +862,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
@@ -898,6 +920,7 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			Extend(CreatePastMeetingParticipantPayload)
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			PastMeetingUIDAttribute()
 		})
@@ -915,6 +938,7 @@ var _ = Service("Meeting Service", func() {
 			Param("version:v")
 			Param("uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
@@ -972,6 +996,7 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			Extend(UpdatePastMeetingParticipantPayload)
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			PastMeetingParticipantPastMeetingUIDAttribute()
@@ -994,6 +1019,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")              // past meeting participant uid
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
@@ -1012,6 +1038,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			IfMatchAttribute()
 			VersionAttribute()
 			PastMeetingParticipantPastMeetingUIDAttribute()
@@ -1031,6 +1058,7 @@ var _ = Service("Meeting Service", func() {
 				Param("uid")              // past meeting participant uid
 			})
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusNoContent)
 			Response("NotFound", StatusNotFound)
@@ -1119,6 +1147,7 @@ var _ = Service("Meeting Service", func() {
 		Security(JWTAuth)
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			IfMatchAttribute()
 			PastMeetingSummaryPastMeetingUIDAttribute()
@@ -1138,6 +1167,7 @@ var _ = Service("Meeting Service", func() {
 			Param("past_meeting_uid")
 			Param("summary_uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Header("if_match:If-Match")
 			Response(StatusOK)
 			Response("NotFound", StatusNotFound)
@@ -1155,6 +1185,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			AttachmentMeetingUIDAttribute()
 			AttachmentTypeAttribute()
@@ -1181,6 +1212,7 @@ var _ = Service("Meeting Service", func() {
 			Param("version:v")
 			Param("meeting_uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			MultipartRequest()
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)
@@ -1269,6 +1301,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			AttachmentMeetingUIDAttribute()
 			AttachmentUIDAttribute()
@@ -1286,6 +1319,7 @@ var _ = Service("Meeting Service", func() {
 			Param("meeting_uid")
 			Param("uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Response(StatusNoContent)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)
@@ -1302,6 +1336,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			PastMeetingAttachmentPastMeetingUIDAttribute()
 			PastMeetingAttachmentTypeAttribute()
@@ -1332,6 +1367,7 @@ var _ = Service("Meeting Service", func() {
 			Param("version:v")
 			Param("past_meeting_uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			MultipartRequest()
 			Response(StatusCreated)
 			Response("BadRequest", StatusBadRequest)
@@ -1459,6 +1495,7 @@ var _ = Service("Meeting Service", func() {
 
 		Payload(func() {
 			BearerTokenAttribute()
+			XSyncAttribute()
 			VersionAttribute()
 			PastMeetingAttachmentPastMeetingUIDAttribute()
 			PastMeetingAttachmentUIDAttribute()
@@ -1476,6 +1513,7 @@ var _ = Service("Meeting Service", func() {
 			Param("past_meeting_uid")
 			Param("uid")
 			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
 			Response(StatusNoContent)
 			Response("BadRequest", StatusBadRequest)
 			Response("NotFound", StatusNotFound)

@@ -37,12 +37,14 @@ func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMe
 
 // CreateMeeting creates a new meeting.
 func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.MeetingFull, error) {
+	sync := payload.XSync != nil && *payload.XSync
+
 	createMeetingReq, err := service.ConvertCreateMeetingPayloadToDomain(payload)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	meeting, err := s.meetingService.CreateMeeting(ctx, createMeetingReq)
+	meeting, err := s.meetingService.CreateMeeting(ctx, createMeetingReq, sync)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -109,6 +111,8 @@ func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	etag, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {
 		return nil, handleError(err)
@@ -119,7 +123,7 @@ func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc
 		return nil, handleError(err)
 	}
 
-	updatedMeeting, err := s.meetingService.UpdateMeetingBase(ctx, updatedMeetingReq, etag)
+	updatedMeeting, err := s.meetingService.UpdateMeetingBase(ctx, updatedMeetingReq, etag, sync)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -132,13 +136,15 @@ func (s *MeetingsAPI) UpdateMeetingSettings(ctx context.Context, payload *meetin
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	etag, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
 	updateSettingsReq := service.ConvertUpdateSettingsPayloadToDomain(payload)
-	updatedSettings, err := s.meetingService.UpdateMeetingSettings(ctx, updateSettingsReq, etag)
+	updatedSettings, err := s.meetingService.UpdateMeetingSettings(ctx, updateSettingsReq, etag, sync)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -151,12 +157,14 @@ func (s *MeetingsAPI) DeleteMeeting(ctx context.Context, payload *meetingsvc.Del
 		return handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	etag, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {
 		return handleError(err)
 	}
 
-	err = s.meetingService.DeleteMeeting(ctx, *payload.UID, etag)
+	err = s.meetingService.DeleteMeeting(ctx, *payload.UID, etag, sync)
 	if err != nil {
 		return handleError(err)
 	}
@@ -169,12 +177,14 @@ func (s *MeetingsAPI) DeleteMeetingOccurrence(ctx context.Context, payload *meet
 		return handleError(domain.NewValidationError("payload is empty"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	etag, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {
 		return handleError(err)
 	}
 
-	err = s.meetingService.CancelMeetingOccurrence(ctx, payload.UID, payload.OccurrenceID, etag)
+	err = s.meetingService.CancelMeetingOccurrence(ctx, payload.UID, payload.OccurrenceID, etag, sync)
 	if err != nil {
 		return handleError(err)
 	}

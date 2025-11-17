@@ -92,7 +92,7 @@ func (s *PastMeetingRecordingService) CreateRecording(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording)
+			return s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionCreated, *recording, false)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -121,7 +121,7 @@ func (s *PastMeetingRecordingService) CreateRecording(
 				PastMeetingUID:     recording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
 				Participants:       participants,
-			})
+			}, false)
 		},
 	}
 
@@ -224,7 +224,7 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording)
+			return s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionUpdated, *currentRecording, false)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -253,7 +253,7 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 				PastMeetingUID:     currentRecording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
 				Participants:       participants,
-			})
+			}, false)
 		},
 	}
 
@@ -298,7 +298,7 @@ func (s *PastMeetingRecordingService) DeleteRecording(ctx context.Context, recor
 	}
 
 	// Send indexing message for deleted recording
-	err = s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionDeleted, *recording)
+	err = s.messageSender.SendIndexPastMeetingRecording(ctx, models.ActionDeleted, *recording, false)
 	if err != nil {
 		slog.ErrorContext(ctx, "error sending index message for deleted recording", logging.ErrKey, err, "recording_uid", recordingUID)
 		// Don't fail the operation if indexing fails

@@ -95,6 +95,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: Create-MeetingRequestBody
                   in: body
                   required: true
@@ -172,6 +177,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: Create-Meeting-AttachmentRequestBody
                   in: formData
                   required: true
@@ -326,6 +336,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
             responses:
                 "204":
                     description: No Content response.
@@ -462,6 +477,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: Create-Meeting-RegistrantRequestBody
                   in: body
                   required: true
@@ -620,6 +640,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -712,6 +737,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -916,6 +946,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: Create-Meeting-RsvpRequestBody
                   in: body
                   required: true
@@ -1060,6 +1095,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -1146,6 +1186,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -1282,6 +1327,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -1476,6 +1526,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -1598,6 +1653,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: Create-Past-MeetingRequestBody
                   in: body
                   required: true
@@ -1678,6 +1738,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: Create-Past-Meeting-AttachmentRequestBody
                   in: formData
                   required: true
@@ -1832,6 +1897,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
             responses:
                 "204":
                     description: No Content response.
@@ -2044,6 +2114,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -2136,6 +2211,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -2284,6 +2364,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -2427,6 +2512,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -2616,6 +2706,11 @@ paths:
                   description: JWT token issued by Heimdall
                   required: false
                   type: string
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  required: false
+                  type: boolean
                 - name: Create-Past-Meeting-ParticipantRequestBody
                   in: body
                   required: true

@@ -132,7 +132,7 @@ func (s *PastMeetingSummaryService) CreateSummary(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary)
+			return s.messageSender.SendIndexPastMeetingSummary(ctx, models.ActionCreated, *summary, false)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -161,7 +161,7 @@ func (s *PastMeetingSummaryService) CreateSummary(
 				PastMeetingUID:     summary.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
 				Participants:       participants,
-			})
+			}, false)
 		},
 	}
 
@@ -268,7 +268,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary)
+			return s.messageSender.SendIndexPastMeetingSummary(ctx, models.ActionUpdated, updatedSummary, false)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -297,7 +297,7 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 				PastMeetingUID:     updatedSummary.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
 				Participants:       participants,
-			})
+			}, false)
 		},
 	}
 

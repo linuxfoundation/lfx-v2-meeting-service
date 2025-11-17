@@ -58,7 +58,7 @@ func BuildGetMeetingsPayload(meetingServiceGetMeetingsVersion string, meetingSer
 
 // BuildCreateMeetingPayload builds the payload for the Meeting Service
 // create-meeting endpoint from CLI flags.
-func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingServiceCreateMeetingVersion string, meetingServiceCreateMeetingBearerToken string) (*meetingservice.CreateMeetingPayload, error) {
+func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingServiceCreateMeetingVersion string, meetingServiceCreateMeetingBearerToken string, meetingServiceCreateMeetingXSync string) (*meetingservice.CreateMeetingPayload, error) {
 	var err error
 	var body CreateMeetingRequestBody
 	{
@@ -138,6 +138,17 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 			bearerToken = &meetingServiceCreateMeetingBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceCreateMeetingXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceCreateMeetingXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.CreateMeetingPayload{
 		ProjectUID:           body.ProjectUID,
 		StartTime:            body.StartTime,
@@ -175,6 +186,7 @@ func BuildCreateMeetingPayload(meetingServiceCreateMeetingBody string, meetingSe
 	}
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
@@ -305,7 +317,7 @@ func BuildGetMeetingJoinURLPayload(meetingServiceGetMeetingJoinURLUID string, me
 
 // BuildUpdateMeetingBasePayload builds the payload for the Meeting Service
 // update-meeting-base endpoint from CLI flags.
-func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, meetingServiceUpdateMeetingBaseUID string, meetingServiceUpdateMeetingBaseVersion string, meetingServiceUpdateMeetingBaseBearerToken string, meetingServiceUpdateMeetingBaseIfMatch string) (*meetingservice.UpdateMeetingBasePayload, error) {
+func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, meetingServiceUpdateMeetingBaseUID string, meetingServiceUpdateMeetingBaseVersion string, meetingServiceUpdateMeetingBaseBearerToken string, meetingServiceUpdateMeetingBaseXSync string, meetingServiceUpdateMeetingBaseIfMatch string) (*meetingservice.UpdateMeetingBasePayload, error) {
 	var err error
 	var body UpdateMeetingBaseRequestBody
 	{
@@ -393,6 +405,17 @@ func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, m
 			bearerToken = &meetingServiceUpdateMeetingBaseBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceUpdateMeetingBaseXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceUpdateMeetingBaseXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceUpdateMeetingBaseIfMatch != "" {
@@ -431,6 +454,7 @@ func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, m
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -438,7 +462,7 @@ func BuildUpdateMeetingBasePayload(meetingServiceUpdateMeetingBaseBody string, m
 
 // BuildUpdateMeetingSettingsPayload builds the payload for the Meeting Service
 // update-meeting-settings endpoint from CLI flags.
-func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody string, meetingServiceUpdateMeetingSettingsUID string, meetingServiceUpdateMeetingSettingsVersion string, meetingServiceUpdateMeetingSettingsBearerToken string, meetingServiceUpdateMeetingSettingsIfMatch string) (*meetingservice.UpdateMeetingSettingsPayload, error) {
+func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody string, meetingServiceUpdateMeetingSettingsUID string, meetingServiceUpdateMeetingSettingsVersion string, meetingServiceUpdateMeetingSettingsBearerToken string, meetingServiceUpdateMeetingSettingsXSync string, meetingServiceUpdateMeetingSettingsIfMatch string) (*meetingservice.UpdateMeetingSettingsPayload, error) {
 	var err error
 	var body UpdateMeetingSettingsRequestBody
 	{
@@ -473,6 +497,17 @@ func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody s
 			bearerToken = &meetingServiceUpdateMeetingSettingsBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceUpdateMeetingSettingsXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceUpdateMeetingSettingsXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceUpdateMeetingSettingsIfMatch != "" {
@@ -489,6 +524,7 @@ func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody s
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -496,7 +532,7 @@ func BuildUpdateMeetingSettingsPayload(meetingServiceUpdateMeetingSettingsBody s
 
 // BuildDeleteMeetingPayload builds the payload for the Meeting Service
 // delete-meeting endpoint from CLI flags.
-func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingServiceDeleteMeetingVersion string, meetingServiceDeleteMeetingBearerToken string, meetingServiceDeleteMeetingIfMatch string) (*meetingservice.DeleteMeetingPayload, error) {
+func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingServiceDeleteMeetingVersion string, meetingServiceDeleteMeetingBearerToken string, meetingServiceDeleteMeetingXSync string, meetingServiceDeleteMeetingIfMatch string) (*meetingservice.DeleteMeetingPayload, error) {
 	var err error
 	var uid string
 	{
@@ -524,6 +560,17 @@ func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingSer
 			bearerToken = &meetingServiceDeleteMeetingBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceDeleteMeetingXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceDeleteMeetingXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceDeleteMeetingIfMatch != "" {
@@ -534,6 +581,7 @@ func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingSer
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -541,7 +589,7 @@ func BuildDeleteMeetingPayload(meetingServiceDeleteMeetingUID string, meetingSer
 
 // BuildDeleteMeetingOccurrencePayload builds the payload for the Meeting
 // Service delete-meeting-occurrence endpoint from CLI flags.
-func BuildDeleteMeetingOccurrencePayload(meetingServiceDeleteMeetingOccurrenceUID string, meetingServiceDeleteMeetingOccurrenceOccurrenceID string, meetingServiceDeleteMeetingOccurrenceVersion string, meetingServiceDeleteMeetingOccurrenceBearerToken string, meetingServiceDeleteMeetingOccurrenceIfMatch string) (*meetingservice.DeleteMeetingOccurrencePayload, error) {
+func BuildDeleteMeetingOccurrencePayload(meetingServiceDeleteMeetingOccurrenceUID string, meetingServiceDeleteMeetingOccurrenceOccurrenceID string, meetingServiceDeleteMeetingOccurrenceVersion string, meetingServiceDeleteMeetingOccurrenceBearerToken string, meetingServiceDeleteMeetingOccurrenceXSync string, meetingServiceDeleteMeetingOccurrenceIfMatch string) (*meetingservice.DeleteMeetingOccurrencePayload, error) {
 	var err error
 	var uid string
 	{
@@ -573,6 +621,17 @@ func BuildDeleteMeetingOccurrencePayload(meetingServiceDeleteMeetingOccurrenceUI
 			bearerToken = &meetingServiceDeleteMeetingOccurrenceBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceDeleteMeetingOccurrenceXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceDeleteMeetingOccurrenceXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceDeleteMeetingOccurrenceIfMatch != "" {
@@ -584,6 +643,7 @@ func BuildDeleteMeetingOccurrencePayload(meetingServiceDeleteMeetingOccurrenceUI
 	v.OccurrenceID = occurrenceID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -629,7 +689,7 @@ func BuildGetMeetingRegistrantsPayload(meetingServiceGetMeetingRegistrantsUID st
 
 // BuildCreateMeetingRegistrantPayload builds the payload for the Meeting
 // Service create-meeting-registrant endpoint from CLI flags.
-func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBody string, meetingServiceCreateMeetingRegistrantMeetingUID string, meetingServiceCreateMeetingRegistrantVersion string, meetingServiceCreateMeetingRegistrantBearerToken string) (*meetingservice.CreateMeetingRegistrantPayload, error) {
+func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBody string, meetingServiceCreateMeetingRegistrantMeetingUID string, meetingServiceCreateMeetingRegistrantVersion string, meetingServiceCreateMeetingRegistrantBearerToken string, meetingServiceCreateMeetingRegistrantXSync string) (*meetingservice.CreateMeetingRegistrantPayload, error) {
 	var err error
 	var body CreateMeetingRegistrantRequestBody
 	{
@@ -694,6 +754,17 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 			bearerToken = &meetingServiceCreateMeetingRegistrantBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceCreateMeetingRegistrantXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceCreateMeetingRegistrantXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.CreateMeetingRegistrantPayload{
 		Email:        body.Email,
 		FirstName:    body.FirstName,
@@ -708,6 +779,7 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 	v.MeetingUID = meetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
@@ -761,7 +833,7 @@ func BuildGetMeetingRegistrantPayload(meetingServiceGetMeetingRegistrantMeetingU
 
 // BuildUpdateMeetingRegistrantPayload builds the payload for the Meeting
 // Service update-meeting-registrant endpoint from CLI flags.
-func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBody string, meetingServiceUpdateMeetingRegistrantMeetingUID string, meetingServiceUpdateMeetingRegistrantUID string, meetingServiceUpdateMeetingRegistrantVersion string, meetingServiceUpdateMeetingRegistrantBearerToken string, meetingServiceUpdateMeetingRegistrantIfMatch string) (*meetingservice.UpdateMeetingRegistrantPayload, error) {
+func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBody string, meetingServiceUpdateMeetingRegistrantMeetingUID string, meetingServiceUpdateMeetingRegistrantUID string, meetingServiceUpdateMeetingRegistrantVersion string, meetingServiceUpdateMeetingRegistrantBearerToken string, meetingServiceUpdateMeetingRegistrantXSync string, meetingServiceUpdateMeetingRegistrantIfMatch string) (*meetingservice.UpdateMeetingRegistrantPayload, error) {
 	var err error
 	var body UpdateMeetingRegistrantRequestBody
 	{
@@ -834,6 +906,17 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 			bearerToken = &meetingServiceUpdateMeetingRegistrantBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceUpdateMeetingRegistrantXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceUpdateMeetingRegistrantXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceUpdateMeetingRegistrantIfMatch != "" {
@@ -855,6 +938,7 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -862,7 +946,7 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 
 // BuildDeleteMeetingRegistrantPayload builds the payload for the Meeting
 // Service delete-meeting-registrant endpoint from CLI flags.
-func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMeetingUID string, meetingServiceDeleteMeetingRegistrantUID string, meetingServiceDeleteMeetingRegistrantVersion string, meetingServiceDeleteMeetingRegistrantBearerToken string, meetingServiceDeleteMeetingRegistrantIfMatch string) (*meetingservice.DeleteMeetingRegistrantPayload, error) {
+func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMeetingUID string, meetingServiceDeleteMeetingRegistrantUID string, meetingServiceDeleteMeetingRegistrantVersion string, meetingServiceDeleteMeetingRegistrantBearerToken string, meetingServiceDeleteMeetingRegistrantXSync string, meetingServiceDeleteMeetingRegistrantIfMatch string) (*meetingservice.DeleteMeetingRegistrantPayload, error) {
 	var err error
 	var meetingUID string
 	{
@@ -898,6 +982,17 @@ func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMe
 			bearerToken = &meetingServiceDeleteMeetingRegistrantBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceDeleteMeetingRegistrantXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceDeleteMeetingRegistrantXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceDeleteMeetingRegistrantIfMatch != "" {
@@ -909,6 +1004,7 @@ func BuildDeleteMeetingRegistrantPayload(meetingServiceDeleteMeetingRegistrantMe
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -963,7 +1059,7 @@ func BuildResendMeetingRegistrantInvitationPayload(meetingServiceResendMeetingRe
 
 // BuildCreateMeetingRsvpPayload builds the payload for the Meeting Service
 // create-meeting-rsvp endpoint from CLI flags.
-func BuildCreateMeetingRsvpPayload(meetingServiceCreateMeetingRsvpBody string, meetingServiceCreateMeetingRsvpMeetingUID string, meetingServiceCreateMeetingRsvpVersion string, meetingServiceCreateMeetingRsvpBearerToken string) (*meetingservice.CreateMeetingRsvpPayload, error) {
+func BuildCreateMeetingRsvpPayload(meetingServiceCreateMeetingRsvpBody string, meetingServiceCreateMeetingRsvpMeetingUID string, meetingServiceCreateMeetingRsvpVersion string, meetingServiceCreateMeetingRsvpBearerToken string, meetingServiceCreateMeetingRsvpXSync string) (*meetingservice.CreateMeetingRsvpPayload, error) {
 	var err error
 	var body CreateMeetingRsvpRequestBody
 	{
@@ -1013,6 +1109,17 @@ func BuildCreateMeetingRsvpPayload(meetingServiceCreateMeetingRsvpBody string, m
 			bearerToken = &meetingServiceCreateMeetingRsvpBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceCreateMeetingRsvpXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceCreateMeetingRsvpXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.CreateMeetingRsvpPayload{
 		RegistrantID: body.RegistrantID,
 		Username:     body.Username,
@@ -1023,6 +1130,7 @@ func BuildCreateMeetingRsvpPayload(meetingServiceCreateMeetingRsvpBody string, m
 	v.MeetingUID = meetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
@@ -1135,7 +1243,7 @@ func BuildGetPastMeetingsPayload(meetingServiceGetPastMeetingsVersion string, me
 
 // BuildCreatePastMeetingPayload builds the payload for the Meeting Service
 // create-past-meeting endpoint from CLI flags.
-func BuildCreatePastMeetingPayload(meetingServiceCreatePastMeetingBody string, meetingServiceCreatePastMeetingVersion string, meetingServiceCreatePastMeetingBearerToken string) (*meetingservice.CreatePastMeetingPayload, error) {
+func BuildCreatePastMeetingPayload(meetingServiceCreatePastMeetingBody string, meetingServiceCreatePastMeetingVersion string, meetingServiceCreatePastMeetingBearerToken string, meetingServiceCreatePastMeetingXSync string) (*meetingservice.CreatePastMeetingPayload, error) {
 	var err error
 	var body CreatePastMeetingRequestBody
 	{
@@ -1230,6 +1338,17 @@ func BuildCreatePastMeetingPayload(meetingServiceCreatePastMeetingBody string, m
 			bearerToken = &meetingServiceCreatePastMeetingBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceCreatePastMeetingXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceCreatePastMeetingXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.CreatePastMeetingPayload{
 		MeetingUID:           body.MeetingUID,
 		OccurrenceID:         body.OccurrenceID,
@@ -1272,6 +1391,7 @@ func BuildCreatePastMeetingPayload(meetingServiceCreatePastMeetingBody string, m
 	}
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
@@ -1316,7 +1436,7 @@ func BuildGetPastMeetingPayload(meetingServiceGetPastMeetingUID string, meetingS
 
 // BuildDeletePastMeetingPayload builds the payload for the Meeting Service
 // delete-past-meeting endpoint from CLI flags.
-func BuildDeletePastMeetingPayload(meetingServiceDeletePastMeetingUID string, meetingServiceDeletePastMeetingVersion string, meetingServiceDeletePastMeetingBearerToken string, meetingServiceDeletePastMeetingIfMatch string) (*meetingservice.DeletePastMeetingPayload, error) {
+func BuildDeletePastMeetingPayload(meetingServiceDeletePastMeetingUID string, meetingServiceDeletePastMeetingVersion string, meetingServiceDeletePastMeetingBearerToken string, meetingServiceDeletePastMeetingXSync string, meetingServiceDeletePastMeetingIfMatch string) (*meetingservice.DeletePastMeetingPayload, error) {
 	var err error
 	var uid string
 	{
@@ -1344,6 +1464,17 @@ func BuildDeletePastMeetingPayload(meetingServiceDeletePastMeetingUID string, me
 			bearerToken = &meetingServiceDeletePastMeetingBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceDeletePastMeetingXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceDeletePastMeetingXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceDeletePastMeetingIfMatch != "" {
@@ -1354,6 +1485,7 @@ func BuildDeletePastMeetingPayload(meetingServiceDeletePastMeetingUID string, me
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -1399,7 +1531,7 @@ func BuildGetPastMeetingParticipantsPayload(meetingServiceGetPastMeetingParticip
 
 // BuildCreatePastMeetingParticipantPayload builds the payload for the Meeting
 // Service create-past-meeting-participant endpoint from CLI flags.
-func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingParticipantBody string, meetingServiceCreatePastMeetingParticipantUID string, meetingServiceCreatePastMeetingParticipantVersion string, meetingServiceCreatePastMeetingParticipantBearerToken string) (*meetingservice.CreatePastMeetingParticipantPayload, error) {
+func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingParticipantBody string, meetingServiceCreatePastMeetingParticipantUID string, meetingServiceCreatePastMeetingParticipantVersion string, meetingServiceCreatePastMeetingParticipantBearerToken string, meetingServiceCreatePastMeetingParticipantXSync string) (*meetingservice.CreatePastMeetingParticipantPayload, error) {
 	var err error
 	var body CreatePastMeetingParticipantRequestBody
 	{
@@ -1462,6 +1594,17 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 			bearerToken = &meetingServiceCreatePastMeetingParticipantBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceCreatePastMeetingParticipantXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceCreatePastMeetingParticipantXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.CreatePastMeetingParticipantPayload{
 		PastMeetingUID: body.PastMeetingUID,
 		Email:          body.Email,
@@ -1478,6 +1621,7 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
@@ -1531,7 +1675,7 @@ func BuildGetPastMeetingParticipantPayload(meetingServiceGetPastMeetingParticipa
 
 // BuildUpdatePastMeetingParticipantPayload builds the payload for the Meeting
 // Service update-past-meeting-participant endpoint from CLI flags.
-func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingParticipantBody string, meetingServiceUpdatePastMeetingParticipantPastMeetingUID string, meetingServiceUpdatePastMeetingParticipantUID string, meetingServiceUpdatePastMeetingParticipantVersion string, meetingServiceUpdatePastMeetingParticipantBearerToken string, meetingServiceUpdatePastMeetingParticipantIfMatch string) (*meetingservice.UpdatePastMeetingParticipantPayload, error) {
+func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingParticipantBody string, meetingServiceUpdatePastMeetingParticipantPastMeetingUID string, meetingServiceUpdatePastMeetingParticipantUID string, meetingServiceUpdatePastMeetingParticipantVersion string, meetingServiceUpdatePastMeetingParticipantBearerToken string, meetingServiceUpdatePastMeetingParticipantXSync string, meetingServiceUpdatePastMeetingParticipantIfMatch string) (*meetingservice.UpdatePastMeetingParticipantPayload, error) {
 	var err error
 	var body UpdatePastMeetingParticipantRequestBody
 	{
@@ -1601,6 +1745,17 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 			bearerToken = &meetingServiceUpdatePastMeetingParticipantBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceUpdatePastMeetingParticipantXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceUpdatePastMeetingParticipantXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceUpdatePastMeetingParticipantIfMatch != "" {
@@ -1623,6 +1778,7 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -1630,7 +1786,7 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 
 // BuildDeletePastMeetingParticipantPayload builds the payload for the Meeting
 // Service delete-past-meeting-participant endpoint from CLI flags.
-func BuildDeletePastMeetingParticipantPayload(meetingServiceDeletePastMeetingParticipantPastMeetingUID string, meetingServiceDeletePastMeetingParticipantUID string, meetingServiceDeletePastMeetingParticipantVersion string, meetingServiceDeletePastMeetingParticipantBearerToken string, meetingServiceDeletePastMeetingParticipantIfMatch string) (*meetingservice.DeletePastMeetingParticipantPayload, error) {
+func BuildDeletePastMeetingParticipantPayload(meetingServiceDeletePastMeetingParticipantPastMeetingUID string, meetingServiceDeletePastMeetingParticipantUID string, meetingServiceDeletePastMeetingParticipantVersion string, meetingServiceDeletePastMeetingParticipantBearerToken string, meetingServiceDeletePastMeetingParticipantXSync string, meetingServiceDeletePastMeetingParticipantIfMatch string) (*meetingservice.DeletePastMeetingParticipantPayload, error) {
 	var err error
 	var pastMeetingUID string
 	{
@@ -1666,6 +1822,17 @@ func BuildDeletePastMeetingParticipantPayload(meetingServiceDeletePastMeetingPar
 			bearerToken = &meetingServiceDeletePastMeetingParticipantBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceDeletePastMeetingParticipantXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceDeletePastMeetingParticipantXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceDeletePastMeetingParticipantIfMatch != "" {
@@ -1677,6 +1844,7 @@ func BuildDeletePastMeetingParticipantPayload(meetingServiceDeletePastMeetingPar
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -1769,7 +1937,7 @@ func BuildGetPastMeetingSummaryPayload(meetingServiceGetPastMeetingSummaryPastMe
 
 // BuildUpdatePastMeetingSummaryPayload builds the payload for the Meeting
 // Service update-past-meeting-summary endpoint from CLI flags.
-func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummaryBody string, meetingServiceUpdatePastMeetingSummaryPastMeetingUID string, meetingServiceUpdatePastMeetingSummarySummaryUID string, meetingServiceUpdatePastMeetingSummaryVersion string, meetingServiceUpdatePastMeetingSummaryBearerToken string, meetingServiceUpdatePastMeetingSummaryIfMatch string) (*meetingservice.UpdatePastMeetingSummaryPayload, error) {
+func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummaryBody string, meetingServiceUpdatePastMeetingSummaryPastMeetingUID string, meetingServiceUpdatePastMeetingSummarySummaryUID string, meetingServiceUpdatePastMeetingSummaryVersion string, meetingServiceUpdatePastMeetingSummaryBearerToken string, meetingServiceUpdatePastMeetingSummaryXSync string, meetingServiceUpdatePastMeetingSummaryIfMatch string) (*meetingservice.UpdatePastMeetingSummaryPayload, error) {
 	var err error
 	var body UpdatePastMeetingSummaryRequestBody
 	{
@@ -1812,6 +1980,17 @@ func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummary
 			bearerToken = &meetingServiceUpdatePastMeetingSummaryBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceUpdatePastMeetingSummaryXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceUpdatePastMeetingSummaryXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	var ifMatch *string
 	{
 		if meetingServiceUpdatePastMeetingSummaryIfMatch != "" {
@@ -1826,6 +2005,7 @@ func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummary
 	v.SummaryUID = summaryUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v, nil
@@ -1833,7 +2013,7 @@ func BuildUpdatePastMeetingSummaryPayload(meetingServiceUpdatePastMeetingSummary
 
 // BuildCreateMeetingAttachmentPayload builds the payload for the Meeting
 // Service create-meeting-attachment endpoint from CLI flags.
-func BuildCreateMeetingAttachmentPayload(meetingServiceCreateMeetingAttachmentBody string, meetingServiceCreateMeetingAttachmentMeetingUID string, meetingServiceCreateMeetingAttachmentVersion string, meetingServiceCreateMeetingAttachmentBearerToken string) (*meetingservice.CreateMeetingAttachmentPayload, error) {
+func BuildCreateMeetingAttachmentPayload(meetingServiceCreateMeetingAttachmentBody string, meetingServiceCreateMeetingAttachmentMeetingUID string, meetingServiceCreateMeetingAttachmentVersion string, meetingServiceCreateMeetingAttachmentBearerToken string, meetingServiceCreateMeetingAttachmentXSync string) (*meetingservice.CreateMeetingAttachmentPayload, error) {
 	var err error
 	var body CreateMeetingAttachmentRequestBody
 	{
@@ -1893,6 +2073,17 @@ func BuildCreateMeetingAttachmentPayload(meetingServiceCreateMeetingAttachmentBo
 			bearerToken = &meetingServiceCreateMeetingAttachmentBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceCreateMeetingAttachmentXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceCreateMeetingAttachmentXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.CreateMeetingAttachmentPayload{
 		Type:            body.Type,
 		Link:            body.Link,
@@ -1905,6 +2096,7 @@ func BuildCreateMeetingAttachmentPayload(meetingServiceCreateMeetingAttachmentBo
 	v.MeetingUID = meetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
@@ -2005,7 +2197,7 @@ func BuildGetMeetingAttachmentMetadataPayload(meetingServiceGetMeetingAttachment
 
 // BuildDeleteMeetingAttachmentPayload builds the payload for the Meeting
 // Service delete-meeting-attachment endpoint from CLI flags.
-func BuildDeleteMeetingAttachmentPayload(meetingServiceDeleteMeetingAttachmentMeetingUID string, meetingServiceDeleteMeetingAttachmentUID string, meetingServiceDeleteMeetingAttachmentVersion string, meetingServiceDeleteMeetingAttachmentBearerToken string) (*meetingservice.DeleteMeetingAttachmentPayload, error) {
+func BuildDeleteMeetingAttachmentPayload(meetingServiceDeleteMeetingAttachmentMeetingUID string, meetingServiceDeleteMeetingAttachmentUID string, meetingServiceDeleteMeetingAttachmentVersion string, meetingServiceDeleteMeetingAttachmentBearerToken string, meetingServiceDeleteMeetingAttachmentXSync string) (*meetingservice.DeleteMeetingAttachmentPayload, error) {
 	var err error
 	var meetingUID string
 	{
@@ -2041,18 +2233,30 @@ func BuildDeleteMeetingAttachmentPayload(meetingServiceDeleteMeetingAttachmentMe
 			bearerToken = &meetingServiceDeleteMeetingAttachmentBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceDeleteMeetingAttachmentXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceDeleteMeetingAttachmentXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.DeleteMeetingAttachmentPayload{}
 	v.MeetingUID = meetingUID
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
 
 // BuildCreatePastMeetingAttachmentPayload builds the payload for the Meeting
 // Service create-past-meeting-attachment endpoint from CLI flags.
-func BuildCreatePastMeetingAttachmentPayload(meetingServiceCreatePastMeetingAttachmentBody string, meetingServiceCreatePastMeetingAttachmentPastMeetingUID string, meetingServiceCreatePastMeetingAttachmentVersion string, meetingServiceCreatePastMeetingAttachmentBearerToken string) (*meetingservice.CreatePastMeetingAttachmentPayload, error) {
+func BuildCreatePastMeetingAttachmentPayload(meetingServiceCreatePastMeetingAttachmentBody string, meetingServiceCreatePastMeetingAttachmentPastMeetingUID string, meetingServiceCreatePastMeetingAttachmentVersion string, meetingServiceCreatePastMeetingAttachmentBearerToken string, meetingServiceCreatePastMeetingAttachmentXSync string) (*meetingservice.CreatePastMeetingAttachmentPayload, error) {
 	var err error
 	var body CreatePastMeetingAttachmentRequestBody
 	{
@@ -2115,6 +2319,17 @@ func BuildCreatePastMeetingAttachmentPayload(meetingServiceCreatePastMeetingAtta
 			bearerToken = &meetingServiceCreatePastMeetingAttachmentBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceCreatePastMeetingAttachmentXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceCreatePastMeetingAttachmentXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.CreatePastMeetingAttachmentPayload{
 		Type:            body.Type,
 		Link:            body.Link,
@@ -2128,6 +2343,7 @@ func BuildCreatePastMeetingAttachmentPayload(meetingServiceCreatePastMeetingAtta
 	v.PastMeetingUID = pastMeetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }
@@ -2266,7 +2482,7 @@ func BuildGetPastMeetingAttachmentMetadataPayload(meetingServiceGetPastMeetingAt
 
 // BuildDeletePastMeetingAttachmentPayload builds the payload for the Meeting
 // Service delete-past-meeting-attachment endpoint from CLI flags.
-func BuildDeletePastMeetingAttachmentPayload(meetingServiceDeletePastMeetingAttachmentPastMeetingUID string, meetingServiceDeletePastMeetingAttachmentUID string, meetingServiceDeletePastMeetingAttachmentVersion string, meetingServiceDeletePastMeetingAttachmentBearerToken string) (*meetingservice.DeletePastMeetingAttachmentPayload, error) {
+func BuildDeletePastMeetingAttachmentPayload(meetingServiceDeletePastMeetingAttachmentPastMeetingUID string, meetingServiceDeletePastMeetingAttachmentUID string, meetingServiceDeletePastMeetingAttachmentVersion string, meetingServiceDeletePastMeetingAttachmentBearerToken string, meetingServiceDeletePastMeetingAttachmentXSync string) (*meetingservice.DeletePastMeetingAttachmentPayload, error) {
 	var err error
 	var pastMeetingUID string
 	{
@@ -2302,11 +2518,23 @@ func BuildDeletePastMeetingAttachmentPayload(meetingServiceDeletePastMeetingAtta
 			bearerToken = &meetingServiceDeletePastMeetingAttachmentBearerToken
 		}
 	}
+	var xSync *bool
+	{
+		if meetingServiceDeletePastMeetingAttachmentXSync != "" {
+			var val bool
+			val, err = strconv.ParseBool(meetingServiceDeletePastMeetingAttachmentXSync)
+			xSync = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
+			}
+		}
+	}
 	v := &meetingservice.DeletePastMeetingAttachmentPayload{}
 	v.PastMeetingUID = pastMeetingUID
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v, nil
 }

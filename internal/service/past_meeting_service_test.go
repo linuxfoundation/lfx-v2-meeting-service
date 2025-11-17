@@ -199,8 +199,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 				mockMeetingAttachmentRepo.On("ListByMeeting", mock.Anything, "meeting-123").Return([]*models.MeetingAttachment{}, nil)
 
 				// Send indexer and access messages
-				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
-				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			},
 			wantErr: false,
 			validate: func(t *testing.T, pm *models.PastMeeting) {
@@ -309,8 +309,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 
 				// But creation continues
 				mockPastMeetingRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
-				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
-				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			},
 			wantErr: false,
 		},
@@ -344,8 +344,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 						pm.Recurrence.RepeatInterval == 1 &&
 						pm.Recurrence.WeeklyDays == "1,3"
 				})).Return(nil)
-				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
-				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			},
 			wantErr: false,
 			validate: func(t *testing.T, result *models.PastMeeting) {
@@ -383,10 +383,10 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 						pm.Committees[0].UID == "committee-1" &&
 						len(pm.Committees[0].AllowedVotingStatuses) == 2
 				})).Return(nil)
-				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(nil)
 				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.MatchedBy(func(msg models.PastMeetingAccessMessage) bool {
 					return len(msg.Committees) == 2
-				})).Return(nil)
+				}), mock.Anything).Return(nil)
 			},
 			wantErr: false,
 			validate: func(t *testing.T, result *models.PastMeeting) {
@@ -429,8 +429,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 						pm.Sessions[0].UID == "session-1" &&
 						pm.Sessions[1].UID == "session-2"
 				})).Return(nil)
-				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
-				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			},
 			wantErr: false,
 			validate: func(t *testing.T, result *models.PastMeeting) {
@@ -456,8 +456,8 @@ func TestPastMeetingService_CreatePastMeeting(t *testing.T) {
 
 				// Messaging fails but operation continues
 				// Due to errgroup behavior, either one or both calls might be made depending on timing
-				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(errors.New("messaging error")).Maybe()
-				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything).Return(errors.New("messaging error")).Maybe()
+				mockBuilder.On("SendIndexPastMeeting", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(errors.New("messaging error")).Maybe()
+				mockBuilder.On("SendUpdateAccessPastMeeting", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("messaging error")).Maybe()
 			},
 			wantErr: false,
 		},
@@ -708,8 +708,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(nil)
 
 				// Messages sent after successful deletion
-				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123").Return(nil)
-				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123").Return(nil)
+				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123", mock.Anything).Return(nil)
+				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123", mock.Anything).Return(nil)
 			},
 			wantErr: false,
 		},
@@ -766,8 +766,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 				mockRepo.On("Exists", mock.Anything, "past-meeting-123").Return(true, nil)
 				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(nil)
 
-				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123").Return(nil)
-				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123").Return(nil)
+				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123", mock.Anything).Return(nil)
+				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123", mock.Anything).Return(nil)
 			},
 			skipEtag: true,
 			wantErr:  false,
@@ -792,8 +792,8 @@ func TestPastMeetingService_DeletePastMeeting(t *testing.T) {
 				mockRepo.On("Delete", mock.Anything, "past-meeting-123", uint64(42)).Return(nil)
 
 				// Messaging fails but operation succeeds
-				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123").Return(errors.New("messaging error")).Maybe()
-				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123").Return(errors.New("messaging error")).Maybe()
+				mockBuilder.On("SendDeleteIndexPastMeeting", mock.Anything, "past-meeting-123", mock.Anything).Return(errors.New("messaging error")).Maybe()
+				mockBuilder.On("SendDeleteAllAccessPastMeeting", mock.Anything, "past-meeting-123", mock.Anything).Return(errors.New("messaging error")).Maybe()
 			},
 			wantErr: false,
 		},

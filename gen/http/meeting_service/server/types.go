@@ -5578,7 +5578,7 @@ func NewGetMeetingsPayload(version *string, includeCancelledOccurrences bool, be
 
 // NewCreateMeetingPayload builds a Meeting Service service create-meeting
 // endpoint payload.
-func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, bearerToken *string) *meetingservice.CreateMeetingPayload {
+func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateMeetingPayload {
 	v := &meetingservice.CreateMeetingPayload{
 		ProjectUID:           *body.ProjectUID,
 		StartTime:            *body.StartTime,
@@ -5616,6 +5616,7 @@ func NewCreateMeetingPayload(body *CreateMeetingRequestBody, version *string, be
 	}
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
@@ -5656,7 +5657,7 @@ func NewGetMeetingJoinURLPayload(uid string, version *string, bearerToken *strin
 
 // NewUpdateMeetingBasePayload builds a Meeting Service service
 // update-meeting-base endpoint payload.
-func NewUpdateMeetingBasePayload(body *UpdateMeetingBaseRequestBody, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdateMeetingBasePayload {
+func NewUpdateMeetingBasePayload(body *UpdateMeetingBaseRequestBody, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.UpdateMeetingBasePayload {
 	v := &meetingservice.UpdateMeetingBasePayload{
 		ProjectUID:           *body.ProjectUID,
 		StartTime:            *body.StartTime,
@@ -5689,6 +5690,7 @@ func NewUpdateMeetingBasePayload(body *UpdateMeetingBaseRequestBody, uid string,
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -5696,7 +5698,7 @@ func NewUpdateMeetingBasePayload(body *UpdateMeetingBaseRequestBody, uid string,
 
 // NewUpdateMeetingSettingsPayload builds a Meeting Service service
 // update-meeting-settings endpoint payload.
-func NewUpdateMeetingSettingsPayload(body *UpdateMeetingSettingsRequestBody, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdateMeetingSettingsPayload {
+func NewUpdateMeetingSettingsPayload(body *UpdateMeetingSettingsRequestBody, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.UpdateMeetingSettingsPayload {
 	v := &meetingservice.UpdateMeetingSettingsPayload{}
 	if body.Organizers != nil {
 		v.Organizers = make([]string, len(body.Organizers))
@@ -5707,6 +5709,7 @@ func NewUpdateMeetingSettingsPayload(body *UpdateMeetingSettingsRequestBody, uid
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -5714,11 +5717,12 @@ func NewUpdateMeetingSettingsPayload(body *UpdateMeetingSettingsRequestBody, uid
 
 // NewDeleteMeetingPayload builds a Meeting Service service delete-meeting
 // endpoint payload.
-func NewDeleteMeetingPayload(uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeleteMeetingPayload {
+func NewDeleteMeetingPayload(uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.DeleteMeetingPayload {
 	v := &meetingservice.DeleteMeetingPayload{}
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -5726,12 +5730,13 @@ func NewDeleteMeetingPayload(uid string, version *string, bearerToken *string, i
 
 // NewDeleteMeetingOccurrencePayload builds a Meeting Service service
 // delete-meeting-occurrence endpoint payload.
-func NewDeleteMeetingOccurrencePayload(uid string, occurrenceID string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeleteMeetingOccurrencePayload {
+func NewDeleteMeetingOccurrencePayload(uid string, occurrenceID string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.DeleteMeetingOccurrencePayload {
 	v := &meetingservice.DeleteMeetingOccurrencePayload{}
 	v.UID = uid
 	v.OccurrenceID = occurrenceID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -5750,7 +5755,7 @@ func NewGetMeetingRegistrantsPayload(uid string, version *string, bearerToken *s
 
 // NewCreateMeetingRegistrantPayload builds a Meeting Service service
 // create-meeting-registrant endpoint payload.
-func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody, meetingUID string, version *string, bearerToken *string) *meetingservice.CreateMeetingRegistrantPayload {
+func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody, meetingUID string, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateMeetingRegistrantPayload {
 	v := &meetingservice.CreateMeetingRegistrantPayload{
 		Email:        *body.Email,
 		FirstName:    body.FirstName,
@@ -5765,6 +5770,7 @@ func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody,
 	v.MeetingUID = meetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
@@ -5783,7 +5789,7 @@ func NewGetMeetingRegistrantPayload(meetingUID string, uid string, version *stri
 
 // NewUpdateMeetingRegistrantPayload builds a Meeting Service service
 // update-meeting-registrant endpoint payload.
-func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody, meetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdateMeetingRegistrantPayload {
+func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody, meetingUID string, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.UpdateMeetingRegistrantPayload {
 	v := &meetingservice.UpdateMeetingRegistrantPayload{
 		Email:        *body.Email,
 		FirstName:    body.FirstName,
@@ -5799,6 +5805,7 @@ func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody,
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -5806,12 +5813,13 @@ func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody,
 
 // NewDeleteMeetingRegistrantPayload builds a Meeting Service service
 // delete-meeting-registrant endpoint payload.
-func NewDeleteMeetingRegistrantPayload(meetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeleteMeetingRegistrantPayload {
+func NewDeleteMeetingRegistrantPayload(meetingUID string, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.DeleteMeetingRegistrantPayload {
 	v := &meetingservice.DeleteMeetingRegistrantPayload{}
 	v.MeetingUID = &meetingUID
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -5831,7 +5839,7 @@ func NewResendMeetingRegistrantInvitationPayload(meetingUID string, uid string, 
 
 // NewCreateMeetingRsvpPayload builds a Meeting Service service
 // create-meeting-rsvp endpoint payload.
-func NewCreateMeetingRsvpPayload(body *CreateMeetingRsvpRequestBody, meetingUID string, version *string, bearerToken *string) *meetingservice.CreateMeetingRsvpPayload {
+func NewCreateMeetingRsvpPayload(body *CreateMeetingRsvpRequestBody, meetingUID string, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateMeetingRsvpPayload {
 	v := &meetingservice.CreateMeetingRsvpPayload{
 		RegistrantID: body.RegistrantID,
 		Username:     body.Username,
@@ -5842,6 +5850,7 @@ func NewCreateMeetingRsvpPayload(body *CreateMeetingRsvpRequestBody, meetingUID 
 	v.MeetingUID = meetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
@@ -5883,7 +5892,7 @@ func NewGetPastMeetingsPayload(version *string, bearerToken *string) *meetingser
 
 // NewCreatePastMeetingPayload builds a Meeting Service service
 // create-past-meeting endpoint payload.
-func NewCreatePastMeetingPayload(body *CreatePastMeetingRequestBody, version *string, bearerToken *string) *meetingservice.CreatePastMeetingPayload {
+func NewCreatePastMeetingPayload(body *CreatePastMeetingRequestBody, version *string, bearerToken *string, xSync *bool) *meetingservice.CreatePastMeetingPayload {
 	v := &meetingservice.CreatePastMeetingPayload{
 		MeetingUID:           *body.MeetingUID,
 		OccurrenceID:         body.OccurrenceID,
@@ -5926,6 +5935,7 @@ func NewCreatePastMeetingPayload(body *CreatePastMeetingRequestBody, version *st
 	}
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
@@ -5943,11 +5953,12 @@ func NewGetPastMeetingPayload(uid string, version *string, bearerToken *string) 
 
 // NewDeletePastMeetingPayload builds a Meeting Service service
 // delete-past-meeting endpoint payload.
-func NewDeletePastMeetingPayload(uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeletePastMeetingPayload {
+func NewDeletePastMeetingPayload(uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.DeletePastMeetingPayload {
 	v := &meetingservice.DeletePastMeetingPayload{}
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -5966,7 +5977,7 @@ func NewGetPastMeetingParticipantsPayload(uid string, version *string, bearerTok
 
 // NewCreatePastMeetingParticipantPayload builds a Meeting Service service
 // create-past-meeting-participant endpoint payload.
-func NewCreatePastMeetingParticipantPayload(body *CreatePastMeetingParticipantRequestBody, uid string, version *string, bearerToken *string) *meetingservice.CreatePastMeetingParticipantPayload {
+func NewCreatePastMeetingParticipantPayload(body *CreatePastMeetingParticipantRequestBody, uid string, version *string, bearerToken *string, xSync *bool) *meetingservice.CreatePastMeetingParticipantPayload {
 	v := &meetingservice.CreatePastMeetingParticipantPayload{
 		PastMeetingUID: *body.PastMeetingUID,
 		Email:          *body.Email,
@@ -5983,6 +5994,7 @@ func NewCreatePastMeetingParticipantPayload(body *CreatePastMeetingParticipantRe
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
@@ -6001,7 +6013,7 @@ func NewGetPastMeetingParticipantPayload(pastMeetingUID string, uid string, vers
 
 // NewUpdatePastMeetingParticipantPayload builds a Meeting Service service
 // update-past-meeting-participant endpoint payload.
-func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRequestBody, pastMeetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdatePastMeetingParticipantPayload {
+func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRequestBody, pastMeetingUID string, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.UpdatePastMeetingParticipantPayload {
 	v := &meetingservice.UpdatePastMeetingParticipantPayload{
 		Email:      *body.Email,
 		FirstName:  body.FirstName,
@@ -6018,6 +6030,7 @@ func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRe
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -6025,12 +6038,13 @@ func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRe
 
 // NewDeletePastMeetingParticipantPayload builds a Meeting Service service
 // delete-past-meeting-participant endpoint payload.
-func NewDeletePastMeetingParticipantPayload(pastMeetingUID string, uid string, version *string, bearerToken *string, ifMatch *string) *meetingservice.DeletePastMeetingParticipantPayload {
+func NewDeletePastMeetingParticipantPayload(pastMeetingUID string, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.DeletePastMeetingParticipantPayload {
 	v := &meetingservice.DeletePastMeetingParticipantPayload{}
 	v.PastMeetingUID = &pastMeetingUID
 	v.UID = &uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -6061,7 +6075,7 @@ func NewGetPastMeetingSummaryPayload(pastMeetingUID string, summaryUID string, v
 
 // NewUpdatePastMeetingSummaryPayload builds a Meeting Service service
 // update-past-meeting-summary endpoint payload.
-func NewUpdatePastMeetingSummaryPayload(body *UpdatePastMeetingSummaryRequestBody, pastMeetingUID string, summaryUID string, version *string, bearerToken *string, ifMatch *string) *meetingservice.UpdatePastMeetingSummaryPayload {
+func NewUpdatePastMeetingSummaryPayload(body *UpdatePastMeetingSummaryRequestBody, pastMeetingUID string, summaryUID string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.UpdatePastMeetingSummaryPayload {
 	v := &meetingservice.UpdatePastMeetingSummaryPayload{
 		EditedContent: body.EditedContent,
 		Approved:      body.Approved,
@@ -6070,6 +6084,7 @@ func NewUpdatePastMeetingSummaryPayload(body *UpdatePastMeetingSummaryRequestBod
 	v.SummaryUID = summaryUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 	v.IfMatch = ifMatch
 
 	return v
@@ -6077,7 +6092,7 @@ func NewUpdatePastMeetingSummaryPayload(body *UpdatePastMeetingSummaryRequestBod
 
 // NewCreateMeetingAttachmentPayload builds a Meeting Service service
 // create-meeting-attachment endpoint payload.
-func NewCreateMeetingAttachmentPayload(body *CreateMeetingAttachmentRequestBody, meetingUID string, version *string, bearerToken *string) *meetingservice.CreateMeetingAttachmentPayload {
+func NewCreateMeetingAttachmentPayload(body *CreateMeetingAttachmentRequestBody, meetingUID string, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateMeetingAttachmentPayload {
 	v := &meetingservice.CreateMeetingAttachmentPayload{
 		Type:            *body.Type,
 		Link:            body.Link,
@@ -6090,6 +6105,7 @@ func NewCreateMeetingAttachmentPayload(body *CreateMeetingAttachmentRequestBody,
 	v.MeetingUID = meetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
@@ -6120,19 +6136,20 @@ func NewGetMeetingAttachmentMetadataPayload(meetingUID string, uid string, versi
 
 // NewDeleteMeetingAttachmentPayload builds a Meeting Service service
 // delete-meeting-attachment endpoint payload.
-func NewDeleteMeetingAttachmentPayload(meetingUID string, uid string, version *string, bearerToken *string) *meetingservice.DeleteMeetingAttachmentPayload {
+func NewDeleteMeetingAttachmentPayload(meetingUID string, uid string, version *string, bearerToken *string, xSync *bool) *meetingservice.DeleteMeetingAttachmentPayload {
 	v := &meetingservice.DeleteMeetingAttachmentPayload{}
 	v.MeetingUID = meetingUID
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
 
 // NewCreatePastMeetingAttachmentPayload builds a Meeting Service service
 // create-past-meeting-attachment endpoint payload.
-func NewCreatePastMeetingAttachmentPayload(body *CreatePastMeetingAttachmentRequestBody, pastMeetingUID string, version *string, bearerToken *string) *meetingservice.CreatePastMeetingAttachmentPayload {
+func NewCreatePastMeetingAttachmentPayload(body *CreatePastMeetingAttachmentRequestBody, pastMeetingUID string, version *string, bearerToken *string, xSync *bool) *meetingservice.CreatePastMeetingAttachmentPayload {
 	v := &meetingservice.CreatePastMeetingAttachmentPayload{
 		Type:            *body.Type,
 		Link:            body.Link,
@@ -6146,6 +6163,7 @@ func NewCreatePastMeetingAttachmentPayload(body *CreatePastMeetingAttachmentRequ
 	v.PastMeetingUID = pastMeetingUID
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }
@@ -6187,12 +6205,13 @@ func NewGetPastMeetingAttachmentMetadataPayload(pastMeetingUID string, uid strin
 
 // NewDeletePastMeetingAttachmentPayload builds a Meeting Service service
 // delete-past-meeting-attachment endpoint payload.
-func NewDeletePastMeetingAttachmentPayload(pastMeetingUID string, uid string, version *string, bearerToken *string) *meetingservice.DeletePastMeetingAttachmentPayload {
+func NewDeletePastMeetingAttachmentPayload(pastMeetingUID string, uid string, version *string, bearerToken *string, xSync *bool) *meetingservice.DeletePastMeetingAttachmentPayload {
 	v := &meetingservice.DeletePastMeetingAttachmentPayload{}
 	v.PastMeetingUID = pastMeetingUID
 	v.UID = uid
 	v.Version = version
 	v.BearerToken = bearerToken
+	v.XSync = xSync
 
 	return v
 }

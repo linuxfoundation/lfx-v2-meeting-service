@@ -57,7 +57,7 @@ func (s *MeetingRSVPService) ServiceReady() bool {
 // 3. This and Following: RSVP applies to a specific occurrence and all following ones
 //
 // There can't be two single or two this_and_following RSVPs for the same registrant and occurrence of a meeting.
-func (s *MeetingRSVPService) PutRSVP(ctx context.Context, req *models.CreateRSVPRequest) (*models.RSVPResponse, error) {
+func (s *MeetingRSVPService) PutRSVP(ctx context.Context, req *models.CreateRSVPRequest, sync bool) (*models.RSVPResponse, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("rsvp service is not ready")
@@ -151,7 +151,7 @@ func (s *MeetingRSVPService) PutRSVP(ctx context.Context, req *models.CreateRSVP
 		}
 
 		// Send indexing message for update
-		if err := s.messageSender.SendIndexMeetingRSVP(ctx, models.ActionUpdated, *existingRSVP); err != nil {
+		if err := s.messageSender.SendIndexMeetingRSVP(ctx, models.ActionUpdated, *existingRSVP, sync); err != nil {
 			slog.ErrorContext(ctx, "failed to send index message for updated rsvp", logging.ErrKey, err, "rsvp_id", existingRSVP.ID)
 			// Don't fail the operation if indexing fails
 		}
@@ -180,7 +180,7 @@ func (s *MeetingRSVPService) PutRSVP(ctx context.Context, req *models.CreateRSVP
 	slog.InfoContext(ctx, "created new rsvp", "rsvp_id", rsvp.ID)
 
 	// Send indexing message for create
-	if err := s.messageSender.SendIndexMeetingRSVP(ctx, models.ActionCreated, *rsvp); err != nil {
+	if err := s.messageSender.SendIndexMeetingRSVP(ctx, models.ActionCreated, *rsvp, sync); err != nil {
 		slog.ErrorContext(ctx, "failed to send index message for created rsvp", logging.ErrKey, err, "rsvp_id", rsvp.ID)
 		// Don't fail the operation if indexing fails
 	}

@@ -167,7 +167,7 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant)
+			return s.messageSender.SendIndexPastMeetingParticipant(ctx, models.ActionCreated, *participant, false)
 		},
 		func() error {
 			return s.messageSender.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
@@ -178,7 +178,7 @@ func (s *PastMeetingParticipantService) CreatePastMeetingParticipant(ctx context
 				Host:               participant.Host,
 				IsInvited:          participant.IsInvited,
 				IsAttended:         participant.IsAttended,
-			})
+			}, false)
 		},
 	}
 
@@ -332,7 +332,7 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingParticipant(ctx, models.ActionUpdated, *participant)
+			return s.messageSender.SendIndexPastMeetingParticipant(ctx, models.ActionUpdated, *participant, false)
 		},
 		func() error {
 			return s.messageSender.SendPutPastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
@@ -343,7 +343,7 @@ func (s *PastMeetingParticipantService) UpdatePastMeetingParticipant(ctx context
 				Host:               participant.Host,
 				IsInvited:          participant.IsInvited,
 				IsAttended:         participant.IsAttended,
-			})
+			}, false)
 		},
 	}
 
@@ -416,7 +416,7 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendDeleteIndexPastMeetingParticipant(ctx, participantUID)
+			return s.messageSender.SendDeleteIndexPastMeetingParticipant(ctx, participantUID, false)
 		},
 		func() error {
 			return s.messageSender.SendRemovePastMeetingParticipantAccess(ctx, models.PastMeetingParticipantAccessMessage{
@@ -427,7 +427,7 @@ func (s *PastMeetingParticipantService) DeletePastMeetingParticipant(ctx context
 				Host:               participant.Host,
 				IsInvited:          participant.IsInvited,
 				IsAttended:         participant.IsAttended,
-			})
+			}, false)
 		},
 	}
 
