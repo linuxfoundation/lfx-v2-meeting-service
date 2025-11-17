@@ -55,6 +55,7 @@ func ParseEndpoint(
 		meetingServiceCreateMeetingBodyFlag        = meetingServiceCreateMeetingFlags.String("body", "REQUIRED", "")
 		meetingServiceCreateMeetingVersionFlag     = meetingServiceCreateMeetingFlags.String("version", "", "")
 		meetingServiceCreateMeetingBearerTokenFlag = meetingServiceCreateMeetingFlags.String("bearer-token", "", "")
+		meetingServiceCreateMeetingXSyncFlag       = meetingServiceCreateMeetingFlags.String("x-sync", "", "")
 
 		meetingServiceGetMeetingBaseFlags                           = flag.NewFlagSet("get-meeting-base", flag.ExitOnError)
 		meetingServiceGetMeetingBaseUIDFlag                         = meetingServiceGetMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
@@ -77,6 +78,7 @@ func ParseEndpoint(
 		meetingServiceUpdateMeetingBaseUIDFlag         = meetingServiceUpdateMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceUpdateMeetingBaseVersionFlag     = meetingServiceUpdateMeetingBaseFlags.String("version", "", "")
 		meetingServiceUpdateMeetingBaseBearerTokenFlag = meetingServiceUpdateMeetingBaseFlags.String("bearer-token", "", "")
+		meetingServiceUpdateMeetingBaseXSyncFlag       = meetingServiceUpdateMeetingBaseFlags.String("x-sync", "", "")
 		meetingServiceUpdateMeetingBaseIfMatchFlag     = meetingServiceUpdateMeetingBaseFlags.String("if-match", "", "")
 
 		meetingServiceUpdateMeetingSettingsFlags           = flag.NewFlagSet("update-meeting-settings", flag.ExitOnError)
@@ -84,12 +86,14 @@ func ParseEndpoint(
 		meetingServiceUpdateMeetingSettingsUIDFlag         = meetingServiceUpdateMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceUpdateMeetingSettingsVersionFlag     = meetingServiceUpdateMeetingSettingsFlags.String("version", "", "")
 		meetingServiceUpdateMeetingSettingsBearerTokenFlag = meetingServiceUpdateMeetingSettingsFlags.String("bearer-token", "", "")
+		meetingServiceUpdateMeetingSettingsXSyncFlag       = meetingServiceUpdateMeetingSettingsFlags.String("x-sync", "", "")
 		meetingServiceUpdateMeetingSettingsIfMatchFlag     = meetingServiceUpdateMeetingSettingsFlags.String("if-match", "", "")
 
 		meetingServiceDeleteMeetingFlags           = flag.NewFlagSet("delete-meeting", flag.ExitOnError)
 		meetingServiceDeleteMeetingUIDFlag         = meetingServiceDeleteMeetingFlags.String("uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceDeleteMeetingVersionFlag     = meetingServiceDeleteMeetingFlags.String("version", "", "")
 		meetingServiceDeleteMeetingBearerTokenFlag = meetingServiceDeleteMeetingFlags.String("bearer-token", "", "")
+		meetingServiceDeleteMeetingXSyncFlag       = meetingServiceDeleteMeetingFlags.String("x-sync", "", "")
 		meetingServiceDeleteMeetingIfMatchFlag     = meetingServiceDeleteMeetingFlags.String("if-match", "", "")
 
 		meetingServiceDeleteMeetingOccurrenceFlags            = flag.NewFlagSet("delete-meeting-occurrence", flag.ExitOnError)
@@ -97,6 +101,7 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingOccurrenceOccurrenceIDFlag = meetingServiceDeleteMeetingOccurrenceFlags.String("occurrence-id", "REQUIRED", "The ID of the occurrence to cancel")
 		meetingServiceDeleteMeetingOccurrenceVersionFlag      = meetingServiceDeleteMeetingOccurrenceFlags.String("version", "", "")
 		meetingServiceDeleteMeetingOccurrenceBearerTokenFlag  = meetingServiceDeleteMeetingOccurrenceFlags.String("bearer-token", "", "")
+		meetingServiceDeleteMeetingOccurrenceXSyncFlag        = meetingServiceDeleteMeetingOccurrenceFlags.String("x-sync", "", "")
 		meetingServiceDeleteMeetingOccurrenceIfMatchFlag      = meetingServiceDeleteMeetingOccurrenceFlags.String("if-match", "", "")
 
 		meetingServiceGetMeetingRegistrantsFlags           = flag.NewFlagSet("get-meeting-registrants", flag.ExitOnError)
@@ -109,6 +114,7 @@ func ParseEndpoint(
 		meetingServiceCreateMeetingRegistrantMeetingUIDFlag  = meetingServiceCreateMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
 		meetingServiceCreateMeetingRegistrantVersionFlag     = meetingServiceCreateMeetingRegistrantFlags.String("version", "", "")
 		meetingServiceCreateMeetingRegistrantBearerTokenFlag = meetingServiceCreateMeetingRegistrantFlags.String("bearer-token", "", "")
+		meetingServiceCreateMeetingRegistrantXSyncFlag       = meetingServiceCreateMeetingRegistrantFlags.String("x-sync", "", "")
 
 		meetingServiceGetMeetingRegistrantFlags           = flag.NewFlagSet("get-meeting-registrant", flag.ExitOnError)
 		meetingServiceGetMeetingRegistrantMeetingUIDFlag  = meetingServiceGetMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
@@ -122,6 +128,7 @@ func ParseEndpoint(
 		meetingServiceUpdateMeetingRegistrantUIDFlag         = meetingServiceUpdateMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
 		meetingServiceUpdateMeetingRegistrantVersionFlag     = meetingServiceUpdateMeetingRegistrantFlags.String("version", "", "")
 		meetingServiceUpdateMeetingRegistrantBearerTokenFlag = meetingServiceUpdateMeetingRegistrantFlags.String("bearer-token", "", "")
+		meetingServiceUpdateMeetingRegistrantXSyncFlag       = meetingServiceUpdateMeetingRegistrantFlags.String("x-sync", "", "")
 		meetingServiceUpdateMeetingRegistrantIfMatchFlag     = meetingServiceUpdateMeetingRegistrantFlags.String("if-match", "", "")
 
 		meetingServiceDeleteMeetingRegistrantFlags           = flag.NewFlagSet("delete-meeting-registrant", flag.ExitOnError)
@@ -129,6 +136,7 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingRegistrantUIDFlag         = meetingServiceDeleteMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
 		meetingServiceDeleteMeetingRegistrantVersionFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("version", "", "")
 		meetingServiceDeleteMeetingRegistrantBearerTokenFlag = meetingServiceDeleteMeetingRegistrantFlags.String("bearer-token", "", "")
+		meetingServiceDeleteMeetingRegistrantXSyncFlag       = meetingServiceDeleteMeetingRegistrantFlags.String("x-sync", "", "")
 		meetingServiceDeleteMeetingRegistrantIfMatchFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("if-match", "", "")
 
 		meetingServiceResendMeetingRegistrantInvitationFlags           = flag.NewFlagSet("resend-meeting-registrant-invitation", flag.ExitOnError)
@@ -142,6 +150,7 @@ func ParseEndpoint(
 		meetingServiceCreateMeetingRsvpMeetingUIDFlag  = meetingServiceCreateMeetingRsvpFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this RSVP is for")
 		meetingServiceCreateMeetingRsvpVersionFlag     = meetingServiceCreateMeetingRsvpFlags.String("version", "", "")
 		meetingServiceCreateMeetingRsvpBearerTokenFlag = meetingServiceCreateMeetingRsvpFlags.String("bearer-token", "", "")
+		meetingServiceCreateMeetingRsvpXSyncFlag       = meetingServiceCreateMeetingRsvpFlags.String("x-sync", "", "")
 
 		meetingServiceGetMeetingRsvpsFlags           = flag.NewFlagSet("get-meeting-rsvps", flag.ExitOnError)
 		meetingServiceGetMeetingRsvpsMeetingUIDFlag  = meetingServiceGetMeetingRsvpsFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this RSVP is for")
@@ -161,6 +170,7 @@ func ParseEndpoint(
 		meetingServiceCreatePastMeetingBodyFlag        = meetingServiceCreatePastMeetingFlags.String("body", "REQUIRED", "")
 		meetingServiceCreatePastMeetingVersionFlag     = meetingServiceCreatePastMeetingFlags.String("version", "", "")
 		meetingServiceCreatePastMeetingBearerTokenFlag = meetingServiceCreatePastMeetingFlags.String("bearer-token", "", "")
+		meetingServiceCreatePastMeetingXSyncFlag       = meetingServiceCreatePastMeetingFlags.String("x-sync", "", "")
 
 		meetingServiceGetPastMeetingFlags           = flag.NewFlagSet("get-past-meeting", flag.ExitOnError)
 		meetingServiceGetPastMeetingUIDFlag         = meetingServiceGetPastMeetingFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
@@ -171,6 +181,7 @@ func ParseEndpoint(
 		meetingServiceDeletePastMeetingUIDFlag         = meetingServiceDeletePastMeetingFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
 		meetingServiceDeletePastMeetingVersionFlag     = meetingServiceDeletePastMeetingFlags.String("version", "", "")
 		meetingServiceDeletePastMeetingBearerTokenFlag = meetingServiceDeletePastMeetingFlags.String("bearer-token", "", "")
+		meetingServiceDeletePastMeetingXSyncFlag       = meetingServiceDeletePastMeetingFlags.String("x-sync", "", "")
 		meetingServiceDeletePastMeetingIfMatchFlag     = meetingServiceDeletePastMeetingFlags.String("if-match", "", "")
 
 		meetingServiceGetPastMeetingParticipantsFlags           = flag.NewFlagSet("get-past-meeting-participants", flag.ExitOnError)
@@ -183,6 +194,7 @@ func ParseEndpoint(
 		meetingServiceCreatePastMeetingParticipantUIDFlag         = meetingServiceCreatePastMeetingParticipantFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
 		meetingServiceCreatePastMeetingParticipantVersionFlag     = meetingServiceCreatePastMeetingParticipantFlags.String("version", "", "")
 		meetingServiceCreatePastMeetingParticipantBearerTokenFlag = meetingServiceCreatePastMeetingParticipantFlags.String("bearer-token", "", "")
+		meetingServiceCreatePastMeetingParticipantXSyncFlag       = meetingServiceCreatePastMeetingParticipantFlags.String("x-sync", "", "")
 
 		meetingServiceGetPastMeetingParticipantFlags              = flag.NewFlagSet("get-past-meeting-participant", flag.ExitOnError)
 		meetingServiceGetPastMeetingParticipantPastMeetingUIDFlag = meetingServiceGetPastMeetingParticipantFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
@@ -196,6 +208,7 @@ func ParseEndpoint(
 		meetingServiceUpdatePastMeetingParticipantUIDFlag            = meetingServiceUpdatePastMeetingParticipantFlags.String("uid", "REQUIRED", "The UID of the past meeting participant")
 		meetingServiceUpdatePastMeetingParticipantVersionFlag        = meetingServiceUpdatePastMeetingParticipantFlags.String("version", "", "")
 		meetingServiceUpdatePastMeetingParticipantBearerTokenFlag    = meetingServiceUpdatePastMeetingParticipantFlags.String("bearer-token", "", "")
+		meetingServiceUpdatePastMeetingParticipantXSyncFlag          = meetingServiceUpdatePastMeetingParticipantFlags.String("x-sync", "", "")
 		meetingServiceUpdatePastMeetingParticipantIfMatchFlag        = meetingServiceUpdatePastMeetingParticipantFlags.String("if-match", "", "")
 
 		meetingServiceDeletePastMeetingParticipantFlags              = flag.NewFlagSet("delete-past-meeting-participant", flag.ExitOnError)
@@ -203,6 +216,7 @@ func ParseEndpoint(
 		meetingServiceDeletePastMeetingParticipantUIDFlag            = meetingServiceDeletePastMeetingParticipantFlags.String("uid", "REQUIRED", "The UID of the past meeting participant")
 		meetingServiceDeletePastMeetingParticipantVersionFlag        = meetingServiceDeletePastMeetingParticipantFlags.String("version", "", "")
 		meetingServiceDeletePastMeetingParticipantBearerTokenFlag    = meetingServiceDeletePastMeetingParticipantFlags.String("bearer-token", "", "")
+		meetingServiceDeletePastMeetingParticipantXSyncFlag          = meetingServiceDeletePastMeetingParticipantFlags.String("x-sync", "", "")
 		meetingServiceDeletePastMeetingParticipantIfMatchFlag        = meetingServiceDeletePastMeetingParticipantFlags.String("if-match", "", "")
 
 		meetingServiceGetPastMeetingSummariesFlags           = flag.NewFlagSet("get-past-meeting-summaries", flag.ExitOnError)
@@ -222,6 +236,7 @@ func ParseEndpoint(
 		meetingServiceUpdatePastMeetingSummarySummaryUIDFlag     = meetingServiceUpdatePastMeetingSummaryFlags.String("summary-uid", "REQUIRED", "The unique identifier of the summary")
 		meetingServiceUpdatePastMeetingSummaryVersionFlag        = meetingServiceUpdatePastMeetingSummaryFlags.String("version", "", "")
 		meetingServiceUpdatePastMeetingSummaryBearerTokenFlag    = meetingServiceUpdatePastMeetingSummaryFlags.String("bearer-token", "", "")
+		meetingServiceUpdatePastMeetingSummaryXSyncFlag          = meetingServiceUpdatePastMeetingSummaryFlags.String("x-sync", "", "")
 		meetingServiceUpdatePastMeetingSummaryIfMatchFlag        = meetingServiceUpdatePastMeetingSummaryFlags.String("if-match", "", "")
 
 		meetingServiceCreateMeetingAttachmentFlags           = flag.NewFlagSet("create-meeting-attachment", flag.ExitOnError)
@@ -229,6 +244,7 @@ func ParseEndpoint(
 		meetingServiceCreateMeetingAttachmentMeetingUIDFlag  = meetingServiceCreateMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
 		meetingServiceCreateMeetingAttachmentVersionFlag     = meetingServiceCreateMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceCreateMeetingAttachmentBearerTokenFlag = meetingServiceCreateMeetingAttachmentFlags.String("bearer-token", "", "")
+		meetingServiceCreateMeetingAttachmentXSyncFlag       = meetingServiceCreateMeetingAttachmentFlags.String("x-sync", "", "")
 
 		meetingServiceGetMeetingAttachmentFlags           = flag.NewFlagSet("get-meeting-attachment", flag.ExitOnError)
 		meetingServiceGetMeetingAttachmentMeetingUIDFlag  = meetingServiceGetMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
@@ -247,12 +263,14 @@ func ParseEndpoint(
 		meetingServiceDeleteMeetingAttachmentUIDFlag         = meetingServiceDeleteMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
 		meetingServiceDeleteMeetingAttachmentVersionFlag     = meetingServiceDeleteMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceDeleteMeetingAttachmentBearerTokenFlag = meetingServiceDeleteMeetingAttachmentFlags.String("bearer-token", "", "")
+		meetingServiceDeleteMeetingAttachmentXSyncFlag       = meetingServiceDeleteMeetingAttachmentFlags.String("x-sync", "", "")
 
 		meetingServiceCreatePastMeetingAttachmentFlags              = flag.NewFlagSet("create-past-meeting-attachment", flag.ExitOnError)
 		meetingServiceCreatePastMeetingAttachmentBodyFlag           = meetingServiceCreatePastMeetingAttachmentFlags.String("body", "REQUIRED", "")
 		meetingServiceCreatePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceCreatePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
 		meetingServiceCreatePastMeetingAttachmentVersionFlag        = meetingServiceCreatePastMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceCreatePastMeetingAttachmentBearerTokenFlag    = meetingServiceCreatePastMeetingAttachmentFlags.String("bearer-token", "", "")
+		meetingServiceCreatePastMeetingAttachmentXSyncFlag          = meetingServiceCreatePastMeetingAttachmentFlags.String("x-sync", "", "")
 
 		meetingServiceGetPastMeetingAttachmentsFlags           = flag.NewFlagSet("get-past-meeting-attachments", flag.ExitOnError)
 		meetingServiceGetPastMeetingAttachmentsUIDFlag         = meetingServiceGetPastMeetingAttachmentsFlags.String("uid", "REQUIRED", "The unique identifier of the resource")
@@ -276,6 +294,7 @@ func ParseEndpoint(
 		meetingServiceDeletePastMeetingAttachmentUIDFlag            = meetingServiceDeletePastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
 		meetingServiceDeletePastMeetingAttachmentVersionFlag        = meetingServiceDeletePastMeetingAttachmentFlags.String("version", "", "")
 		meetingServiceDeletePastMeetingAttachmentBearerTokenFlag    = meetingServiceDeletePastMeetingAttachmentFlags.String("bearer-token", "", "")
+		meetingServiceDeletePastMeetingAttachmentXSyncFlag          = meetingServiceDeletePastMeetingAttachmentFlags.String("x-sync", "", "")
 
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
@@ -511,7 +530,7 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingsPayload(*meetingServiceGetMeetingsVersionFlag, *meetingServiceGetMeetingsIncludeCancelledOccurrencesFlag, *meetingServiceGetMeetingsBearerTokenFlag)
 			case "create-meeting":
 				endpoint = c.CreateMeeting()
-				data, err = meetingservicec.BuildCreateMeetingPayload(*meetingServiceCreateMeetingBodyFlag, *meetingServiceCreateMeetingVersionFlag, *meetingServiceCreateMeetingBearerTokenFlag)
+				data, err = meetingservicec.BuildCreateMeetingPayload(*meetingServiceCreateMeetingBodyFlag, *meetingServiceCreateMeetingVersionFlag, *meetingServiceCreateMeetingBearerTokenFlag, *meetingServiceCreateMeetingXSyncFlag)
 			case "get-meeting-base":
 				endpoint = c.GetMeetingBase()
 				data, err = meetingservicec.BuildGetMeetingBasePayload(*meetingServiceGetMeetingBaseUIDFlag, *meetingServiceGetMeetingBaseVersionFlag, *meetingServiceGetMeetingBaseIncludeCancelledOccurrencesFlag, *meetingServiceGetMeetingBaseBearerTokenFlag)
@@ -523,37 +542,37 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingJoinURLPayload(*meetingServiceGetMeetingJoinURLUIDFlag, *meetingServiceGetMeetingJoinURLVersionFlag, *meetingServiceGetMeetingJoinURLBearerTokenFlag)
 			case "update-meeting-base":
 				endpoint = c.UpdateMeetingBase()
-				data, err = meetingservicec.BuildUpdateMeetingBasePayload(*meetingServiceUpdateMeetingBaseBodyFlag, *meetingServiceUpdateMeetingBaseUIDFlag, *meetingServiceUpdateMeetingBaseVersionFlag, *meetingServiceUpdateMeetingBaseBearerTokenFlag, *meetingServiceUpdateMeetingBaseIfMatchFlag)
+				data, err = meetingservicec.BuildUpdateMeetingBasePayload(*meetingServiceUpdateMeetingBaseBodyFlag, *meetingServiceUpdateMeetingBaseUIDFlag, *meetingServiceUpdateMeetingBaseVersionFlag, *meetingServiceUpdateMeetingBaseBearerTokenFlag, *meetingServiceUpdateMeetingBaseXSyncFlag, *meetingServiceUpdateMeetingBaseIfMatchFlag)
 			case "update-meeting-settings":
 				endpoint = c.UpdateMeetingSettings()
-				data, err = meetingservicec.BuildUpdateMeetingSettingsPayload(*meetingServiceUpdateMeetingSettingsBodyFlag, *meetingServiceUpdateMeetingSettingsUIDFlag, *meetingServiceUpdateMeetingSettingsVersionFlag, *meetingServiceUpdateMeetingSettingsBearerTokenFlag, *meetingServiceUpdateMeetingSettingsIfMatchFlag)
+				data, err = meetingservicec.BuildUpdateMeetingSettingsPayload(*meetingServiceUpdateMeetingSettingsBodyFlag, *meetingServiceUpdateMeetingSettingsUIDFlag, *meetingServiceUpdateMeetingSettingsVersionFlag, *meetingServiceUpdateMeetingSettingsBearerTokenFlag, *meetingServiceUpdateMeetingSettingsXSyncFlag, *meetingServiceUpdateMeetingSettingsIfMatchFlag)
 			case "delete-meeting":
 				endpoint = c.DeleteMeeting()
-				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingIfMatchFlag)
+				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingXSyncFlag, *meetingServiceDeleteMeetingIfMatchFlag)
 			case "delete-meeting-occurrence":
 				endpoint = c.DeleteMeetingOccurrence()
-				data, err = meetingservicec.BuildDeleteMeetingOccurrencePayload(*meetingServiceDeleteMeetingOccurrenceUIDFlag, *meetingServiceDeleteMeetingOccurrenceOccurrenceIDFlag, *meetingServiceDeleteMeetingOccurrenceVersionFlag, *meetingServiceDeleteMeetingOccurrenceBearerTokenFlag, *meetingServiceDeleteMeetingOccurrenceIfMatchFlag)
+				data, err = meetingservicec.BuildDeleteMeetingOccurrencePayload(*meetingServiceDeleteMeetingOccurrenceUIDFlag, *meetingServiceDeleteMeetingOccurrenceOccurrenceIDFlag, *meetingServiceDeleteMeetingOccurrenceVersionFlag, *meetingServiceDeleteMeetingOccurrenceBearerTokenFlag, *meetingServiceDeleteMeetingOccurrenceXSyncFlag, *meetingServiceDeleteMeetingOccurrenceIfMatchFlag)
 			case "get-meeting-registrants":
 				endpoint = c.GetMeetingRegistrants()
 				data, err = meetingservicec.BuildGetMeetingRegistrantsPayload(*meetingServiceGetMeetingRegistrantsUIDFlag, *meetingServiceGetMeetingRegistrantsVersionFlag, *meetingServiceGetMeetingRegistrantsBearerTokenFlag)
 			case "create-meeting-registrant":
 				endpoint = c.CreateMeetingRegistrant()
-				data, err = meetingservicec.BuildCreateMeetingRegistrantPayload(*meetingServiceCreateMeetingRegistrantBodyFlag, *meetingServiceCreateMeetingRegistrantMeetingUIDFlag, *meetingServiceCreateMeetingRegistrantVersionFlag, *meetingServiceCreateMeetingRegistrantBearerTokenFlag)
+				data, err = meetingservicec.BuildCreateMeetingRegistrantPayload(*meetingServiceCreateMeetingRegistrantBodyFlag, *meetingServiceCreateMeetingRegistrantMeetingUIDFlag, *meetingServiceCreateMeetingRegistrantVersionFlag, *meetingServiceCreateMeetingRegistrantBearerTokenFlag, *meetingServiceCreateMeetingRegistrantXSyncFlag)
 			case "get-meeting-registrant":
 				endpoint = c.GetMeetingRegistrant()
 				data, err = meetingservicec.BuildGetMeetingRegistrantPayload(*meetingServiceGetMeetingRegistrantMeetingUIDFlag, *meetingServiceGetMeetingRegistrantUIDFlag, *meetingServiceGetMeetingRegistrantVersionFlag, *meetingServiceGetMeetingRegistrantBearerTokenFlag)
 			case "update-meeting-registrant":
 				endpoint = c.UpdateMeetingRegistrant()
-				data, err = meetingservicec.BuildUpdateMeetingRegistrantPayload(*meetingServiceUpdateMeetingRegistrantBodyFlag, *meetingServiceUpdateMeetingRegistrantMeetingUIDFlag, *meetingServiceUpdateMeetingRegistrantUIDFlag, *meetingServiceUpdateMeetingRegistrantVersionFlag, *meetingServiceUpdateMeetingRegistrantBearerTokenFlag, *meetingServiceUpdateMeetingRegistrantIfMatchFlag)
+				data, err = meetingservicec.BuildUpdateMeetingRegistrantPayload(*meetingServiceUpdateMeetingRegistrantBodyFlag, *meetingServiceUpdateMeetingRegistrantMeetingUIDFlag, *meetingServiceUpdateMeetingRegistrantUIDFlag, *meetingServiceUpdateMeetingRegistrantVersionFlag, *meetingServiceUpdateMeetingRegistrantBearerTokenFlag, *meetingServiceUpdateMeetingRegistrantXSyncFlag, *meetingServiceUpdateMeetingRegistrantIfMatchFlag)
 			case "delete-meeting-registrant":
 				endpoint = c.DeleteMeetingRegistrant()
-				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantIfMatchFlag)
+				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantXSyncFlag, *meetingServiceDeleteMeetingRegistrantIfMatchFlag)
 			case "resend-meeting-registrant-invitation":
 				endpoint = c.ResendMeetingRegistrantInvitation()
 				data, err = meetingservicec.BuildResendMeetingRegistrantInvitationPayload(*meetingServiceResendMeetingRegistrantInvitationMeetingUIDFlag, *meetingServiceResendMeetingRegistrantInvitationUIDFlag, *meetingServiceResendMeetingRegistrantInvitationVersionFlag, *meetingServiceResendMeetingRegistrantInvitationBearerTokenFlag)
 			case "create-meeting-rsvp":
 				endpoint = c.CreateMeetingRsvp()
-				data, err = meetingservicec.BuildCreateMeetingRsvpPayload(*meetingServiceCreateMeetingRsvpBodyFlag, *meetingServiceCreateMeetingRsvpMeetingUIDFlag, *meetingServiceCreateMeetingRsvpVersionFlag, *meetingServiceCreateMeetingRsvpBearerTokenFlag)
+				data, err = meetingservicec.BuildCreateMeetingRsvpPayload(*meetingServiceCreateMeetingRsvpBodyFlag, *meetingServiceCreateMeetingRsvpMeetingUIDFlag, *meetingServiceCreateMeetingRsvpVersionFlag, *meetingServiceCreateMeetingRsvpBearerTokenFlag, *meetingServiceCreateMeetingRsvpXSyncFlag)
 			case "get-meeting-rsvps":
 				endpoint = c.GetMeetingRsvps()
 				data, err = meetingservicec.BuildGetMeetingRsvpsPayload(*meetingServiceGetMeetingRsvpsMeetingUIDFlag, *meetingServiceGetMeetingRsvpsVersionFlag, *meetingServiceGetMeetingRsvpsBearerTokenFlag)
@@ -565,28 +584,28 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetPastMeetingsPayload(*meetingServiceGetPastMeetingsVersionFlag, *meetingServiceGetPastMeetingsBearerTokenFlag)
 			case "create-past-meeting":
 				endpoint = c.CreatePastMeeting()
-				data, err = meetingservicec.BuildCreatePastMeetingPayload(*meetingServiceCreatePastMeetingBodyFlag, *meetingServiceCreatePastMeetingVersionFlag, *meetingServiceCreatePastMeetingBearerTokenFlag)
+				data, err = meetingservicec.BuildCreatePastMeetingPayload(*meetingServiceCreatePastMeetingBodyFlag, *meetingServiceCreatePastMeetingVersionFlag, *meetingServiceCreatePastMeetingBearerTokenFlag, *meetingServiceCreatePastMeetingXSyncFlag)
 			case "get-past-meeting":
 				endpoint = c.GetPastMeeting()
 				data, err = meetingservicec.BuildGetPastMeetingPayload(*meetingServiceGetPastMeetingUIDFlag, *meetingServiceGetPastMeetingVersionFlag, *meetingServiceGetPastMeetingBearerTokenFlag)
 			case "delete-past-meeting":
 				endpoint = c.DeletePastMeeting()
-				data, err = meetingservicec.BuildDeletePastMeetingPayload(*meetingServiceDeletePastMeetingUIDFlag, *meetingServiceDeletePastMeetingVersionFlag, *meetingServiceDeletePastMeetingBearerTokenFlag, *meetingServiceDeletePastMeetingIfMatchFlag)
+				data, err = meetingservicec.BuildDeletePastMeetingPayload(*meetingServiceDeletePastMeetingUIDFlag, *meetingServiceDeletePastMeetingVersionFlag, *meetingServiceDeletePastMeetingBearerTokenFlag, *meetingServiceDeletePastMeetingXSyncFlag, *meetingServiceDeletePastMeetingIfMatchFlag)
 			case "get-past-meeting-participants":
 				endpoint = c.GetPastMeetingParticipants()
 				data, err = meetingservicec.BuildGetPastMeetingParticipantsPayload(*meetingServiceGetPastMeetingParticipantsUIDFlag, *meetingServiceGetPastMeetingParticipantsVersionFlag, *meetingServiceGetPastMeetingParticipantsBearerTokenFlag)
 			case "create-past-meeting-participant":
 				endpoint = c.CreatePastMeetingParticipant()
-				data, err = meetingservicec.BuildCreatePastMeetingParticipantPayload(*meetingServiceCreatePastMeetingParticipantBodyFlag, *meetingServiceCreatePastMeetingParticipantUIDFlag, *meetingServiceCreatePastMeetingParticipantVersionFlag, *meetingServiceCreatePastMeetingParticipantBearerTokenFlag)
+				data, err = meetingservicec.BuildCreatePastMeetingParticipantPayload(*meetingServiceCreatePastMeetingParticipantBodyFlag, *meetingServiceCreatePastMeetingParticipantUIDFlag, *meetingServiceCreatePastMeetingParticipantVersionFlag, *meetingServiceCreatePastMeetingParticipantBearerTokenFlag, *meetingServiceCreatePastMeetingParticipantXSyncFlag)
 			case "get-past-meeting-participant":
 				endpoint = c.GetPastMeetingParticipant()
 				data, err = meetingservicec.BuildGetPastMeetingParticipantPayload(*meetingServiceGetPastMeetingParticipantPastMeetingUIDFlag, *meetingServiceGetPastMeetingParticipantUIDFlag, *meetingServiceGetPastMeetingParticipantVersionFlag, *meetingServiceGetPastMeetingParticipantBearerTokenFlag)
 			case "update-past-meeting-participant":
 				endpoint = c.UpdatePastMeetingParticipant()
-				data, err = meetingservicec.BuildUpdatePastMeetingParticipantPayload(*meetingServiceUpdatePastMeetingParticipantBodyFlag, *meetingServiceUpdatePastMeetingParticipantPastMeetingUIDFlag, *meetingServiceUpdatePastMeetingParticipantUIDFlag, *meetingServiceUpdatePastMeetingParticipantVersionFlag, *meetingServiceUpdatePastMeetingParticipantBearerTokenFlag, *meetingServiceUpdatePastMeetingParticipantIfMatchFlag)
+				data, err = meetingservicec.BuildUpdatePastMeetingParticipantPayload(*meetingServiceUpdatePastMeetingParticipantBodyFlag, *meetingServiceUpdatePastMeetingParticipantPastMeetingUIDFlag, *meetingServiceUpdatePastMeetingParticipantUIDFlag, *meetingServiceUpdatePastMeetingParticipantVersionFlag, *meetingServiceUpdatePastMeetingParticipantBearerTokenFlag, *meetingServiceUpdatePastMeetingParticipantXSyncFlag, *meetingServiceUpdatePastMeetingParticipantIfMatchFlag)
 			case "delete-past-meeting-participant":
 				endpoint = c.DeletePastMeetingParticipant()
-				data, err = meetingservicec.BuildDeletePastMeetingParticipantPayload(*meetingServiceDeletePastMeetingParticipantPastMeetingUIDFlag, *meetingServiceDeletePastMeetingParticipantUIDFlag, *meetingServiceDeletePastMeetingParticipantVersionFlag, *meetingServiceDeletePastMeetingParticipantBearerTokenFlag, *meetingServiceDeletePastMeetingParticipantIfMatchFlag)
+				data, err = meetingservicec.BuildDeletePastMeetingParticipantPayload(*meetingServiceDeletePastMeetingParticipantPastMeetingUIDFlag, *meetingServiceDeletePastMeetingParticipantUIDFlag, *meetingServiceDeletePastMeetingParticipantVersionFlag, *meetingServiceDeletePastMeetingParticipantBearerTokenFlag, *meetingServiceDeletePastMeetingParticipantXSyncFlag, *meetingServiceDeletePastMeetingParticipantIfMatchFlag)
 			case "get-past-meeting-summaries":
 				endpoint = c.GetPastMeetingSummaries()
 				data, err = meetingservicec.BuildGetPastMeetingSummariesPayload(*meetingServiceGetPastMeetingSummariesUIDFlag, *meetingServiceGetPastMeetingSummariesVersionFlag, *meetingServiceGetPastMeetingSummariesBearerTokenFlag)
@@ -595,10 +614,10 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetPastMeetingSummaryPayload(*meetingServiceGetPastMeetingSummaryPastMeetingUIDFlag, *meetingServiceGetPastMeetingSummarySummaryUIDFlag, *meetingServiceGetPastMeetingSummaryVersionFlag, *meetingServiceGetPastMeetingSummaryBearerTokenFlag)
 			case "update-past-meeting-summary":
 				endpoint = c.UpdatePastMeetingSummary()
-				data, err = meetingservicec.BuildUpdatePastMeetingSummaryPayload(*meetingServiceUpdatePastMeetingSummaryBodyFlag, *meetingServiceUpdatePastMeetingSummaryPastMeetingUIDFlag, *meetingServiceUpdatePastMeetingSummarySummaryUIDFlag, *meetingServiceUpdatePastMeetingSummaryVersionFlag, *meetingServiceUpdatePastMeetingSummaryBearerTokenFlag, *meetingServiceUpdatePastMeetingSummaryIfMatchFlag)
+				data, err = meetingservicec.BuildUpdatePastMeetingSummaryPayload(*meetingServiceUpdatePastMeetingSummaryBodyFlag, *meetingServiceUpdatePastMeetingSummaryPastMeetingUIDFlag, *meetingServiceUpdatePastMeetingSummarySummaryUIDFlag, *meetingServiceUpdatePastMeetingSummaryVersionFlag, *meetingServiceUpdatePastMeetingSummaryBearerTokenFlag, *meetingServiceUpdatePastMeetingSummaryXSyncFlag, *meetingServiceUpdatePastMeetingSummaryIfMatchFlag)
 			case "create-meeting-attachment":
 				endpoint = c.CreateMeetingAttachment(meetingServiceCreateMeetingAttachmentEncoderFn)
-				data, err = meetingservicec.BuildCreateMeetingAttachmentPayload(*meetingServiceCreateMeetingAttachmentBodyFlag, *meetingServiceCreateMeetingAttachmentMeetingUIDFlag, *meetingServiceCreateMeetingAttachmentVersionFlag, *meetingServiceCreateMeetingAttachmentBearerTokenFlag)
+				data, err = meetingservicec.BuildCreateMeetingAttachmentPayload(*meetingServiceCreateMeetingAttachmentBodyFlag, *meetingServiceCreateMeetingAttachmentMeetingUIDFlag, *meetingServiceCreateMeetingAttachmentVersionFlag, *meetingServiceCreateMeetingAttachmentBearerTokenFlag, *meetingServiceCreateMeetingAttachmentXSyncFlag)
 			case "get-meeting-attachment":
 				endpoint = c.GetMeetingAttachment()
 				data, err = meetingservicec.BuildGetMeetingAttachmentPayload(*meetingServiceGetMeetingAttachmentMeetingUIDFlag, *meetingServiceGetMeetingAttachmentUIDFlag, *meetingServiceGetMeetingAttachmentVersionFlag, *meetingServiceGetMeetingAttachmentBearerTokenFlag)
@@ -607,10 +626,10 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetMeetingAttachmentMetadataPayload(*meetingServiceGetMeetingAttachmentMetadataMeetingUIDFlag, *meetingServiceGetMeetingAttachmentMetadataUIDFlag, *meetingServiceGetMeetingAttachmentMetadataVersionFlag, *meetingServiceGetMeetingAttachmentMetadataBearerTokenFlag)
 			case "delete-meeting-attachment":
 				endpoint = c.DeleteMeetingAttachment()
-				data, err = meetingservicec.BuildDeleteMeetingAttachmentPayload(*meetingServiceDeleteMeetingAttachmentMeetingUIDFlag, *meetingServiceDeleteMeetingAttachmentUIDFlag, *meetingServiceDeleteMeetingAttachmentVersionFlag, *meetingServiceDeleteMeetingAttachmentBearerTokenFlag)
+				data, err = meetingservicec.BuildDeleteMeetingAttachmentPayload(*meetingServiceDeleteMeetingAttachmentMeetingUIDFlag, *meetingServiceDeleteMeetingAttachmentUIDFlag, *meetingServiceDeleteMeetingAttachmentVersionFlag, *meetingServiceDeleteMeetingAttachmentBearerTokenFlag, *meetingServiceDeleteMeetingAttachmentXSyncFlag)
 			case "create-past-meeting-attachment":
 				endpoint = c.CreatePastMeetingAttachment(meetingServiceCreatePastMeetingAttachmentEncoderFn)
-				data, err = meetingservicec.BuildCreatePastMeetingAttachmentPayload(*meetingServiceCreatePastMeetingAttachmentBodyFlag, *meetingServiceCreatePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceCreatePastMeetingAttachmentVersionFlag, *meetingServiceCreatePastMeetingAttachmentBearerTokenFlag)
+				data, err = meetingservicec.BuildCreatePastMeetingAttachmentPayload(*meetingServiceCreatePastMeetingAttachmentBodyFlag, *meetingServiceCreatePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceCreatePastMeetingAttachmentVersionFlag, *meetingServiceCreatePastMeetingAttachmentBearerTokenFlag, *meetingServiceCreatePastMeetingAttachmentXSyncFlag)
 			case "get-past-meeting-attachments":
 				endpoint = c.GetPastMeetingAttachments()
 				data, err = meetingservicec.BuildGetPastMeetingAttachmentsPayload(*meetingServiceGetPastMeetingAttachmentsUIDFlag, *meetingServiceGetPastMeetingAttachmentsVersionFlag, *meetingServiceGetPastMeetingAttachmentsBearerTokenFlag)
@@ -622,7 +641,7 @@ func ParseEndpoint(
 				data, err = meetingservicec.BuildGetPastMeetingAttachmentMetadataPayload(*meetingServiceGetPastMeetingAttachmentMetadataPastMeetingUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataVersionFlag, *meetingServiceGetPastMeetingAttachmentMetadataBearerTokenFlag)
 			case "delete-past-meeting-attachment":
 				endpoint = c.DeletePastMeetingAttachment()
-				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag)
+				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag, *meetingServiceDeletePastMeetingAttachmentXSyncFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
@@ -706,13 +725,14 @@ Example:
 }
 
 func meetingServiceCreateMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting -body JSON -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting -body JSON -version STRING -bearer-token STRING -x-sync BOOL
 
 Create a new meeting for a project. An actual meeting in the specific platform will be created by
 			this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.
     -body JSON: 
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
     %[1]s meeting-service create-meeting --body '{
@@ -774,7 +794,7 @@ Example:
          "ai_companion_enabled": true,
          "ai_summary_require_approval": true
       }
-   }' --version "1" --bearer-token "eyJhbGci..."
+   }' --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
@@ -819,13 +839,14 @@ Example:
 }
 
 func meetingServiceUpdateMeetingBaseUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-base -body JSON -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-base -body JSON -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Update an existing meeting base.
     -body JSON: 
     -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
@@ -889,18 +910,19 @@ Example:
          "ai_companion_enabled": true,
          "ai_summary_require_approval": true
       }
-   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceUpdateMeetingSettingsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-settings -body JSON -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-settings -body JSON -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Update an existing meeting's settings.
     -body JSON: 
     -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
@@ -910,36 +932,38 @@ Example:
          "Ipsum commodi vel ullam quo porro.",
          "Autem repellendus quia."
       ]
-   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceDeleteMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Delete an existing meeting.
     -uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
-    %[1]s meeting-service delete-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+    %[1]s meeting-service delete-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceDeleteMeetingOccurrenceUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-occurrence -uid STRING -occurrence-id STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-occurrence -uid STRING -occurrence-id STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.
     -uid STRING: The UID of the meeting
     -occurrence-id STRING: The ID of the occurrence to cancel
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
-    %[1]s meeting-service delete-meeting-occurrence --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --occurrence-id "1640995200" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+    %[1]s meeting-service delete-meeting-occurrence --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --occurrence-id "1640995200" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
@@ -957,13 +981,14 @@ Example:
 }
 
 func meetingServiceCreateMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-registrant -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-registrant -body JSON -meeting-uid STRING -version STRING -bearer-token STRING -x-sync BOOL
 
 Create a new registrant for a meeting
     -body JSON: 
     -meeting-uid STRING: The UID of the meeting
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
     %[1]s meeting-service create-meeting-registrant --body '{
@@ -976,7 +1001,7 @@ Example:
       "occurrence_id": "1640995200",
       "org_name": "Illum aperiam dolor.",
       "username": "Id amet est laboriosam."
-   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
@@ -995,7 +1020,7 @@ Example:
 }
 
 func meetingServiceUpdateMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-registrant -body JSON -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-meeting-registrant -body JSON -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Update an existing registrant for a meeting
     -body JSON: 
@@ -1003,6 +1028,7 @@ Update an existing registrant for a meeting
     -uid STRING: The UID of the registrant
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
@@ -1016,22 +1042,23 @@ Example:
       "occurrence_id": "1640995200",
       "org_name": "Voluptates veritatis praesentium deserunt vel.",
       "username": "Sed et nesciunt ipsam."
-   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceDeleteMeetingRegistrantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-registrant -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-registrant -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Delete a registrant from a meeting
     -meeting-uid STRING: The UID of the meeting
     -uid STRING: The UID of the registrant
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
-    %[1]s meeting-service delete-meeting-registrant --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+    %[1]s meeting-service delete-meeting-registrant --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
@@ -1050,13 +1077,14 @@ Example:
 }
 
 func meetingServiceCreateMeetingRsvpUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-rsvp -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-rsvp -body JSON -meeting-uid STRING -version STRING -bearer-token STRING -x-sync BOOL
 
 Create or update an RSVP response for a meeting. Username is automatically extracted from the JWT token. The most recent RSVP takes precedence.
     -body JSON: 
     -meeting-uid STRING: The UID of the meeting this RSVP is for
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
     %[1]s meeting-service create-meeting-rsvp --body '{
@@ -1065,7 +1093,7 @@ Example:
       "response": "accepted",
       "scope": "all",
       "username": "jdoe"
-   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
@@ -1112,12 +1140,13 @@ Example:
 }
 
 func meetingServiceCreatePastMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting -body JSON -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting -body JSON -version STRING -bearer-token STRING -x-sync BOOL
 
 Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.
     -body JSON: 
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
     %[1]s meeting-service create-past-meeting --body '{
@@ -1185,7 +1214,7 @@ Example:
          "meeting_id": "1234567890",
          "passcode": "147258"
       }
-   }' --version "1" --bearer-token "eyJhbGci..."
+   }' --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
@@ -1203,16 +1232,17 @@ Example:
 }
 
 func meetingServiceDeletePastMeetingUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Delete an existing past meeting.
     -uid STRING: The unique identifier of the past meeting
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
-    %[1]s meeting-service delete-past-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+    %[1]s meeting-service delete-past-meeting --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
@@ -1230,13 +1260,14 @@ Example:
 }
 
 func meetingServiceCreatePastMeetingParticipantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting-participant -body JSON -uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting-participant -body JSON -uid STRING -version STRING -bearer-token STRING -x-sync BOOL
 
 Create a new participant for a past meeting
     -body JSON: 
     -uid STRING: The unique identifier of the past meeting
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
     %[1]s meeting-service create-past-meeting-participant --body '{
@@ -1251,7 +1282,7 @@ Example:
       "org_name": "Et dignissimos incidunt.",
       "past_meeting_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "username": "Dolores eligendi incidunt praesentium sed non."
-   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+   }' --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
@@ -1270,7 +1301,7 @@ Example:
 }
 
 func meetingServiceUpdatePastMeetingParticipantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-past-meeting-participant -body JSON -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-past-meeting-participant -body JSON -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Update an existing participant for a past meeting
     -body JSON: 
@@ -1278,6 +1309,7 @@ Update an existing participant for a past meeting
     -uid STRING: The UID of the past meeting participant
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
@@ -1292,22 +1324,23 @@ Example:
       "last_name": "Doe",
       "org_name": "Minus qui necessitatibus laborum dolorum.",
       "username": "Voluptatem qui velit doloremque alias."
-   }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+   }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceDeletePastMeetingParticipantUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting-participant -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting-participant -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Delete a participant from a past meeting
     -past-meeting-uid STRING: The unique identifier of the past meeting
     -uid STRING: The UID of the past meeting participant
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
-    %[1]s meeting-service delete-past-meeting-participant --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+    %[1]s meeting-service delete-past-meeting-participant --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
@@ -1339,7 +1372,7 @@ Example:
 }
 
 func meetingServiceUpdatePastMeetingSummaryUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-past-meeting-summary -body JSON -past-meeting-uid STRING -summary-uid STRING -version STRING -bearer-token STRING -if-match STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service update-past-meeting-summary -body JSON -past-meeting-uid STRING -summary-uid STRING -version STRING -bearer-token STRING -x-sync BOOL -if-match STRING
 
 Update an existing past meeting summary
     -body JSON: 
@@ -1347,24 +1380,26 @@ Update an existing past meeting summary
     -summary-uid STRING: The unique identifier of the summary
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
     -if-match STRING: 
 
 Example:
     %[1]s meeting-service update-past-meeting-summary --body '{
       "approved": true,
       "edited_content": "Updated meeting summary with additional details and action items."
-   }' --past-meeting-uid "123e4567-e89b-12d3-a456-426614174000" --summary-uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..." --if-match "123"
+   }' --past-meeting-uid "123e4567-e89b-12d3-a456-426614174000" --summary-uid "456e7890-e89b-12d3-a456-426614174000" --version "1" --bearer-token "eyJhbGci..." --x-sync true --if-match "123"
 `, os.Args[0])
 }
 
 func meetingServiceCreateMeetingAttachmentUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-attachment -body JSON -meeting-uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-meeting-attachment -body JSON -meeting-uid STRING -version STRING -bearer-token STRING -x-sync BOOL
 
 Create a file or link attachment for a meeting
     -body JSON: 
     -meeting-uid STRING: The UID of the meeting this attachment belongs to
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
     %[1]s meeting-service create-meeting-attachment --body '{
@@ -1375,7 +1410,7 @@ Example:
       "link": "https://example.com/meeting-notes",
       "name": "Q1 Meeting Agenda",
       "type": "file"
-   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+   }' --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
@@ -1408,27 +1443,29 @@ Example:
 }
 
 func meetingServiceDeleteMeetingAttachmentUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-attachment -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-meeting-attachment -meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -x-sync BOOL
 
 Delete a file attachment for a meeting
     -meeting-uid STRING: The UID of the meeting this attachment belongs to
     -uid STRING: The UID of the attachment
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
-    %[1]s meeting-service delete-meeting-attachment --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service delete-meeting-attachment --meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
 func meetingServiceCreatePastMeetingAttachmentUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting-attachment -body JSON -past-meeting-uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service create-past-meeting-attachment -body JSON -past-meeting-uid STRING -version STRING -bearer-token STRING -x-sync BOOL
 
 Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.
     -body JSON: 
     -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
     %[1]s meeting-service create-past-meeting-attachment --body '{
@@ -1440,7 +1477,7 @@ Example:
       "name": "Q1 Meeting Recording",
       "source_object_uid": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
       "type": "file"
-   }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+   }' --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 
@@ -1486,16 +1523,17 @@ Example:
 }
 
 func meetingServiceDeletePastMeetingAttachmentUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting-attachment -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] meeting-service delete-past-meeting-attachment -past-meeting-uid STRING -uid STRING -version STRING -bearer-token STRING -x-sync BOOL
 
 Delete a past meeting attachment
     -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to
     -uid STRING: The UID of the attachment
     -version STRING: 
     -bearer-token STRING: 
+    -x-sync BOOL: 
 
 Example:
-    %[1]s meeting-service delete-past-meeting-attachment --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..."
+    %[1]s meeting-service delete-past-meeting-attachment --past-meeting-uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --uid "7cad5a8d-19d0-41a4-81a6-043453daf9ee" --version "1" --bearer-token "eyJhbGci..." --x-sync true
 `, os.Args[0])
 }
 

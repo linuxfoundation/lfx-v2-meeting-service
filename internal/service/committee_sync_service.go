@@ -344,7 +344,7 @@ func (s *CommitteeSyncService) updateRegistrantToCommitteeType(
 	}
 
 	// Use the registrant service to update, which handles NATS messages and FGA sync
-	_, err := s.registrantService.UpdateMeetingRegistrant(ctx, updateRequest, revision)
+	_, err := s.registrantService.UpdateMeetingRegistrant(ctx, updateRequest, revision, false)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update registrant to committee type",
 			"meeting_uid", existingRegistrant.MeetingUID,
@@ -399,7 +399,7 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 		JobTitle:     member.JobTitle,
 	}
 
-	createdRegistrant, err := s.registrantService.CreateMeetingRegistrant(ctx, registrant)
+	createdRegistrant, err := s.registrantService.CreateMeetingRegistrant(ctx, registrant, false)
 	if err != nil {
 		if domain.GetErrorType(err) == domain.ErrorTypeConflict {
 			// This shouldn't happen since we check ExistsByMeetingAndEmail above,
@@ -535,7 +535,7 @@ func (s *CommitteeSyncService) processCommitteeRegistrantRemoval(
 		return s.convertRegistrantToDirect(ctx, registrant)
 	} else {
 		// Remove registrant entirely using registrant service (includes email notifications)
-		return s.registrantService.DeleteRegistrantWithCleanup(ctx, registrant, meeting, 0, true)
+		return s.registrantService.DeleteRegistrantWithCleanup(ctx, registrant, meeting, 0, true, false)
 	}
 }
 
@@ -560,7 +560,7 @@ func (s *CommitteeSyncService) convertRegistrantToDirect(
 	}
 
 	// Send indexing message
-	err = s.indexSender.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrant)
+	err = s.indexSender.SendIndexMeetingRegistrant(ctx, models.ActionUpdated, *registrant, false)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to send indexing message for converted registrant",
 			"registrant_uid", registrant.UID,
@@ -811,7 +811,7 @@ func (s *CommitteeSyncService) UpdateCommitteeMemberEmailForMeeting(
 	}
 
 	// Use the registrant service to update, which handles NATS messages and FGA sync
-	_, err = s.registrantService.UpdateMeetingRegistrant(ctx, updatedRegistrant, registrantRevision)
+	_, err = s.registrantService.UpdateMeetingRegistrant(ctx, updatedRegistrant, registrantRevision, false)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update registrant email",
 			"meeting_uid", registrant.MeetingUID,

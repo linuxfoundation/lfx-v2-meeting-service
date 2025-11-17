@@ -80,7 +80,7 @@ func (s *PastMeetingTranscriptService) CreateTranscript(ctx context.Context, tra
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingTranscript(ctx, models.ActionCreated, *transcript)
+			return s.messageSender.SendIndexPastMeetingTranscript(ctx, models.ActionCreated, *transcript, false)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -109,7 +109,7 @@ func (s *PastMeetingTranscriptService) CreateTranscript(ctx context.Context, tra
 				PastMeetingUID:     transcript.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
 				Participants:       participants,
-			})
+			}, false)
 		},
 	}
 
@@ -209,7 +209,7 @@ func (s *PastMeetingTranscriptService) UpdateTranscript(ctx context.Context, tra
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeetingTranscript(ctx, models.ActionUpdated, *existingTranscript)
+			return s.messageSender.SendIndexPastMeetingTranscript(ctx, models.ActionUpdated, *existingTranscript, false)
 		},
 		func() error {
 			// Get past meeting to retrieve artifact visibility
@@ -238,7 +238,7 @@ func (s *PastMeetingTranscriptService) UpdateTranscript(ctx context.Context, tra
 				PastMeetingUID:     existingTranscript.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
 				Participants:       participants,
-			})
+			}, false)
 		},
 	}
 
@@ -300,7 +300,7 @@ func (s *PastMeetingTranscriptService) DeleteTranscript(ctx context.Context, tra
 	}
 
 	// Publish deletion message
-	err = s.messageSender.SendDeleteIndexPastMeetingTranscript(ctx, transcriptUID)
+	err = s.messageSender.SendDeleteIndexPastMeetingTranscript(ctx, transcriptUID, false)
 	if err != nil {
 		slog.WarnContext(ctx, "failed to publish transcript deletion message", logging.ErrKey, err,
 			"transcript_uid", transcriptUID,

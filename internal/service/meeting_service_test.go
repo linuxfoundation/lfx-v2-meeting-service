@@ -206,9 +206,9 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 				// Set up repository and message builder mocks
 				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.MeetingBase"), mock.AnythingOfType("*models.MeetingSettings")).Return(nil)
 				mockBuilder.On("GetProjectName", mock.Anything, "project-123").Return("Test Project", nil)
-				mockBuilder.On("SendIndexMeeting", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
-				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionCreated, mock.Anything).Return(nil)
-				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexMeeting", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionCreated, mock.Anything, mock.Anything).Return(nil)
+				mockBuilder.On("SendUpdateAccessMeeting", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				mockBuilder.On("SendMeetingCreated", mock.Anything, mock.Anything).Return(nil)
 			},
 			wantErr: false,
@@ -285,7 +285,7 @@ func TestMeetingsService_CreateMeeting(t *testing.T) {
 
 			tt.setupMocks(service, mockRepo, mockBuilder)
 
-			result, err := service.CreateMeeting(context.Background(), tt.payload)
+			result, err := service.CreateMeeting(context.Background(), tt.payload, false)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -531,7 +531,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 						settings.CreatedAt.Equal(now)
 				}), uint64(1)).Return(nil)
 
-				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionUpdated, mock.Anything).Return(nil)
+				mockBuilder.On("SendIndexMeetingSettings", mock.Anything, models.ActionUpdated, mock.Anything, mock.Anything).Return(nil)
 
 				mockRepo.On("GetBase", mock.Anything, "meeting-123").Return(&models.MeetingBase{
 					UID:        "meeting-123",
@@ -548,7 +548,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 						len(msg.Organizers) == 2 &&
 						msg.Organizers[0] == "org3" &&
 						msg.Organizers[1] == "org4"
-				})).Return(nil)
+				}), mock.Anything).Return(nil)
 			},
 			wantErr: false,
 			validate: func(t *testing.T, result *models.MeetingSettings) {
@@ -618,7 +618,7 @@ func TestMeetingsService_UpdateMeetingSettings(t *testing.T) {
 
 			tt.setupMocks(mockRepo, mockBuilder)
 
-			result, err := service.UpdateMeetingSettings(context.Background(), tt.settings, tt.revision)
+			result, err := service.UpdateMeetingSettings(context.Background(), tt.settings, tt.revision, false)
 
 			if tt.wantErr {
 				assert.Error(t, err)

@@ -18,6 +18,8 @@ func (s *MeetingsAPI) CreateMeetingRsvp(ctx context.Context, payload *meetingsvc
 		return nil, handleError(domain.NewValidationError("validation failed"))
 	}
 
+	sync := payload.XSync != nil && *payload.XSync
+
 	// Parse username from JWT token (principal is the username in Heimdall)
 	username, err := s.authService.ParsePrincipal(ctx, *payload.BearerToken, slog.Default())
 	if err != nil {
@@ -28,7 +30,7 @@ func (s *MeetingsAPI) CreateMeetingRsvp(ctx context.Context, payload *meetingsvc
 
 	req := service.ConvertCreateRSVPPayloadToDomain(payload)
 
-	rsvp, err := s.meetingRSVPService.PutRSVP(ctx, req)
+	rsvp, err := s.meetingRSVPService.PutRSVP(ctx, req, sync)
 	if err != nil {
 		return nil, handleError(err)
 	}

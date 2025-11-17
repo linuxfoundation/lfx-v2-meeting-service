@@ -200,7 +200,7 @@ func (s *MeetingHandler) HandleMeetingDeleted(ctx context.Context, msg domain.Me
 		reg := registrant // capture loop variable
 		tasks = append(tasks, func() error {
 			// Use the shared helper with skipRevisionCheck=true for bulk cleanup
-			err := s.registrantService.DeleteRegistrantWithCleanup(ctx, reg, meeting, 0, true)
+			err := s.registrantService.DeleteRegistrantWithCleanup(ctx, reg, meeting, 0, true, false)
 			if err != nil {
 				slog.ErrorContext(ctx, "error deleting registrant",
 					"registrant_uid", reg.UID,

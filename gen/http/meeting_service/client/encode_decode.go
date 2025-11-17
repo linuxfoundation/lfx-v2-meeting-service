@@ -15,6 +15,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -186,6 +187,11 @@ func EncodeCreateMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -794,6 +800,11 @@ func EncodeUpdateMeetingBaseRequest(encoder func(*http.Request) goahttp.Encoder)
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
 			req.Header.Set("If-Match", head)
@@ -972,6 +983,11 @@ func EncodeUpdateMeetingSettingsRequest(encoder func(*http.Request) goahttp.Enco
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
 			req.Header.Set("If-Match", head)
@@ -1134,6 +1150,11 @@ func EncodeDeleteMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
 			req.Header.Set("If-Match", head)
@@ -1279,6 +1300,11 @@ func EncodeDeleteMeetingOccurrenceRequest(encoder func(*http.Request) goahttp.En
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
@@ -1586,6 +1612,11 @@ func EncodeCreateMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -1915,6 +1946,11 @@ func EncodeUpdateMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
 			req.Header.Set("If-Match", head)
@@ -2097,6 +2133,11 @@ func EncodeDeleteMeetingRegistrantRequest(encoder func(*http.Request) goahttp.En
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
@@ -2406,6 +2447,11 @@ func EncodeCreateMeetingRsvpRequest(encoder func(*http.Request) goahttp.Encoder)
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -2964,6 +3010,11 @@ func EncodeCreatePastMeetingRequest(encoder func(*http.Request) goahttp.Encoder)
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		values := req.URL.Query()
 		if p.Version != nil {
 			values.Add("v", *p.Version)
@@ -3270,6 +3321,11 @@ func EncodeDeletePastMeetingRequest(encoder func(*http.Request) goahttp.Encoder)
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
 			req.Header.Set("If-Match", head)
@@ -3563,6 +3619,11 @@ func EncodeCreatePastMeetingParticipantRequest(encoder func(*http.Request) goaht
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -3893,6 +3954,11 @@ func EncodeUpdatePastMeetingParticipantRequest(encoder func(*http.Request) goaht
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
 			req.Header.Set("If-Match", head)
@@ -4075,6 +4141,11 @@ func EncodeDeletePastMeetingParticipantRequest(encoder func(*http.Request) goaht
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
@@ -4518,6 +4589,11 @@ func EncodeUpdatePastMeetingSummaryRequest(encoder func(*http.Request) goahttp.E
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		if p.IfMatch != nil {
 			head := *p.IfMatch
 			req.Header.Set("If-Match", head)
@@ -4679,6 +4755,11 @@ func EncodeCreateMeetingAttachmentRequest(encoder func(*http.Request) goahttp.En
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -5164,6 +5245,11 @@ func EncodeDeleteMeetingAttachmentRequest(encoder func(*http.Request) goahttp.En
 				req.Header.Set("Authorization", head)
 			}
 		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
+		}
 		values := req.URL.Query()
 		if p.Version != nil {
 			values.Add("v", *p.Version)
@@ -5304,6 +5390,11 @@ func EncodeCreatePastMeetingAttachmentRequest(encoder func(*http.Request) goahtt
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {
@@ -5939,6 +6030,11 @@ func EncodeDeletePastMeetingAttachmentRequest(encoder func(*http.Request) goahtt
 			} else {
 				req.Header.Set("Authorization", head)
 			}
+		}
+		if p.XSync != nil {
+			head := *p.XSync
+			headStr := strconv.FormatBool(head)
+			req.Header.Set("X-Sync", headStr)
 		}
 		values := req.URL.Query()
 		if p.Version != nil {

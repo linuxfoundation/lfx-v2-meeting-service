@@ -151,7 +151,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeetingReq)
+			return s.messageSender.SendIndexPastMeeting(ctx, models.ActionCreated, *pastMeetingReq, false)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -166,7 +166,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, pastMeetingR
 				Public:     pastMeetingReq.IsPublic(),
 				ProjectUID: pastMeetingReq.ProjectUID,
 				Committees: committees,
-			})
+			}, false)
 		},
 	}
 
@@ -316,7 +316,7 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeeting 
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendIndexPastMeeting(ctx, models.ActionUpdated, *pastMeeting)
+			return s.messageSender.SendIndexPastMeeting(ctx, models.ActionUpdated, *pastMeeting, false)
 		},
 		func() error {
 			// For the message we only need the committee UIDs.
@@ -331,7 +331,7 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeeting 
 				Public:     pastMeeting.IsPublic(),
 				ProjectUID: pastMeeting.ProjectUID,
 				Committees: committees,
-			})
+			}, false)
 		},
 	}
 
@@ -380,10 +380,10 @@ func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, uid string, 
 	pool := concurrent.NewWorkerPool(2) // 2 messages to send
 	messages := []func() error{
 		func() error {
-			return s.messageSender.SendDeleteIndexPastMeeting(ctx, uid)
+			return s.messageSender.SendDeleteIndexPastMeeting(ctx, uid, false)
 		},
 		func() error {
-			return s.messageSender.SendDeleteAllAccessPastMeeting(ctx, uid)
+			return s.messageSender.SendDeleteAllAccessPastMeeting(ctx, uid, false)
 		},
 	}
 

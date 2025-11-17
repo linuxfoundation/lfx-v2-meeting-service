@@ -158,6 +158,9 @@ type ConflictError struct {
 type CreateMeetingAttachmentPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the meeting this attachment belongs to
@@ -183,6 +186,9 @@ type CreateMeetingAttachmentPayload struct {
 type CreateMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the LF project
@@ -235,6 +241,9 @@ type CreateMeetingPayload struct {
 type CreateMeetingRegistrantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the meeting
@@ -265,6 +274,9 @@ type CreateMeetingRegistrantPayload struct {
 type CreateMeetingRsvpPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the meeting this RSVP is for
@@ -288,6 +300,9 @@ type CreateMeetingRsvpPayload struct {
 type CreatePastMeetingAttachmentPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the past meeting this attachment belongs to
@@ -317,6 +332,9 @@ type CreatePastMeetingAttachmentPayload struct {
 type CreatePastMeetingParticipantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The unique identifier of the past meeting
@@ -350,6 +368,9 @@ type CreatePastMeetingParticipantPayload struct {
 type CreatePastMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the original meeting
@@ -414,6 +435,9 @@ type CreatePastMeetingPayload struct {
 type DeleteMeetingAttachmentPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the meeting this attachment belongs to
@@ -427,6 +451,9 @@ type DeleteMeetingAttachmentPayload struct {
 type DeleteMeetingOccurrencePayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -442,6 +469,9 @@ type DeleteMeetingOccurrencePayload struct {
 type DeleteMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -455,6 +485,9 @@ type DeleteMeetingPayload struct {
 type DeleteMeetingRegistrantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -470,6 +503,9 @@ type DeleteMeetingRegistrantPayload struct {
 type DeletePastMeetingAttachmentPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// The UID of the past meeting this attachment belongs to
@@ -483,6 +519,9 @@ type DeletePastMeetingAttachmentPayload struct {
 type DeletePastMeetingParticipantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -498,6 +537,9 @@ type DeletePastMeetingParticipantPayload struct {
 type DeletePastMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -1433,6 +1475,9 @@ type UnauthorizedError struct {
 type UpdateMeetingBasePayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -1486,6 +1531,9 @@ type UpdateMeetingBasePayload struct {
 type UpdateMeetingRegistrantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -1520,6 +1568,9 @@ type UpdateMeetingRegistrantPayload struct {
 type UpdateMeetingSettingsPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -1536,6 +1587,9 @@ type UpdateMeetingSettingsPayload struct {
 type UpdatePastMeetingParticipantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// If-Match header value for conditional requests
 	IfMatch *string
 	// Version of the API
@@ -1571,6 +1625,9 @@ type UpdatePastMeetingParticipantPayload struct {
 type UpdatePastMeetingSummaryPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
 	// Version of the API
 	Version *string
 	// If-Match header value for conditional requests

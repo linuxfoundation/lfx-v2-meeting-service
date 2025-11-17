@@ -521,6 +521,15 @@ paths:
                     enum:
                         - "1"
                   example: "1"
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             requestBody:
                 required: true
                 content:
@@ -779,6 +788,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             requestBody:
                 required: true
                 content:
@@ -907,6 +925,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             responses:
                 "204":
                     description: No Content response.
@@ -1226,6 +1253,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             requestBody:
                 required: true
                 content:
@@ -1353,6 +1389,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -1550,6 +1595,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -1851,6 +1905,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             requestBody:
                 required: true
                 content:
@@ -1948,6 +2011,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -2228,6 +2300,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -2583,6 +2664,15 @@ paths:
                     description: The ID of the occurrence to cancel
                     example: "1640995200"
                   example: "1640995200"
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -2860,6 +2950,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -3143,6 +3242,15 @@ paths:
                     enum:
                         - "1"
                   example: "1"
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             requestBody:
                 required: true
                 content:
@@ -3344,6 +3452,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             requestBody:
                 required: true
                 content:
@@ -3493,6 +3610,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             responses:
                 "204":
                     description: No Content response.
@@ -3846,6 +3972,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -4047,6 +4182,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -4304,6 +4448,15 @@ paths:
                     example: 456e7890-e89b-12d3-a456-426614174000
                     format: uuid
                   example: 456e7890-e89b-12d3-a456-426614174000
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -4417,6 +4570,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
                 - name: If-Match
                   in: header
                   description: If-Match header value for conditional requests
@@ -4937,6 +5099,15 @@ paths:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     format: uuid
                   example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - name: X-Sync
+                  in: header
+                  description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                  allowEmptyValue: true
+                  schema:
+                    type: boolean
+                    description: Determines if the operation should be synchronous (true) or asynchronous (false, default)
+                    example: true
+                  example: true
             requestBody:
                 required: true
                 content:

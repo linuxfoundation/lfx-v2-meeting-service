@@ -100,7 +100,7 @@ func (s *MeetingAttachmentService) validateCreateMeetingAttachmentRequest(req *m
 }
 
 // CreateMeetingAttachment creates a file or link attachment for a meeting
-func (s *MeetingAttachmentService) CreateMeetingAttachment(ctx context.Context, req *models.CreateMeetingAttachmentRequest) (*models.MeetingAttachment, error) {
+func (s *MeetingAttachmentService) CreateMeetingAttachment(ctx context.Context, req *models.CreateMeetingAttachmentRequest, sync bool) (*models.MeetingAttachment, error) {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return nil, domain.NewUnavailableError("attachment service is not ready")
@@ -179,7 +179,7 @@ func (s *MeetingAttachmentService) CreateMeetingAttachment(ctx context.Context, 
 			if s.indexSender == nil {
 				return nil
 			}
-			if err := s.indexSender.SendIndexMeetingAttachment(ctx, models.ActionCreated, *attachment); err != nil {
+			if err := s.indexSender.SendIndexMeetingAttachment(ctx, models.ActionCreated, *attachment, sync); err != nil {
 				slog.WarnContext(ctx, "failed to send index message for attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachment.UID)
@@ -195,7 +195,7 @@ func (s *MeetingAttachmentService) CreateMeetingAttachment(ctx context.Context, 
 				UID:        attachment.UID,
 				MeetingUID: attachment.MeetingUID,
 			}
-			if err := s.accessSender.SendUpdateAccessMeetingAttachment(ctx, accessMsg); err != nil {
+			if err := s.accessSender.SendUpdateAccessMeetingAttachment(ctx, accessMsg, sync); err != nil {
 				slog.WarnContext(ctx, "failed to send access control message for attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachment.UID)
@@ -334,7 +334,7 @@ func (s *MeetingAttachmentService) GetMeetingAttachmentsForEmail(ctx context.Con
 }
 
 // DeleteAttachment deletes a file attachment by UID
-func (s *MeetingAttachmentService) DeleteAttachment(ctx context.Context, meetingUID, attachmentUID string) error {
+func (s *MeetingAttachmentService) DeleteAttachment(ctx context.Context, meetingUID, attachmentUID string, sync bool) error {
 	if !s.ServiceReady() {
 		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
 		return domain.NewUnavailableError("attachment service is not ready")
@@ -376,7 +376,7 @@ func (s *MeetingAttachmentService) DeleteAttachment(ctx context.Context, meeting
 			if s.indexSender == nil {
 				return nil
 			}
-			if err := s.indexSender.SendDeleteIndexMeetingAttachment(ctx, attachmentUID); err != nil {
+			if err := s.indexSender.SendDeleteIndexMeetingAttachment(ctx, attachmentUID, sync); err != nil {
 				slog.WarnContext(ctx, "failed to send delete index message for attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachmentUID)
@@ -388,7 +388,7 @@ func (s *MeetingAttachmentService) DeleteAttachment(ctx context.Context, meeting
 			if s.accessSender == nil {
 				return nil
 			}
-			if err := s.accessSender.SendDeleteAccessMeetingAttachment(ctx, attachmentUID); err != nil {
+			if err := s.accessSender.SendDeleteAccessMeetingAttachment(ctx, attachmentUID, sync); err != nil {
 				slog.WarnContext(ctx, "failed to send delete access control message for attachment",
 					logging.ErrKey, err,
 					"attachment_uid", attachmentUID)

@@ -210,7 +210,7 @@ func TestMessageBuilder_sendIndexerMessage(t *testing.T) {
 		dataBytes, _ := json.Marshal(data)
 		tags := []string{"tag1", "tag2"}
 
-		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, dataBytes, tags)
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, dataBytes, tags, false)
 		if err != nil {
 			t.Errorf("expected no error, got: %v", err)
 		}
@@ -255,7 +255,7 @@ func TestMessageBuilder_sendIndexerMessage(t *testing.T) {
 		ctx := context.Background()
 		tags := []string{"meeting_uid:meeting-123"}
 
-		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionDeleted, []byte(uid), tags)
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionDeleted, []byte(uid), tags, false)
 		if err != nil {
 			t.Errorf("expected no error, got: %v", err)
 		}
@@ -275,7 +275,7 @@ func TestMessageBuilder_sendIndexerMessage(t *testing.T) {
 		invalidJSON := []byte("{invalid json")
 		tags := []string{"tag1"}
 
-		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, invalidJSON, tags)
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, invalidJSON, tags, false)
 		if err == nil {
 			t.Error("expected error for invalid JSON, got nil")
 		}
@@ -297,7 +297,7 @@ func TestMessageBuilder_sendIndexerMessage(t *testing.T) {
 		dataBytes, _ := json.Marshal(data)
 		tags := []string{"tag1"}
 
-		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, dataBytes, tags)
+		err := builder.sendIndexerMessage(ctx, "test.subject", models.ActionCreated, dataBytes, tags, false)
 		if err == nil {
 			t.Error("expected publish error, got nil")
 		}
