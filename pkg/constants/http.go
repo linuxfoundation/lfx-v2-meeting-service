@@ -46,6 +46,12 @@ type contextEtag string
 // ETagContextID is the context ID for the ETag
 const ETagContextID contextEtag = "etag"
 
+// contextUsername is the type for the username context key
+type contextUsername string
+
+// UsernameContextID is the context ID for the username
+const UsernameContextID contextUsername = "username"
+
 // LFX app domain constants
 const (
 	// LFXDomainDev is the development domain

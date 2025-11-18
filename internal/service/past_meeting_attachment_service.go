@@ -97,7 +97,6 @@ func (s *PastMeetingAttachmentService) validateCreatePastMeetingAttachmentReques
 	if req.PastMeetingUID == "" {
 		return domain.NewValidationError("past meeting UID is required")
 	}
-
 	if req.Username == "" {
 		return domain.NewValidationError("username is required")
 	}

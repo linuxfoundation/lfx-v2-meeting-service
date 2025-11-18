@@ -45,6 +45,7 @@ func setupServiceForTesting() (*MeetingService, *mocks.MockMeetingRepository, *m
 		mockPlatformRegistry,
 		occurrenceService,
 		mockEmailService,
+		nil, // attachmentService - nil for basic tests that don't test link extraction
 		config,
 	)
 
