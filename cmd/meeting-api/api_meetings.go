@@ -5,11 +5,14 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	svc "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 // GetMeetings fetches all meetings
@@ -38,6 +41,16 @@ func (s *MeetingsAPI) GetMeetings(ctx context.Context, payload *meetingsvc.GetMe
 // CreateMeeting creates a new meeting.
 func (s *MeetingsAPI) CreateMeeting(ctx context.Context, payload *meetingsvc.CreateMeetingPayload) (*meetingsvc.MeetingFull, error) {
 	sync := payload.XSync != nil && *payload.XSync
+
+	// Parse username from JWT token
+	username, err := s.authService.ParsePrincipal(ctx, *payload.BearerToken, slog.Default())
+	if err != nil {
+		slog.WarnContext(ctx, "failed to parse username from JWT token", logging.ErrKey, err)
+		return nil, handleError(domain.NewValidationError("failed to parse username from authorization token"))
+	}
+
+	// Store username in context for use by service layer
+	ctx = context.WithValue(ctx, constants.UsernameContextID, username)
 
 	createMeetingReq, err := service.ConvertCreateMeetingPayloadToDomain(payload)
 	if err != nil {
@@ -112,6 +125,16 @@ func (s *MeetingsAPI) UpdateMeetingBase(ctx context.Context, payload *meetingsvc
 	}
 
 	sync := payload.XSync != nil && *payload.XSync
+
+	// Parse username from JWT token
+	username, err := s.authService.ParsePrincipal(ctx, *payload.BearerToken, slog.Default())
+	if err != nil {
+		slog.WarnContext(ctx, "failed to parse username from JWT token", logging.ErrKey, err)
+		return nil, handleError(domain.NewValidationError("failed to parse username from authorization token"))
+	}
+
+	// Store username in context for use by service layer
+	ctx = context.WithValue(ctx, constants.UsernameContextID, username)
 
 	etag, err := service.EtagValidator(payload.IfMatch)
 	if err != nil {

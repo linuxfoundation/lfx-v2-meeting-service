@@ -53,6 +53,7 @@ func setupHandlerForTesting() (*MeetingHandler, *mocks.MockMeetingRepository, *m
 		mockPlatformRegistry,
 		occurrenceService,
 		mockEmailService,
+		mockAttachmentService,
 		config,
 	)
 

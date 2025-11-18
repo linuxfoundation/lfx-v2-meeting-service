@@ -77,6 +77,12 @@ func main() {
 	messageBuilder := messaging.NewMessageBuilder(natsConn)
 	authService := service.NewAuthService(jwtAuth)
 	occurrenceService := service.NewOccurrenceService()
+	attachmentService := service.NewMeetingAttachmentService(
+		repos.Attachment,
+		repos.Meeting,
+		messageBuilder, // Implements MeetingAttachmentIndexSender
+		messageBuilder, // Implements MeetingAttachmentAccessSender
+	)
 	meetingService := service.NewMeetingService(
 		repos.Meeting,
 		repos.Registrant,
@@ -86,13 +92,8 @@ func main() {
 		platformRegistry,
 		occurrenceService,
 		emailService,
+		attachmentService,
 		serviceConfig,
-	)
-	attachmentService := service.NewMeetingAttachmentService(
-		repos.Attachment,
-		repos.Meeting,
-		messageBuilder, // Implements MeetingAttachmentIndexSender
-		messageBuilder, // Implements MeetingAttachmentAccessSender
 	)
 	registrantService := service.NewMeetingRegistrantService(
 		repos.Meeting,

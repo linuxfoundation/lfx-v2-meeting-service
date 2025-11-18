@@ -22,6 +22,15 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
+// getUsernameFromContext extracts the username from the context
+// Returns empty string if username is not found in context
+func getUsernameFromContext(ctx context.Context) string {
+	if username, ok := ctx.Value(constants.UsernameContextID).(string); ok {
+		return username
+	}
+	return ""
+}
+
 // MeetingsService implements the meetingsvc.Service interface and domain.MessageHandler
 type MeetingService struct {
 	meetingRepository     domain.MeetingRepository
@@ -32,6 +41,7 @@ type MeetingService struct {
 	platformRegistry      domain.PlatformRegistry
 	occurrenceService     domain.OccurrenceService
 	emailService          domain.EmailService
+	attachmentService     *MeetingAttachmentService
 	config                ServiceConfig
 }
 
@@ -45,6 +55,7 @@ func NewMeetingService(
 	platformRegistry domain.PlatformRegistry,
 	occurrenceService domain.OccurrenceService,
 	emailService domain.EmailService,
+	attachmentService *MeetingAttachmentService,
 	config ServiceConfig,
 ) *MeetingService {
 	return &MeetingService{
@@ -56,6 +67,7 @@ func NewMeetingService(
 		platformRegistry:      platformRegistry,
 		occurrenceService:     occurrenceService,
 		emailService:          emailService,
+		attachmentService:     attachmentService,
 		config:                config,
 	}
 }
@@ -426,6 +438,17 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	// Generate password for the meeting
 	reqMeeting.Base.Password = uuid.New().String()
 
+	// Early validation: Check if links can be extracted from description
+	// This fails fast before creating anything (Zoom meeting or NATS entries)
+	var extractedLinks []string
+	if s.attachmentService != nil && reqMeeting.Base.Description != "" {
+		var err error
+		extractedLinks, err = s.attachmentService.ValidateAndExtractLinks(ctx, reqMeeting.Base.Description)
+		if err != nil {
+			return nil, domain.NewInternalError("failed to extract links from meeting description", err)
+		}
+	}
+
 	// Create meeting on external platform if configured
 	if reqMeeting.Base.Platform != "" {
 		provider, err := s.platformRegistry.GetProvider(reqMeeting.Base.Platform)
@@ -479,6 +502,24 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 			}
 		}
 		return nil, err
+	}
+
+	// Now that the meeting exists in NATS, create link attachments from description
+	// We use the extracted links from earlier validation to avoid re-extraction
+	if s.attachmentService != nil && len(extractedLinks) > 0 {
+		username := getUsernameFromContext(ctx)
+		if username == "" {
+			slog.WarnContext(ctx, "username not available in context, skipping link attachment creation",
+				"meeting_uid", reqMeeting.Base.UID)
+		} else if err := s.attachmentService.CreateLinksFromDescription(ctx, reqMeeting.Base.UID, reqMeeting.Base.Description, username, sync); err != nil {
+			slog.ErrorContext(ctx, "failed to create link attachments from description after meeting creation",
+				logging.ErrKey, err,
+				"meeting_uid", reqMeeting.Base.UID)
+			// Log the error but don't fail the meeting creation - meeting was already created
+			// The user can manually add attachments if needed
+			slog.WarnContext(ctx, "meeting created successfully but link attachments failed - user may need to add manually",
+				"meeting_uid", reqMeeting.Base.UID)
+		}
 	}
 
 	// Use WorkerPool for concurrent NATS message sending
@@ -711,6 +752,17 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 		return nil, err
 	}
 
+	// Early validation: Check if links can be extracted from description if it changed
+	// This fails fast before updating anything (Zoom meeting or NATS entries)
+	var extractedLinks []string
+	if s.attachmentService != nil && reqMeeting.Description != existingMeetingDB.Description && reqMeeting.Description != "" {
+		var err error
+		extractedLinks, err = s.attachmentService.ValidateAndExtractLinks(ctx, reqMeeting.Description)
+		if err != nil {
+			return nil, domain.NewInternalError("failed to extract links from meeting description", err)
+		}
+	}
+
 	// Update meeting on external platform if configured
 	if reqMeeting.Platform != "" {
 		provider, err := s.platformRegistry.GetProvider(reqMeeting.Platform)
@@ -754,9 +806,28 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 	// Detect changes before updating
 	changes := detectMeetingBaseChanges(existingMeetingDB, reqMeeting)
 
+	// Update the meeting in the repository
 	err = s.meetingRepository.UpdateBase(ctx, reqMeeting, revision)
 	if err != nil {
 		return nil, err
+	}
+
+	// Now that the meeting is updated in NATS, create link attachments from description
+	// Only process if description changed and links were found during validation
+	if s.attachmentService != nil && len(extractedLinks) > 0 {
+		username := getUsernameFromContext(ctx)
+		if username == "" {
+			slog.WarnContext(ctx, "username not available in context, skipping link attachment creation",
+				"meeting_uid", reqMeeting.UID)
+		} else if err := s.attachmentService.CreateLinksFromDescription(ctx, reqMeeting.UID, reqMeeting.Description, username, sync); err != nil {
+			slog.ErrorContext(ctx, "failed to create link attachments from description after meeting update",
+				logging.ErrKey, err,
+				"meeting_uid", reqMeeting.UID)
+			// Log the error but don't fail the meeting update - meeting was already updated
+			// The user can manually add attachments if needed
+			slog.WarnContext(ctx, "meeting updated successfully but link attachments failed - user may need to add manually",
+				"meeting_uid", reqMeeting.UID)
+		}
 	}
 
 	// Calculate occurrences for the updated meeting before sending NATS messages

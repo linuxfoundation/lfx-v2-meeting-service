@@ -14,6 +14,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/utils"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/concurrent"
 )
 
@@ -403,6 +404,156 @@ func (s *MeetingAttachmentService) DeleteAttachment(ctx context.Context, meeting
 		slog.WarnContext(ctx, "some messaging operations failed for attachment deletion",
 			"attachment_uid", attachmentUID,
 			"error_count", len(errors))
+	}
+
+	return nil
+}
+
+// GetAttachmentsByMeetingUID retrieves all attachments for a given meeting UID
+func (s *MeetingAttachmentService) GetAttachmentsByMeetingUID(ctx context.Context, meetingUID string) ([]*models.MeetingAttachment, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("attachment service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+
+	// Validate input
+	if meetingUID == "" {
+		return nil, domain.NewValidationError("meeting UID is required")
+	}
+
+	// Get all attachments for the meeting
+	attachments, err := s.attachmentRepository.ListByMeeting(ctx, meetingUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return attachments, nil
+}
+
+// ValidateAndExtractLinks extracts URLs from a description for validation purposes.
+// This is used for early validation before creating meetings or attachments.
+// Returns the list of extracted URLs and an error if extraction fails.
+// This method does NOT create any attachments - it only extracts URLs.
+// Note: An empty list of URLs is not an error - it just means no URLs were found.
+func (s *MeetingAttachmentService) ValidateAndExtractLinks(ctx context.Context, description string) ([]string, error) {
+	if description == "" {
+		return []string{}, nil
+	}
+
+	// Extract URLs from description
+	// The extraction process itself shouldn't fail unless there's a critical error
+	extractedURLs := utils.ExtractURLs(description)
+
+	if len(extractedURLs) > 0 {
+		slog.DebugContext(ctx, "validated and extracted URLs from description", "url_count", len(extractedURLs))
+	}
+
+	return extractedURLs, nil
+}
+
+// FilterNewLinks filters out URLs that already exist as link attachments
+// Returns only the URLs that are not already present in the existing attachments
+func (s *MeetingAttachmentService) FilterNewLinks(existingAttachments []*models.MeetingAttachment, extractedURLs []string) []string {
+	if len(extractedURLs) == 0 {
+		return []string{}
+	}
+
+	// Create a set of existing link URLs for fast lookup
+	existingLinks := make(map[string]bool)
+	for _, attachment := range existingAttachments {
+		if attachment.Type == models.AttachmentTypeLink && attachment.Link != "" {
+			existingLinks[attachment.Link] = true
+		}
+	}
+
+	// Filter out URLs that already exist
+	newLinks := make([]string, 0, len(extractedURLs))
+	for _, url := range extractedURLs {
+		if !existingLinks[url] {
+			newLinks = append(newLinks, url)
+		}
+	}
+
+	return newLinks
+}
+
+// CreateLinksFromDescription extracts URLs from a meeting description and creates link attachments
+// for any URLs that don't already exist as attachments. This method is called during meeting
+// creation and updates to automatically capture agenda links.
+//
+// Parameters:
+//   - ctx: Context for the operation
+//   - meetingUID: The UID of the meeting to attach links to
+//   - description: The meeting description text to extract URLs from
+//   - username: The username to attribute link creation to
+//   - sync: Whether to send messaging operations synchronously
+//
+// Returns an error if:
+//   - The service is not ready
+//   - URL extraction fails
+//   - Fetching existing attachments fails
+//   - Any link attachment creation fails
+func (s *MeetingAttachmentService) CreateLinksFromDescription(ctx context.Context, meetingUID, description, username string, sync bool) error {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return domain.NewUnavailableError("attachment service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("meeting_uid", meetingUID))
+
+	// Extract URLs from description
+	extractedURLs := utils.ExtractURLs(description)
+	if len(extractedURLs) == 0 {
+		slog.DebugContext(ctx, "no URLs found in meeting description")
+		return nil
+	}
+
+	slog.InfoContext(ctx, "extracted URLs from meeting description", "url_count", len(extractedURLs))
+
+	// Fetch existing attachments to check for duplicates
+	existingAttachments, err := s.GetAttachmentsByMeetingUID(ctx, meetingUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to fetch existing attachments for duplicate check", logging.ErrKey, err)
+		return domain.NewInternalError("failed to fetch existing attachments for duplicate check", err)
+	}
+
+	// Filter out URLs that already exist as attachments
+	newLinks := s.FilterNewLinks(existingAttachments, extractedURLs)
+	if len(newLinks) == 0 {
+		slog.DebugContext(ctx, "all extracted URLs already exist as attachments")
+		return nil
+	}
+
+	slog.InfoContext(ctx, "creating link attachments for new URLs", "new_link_count", len(newLinks))
+
+	// Create link attachments for each new URL
+	for _, url := range newLinks {
+		// Extract domain from URL to use as the name
+		domainName := utils.ExtractDomain(url)
+
+		req := &models.CreateMeetingAttachmentRequest{
+			MeetingUID:  meetingUID,
+			Type:        models.AttachmentTypeLink,
+			Link:        url,
+			Name:        domainName,
+			Description: "",
+			Username:    username, // Username is required and must be provided by caller
+		}
+
+		attachment, err := s.CreateMeetingAttachment(ctx, req, sync)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to create link attachment from description",
+				logging.ErrKey, err,
+				"url", url,
+				"meeting_uid", meetingUID)
+			return domain.NewInternalError("failed to create link attachment for URL", err)
+		}
+
+		slog.InfoContext(ctx, "created link attachment from description",
+			"attachment_uid", attachment.UID,
+			"url", url)
 	}
 
 	return nil
