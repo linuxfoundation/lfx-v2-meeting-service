@@ -10,6 +10,18 @@ image:
   # pullPolicy is the image pull policy
   pullPolicy: IfNotPresent
 
+replicaCount: 3
+
+resources:
+  # limits define the maximum resources the container can use
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  # requests define the minimum resources the container needs
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
 # app is the configuration for the application
 app:
   # audience is the JWT audience required for this authentication with this app
