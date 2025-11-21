@@ -344,6 +344,27 @@ func (s *MeetingService) ListMeetingsByCommittee(ctx context.Context, committeeU
 	return meetings, settings, nil
 }
 
+// ListMeetingsByProject gets all meeting bases associated with a project
+func (s *MeetingService) ListMeetingsByProject(ctx context.Context, projectUID string) ([]*models.MeetingBase, error) {
+	if !s.ServiceReady() {
+		slog.ErrorContext(ctx, "service not initialized", logging.PriorityCritical())
+		return nil, domain.NewUnavailableError("meeting service is not ready")
+	}
+
+	ctx = logging.AppendCtx(ctx, slog.String("project_uid", projectUID))
+
+	// Get meetings from repository
+	meetings, err := s.meetingRepository.ListByProject(ctx, projectUID)
+	if err != nil {
+		slog.ErrorContext(ctx, "error getting meetings by project", logging.ErrKey, err)
+		return nil, err
+	}
+
+	slog.DebugContext(ctx, "returning meetings by project", "meeting_count", len(meetings))
+
+	return meetings, nil
+}
+
 func (s *MeetingService) validateCreateMeetingPayload(ctx context.Context, payload *models.MeetingFull) error {
 	if payload == nil || payload.Base == nil {
 		return domain.NewValidationError("meeting payload is required")
