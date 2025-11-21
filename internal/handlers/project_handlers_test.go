@@ -403,6 +403,64 @@ func TestProjectHandlers_FindRemovedUsernamesByRoles(t *testing.T) {
 			roles:    []ProjectRole{ProjectRoleAuditor},
 			expected: []string{"auditor2"},
 		},
+		{
+			name: "user removed from writers but still in meeting coordinators - not flagged",
+			oldSettings: &models.ProjectSettings{
+				Writers: []models.ProjectUserInfo{
+					{Username: "user1"},
+				},
+				MeetingCoordinators: []models.ProjectUserInfo{
+					{Username: "user1"},
+				},
+			},
+			newSettings: &models.ProjectSettings{
+				Writers: []models.ProjectUserInfo{},
+				MeetingCoordinators: []models.ProjectUserInfo{
+					{Username: "user1"}, // Still has meeting coordinator role
+				},
+			},
+			roles:    []ProjectRole{ProjectRoleWriter, ProjectRoleMeetingCoordinator},
+			expected: []string{}, // user1 should NOT be flagged since they still have meeting coordinator role
+		},
+		{
+			name: "user removed from meeting coordinators but still in writers - not flagged",
+			oldSettings: &models.ProjectSettings{
+				Writers: []models.ProjectUserInfo{
+					{Username: "user1"},
+				},
+				MeetingCoordinators: []models.ProjectUserInfo{
+					{Username: "user1"},
+				},
+			},
+			newSettings: &models.ProjectSettings{
+				Writers: []models.ProjectUserInfo{
+					{Username: "user1"}, // Still has writer role
+				},
+				MeetingCoordinators: []models.ProjectUserInfo{},
+			},
+			roles:    []ProjectRole{ProjectRoleWriter, ProjectRoleMeetingCoordinator},
+			expected: []string{}, // user1 should NOT be flagged since they still have writer role
+		},
+		{
+			name: "mixed scenario - one user fully removed, one still has a role",
+			oldSettings: &models.ProjectSettings{
+				Writers: []models.ProjectUserInfo{
+					{Username: "user1"},
+					{Username: "user2"},
+				},
+				MeetingCoordinators: []models.ProjectUserInfo{
+					{Username: "user1"},
+				},
+			},
+			newSettings: &models.ProjectSettings{
+				Writers: []models.ProjectUserInfo{},
+				MeetingCoordinators: []models.ProjectUserInfo{
+					{Username: "user1"}, // user1 still has this role
+				},
+			},
+			roles:    []ProjectRole{ProjectRoleWriter, ProjectRoleMeetingCoordinator},
+			expected: []string{"user2"}, // Only user2 should be flagged (fully removed)
+		},
 	}
 
 	for _, tt := range tests {

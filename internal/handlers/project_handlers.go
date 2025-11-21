@@ -194,29 +194,37 @@ func getUsernamesByRole(settings *models.ProjectSettings, role ProjectRole) map[
 	return usernames
 }
 
-// findRemovedUsernamesByRoles finds usernames that were removed from any of the specified roles
+// findRemovedUsernamesByRoles finds usernames that no longer have any of the specified roles.
+// It computes the union of usernames across all roles in oldSettings and newSettings,
+// then returns users who were in the old union but are not in the new union.
+// This ensures users who are removed from one role but still have another role are not flagged.
 func (h *ProjectHandlers) findRemovedUsernamesByRoles(
 	oldSettings, newSettings *models.ProjectSettings,
 	roles []ProjectRole,
 ) []string {
-	removedUsernames := make(map[string]bool)
-
+	// Build union of usernames across all specified roles in old settings
+	oldUnion := make(map[string]bool)
 	for _, role := range roles {
-		oldUsernames := getUsernamesByRole(oldSettings, role)
-		newUsernames := getUsernamesByRole(newSettings, role)
-
-		// Check each old username - if not in new, they're removed from this role
-		for username := range oldUsernames {
-			if !newUsernames[username] {
-				removedUsernames[username] = true
-			}
+		for username := range getUsernamesByRole(oldSettings, role) {
+			oldUnion[username] = true
 		}
 	}
 
-	// Convert map to slice
-	result := make([]string, 0, len(removedUsernames))
-	for username := range removedUsernames {
-		result = append(result, username)
+	// Build union of usernames across all specified roles in new settings
+	newUnion := make(map[string]bool)
+	for _, role := range roles {
+		for username := range getUsernamesByRole(newSettings, role) {
+			newUnion[username] = true
+		}
+	}
+
+	// Find usernames that were in old union but not in new union
+	// (users who no longer have ANY of the organizer-granting roles)
+	result := make([]string, 0)
+	for username := range oldUnion {
+		if !newUnion[username] {
+			result = append(result, username)
+		}
 	}
 
 	return result
