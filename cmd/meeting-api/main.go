@@ -197,6 +197,9 @@ func main() {
 		committeeSyncService,
 		messageBuilder,
 	)
+	projectHandler := handlers.NewProjectHandlers(
+		meetingService,
+	)
 
 	svc := NewMeetingsAPI(
 		authService,
@@ -212,6 +215,7 @@ func main() {
 		zoomWebhookHandler,
 		meetingHandler,
 		committeeHandler,
+		projectHandler,
 	)
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)

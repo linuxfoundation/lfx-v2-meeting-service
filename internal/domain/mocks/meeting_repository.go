@@ -79,6 +79,14 @@ func (m *MockMeetingRepository) ListByCommittee(ctx context.Context, committeeUI
 	return args.Get(0).([]*models.MeetingBase), args.Get(1).([]*models.MeetingSettings), args.Error(2)
 }
 
+func (m *MockMeetingRepository) ListByProject(ctx context.Context, projectUID string) ([]*models.MeetingBase, error) {
+	args := m.Called(ctx, projectUID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.MeetingBase), args.Error(1)
+}
+
 func (m *MockMeetingRepository) Create(ctx context.Context, meeting *models.MeetingBase, settings *models.MeetingSettings) error {
 	args := m.Called(ctx, meeting, settings)
 	return args.Error(0)

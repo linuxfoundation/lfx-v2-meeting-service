@@ -149,6 +149,10 @@ const (
 	// ProjectGetSlugSubject is the subject for project slug validation.
 	// The subject is of the form: lfx.projects-api.get_slug
 	ProjectGetSlugSubject = "lfx.projects-api.get_slug"
+
+	// ProjectSettingsUpdatedSubject is the subject for project settings update events.
+	// The subject is of the form: lfx.projects-api.project_settings.updated
+	ProjectSettingsUpdatedSubject = "lfx.projects-api.project_settings.updated"
 )
 
 // NATS wildcard subjects that the meeting service handles messages about.
@@ -391,4 +395,33 @@ type ZoomWebhookEventMessage struct {
 	EventType string                 `json:"event_type"`
 	EventTS   int64                  `json:"event_ts"`
 	Payload   map[string]interface{} `json:"payload"`
+}
+
+// ProjectSettingsUpdatedPayload is the schema for the project settings updated event.
+// This message is published by the projects-api service when project settings are updated.
+type ProjectSettingsUpdatedPayload struct {
+	ProjectUID  string           `json:"project_uid"`
+	OldSettings *ProjectSettings `json:"old_settings"`
+	NewSettings *ProjectSettings `json:"new_settings"`
+}
+
+// ProjectSettings represents the project settings from the projects-api service.
+type ProjectSettings struct {
+	UID                 string            `json:"uid"`
+	MissionStatement    string            `json:"mission_statement"`
+	AnnouncementDate    *time.Time        `json:"announcement_date"`
+	Auditors            []ProjectUserInfo `json:"auditors"`
+	Writers             []ProjectUserInfo `json:"writers"`
+	MeetingCoordinators []ProjectUserInfo `json:"meeting_coordinators"`
+	CreatedAt           *time.Time        `json:"created_at"`
+	UpdatedAt           *time.Time        `json:"updated_at"`
+}
+
+// ProjectUserInfo represents user information in project settings.
+type ProjectUserInfo struct {
+	UID       string `json:"uid"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }

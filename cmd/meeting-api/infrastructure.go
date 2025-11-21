@@ -209,6 +209,8 @@ func createNatsSubcriptions(ctx context.Context, svc *MeetingsAPI, natsConn *nat
 		models.CommitteeMemberDeletedSubject: svc.committeeHandler.HandleMessage,
 		// Committee member update subscription
 		models.CommitteeMemberUpdatedSubject: svc.committeeHandler.HandleMessage,
+		// Project settings update subscription
+		models.ProjectSettingsUpdatedSubject: svc.projectHandler.HandleMessage,
 		// Zoom webhook event subscriptions
 		models.ZoomWebhookMeetingStartedSubject:               svc.zoomWebhookHandler.HandleMessage,
 		models.ZoomWebhookMeetingEndedSubject:                 svc.zoomWebhookHandler.HandleMessage,
