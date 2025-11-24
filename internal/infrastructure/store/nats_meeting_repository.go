@@ -120,6 +120,26 @@ func (r *NatsMeetingRepository) ListByCommittee(ctx context.Context, committeeUI
 	return matchingBases, matchingSettings, nil
 }
 
+// ListByProject lists meeting bases by project UID
+func (r *NatsMeetingRepository) ListByProject(ctx context.Context, projectUID string) ([]*models.MeetingBase, error) {
+	// Get all meeting bases and filter by project
+	allBases, err := r.ListAllBase(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var matchingBases []*models.MeetingBase
+
+	// Filter bases by project
+	for _, base := range allBases {
+		if base.ProjectUID == projectUID {
+			matchingBases = append(matchingBases, base)
+		}
+	}
+
+	return matchingBases, nil
+}
+
 // Create creates both meeting base and settings
 func (r *NatsMeetingRepository) Create(ctx context.Context, meetingBase *models.MeetingBase, meetingSettings *models.MeetingSettings) error {
 	// Create base first

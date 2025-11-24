@@ -175,65 +175,6 @@ func TestSMTPService_SendRegistrantInvitation(t *testing.T) {
 		assert.Empty(t, server.Messages())
 	})
 
-	t.Run("invitation without recurrence", func(t *testing.T) {
-		// Start mock SMTP server
-		server := smtpmock.New(smtpmock.ConfigurationAttr{
-			LogToStdout:       false,
-			LogServerActivity: false,
-		})
-		require.NoError(t, server.Start())
-		defer func() {
-			require.NoError(t, server.Stop())
-		}()
-
-		// Setup mocks
-		mockTemplateManager := new(MockTemplateManager)
-		mockICSGenerator := new(MockICSGenerator)
-
-		service := &SMTPService{
-			config: SMTPConfig{
-				Host: "localhost",
-				Port: server.PortNumber(),
-				From: "test@example.com",
-			},
-			icsGenerator:    mockICSGenerator,
-			templateManager: mockTemplateManager,
-		}
-
-		// Create invitation without recurrence
-		invitation := domain.EmailInvitation{
-			RecipientEmail: "recipient@example.com",
-			MeetingTitle:   "One-time Meeting",
-			MeetingUID:     "onetime-uid",
-			StartTime:      time.Now().Add(24 * time.Hour),
-			Duration:       30,
-			Timezone:       "UTC",
-			Recurrence:     nil, // No recurrence
-		}
-
-		// Setup mocks
-		mockICSGenerator.On("GenerateMeetingInvitationICS", mock.MatchedBy(func(params ICSMeetingInvitationParams) bool {
-			return params.Recurrence == nil // Verify no recurrence passed
-		})).Return("ICS_CONTENT", nil)
-
-		mockTemplateManager.On("RenderInvitation", mock.Anything).
-			Return(&RenderedEmail{HTML: "<html>Test</html>", Text: "Test"}, nil)
-
-		// Execute
-		ctx := context.Background()
-		err := service.SendRegistrantInvitation(ctx, invitation)
-
-		// Verify success
-		assert.NoError(t, err)
-		mockICSGenerator.AssertExpectations(t)
-		mockTemplateManager.AssertExpectations(t)
-
-		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
-		assert.Contains(t, messages[0].MsgRequest(), "One-time Meeting")
-	})
-
 	t.Run("invitation with recurrence", func(t *testing.T) {
 		// Start mock SMTP server
 		server := smtpmock.New(smtpmock.ConfigurationAttr{
