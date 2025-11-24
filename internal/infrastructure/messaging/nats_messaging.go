@@ -633,10 +633,11 @@ func (m *MessageBuilder) GetProjectSlug(ctx context.Context, projectUID string) 
 	return projectSlug, nil
 }
 
-// EmailToUsernameLookup fetches the username for an email from the auth service.
-// Returns the username if it exists, or an error if it doesn't exist or there's a communication error.
-func (m *MessageBuilder) EmailToUsernameLookup(ctx context.Context, email string) (string, error) {
-	msg, err := m.request(ctx, models.AuthEmailToUsernameLookupSubject, []byte(email), 5*time.Second)
+// EmailToSubLookup fetches the sub (subject identifier) for an email from the auth service.
+// Returns the sub if it exists, or an error if it doesn't exist or there's a communication error.
+// The sub value is used as the username for registrants and access control.
+func (m *MessageBuilder) EmailToSubLookup(ctx context.Context, email string) (string, error) {
+	msg, err := m.request(ctx, models.AuthEmailToSubLookupSubject, []byte(email), 5*time.Second)
 	if err != nil {
 		return "", err
 	}
@@ -648,11 +649,11 @@ func (m *MessageBuilder) EmailToUsernameLookup(ctx context.Context, email string
 	}
 	if err := json.Unmarshal(msg.Data, &errorResponse); err == nil && errorResponse.Error != "" {
 		slog.WarnContext(ctx, "user not found by email", "email", redaction.RedactEmail(email), "error", errorResponse.Error)
-		return "", domain.NewNotFoundError("email to username lookup: user not found")
+		return "", domain.NewNotFoundError("email to sub lookup: user not found")
 	}
 
-	// If not a JSON error, treat as username
-	slog.DebugContext(ctx, "username retrieved successfully for email", "email", redaction.RedactEmail(email), "username", string(msg.Data))
+	// If not a JSON error, treat as sub (username)
+	slog.DebugContext(ctx, "sub retrieved successfully for email", "email", redaction.RedactEmail(email), "sub", string(msg.Data))
 	return string(msg.Data), nil
 }
 

@@ -249,7 +249,7 @@ func (m *MockMessageBuilder) GetProjectSlug(ctx context.Context, projectUID stri
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockMessageBuilder) EmailToUsernameLookup(ctx context.Context, email string) (string, error) {
+func (m *MockMessageBuilder) EmailToSubLookup(ctx context.Context, email string) (string, error) {
 	args := m.Called(ctx, email)
 	return args.String(0), args.Error(1)
 }
