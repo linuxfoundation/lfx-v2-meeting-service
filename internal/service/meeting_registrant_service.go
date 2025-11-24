@@ -168,9 +168,10 @@ func (s *MeetingRegistrantService) CreateMeetingRegistrant(ctx context.Context, 
 		return nil, err
 	}
 
-	// Check if the user is LF registered in the auth service via an email to username lookup
+	// Check if the user is LF registered in the auth service via an email to sub lookup
+	// The sub (subject identifier) is used as the username for access control.
 	// Ignore errors about the user not being found since it isn't required for meeting registration.
-	username, err := s.externalClient.EmailToUsernameLookup(ctx, reqRegistrant.Email)
+	username, err := s.externalClient.EmailToSubLookup(ctx, reqRegistrant.Email)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 		return nil, err
 	}
@@ -344,10 +345,11 @@ func (s *MeetingRegistrantService) UpdateMeetingRegistrant(ctx context.Context, 
 
 	reqRegistrant = models.MergeUpdateRegistrantRequest(reqRegistrant, existingRegistrant)
 
-	// If the email changed, check if the user is LF registered in the auth service via an email to username lookup
+	// If the email changed, check if the user is LF registered in the auth service via an email to sub lookup
+	// The sub (subject identifier) is used as the username for access control.
 	// Ignore errors about the user not being found since it isn't required for meeting registration.
 	if reqRegistrant.Email != existingRegistrant.Email {
-		username, err := s.externalClient.EmailToUsernameLookup(ctx, reqRegistrant.Email)
+		username, err := s.externalClient.EmailToSubLookup(ctx, reqRegistrant.Email)
 		if err != nil && domain.GetErrorType(err) != domain.ErrorTypeNotFound {
 			return nil, err
 		}

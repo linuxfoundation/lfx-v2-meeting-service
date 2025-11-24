@@ -159,7 +159,7 @@ type ExternalServiceClient interface {
 	GetProjectName(ctx context.Context, projectUID string) (string, error)
 	GetProjectLogo(ctx context.Context, projectUID string) (string, error)
 	GetProjectSlug(ctx context.Context, projectUID string) (string, error)
-	EmailToUsernameLookup(ctx context.Context, email string) (string, error)
+	EmailToSubLookup(ctx context.Context, email string) (string, error)
 }
 
 // MeetingMessageSender composes all meeting-related messaging operations.

@@ -111,9 +111,9 @@ const (
 	// The subject is of the form: lfx.remove_participant.past_meeting
 	RemoveParticipantPastMeetingSubject = "lfx.remove_participant.past_meeting"
 
-	// AuthEmailToUsernameLookupSubject is the subject for the email to username lookup.
-	// The subject is of the form: lfx.auth-service.email_to_username
-	AuthEmailToUsernameLookupSubject = "lfx.auth-service.email_to_username"
+	// AuthEmailToSubLookupSubject is the subject for the email to sub lookup.
+	// The subject is of the form: lfx.auth-service.email_to_sub
+	AuthEmailToSubLookupSubject = "lfx.auth-service.email_to_sub"
 )
 
 // NATS subjects that external services handle and that the meeting service requests.

@@ -581,24 +581,24 @@ func TestMessageBuilder_GetProjectSlug(t *testing.T) {
 	})
 }
 
-func TestMessageBuilder_EmailToUsernameLookup(t *testing.T) {
+func TestMessageBuilder_EmailToSubLookup(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("successful lookup", func(t *testing.T) {
 		mockConn := new(MockNATSConn)
-		mockConn.On("Request", models.AuthEmailToUsernameLookupSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
-			Subject: models.AuthEmailToUsernameLookupSubject,
+		mockConn.On("Request", models.AuthEmailToSubLookupSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.AuthEmailToSubLookupSubject,
 			Data:    []byte("johndoe"),
 		}, nil)
 
 		builder := &MessageBuilder{NatsConn: mockConn}
 
-		username, err := builder.EmailToUsernameLookup(ctx, "john.doe@example.com")
+		sub, err := builder.EmailToSubLookup(ctx, "john.doe@example.com")
 		if err != nil {
 			t.Errorf("expected no error, got: %v", err)
 		}
-		if username != "johndoe" {
-			t.Errorf("expected username %q, got %q", "johndoe", username)
+		if sub != "johndoe" {
+			t.Errorf("expected sub %q, got %q", "johndoe", sub)
 		}
 
 		mockConn.AssertExpectations(t)
@@ -606,19 +606,19 @@ func TestMessageBuilder_EmailToUsernameLookup(t *testing.T) {
 
 	t.Run("user not found - JSON error response", func(t *testing.T) {
 		mockConn := new(MockNATSConn)
-		mockConn.On("Request", models.AuthEmailToUsernameLookupSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
-			Subject: models.AuthEmailToUsernameLookupSubject,
+		mockConn.On("Request", models.AuthEmailToSubLookupSubject, mock.Anything, mock.Anything).Return(&nats.Msg{
+			Subject: models.AuthEmailToSubLookupSubject,
 			Data:    []byte(`{"success":false,"error":"user not found"}`),
 		}, nil)
 
 		builder := &MessageBuilder{NatsConn: mockConn}
 
-		username, err := builder.EmailToUsernameLookup(ctx, "nonexistent@example.com")
+		sub, err := builder.EmailToSubLookup(ctx, "nonexistent@example.com")
 		if err == nil {
 			t.Error("expected error for user not found, got nil")
 		}
-		if username != "" {
-			t.Errorf("expected empty username, got %q", username)
+		if sub != "" {
+			t.Errorf("expected empty sub, got %q", sub)
 		}
 
 		mockConn.AssertExpectations(t)
@@ -626,16 +626,16 @@ func TestMessageBuilder_EmailToUsernameLookup(t *testing.T) {
 
 	t.Run("request error", func(t *testing.T) {
 		mockConn := new(MockNATSConn)
-		mockConn.On("Request", models.AuthEmailToUsernameLookupSubject, mock.Anything, mock.Anything).Return(nil, errors.New("auth service unavailable"))
+		mockConn.On("Request", models.AuthEmailToSubLookupSubject, mock.Anything, mock.Anything).Return(nil, errors.New("auth service unavailable"))
 
 		builder := &MessageBuilder{NatsConn: mockConn}
 
-		username, err := builder.EmailToUsernameLookup(ctx, "test@example.com")
+		sub, err := builder.EmailToSubLookup(ctx, "test@example.com")
 		if err == nil {
 			t.Error("expected error, got nil")
 		}
-		if username != "" {
-			t.Errorf("expected empty username on error, got %q", username)
+		if sub != "" {
+			t.Errorf("expected empty sub on error, got %q", sub)
 		}
 
 		mockConn.AssertExpectations(t)
