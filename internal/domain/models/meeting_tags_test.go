@@ -64,6 +64,15 @@ func TestMeetingBase_Tags(t *testing.T) {
 			},
 		},
 		{
+			name: "meeting with MeetingType only",
+			meeting: &MeetingBase{
+				MeetingType: "Board",
+			},
+			expected: []string{
+				"meeting_type:Board",
+			},
+		},
+		{
 			name: "meeting with single committee",
 			meeting: &MeetingBase{
 				Committees: []Committee{
@@ -98,10 +107,11 @@ func TestMeetingBase_Tags(t *testing.T) {
 					{UID: "committee-789"},
 					{UID: "committee-101"},
 				},
-				Platform:  PlatformZoom,
-				StartTime: time.Now(),
-				Duration:  60,
-				Timezone:  "UTC",
+				Platform:    PlatformZoom,
+				MeetingType: "Technical",
+				StartTime:   time.Now(),
+				Duration:    60,
+				Timezone:    "UTC",
 			},
 			expected: []string{
 				"meeting-123",
@@ -111,6 +121,7 @@ func TestMeetingBase_Tags(t *testing.T) {
 				"committee_uid:committee-101",
 				"title:Weekly Standup",
 				"description:Team sync meeting",
+				"meeting_type:Technical",
 			},
 		},
 		{
