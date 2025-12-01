@@ -178,6 +178,11 @@ func (m *MeetingBase) Tags() []string {
 		tags = append(tags, tag)
 	}
 
+	if m.MeetingType != "" {
+		tag := fmt.Sprintf("meeting_type:%s", m.MeetingType)
+		tags = append(tags, tag)
+	}
+
 	return tags
 
 }

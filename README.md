@@ -127,6 +127,7 @@ When meetings and meeting settings are created or updated, the following tags ar
 | Committee UIDs | `committee_uid:<value>` | `committee_uid:cbef1ed5-17dc-4a50-84e2-6cddd70f6878` | Find meetings for specific committees |
 | Title | Plain value | `Weekly Technical Steering Committee` | Text search in meeting titles |
 | Description | Plain value | `Weekly meeting to discuss technical decisions` | Text search in meeting descriptions |
+| MeetingType | `meeting_type:<value>` | `meeting_type:Board` | Filter meetings by type (e.g., Board, Technical) |
 
 ### Tags Generated for Meeting Registrants
 
