@@ -160,7 +160,6 @@ func (s *PastMeetingSummaryService) CreateSummary(
 				UID:                summary.UID,
 				PastMeetingUID:     summary.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}
@@ -296,7 +295,6 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 				UID:                updatedSummary.UID,
 				PastMeetingUID:     updatedSummary.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}

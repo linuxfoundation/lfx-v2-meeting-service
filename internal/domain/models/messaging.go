@@ -365,28 +365,25 @@ type AccessParticipant struct {
 // PastMeetingRecordingAccessMessage is the schema for the data in the message sent to the fga-sync service.
 // These are the fields that the fga-sync service needs in order to update the OpenFGA permissions for recordings.
 type PastMeetingRecordingAccessMessage struct {
-	UID                string              `json:"uid"`
-	PastMeetingUID     string              `json:"past_meeting_uid"`
-	ArtifactVisibility string              `json:"artifact_visibility"`
-	Participants       []AccessParticipant `json:"participants"`
+	UID                string `json:"uid"`
+	PastMeetingUID     string `json:"past_meeting_uid"`
+	ArtifactVisibility string `json:"artifact_visibility"`
 }
 
 // PastMeetingTranscriptAccessMessage is the schema for the data in the message sent to the fga-sync service.
 // These are the fields that the fga-sync service needs in order to update the OpenFGA permissions for transcripts.
 type PastMeetingTranscriptAccessMessage struct {
-	UID                string              `json:"uid"`
-	PastMeetingUID     string              `json:"past_meeting_uid"`
-	ArtifactVisibility string              `json:"artifact_visibility"`
-	Participants       []AccessParticipant `json:"participants"`
+	UID                string `json:"uid"`
+	PastMeetingUID     string `json:"past_meeting_uid"`
+	ArtifactVisibility string `json:"artifact_visibility"`
 }
 
 // PastMeetingSummaryAccessMessage is the schema for the data in the message sent to the fga-sync service.
 // These are the fields that the fga-sync service needs in order to update the OpenFGA permissions for summaries.
 type PastMeetingSummaryAccessMessage struct {
-	UID                string              `json:"uid"`
-	PastMeetingUID     string              `json:"past_meeting_uid"`
-	ArtifactVisibility string              `json:"artifact_visibility"`
-	Participants       []AccessParticipant `json:"participants"`
+	UID                string `json:"uid"`
+	PastMeetingUID     string `json:"past_meeting_uid"`
+	ArtifactVisibility string `json:"artifact_visibility"`
 }
 
 // ZoomWebhookEventMessage is the schema for Zoom webhook events sent via NATS for async processing.

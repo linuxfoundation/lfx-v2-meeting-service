@@ -108,7 +108,6 @@ func (s *PastMeetingTranscriptService) CreateTranscript(ctx context.Context, tra
 				UID:                transcript.UID,
 				PastMeetingUID:     transcript.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}
@@ -237,7 +236,6 @@ func (s *PastMeetingTranscriptService) UpdateTranscript(ctx context.Context, tra
 				UID:                existingTranscript.UID,
 				PastMeetingUID:     existingTranscript.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}

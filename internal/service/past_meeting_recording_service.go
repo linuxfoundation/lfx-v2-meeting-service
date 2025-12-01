@@ -120,7 +120,6 @@ func (s *PastMeetingRecordingService) CreateRecording(
 				UID:                recording.UID,
 				PastMeetingUID:     recording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}
@@ -252,7 +251,6 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 				UID:                currentRecording.UID,
 				PastMeetingUID:     currentRecording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}
