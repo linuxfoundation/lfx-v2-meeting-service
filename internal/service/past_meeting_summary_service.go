@@ -141,21 +141,6 @@ func (s *PastMeetingSummaryService) CreateSummary(
 				return err
 			}
 
-			// Get participants for the past meeting
-			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, summary.PastMeetingUID)
-			if err != nil {
-				return err
-			}
-
-			// Convert to simplified access participants
-			participants := make([]models.AccessParticipant, len(participantPointers))
-			for i, p := range participantPointers {
-				participants[i] = models.AccessParticipant{
-					Username: p.Username,
-					Host:     p.Host,
-				}
-			}
-
 			return s.messageSender.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{
 				UID:                summary.UID,
 				PastMeetingUID:     summary.PastMeetingUID,
@@ -274,21 +259,6 @@ func (s *PastMeetingSummaryService) UpdateSummary(
 			pastMeeting, err := s.pastMeetingRepository.Get(ctx, updatedSummary.PastMeetingUID)
 			if err != nil {
 				return err
-			}
-
-			// Get participants for the past meeting
-			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, updatedSummary.PastMeetingUID)
-			if err != nil {
-				return err
-			}
-
-			// Convert to simplified access participants
-			participants := make([]models.AccessParticipant, len(participantPointers))
-			for i, p := range participantPointers {
-				participants[i] = models.AccessParticipant{
-					Username: p.Username,
-					Host:     p.Host,
-				}
 			}
 
 			return s.messageSender.SendUpdateAccessPastMeetingSummary(ctx, models.PastMeetingSummaryAccessMessage{

@@ -89,21 +89,6 @@ func (s *PastMeetingTranscriptService) CreateTranscript(ctx context.Context, tra
 				return err
 			}
 
-			// Get participants for the past meeting
-			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, transcript.PastMeetingUID)
-			if err != nil {
-				return err
-			}
-
-			// Convert to simplified access participants
-			participants := make([]models.AccessParticipant, len(participantPointers))
-			for i, p := range participantPointers {
-				participants[i] = models.AccessParticipant{
-					Username: p.Username,
-					Host:     p.Host,
-				}
-			}
-
 			return s.messageSender.SendUpdateAccessPastMeetingTranscript(ctx, models.PastMeetingTranscriptAccessMessage{
 				UID:                transcript.UID,
 				PastMeetingUID:     transcript.PastMeetingUID,
@@ -215,21 +200,6 @@ func (s *PastMeetingTranscriptService) UpdateTranscript(ctx context.Context, tra
 			pastMeeting, err := s.pastMeetingRepository.Get(ctx, existingTranscript.PastMeetingUID)
 			if err != nil {
 				return err
-			}
-
-			// Get participants for the past meeting
-			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, existingTranscript.PastMeetingUID)
-			if err != nil {
-				return err
-			}
-
-			// Convert to simplified access participants
-			participants := make([]models.AccessParticipant, len(participantPointers))
-			for i, p := range participantPointers {
-				participants[i] = models.AccessParticipant{
-					Username: p.Username,
-					Host:     p.Host,
-				}
 			}
 
 			return s.messageSender.SendUpdateAccessPastMeetingTranscript(ctx, models.PastMeetingTranscriptAccessMessage{

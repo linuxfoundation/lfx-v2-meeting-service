@@ -63,9 +63,7 @@ help:
 deps:
 	@echo "==> Installing dependencies..."
 	go mod download
-	@GOA_VERSION=$$(go list -m -f '{{.Version}}' goa.design/goa/v3); \
-	echo "==> Installing goa CLI version $$GOA_VERSION..."; \
-	go install goa.design/goa/$(GOA_VERSION)/cmd/goa@$$GOA_VERSION
+	go install goa.design/goa/$(GOA_VERSION)/cmd/goa@latest
 	@command -v golangci-lint >/dev/null 2>&1 || { \
 		echo "==> Installing golangci-lint..."; \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
