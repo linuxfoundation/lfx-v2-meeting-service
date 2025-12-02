@@ -253,7 +253,11 @@ func TitleAttribute() {
 
 // DescriptionAttribute is the DSL attribute for description.
 func DescriptionAttribute() {
-	Attribute("description", String, "The description of the meeting")
+	Attribute("description", String, "The description of the meeting", func() {
+		// Zoom's Agenda max length is 2000
+		// https://developers.zoom.us/docs/api/meetings/#tag/meetings/post/users/{userId}/meetings
+		MaxLength(2000)
+	})
 }
 
 // CommitteesAttribute is the DSL attribute for committees.

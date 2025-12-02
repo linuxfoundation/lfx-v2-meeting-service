@@ -16,6 +16,13 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
+const (
+	// MaxAgendaLength is the maximum length for a Zoom meeting agenda field
+	// as confirmed by Zoom staff (not documented in official API docs)
+	// Reference: https://devforum.zoom.us/t/is-there-a-size-limit-for-the-agenda-field/11199
+	MaxAgendaLength = 2000
+)
+
 // ZoomProvider implements the PlatformProvider interface for Zoom
 // It contains business logic and orchestrates API calls through the Client
 type ZoomProvider struct {
