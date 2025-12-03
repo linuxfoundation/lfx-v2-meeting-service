@@ -101,26 +101,10 @@ func (s *PastMeetingRecordingService) CreateRecording(
 				return err
 			}
 
-			// Get participants for the past meeting
-			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, recording.PastMeetingUID)
-			if err != nil {
-				return err
-			}
-
-			// Convert to simplified access participants
-			participants := make([]models.AccessParticipant, len(participantPointers))
-			for i, p := range participantPointers {
-				participants[i] = models.AccessParticipant{
-					Username: p.Username,
-					Host:     p.Host,
-				}
-			}
-
 			return s.messageSender.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
 				UID:                recording.UID,
 				PastMeetingUID:     recording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}
@@ -233,26 +217,10 @@ func (s *PastMeetingRecordingService) UpdateRecording(
 				return err
 			}
 
-			// Get participants for the past meeting
-			participantPointers, err := s.pastMeetingParticipantRepository.ListByPastMeeting(ctx, currentRecording.PastMeetingUID)
-			if err != nil {
-				return err
-			}
-
-			// Convert to simplified access participants
-			participants := make([]models.AccessParticipant, len(participantPointers))
-			for i, p := range participantPointers {
-				participants[i] = models.AccessParticipant{
-					Username: p.Username,
-					Host:     p.Host,
-				}
-			}
-
 			return s.messageSender.SendUpdateAccessPastMeetingRecording(ctx, models.PastMeetingRecordingAccessMessage{
 				UID:                currentRecording.UID,
 				PastMeetingUID:     currentRecording.PastMeetingUID,
 				ArtifactVisibility: pastMeeting.ArtifactVisibility,
-				Participants:       participants,
 			}, false)
 		},
 	}
