@@ -3074,17 +3074,13 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -3131,63 +3127,63 @@ definitions:
                     $ref: '#/definitions/Occurrence'
                 description: Array of meeting occurrences (read-only from platform API)
                 example:
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
+                      title: Aspernatur enim doloremque sunt et et aut.
             password:
                 type: string
                 description: Unique, non-guessable, password for the meeting - is needed to join a meeting and is included in invites
@@ -3224,6 +3220,11 @@ definitions:
                 type: boolean
                 description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
                 example: true
+            series_end_date:
+                type: string
+                description: The final end time for the meeting series. For recurring meetings, this is the end time of the last occurrence. For non-recurring meetings, this is the end time of the single meeting (start time + duration). Null if the meeting has no end date (infinite recurrence).
+                example: "2024-12-31T23:59:00Z"
+                format: date-time
             start_time:
                 type: string
                 description: The start time of the meeting in RFC3339 format
@@ -3269,23 +3270,17 @@ definitions:
             artifact_visibility: public
             committees:
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
             created_at: "2021-01-01T00:00:00Z"
             description: Id amet.
             duration: 241
@@ -3293,79 +3288,80 @@ definitions:
             email_delivery_error_count: 4101528956492521534
             meeting_type: Other
             occurrences:
-                - description: Sed aspernatur enim.
-                  duration: 748992484864519505
+                - description: Et doloremque.
+                  duration: 4385111394170189297
                   is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 8724067372506245904
-                  response_count_maybe: 4064091635475062566
-                  response_count_no: 3423590977722818126
-                  response_count_yes: 4918788668947325463
+                  registrant_count: 6692037250076525203
+                  response_count_maybe: 7591255699614647060
+                  response_count_no: 504205492596523620
+                  response_count_yes: 8795476283178103552
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Exercitationem rem unde.
-                - description: Sed aspernatur enim.
-                  duration: 748992484864519505
+                  title: Aspernatur enim doloremque sunt et et aut.
+                - description: Et doloremque.
+                  duration: 4385111394170189297
                   is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 8724067372506245904
-                  response_count_maybe: 4064091635475062566
-                  response_count_no: 3423590977722818126
-                  response_count_yes: 4918788668947325463
+                  registrant_count: 6692037250076525203
+                  response_count_maybe: 7591255699614647060
+                  response_count_no: 504205492596523620
+                  response_count_yes: 8795476283178103552
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Exercitationem rem unde.
-                - description: Sed aspernatur enim.
-                  duration: 748992484864519505
+                  title: Aspernatur enim doloremque sunt et et aut.
+                - description: Et doloremque.
+                  duration: 4385111394170189297
                   is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 8724067372506245904
-                  response_count_maybe: 4064091635475062566
-                  response_count_no: 3423590977722818126
-                  response_count_yes: 4918788668947325463
+                  registrant_count: 6692037250076525203
+                  response_count_maybe: 7591255699614647060
+                  response_count_no: 504205492596523620
+                  response_count_yes: 8795476283178103552
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Exercitationem rem unde.
+                  title: Aspernatur enim doloremque sunt et et aut.
             password: ffbb12f4-1c32-42d5-98a1-716cbe0c93ce
             platform: Zoom
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             public_link: http://wilderman.name/alysha_kuhic
             recording_enabled: true
             recurrence:
-                end_date_time: "1985-11-11T06:00:04Z"
-                end_times: 8474492850734006130
-                monthly_day: 26
-                monthly_week: -1
-                monthly_week_day: 7
-                repeat_interval: 2356304732349297219
-                type: 1
+                end_date_time: "1987-05-07T05:19:27Z"
+                end_times: 6071416756838975378
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 3
+                repeat_interval: 8501826080373926009
+                type: 3
                 weekly_days: 1,3,5
             registrant_count: 5148615239702980124
             restricted: false
+            series_end_date: "2024-12-31T23:59:00Z"
             start_time: "2021-01-01T00:00:00Z"
             timezone: Rerum aut quia voluptatem illum quia.
             title: Consequatur omnis et alias est dicta et.
@@ -3398,23 +3394,17 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -3461,82 +3451,82 @@ definitions:
                     $ref: '#/definitions/Occurrence'
                 description: Array of meeting occurrences (read-only from platform API)
                 example:
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
+                      title: Aspernatur enim doloremque sunt et et aut.
             organizers:
                 type: array
                 items:
@@ -3583,6 +3573,11 @@ definitions:
                 type: boolean
                 description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
                 example: false
+            series_end_date:
+                type: string
+                description: The final end time for the meeting series. For recurring meetings, this is the end time of the last occurrence. For non-recurring meetings, this is the end time of the single meeting (start time + duration). Null if the meeting has no end date (infinite recurrence).
+                example: "2024-12-31T23:59:00Z"
+                format: date-time
             start_time:
                 type: string
                 description: The start time of the meeting in RFC3339 format
@@ -3628,23 +3623,17 @@ definitions:
             artifact_visibility: public
             committees:
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
             created_at: "2021-01-01T00:00:00Z"
             description: Facere veniam voluptas.
             duration: 355
@@ -3652,63 +3641,63 @@ definitions:
             email_delivery_error_count: 1103718995664703159
             meeting_type: Technical
             occurrences:
-                - description: Sed aspernatur enim.
-                  duration: 748992484864519505
+                - description: Et doloremque.
+                  duration: 4385111394170189297
                   is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 8724067372506245904
-                  response_count_maybe: 4064091635475062566
-                  response_count_no: 3423590977722818126
-                  response_count_yes: 4918788668947325463
+                  registrant_count: 6692037250076525203
+                  response_count_maybe: 7591255699614647060
+                  response_count_no: 504205492596523620
+                  response_count_yes: 8795476283178103552
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Exercitationem rem unde.
-                - description: Sed aspernatur enim.
-                  duration: 748992484864519505
+                  title: Aspernatur enim doloremque sunt et et aut.
+                - description: Et doloremque.
+                  duration: 4385111394170189297
                   is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 8724067372506245904
-                  response_count_maybe: 4064091635475062566
-                  response_count_no: 3423590977722818126
-                  response_count_yes: 4918788668947325463
+                  registrant_count: 6692037250076525203
+                  response_count_maybe: 7591255699614647060
+                  response_count_no: 504205492596523620
+                  response_count_yes: 8795476283178103552
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Exercitationem rem unde.
-                - description: Sed aspernatur enim.
-                  duration: 748992484864519505
+                  title: Aspernatur enim doloremque sunt et et aut.
+                - description: Et doloremque.
+                  duration: 4385111394170189297
                   is_cancelled: false
                   occurrence_id: "1640995200"
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 8724067372506245904
-                  response_count_maybe: 4064091635475062566
-                  response_count_no: 3423590977722818126
-                  response_count_yes: 4918788668947325463
+                  registrant_count: 6692037250076525203
+                  response_count_maybe: 7591255699614647060
+                  response_count_no: 504205492596523620
+                  response_count_yes: 8795476283178103552
                   start_time: "2021-01-01T10:00:00Z"
-                  title: Exercitationem rem unde.
+                  title: Aspernatur enim doloremque sunt et et aut.
             organizers:
                 - Rerum quia sunt voluptatem consequatur quam molestiae.
                 - Velit et sint rem non sunt aut.
@@ -3720,16 +3709,17 @@ definitions:
             public_link: http://blick.info/chelsey
             recording_enabled: true
             recurrence:
-                end_date_time: "1985-11-11T06:00:04Z"
-                end_times: 8474492850734006130
-                monthly_day: 26
-                monthly_week: -1
-                monthly_week_day: 7
-                repeat_interval: 2356304732349297219
-                type: 1
+                end_date_time: "1987-05-07T05:19:27Z"
+                end_times: 6071416756838975378
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 3
+                repeat_interval: 8501826080373926009
+                type: 3
                 weekly_days: 1,3,5
             registrant_count: 8311159985112114870
             restricted: true
+            series_end_date: "2024-12-31T23:59:00Z"
             start_time: "2021-01-01T00:00:00Z"
             timezone: Sit dignissimos ut tempora quo.
             title: Distinctio tenetur unde eius quasi.
@@ -3953,11 +3943,11 @@ definitions:
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
             description:
                 type: string
                 description: The description of the meeting
@@ -4054,15 +4044,15 @@ definitions:
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
             description: Et voluptates earum occaecati.
             duration: 219
             early_join_time_minutes: 11
@@ -4074,12 +4064,12 @@ definitions:
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: true
             recurrence:
-                end_date_time: "2015-08-31T10:05:43Z"
-                end_times: 5954965436118576578
-                monthly_day: 11
-                monthly_week: 3
-                monthly_week_day: 7
-                repeat_interval: 7418953500629859380
+                end_date_time: "1973-07-31T10:43:38Z"
+                end_times: 8053658369419006394
+                monthly_day: 27
+                monthly_week: 4
+                monthly_week_day: 5
+                repeat_interval: 5954965436118576579
                 type: 3
                 weekly_days: 1,3,5
             restricted: true
@@ -4348,11 +4338,11 @@ definitions:
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
             description:
                 type: string
                 description: The description of the meeting
@@ -4475,19 +4465,19 @@ definitions:
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
             description: Sapiente architecto eos magni amet quas.
             duration: 554
             early_join_time_minutes: 16
@@ -4500,12 +4490,12 @@ definitions:
             public_link: http://cummerata.org/winifred
             recording_enabled: false
             recurrence:
-                end_date_time: "2015-08-31T10:05:43Z"
-                end_times: 5954965436118576578
-                monthly_day: 11
-                monthly_week: 3
-                monthly_week_day: 7
-                repeat_interval: 7418953500629859380
+                end_date_time: "1973-07-31T10:43:38Z"
+                end_times: 8053658369419006394
+                monthly_day: 27
+                monthly_week: 4
+                monthly_week_day: 5
+                repeat_interval: 5954965436118576579
                 type: 3
                 weekly_days: 1,3,5
             restricted: true
@@ -4689,103 +4679,132 @@ definitions:
                     - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Sint enim aut consequatur.
-                      duration: 479
-                      early_join_time_minutes: 28
-                      email_delivery_error_count: 5412937491481796382
-                      meeting_type: Maintainers
+                      description: Quis a delectus dolores.
+                      duration: 505
+                      early_join_time_minutes: 18
+                      email_delivery_error_count: 6296842263377246821
+                      meeting_type: Marketing
                       occurrences:
-                        - description: Sed aspernatur enim.
-                          duration: 748992484864519505
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
                           is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1985-11-11T06:00:04Z"
-                            end_times: 8474492850734006130
-                            monthly_day: 26
-                            monthly_week: -1
-                            monthly_week_day: 7
-                            repeat_interval: 2356304732349297219
-                            type: 1
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
                             weekly_days: 1,3,5
-                          registrant_count: 8724067372506245904
-                          response_count_maybe: 4064091635475062566
-                          response_count_no: 3423590977722818126
-                          response_count_yes: 4918788668947325463
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Exercitationem rem unde.
-                        - description: Sed aspernatur enim.
-                          duration: 748992484864519505
+                          title: Aspernatur enim doloremque sunt et et aut.
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
                           is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1985-11-11T06:00:04Z"
-                            end_times: 8474492850734006130
-                            monthly_day: 26
-                            monthly_week: -1
-                            monthly_week_day: 7
-                            repeat_interval: 2356304732349297219
-                            type: 1
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
                             weekly_days: 1,3,5
-                          registrant_count: 8724067372506245904
-                          response_count_maybe: 4064091635475062566
-                          response_count_no: 3423590977722818126
-                          response_count_yes: 4918788668947325463
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Exercitationem rem unde.
+                          title: Aspernatur enim doloremque sunt et et aut.
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
+                            weekly_days: 1,3,5
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Aspernatur enim doloremque sunt et et aut.
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
+                            weekly_days: 1,3,5
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Aspernatur enim doloremque sunt et et aut.
                       organizers:
-                        - Et voluptatem vel voluptates consequatur numquam.
-                        - Fugiat et unde molestiae.
-                        - Et tempore vel qui placeat.
-                        - Voluptas quo ut earum.
-                      password: 794a0f20-f551-4d33-9c27-764244393b57
+                        - Et unde molestiae est et.
+                        - Vel qui placeat repudiandae voluptas quo ut.
+                      password: 26937aec-deca-43c6-86ca-e2c1492b347e
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: http://schumm.info/zaria.veum
+                      public_link: http://dicki.biz/devante.nader
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 5603326241682597219
+                      registrant_count: 6495198376186248545
                       restricted: false
+                      series_end_date: "2024-12-31T23:59:00Z"
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Alias quasi eum non ipsum minima fuga.
-                      title: Quis voluptate est qui sint nobis.
-                      transcript_enabled: false
+                      timezone: Quibusdam ut ut earum assumenda est aut.
+                      title: Tenetur possimus.
+                      transcript_enabled: true
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       visibility: public
-                      youtube_upload_enabled: true
+                      youtube_upload_enabled: false
                       zoom_config:
                         ai_companion_enabled: true
                         ai_summary_require_approval: false
@@ -4794,103 +4813,132 @@ definitions:
                     - artifact_visibility: public
                       committees:
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                       created_at: "2021-01-01T00:00:00Z"
-                      description: Sint enim aut consequatur.
-                      duration: 479
-                      early_join_time_minutes: 28
-                      email_delivery_error_count: 5412937491481796382
-                      meeting_type: Maintainers
+                      description: Quis a delectus dolores.
+                      duration: 505
+                      early_join_time_minutes: 18
+                      email_delivery_error_count: 6296842263377246821
+                      meeting_type: Marketing
                       occurrences:
-                        - description: Sed aspernatur enim.
-                          duration: 748992484864519505
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
                           is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1985-11-11T06:00:04Z"
-                            end_times: 8474492850734006130
-                            monthly_day: 26
-                            monthly_week: -1
-                            monthly_week_day: 7
-                            repeat_interval: 2356304732349297219
-                            type: 1
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
                             weekly_days: 1,3,5
-                          registrant_count: 8724067372506245904
-                          response_count_maybe: 4064091635475062566
-                          response_count_no: 3423590977722818126
-                          response_count_yes: 4918788668947325463
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Exercitationem rem unde.
-                        - description: Sed aspernatur enim.
-                          duration: 748992484864519505
+                          title: Aspernatur enim doloremque sunt et et aut.
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
                           is_cancelled: false
                           occurrence_id: "1640995200"
                           recurrence:
-                            end_date_time: "1985-11-11T06:00:04Z"
-                            end_times: 8474492850734006130
-                            monthly_day: 26
-                            monthly_week: -1
-                            monthly_week_day: 7
-                            repeat_interval: 2356304732349297219
-                            type: 1
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
                             weekly_days: 1,3,5
-                          registrant_count: 8724067372506245904
-                          response_count_maybe: 4064091635475062566
-                          response_count_no: 3423590977722818126
-                          response_count_yes: 4918788668947325463
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
                           start_time: "2021-01-01T10:00:00Z"
-                          title: Exercitationem rem unde.
+                          title: Aspernatur enim doloremque sunt et et aut.
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
+                            weekly_days: 1,3,5
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Aspernatur enim doloremque sunt et et aut.
+                        - description: Et doloremque.
+                          duration: 4385111394170189297
+                          is_cancelled: false
+                          occurrence_id: "1640995200"
+                          recurrence:
+                            end_date_time: "1987-05-07T05:19:27Z"
+                            end_times: 6071416756838975378
+                            monthly_day: 5
+                            monthly_week: 4
+                            monthly_week_day: 3
+                            repeat_interval: 8501826080373926009
+                            type: 3
+                            weekly_days: 1,3,5
+                          registrant_count: 6692037250076525203
+                          response_count_maybe: 7591255699614647060
+                          response_count_no: 504205492596523620
+                          response_count_yes: 8795476283178103552
+                          start_time: "2021-01-01T10:00:00Z"
+                          title: Aspernatur enim doloremque sunt et et aut.
                       organizers:
-                        - Et voluptatem vel voluptates consequatur numquam.
-                        - Fugiat et unde molestiae.
-                        - Et tempore vel qui placeat.
-                        - Voluptas quo ut earum.
-                      password: 794a0f20-f551-4d33-9c27-764244393b57
+                        - Et unde molestiae est et.
+                        - Vel qui placeat repudiandae voluptas quo ut.
+                      password: 26937aec-deca-43c6-86ca-e2c1492b347e
                       platform: Zoom
                       project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                      public_link: http://schumm.info/zaria.veum
+                      public_link: http://dicki.biz/devante.nader
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 5603326241682597219
+                      registrant_count: 6495198376186248545
                       restricted: false
+                      series_end_date: "2024-12-31T23:59:00Z"
                       start_time: "2021-01-01T00:00:00Z"
-                      timezone: Alias quasi eum non ipsum minima fuga.
-                      title: Quis voluptate est qui sint nobis.
-                      transcript_enabled: false
+                      timezone: Quibusdam ut ut earum assumenda est aut.
+                      title: Tenetur possimus.
+                      transcript_enabled: true
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       updated_at: "2021-01-01T00:00:00Z"
                       visibility: public
-                      youtube_upload_enabled: true
+                      youtube_upload_enabled: false
                       zoom_config:
                         ai_companion_enabled: true
                         ai_summary_require_approval: false
@@ -4901,103 +4949,132 @@ definitions:
                 - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Sint enim aut consequatur.
-                  duration: 479
-                  early_join_time_minutes: 28
-                  email_delivery_error_count: 5412937491481796382
-                  meeting_type: Maintainers
+                  description: Quis a delectus dolores.
+                  duration: 505
+                  early_join_time_minutes: 18
+                  email_delivery_error_count: 6296842263377246821
+                  meeting_type: Marketing
                   occurrences:
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
+                        weekly_days: 1,3,5
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
+                        weekly_days: 1,3,5
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Aspernatur enim doloremque sunt et et aut.
                   organizers:
-                    - Et voluptatem vel voluptates consequatur numquam.
-                    - Fugiat et unde molestiae.
-                    - Et tempore vel qui placeat.
-                    - Voluptas quo ut earum.
-                  password: 794a0f20-f551-4d33-9c27-764244393b57
+                    - Et unde molestiae est et.
+                    - Vel qui placeat repudiandae voluptas quo ut.
+                  password: 26937aec-deca-43c6-86ca-e2c1492b347e
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://schumm.info/zaria.veum
+                  public_link: http://dicki.biz/devante.nader
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 5603326241682597219
+                  registrant_count: 6495198376186248545
                   restricted: false
+                  series_end_date: "2024-12-31T23:59:00Z"
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Alias quasi eum non ipsum minima fuga.
-                  title: Quis voluptate est qui sint nobis.
-                  transcript_enabled: false
+                  timezone: Quibusdam ut ut earum assumenda est aut.
+                  title: Tenetur possimus.
+                  transcript_enabled: true
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   visibility: public
-                  youtube_upload_enabled: true
+                  youtube_upload_enabled: false
                   zoom_config:
                     ai_companion_enabled: true
                     ai_summary_require_approval: false
@@ -5006,103 +5083,132 @@ definitions:
                 - artifact_visibility: public
                   committees:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                   created_at: "2021-01-01T00:00:00Z"
-                  description: Sint enim aut consequatur.
-                  duration: 479
-                  early_join_time_minutes: 28
-                  email_delivery_error_count: 5412937491481796382
-                  meeting_type: Maintainers
+                  description: Quis a delectus dolores.
+                  duration: 505
+                  early_join_time_minutes: 18
+                  email_delivery_error_count: 6296842263377246821
+                  meeting_type: Marketing
                   occurrences:
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
-                    - description: Sed aspernatur enim.
-                      duration: 748992484864519505
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
                       is_cancelled: false
                       occurrence_id: "1640995200"
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
-                      registrant_count: 8724067372506245904
-                      response_count_maybe: 4064091635475062566
-                      response_count_no: 3423590977722818126
-                      response_count_yes: 4918788668947325463
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
                       start_time: "2021-01-01T10:00:00Z"
-                      title: Exercitationem rem unde.
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
+                        weekly_days: 1,3,5
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Aspernatur enim doloremque sunt et et aut.
+                    - description: Et doloremque.
+                      duration: 4385111394170189297
+                      is_cancelled: false
+                      occurrence_id: "1640995200"
+                      recurrence:
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
+                        weekly_days: 1,3,5
+                      registrant_count: 6692037250076525203
+                      response_count_maybe: 7591255699614647060
+                      response_count_no: 504205492596523620
+                      response_count_yes: 8795476283178103552
+                      start_time: "2021-01-01T10:00:00Z"
+                      title: Aspernatur enim doloremque sunt et et aut.
                   organizers:
-                    - Et voluptatem vel voluptates consequatur numquam.
-                    - Fugiat et unde molestiae.
-                    - Et tempore vel qui placeat.
-                    - Voluptas quo ut earum.
-                  password: 794a0f20-f551-4d33-9c27-764244393b57
+                    - Et unde molestiae est et.
+                    - Vel qui placeat repudiandae voluptas quo ut.
+                  password: 26937aec-deca-43c6-86ca-e2c1492b347e
                   platform: Zoom
                   project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                  public_link: http://schumm.info/zaria.veum
+                  public_link: http://dicki.biz/devante.nader
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
-                  registrant_count: 5603326241682597219
+                  registrant_count: 6495198376186248545
                   restricted: false
+                  series_end_date: "2024-12-31T23:59:00Z"
                   start_time: "2021-01-01T00:00:00Z"
-                  timezone: Alias quasi eum non ipsum minima fuga.
-                  title: Quis voluptate est qui sint nobis.
-                  transcript_enabled: false
+                  timezone: Quibusdam ut ut earum assumenda est aut.
+                  title: Tenetur possimus.
+                  transcript_enabled: true
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   updated_at: "2021-01-01T00:00:00Z"
                   visibility: public
-                  youtube_upload_enabled: true
+                  youtube_upload_enabled: false
                   zoom_config:
                     ai_companion_enabled: true
                     ai_summary_require_approval: false
@@ -5494,23 +5600,17 @@ definitions:
                     - artifact_visibility: meeting_hosts
                       committees:
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Eos voluptatem eligendi voluptas eum assumenda.
                       duration: 426
@@ -5524,13 +5624,13 @@ definitions:
                       public_link: http://connwisoky.com/korey.kub
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
                       restricted: false
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5557,23 +5657,17 @@ definitions:
                     - artifact_visibility: meeting_hosts
                       committees:
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                         - allowed_voting_statuses:
-                            - Delectus dolores dolorem.
-                            - Qui ratione ea quisquam.
-                            - Qui ea.
-                            - Natus ut enim officiis nisi.
-                          uid: Possimus tempora.
+                            - Ea provident natus ut enim officiis.
+                            - Dolorem voluptates repellat odit dolorem eius.
+                          uid: Qui ratione ea quisquam.
                       created_at: "2021-01-01T00:00:00Z"
                       description: Eos voluptatem eligendi voluptas eum assumenda.
                       duration: 426
@@ -5587,13 +5681,13 @@ definitions:
                       public_link: http://connwisoky.com/korey.kub
                       recording_enabled: false
                       recurrence:
-                        end_date_time: "1985-11-11T06:00:04Z"
-                        end_times: 8474492850734006130
-                        monthly_day: 26
-                        monthly_week: -1
-                        monthly_week_day: 7
-                        repeat_interval: 2356304732349297219
-                        type: 1
+                        end_date_time: "1987-05-07T05:19:27Z"
+                        end_times: 6071416756838975378
+                        monthly_day: 5
+                        monthly_week: 4
+                        monthly_week_day: 3
+                        repeat_interval: 8501826080373926009
+                        type: 3
                         weekly_days: 1,3,5
                       restricted: false
                       scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5622,23 +5716,17 @@ definitions:
                 - artifact_visibility: meeting_hosts
                   committees:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                   created_at: "2021-01-01T00:00:00Z"
                   description: Eos voluptatem eligendi voluptas eum assumenda.
                   duration: 426
@@ -5652,13 +5740,13 @@ definitions:
                   public_link: http://connwisoky.com/korey.kub
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
                   restricted: false
                   scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5685,23 +5773,17 @@ definitions:
                 - artifact_visibility: meeting_hosts
                   committees:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                   created_at: "2021-01-01T00:00:00Z"
                   description: Eos voluptatem eligendi voluptas eum assumenda.
                   duration: 426
@@ -5715,13 +5797,13 @@ definitions:
                   public_link: http://connwisoky.com/korey.kub
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
                   restricted: false
                   scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5748,23 +5830,17 @@ definitions:
                 - artifact_visibility: meeting_hosts
                   committees:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                   created_at: "2021-01-01T00:00:00Z"
                   description: Eos voluptatem eligendi voluptas eum assumenda.
                   duration: 426
@@ -5778,13 +5854,13 @@ definitions:
                   public_link: http://connwisoky.com/korey.kub
                   recording_enabled: false
                   recurrence:
-                    end_date_time: "1985-11-11T06:00:04Z"
-                    end_times: 8474492850734006130
-                    monthly_day: 26
-                    monthly_week: -1
-                    monthly_week_day: 7
-                    repeat_interval: 2356304732349297219
-                    type: 1
+                    end_date_time: "1987-05-07T05:19:27Z"
+                    end_times: 6071416756838975378
+                    monthly_day: 5
+                    monthly_week: 4
+                    monthly_week_day: 3
+                    repeat_interval: 8501826080373926009
+                    type: 3
                     weekly_days: 1,3,5
                   restricted: false
                   scheduled_end_time: "2021-01-01T11:00:00Z"
@@ -5831,19 +5907,19 @@ definitions:
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
                     - allowed_voting_statuses:
                         - Ex sapiente libero enim ut.
                         - At facere consectetur quod.
-                      uid: Est quod nihil voluptas.
+                      uid: Qui est quod nihil voluptas.
             description:
                 type: string
                 description: The description of the meeting
@@ -5931,15 +6007,15 @@ definitions:
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
                 - allowed_voting_statuses:
                     - Ex sapiente libero enim ut.
                     - At facere consectetur quod.
-                  uid: Est quod nihil voluptas.
+                  uid: Qui est quod nihil voluptas.
             description: Sed quae molestias.
             duration: 67
             early_join_time_minutes: 32
@@ -5948,12 +6024,12 @@ definitions:
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: true
             recurrence:
-                end_date_time: "2015-08-31T10:05:43Z"
-                end_times: 5954965436118576578
-                monthly_day: 11
-                monthly_week: 3
-                monthly_week_day: 7
-                repeat_interval: 7418953500629859380
+                end_date_time: "1973-07-31T10:43:38Z"
+                end_times: 8053658369419006394
+                monthly_day: 27
+                monthly_week: 4
+                monthly_week_day: 5
+                repeat_interval: 5954965436118576579
                 type: 3
                 weekly_days: 1,3,5
             restricted: false
@@ -6245,13 +6321,13 @@ definitions:
             is_cancelled: false
             occurrence_id: "1640995200"
             recurrence:
-                end_date_time: "1985-11-11T06:00:04Z"
-                end_times: 8474492850734006130
-                monthly_day: 26
-                monthly_week: -1
-                monthly_week_day: 7
-                repeat_interval: 2356304732349297219
-                type: 1
+                end_date_time: "1987-05-07T05:19:27Z"
+                end_times: 6071416756838975378
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 3
+                repeat_interval: 8501826080373926009
+                type: 3
                 weekly_days: 1,3,5
             registrant_count: 9062420974093437029
             response_count_maybe: 2573334856234522886
@@ -6309,23 +6385,17 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
                     - allowed_voting_statuses:
-                        - Delectus dolores dolorem.
-                        - Qui ratione ea quisquam.
-                        - Qui ea.
-                        - Natus ut enim officiis nisi.
-                      uid: Possimus tempora.
+                        - Ea provident natus ut enim officiis.
+                        - Dolorem voluptates repellat odit dolorem eius.
+                      uid: Qui ratione ea quisquam.
             created_at:
                 type: string
                 description: The date and time the resource was created
@@ -6462,23 +6532,17 @@ definitions:
             artifact_visibility: public
             committees:
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
                 - allowed_voting_statuses:
-                    - Delectus dolores dolorem.
-                    - Qui ratione ea quisquam.
-                    - Qui ea.
-                    - Natus ut enim officiis nisi.
-                  uid: Possimus tempora.
+                    - Ea provident natus ut enim officiis.
+                    - Dolorem voluptates repellat odit dolorem eius.
+                  uid: Qui ratione ea quisquam.
             created_at: "2021-01-01T00:00:00Z"
             description: Officia accusamus.
             duration: 513
@@ -6492,13 +6556,13 @@ definitions:
             public_link: http://denesikkautzer.biz/donato
             recording_enabled: true
             recurrence:
-                end_date_time: "1985-11-11T06:00:04Z"
-                end_times: 8474492850734006130
-                monthly_day: 26
-                monthly_week: -1
-                monthly_week_day: 7
-                repeat_interval: 2356304732349297219
-                type: 1
+                end_date_time: "1987-05-07T05:19:27Z"
+                end_times: 6071416756838975378
+                monthly_day: 5
+                monthly_week: 4
+                monthly_week_day: 3
+                repeat_interval: 8501826080373926009
+                type: 3
                 weekly_days: 1,3,5
             restricted: false
             scheduled_end_time: "2021-01-01T11:00:00Z"
