@@ -709,7 +709,7 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreateMeetingRegistrantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Ut possimus aut quo.\",\n      \"username\": \"Commodi vel ullam quo porro.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Ut possimus aut quo.\",\n      \"username\": \"Commodi vel ullam quo porro.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if body.FirstName != nil {
@@ -737,6 +737,12 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 		}
 		if body.AvatarURL != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
 		}
 		if err != nil {
 			return nil, err
@@ -780,15 +786,16 @@ func BuildCreateMeetingRegistrantPayload(meetingServiceCreateMeetingRegistrantBo
 		}
 	}
 	v := &meetingservice.CreateMeetingRegistrantPayload{
-		Email:        body.Email,
-		FirstName:    body.FirstName,
-		LastName:     body.LastName,
-		Host:         body.Host,
-		JobTitle:     body.JobTitle,
-		OrgName:      body.OrgName,
-		OccurrenceID: body.OccurrenceID,
-		AvatarURL:    body.AvatarURL,
-		Username:     body.Username,
+		Email:           body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		OccurrenceID:    body.OccurrenceID,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
 	}
 	v.MeetingUID = meetingUID
 	v.Version = version
@@ -853,7 +860,7 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdateMeetingRegistrantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Tenetur voluptas in veritatis.\",\n      \"username\": \"Est placeat.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Tenetur voluptas in veritatis.\",\n      \"username\": \"Est placeat.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if body.FirstName != nil {
@@ -881,6 +888,12 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 		}
 		if body.AvatarURL != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
 		}
 		if err != nil {
 			return nil, err
@@ -938,15 +951,16 @@ func BuildUpdateMeetingRegistrantPayload(meetingServiceUpdateMeetingRegistrantBo
 		}
 	}
 	v := &meetingservice.UpdateMeetingRegistrantPayload{
-		Email:        body.Email,
-		FirstName:    body.FirstName,
-		LastName:     body.LastName,
-		Host:         body.Host,
-		JobTitle:     body.JobTitle,
-		OrgName:      body.OrgName,
-		OccurrenceID: body.OccurrenceID,
-		AvatarURL:    body.AvatarURL,
-		Username:     body.Username,
+		Email:           body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		OccurrenceID:    body.OccurrenceID,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
 	}
 	v.MeetingUID = meetingUID
 	v.UID = &uid
@@ -1562,7 +1576,7 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreatePastMeetingParticipantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Unde facilis.\",\n      \"past_meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"username\": \"Vero est consectetur rerum expedita omnis.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"org_name\": \"Unde facilis.\",\n      \"past_meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"username\": \"Vero est consectetur rerum expedita omnis.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.past_meeting_uid", body.PastMeetingUID, goa.FormatUUID))
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
@@ -1588,6 +1602,12 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 		}
 		if body.AvatarURL != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
 		}
 		if err != nil {
 			return nil, err
@@ -1631,17 +1651,18 @@ func BuildCreatePastMeetingParticipantPayload(meetingServiceCreatePastMeetingPar
 		}
 	}
 	v := &meetingservice.CreatePastMeetingParticipantPayload{
-		PastMeetingUID: body.PastMeetingUID,
-		Email:          body.Email,
-		FirstName:      body.FirstName,
-		LastName:       body.LastName,
-		Host:           body.Host,
-		JobTitle:       body.JobTitle,
-		OrgName:        body.OrgName,
-		AvatarURL:      body.AvatarURL,
-		Username:       body.Username,
-		IsInvited:      body.IsInvited,
-		IsAttended:     body.IsAttended,
+		PastMeetingUID:  body.PastMeetingUID,
+		Email:           body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
+		IsInvited:       body.IsInvited,
+		IsAttended:      body.IsAttended,
 	}
 	v.UID = &uid
 	v.Version = version
@@ -1706,7 +1727,7 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdatePastMeetingParticipantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"org_name\": \"Dolorem explicabo.\",\n      \"username\": \"Vero quo vel tempore.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"org_name\": \"Dolorem explicabo.\",\n      \"username\": \"Vero quo vel tempore.\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", body.Email, goa.FormatEmail))
 		if body.FirstName != nil {
@@ -1731,6 +1752,12 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 		}
 		if body.AvatarURL != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+		}
+		if body.LinkedinProfile != nil {
+			err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
 		}
 		if err != nil {
 			return nil, err
@@ -1788,16 +1815,17 @@ func BuildUpdatePastMeetingParticipantPayload(meetingServiceUpdatePastMeetingPar
 		}
 	}
 	v := &meetingservice.UpdatePastMeetingParticipantPayload{
-		Email:      body.Email,
-		FirstName:  body.FirstName,
-		LastName:   body.LastName,
-		Host:       body.Host,
-		JobTitle:   body.JobTitle,
-		OrgName:    body.OrgName,
-		AvatarURL:  body.AvatarURL,
-		Username:   body.Username,
-		IsInvited:  body.IsInvited,
-		IsAttended: body.IsAttended,
+		Email:           body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
+		IsInvited:       body.IsInvited,
+		IsAttended:      body.IsAttended,
 	}
 	v.PastMeetingUID = pastMeetingUID
 	v.UID = &uid

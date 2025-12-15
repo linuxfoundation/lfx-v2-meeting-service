@@ -27,19 +27,20 @@ func MergeUpdateRegistrantRequest(reqRegistrant *Registrant, existingRegistrant 
 
 	now := time.Now().UTC()
 	registrant := &Registrant{
-		UID:          existingRegistrant.UID,
-		MeetingUID:   existingRegistrant.MeetingUID,
-		Email:        utils.CoalesceString(reqRegistrant.Email, existingRegistrant.Email),
-		FirstName:    utils.CoalesceString(reqRegistrant.FirstName, existingRegistrant.FirstName),
-		LastName:     utils.CoalesceString(reqRegistrant.LastName, existingRegistrant.LastName),
-		Host:         reqRegistrant.Host,
-		JobTitle:     utils.CoalesceString(reqRegistrant.JobTitle, existingRegistrant.JobTitle),
-		OccurrenceID: utils.CoalesceString(reqRegistrant.OccurrenceID, existingRegistrant.OccurrenceID),
-		OrgName:      utils.CoalesceString(reqRegistrant.OrgName, existingRegistrant.OrgName),
-		AvatarURL:    utils.CoalesceString(reqRegistrant.AvatarURL, existingRegistrant.AvatarURL),
-		Username:     utils.CoalesceString(reqRegistrant.Username, existingRegistrant.Username),
-		CreatedAt:    existingRegistrant.CreatedAt,
-		UpdatedAt:    &now,
+		UID:             existingRegistrant.UID,
+		MeetingUID:      existingRegistrant.MeetingUID,
+		Email:           utils.CoalesceString(reqRegistrant.Email, existingRegistrant.Email),
+		FirstName:       utils.CoalesceString(reqRegistrant.FirstName, existingRegistrant.FirstName),
+		LastName:        utils.CoalesceString(reqRegistrant.LastName, existingRegistrant.LastName),
+		Host:            reqRegistrant.Host,
+		JobTitle:        utils.CoalesceString(reqRegistrant.JobTitle, existingRegistrant.JobTitle),
+		OccurrenceID:    utils.CoalesceString(reqRegistrant.OccurrenceID, existingRegistrant.OccurrenceID),
+		OrgName:         utils.CoalesceString(reqRegistrant.OrgName, existingRegistrant.OrgName),
+		AvatarURL:       utils.CoalesceString(reqRegistrant.AvatarURL, existingRegistrant.AvatarURL),
+		LinkedInProfile: utils.CoalesceString(reqRegistrant.LinkedInProfile, existingRegistrant.LinkedInProfile),
+		Username:        utils.CoalesceString(reqRegistrant.Username, existingRegistrant.Username),
+		CreatedAt:       existingRegistrant.CreatedAt,
+		UpdatedAt:       &now,
 	}
 
 	// Set optional fields

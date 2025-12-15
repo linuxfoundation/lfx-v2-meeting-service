@@ -210,6 +210,7 @@ func ConvertCreateRegistrantPayloadToDomain(goaRegistrant *meetingservice.Create
 		OrgIsMember:        false, // This will get populated by the service
 		OrgIsProjectMember: false, // This will get populated by the service
 		AvatarURL:          utils.StringValue(goaRegistrant.AvatarURL),
+		LinkedInProfile:    utils.StringValue(goaRegistrant.LinkedinProfile),
 		Username:           utils.StringValue(goaRegistrant.Username),
 		CreatedAt:          &now,
 		UpdatedAt:          &now,
@@ -235,6 +236,7 @@ func ConvertUpdateRegistrantPayloadToDomain(payload *meetingservice.UpdateMeetin
 		OrgIsMember:        false, // This will get populated by the service
 		OrgIsProjectMember: false, // This will get populated by the service
 		AvatarURL:          utils.StringValue(payload.AvatarURL),
+		LinkedInProfile:    utils.StringValue(payload.LinkedinProfile),
 		Username:           utils.StringValue(payload.Username),
 		CreatedAt:          nil, // This will get populated by the service
 		UpdatedAt:          &now,
@@ -259,6 +261,7 @@ func ConvertCreatePastMeetingParticipantPayloadToDomain(payload *meetingservice.
 		OrgIsMember:        false, // This will get populated by the service
 		OrgIsProjectMember: false, // This will get populated by the service
 		AvatarURL:          utils.StringValue(payload.AvatarURL),
+		LinkedInProfile:    utils.StringValue(payload.LinkedinProfile),
 		Username:           utils.StringValue(payload.Username),
 		IsInvited:          utils.BoolValue(payload.IsInvited),
 		IsAttended:         utils.BoolValue(payload.IsAttended),
@@ -285,6 +288,7 @@ func ConvertUpdatePastMeetingParticipantPayloadToDomain(payload *meetingservice.
 		OrgIsMember:        false, // This will get populated by the service
 		OrgIsProjectMember: false, // This will get populated by the service
 		AvatarURL:          utils.StringValue(payload.AvatarURL),
+		LinkedInProfile:    utils.StringValue(payload.LinkedinProfile),
 		Username:           utils.StringValue(payload.Username),
 		IsInvited:          utils.BoolValue(payload.IsInvited),
 		IsAttended:         utils.BoolValue(payload.IsAttended),

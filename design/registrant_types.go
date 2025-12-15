@@ -18,6 +18,7 @@ var CreateRegistrantPayload = Type("CreateRegistrantPayload", func() {
 	RegistrantOrgNameAttribute()
 	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
+	RegistrantLinkedInProfileAttribute()
 	RegistrantUsernameAttribute()
 	Required("meeting_uid", "email")
 })
@@ -33,6 +34,7 @@ var UpdateRegistrantPayload = Type("UpdateRegistrantPayload", func() {
 	RegistrantOrgNameAttribute()
 	RegistrantOccurrenceIDAttribute()
 	RegistrantAvatarURLAttribute()
+	RegistrantLinkedInProfileAttribute()
 	RegistrantUsernameAttribute()
 	Required("meeting_uid", "email")
 })
@@ -54,6 +56,7 @@ var Registrant = Type("Registrant", func() {
 	RegistrantOrgIsMemberAttribute()
 	RegistrantOrgIsProjectMemberAttribute()
 	RegistrantAvatarURLAttribute()
+	RegistrantLinkedInProfileAttribute()
 	RegistrantUsernameAttribute()
 	CreatedAtAttribute()
 	UpdatedAtAttribute()
@@ -151,6 +154,15 @@ func RegistrantAvatarURLAttribute() {
 	Attribute("avatar_url", String, "User's avatar URL", func() {
 		Format(FormatURI)
 		Example("https://example.com/avatar.jpg")
+	})
+}
+
+// RegistrantLinkedInProfileAttribute is the DSL attribute for registrant LinkedIn profile URL.
+func RegistrantLinkedInProfileAttribute() {
+	Attribute("linkedin_profile", String, "User's LinkedIn profile URL", func() {
+		Format(FormatURI)
+		Pattern(`^(https?://)?([a-z]{2,3}\.)?linkedin\.com/.*$`)
+		Example("https://www.linkedin.com/in/username")
 	})
 }
 

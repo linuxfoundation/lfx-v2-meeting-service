@@ -3870,6 +3870,12 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
+            linkedin_profile:
+                type: string
+                description: User's LinkedIn profile URL
+                example: https://www.linkedin.com/in/username
+                format: uri
+                pattern: ^(https?://)?([a-z]{2,3}\.)?linkedin\.com/.*$
             occurrence_id:
                 type: string
                 description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
@@ -3890,6 +3896,7 @@ definitions:
             host: false
             job_title: Software Engineer
             last_name: Doe
+            linkedin_profile: https://www.linkedin.com/in/username
             occurrence_id: "1640995200"
             org_name: Natus reiciendis iure.
             username: Mollitia eveniet aut dolorem est.
@@ -4304,6 +4311,12 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
+            linkedin_profile:
+                type: string
+                description: User's LinkedIn profile URL
+                example: https://www.linkedin.com/in/username
+                format: uri
+                pattern: ^(https?://)?([a-z]{2,3}\.)?linkedin\.com/.*$
             org_name:
                 type: string
                 description: User's organization
@@ -4326,6 +4339,7 @@ definitions:
             is_invited: true
             job_title: Software Engineer
             last_name: Doe
+            linkedin_profile: https://www.linkedin.com/in/username
             org_name: Deleniti placeat quos iste in vero.
             past_meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             username: Necessitatibus mollitia commodi qui quo.
@@ -4598,6 +4612,7 @@ definitions:
                       host: true
                       job_title: Software Engineer
                       last_name: Doe
+                      linkedin_profile: https://www.linkedin.com/in/username
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       occurrence_id: "1640995200"
                       org_is_member: true
@@ -4615,6 +4630,7 @@ definitions:
                       host: true
                       job_title: Software Engineer
                       last_name: Doe
+                      linkedin_profile: https://www.linkedin.com/in/username
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       occurrence_id: "1640995200"
                       org_is_member: true
@@ -4632,6 +4648,7 @@ definitions:
                       host: true
                       job_title: Software Engineer
                       last_name: Doe
+                      linkedin_profile: https://www.linkedin.com/in/username
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       occurrence_id: "1640995200"
                       org_is_member: true
@@ -4651,6 +4668,7 @@ definitions:
                   host: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   occurrence_id: "1640995200"
                   org_is_member: true
@@ -4668,6 +4686,7 @@ definitions:
                   host: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   occurrence_id: "1640995200"
                   org_is_member: true
@@ -4685,6 +4704,7 @@ definitions:
                   host: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   occurrence_id: "1640995200"
                   org_is_member: true
@@ -4702,6 +4722,7 @@ definitions:
                   host: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   occurrence_id: "1640995200"
                   org_is_member: true
@@ -5378,6 +5399,7 @@ definitions:
                       is_invited: true
                       job_title: Software Engineer
                       last_name: Doe
+                      linkedin_profile: https://www.linkedin.com/in/username
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       org_is_member: false
                       org_is_project_member: true
@@ -5404,6 +5426,7 @@ definitions:
                       is_invited: true
                       job_title: Software Engineer
                       last_name: Doe
+                      linkedin_profile: https://www.linkedin.com/in/username
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       org_is_member: false
                       org_is_project_member: true
@@ -5430,6 +5453,7 @@ definitions:
                       is_invited: true
                       job_title: Software Engineer
                       last_name: Doe
+                      linkedin_profile: https://www.linkedin.com/in/username
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       org_is_member: false
                       org_is_project_member: true
@@ -5456,6 +5480,7 @@ definitions:
                       is_invited: true
                       job_title: Software Engineer
                       last_name: Doe
+                      linkedin_profile: https://www.linkedin.com/in/username
                       meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                       org_is_member: false
                       org_is_project_member: true
@@ -5484,6 +5509,7 @@ definitions:
                   is_invited: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   org_is_member: false
                   org_is_project_member: true
@@ -5510,6 +5536,7 @@ definitions:
                   is_invited: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   org_is_member: false
                   org_is_project_member: true
@@ -5536,6 +5563,7 @@ definitions:
                   is_invited: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   org_is_member: false
                   org_is_project_member: true
@@ -5562,6 +5590,7 @@ definitions:
                   is_invited: true
                   job_title: Software Engineer
                   last_name: Doe
+                  linkedin_profile: https://www.linkedin.com/in/username
                   meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                   org_is_member: false
                   org_is_project_member: true
@@ -6335,6 +6364,12 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
+            linkedin_profile:
+                type: string
+                description: User's LinkedIn profile URL
+                example: https://www.linkedin.com/in/username
+                format: uri
+                pattern: ^(https?://)?([a-z]{2,3}\.)?linkedin\.com/.*$
             occurrence_id:
                 type: string
                 description: The ID of the specific occurrence the user should be invited to. If blank, user is invited to all occurrences
@@ -6355,6 +6390,7 @@ definitions:
             host: true
             job_title: Software Engineer
             last_name: Doe
+            linkedin_profile: https://www.linkedin.com/in/username
             occurrence_id: "1640995200"
             org_name: Ipsa voluptas consequuntur voluptas sint incidunt.
             username: Corporis velit consequatur doloremque tempore voluptas.
@@ -6422,6 +6458,12 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
+            linkedin_profile:
+                type: string
+                description: User's LinkedIn profile URL
+                example: https://www.linkedin.com/in/username
+                format: uri
+                pattern: ^(https?://)?([a-z]{2,3}\.)?linkedin\.com/.*$
             org_name:
                 type: string
                 description: User's organization
@@ -6439,6 +6481,7 @@ definitions:
             is_invited: true
             job_title: Software Engineer
             last_name: Doe
+            linkedin_profile: https://www.linkedin.com/in/username
             org_name: Nesciunt exercitationem quia at.
             username: Porro et aspernatur cumque fugit minus ut.
         required:
@@ -6978,6 +7021,12 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
+            linkedin_profile:
+                type: string
+                description: User's LinkedIn profile URL
+                example: https://www.linkedin.com/in/username
+                format: uri
+                pattern: ^(https?://)?([a-z]{2,3}\.)?linkedin\.com/.*$
             meeting_uid:
                 type: string
                 description: The UID of the meeting
@@ -7043,6 +7092,7 @@ definitions:
             is_invited: true
             job_title: Software Engineer
             last_name: Doe
+            linkedin_profile: https://www.linkedin.com/in/username
             meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             org_is_member: true
             org_is_project_member: false
@@ -7444,6 +7494,12 @@ definitions:
                 example: Doe
                 minLength: 1
                 maxLength: 100
+            linkedin_profile:
+                type: string
+                description: User's LinkedIn profile URL
+                example: https://www.linkedin.com/in/username
+                format: uri
+                pattern: ^(https?://)?([a-z]{2,3}\.)?linkedin\.com/.*$
             meeting_uid:
                 type: string
                 description: The UID of the meeting
@@ -7497,6 +7553,7 @@ definitions:
             host: false
             job_title: Software Engineer
             last_name: Doe
+            linkedin_profile: https://www.linkedin.com/in/username
             meeting_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             occurrence_id: "1640995200"
             org_is_member: false

@@ -135,6 +135,8 @@ type CreateMeetingRegistrantRequestBody struct {
 	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 }
@@ -159,6 +161,8 @@ type UpdateMeetingRegistrantRequestBody struct {
 	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 }
@@ -270,6 +274,8 @@ type CreatePastMeetingParticipantRequestBody struct {
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Whether the participant was invited to this past meeting
@@ -295,6 +301,8 @@ type UpdatePastMeetingParticipantRequestBody struct {
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Whether the participant was invited to this past meeting
@@ -583,6 +591,8 @@ type CreateMeetingRegistrantResponseBody struct {
 	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// The date and time the resource was created
@@ -630,6 +640,8 @@ type UpdateMeetingRegistrantResponseBody struct {
 	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// The date and time the resource was created
@@ -800,6 +812,8 @@ type CreatePastMeetingParticipantResponseBody struct {
 	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Whether the participant was invited to this past meeting
@@ -849,6 +863,8 @@ type UpdatePastMeetingParticipantResponseBody struct {
 	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Whether the participant was invited to this past meeting
@@ -2837,6 +2853,8 @@ type RegistrantResponseBody struct {
 	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// The date and time the resource was created
@@ -2976,6 +2994,8 @@ type PastMeetingParticipantResponseBody struct {
 	OrgIsProjectMember *bool `form:"org_is_project_member,omitempty" json:"org_is_project_member,omitempty" xml:"org_is_project_member,omitempty"`
 	// User's avatar URL
 	AvatarURL *string `form:"avatar_url,omitempty" json:"avatar_url,omitempty" xml:"avatar_url,omitempty"`
+	// User's LinkedIn profile URL
+	LinkedinProfile *string `form:"linkedin_profile,omitempty" json:"linkedin_profile,omitempty" xml:"linkedin_profile,omitempty"`
 	// User's LF ID
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Whether the participant was invited to this past meeting
@@ -3470,6 +3490,7 @@ func NewCreateMeetingRegistrantResponseBody(res *meetingservice.Registrant) *Cre
 		OrgIsMember:        res.OrgIsMember,
 		OrgIsProjectMember: res.OrgIsProjectMember,
 		AvatarURL:          res.AvatarURL,
+		LinkedinProfile:    res.LinkedinProfile,
 		Username:           res.Username,
 		CreatedAt:          res.CreatedAt,
 		UpdatedAt:          res.UpdatedAt,
@@ -3496,6 +3517,7 @@ func NewGetMeetingRegistrantResponseBody(res *meetingservice.GetMeetingRegistran
 		OrgIsMember:        res.Registrant.OrgIsMember,
 		OrgIsProjectMember: res.Registrant.OrgIsProjectMember,
 		AvatarURL:          res.Registrant.AvatarURL,
+		LinkedinProfile:    res.Registrant.LinkedinProfile,
 		Username:           res.Registrant.Username,
 		CreatedAt:          res.Registrant.CreatedAt,
 		UpdatedAt:          res.Registrant.UpdatedAt,
@@ -3522,6 +3544,7 @@ func NewUpdateMeetingRegistrantResponseBody(res *meetingservice.Registrant) *Upd
 		OrgIsMember:        res.OrgIsMember,
 		OrgIsProjectMember: res.OrgIsProjectMember,
 		AvatarURL:          res.AvatarURL,
+		LinkedinProfile:    res.LinkedinProfile,
 		Username:           res.Username,
 		CreatedAt:          res.CreatedAt,
 		UpdatedAt:          res.UpdatedAt,
@@ -3750,6 +3773,7 @@ func NewCreatePastMeetingParticipantResponseBody(res *meetingservice.PastMeeting
 		OrgIsMember:        res.OrgIsMember,
 		OrgIsProjectMember: res.OrgIsProjectMember,
 		AvatarURL:          res.AvatarURL,
+		LinkedinProfile:    res.LinkedinProfile,
 		Username:           res.Username,
 		IsInvited:          res.IsInvited,
 		IsAttended:         res.IsAttended,
@@ -3786,6 +3810,7 @@ func NewGetPastMeetingParticipantResponseBody(res *meetingservice.GetPastMeeting
 		OrgIsMember:        res.Participant.OrgIsMember,
 		OrgIsProjectMember: res.Participant.OrgIsProjectMember,
 		AvatarURL:          res.Participant.AvatarURL,
+		LinkedinProfile:    res.Participant.LinkedinProfile,
 		Username:           res.Participant.Username,
 		IsInvited:          res.Participant.IsInvited,
 		IsAttended:         res.Participant.IsAttended,
@@ -3822,6 +3847,7 @@ func NewUpdatePastMeetingParticipantResponseBody(res *meetingservice.PastMeeting
 		OrgIsMember:        res.OrgIsMember,
 		OrgIsProjectMember: res.OrgIsProjectMember,
 		AvatarURL:          res.AvatarURL,
+		LinkedinProfile:    res.LinkedinProfile,
 		Username:           res.Username,
 		IsInvited:          res.IsInvited,
 		IsAttended:         res.IsAttended,
@@ -5868,15 +5894,16 @@ func NewGetMeetingRegistrantsPayload(uid string, version *string, bearerToken *s
 // create-meeting-registrant endpoint payload.
 func NewCreateMeetingRegistrantPayload(body *CreateMeetingRegistrantRequestBody, meetingUID string, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateMeetingRegistrantPayload {
 	v := &meetingservice.CreateMeetingRegistrantPayload{
-		Email:        *body.Email,
-		FirstName:    body.FirstName,
-		LastName:     body.LastName,
-		Host:         body.Host,
-		JobTitle:     body.JobTitle,
-		OrgName:      body.OrgName,
-		OccurrenceID: body.OccurrenceID,
-		AvatarURL:    body.AvatarURL,
-		Username:     body.Username,
+		Email:           *body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		OccurrenceID:    body.OccurrenceID,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
 	}
 	v.MeetingUID = meetingUID
 	v.Version = version
@@ -5902,15 +5929,16 @@ func NewGetMeetingRegistrantPayload(meetingUID string, uid string, version *stri
 // update-meeting-registrant endpoint payload.
 func NewUpdateMeetingRegistrantPayload(body *UpdateMeetingRegistrantRequestBody, meetingUID string, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.UpdateMeetingRegistrantPayload {
 	v := &meetingservice.UpdateMeetingRegistrantPayload{
-		Email:        *body.Email,
-		FirstName:    body.FirstName,
-		LastName:     body.LastName,
-		Host:         body.Host,
-		JobTitle:     body.JobTitle,
-		OrgName:      body.OrgName,
-		OccurrenceID: body.OccurrenceID,
-		AvatarURL:    body.AvatarURL,
-		Username:     body.Username,
+		Email:           *body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		OccurrenceID:    body.OccurrenceID,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
 	}
 	v.MeetingUID = meetingUID
 	v.UID = &uid
@@ -6098,17 +6126,18 @@ func NewGetPastMeetingParticipantsPayload(uid string, version *string, bearerTok
 // create-past-meeting-participant endpoint payload.
 func NewCreatePastMeetingParticipantPayload(body *CreatePastMeetingParticipantRequestBody, uid string, version *string, bearerToken *string, xSync *bool) *meetingservice.CreatePastMeetingParticipantPayload {
 	v := &meetingservice.CreatePastMeetingParticipantPayload{
-		PastMeetingUID: *body.PastMeetingUID,
-		Email:          *body.Email,
-		FirstName:      body.FirstName,
-		LastName:       body.LastName,
-		Host:           body.Host,
-		JobTitle:       body.JobTitle,
-		OrgName:        body.OrgName,
-		AvatarURL:      body.AvatarURL,
-		Username:       body.Username,
-		IsInvited:      body.IsInvited,
-		IsAttended:     body.IsAttended,
+		PastMeetingUID:  *body.PastMeetingUID,
+		Email:           *body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
+		IsInvited:       body.IsInvited,
+		IsAttended:      body.IsAttended,
 	}
 	v.UID = &uid
 	v.Version = version
@@ -6134,16 +6163,17 @@ func NewGetPastMeetingParticipantPayload(pastMeetingUID string, uid string, vers
 // update-past-meeting-participant endpoint payload.
 func NewUpdatePastMeetingParticipantPayload(body *UpdatePastMeetingParticipantRequestBody, pastMeetingUID string, uid string, version *string, bearerToken *string, xSync *bool, ifMatch *string) *meetingservice.UpdatePastMeetingParticipantPayload {
 	v := &meetingservice.UpdatePastMeetingParticipantPayload{
-		Email:      *body.Email,
-		FirstName:  body.FirstName,
-		LastName:   body.LastName,
-		Host:       body.Host,
-		JobTitle:   body.JobTitle,
-		OrgName:    body.OrgName,
-		AvatarURL:  body.AvatarURL,
-		Username:   body.Username,
-		IsInvited:  body.IsInvited,
-		IsAttended: body.IsAttended,
+		Email:           *body.Email,
+		FirstName:       body.FirstName,
+		LastName:        body.LastName,
+		Host:            body.Host,
+		JobTitle:        body.JobTitle,
+		OrgName:         body.OrgName,
+		AvatarURL:       body.AvatarURL,
+		LinkedinProfile: body.LinkedinProfile,
+		Username:        body.Username,
+		IsInvited:       body.IsInvited,
+		IsAttended:      body.IsAttended,
 	}
 	v.PastMeetingUID = pastMeetingUID
 	v.UID = &uid
@@ -6544,6 +6574,12 @@ func ValidateCreateMeetingRegistrantRequestBody(body *CreateMeetingRegistrantReq
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
+	}
 	return
 }
 
@@ -6581,6 +6617,12 @@ func ValidateUpdateMeetingRegistrantRequestBody(body *UpdateMeetingRegistrantReq
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
 	}
 	return
 }
@@ -6788,6 +6830,12 @@ func ValidateCreatePastMeetingParticipantRequestBody(body *CreatePastMeetingPart
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
 	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
+	}
 	return
 }
 
@@ -6822,6 +6870,12 @@ func ValidateUpdatePastMeetingParticipantRequestBody(body *UpdatePastMeetingPart
 	}
 	if body.AvatarURL != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.avatar_url", *body.AvatarURL, goa.FormatURI))
+	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.linkedin_profile", *body.LinkedinProfile, goa.FormatURI))
+	}
+	if body.LinkedinProfile != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.linkedin_profile", *body.LinkedinProfile, "^(https?://)?([a-z]{2,3}\\.)?linkedin\\.com/.*$"))
 	}
 	return
 }
