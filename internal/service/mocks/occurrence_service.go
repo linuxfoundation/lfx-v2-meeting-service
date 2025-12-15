@@ -26,5 +26,13 @@ func (m *MockOccurrenceService) CalculateOccurrencesFromDate(meeting *models.Mee
 	return args.Get(0).([]models.Occurrence)
 }
 
+func (m *MockOccurrenceService) GetSeriesEndDate(meeting *models.MeetingBase) *time.Time {
+	args := m.Called(meeting)
+	if args.Get(0) == nil {
+		return nil
+	}
+	return args.Get(0).(*time.Time)
+}
+
 // Ensure MockOccurrenceService implements domain.OccurrenceService
 var _ domain.OccurrenceService = (*MockOccurrenceService)(nil)

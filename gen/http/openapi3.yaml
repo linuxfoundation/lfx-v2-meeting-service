@@ -130,6 +130,7 @@ paths:
                                         weekly_days: 1,3,5
                                       registrant_count: 1853296307668228253
                                       restricted: false
+                                      series_end_date: "2024-12-31T23:59:00Z"
                                       start_time: "2021-01-01T00:00:00Z"
                                       timezone: Minus et.
                                       title: Recusandae voluptatem.
@@ -221,6 +222,7 @@ paths:
                                         weekly_days: 1,3,5
                                       registrant_count: 1853296307668228253
                                       restricted: false
+                                      series_end_date: "2024-12-31T23:59:00Z"
                                       start_time: "2021-01-01T00:00:00Z"
                                       timezone: Minus et.
                                       title: Recusandae voluptatem.
@@ -438,6 +440,7 @@ paths:
                                     weekly_days: 1,3,5
                                 registrant_count: 3212667003319069863
                                 restricted: true
+                                series_end_date: "2024-12-31T23:59:00Z"
                                 start_time: "2021-01-01T00:00:00Z"
                                 timezone: Enim ut quae.
                                 title: Facere consectetur quod voluptatibus in necessitatibus rerum.
@@ -1964,6 +1967,7 @@ paths:
                                     weekly_days: 1,3,5
                                 registrant_count: 83223306159919769
                                 restricted: false
+                                series_end_date: "2024-12-31T23:59:00Z"
                                 start_time: "2021-01-01T00:00:00Z"
                                 timezone: Fuga omnis recusandae autem esse.
                                 title: Suscipit ipsam accusamus.
@@ -2183,6 +2187,7 @@ paths:
                                     weekly_days: 1,3,5
                                 registrant_count: 2530479471633554910
                                 restricted: true
+                                series_end_date: "2024-12-31T23:59:00Z"
                                 start_time: "2021-01-01T00:00:00Z"
                                 timezone: Magnam expedita voluptatem ut.
                                 title: Vel qui animi ea rerum a aut.
@@ -6387,6 +6392,7 @@ components:
                             weekly_days: 1,3,5
                           registrant_count: 1853296307668228253
                           restricted: false
+                          series_end_date: "2024-12-31T23:59:00Z"
                           start_time: "2021-01-01T00:00:00Z"
                           timezone: Minus et.
                           title: Recusandae voluptatem.
@@ -6478,6 +6484,7 @@ components:
                             weekly_days: 1,3,5
                           registrant_count: 1853296307668228253
                           restricted: false
+                          series_end_date: "2024-12-31T23:59:00Z"
                           start_time: "2021-01-01T00:00:00Z"
                           timezone: Minus et.
                           title: Recusandae voluptatem.
@@ -6571,6 +6578,7 @@ components:
                         weekly_days: 1,3,5
                       registrant_count: 1853296307668228253
                       restricted: false
+                      series_end_date: "2024-12-31T23:59:00Z"
                       start_time: "2021-01-01T00:00:00Z"
                       timezone: Minus et.
                       title: Recusandae voluptatem.
@@ -6662,6 +6670,7 @@ components:
                         weekly_days: 1,3,5
                       registrant_count: 1853296307668228253
                       restricted: false
+                      series_end_date: "2024-12-31T23:59:00Z"
                       start_time: "2021-01-01T00:00:00Z"
                       timezone: Minus et.
                       title: Recusandae voluptatem.
@@ -6753,6 +6762,7 @@ components:
                         weekly_days: 1,3,5
                       registrant_count: 1853296307668228253
                       restricted: false
+                      series_end_date: "2024-12-31T23:59:00Z"
                       start_time: "2021-01-01T00:00:00Z"
                       timezone: Minus et.
                       title: Recusandae voluptatem.
@@ -6844,6 +6854,7 @@ components:
                         weekly_days: 1,3,5
                       registrant_count: 1853296307668228253
                       restricted: false
+                      series_end_date: "2024-12-31T23:59:00Z"
                       start_time: "2021-01-01T00:00:00Z"
                       timezone: Minus et.
                       title: Recusandae voluptatem.
@@ -7955,6 +7966,11 @@ components:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
                     example: true
+                series_end_date:
+                    type: string
+                    description: The final end time for the meeting series. For recurring meetings, this is the end time of the last occurrence. For non-recurring meetings, this is the end time of the single meeting (start time + duration). Null if the meeting has no end date (infinite recurrence).
+                    example: "2024-12-31T23:59:00Z"
+                    format: date-time
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -8114,6 +8130,7 @@ components:
                     weekly_days: 1,3,5
                 registrant_count: 419011882014355014
                 restricted: true
+                series_end_date: "2024-12-31T23:59:00Z"
                 start_time: "2021-01-01T00:00:00Z"
                 timezone: Libero similique id.
                 title: Laudantium eius corrupti.
@@ -8307,6 +8324,11 @@ components:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
                     example: true
+                series_end_date:
+                    type: string
+                    description: The final end time for the meeting series. For recurring meetings, this is the end time of the last occurrence. For non-recurring meetings, this is the end time of the single meeting (start time + duration). Null if the meeting has no end date (infinite recurrence).
+                    example: "2024-12-31T23:59:00Z"
+                    format: date-time
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -8467,6 +8489,7 @@ components:
                     weekly_days: 1,3,5
                 registrant_count: 536122995838694145
                 restricted: true
+                series_end_date: "2024-12-31T23:59:00Z"
                 start_time: "2021-01-01T00:00:00Z"
                 timezone: Laudantium odio.
                 title: Nihil laborum quaerat unde quos.

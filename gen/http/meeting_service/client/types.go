@@ -376,6 +376,11 @@ type CreateMeetingResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -464,6 +469,11 @@ type UpdateMeetingBaseResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -2538,6 +2548,11 @@ type MeetingFullResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -2794,6 +2809,11 @@ type MeetingBaseResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -3525,6 +3545,7 @@ func NewCreateMeetingMeetingFullCreated(body *CreateMeetingResponseBody) *meetin
 		StartTime:               body.StartTime,
 		Duration:                body.Duration,
 		Timezone:                body.Timezone,
+		SeriesEndDate:           body.SeriesEndDate,
 		Title:                   body.Title,
 		Description:             body.Description,
 		Platform:                body.Platform,
@@ -3632,6 +3653,7 @@ func NewGetMeetingBaseResultOK(body *GetMeetingBaseResponseBody, etag *string) *
 		StartTime:               body.StartTime,
 		Duration:                body.Duration,
 		Timezone:                body.Timezone,
+		SeriesEndDate:           body.SeriesEndDate,
 		Title:                   body.Title,
 		Description:             body.Description,
 		Platform:                body.Platform,
@@ -3835,6 +3857,7 @@ func NewUpdateMeetingBaseMeetingBaseOK(body *UpdateMeetingBaseResponseBody) *mee
 		StartTime:               body.StartTime,
 		Duration:                body.Duration,
 		Timezone:                body.Timezone,
+		SeriesEndDate:           body.SeriesEndDate,
 		Title:                   body.Title,
 		Description:             body.Description,
 		Platform:                body.Platform,
@@ -6009,6 +6032,9 @@ func ValidateCreateMeetingResponseBody(body *CreateMeetingResponseBody) (err err
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.SeriesEndDate != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
+	}
 	if body.Description != nil {
 		if utf8.RuneCountInString(*body.Description) > 2000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
@@ -6104,6 +6130,9 @@ func ValidateGetMeetingBaseResponseBody(body *GetMeetingBaseResponseBody) (err e
 		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
+	}
+	if body.SeriesEndDate != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
 	}
 	if body.Description != nil {
 		if utf8.RuneCountInString(*body.Description) > 2000 {
@@ -6227,6 +6256,9 @@ func ValidateUpdateMeetingBaseResponseBody(body *UpdateMeetingBaseResponseBody) 
 		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
+	}
+	if body.SeriesEndDate != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
 	}
 	if body.Description != nil {
 		if utf8.RuneCountInString(*body.Description) > 2000 {
@@ -9432,6 +9464,9 @@ func ValidateMeetingFullResponseBody(body *MeetingFullResponseBody) (err error) 
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.SeriesEndDate != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
+	}
 	if body.Description != nil {
 		if utf8.RuneCountInString(*body.Description) > 2000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
@@ -9680,6 +9715,9 @@ func ValidateMeetingBaseResponseBody(body *MeetingBaseResponseBody) (err error) 
 		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
+	}
+	if body.SeriesEndDate != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
 	}
 	if body.Description != nil {
 		if utf8.RuneCountInString(*body.Description) > 2000 {

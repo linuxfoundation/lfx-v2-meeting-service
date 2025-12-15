@@ -377,6 +377,57 @@ func (s *OccurrenceService) getEndDate(meeting *models.MeetingBase, loc *time.Lo
 	return time.Time{}
 }
 
+// GetSeriesEndDate calculates the final end time for a meeting series.
+// For recurring meetings, this is the end time of the last occurrence.
+// For non-recurring meetings, this is the end time of the single meeting (start time + duration).
+// Returns nil if the meeting has no end date (infinite recurrence).
+func (s *OccurrenceService) GetSeriesEndDate(meeting *models.MeetingBase) *time.Time {
+	if meeting == nil {
+		return nil
+	}
+
+	// Load the meeting timezone
+	loc, err := time.LoadLocation(meeting.Timezone)
+	if err != nil {
+		loc = time.UTC
+	}
+
+	// For non-recurring meetings, return start time + duration
+	if meeting.Recurrence == nil {
+		endTime := meeting.StartTime.In(loc).Add(time.Duration(meeting.Duration) * time.Minute)
+		return &endTime
+	}
+
+	recurrence := meeting.Recurrence
+
+	// If EndDateTime is set, it represents an exclusive boundary.
+	// We need to find the last occurrence before this boundary.
+	if recurrence.EndDateTime != nil {
+		// Calculate all occurrences and find the last one
+		occurrences := s.CalculateOccurrences(meeting, 10000) // Use a large limit
+		if len(occurrences) == 0 {
+			return nil
+		}
+
+		// Get the last occurrence and add duration
+		lastOccurrence := occurrences[len(occurrences)-1]
+		endTime := lastOccurrence.StartTime.Add(time.Duration(meeting.Duration) * time.Minute)
+		return &endTime
+	}
+
+	// For EndTimes-based recurrence, getEndDate returns the start time of the last occurrence
+	endDate := s.getEndDate(meeting, loc)
+
+	// If endDate is zero time, there's no end date (infinite recurrence)
+	if endDate.IsZero() {
+		return nil
+	}
+
+	// Add the meeting duration to get the actual end time of the last occurrence
+	endTime := endDate.Add(time.Duration(meeting.Duration) * time.Minute)
+	return &endTime
+}
+
 // parseWeeklyDays parses the weekly days string (e.g., "1,3,5") into day integers
 func (s *OccurrenceService) parseWeeklyDays(weeklyDays string) []int {
 	if weeklyDays == "" {

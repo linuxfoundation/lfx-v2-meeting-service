@@ -78,6 +78,7 @@ func MeetingBaseAttributes() {
 	DurationAttribute()
 	TimezoneAttribute()
 	RecurrenceAttribute()
+	SeriesEndDateAttribute()
 	TitleAttribute()
 	DescriptionAttribute()
 	CommitteesAttribute()
@@ -244,6 +245,14 @@ func TimezoneAttribute() {
 // RecurrenceAttribute is the DSL attribute for recurrence.
 func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
+}
+
+// SeriesEndDateAttribute is the DSL attribute for the series end date.
+func SeriesEndDateAttribute() {
+	Attribute("series_end_date", String, "The final end time for the meeting series. For recurring meetings, this is the end time of the last occurrence. For non-recurring meetings, this is the end time of the single meeting (start time + duration). Null if the meeting has no end date (infinite recurrence).", func() {
+		Format(FormatDateTime)
+		Example("2024-12-31T23:59:00Z")
+	})
 }
 
 // TitleAttribute is the DSL attribute for title.

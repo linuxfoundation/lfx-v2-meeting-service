@@ -504,6 +504,9 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, reqMeeting *models.M
 	// Calculate first 50 occurrences for the new meeting
 	reqMeeting.Base.Occurrences = s.occurrenceService.CalculateOccurrences(reqMeeting.Base, 50)
 
+	// Set the series end date before persisting
+	reqMeeting.Base.SeriesEndDate = s.occurrenceService.GetSeriesEndDate(reqMeeting.Base)
+
 	// Create the meeting in the repository
 	// TODO: handle rollbacks better
 	err := s.meetingRepository.Create(ctx, reqMeeting.Base, reqMeeting.Settings)
@@ -823,6 +826,9 @@ func (s *MeetingService) UpdateMeetingBase(ctx context.Context, reqMeeting *mode
 
 	// Increment ICS sequence for calendar updates
 	reqMeeting.IcsSequence = existingMeetingDB.IcsSequence + 1
+
+	// Set the series end date before persisting
+	reqMeeting.SeriesEndDate = s.occurrenceService.GetSeriesEndDate(reqMeeting)
 
 	// Detect changes before updating
 	changes := detectMeetingBaseChanges(existingMeetingDB, reqMeeting)

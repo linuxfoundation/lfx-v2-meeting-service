@@ -5379,6 +5379,7 @@ func marshalMeetingserviceMeetingFullToMeetingFullResponseBody(v *meetingservice
 		StartTime:               v.StartTime,
 		Duration:                v.Duration,
 		Timezone:                v.Timezone,
+		SeriesEndDate:           v.SeriesEndDate,
 		Title:                   v.Title,
 		Description:             v.Description,
 		Platform:                v.Platform,

@@ -97,6 +97,11 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 		meetingFull.UpdatedAt = utils.StringPtr(meetingBase.UpdatedAt.Format(time.RFC3339))
 	}
 
+	// Convert SeriesEndDate
+	if meetingBase.SeriesEndDate != nil {
+		meetingFull.SeriesEndDate = utils.StringPtr(meetingBase.SeriesEndDate.Format(time.RFC3339))
+	}
+
 	if meetingSettings != nil {
 		meetingFull.Organizers = meetingSettings.Organizers
 	}
@@ -144,6 +149,11 @@ func ConvertDomainToBaseResponse(meeting *models.MeetingBase) *meetingservice.Me
 	// Convert Recurrence
 	if meeting.Recurrence != nil {
 		goaMeeting.Recurrence = convertDomainToRecurrenceResponse(meeting.Recurrence)
+	}
+
+	// Convert SeriesEndDate
+	if meeting.SeriesEndDate != nil {
+		goaMeeting.SeriesEndDate = utils.StringPtr(meeting.SeriesEndDate.Format(time.RFC3339))
 	}
 
 	// Convert Committees

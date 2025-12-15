@@ -376,6 +376,11 @@ type CreateMeetingResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -464,6 +469,11 @@ type UpdateMeetingBaseResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -2538,6 +2548,11 @@ type MeetingFullResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -2717,6 +2732,11 @@ type MeetingBaseResponseBody struct {
 	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// The final end time for the meeting series. For recurring meetings, this is
+	// the end time of the last occurrence. For non-recurring meetings, this is the
+	// end time of the single meeting (start time + duration). Null if the meeting
+	// has no end date (infinite recurrence).
+	SeriesEndDate *string `form:"series_end_date,omitempty" json:"series_end_date,omitempty" xml:"series_end_date,omitempty"`
 	// The title of the meeting
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
 	// The description of the meeting
@@ -3196,6 +3216,7 @@ func NewCreateMeetingResponseBody(res *meetingservice.MeetingFull) *CreateMeetin
 		StartTime:               res.StartTime,
 		Duration:                res.Duration,
 		Timezone:                res.Timezone,
+		SeriesEndDate:           res.SeriesEndDate,
 		Title:                   res.Title,
 		Description:             res.Description,
 		Platform:                res.Platform,
@@ -3258,6 +3279,7 @@ func NewGetMeetingBaseResponseBody(res *meetingservice.GetMeetingBaseResult) *Ge
 		StartTime:               res.Meeting.StartTime,
 		Duration:                res.Meeting.Duration,
 		Timezone:                res.Meeting.Timezone,
+		SeriesEndDate:           res.Meeting.SeriesEndDate,
 		Title:                   res.Meeting.Title,
 		Description:             res.Meeting.Description,
 		Platform:                res.Meeting.Platform,
@@ -3343,6 +3365,7 @@ func NewUpdateMeetingBaseResponseBody(res *meetingservice.MeetingBase) *UpdateMe
 		StartTime:               res.StartTime,
 		Duration:                res.Duration,
 		Timezone:                res.Timezone,
+		SeriesEndDate:           res.SeriesEndDate,
 		Title:                   res.Title,
 		Description:             res.Description,
 		Platform:                res.Platform,

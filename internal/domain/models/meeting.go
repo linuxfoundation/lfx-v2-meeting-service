@@ -28,12 +28,16 @@ const (
 
 // MeetingBase is the key-value store representation of a meeting base.
 type MeetingBase struct {
-	UID                     string       `json:"uid"`
-	ProjectUID              string       `json:"project_uid"`
-	StartTime               time.Time    `json:"start_time"`
-	Duration                int          `json:"duration"`
-	Timezone                string       `json:"timezone"`
-	Recurrence              *Recurrence  `json:"recurrence,omitempty"`
+	UID        string      `json:"uid"`
+	ProjectUID string      `json:"project_uid"`
+	StartTime  time.Time   `json:"start_time"`
+	Duration   int         `json:"duration"`
+	Timezone   string      `json:"timezone"`
+	Recurrence *Recurrence `json:"recurrence,omitempty"`
+	// SeriesEndDate is the final end date for the full meeting series.
+	// For a recurring meeting, then it will be the end time of the last occurrence.
+	// For a non-recurring meeting, then it will be the same as the end time of that one meeting.
+	SeriesEndDate           *time.Time   `json:"series_end_date,omitempty"`
 	Title                   string       `json:"title"`
 	Description             string       `json:"description"`
 	Committees              []Committee  `json:"committees,omitempty"`
