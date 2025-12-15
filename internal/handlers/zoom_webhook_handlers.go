@@ -1263,14 +1263,22 @@ func (s *ZoomWebhookHandler) createPastMeetingParticipants(ctx context.Context, 
 		r := registrant
 		tasks = append(tasks, func() error {
 			participant := &models.PastMeetingParticipant{
-				UID:            uuid.New().String(),
-				PastMeetingUID: pastMeeting.UID,
-				MeetingUID:     meeting.UID,
-				Email:          r.Email,
-				FirstName:      r.FirstName,
-				LastName:       r.LastName,
-				IsInvited:      true,
-				IsAttended:     false, // Will be set to true when they join
+				UID:                uuid.New().String(),
+				PastMeetingUID:     pastMeeting.UID,
+				MeetingUID:         meeting.UID,
+				Email:              r.Email,
+				FirstName:          r.FirstName,
+				LastName:           r.LastName,
+				JobTitle:           r.JobTitle,
+				OrgName:            r.OrgName,
+				OrgIsMember:        r.OrgIsMember,
+				OrgIsProjectMember: r.OrgIsProjectMember,
+				AvatarURL:          r.AvatarURL,
+				LinkedInProfile:    r.LinkedInProfile,
+				Username:           r.Username,
+				Host:               r.Host,
+				IsInvited:          true,
+				IsAttended:         false, // Will be set to true when they join
 				// Sessions will be updated when participants join/leave
 			}
 
@@ -1907,6 +1915,7 @@ func (s *ZoomWebhookHandler) createParticipantRecord(ctx context.Context, pastMe
 			OrgIsMember:        matchingRegistrant.OrgIsMember,
 			OrgIsProjectMember: matchingRegistrant.OrgIsProjectMember,
 			AvatarURL:          matchingRegistrant.AvatarURL,
+			LinkedInProfile:    matchingRegistrant.LinkedInProfile,
 			Username:           matchingRegistrant.Username,
 			Host:               matchingRegistrant.Host,
 			IsInvited:          true,
