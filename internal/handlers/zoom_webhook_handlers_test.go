@@ -464,7 +464,7 @@ func TestFindClosestOccurrenceID(t *testing.T) {
 				occurrenceService: mockOccurrenceService,
 			}
 
-			result := handler.findClosestOccurrenceID(tt.meeting, tt.actualStart)
+			result := handler.findClosestOccurrenceID(context.Background(), tt.meeting, tt.actualStart)
 			assert.Equal(t, tt.expectedID, result, tt.description)
 
 			// Verify mock expectations

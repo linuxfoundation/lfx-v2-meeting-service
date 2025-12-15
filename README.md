@@ -678,6 +678,10 @@ export SKIP_ETAG_VALIDATION="true"
 export JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL="local-dev-user"
 ```
 
+### Tracing Configuration
+
+The service supports distributed tracing via OpenTelemetry. See [docs/tracing.md](docs/tracing.md) for configuration options, including setup for Jaeger and Kubernetes deployments.
+
 ## 🤝 Contributing
 
 1. **Fork** the repository

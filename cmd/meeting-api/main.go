@@ -20,19 +20,50 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
+)
+
+// Build-time variables set via ldflags
+var (
+	Version   = "dev"
+	BuildTime = "unknown"
+	GitCommit = "unknown"
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	env := parseEnv()
 	flags := parseFlags(env.Port)
 
 	logging.InitStructureLogConfig()
 
+	// Set up OpenTelemetry SDK.
+	// Command-line/environment OTEL_SERVICE_VERSION takes precedence over
+	// the build-time Version variable.
+	otelConfig := utils.OTelConfigFromEnv()
+	if otelConfig.ServiceVersion == "" {
+		otelConfig.ServiceVersion = Version
+	}
+	otelShutdown, err := utils.SetupOTelSDKWithConfig(context.Background(), otelConfig)
+	if err != nil {
+		slog.With(logging.ErrKey, err).Error("error setting up OpenTelemetry SDK")
+		return 1
+	}
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		if shutdownErr := otelShutdown(context.Background()); shutdownErr != nil {
+			slog.With(logging.ErrKey, shutdownErr).Error("error shutting down OpenTelemetry SDK")
+		}
+	}()
+
 	// Set up JWT validator needed by the [MeetingsService.JWTAuth] security handler.
 	jwtAuth, err := setupJWTAuth()
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error setting up JWT authentication")
-		os.Exit(1)
+		return 1
 	}
 
 	// Initialize platform providers
@@ -44,7 +75,7 @@ func main() {
 	emailService, err := setupEmailService(env)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error setting up email service")
-		return
+		return 1
 	}
 
 	// Setup graceful shutdown
@@ -58,14 +89,14 @@ func main() {
 	natsConn, err := setupNATS(ctx, env, &gracefulCloseWG, done)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error setting up NATS")
-		return
+		return 1
 	}
 
 	// Get the key-value stores for the service.
 	repos, err := getStorageRepos(ctx, natsConn)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error getting key-value stores")
-		return
+		return 1
 	}
 
 	// Initialize services
@@ -224,11 +255,13 @@ func main() {
 	err = createNatsSubcriptions(ctx, svc, natsConn)
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error creating NATS subscriptions")
-		return
+		return 1
 	}
 
 	// This next line blocks until SIGINT or SIGTERM is received.
 	<-done
 
 	gracefulShutdown(httpServer, natsConn, &gracefulCloseWG, cancel)
+
+	return 0
 }

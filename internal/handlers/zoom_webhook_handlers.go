@@ -333,7 +333,7 @@ func (s *ZoomWebhookHandler) handleMeetingStartedEvent(ctx context.Context, even
 	}
 
 	// Calculate the closest occurrence ID based on the actual start time
-	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, meetingObj.StartTime)
 
 	// Check if a past meeting already exists for this occurrence
 	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
@@ -470,7 +470,7 @@ func (s *ZoomWebhookHandler) handleMeetingEndedEvent(ctx context.Context, event 
 	}
 
 	// Calculate the closest occurrence ID based on the actual start time
-	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, meetingObj.StartTime)
 
 	// Try to find existing PastMeeting record by platform meeting ID and occurrence ID
 	existingPastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
@@ -581,7 +581,7 @@ func (s *ZoomWebhookHandler) handleParticipantJoinedEvent(ctx context.Context, e
 	}
 
 	// Calculate the closest occurrence ID based on the actual start time
-	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, meetingObj.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID and occurrence ID
 	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
@@ -686,7 +686,7 @@ func (s *ZoomWebhookHandler) handleParticipantLeftEvent(ctx context.Context, eve
 	}
 
 	// Calculate the closest occurrence ID based on the actual start time
-	occurrenceID := s.findClosestOccurrenceID(meeting, meetingObj.StartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, meetingObj.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID and occurrence ID
 	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingObj.ID, occurrenceID)
@@ -795,7 +795,7 @@ func (s *ZoomWebhookHandler) handleRecordingCompletedEvent(ctx context.Context, 
 	}
 
 	// Calculate the occurrence ID based on the recording start time
-	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.StartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, payload.Object.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID AND occurrence ID
 	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingIDStr, occurrenceID)
@@ -1010,7 +1010,7 @@ func (s *ZoomWebhookHandler) handleTranscriptCompletedEvent(ctx context.Context,
 	}
 
 	// Calculate the occurrence ID based on the transcript start time
-	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.StartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, payload.Object.StartTime)
 
 	// Find the PastMeeting record by platform meeting ID AND occurrence ID
 	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, meetingIDStr, occurrenceID)
@@ -1128,7 +1128,7 @@ func (s *ZoomWebhookHandler) handleSummaryCompletedEvent(ctx context.Context, ev
 	}
 
 	// Calculate the closest occurrence ID based on the meeting start time
-	occurrenceID := s.findClosestOccurrenceID(meeting, payload.Object.MeetingStartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, payload.Object.MeetingStartTime)
 
 	// Find the past meeting by platform meeting ID AND occurrence ID
 	pastMeeting, err := s.pastMeetingService.GetByPlatformMeetingIDAndOccurrence(ctx, models.PlatformZoom, zoomMeetingID, occurrenceID)
@@ -1405,11 +1405,11 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordForEndedEvent(ctx context.Co
 // findClosestOccurrenceID finds the occurrence ID closest to the given start time
 // For recurring meetings: calculates occurrences around the actual start time and returns the ID of the closest one
 // For non-recurring meetings: returns the meeting's scheduled start time as unix timestamp string
-func (s *ZoomWebhookHandler) findClosestOccurrenceID(meeting *models.MeetingBase, actualStartTime time.Time) string {
+func (s *ZoomWebhookHandler) findClosestOccurrenceID(ctx context.Context, meeting *models.MeetingBase, actualStartTime time.Time) string {
 	// For non-recurring meetings, use the scheduled start time from the meeting object
 	if meeting.Recurrence == nil {
 		occurrenceID := strconv.FormatInt(meeting.StartTime.Unix(), 10)
-		slog.Debug("non-recurring meeting, using scheduled start time as unix timestamp",
+		slog.DebugContext(ctx, "non-recurring meeting, using scheduled start time as unix timestamp",
 			"meeting_uid", meeting.UID,
 			"occurrence_id", occurrenceID,
 			"scheduled_start_time", meeting.StartTime,
@@ -1430,7 +1430,7 @@ func (s *ZoomWebhookHandler) findClosestOccurrenceID(meeting *models.MeetingBase
 	// If no occurrences found, fallback to scheduled start time
 	if len(occurrences) == 0 {
 		occurrenceID := strconv.FormatInt(meeting.StartTime.Unix(), 10)
-		slog.Debug("no occurrences found for recurring meeting, using scheduled start time as unix timestamp",
+		slog.DebugContext(ctx, "no occurrences found for recurring meeting, using scheduled start time as unix timestamp",
 			"meeting_uid", meeting.UID,
 			"occurrence_id", occurrenceID,
 			"scheduled_start_time", meeting.StartTime,
@@ -1465,7 +1465,7 @@ func (s *ZoomWebhookHandler) findClosestOccurrenceID(meeting *models.MeetingBase
 
 	// If we found a close occurrence, use its ID
 	if closestOccurrence != nil && closestOccurrence.OccurrenceID != "" {
-		slog.Debug("found closest occurrence for recurring meeting using OccurrenceService",
+		slog.DebugContext(ctx, "found closest occurrence for recurring meeting using OccurrenceService",
 			"meeting_uid", meeting.UID,
 			"occurrence_id", closestOccurrence.OccurrenceID,
 			"occurrence_start_time", closestOccurrence.StartTime,
@@ -1477,7 +1477,7 @@ func (s *ZoomWebhookHandler) findClosestOccurrenceID(meeting *models.MeetingBase
 
 	// Fallback to scheduled start time unix timestamp if no valid occurrence found
 	occurrenceID := strconv.FormatInt(meeting.StartTime.Unix(), 10)
-	slog.Warn("no valid occurrence found for recurring meeting, using scheduled start time as unix timestamp",
+	slog.WarnContext(ctx, "no valid occurrence found for recurring meeting, using scheduled start time as unix timestamp",
 		"meeting_uid", meeting.UID,
 		"occurrence_id", occurrenceID,
 		"scheduled_start_time", meeting.StartTime,
@@ -1495,7 +1495,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 	}
 
 	// Calculate occurrence ID based on meeting type and occurrences
-	occurrenceID := s.findClosestOccurrenceID(meeting, zoomData.StartTime)
+	occurrenceID := s.findClosestOccurrenceID(ctx, meeting, zoomData.StartTime)
 
 	// Parse occurrence ID to get the scheduled start time for this occurrence
 	// The occurrence ID is a unix timestamp string
