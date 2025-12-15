@@ -6035,6 +6035,11 @@ func ValidateCreateMeetingResponseBody(body *CreateMeetingResponseBody) (err err
 	if body.SeriesEndDate != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
 	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
 	for _, e := range body.Committees {
 		if e != nil {
 			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
@@ -6128,6 +6133,11 @@ func ValidateGetMeetingBaseResponseBody(body *GetMeetingBaseResponseBody) (err e
 	}
 	if body.SeriesEndDate != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
 	}
 	for _, e := range body.Committees {
 		if e != nil {
@@ -6249,6 +6259,11 @@ func ValidateUpdateMeetingBaseResponseBody(body *UpdateMeetingBaseResponseBody) 
 	}
 	if body.SeriesEndDate != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
 	}
 	for _, e := range body.Committees {
 		if e != nil {
@@ -6669,6 +6684,11 @@ func ValidateCreatePastMeetingResponseBody(body *CreatePastMeetingResponseBody) 
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
 	for _, e := range body.Committees {
 		if e != nil {
 			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
@@ -6761,6 +6781,11 @@ func ValidateGetPastMeetingResponseBody(body *GetPastMeetingResponseBody) (err e
 	if body.Recurrence != nil {
 		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
 		}
 	}
 	for _, e := range body.Committees {
@@ -9442,6 +9467,11 @@ func ValidateMeetingFullResponseBody(body *MeetingFullResponseBody) (err error) 
 	if body.SeriesEndDate != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
 	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
 	for _, e := range body.Committees {
 		if e != nil {
 			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
@@ -9689,6 +9719,11 @@ func ValidateMeetingBaseResponseBody(body *MeetingBaseResponseBody) (err error) 
 	if body.SeriesEndDate != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.series_end_date", *body.SeriesEndDate, goa.FormatDateTime))
 	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
 	for _, e := range body.Committees {
 		if e != nil {
 			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
@@ -9924,6 +9959,11 @@ func ValidatePastMeetingResponseBody(body *PastMeetingResponseBody) (err error) 
 	if body.Recurrence != nil {
 		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
 		}
 	}
 	for _, e := range body.Committees {

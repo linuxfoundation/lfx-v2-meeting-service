@@ -6377,6 +6377,11 @@ func ValidateCreateMeetingRequestBody(body *CreateMeetingRequestBody) (err error
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
 	for _, e := range body.Committees {
 		if e != nil {
 			if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
@@ -6457,6 +6462,11 @@ func ValidateUpdateMeetingBaseRequestBody(body *UpdateMeetingBaseRequestBody) (e
 	if body.Recurrence != nil {
 		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
 		}
 	}
 	for _, e := range body.Committees {
@@ -6678,6 +6688,11 @@ func ValidateCreatePastMeetingRequestBody(body *CreatePastMeetingRequestBody) (e
 	if body.Recurrence != nil {
 		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
 		}
 	}
 	for _, e := range body.Committees {
