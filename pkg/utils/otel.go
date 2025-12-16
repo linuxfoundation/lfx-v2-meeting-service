@@ -203,6 +203,7 @@ func SetupOTelSDKWithConfig(ctx context.Context, cfg OTelConfig) (shutdown func(
 	return
 }
 
+// newResource creates an OpenTelemetry resource with service name and version attributes.
 func newResource(cfg OTelConfig) (*resource.Resource, error) {
 	return resource.Merge(
 		resource.Default(),
@@ -214,6 +215,7 @@ func newResource(cfg OTelConfig) (*resource.Resource, error) {
 	)
 }
 
+// newPropagator creates a composite text map propagator with W3C Trace Context and Baggage support.
 func newPropagator() propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
@@ -221,6 +223,7 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
+// newTraceProvider creates a TracerProvider with an OTLP exporter configured based on the protocol setting.
 func newTraceProvider(ctx context.Context, cfg OTelConfig, res *resource.Resource) (*trace.TracerProvider, error) {
 	var exporter trace.SpanExporter
 	var err error
@@ -258,6 +261,7 @@ func newTraceProvider(ctx context.Context, cfg OTelConfig, res *resource.Resourc
 	return traceProvider, nil
 }
 
+// newMetricsProvider creates a MeterProvider with an OTLP exporter configured based on the protocol setting.
 func newMetricsProvider(ctx context.Context, cfg OTelConfig, res *resource.Resource) (*metric.MeterProvider, error) {
 	var exporter metric.Exporter
 	var err error
@@ -295,6 +299,7 @@ func newMetricsProvider(ctx context.Context, cfg OTelConfig, res *resource.Resou
 	return metricsProvider, nil
 }
 
+// newLoggerProvider creates a LoggerProvider with an OTLP exporter configured based on the protocol setting.
 func newLoggerProvider(ctx context.Context, cfg OTelConfig, res *resource.Resource) (*log.LoggerProvider, error) {
 	var exporter log.Exporter
 	var err error
