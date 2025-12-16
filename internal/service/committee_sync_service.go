@@ -388,15 +388,16 @@ func (s *CommitteeSyncService) createRegistrantForCommitteeMember(
 
 	// Create registrant for committee member using registrant service (includes email invitations)
 	registrant := &models.Registrant{
-		MeetingUID:   meetingUID,
-		Email:        member.Email,
-		FirstName:    member.FirstName,
-		LastName:     member.LastName,
-		Username:     member.Username,
-		Type:         models.RegistrantTypeCommittee,
-		CommitteeUID: &committeeUID,
-		OrgName:      member.Organization.Name,
-		JobTitle:     member.JobTitle,
+		MeetingUID:      meetingUID,
+		Email:           member.Email,
+		FirstName:       member.FirstName,
+		LastName:        member.LastName,
+		Username:        member.Username,
+		Type:            models.RegistrantTypeCommittee,
+		CommitteeUID:    &committeeUID,
+		OrgName:         member.Organization.Name,
+		JobTitle:        member.JobTitle,
+		LinkedInProfile: member.LinkedInProfile,
 	}
 
 	createdRegistrant, err := s.registrantService.CreateMeetingRegistrant(ctx, registrant, false)
@@ -797,17 +798,18 @@ func (s *CommitteeSyncService) UpdateCommitteeMemberEmailForMeeting(
 
 	// Update the registrant with the new email and member info
 	updatedRegistrant := &models.Registrant{
-		UID:          registrant.UID,
-		MeetingUID:   registrant.MeetingUID,
-		Email:        newEmail,
-		FirstName:    member.FirstName,
-		LastName:     member.LastName,
-		Username:     member.Username,
-		Type:         models.RegistrantTypeCommittee,
-		CommitteeUID: registrant.CommitteeUID,
-		OrgName:      member.Organization.Name,
-		JobTitle:     member.JobTitle,
-		Host:         registrant.Host,
+		UID:             registrant.UID,
+		MeetingUID:      registrant.MeetingUID,
+		Email:           newEmail,
+		FirstName:       member.FirstName,
+		LastName:        member.LastName,
+		Username:        member.Username,
+		Type:            models.RegistrantTypeCommittee,
+		CommitteeUID:    registrant.CommitteeUID,
+		OrgName:         member.Organization.Name,
+		JobTitle:        member.JobTitle,
+		LinkedInProfile: member.LinkedInProfile,
+		Host:            registrant.Host,
 	}
 
 	// Use the registrant service to update, which handles NATS messages and FGA sync

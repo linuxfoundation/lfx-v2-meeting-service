@@ -23,6 +23,7 @@ type PastMeetingParticipant struct {
 	OrgIsMember        bool                 `json:"org_is_member"`
 	OrgIsProjectMember bool                 `json:"org_is_project_member"`
 	AvatarURL          string               `json:"avatar_url,omitempty"`
+	LinkedInProfile    string               `json:"linkedin_profile,omitempty"`
 	Username           string               `json:"username,omitempty"`
 	IsInvited          bool                 `json:"is_invited"`
 	IsAttended         bool                 `json:"is_attended"`

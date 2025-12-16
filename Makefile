@@ -8,7 +8,7 @@ GO_MODULE=github.com/linuxfoundation/lfx-v2-meeting-service
 CMD_PATH=$(GO_MODULE)/cmd/meeting-api
 DESIGN_MODULE=$(GO_MODULE)/design
 GO_FILES=$(shell find . -name '*.go' -not -path './gen/*' -not -path './vendor/*')
-GOA_VERSION=v3
+GOA_VERSION=v3.23.4
 
 # Docker variables
 DOCKER_IMAGE=linuxfoundation/lfx-v2-meeting-service
@@ -63,7 +63,7 @@ help:
 deps:
 	@echo "==> Installing dependencies..."
 	go mod download
-	go install goa.design/goa/$(GOA_VERSION)/cmd/goa@latest
+	go install goa.design/goa/v3/cmd/goa@$(GOA_VERSION)
 	@command -v golangci-lint >/dev/null 2>&1 || { \
 		echo "==> Installing golangci-lint..."; \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \

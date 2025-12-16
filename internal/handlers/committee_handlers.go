@@ -286,22 +286,23 @@ func (h *CommitteeHandlers) addMemberToRelevantMeetings(ctx context.Context, mem
 
 	// Create committee member for sync service
 	committeeMember := models.CommitteeMember{
-		UID:           memberMsg.UID,
-		Username:      memberMsg.Username,
-		Email:         memberMsg.Email,
-		FirstName:     memberMsg.FirstName,
-		LastName:      memberMsg.LastName,
-		JobTitle:      memberMsg.JobTitle,
-		Organization:  memberMsg.Organization,
-		CommitteeUID:  memberMsg.CommitteeUID,
-		CommitteeName: memberMsg.CommitteeName,
-		Voting:        memberMsg.Voting,
+		UID:             memberMsg.UID,
+		Username:        memberMsg.Username,
+		Email:           memberMsg.Email,
+		FirstName:       memberMsg.FirstName,
+		LastName:        memberMsg.LastName,
+		JobTitle:        memberMsg.JobTitle,
+		Organization:    memberMsg.Organization,
+		CommitteeUID:    memberMsg.CommitteeUID,
+		CommitteeName:   memberMsg.CommitteeName,
+		LinkedInProfile: memberMsg.LinkedInProfile,
+		Voting:          memberMsg.Voting,
 	}
 
 	// Process each meeting that contains this committee
 	var successCount int64
 
-	tasks := make([]func() error, len(meetings))
+	tasks := make([]func() error, 0, len(meetings))
 	for i := range meetings {
 		meeting := meetings[i]
 		tasks = append(tasks, func() error {
@@ -419,7 +420,7 @@ func (h *CommitteeHandlers) removeMemberFromRelevantMeetings(ctx context.Context
 	// Process each meeting that contains this committee
 	var successCount int64
 
-	tasks := make([]func() error, len(meetings))
+	tasks := make([]func() error, 0, len(meetings))
 	for i := range meetings {
 		meeting := meetings[i]
 		tasks = append(tasks, func() error {
