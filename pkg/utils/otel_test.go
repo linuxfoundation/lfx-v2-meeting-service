@@ -7,8 +7,6 @@ import (
 	"context"
 	"os"
 	"testing"
-
-	"go.opentelemetry.io/otel/propagation"
 )
 
 // TestOTelConfigFromEnv_Defaults verifies that OTelConfigFromEnv returns
