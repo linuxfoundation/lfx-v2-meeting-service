@@ -131,10 +131,10 @@ func TestOTelConfigFromEnv_TracesSampleRatio(t *testing.T) {
 		{"valid half", "0.5", 0.5},
 		{"valid one", "1.0", 1.0},
 		{"valid small", "0.01", 0.01},
-		{"invalid negative", "-0.5", 1.0},   // defaults to 1.0
-		{"invalid above one", "1.5", 1.0},   // defaults to 1.0
+		{"invalid negative", "-0.5", 1.0},      // defaults to 1.0
+		{"invalid above one", "1.5", 1.0},      // defaults to 1.0
 		{"invalid non-number", "invalid", 1.0}, // defaults to 1.0
-		{"empty string", "", 1.0},           // defaults to 1.0
+		{"empty string", "", 1.0},              // defaults to 1.0
 	}
 
 	for _, tt := range tests {
@@ -333,9 +333,6 @@ func TestNewPropagator(t *testing.T) {
 			t.Errorf("expected propagator to include field %q", field)
 		}
 	}
-
-	// Verify it implements TextMapPropagator interface
-	var _ propagation.TextMapPropagator = prop
 }
 
 // TestOTelConstants verifies that the exported OTel constants have their
