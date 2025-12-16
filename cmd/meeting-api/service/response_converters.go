@@ -332,6 +332,9 @@ func ConvertDomainToRegistrantResponse(domainRegistrant *models.Registrant) *mee
 	if domainRegistrant.AvatarURL != "" {
 		registrant.AvatarURL = utils.StringPtr(domainRegistrant.AvatarURL)
 	}
+	if domainRegistrant.LinkedInProfile != "" {
+		registrant.LinkedinProfile = utils.StringPtr(domainRegistrant.LinkedInProfile)
+	}
 	if domainRegistrant.Username != "" {
 		registrant.Username = utils.StringPtr(domainRegistrant.Username)
 	}
@@ -478,6 +481,9 @@ func ConvertDomainToPastMeetingParticipantResponse(domainParticipant *models.Pas
 	// Set fields that are optional and should only be set if they are not empty
 	if domainParticipant.AvatarURL != "" {
 		participant.AvatarURL = utils.StringPtr(domainParticipant.AvatarURL)
+	}
+	if domainParticipant.LinkedInProfile != "" {
+		participant.LinkedinProfile = utils.StringPtr(domainParticipant.LinkedInProfile)
 	}
 	if domainParticipant.Username != "" {
 		participant.Username = utils.StringPtr(domainParticipant.Username)

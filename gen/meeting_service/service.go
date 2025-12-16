@@ -265,6 +265,8 @@ type CreateMeetingRegistrantPayload struct {
 	OccurrenceID *string
 	// User's avatar URL
 	AvatarURL *string
+	// User's LinkedIn profile URL
+	LinkedinProfile *string
 	// User's LF ID
 	Username *string
 }
@@ -355,6 +357,8 @@ type CreatePastMeetingParticipantPayload struct {
 	OrgName *string
 	// User's avatar URL
 	AvatarURL *string
+	// User's LinkedIn profile URL
+	LinkedinProfile *string
 	// User's LF ID
 	Username *string
 	// Whether the participant was invited to this past meeting
@@ -1239,6 +1243,8 @@ type PastMeetingParticipant struct {
 	OrgIsProjectMember *bool
 	// User's avatar URL
 	AvatarURL *string
+	// User's LinkedIn profile URL
+	LinkedinProfile *string
 	// User's LF ID
 	Username *string
 	// Whether the participant was invited to this past meeting
@@ -1419,6 +1425,8 @@ type Registrant struct {
 	OrgIsProjectMember *bool
 	// User's avatar URL
 	AvatarURL *string
+	// User's LinkedIn profile URL
+	LinkedinProfile *string
 	// User's LF ID
 	Username *string
 	// The date and time the resource was created
@@ -1569,6 +1577,8 @@ type UpdateMeetingRegistrantPayload struct {
 	OccurrenceID *string
 	// User's avatar URL
 	AvatarURL *string
+	// User's LinkedIn profile URL
+	LinkedinProfile *string
 	// User's LF ID
 	Username *string
 }
@@ -1622,6 +1632,8 @@ type UpdatePastMeetingParticipantPayload struct {
 	OrgName *string
 	// User's avatar URL
 	AvatarURL *string
+	// User's LinkedIn profile URL
+	LinkedinProfile *string
 	// User's LF ID
 	Username *string
 	// Whether the participant was invited to this past meeting
