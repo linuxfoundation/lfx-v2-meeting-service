@@ -16,6 +16,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// waitForMessages waits for the mock SMTP server to receive the expected number of messages
+// This is needed because the mock server processes messages asynchronously
+// Uses the built-in WaitForMessages method which properly handles synchronization
+func waitForMessages(t *testing.T, server *smtpmock.Server, expectedCount int, timeout time.Duration) []smtpmock.Message {
+	t.Helper()
+
+	messages, err := server.WaitForMessages(expectedCount, timeout)
+	require.NoError(t, err, "timed out waiting for %d messages", expectedCount)
+	require.Len(t, messages, expectedCount)
+
+	return messages
+}
+
 func TestNewSMTPService(t *testing.T) {
 	config := SMTPConfig{
 		Host: "localhost",
@@ -102,8 +115,7 @@ func TestSMTPService_SendRegistrantInvitation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent to mock server
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		message := messages[0]
 
 		// Verify recipient and sender
@@ -172,6 +184,7 @@ func TestSMTPService_SendRegistrantInvitation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// No email should have been sent
+		time.Sleep(100 * time.Millisecond) // Wait to ensure no message arrives
 		assert.Empty(t, server.Messages())
 	})
 
@@ -238,8 +251,7 @@ func TestSMTPService_SendRegistrantInvitation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		assert.Contains(t, messages[0].MsgRequest(), "Recurring Meeting")
 	})
 }
@@ -309,8 +321,7 @@ func TestSMTPService_SendRegistrantCancellation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent to mock server
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		message := messages[0]
 
 		// Verify recipient and sender
@@ -382,8 +393,7 @@ func TestSMTPService_SendRegistrantCancellation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		assert.Contains(t, messages[0].MsgRequest(), "Past Meeting")
 	})
 
@@ -451,8 +461,7 @@ func TestSMTPService_SendRegistrantCancellation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		assert.Contains(t, messages[0].MsgRequest(), "Recurring Meeting Cancelled")
 	})
 
@@ -511,6 +520,7 @@ func TestSMTPService_SendRegistrantCancellation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// No email should have been sent
+		time.Sleep(100 * time.Millisecond) // Wait to ensure no message arrives
 		assert.Empty(t, server.Messages())
 	})
 
@@ -572,282 +582,274 @@ func TestSMTPService_SendRegistrantCancellation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		_ = waitForMessages(t, server, 1, 2*time.Second)
 	})
 }
 
-// TODO: Look into transient test failures:
-// - https://github.com/linuxfoundation/lfx-v2-meeting-service/actions/runs/19582048155/job/56082126452
-// - and other workflow runs: https://github.com/linuxfoundation/lfx-v2-meeting-service/actions/workflows/meeting-api-build.yaml
-//
-// func TestSMTPService_SendOccurrenceCancellation(t *testing.T) {
-// 	t.Run("successful occurrence cancellation for future occurrence", func(t *testing.T) {
-// 		// Start mock SMTP server
-// 		server := smtpmock.New(smtpmock.ConfigurationAttr{
-// 			LogToStdout:       false,
-// 			LogServerActivity: false,
-// 		})
-// 		require.NoError(t, server.Start())
-// 		defer func() {
-// 			require.NoError(t, server.Stop())
-// 		}()
+func TestSMTPService_SendOccurrenceCancellation(t *testing.T) {
+	t.Run("successful occurrence cancellation for future occurrence", func(t *testing.T) {
+		// Start mock SMTP server
+		server := smtpmock.New(smtpmock.ConfigurationAttr{
+			LogToStdout:       false,
+			LogServerActivity: false,
+		})
+		require.NoError(t, server.Start())
+		defer func() {
+			require.NoError(t, server.Stop())
+		}()
 
-// 		// Setup mocks
-// 		mockTemplateManager := new(MockTemplateManager)
-// 		mockICSGenerator := new(MockICSGenerator)
+		// Setup mocks
+		mockTemplateManager := new(MockTemplateManager)
+		mockICSGenerator := new(MockICSGenerator)
 
-// 		service := &SMTPService{
-// 			config: SMTPConfig{
-// 				Host: "localhost",
-// 				Port: server.PortNumber(),
-// 				From: "test@example.com",
-// 			},
-// 			icsGenerator:    mockICSGenerator,
-// 			templateManager: mockTemplateManager,
-// 		}
+		service := &SMTPService{
+			config: SMTPConfig{
+				Host: "localhost",
+				Port: server.PortNumber(),
+				From: "test@example.com",
+			},
+			icsGenerator:    mockICSGenerator,
+			templateManager: mockTemplateManager,
+		}
 
-// 		// Create test data for future occurrence
-// 		occurrenceStartTime := time.Now().Add(48 * time.Hour)
-// 		cancellation := domain.EmailOccurrenceCancellation{
-// 			RecipientEmail:      "recipient@example.com",
-// 			RecipientName:       "Test Recipient",
-// 			MeetingTitle:        "Weekly Standup",
-// 			MeetingUID:          "weekly-standup-uid",
-// 			OccurrenceID:        "occurrence-123",
-// 			OccurrenceStartTime: occurrenceStartTime,
-// 			Duration:            30,
-// 			Timezone:            "America/New_York",
-// 			ProjectName:         "Test Project",
-// 		}
+		// Create test data for future occurrence
+		occurrenceStartTime := time.Now().Add(48 * time.Hour)
+		cancellation := domain.EmailOccurrenceCancellation{
+			RecipientEmail:      "recipient@example.com",
+			RecipientName:       "Test Recipient",
+			MeetingTitle:        "Weekly Standup",
+			MeetingUID:          "weekly-standup-uid",
+			OccurrenceID:        "occurrence-123",
+			OccurrenceStartTime: occurrenceStartTime,
+			Duration:            30,
+			Timezone:            "America/New_York",
+			ProjectName:         "Test Project",
+		}
 
-// 		// Setup mock expectations
-// 		mockICSGenerator.On("GenerateOccurrenceCancellationICS", mock.MatchedBy(func(params ICSOccurrenceCancellationParams) bool {
-// 			return params.MeetingUID == cancellation.MeetingUID &&
-// 				params.MeetingTitle == cancellation.MeetingTitle &&
-// 				params.OccurrenceStartTime.Equal(cancellation.OccurrenceStartTime)
-// 		})).Return("ICS_OCCURRENCE_CANCELLATION", nil)
+		// Setup mock expectations
+		mockICSGenerator.On("GenerateOccurrenceCancellationICS", mock.MatchedBy(func(params ICSOccurrenceCancellationParams) bool {
+			return params.MeetingUID == cancellation.MeetingUID &&
+				params.MeetingTitle == cancellation.MeetingTitle &&
+				params.OccurrenceStartTime.Equal(cancellation.OccurrenceStartTime)
+		})).Return("ICS_OCCURRENCE_CANCELLATION", nil)
 
-// 		mockTemplateManager.On("RenderOccurrenceCancellation", mock.MatchedBy(func(cancel domain.EmailOccurrenceCancellation) bool {
-// 			return cancel.RecipientEmail == cancellation.RecipientEmail &&
-// 				cancel.MeetingTitle == cancellation.MeetingTitle &&
-// 				cancel.ICSAttachment != nil // Should have ICS cancellation attachment
-// 		})).Return(&RenderedEmail{
-// 			HTML: "<html><body>Occurrence Cancellation HTML</body></html>",
-// 			Text: "Occurrence Cancellation Text",
-// 		}, nil)
+		mockTemplateManager.On("RenderOccurrenceCancellation", mock.MatchedBy(func(cancel domain.EmailOccurrenceCancellation) bool {
+			return cancel.RecipientEmail == cancellation.RecipientEmail &&
+				cancel.MeetingTitle == cancellation.MeetingTitle &&
+				cancel.ICSAttachment != nil // Should have ICS cancellation attachment
+		})).Return(&RenderedEmail{
+			HTML: "<html><body>Occurrence Cancellation HTML</body></html>",
+			Text: "Occurrence Cancellation Text",
+		}, nil)
 
-// 		// Execute
-// 		ctx := context.Background()
-// 		err := service.SendOccurrenceCancellation(ctx, cancellation)
+		// Execute
+		ctx := context.Background()
+		err := service.SendOccurrenceCancellation(ctx, cancellation)
 
-// 		// Verify no error
-// 		assert.NoError(t, err)
-// 		mockICSGenerator.AssertExpectations(t)
-// 		mockTemplateManager.AssertExpectations(t)
+		// Verify no error
+		assert.NoError(t, err)
+		mockICSGenerator.AssertExpectations(t)
+		mockTemplateManager.AssertExpectations(t)
 
-// 		// Verify email was sent to mock server
-// 		messages := server.Messages()
-// 		require.Len(t, messages, 1)
-// 		message := messages[0]
+		// Verify email was sent to mock server
+		messages := waitForMessages(t, server, 1, 2*time.Second)
+		message := messages[0]
 
-// 		// Verify recipient and sender
-// 		rcptto := message.RcpttoRequestResponse()
-// 		require.NotEmpty(t, rcptto)
-// 		assert.Contains(t, rcptto[0][0], "recipient@example.com")
-// 		assert.Contains(t, message.MailfromRequest(), "test@example.com")
+		// Verify recipient and sender
+		rcptto := message.RcpttoRequestResponse()
+		require.NotEmpty(t, rcptto)
+		assert.Contains(t, rcptto[0][0], "recipient@example.com")
+		assert.Contains(t, message.MailfromRequest(), "test@example.com")
 
-// 		// Verify message content
-// 		msgData := message.MsgRequest()
-// 		assert.Contains(t, msgData, "Weekly Standup")
-// 		assert.Contains(t, msgData, "occurrence-cancellation.ics")
-// 	})
+		// Verify message content
+		msgData := message.MsgRequest()
+		assert.Contains(t, msgData, "Weekly Standup")
+		assert.Contains(t, msgData, "occurrence-cancellation.ics")
+	})
 
-// 	t.Run("occurrence cancellation for past occurrence without ICS", func(t *testing.T) {
-// 		// Start mock SMTP server
-// 		server := smtpmock.New(smtpmock.ConfigurationAttr{
-// 			LogToStdout:       false,
-// 			LogServerActivity: false,
-// 		})
-// 		require.NoError(t, server.Start())
-// 		defer func() {
-// 			require.NoError(t, server.Stop())
-// 		}()
+	t.Run("occurrence cancellation for past occurrence without ICS", func(t *testing.T) {
+		// Start mock SMTP server
+		server := smtpmock.New(smtpmock.ConfigurationAttr{
+			LogToStdout:       false,
+			LogServerActivity: false,
+		})
+		require.NoError(t, server.Start())
+		defer func() {
+			require.NoError(t, server.Stop())
+		}()
 
-// 		// Setup mocks
-// 		mockTemplateManager := new(MockTemplateManager)
-// 		mockICSGenerator := new(MockICSGenerator)
+		// Setup mocks
+		mockTemplateManager := new(MockTemplateManager)
+		mockICSGenerator := new(MockICSGenerator)
 
-// 		service := &SMTPService{
-// 			config: SMTPConfig{
-// 				Host: "localhost",
-// 				Port: server.PortNumber(),
-// 				From: "test@example.com",
-// 			},
-// 			icsGenerator:    mockICSGenerator,
-// 			templateManager: mockTemplateManager,
-// 		}
+		service := &SMTPService{
+			config: SMTPConfig{
+				Host: "localhost",
+				Port: server.PortNumber(),
+				From: "test@example.com",
+			},
+			icsGenerator:    mockICSGenerator,
+			templateManager: mockTemplateManager,
+		}
 
-// 		// Create test data for past occurrence (no ICS should be generated)
-// 		occurrenceStartTime := time.Now().Add(-3 * time.Hour)
-// 		cancellation := domain.EmailOccurrenceCancellation{
-// 			RecipientEmail:      "recipient@example.com",
-// 			RecipientName:       "Test Recipient",
-// 			MeetingTitle:        "Past Occurrence",
-// 			MeetingUID:          "past-occurrence-uid",
-// 			OccurrenceID:        "occurrence-past",
-// 			OccurrenceStartTime: occurrenceStartTime,
-// 			Duration:            60,
-// 			Timezone:            "UTC",
-// 			ProjectName:         "Test Project",
-// 		}
+		// Create test data for past occurrence (no ICS should be generated)
+		occurrenceStartTime := time.Now().Add(-3 * time.Hour)
+		cancellation := domain.EmailOccurrenceCancellation{
+			RecipientEmail:      "recipient@example.com",
+			RecipientName:       "Test Recipient",
+			MeetingTitle:        "Past Occurrence",
+			MeetingUID:          "past-occurrence-uid",
+			OccurrenceID:        "occurrence-past",
+			OccurrenceStartTime: occurrenceStartTime,
+			Duration:            60,
+			Timezone:            "UTC",
+			ProjectName:         "Test Project",
+		}
 
-// 		// ICS generator should not be called for past occurrences
-// 		mockTemplateManager.On("RenderOccurrenceCancellation", mock.MatchedBy(func(cancel domain.EmailOccurrenceCancellation) bool {
-// 			return cancel.RecipientEmail == cancellation.RecipientEmail &&
-// 				cancel.ICSAttachment == nil // No ICS for past occurrence
-// 		})).Return(&RenderedEmail{
-// 			HTML: "<html>Past Occurrence Cancellation</html>",
-// 			Text: "Past Occurrence Cancellation",
-// 		}, nil)
+		// ICS generator should not be called for past occurrences
+		mockTemplateManager.On("RenderOccurrenceCancellation", mock.MatchedBy(func(cancel domain.EmailOccurrenceCancellation) bool {
+			return cancel.RecipientEmail == cancellation.RecipientEmail &&
+				cancel.ICSAttachment == nil // No ICS for past occurrence
+		})).Return(&RenderedEmail{
+			HTML: "<html>Past Occurrence Cancellation</html>",
+			Text: "Past Occurrence Cancellation",
+		}, nil)
 
-// 		// Execute
-// 		ctx := context.Background()
-// 		err := service.SendOccurrenceCancellation(ctx, cancellation)
+		// Execute
+		ctx := context.Background()
+		err := service.SendOccurrenceCancellation(ctx, cancellation)
 
-// 		// Verify no error
-// 		assert.NoError(t, err)
-// 		mockICSGenerator.AssertNotCalled(t, "GenerateOccurrenceCancellationICS")
-// 		mockTemplateManager.AssertExpectations(t)
+		// Verify no error
+		assert.NoError(t, err)
+		mockICSGenerator.AssertNotCalled(t, "GenerateOccurrenceCancellationICS")
+		mockTemplateManager.AssertExpectations(t)
 
-// 		// Verify email was sent
-// 		messages := server.Messages()
-// 		require.Len(t, messages, 1)
-// 		assert.Contains(t, messages[0].MsgRequest(), "Past Occurrence")
-// 	})
+		// Verify email was sent
+		messages := waitForMessages(t, server, 1, 2*time.Second)
+		assert.Contains(t, messages[0].MsgRequest(), "Past Occurrence")
+	})
 
-// 	t.Run("template rendering failure", func(t *testing.T) {
-// 		// Start mock SMTP server
-// 		server := smtpmock.New(smtpmock.ConfigurationAttr{
-// 			LogToStdout:       false,
-// 			LogServerActivity: false,
-// 		})
-// 		require.NoError(t, server.Start())
-// 		defer func() {
-// 			require.NoError(t, server.Stop())
-// 		}()
+	t.Run("template rendering failure", func(t *testing.T) {
+		// Start mock SMTP server
+		server := smtpmock.New(smtpmock.ConfigurationAttr{
+			LogToStdout:       false,
+			LogServerActivity: false,
+		})
+		require.NoError(t, server.Start())
+		defer func() {
+			require.NoError(t, server.Stop())
+		}()
 
-// 		// Setup mocks
-// 		mockTemplateManager := new(MockTemplateManager)
-// 		mockICSGenerator := new(MockICSGenerator)
+		// Setup mocks
+		mockTemplateManager := new(MockTemplateManager)
+		mockICSGenerator := new(MockICSGenerator)
 
-// 		service := &SMTPService{
-// 			config: SMTPConfig{
-// 				Host: "localhost",
-// 				Port: server.PortNumber(),
-// 				From: "test@example.com",
-// 			},
-// 			icsGenerator:    mockICSGenerator,
-// 			templateManager: mockTemplateManager,
-// 		}
+		service := &SMTPService{
+			config: SMTPConfig{
+				Host: "localhost",
+				Port: server.PortNumber(),
+				From: "test@example.com",
+			},
+			icsGenerator:    mockICSGenerator,
+			templateManager: mockTemplateManager,
+		}
 
-// 		// Create test data
-// 		cancellation := domain.EmailOccurrenceCancellation{
-// 			RecipientEmail:      "recipient@example.com",
-// 			MeetingTitle:        "Test Meeting",
-// 			MeetingUID:          "test-uid",
-// 			OccurrenceID:        "occurrence-1",
-// 			OccurrenceStartTime: time.Now().Add(24 * time.Hour),
-// 			Duration:            60,
-// 			Timezone:            "UTC",
-// 			ProjectName:         "Test Project",
-// 		}
+		// Create test data
+		cancellation := domain.EmailOccurrenceCancellation{
+			RecipientEmail:      "recipient@example.com",
+			MeetingTitle:        "Test Meeting",
+			MeetingUID:          "test-uid",
+			OccurrenceID:        "occurrence-1",
+			OccurrenceStartTime: time.Now().Add(24 * time.Hour),
+			Duration:            60,
+			Timezone:            "UTC",
+			ProjectName:         "Test Project",
+		}
 
-// 		// ICS generation succeeds
-// 		mockICSGenerator.On("GenerateOccurrenceCancellationICS", mock.Anything).
-// 			Return("ICS_CONTENT", nil)
+		// ICS generation succeeds
+		mockICSGenerator.On("GenerateOccurrenceCancellationICS", mock.Anything).
+			Return("ICS_CONTENT", nil)
 
-// 		// Template rendering fails
-// 		mockTemplateManager.On("RenderOccurrenceCancellation", mock.Anything).
-// 			Return(nil, assert.AnError)
+		// Template rendering fails
+		mockTemplateManager.On("RenderOccurrenceCancellation", mock.Anything).
+			Return(nil, assert.AnError)
 
-// 		// Execute
-// 		ctx := context.Background()
-// 		err := service.SendOccurrenceCancellation(ctx, cancellation)
+		// Execute
+		ctx := context.Background()
+		err := service.SendOccurrenceCancellation(ctx, cancellation)
 
-// 		// Verify error occurred before reaching SMTP
-// 		assert.Error(t, err)
-// 		assert.Contains(t, err.Error(), "failed to render occurrence cancellation template")
-// 		mockICSGenerator.AssertExpectations(t)
-// 		mockTemplateManager.AssertExpectations(t)
+		// Verify error occurred before reaching SMTP
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to render occurrence cancellation template")
+		mockICSGenerator.AssertExpectations(t)
+		mockTemplateManager.AssertExpectations(t)
 
-// 		// No email should have been sent
-// 		assert.Empty(t, server.Messages())
-// 	})
+		// No email should have been sent
+		assert.Empty(t, server.Messages())
+	})
 
-// 	t.Run("ICS generation failure continues without attachment", func(t *testing.T) {
-// 		// Start mock SMTP server
-// 		server := smtpmock.New(smtpmock.ConfigurationAttr{
-// 			LogToStdout:       false,
-// 			LogServerActivity: false,
-// 		})
-// 		require.NoError(t, server.Start())
-// 		defer func() {
-// 			require.NoError(t, server.Stop())
-// 		}()
+	t.Run("ICS generation failure continues without attachment", func(t *testing.T) {
+		// Start mock SMTP server
+		server := smtpmock.New(smtpmock.ConfigurationAttr{
+			LogToStdout:       false,
+			LogServerActivity: false,
+		})
+		require.NoError(t, server.Start())
+		defer func() {
+			require.NoError(t, server.Stop())
+		}()
 
-// 		// Setup mocks
-// 		mockTemplateManager := new(MockTemplateManager)
-// 		mockICSGenerator := new(MockICSGenerator)
+		// Setup mocks
+		mockTemplateManager := new(MockTemplateManager)
+		mockICSGenerator := new(MockICSGenerator)
 
-// 		service := &SMTPService{
-// 			config: SMTPConfig{
-// 				Host: "localhost",
-// 				Port: server.PortNumber(),
-// 				From: "test@example.com",
-// 			},
-// 			icsGenerator:    mockICSGenerator,
-// 			templateManager: mockTemplateManager,
-// 		}
+		service := &SMTPService{
+			config: SMTPConfig{
+				Host: "localhost",
+				Port: server.PortNumber(),
+				From: "test@example.com",
+			},
+			icsGenerator:    mockICSGenerator,
+			templateManager: mockTemplateManager,
+		}
 
-// 		// Create test data
-// 		cancellation := domain.EmailOccurrenceCancellation{
-// 			RecipientEmail:      "recipient@example.com",
-// 			MeetingTitle:        "Test Meeting",
-// 			MeetingUID:          "test-uid",
-// 			OccurrenceID:        "occurrence-1",
-// 			OccurrenceStartTime: time.Now().Add(24 * time.Hour),
-// 			Duration:            60,
-// 			Timezone:            "UTC",
-// 			ProjectName:         "Test Project",
-// 		}
+		// Create test data
+		cancellation := domain.EmailOccurrenceCancellation{
+			RecipientEmail:      "recipient@example.com",
+			MeetingTitle:        "Test Meeting",
+			MeetingUID:          "test-uid",
+			OccurrenceID:        "occurrence-1",
+			OccurrenceStartTime: time.Now().Add(24 * time.Hour),
+			Duration:            60,
+			Timezone:            "UTC",
+			ProjectName:         "Test Project",
+		}
 
-// 		// ICS generation fails
-// 		mockICSGenerator.On("GenerateOccurrenceCancellationICS", mock.Anything).
-// 			Return("", assert.AnError)
+		// ICS generation fails
+		mockICSGenerator.On("GenerateOccurrenceCancellationICS", mock.Anything).
+			Return("", assert.AnError)
 
-// 		// Template rendering succeeds (without ICS attachment)
-// 		mockTemplateManager.On("RenderOccurrenceCancellation", mock.MatchedBy(func(cancel domain.EmailOccurrenceCancellation) bool {
-// 			return cancel.ICSAttachment == nil // No ICS due to generation failure
-// 		})).Return(&RenderedEmail{
-// 			HTML: "<html>Occurrence Cancellation</html>",
-// 			Text: "Occurrence Cancellation",
-// 		}, nil)
+		// Template rendering succeeds (without ICS attachment)
+		mockTemplateManager.On("RenderOccurrenceCancellation", mock.MatchedBy(func(cancel domain.EmailOccurrenceCancellation) bool {
+			return cancel.ICSAttachment == nil // No ICS due to generation failure
+		})).Return(&RenderedEmail{
+			HTML: "<html>Occurrence Cancellation</html>",
+			Text: "Occurrence Cancellation",
+		}, nil)
 
-// 		// Execute
-// 		ctx := context.Background()
-// 		err := service.SendOccurrenceCancellation(ctx, cancellation)
+		// Execute
+		ctx := context.Background()
+		err := service.SendOccurrenceCancellation(ctx, cancellation)
 
-// 		// Verify success (email sent without ICS)
-// 		assert.NoError(t, err)
-// 		mockICSGenerator.AssertExpectations(t)
-// 		mockTemplateManager.AssertExpectations(t)
+		// Verify success (email sent without ICS)
+		assert.NoError(t, err)
+		mockICSGenerator.AssertExpectations(t)
+		mockTemplateManager.AssertExpectations(t)
 
-// 		// Verify email was sent
-// 		messages := server.Messages()
-// 		require.Len(t, messages, 1)
-// 	})
-// }
+		// Verify email was sent
+		_ = waitForMessages(t, server, 1, 2*time.Second)
+	})
+}
 
 func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 	t.Run("successful updated invitation for future meeting", func(t *testing.T) {
@@ -915,8 +917,7 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		message := messages[0]
 
 		// Verify recipient and sender
@@ -982,8 +983,7 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent without ICS attachment
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		_ = waitForMessages(t, server, 1, 2*time.Second)
 	})
 
 	t.Run("updated invitation with recurrence", func(t *testing.T) {
@@ -1050,8 +1050,7 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		_ = waitForMessages(t, server, 1, 2*time.Second)
 	})
 
 	t.Run("template rendering failure", func(t *testing.T) {
@@ -1150,8 +1149,7 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		_ = waitForMessages(t, server, 1, 2*time.Second)
 	})
 }
 
@@ -1207,8 +1205,7 @@ func TestSMTPService_SendSummaryNotification(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		message := messages[0]
 
 		// Verify recipient and sender
@@ -1307,8 +1304,7 @@ func TestSMTPService_SendSummaryNotification(t *testing.T) {
 		mockTemplateManager.AssertExpectations(t)
 
 		// Verify email was sent
-		messages := server.Messages()
-		require.Len(t, messages, 1)
+		messages := waitForMessages(t, server, 1, 2*time.Second)
 		assert.Contains(t, messages[0].MsgRequest(), "Minimal Meeting")
 	})
 }
