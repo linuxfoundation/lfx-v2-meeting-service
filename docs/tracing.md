@@ -12,6 +12,7 @@ The LFX v2 Meeting Service supports distributed tracing via OpenTelemetry (OTEL)
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint | (none) |
 | `OTEL_EXPORTER_OTLP_INSECURE` | Disable TLS for OTLP connection | `false` |
 | `OTEL_TRACES_EXPORTER` | Traces exporter: `otlp` or `none` | `none` |
+| `OTEL_TRACES_SAMPLE_RATIO` | Sampling ratio for traces (0.0 to 1.0) | `1.0` |
 | `OTEL_METRICS_EXPORTER` | Metrics exporter: `otlp` or `none` | `none` |
 | `OTEL_LOGS_EXPORTER` | Logs exporter: `otlp` or `none` | `none` |
 
@@ -113,3 +114,40 @@ These use the same endpoint and protocol configuration as traces.
 - Verify the collector is running and accessible
 - Check firewall rules allow traffic on the OTLP port (4317 for gRPC, 4318 for HTTP)
 - For Kubernetes, verify the service DNS name resolves correctly
+
+## Trace Sampling
+
+By default, all traces are sampled (ratio of 1.0). In production environments with high traffic, you may want to reduce the sampling ratio to decrease costs and storage requirements while still maintaining visibility.
+
+```bash
+# Sample 10% of traces
+export OTEL_TRACES_SAMPLE_RATIO=0.1
+
+# Sample 50% of traces
+export OTEL_TRACES_SAMPLE_RATIO=0.5
+
+# Sample all traces (default)
+export OTEL_TRACES_SAMPLE_RATIO=1.0
+```
+
+The sampling ratio must be a value between 0.0 and 1.0. Invalid values will be ignored and the default of 1.0 will be used.
+
+## Database Tracing
+
+All NATS KV store operations are automatically traced when tracing is enabled. The following database operations create spans:
+
+| Operation | Span Name | Description |
+|-----------|-----------|-------------|
+| Get | `nats.kv.get` | Retrieve an entity from the store |
+| Put/Create | `nats.kv.put` | Create a new entity in the store |
+| Update | `nats.kv.update` | Update an existing entity |
+| Delete | `nats.kv.delete` | Remove an entity from the store |
+| List Keys | `nats.kv.list_keys` | List all keys in a bucket |
+
+Each span includes the following attributes:
+- `db.system`: Always "nats"
+- `db.operation`: The operation type (get, put, update, delete, list_keys)
+- `db.nats.key`: The key being accessed (when applicable)
+- `db.nats.entity`: The entity type (meeting, registrant, etc.)
+- `db.nats.revision`: The revision number (for update/delete operations)
+- `db.nats.keys_count`: Number of keys returned (for list operations)

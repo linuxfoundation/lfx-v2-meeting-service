@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -60,6 +61,10 @@ type OTelConfig struct {
 	// TracesExporter specifies the traces exporter: "otlp" or "none".
 	// Env: OTEL_TRACES_EXPORTER (default: "none")
 	TracesExporter string
+	// TracesSampleRatio specifies the sampling ratio for traces (0.0 to 1.0).
+	// A value of 1.0 means all traces are sampled, 0.5 means 50% are sampled.
+	// Env: OTEL_TRACES_SAMPLE_RATIO (default: 1.0)
+	TracesSampleRatio float64
 	// MetricsExporter specifies the metrics exporter: "otlp" or "none".
 	// Env: OTEL_METRICS_EXPORTER (default: "none")
 	MetricsExporter string
@@ -102,6 +107,21 @@ func OTelConfigFromEnv() OTelConfig {
 		logsExporter = OTelExporterNone
 	}
 
+	tracesSampleRatio := 1.0
+	if ratio := os.Getenv("OTEL_TRACES_SAMPLE_RATIO"); ratio != "" {
+		if parsed, err := strconv.ParseFloat(ratio, 64); err == nil {
+			if parsed >= 0.0 && parsed <= 1.0 {
+				tracesSampleRatio = parsed
+			} else {
+				slog.Warn("OTEL_TRACES_SAMPLE_RATIO must be between 0.0 and 1.0, using default 1.0",
+					"provided-value", ratio)
+			}
+		} else {
+			slog.Warn("invalid OTEL_TRACES_SAMPLE_RATIO value, using default 1.0",
+				"provided-value", ratio, "error", err)
+		}
+	}
+
 	slog.With(
 		"service-name", serviceName,
 		"version", serviceVersion,
@@ -109,19 +129,21 @@ func OTelConfigFromEnv() OTelConfig {
 		"endpoint", endpoint,
 		"insecure", insecure,
 		"traces-exporter", tracesExporter,
+		"traces-sample-ratio", tracesSampleRatio,
 		"metrics-exporter", metricsExporter,
 		"logs-exporter", logsExporter,
 	).Debug("OTelConfig")
 
 	return OTelConfig{
-		ServiceName:     serviceName,
-		ServiceVersion:  serviceVersion,
-		Protocol:        protocol,
-		Endpoint:        endpoint,
-		Insecure:        insecure,
-		TracesExporter:  tracesExporter,
-		MetricsExporter: metricsExporter,
-		LogsExporter:    logsExporter,
+		ServiceName:       serviceName,
+		ServiceVersion:    serviceVersion,
+		Protocol:          protocol,
+		Endpoint:          endpoint,
+		Insecure:          insecure,
+		TracesExporter:    tracesExporter,
+		TracesSampleRatio: tracesSampleRatio,
+		MetricsExporter:   metricsExporter,
+		LogsExporter:      logsExporter,
 	}
 }
 
@@ -254,6 +276,7 @@ func newTraceProvider(ctx context.Context, cfg OTelConfig, res *resource.Resourc
 
 	traceProvider := trace.NewTracerProvider(
 		trace.WithResource(res),
+		trace.WithSampler(trace.TraceIDRatioBased(cfg.TracesSampleRatio)),
 		trace.WithBatcher(exporter,
 			trace.WithBatchTimeout(time.Second),
 		),
