@@ -5394,6 +5394,7 @@ func marshalMeetingserviceMeetingFullToMeetingFullResponseBody(v *meetingservice
 		RecordingEnabled:        v.RecordingEnabled,
 		TranscriptEnabled:       v.TranscriptEnabled,
 		YoutubeUploadEnabled:    v.YoutubeUploadEnabled,
+		ShowMeetingAttendees:    v.ShowMeetingAttendees,
 		RegistrantCount:         v.RegistrantCount,
 		CreatedAt:               v.CreatedAt,
 		UpdatedAt:               v.UpdatedAt,
@@ -5642,6 +5643,7 @@ func marshalMeetingservicePastMeetingToPastMeetingResponseBody(v *meetingservice
 		RecordingEnabled:     v.RecordingEnabled,
 		TranscriptEnabled:    v.TranscriptEnabled,
 		YoutubeUploadEnabled: v.YoutubeUploadEnabled,
+		ShowMeetingAttendees: v.ShowMeetingAttendees,
 		CreatedAt:            v.CreatedAt,
 		UpdatedAt:            v.UpdatedAt,
 	}

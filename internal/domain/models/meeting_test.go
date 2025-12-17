@@ -32,6 +32,7 @@ func TestMeeting_JSONSerialization(t *testing.T) {
 		RecordingEnabled:        true,
 		TranscriptEnabled:       true,
 		YoutubeUploadEnabled:    false,
+		ShowMeetingAttendees:    true,
 		RegistrantCount:         10,
 		CreatedAt:               &now,
 		UpdatedAt:               &now,
@@ -59,6 +60,9 @@ func TestMeeting_JSONSerialization(t *testing.T) {
 	}
 	if unmarshaled.Duration != meeting.Duration {
 		t.Errorf("expected Duration %d, got %d", meeting.Duration, unmarshaled.Duration)
+	}
+	if unmarshaled.ShowMeetingAttendees != meeting.ShowMeetingAttendees {
+		t.Errorf("expected ShowMeetingAttendees %t, got %t", meeting.ShowMeetingAttendees, unmarshaled.ShowMeetingAttendees)
 	}
 }
 
@@ -263,5 +267,71 @@ func TestMeeting_WithComplexStructures(t *testing.T) {
 	}
 	if len(unmarshaled.Occurrences) != 1 {
 		t.Errorf("expected 1 occurrence, got %d", len(unmarshaled.Occurrences))
+	}
+}
+
+func TestMeeting_ShowMeetingAttendees(t *testing.T) {
+	tests := []struct {
+		name                 string
+		showMeetingAttendees bool
+	}{
+		{
+			name:                 "show_meeting_attendees set to true",
+			showMeetingAttendees: true,
+		},
+		{
+			name:                 "show_meeting_attendees set to false",
+			showMeetingAttendees: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			now := time.Now().UTC()
+			meeting := MeetingBase{
+				UID:                  "test-uid",
+				ProjectUID:           "project-uid",
+				StartTime:            now,
+				Duration:             60,
+				Timezone:             "UTC",
+				Title:                "Test Meeting",
+				Description:          "Test Description",
+				ShowMeetingAttendees: tt.showMeetingAttendees,
+				CreatedAt:            &now,
+				UpdatedAt:            &now,
+			}
+
+			// Test JSON marshaling
+			data, err := json.Marshal(meeting)
+			if err != nil {
+				t.Fatalf("failed to marshal meeting: %v", err)
+			}
+
+			// Verify the JSON contains the field
+			var jsonMap map[string]interface{}
+			err = json.Unmarshal(data, &jsonMap)
+			if err != nil {
+				t.Fatalf("failed to unmarshal to map: %v", err)
+			}
+
+			showAttendees, exists := jsonMap["show_meeting_attendees"]
+			if !exists {
+				t.Error("expected show_meeting_attendees field to exist in JSON")
+			}
+			if showAttendees != tt.showMeetingAttendees {
+				t.Errorf("expected show_meeting_attendees to be %t in JSON, got %v", tt.showMeetingAttendees, showAttendees)
+			}
+
+			// Test JSON unmarshaling
+			var unmarshaled MeetingBase
+			err = json.Unmarshal(data, &unmarshaled)
+			if err != nil {
+				t.Fatalf("failed to unmarshal meeting: %v", err)
+			}
+
+			if unmarshaled.ShowMeetingAttendees != tt.showMeetingAttendees {
+				t.Errorf("expected ShowMeetingAttendees %t, got %t", tt.showMeetingAttendees, unmarshaled.ShowMeetingAttendees)
+			}
+		})
 	}
 }
