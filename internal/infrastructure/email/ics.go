@@ -60,7 +60,8 @@ type ICSMeetingInvitationParams struct {
 	StartTime                time.Time
 	DurationMinutes          int
 	Timezone                 string
-	JoinLink                 string
+	PlatformJoinLink         string
+	DirectZoomJoinLink       string
 	MeetingID                string
 	Passcode                 string
 	RecipientEmail           string
@@ -140,17 +141,18 @@ func (g *ICSGenerator) GenerateMeetingInvitationICS(param ICSMeetingInvitationPa
 		MeetingDescription: param.Description,
 		MeetingID:          param.MeetingID,
 		MeetingPasscode:    param.Passcode,
-		JoinLink:           param.JoinLink,
+		PlatformJoinLink:   param.PlatformJoinLink,
+		DirectZoomJoinLink: param.DirectZoomJoinLink,
 		ProjectName:        param.ProjectName,
 		MeetingAttachments: param.MeetingAttachments,
 	})
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
 	// Location (Zoom URL) - only add if join link exists
-	if param.JoinLink != "" {
-		ics.WriteString(fmt.Sprintf("LOCATION:%s\r\n", param.JoinLink))
+	if param.PlatformJoinLink != "" {
+		ics.WriteString(fmt.Sprintf("LOCATION:%s\r\n", param.PlatformJoinLink))
 		// URL property for the join link
-		ics.WriteString(fmt.Sprintf("URL:%s\r\n", param.JoinLink))
+		ics.WriteString(fmt.Sprintf("URL:%s\r\n", param.PlatformJoinLink))
 	}
 
 	// Attendee
@@ -187,7 +189,8 @@ type ICSMeetingUpdateParams struct {
 	StartTime          time.Time
 	Duration           int // Duration in minutes
 	Timezone           string
-	JoinLink           string
+	PlatformJoinLink   string
+	DirectZoomJoinLink string
 	MeetingID          string
 	Passcode           string
 	RecipientEmail     string
@@ -254,17 +257,18 @@ func (g *ICSGenerator) GenerateMeetingUpdateICS(params ICSMeetingUpdateParams) (
 		MeetingDescription: params.Description,
 		MeetingID:          params.MeetingID,
 		MeetingPasscode:    params.Passcode,
-		JoinLink:           params.JoinLink,
+		PlatformJoinLink:   params.PlatformJoinLink,
+		DirectZoomJoinLink: params.DirectZoomJoinLink,
 		ProjectName:        params.ProjectName,
 		MeetingAttachments: params.MeetingAttachments,
 	})
 	ics.WriteString(fmt.Sprintf("DESCRIPTION:%s\r\n", escapeICSText(descriptionText)))
 
-	// Location (Zoom URL) - only add if join link exists
-	if params.JoinLink != "" {
-		ics.WriteString(fmt.Sprintf("LOCATION:%s\r\n", params.JoinLink))
+	// Location (Platform join meeting URL) - only add if join link exists
+	if params.PlatformJoinLink != "" {
+		ics.WriteString(fmt.Sprintf("LOCATION:%s\r\n", params.PlatformJoinLink))
 		// URL property for the join link
-		ics.WriteString(fmt.Sprintf("URL:%s\r\n", params.JoinLink))
+		ics.WriteString(fmt.Sprintf("URL:%s\r\n", params.PlatformJoinLink))
 	}
 
 	// Attendee
@@ -572,7 +576,8 @@ type DescriptionParams struct {
 	MeetingDescription string
 	MeetingID          string
 	MeetingPasscode    string
-	JoinLink           string
+	PlatformJoinLink   string
+	DirectZoomJoinLink string
 	ProjectName        string
 	MeetingAttachments []*models.MeetingAttachment
 }
@@ -598,9 +603,9 @@ func buildDescription(params DescriptionParams) string {
 		desc.WriteString("\n\n")
 	}
 
-	if params.JoinLink != "" {
+	if params.PlatformJoinLink != "" {
 		desc.WriteString("Join Meeting: ")
-		desc.WriteString(params.JoinLink)
+		desc.WriteString(params.PlatformJoinLink)
 		desc.WriteString("\n\n")
 	}
 
@@ -625,8 +630,14 @@ func buildDescription(params DescriptionParams) string {
 		if params.MeetingPasscode != "" {
 			desc.WriteString("Then enter Passcode: ")
 			desc.WriteString(params.MeetingPasscode)
-			desc.WriteString("#\n")
+			desc.WriteString("#\n\n")
 		}
+	}
+
+	if params.DirectZoomJoinLink != "" {
+		desc.WriteString("If you cannot log in via LFX One, you can use this direct Zoom join link: ")
+		desc.WriteString(params.DirectZoomJoinLink)
+		desc.WriteString("\n")
 	}
 
 	return desc.String()

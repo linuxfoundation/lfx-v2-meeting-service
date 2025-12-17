@@ -62,7 +62,8 @@ func (s *SMTPService) SendRegistrantInvitation(ctx context.Context, invitation d
 		StartTime:                invitation.StartTime,
 		DurationMinutes:          invitation.Duration,
 		Timezone:                 invitation.Timezone,
-		JoinLink:                 invitation.JoinLink,
+		PlatformJoinLink:         invitation.PlatformJoinLink,
+		DirectZoomJoinLink:       invitation.DirectZoomJoinLink,
 		MeetingID:                invitation.MeetingID,
 		Passcode:                 invitation.Passcode,
 		RecipientEmail:           invitation.RecipientEmail,
@@ -271,38 +272,36 @@ func (s *SMTPService) SendRegistrantUpdatedInvitation(ctx context.Context, updat
 	ctx = logging.AppendCtx(ctx, slog.String("recipient_email", redaction.RedactEmail(updatedInvitation.RecipientEmail)))
 	ctx = logging.AppendCtx(ctx, slog.String("meeting_title", updatedInvitation.MeetingTitle))
 
-	// Generate ICS update file if we have the necessary data and it's a future meeting
 	var icsAttachment *domain.EmailAttachment
-	if updatedInvitation.StartTime.After(time.Now()) {
-		icsContent, err := s.icsGenerator.GenerateMeetingUpdateICS(ICSMeetingUpdateParams{
-			MeetingUID:         updatedInvitation.MeetingUID,
-			MeetingTitle:       updatedInvitation.MeetingTitle,
-			Description:        updatedInvitation.Description,
-			StartTime:          updatedInvitation.StartTime,
-			Duration:           updatedInvitation.Duration,
-			Timezone:           updatedInvitation.Timezone,
-			JoinLink:           updatedInvitation.JoinLink,
-			MeetingID:          updatedInvitation.MeetingID,
-			Passcode:           updatedInvitation.Passcode,
-			RecipientEmail:     updatedInvitation.RecipientEmail,
-			ProjectName:        updatedInvitation.ProjectName,
-			Recurrence:         updatedInvitation.Recurrence,
-			Sequence:           updatedInvitation.IcsSequence,
-			MeetingAttachments: updatedInvitation.MeetingAttachments,
-		})
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to generate ICS update", logging.ErrKey, err)
-			// Continue without ICS - don't fail the whole email
-		} else {
-			// Create attachment
-			icsAttachment = &domain.EmailAttachment{
-				Filename:    fmt.Sprintf("%s-updated.ics", strings.ReplaceAll(updatedInvitation.MeetingTitle, " ", "_")),
-				ContentType: "text/calendar; charset=UTF-8; method=REQUEST",
-				Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
-			}
-			updatedInvitation.ICSAttachment = icsAttachment
-			updatedInvitation.EmailFileAttachments = append(updatedInvitation.EmailFileAttachments, icsAttachment)
+	icsContent, err := s.icsGenerator.GenerateMeetingUpdateICS(ICSMeetingUpdateParams{
+		MeetingUID:         updatedInvitation.MeetingUID,
+		MeetingTitle:       updatedInvitation.MeetingTitle,
+		Description:        updatedInvitation.Description,
+		StartTime:          updatedInvitation.StartTime,
+		Duration:           updatedInvitation.Duration,
+		Timezone:           updatedInvitation.Timezone,
+		PlatformJoinLink:   updatedInvitation.PlatformJoinLink,
+		DirectZoomJoinLink: updatedInvitation.DirectZoomJoinLink,
+		MeetingID:          updatedInvitation.MeetingID,
+		Passcode:           updatedInvitation.Passcode,
+		RecipientEmail:     updatedInvitation.RecipientEmail,
+		ProjectName:        updatedInvitation.ProjectName,
+		Recurrence:         updatedInvitation.Recurrence,
+		Sequence:           updatedInvitation.IcsSequence,
+		MeetingAttachments: updatedInvitation.MeetingAttachments,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to generate ICS update", logging.ErrKey, err)
+		// Continue without ICS - don't fail the whole email
+	} else {
+		// Create attachment
+		icsAttachment = &domain.EmailAttachment{
+			Filename:    fmt.Sprintf("%s-updated.ics", strings.ReplaceAll(updatedInvitation.MeetingTitle, " ", "_")),
+			ContentType: "text/calendar; charset=UTF-8; method=REQUEST",
+			Content:     base64.StdEncoding.EncodeToString([]byte(icsContent)),
 		}
+		updatedInvitation.ICSAttachment = icsAttachment
+		updatedInvitation.EmailFileAttachments = append(updatedInvitation.EmailFileAttachments, icsAttachment)
 	}
 
 	// Generate email content from templates
