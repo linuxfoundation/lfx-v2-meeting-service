@@ -32,7 +32,8 @@ type EmailInvitation struct {
 	Description              string
 	MeetingType              string
 	Visibility               string
-	JoinLink                 string
+	PlatformJoinLink         string                      // URL to join the meeting via the LFX One platform
+	DirectZoomJoinLink       string                      // URL to join the meeting directly via Zoom
 	MeetingDetailsLink       string                      // URL to meeting details in LFX One
 	ProjectName              string                      // Optional project name for context
 	ProjectLogo              string                      // Optional project logo URL
@@ -102,7 +103,8 @@ type EmailUpdatedInvitation struct {
 	Duration             int // Duration in minutes
 	Timezone             string
 	Description          string
-	JoinLink             string
+	PlatformJoinLink     string // URL to join the meeting via the LFX One platform
+	DirectZoomJoinLink   string // URL to join the meeting directly via Zoom
 	MeetingDetailsLink   string // URL to meeting details in LFX One
 	Visibility           string
 	MeetingType          string
