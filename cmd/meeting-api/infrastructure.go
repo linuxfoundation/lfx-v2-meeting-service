@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"maps"
 	"net/http"
 	"os"
 	"sync"
@@ -222,7 +223,7 @@ func createNatsSubcriptions(ctx context.Context, svc *MeetingsAPI, natsConn *nat
 		models.ZoomWebhookMeetingSummaryCompletedSubject:      svc.zoomWebhookHandler.HandleMessage,
 	}
 
-	slog.InfoContext(ctx, "subscribing to NATS subjects", "nats_url", natsConn.ConnectedUrl(), "servers", natsConn.Servers(), "subjects", subjects)
+	slog.InfoContext(ctx, "subscribing to NATS subjects", "nats_url", natsConn.ConnectedUrl(), "servers", natsConn.Servers(), "subjects", maps.Keys(subjects))
 	queueName := models.MeetingsAPIQueue
 
 	// Subscribe to all subjects using the same handler pattern
