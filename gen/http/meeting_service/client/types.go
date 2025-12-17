@@ -55,6 +55,8 @@ type CreateMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// The organizers of the meeting. This is a list of LFIDs of the meeting
 	// organizers.
 	Organizers []string `form:"organizers,omitempty" json:"organizers,omitempty" xml:"organizers,omitempty"`
@@ -103,6 +105,8 @@ type UpdateMeetingBaseRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigPostRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 }
@@ -248,6 +252,8 @@ type CreatePastMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullRequestBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// Sessions represent individual start/end periods if a meeting was stopped and
@@ -432,6 +438,8 @@ type CreateMeetingResponseBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
@@ -525,6 +533,8 @@ type UpdateMeetingBaseResponseBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
@@ -759,6 +769,8 @@ type CreatePastMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// Sessions represent individual start/end periods if a meeting was stopped and
@@ -2612,6 +2624,8 @@ type MeetingFullResponseBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
@@ -2873,6 +2887,8 @@ type MeetingBaseResponseBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// The number of registrants for the meeting
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 	// Array of meeting occurrences (read-only from platform API)
@@ -3020,6 +3036,8 @@ type PastMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFullResponseBody `form:"zoom_config,omitempty" json:"zoom_config,omitempty" xml:"zoom_config,omitempty"`
 	// Sessions represent individual start/end periods if a meeting was stopped and
@@ -3227,6 +3245,7 @@ func NewCreateMeetingRequestBody(p *meetingservice.CreateMeetingPayload) *Create
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		ShowMeetingAttendees: p.ShowMeetingAttendees,
 	}
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
@@ -3273,6 +3292,7 @@ func NewUpdateMeetingBaseRequestBody(p *meetingservice.UpdateMeetingBasePayload)
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		ShowMeetingAttendees: p.ShowMeetingAttendees,
 	}
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
@@ -3395,6 +3415,7 @@ func NewCreatePastMeetingRequestBody(p *meetingservice.CreatePastMeetingPayload)
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		ShowMeetingAttendees: p.ShowMeetingAttendees,
 	}
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
@@ -3584,6 +3605,7 @@ func NewCreateMeetingMeetingFullCreated(body *CreateMeetingResponseBody) *meetin
 		RecordingEnabled:        body.RecordingEnabled,
 		TranscriptEnabled:       body.TranscriptEnabled,
 		YoutubeUploadEnabled:    body.YoutubeUploadEnabled,
+		ShowMeetingAttendees:    body.ShowMeetingAttendees,
 		RegistrantCount:         body.RegistrantCount,
 		CreatedAt:               body.CreatedAt,
 		UpdatedAt:               body.UpdatedAt,
@@ -3692,6 +3714,7 @@ func NewGetMeetingBaseResultOK(body *GetMeetingBaseResponseBody, etag *string) *
 		RecordingEnabled:        body.RecordingEnabled,
 		TranscriptEnabled:       body.TranscriptEnabled,
 		YoutubeUploadEnabled:    body.YoutubeUploadEnabled,
+		ShowMeetingAttendees:    body.ShowMeetingAttendees,
 		RegistrantCount:         body.RegistrantCount,
 		CreatedAt:               body.CreatedAt,
 		UpdatedAt:               body.UpdatedAt,
@@ -3896,6 +3919,7 @@ func NewUpdateMeetingBaseMeetingBaseOK(body *UpdateMeetingBaseResponseBody) *mee
 		RecordingEnabled:        body.RecordingEnabled,
 		TranscriptEnabled:       body.TranscriptEnabled,
 		YoutubeUploadEnabled:    body.YoutubeUploadEnabled,
+		ShowMeetingAttendees:    body.ShowMeetingAttendees,
 		RegistrantCount:         body.RegistrantCount,
 		CreatedAt:               body.CreatedAt,
 		UpdatedAt:               body.UpdatedAt,
@@ -4770,6 +4794,7 @@ func NewCreatePastMeetingPastMeetingCreated(body *CreatePastMeetingResponseBody)
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		ShowMeetingAttendees: body.ShowMeetingAttendees,
 		CreatedAt:            body.CreatedAt,
 		UpdatedAt:            body.UpdatedAt,
 	}
@@ -4872,6 +4897,7 @@ func NewGetPastMeetingResultOK(body *GetPastMeetingResponseBody, etag *string) *
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		ShowMeetingAttendees: body.ShowMeetingAttendees,
 		CreatedAt:            body.CreatedAt,
 		UpdatedAt:            body.UpdatedAt,
 	}

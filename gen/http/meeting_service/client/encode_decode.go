@@ -6277,6 +6277,7 @@ func unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull(v *MeetingFullR
 		RecordingEnabled:        v.RecordingEnabled,
 		TranscriptEnabled:       v.TranscriptEnabled,
 		YoutubeUploadEnabled:    v.YoutubeUploadEnabled,
+		ShowMeetingAttendees:    v.ShowMeetingAttendees,
 		RegistrantCount:         v.RegistrantCount,
 		CreatedAt:               v.CreatedAt,
 		UpdatedAt:               v.UpdatedAt,
@@ -6581,6 +6582,7 @@ func unmarshalPastMeetingResponseBodyToMeetingservicePastMeeting(v *PastMeetingR
 		RecordingEnabled:     v.RecordingEnabled,
 		TranscriptEnabled:    v.TranscriptEnabled,
 		YoutubeUploadEnabled: v.YoutubeUploadEnabled,
+		ShowMeetingAttendees: v.ShowMeetingAttendees,
 		CreatedAt:            v.CreatedAt,
 		UpdatedAt:            v.UpdatedAt,
 	}

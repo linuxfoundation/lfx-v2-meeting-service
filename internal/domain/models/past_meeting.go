@@ -34,6 +34,7 @@ type PastMeeting struct {
 	RecordingEnabled     bool        `json:"recording_enabled"`
 	TranscriptEnabled    bool        `json:"transcript_enabled"`
 	YoutubeUploadEnabled bool        `json:"youtube_upload_enabled"`
+	ShowMeetingAttendees bool        `json:"show_meeting_attendees"`
 	ZoomConfig           *ZoomConfig `json:"zoom_config,omitempty"`
 	Sessions             []Session   `json:"sessions,omitempty"`
 	RecordingUIDs        []string    `json:"recording_uids,omitempty"`
