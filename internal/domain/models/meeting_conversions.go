@@ -45,6 +45,7 @@ func MergeUpdateMeetingRequest(reqMeeting *MeetingBase, existingMeeting *Meeting
 		RecordingEnabled:        reqMeeting.RecordingEnabled,
 		TranscriptEnabled:       reqMeeting.TranscriptEnabled,
 		YoutubeUploadEnabled:    reqMeeting.YoutubeUploadEnabled,
+		ShowMeetingAttendees:    reqMeeting.ShowMeetingAttendees,
 		Occurrences:             existingMeeting.Occurrences,
 		EmailDeliveryErrorCount: existingMeeting.EmailDeliveryErrorCount,
 		RegistrantCount:         existingMeeting.RegistrantCount,
