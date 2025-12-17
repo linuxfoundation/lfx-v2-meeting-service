@@ -1575,6 +1575,7 @@ func (s *ZoomWebhookHandler) createPastMeetingRecordWithSession(ctx context.Cont
 		RecordingEnabled:     meeting.RecordingEnabled,
 		TranscriptEnabled:    meeting.TranscriptEnabled,
 		YoutubeUploadEnabled: meeting.YoutubeUploadEnabled,
+		ShowMeetingAttendees: meeting.ShowMeetingAttendees,
 		ZoomConfig:           meeting.ZoomConfig,
 		Sessions:             []models.Session{session},
 	}
