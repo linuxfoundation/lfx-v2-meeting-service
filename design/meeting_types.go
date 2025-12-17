@@ -28,6 +28,7 @@ var CreateMeetingPayload = Type("CreateMeetingPayload", func() {
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
 	ZoomConfigPostAttribute()
+	ShowMeetingAttendeesAttribute()
 	MeetingOrganizersAttribute()
 	Required("project_uid", "start_time", "duration", "timezone", "title", "description")
 })
@@ -54,6 +55,7 @@ var UpdateMeetingPayload = Type("UpdateMeetingPayload", func() {
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
 	ZoomConfigPostAttribute()
+	ShowMeetingAttendeesAttribute()
 	Required("uid", "project_uid", "start_time", "duration", "timezone", "title", "description")
 })
 
@@ -95,6 +97,7 @@ func MeetingBaseAttributes() {
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
 	ZoomConfigFullAttribute()
+	ShowMeetingAttendeesAttribute()
 	RegistrantCountAttribute()
 	OccurrencesAttribute()
 	CreatedAtAttribute()
@@ -358,6 +361,11 @@ func TranscriptEnabledAttribute() {
 // YoutubeUploadEnabledAttribute is the DSL attribute for YouTube upload.
 func YoutubeUploadEnabledAttribute() {
 	Attribute("youtube_upload_enabled", Boolean, "Whether automatic youtube uploading is enabled for the meeting")
+}
+
+// ShowMeetingAttendeesAttribute is the DSL attribute for showing meeting attendees.
+func ShowMeetingAttendeesAttribute() {
+	Attribute("show_meeting_attendees", Boolean, "Whether attendees/participants list is visible to other participants")
 }
 
 // RegistrantCountAttribute is the DSL attribute for registrant count.

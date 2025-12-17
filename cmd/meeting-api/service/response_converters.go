@@ -70,6 +70,9 @@ func convertDomainToFullResponseSplit(meetingBase *models.MeetingBase, meetingSe
 	if meetingBase.YoutubeUploadEnabled {
 		meetingFull.YoutubeUploadEnabled = utils.BoolPtr(meetingBase.YoutubeUploadEnabled)
 	}
+	if meetingBase.ShowMeetingAttendees {
+		meetingFull.ShowMeetingAttendees = utils.BoolPtr(meetingBase.ShowMeetingAttendees)
+	}
 	if meetingBase.ZoomConfig != nil {
 		meetingFull.ZoomConfig = convertDomainToZoomConfigResponse(meetingBase.ZoomConfig)
 	}
@@ -135,6 +138,7 @@ func ConvertDomainToBaseResponse(meeting *models.MeetingBase) *meetingservice.Me
 		RecordingEnabled:        utils.BoolPtr(meeting.RecordingEnabled),
 		TranscriptEnabled:       utils.BoolPtr(meeting.TranscriptEnabled),
 		YoutubeUploadEnabled:    utils.BoolPtr(meeting.YoutubeUploadEnabled),
+		ShowMeetingAttendees:    utils.BoolPtr(meeting.ShowMeetingAttendees),
 		RegistrantCount:         utils.IntPtr(meeting.RegistrantCount),
 	}
 
@@ -381,6 +385,7 @@ func ConvertDomainToPastMeetingResponse(pastMeeting *models.PastMeeting) *meetin
 		RecordingEnabled:     utils.BoolPtr(pastMeeting.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolPtr(pastMeeting.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolPtr(pastMeeting.YoutubeUploadEnabled),
+		ShowMeetingAttendees: utils.BoolPtr(pastMeeting.ShowMeetingAttendees),
 	}
 
 	// Set optional string fields if they are not empty

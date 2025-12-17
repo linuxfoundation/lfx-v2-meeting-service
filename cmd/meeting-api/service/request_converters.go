@@ -63,6 +63,7 @@ func convertCreateMeetingBasePayloadToDomain(payload *meetingservice.CreateMeeti
 		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
+		ShowMeetingAttendees: utils.BoolValue(payload.ShowMeetingAttendees),
 		ZoomConfig:           convertZoomConfigPostToDomain(payload.ZoomConfig),
 		CreatedAt:            &now,
 		UpdatedAt:            &now,
@@ -172,6 +173,7 @@ func ConvertMeetingUpdatePayloadToDomain(payload *meetingservice.UpdateMeetingBa
 		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
+		ShowMeetingAttendees: utils.BoolValue(payload.ShowMeetingAttendees),
 		ZoomConfig:           convertZoomConfigPostToDomain(payload.ZoomConfig),
 		CreatedAt:            nil, // This will get populated by the service from the existing meeting
 		UpdatedAt:            &now,
@@ -342,6 +344,7 @@ func ConvertCreatePastMeetingPayloadToDomain(payload *meetingservice.CreatePastM
 		RecordingEnabled:     utils.BoolValue(payload.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(payload.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(payload.YoutubeUploadEnabled),
+		ShowMeetingAttendees: utils.BoolValue(payload.ShowMeetingAttendees),
 		ZoomConfig:           convertZoomConfigFullToDomain(payload.ZoomConfig),
 		Sessions:             convertSessionsFullToDomain(payload.Sessions),
 		CreatedAt:            &now,

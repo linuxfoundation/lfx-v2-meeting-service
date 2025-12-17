@@ -229,6 +229,8 @@ type CreateMeetingPayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool
 	// The organizers of the meeting. This is a list of LFIDs of the meeting
 	// organizers.
 	Organizers []string
@@ -427,6 +429,8 @@ type CreatePastMeetingPayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFull
 	// Sessions represent individual start/end periods if a meeting was stopped and
@@ -972,6 +976,8 @@ type MeetingBase struct {
 	YoutubeUploadEnabled *bool
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFull
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool
 	// The number of registrants for the meeting
 	RegistrantCount *int
 	// Array of meeting occurrences (read-only from platform API)
@@ -1045,6 +1051,8 @@ type MeetingFull struct {
 	YoutubeUploadEnabled *bool
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFull
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool
 	// The number of registrants for the meeting
 	RegistrantCount *int
 	// Array of meeting occurrences (read-only from platform API)
@@ -1173,6 +1181,8 @@ type PastMeeting struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigFull
 	// Sessions represent individual start/end periods if a meeting was stopped and
@@ -1540,6 +1550,8 @@ type UpdateMeetingBasePayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether attendees/participants list is visible to other participants
+	ShowMeetingAttendees *bool
 	// For zoom platform meetings: the configuration for the meeting
 	ZoomConfig *ZoomConfigPost
 }

@@ -54,6 +54,7 @@ type MeetingBase struct {
 	RecordingEnabled        bool         `json:"recording_enabled"`
 	TranscriptEnabled       bool         `json:"transcript_enabled"`
 	YoutubeUploadEnabled    bool         `json:"youtube_upload_enabled"`
+	ShowMeetingAttendees    bool         `json:"show_meeting_attendees"`
 	ZoomConfig              *ZoomConfig  `json:"zoom_config,omitempty"`
 	RegistrantCount         int          `json:"registrant_count,omitempty"`
 	Occurrences             []Occurrence `json:"occurrences,omitempty"`
@@ -136,6 +137,7 @@ type CreateMeetingRequest struct {
 	RecordingEnabled     bool        `json:"recording_enabled"`
 	TranscriptEnabled    bool        `json:"transcript_enabled"`
 	YoutubeUploadEnabled bool        `json:"youtube_upload_enabled"`
+	ShowMeetingAttendees bool        `json:"show_meeting_attendees"`
 	ZoomConfig           *ZoomConfig `json:"zoom_config,omitempty"`
 	Organizers           []string    `json:"organizers"`
 }
