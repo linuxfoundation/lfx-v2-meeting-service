@@ -15,6 +15,10 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/nats-io/nats.go/jetstream"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // NATS Key-Value store bucket names
@@ -36,6 +40,9 @@ const (
 const (
 	ObjectStoreNameMeetingAttachments = "meeting-attachments"
 )
+
+// tracerName is the instrumentation name for the store package.
+const tracerName = "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/store"
 
 // INatsObjectStore is a NATS Object Store interface for file storage
 // This interface matches jetstream.ObjectStore and allows for mocking in tests.
@@ -76,22 +83,43 @@ func (r *NatsBaseRepository[T]) IsReady() bool {
 
 // Get retrieves a raw entry from NATS KV store
 func (r *NatsBaseRepository[T]) GetRaw(ctx context.Context, key string) (jetstream.KeyValueEntry, error) {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "nats.kv.get",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("db.system", "nats"),
+			attribute.String("db.operation", "get"),
+			attribute.String("db.nats.key", key),
+			attribute.String("db.nats.entity", r.entityName),
+		),
+	)
+	defer span.End()
+
 	if !r.IsReady() {
-		return nil, domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		err := domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
 	entry, err := r.kvStore.Get(ctx, key)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return nil, domain.NewNotFoundError(
+			err = domain.NewNotFoundError(
 				fmt.Sprintf("%s with key '%s' not found", r.entityName, key), err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "not found")
+			return nil, err
 		}
 		slog.ErrorContext(ctx, fmt.Sprintf("error getting %s from NATS KV", r.entityName),
 			logging.ErrKey, err, "key", key)
-		return nil, domain.NewInternalError(
+		err = domain.NewInternalError(
 			fmt.Sprintf("failed to retrieve %s from store", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
+	span.SetStatus(codes.Ok, "")
 	return entry, nil
 }
 
@@ -156,106 +184,217 @@ func (r *NatsBaseRepository[T]) Exists(ctx context.Context, key string) (bool, e
 
 // Create creates a new entity in the store using Put
 func (r *NatsBaseRepository[T]) Create(ctx context.Context, key string, entity *T) error {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "nats.kv.put",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("db.system", "nats"),
+			attribute.String("db.operation", "put"),
+			attribute.String("db.nats.key", key),
+			attribute.String("db.nats.entity", r.entityName),
+		),
+	)
+	defer span.End()
+
 	if !r.IsReady() {
-		return domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		err := domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	data, err := r.Marshal(ctx, entity)
 	if err != nil {
-		return domain.NewInternalError(fmt.Sprintf("failed to marshal %s", r.entityName), err)
+		err = domain.NewInternalError(fmt.Sprintf("failed to marshal %s", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	_, err = r.kvStore.Put(ctx, key, data)
 	if err != nil {
 		slog.ErrorContext(ctx, fmt.Sprintf("error creating %s in NATS KV", r.entityName),
 			logging.ErrKey, err, "key", key)
-		return domain.NewInternalError(fmt.Sprintf("failed to create %s in store", r.entityName), err)
+		err = domain.NewInternalError(fmt.Sprintf("failed to create %s in store", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
+	span.SetStatus(codes.Ok, "")
 	return nil
 }
 
 // Update updates an existing entity in the store with optimistic concurrency control
 func (r *NatsBaseRepository[T]) Update(ctx context.Context, key string, entity *T, revision uint64) error {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "nats.kv.update",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("db.system", "nats"),
+			attribute.String("db.operation", "update"),
+			attribute.String("db.nats.key", key),
+			attribute.String("db.nats.entity", r.entityName),
+			attribute.Int64("db.nats.revision", int64(revision)),
+		),
+	)
+	defer span.End()
+
 	if !r.IsReady() {
-		return domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		err := domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	data, err := r.Marshal(ctx, entity)
 	if err != nil {
-		return domain.NewInternalError(fmt.Sprintf("failed to marshal %s", r.entityName), err)
+		err = domain.NewInternalError(fmt.Sprintf("failed to marshal %s", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	_, err = r.kvStore.Update(ctx, key, data, revision)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.NewNotFoundError(fmt.Sprintf("%s not found", r.entityName), err)
+			err = domain.NewNotFoundError(fmt.Sprintf("%s not found", r.entityName), err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "not found")
+			return err
 		}
 		if strings.Contains(err.Error(), "wrong last sequence") {
-			return domain.NewConflictError(fmt.Sprintf("%s has been modified", r.entityName), err)
+			err = domain.NewConflictError(fmt.Sprintf("%s has been modified", r.entityName), err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "conflict")
+			return err
 		}
 		slog.ErrorContext(ctx, fmt.Sprintf("error updating %s in NATS KV", r.entityName),
 			logging.ErrKey, err, "key", key, "revision", revision)
-		return domain.NewInternalError(fmt.Sprintf("failed to update %s in store", r.entityName), err)
+		err = domain.NewInternalError(fmt.Sprintf("failed to update %s in store", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
+	span.SetStatus(codes.Ok, "")
 	return nil
 }
 
 // Delete removes an entity from the store with optimistic concurrency control
 func (r *NatsBaseRepository[T]) Delete(ctx context.Context, key string, revision uint64) error {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "nats.kv.delete",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("db.system", "nats"),
+			attribute.String("db.operation", "delete"),
+			attribute.String("db.nats.key", key),
+			attribute.String("db.nats.entity", r.entityName),
+			attribute.Int64("db.nats.revision", int64(revision)),
+		),
+	)
+	defer span.End()
+
 	if !r.IsReady() {
-		return domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		err := domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	err := r.kvStore.Delete(ctx, key, jetstream.LastRevision(revision))
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.NewNotFoundError(fmt.Sprintf("%s not found", r.entityName), err)
+			err = domain.NewNotFoundError(fmt.Sprintf("%s not found", r.entityName), err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "not found")
+			return err
 		}
 		if strings.Contains(err.Error(), "wrong last sequence") {
-			return domain.NewConflictError(fmt.Sprintf("%s has been modified", r.entityName), err)
+			err = domain.NewConflictError(fmt.Sprintf("%s has been modified", r.entityName), err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "conflict")
+			return err
 		}
 		slog.ErrorContext(ctx, fmt.Sprintf("error deleting %s from NATS KV", r.entityName),
 			logging.ErrKey, err, "key", key, "revision", revision)
-		return domain.NewInternalError(fmt.Sprintf("failed to delete %s from store", r.entityName), err)
+		err = domain.NewInternalError(fmt.Sprintf("failed to delete %s from store", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
+	span.SetStatus(codes.Ok, "")
 	return nil
 }
 
 // DeleteWithoutRevision removes an entity from the store without revision checking
 // This will delete the key regardless of its current revision, useful for cleanup operations
 func (r *NatsBaseRepository[T]) DeleteWithoutRevision(ctx context.Context, key string) error {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "nats.kv.delete",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("db.system", "nats"),
+			attribute.String("db.operation", "delete"),
+			attribute.String("db.nats.key", key),
+			attribute.String("db.nats.entity", r.entityName),
+		),
+	)
+	defer span.End()
+
 	if !r.IsReady() {
-		return domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		err := domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	err := r.kvStore.Delete(ctx, key)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			return domain.NewNotFoundError(fmt.Sprintf("%s not found", r.entityName), err)
+			err = domain.NewNotFoundError(fmt.Sprintf("%s not found", r.entityName), err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "not found")
+			return err
 		}
 		slog.ErrorContext(ctx, fmt.Sprintf("error deleting %s from NATS KV", r.entityName),
 			logging.ErrKey, err, "key", key)
-		return domain.NewInternalError(fmt.Sprintf("failed to delete %s from store", r.entityName), err)
+		err = domain.NewInternalError(fmt.Sprintf("failed to delete %s from store", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
+	span.SetStatus(codes.Ok, "")
 	return nil
 }
 
 // ListKeys lists all keys in the store with optional filtering
 func (r *NatsBaseRepository[T]) ListKeys(ctx context.Context) ([]string, error) {
+	ctx, span := otel.Tracer(tracerName).Start(ctx, "nats.kv.list_keys",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(
+			attribute.String("db.system", "nats"),
+			attribute.String("db.operation", "list_keys"),
+			attribute.String("db.nats.entity", r.entityName),
+		),
+	)
+	defer span.End()
+
 	if !r.IsReady() {
-		return nil, domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		err := domain.NewUnavailableError(fmt.Sprintf("%s repository is not available", r.entityName))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
 	lister, err := r.kvStore.ListKeys(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, fmt.Sprintf("error listing %s keys from NATS KV", r.entityName),
 			logging.ErrKey, err)
-		return nil, domain.NewInternalError(
+		err = domain.NewInternalError(
 			fmt.Sprintf("failed to list %s keys from store", r.entityName), err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
 	var keys []string
@@ -263,6 +402,8 @@ func (r *NatsBaseRepository[T]) ListKeys(ctx context.Context) ([]string, error) 
 		keys = append(keys, key)
 	}
 
+	span.SetAttributes(attribute.Int("db.nats.keys_count", len(keys)))
+	span.SetStatus(codes.Ok, "")
 	return keys, nil
 }
 
