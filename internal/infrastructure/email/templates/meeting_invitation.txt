@@ -29,14 +29,14 @@ Platform: {{.Platform}}{{end}}
 
 {{end}}Join Meeting:
 =============
-{{.JoinLink}}
+{{.PlatformJoinLink}}
 
 Alternative Ways to Join:
 ========================
 
 1. Join from any device
    If the link above doesn't work, copy and paste this into your browser:
-   {{.JoinLink}}
+   {{.PlatformJoinLink}}
 
 {{if .MeetingID}}2. Join by phone
    One-tap mobile (US):

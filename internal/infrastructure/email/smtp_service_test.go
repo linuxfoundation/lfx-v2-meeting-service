@@ -73,18 +73,19 @@ func TestSMTPService_SendRegistrantInvitation(t *testing.T) {
 		// Create test data
 		startTime := time.Now().Add(24 * time.Hour)
 		invitation := domain.EmailInvitation{
-			RecipientEmail: "recipient@example.com",
-			RecipientName:  "Test Recipient",
-			MeetingTitle:   "Test Meeting",
-			MeetingUID:     "test-meeting-uid",
-			Description:    "Test meeting description",
-			StartTime:      startTime,
-			Duration:       60,
-			Timezone:       "America/New_York",
-			JoinLink:       "https://zoom.us/j/123456789",
-			MeetingID:      "123456789",
-			Passcode:       "secret123",
-			ProjectName:    "Test Project",
+			RecipientEmail:     "recipient@example.com",
+			RecipientName:      "Test Recipient",
+			MeetingTitle:       "Test Meeting",
+			MeetingUID:         "test-meeting-uid",
+			Description:        "Test meeting description",
+			StartTime:          startTime,
+			Duration:           60,
+			Timezone:           "America/New_York",
+			PlatformJoinLink:   "https://app.lfx.dev/meeting/test-meeting-uid",
+			DirectZoomJoinLink: "https://zoom.us/j/123456789",
+			MeetingID:          "123456789",
+			Passcode:           "secret123",
+			ProjectName:        "Test Project",
 		}
 
 		// Setup mock expectations
@@ -878,19 +879,20 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 
 		startTime := time.Now().Add(24 * time.Hour)
 		updatedInvitation := domain.EmailUpdatedInvitation{
-			RecipientEmail: "recipient@example.com",
-			RecipientName:  "Test Recipient",
-			MeetingTitle:   "Updated Meeting",
-			MeetingUID:     "updated-meeting-uid",
-			Description:    "Meeting details have been updated",
-			StartTime:      startTime,
-			Duration:       45,
-			Timezone:       "America/New_York",
-			JoinLink:       "https://zoom.us/j/updated123",
-			MeetingID:      "updated123",
-			Passcode:       "updated456",
-			ProjectName:    "Test Project",
-			IcsSequence:    2, // Indicates this is an update
+			RecipientEmail:     "recipient@example.com",
+			RecipientName:      "Test Recipient",
+			MeetingTitle:       "Updated Meeting",
+			MeetingUID:         "updated-meeting-uid",
+			Description:        "Meeting details have been updated",
+			StartTime:          startTime,
+			Duration:           45,
+			Timezone:           "America/New_York",
+			PlatformJoinLink:   "https://app.lfx.dev/meeting/updated-meeting-uid",
+			DirectZoomJoinLink: "https://zoom.us/j/updated123",
+			MeetingID:          "updated123",
+			Passcode:           "updated456",
+			ProjectName:        "Test Project",
+			IcsSequence:        2, // Indicates this is an update
 		}
 
 		// Setup mock expectations for ICS generation
@@ -933,7 +935,7 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 		assert.Contains(t, msgData, "Updated_Meeting-updated.ics")
 	})
 
-	t.Run("updated invitation for past meeting without ICS", func(t *testing.T) {
+	t.Run("updated invitation for past meeting with ICS", func(t *testing.T) {
 		// Start mock SMTP server
 		server := smtpmock.New(smtpmock.ConfigurationAttr{
 			LogToStdout:       false,
@@ -969,7 +971,12 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 			ProjectName:    "Test Project",
 		}
 
-		// Setup mock expectations - ICS should NOT be generated for past meetings
+		// Setup mock expectations - ICS is now generated even for past meetings
+		mockICSGenerator.On("GenerateMeetingUpdateICS", mock.MatchedBy(func(params ICSMeetingUpdateParams) bool {
+			return params.MeetingUID == "past-updated-meeting-uid" &&
+				params.MeetingTitle == "Past Updated Meeting"
+		})).Return("BEGIN:VCALENDAR\r\nEND:VCALENDAR", nil)
+
 		mockTemplateManager.On("RenderUpdatedInvitation", mock.Anything).Return(&RenderedEmail{
 			HTML: "<html>Past Updated Meeting</html>",
 			Text: "Past Updated Meeting",
@@ -979,10 +986,10 @@ func TestSMTPService_SendRegistrantUpdatedInvitation(t *testing.T) {
 		err := service.SendRegistrantUpdatedInvitation(ctx, updatedInvitation)
 
 		assert.NoError(t, err)
-		mockICSGenerator.AssertNotCalled(t, "GenerateMeetingUpdateICS")
+		mockICSGenerator.AssertExpectations(t)
 		mockTemplateManager.AssertExpectations(t)
 
-		// Verify email was sent without ICS attachment
+		// Verify email was sent with ICS attachment
 		_ = waitForMessages(t, server, 1, 2*time.Second)
 	})
 
