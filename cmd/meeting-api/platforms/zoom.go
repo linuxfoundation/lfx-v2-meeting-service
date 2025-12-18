@@ -78,7 +78,8 @@ func SetupZoom(config ZoomConfig) ZoomConfig {
 		slog.Info("Zoom webhook validation configured")
 		config.Validator = validator
 	default:
-		slog.Warn("Zoom webhook validation not configured", logging.PriorityCritical())
+		slog.Warn("Zoom webhook validation not configured - using mock validator", logging.PriorityCritical())
+		config.Validator = webhook.NewMockWebhookValidator()
 	}
 
 	return config
