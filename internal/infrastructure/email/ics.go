@@ -621,6 +621,12 @@ func buildDescription(params DescriptionParams) string {
 		desc.WriteString("\n")
 	}
 
+	if params.DirectZoomJoinLink != "" {
+		desc.WriteString("If you cannot log in via LFX One, you can use this direct Zoom join link: ")
+		desc.WriteString(params.DirectZoomJoinLink)
+		desc.WriteString("\n")
+	}
+
 	if params.MeetingID != "" {
 		desc.WriteString("\n")
 		desc.WriteString("To dial in, find your local number: https://zoom.us/zoomconference\n")
@@ -632,12 +638,6 @@ func buildDescription(params DescriptionParams) string {
 			desc.WriteString(params.MeetingPasscode)
 			desc.WriteString("#\n\n")
 		}
-	}
-
-	if params.DirectZoomJoinLink != "" {
-		desc.WriteString("If you cannot log in via LFX One, you can use this direct Zoom join link: ")
-		desc.WriteString(params.DirectZoomJoinLink)
-		desc.WriteString("\n")
 	}
 
 	return desc.String()
