@@ -56,10 +56,14 @@ type Client struct {
 	DeletePastMeetingAttachmentEndpoint       goa.Endpoint
 	ReadyzEndpoint                            goa.Endpoint
 	LivezEndpoint                             goa.Endpoint
+	CreateItxMeetingEndpoint                  goa.Endpoint
+	GetItxMeetingEndpoint                     goa.Endpoint
+	DeleteItxMeetingEndpoint                  goa.Endpoint
+	UpdateItxMeetingEndpoint                  goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -102,6 +106,10 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		DeletePastMeetingAttachmentEndpoint:       deletePastMeetingAttachment,
 		ReadyzEndpoint:                            readyz,
 		LivezEndpoint:                             livez,
+		CreateItxMeetingEndpoint:                  createItxMeeting,
+		GetItxMeetingEndpoint:                     getItxMeeting,
+		DeleteItxMeetingEndpoint:                  deleteItxMeeting,
+		UpdateItxMeetingEndpoint:                  updateItxMeeting,
 	}
 }
 
@@ -753,4 +761,73 @@ func (c *Client) Livez(ctx context.Context) (res []byte, err error) {
 		return
 	}
 	return ires.([]byte), nil
+}
+
+// CreateItxMeeting calls the "create-itx-meeting" endpoint of the "Meeting
+// Service" service.
+// CreateItxMeeting may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "Conflict" (type *ConflictError): Conflict with existing meeting
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateItxMeeting(ctx context.Context, p *CreateItxMeetingPayload) (res *ITXZoomMeetingResponse, err error) {
+	var ires any
+	ires, err = c.CreateItxMeetingEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXZoomMeetingResponse), nil
+}
+
+// GetItxMeeting calls the "get-itx-meeting" endpoint of the "Meeting Service"
+// service.
+// GetItxMeeting may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxMeeting(ctx context.Context, p *GetItxMeetingPayload) (res *ITXZoomMeetingResponse, err error) {
+	var ires any
+	ires, err = c.GetItxMeetingEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXZoomMeetingResponse), nil
+}
+
+// DeleteItxMeeting calls the "delete-itx-meeting" endpoint of the "Meeting
+// Service" service.
+// DeleteItxMeeting may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteItxMeeting(ctx context.Context, p *DeleteItxMeetingPayload) (err error) {
+	_, err = c.DeleteItxMeetingEndpoint(ctx, p)
+	return
+}
+
+// UpdateItxMeeting calls the "update-itx-meeting" endpoint of the "Meeting
+// Service" service.
+// UpdateItxMeeting may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "Conflict" (type *ConflictError): Conflict with existing meeting
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateItxMeeting(ctx context.Context, p *UpdateItxMeetingPayload) (err error) {
+	_, err = c.UpdateItxMeetingEndpoint(ctx, p)
+	return
 }

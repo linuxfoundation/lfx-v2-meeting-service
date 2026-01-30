@@ -181,6 +181,22 @@ type Client struct {
 	// Livez Doer is the HTTP client used to make requests to the livez endpoint.
 	LivezDoer goahttp.Doer
 
+	// CreateItxMeeting Doer is the HTTP client used to make requests to the
+	// create-itx-meeting endpoint.
+	CreateItxMeetingDoer goahttp.Doer
+
+	// GetItxMeeting Doer is the HTTP client used to make requests to the
+	// get-itx-meeting endpoint.
+	GetItxMeetingDoer goahttp.Doer
+
+	// DeleteItxMeeting Doer is the HTTP client used to make requests to the
+	// delete-itx-meeting endpoint.
+	DeleteItxMeetingDoer goahttp.Doer
+
+	// UpdateItxMeeting Doer is the HTTP client used to make requests to the
+	// update-itx-meeting endpoint.
+	UpdateItxMeetingDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -253,6 +269,10 @@ func NewClient(
 		DeletePastMeetingAttachmentDoer:       doer,
 		ReadyzDoer:                            doer,
 		LivezDoer:                             doer,
+		CreateItxMeetingDoer:                  doer,
+		GetItxMeetingDoer:                     doer,
+		DeleteItxMeetingDoer:                  doer,
+		UpdateItxMeetingDoer:                  doer,
 		RestoreResponseBody:                   restoreBody,
 		scheme:                                scheme,
 		host:                                  host,
@@ -1232,6 +1252,102 @@ func (c *Client) Livez() goa.Endpoint {
 		resp, err := c.LivezDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "livez", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateItxMeeting returns an endpoint that makes HTTP requests to the Meeting
+// Service service create-itx-meeting server.
+func (c *Client) CreateItxMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateItxMeetingRequest(c.encoder)
+		decodeResponse = DecodeCreateItxMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateItxMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateItxMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-itx-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxMeeting returns an endpoint that makes HTTP requests to the Meeting
+// Service service get-itx-meeting server.
+func (c *Client) GetItxMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxMeetingRequest(c.encoder)
+		decodeResponse = DecodeGetItxMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteItxMeeting returns an endpoint that makes HTTP requests to the Meeting
+// Service service delete-itx-meeting server.
+func (c *Client) DeleteItxMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteItxMeetingRequest(c.encoder)
+		decodeResponse = DecodeDeleteItxMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteItxMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteItxMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateItxMeeting returns an endpoint that makes HTTP requests to the Meeting
+// Service service update-itx-meeting server.
+func (c *Client) UpdateItxMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateItxMeetingRequest(c.encoder)
+		decodeResponse = DecodeUpdateItxMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateItxMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateItxMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-meeting", err)
 		}
 		return decodeResponse(resp)
 	}

@@ -1,0 +1,259 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
+package proxy
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"time"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"golang.org/x/oauth2/clientcredentials"
+)
+
+// Config holds ITX proxy configuration
+type Config struct {
+	BaseURL      string
+	ClientID     string
+	ClientSecret string
+	Auth0Domain  string
+	Audience     string
+	Timeout      time.Duration
+}
+
+// Client implements domain.ITXProxyClient
+type Client struct {
+	httpClient *http.Client
+	config     Config
+}
+
+// NewClient creates a new ITX proxy client with OAuth2 M2M authentication
+func NewClient(config Config) *Client {
+	// Construct TokenURL from Auth0Domain
+	tokenURL := fmt.Sprintf("https://%s/oauth/token", config.Auth0Domain)
+
+	// Configure OAuth2 client credentials flow
+	oauthConfig := &clientcredentials.Config{
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
+		TokenURL:     tokenURL,
+		Scopes:       []string{"manage:projects", "manage:projects"},
+		EndpointParams: url.Values{
+			"audience": []string{config.Audience},
+		},
+	}
+
+	// Create HTTP client with OAuth2 token source (automatic token refresh)
+	ctx := context.Background()
+	httpClient := oauthConfig.Client(ctx)
+	httpClient.Timeout = config.Timeout
+
+	return &Client{
+		httpClient: httpClient,
+		config:     config,
+	}
+}
+
+// CreateZoomMeeting creates a new Zoom meeting in ITX
+func (c *Client) CreateZoomMeeting(ctx context.Context, req *itx.CreateZoomMeetingRequest) (*itx.ZoomMeetingResponse, error) {
+	// Marshal request
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings", c.config.BaseURL)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.ZoomMeetingResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse response", err)
+	}
+
+	return &result, nil
+}
+
+// GetZoomMeeting retrieves a Zoom meeting from ITX
+func (c *Client) GetZoomMeeting(ctx context.Context, meetingID string) (*itx.ZoomMeetingResponse, error) {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s", c.config.BaseURL, meetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.ZoomMeetingResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse response", err)
+	}
+
+	return &result, nil
+}
+
+// DeleteZoomMeeting deletes a Zoom meeting from ITX
+func (c *Client) DeleteZoomMeeting(ctx context.Context, meetingID string) error {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s", c.config.BaseURL, meetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body (for error messages)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// UpdateZoomMeeting updates a Zoom meeting in ITX
+func (c *Client) UpdateZoomMeeting(ctx context.Context, meetingID string, req *itx.CreateZoomMeetingRequest) error {
+	// Marshal request
+	body, err := json.Marshal(req)
+	if err != nil {
+		return domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s", c.config.BaseURL, meetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body (for error messages)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// mapHTTPError maps HTTP status codes to domain errors
+func (c *Client) mapHTTPError(statusCode int, body []byte) error {
+	var errMsg itx.ErrorResponse
+	_ = json.Unmarshal(body, &errMsg)
+
+	message := errMsg.Message
+	if message == "" {
+		message = errMsg.Error
+	}
+	if message == "" {
+		message = fmt.Sprintf("HTTP %d error", statusCode)
+	}
+
+	switch statusCode {
+	case http.StatusBadRequest:
+		return domain.NewValidationError(message)
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return domain.NewValidationError(fmt.Sprintf("authentication/authorization failed: %s", message))
+	case http.StatusNotFound:
+		return domain.NewNotFoundError(message)
+	case http.StatusConflict:
+		return domain.NewConflictError(message)
+	case http.StatusServiceUnavailable:
+		return domain.NewUnavailableError(message)
+	default:
+		return domain.NewInternalError(message)
+	}
+}

@@ -215,3 +215,23 @@ func ReadyzMeetingServicePath() string {
 func LivezMeetingServicePath() string {
 	return "/livez"
 }
+
+// CreateItxMeetingMeetingServicePath returns the URL path to the Meeting Service service create-itx-meeting HTTP endpoint.
+func CreateItxMeetingMeetingServicePath() string {
+	return "/itx/meetings"
+}
+
+// GetItxMeetingMeetingServicePath returns the URL path to the Meeting Service service get-itx-meeting HTTP endpoint.
+func GetItxMeetingMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v", meetingID)
+}
+
+// DeleteItxMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-itx-meeting HTTP endpoint.
+func DeleteItxMeetingMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v", meetingID)
+}
+
+// UpdateItxMeetingMeetingServicePath returns the URL path to the Meeting Service service update-itx-meeting HTTP endpoint.
+func UpdateItxMeetingMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v", meetingID)
+}

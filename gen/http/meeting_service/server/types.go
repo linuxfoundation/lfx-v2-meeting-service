@@ -368,6 +368,88 @@ type CreatePastMeetingAttachmentRequestBody struct {
 	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
 }
 
+// CreateItxMeetingRequestBody is the type of the "Meeting Service" service
+// "create-itx-meeting" endpoint HTTP request body.
+type CreateItxMeetingRequestBody struct {
+	// The UID of the LF project
+	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
+	// The title of the meeting
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// The start time of the meeting in RFC3339 format
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
+	// The duration of the meeting in minutes
+	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
+	// The description of the meeting
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
+	// The committees associated with the meeting
+	Committees []*CommitteeRequestBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes,omitempty" json:"early_join_time_minutes,omitempty" xml:"early_join_time_minutes,omitempty"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+}
+
+// UpdateItxMeetingRequestBody is the type of the "Meeting Service" service
+// "update-itx-meeting" endpoint HTTP request body.
+type UpdateItxMeetingRequestBody struct {
+	// The UID of the LF project
+	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
+	// The title of the meeting
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// The start time of the meeting in RFC3339 format
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
+	// The duration of the meeting in minutes
+	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
+	// The description of the meeting
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
+	// The committees associated with the meeting
+	Committees []*CommitteeRequestBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes,omitempty" json:"early_join_time_minutes,omitempty" xml:"early_join_time_minutes,omitempty"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -1050,6 +1132,124 @@ type GetPastMeetingAttachmentMetadataResponseBody struct {
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 	// The UID of the file in the shared Object Store (only for type='file')
 	SourceObjectUID *string `form:"source_object_uid,omitempty" json:"source_object_uid,omitempty" xml:"source_object_uid,omitempty"`
+}
+
+// CreateItxMeetingResponseBody is the type of the "Meeting Service" service
+// "create-itx-meeting" endpoint HTTP response body.
+type CreateItxMeetingResponseBody struct {
+	// The UID of the LF project
+	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
+	// The title of the meeting
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// The start time of the meeting in RFC3339 format
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
+	// The duration of the meeting in minutes
+	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
+	// The description of the meeting
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
+	// The committees associated with the meeting
+	Committees []*CommitteeResponseBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes,omitempty" json:"early_join_time_minutes,omitempty" xml:"early_join_time_minutes,omitempty"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Zoom meeting ID from ITX
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// 6-digit host key
+	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
+	// Zoom meeting passcode
+	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
+	// UUID password for join page
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
+	// Public meeting join URL
+	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Creation timestamp (RFC3339)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Last modification timestamp (RFC3339)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Meeting occurrences (for recurring)
+	Occurrences []*ITXOccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
+	// Number of registrants
+	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
+}
+
+// GetItxMeetingResponseBody is the type of the "Meeting Service" service
+// "get-itx-meeting" endpoint HTTP response body.
+type GetItxMeetingResponseBody struct {
+	// The UID of the LF project
+	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
+	// The title of the meeting
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// The start time of the meeting in RFC3339 format
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
+	// The duration of the meeting in minutes
+	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
+	// The visibility of the meeting's existence to other users
+	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
+	// The description of the meeting
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
+	// The committees associated with the meeting
+	Committees []*CommitteeResponseBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int `form:"early_join_time_minutes,omitempty" json:"early_join_time_minutes,omitempty" xml:"early_join_time_minutes,omitempty"`
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
+	// The recurrence of the meeting
+	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Zoom meeting ID from ITX
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// 6-digit host key
+	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
+	// Zoom meeting passcode
+	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
+	// UUID password for join page
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
+	// Public meeting join URL
+	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Creation timestamp (RFC3339)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Last modification timestamp (RFC3339)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Meeting occurrences (for recurring)
+	Occurrences []*ITXOccurrenceResponseBody `form:"occurrences,omitempty" json:"occurrences,omitempty" xml:"occurrences,omitempty"`
+	// Number of registrants
+	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 }
 
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
@@ -2562,6 +2762,256 @@ type ReadyzServiceUnavailableResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// CreateItxMeetingBadRequestResponseBody is the type of the "Meeting Service"
+// service "create-itx-meeting" endpoint HTTP response body for the
+// "BadRequest" error.
+type CreateItxMeetingBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingConflictResponseBody is the type of the "Meeting Service"
+// service "create-itx-meeting" endpoint HTTP response body for the "Conflict"
+// error.
+type CreateItxMeetingConflictResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingForbiddenResponseBody is the type of the "Meeting Service"
+// service "create-itx-meeting" endpoint HTTP response body for the "Forbidden"
+// error.
+type CreateItxMeetingForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "create-itx-meeting" endpoint HTTP response body for the
+// "InternalServerError" error.
+type CreateItxMeetingInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "create-itx-meeting" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type CreateItxMeetingServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "create-itx-meeting" endpoint HTTP response body for the
+// "Unauthorized" error.
+type CreateItxMeetingUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingBadRequestResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting" endpoint HTTP response body for the "BadRequest"
+// error.
+type GetItxMeetingBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingForbiddenResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting" endpoint HTTP response body for the "Forbidden"
+// error.
+type GetItxMeetingForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetItxMeetingInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting" endpoint HTTP response body for the "NotFound"
+// error.
+type GetItxMeetingNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetItxMeetingServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingUnauthorizedResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting" endpoint HTTP response body for the "Unauthorized"
+// error.
+type GetItxMeetingUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingBadRequestResponseBody is the type of the "Meeting Service"
+// service "delete-itx-meeting" endpoint HTTP response body for the
+// "BadRequest" error.
+type DeleteItxMeetingBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingForbiddenResponseBody is the type of the "Meeting Service"
+// service "delete-itx-meeting" endpoint HTTP response body for the "Forbidden"
+// error.
+type DeleteItxMeetingForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "delete-itx-meeting" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DeleteItxMeetingInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingNotFoundResponseBody is the type of the "Meeting Service"
+// service "delete-itx-meeting" endpoint HTTP response body for the "NotFound"
+// error.
+type DeleteItxMeetingNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "delete-itx-meeting" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type DeleteItxMeetingServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "delete-itx-meeting" endpoint HTTP response body for the
+// "Unauthorized" error.
+type DeleteItxMeetingUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingBadRequestResponseBody is the type of the "Meeting Service"
+// service "update-itx-meeting" endpoint HTTP response body for the
+// "BadRequest" error.
+type UpdateItxMeetingBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingConflictResponseBody is the type of the "Meeting Service"
+// service "update-itx-meeting" endpoint HTTP response body for the "Conflict"
+// error.
+type UpdateItxMeetingConflictResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingForbiddenResponseBody is the type of the "Meeting Service"
+// service "update-itx-meeting" endpoint HTTP response body for the "Forbidden"
+// error.
+type UpdateItxMeetingForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "update-itx-meeting" endpoint HTTP response body for the
+// "InternalServerError" error.
+type UpdateItxMeetingInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingNotFoundResponseBody is the type of the "Meeting Service"
+// service "update-itx-meeting" endpoint HTTP response body for the "NotFound"
+// error.
+type UpdateItxMeetingNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "update-itx-meeting" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type UpdateItxMeetingServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "update-itx-meeting" endpoint HTTP response body for the
+// "Unauthorized" error.
+type UpdateItxMeetingUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // MeetingFullResponseBody is used to define fields on response body types.
 type MeetingFullResponseBody struct {
 	// The UID of the meeting
@@ -3123,6 +3573,20 @@ type PastMeetingAttachmentResponseBody struct {
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 	// The UID of the file in the shared Object Store (only for type='file')
 	SourceObjectUID *string `form:"source_object_uid,omitempty" json:"source_object_uid,omitempty" xml:"source_object_uid,omitempty"`
+}
+
+// ITXOccurrenceResponseBody is used to define fields on response body types.
+type ITXOccurrenceResponseBody struct {
+	// Unix timestamp
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// RFC3339 start time
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
+	// Duration in minutes
+	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
+	// available or cancel
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// Number of registrants for this occurrence
+	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 }
 
 // RecurrenceRequestBody is used to define fields on request body types.
@@ -4058,6 +4522,112 @@ func NewGetPastMeetingAttachmentMetadataResponseBody(res *meetingservice.PastMee
 		UploadedAt:      res.UploadedAt,
 		Description:     res.Description,
 		SourceObjectUID: res.SourceObjectUID,
+	}
+	return body
+}
+
+// NewCreateItxMeetingResponseBody builds the HTTP response body from the
+// result of the "create-itx-meeting" endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *CreateItxMeetingResponseBody {
+	body := &CreateItxMeetingResponseBody{
+		ProjectUID:           res.ProjectUID,
+		Title:                res.Title,
+		StartTime:            res.StartTime,
+		Duration:             res.Duration,
+		Timezone:             res.Timezone,
+		Visibility:           res.Visibility,
+		Description:          res.Description,
+		Restricted:           res.Restricted,
+		MeetingType:          res.MeetingType,
+		EarlyJoinTimeMinutes: res.EarlyJoinTimeMinutes,
+		RecordingEnabled:     res.RecordingEnabled,
+		TranscriptEnabled:    res.TranscriptEnabled,
+		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
+		ArtifactVisibility:   res.ArtifactVisibility,
+		ID:                   res.ID,
+		HostKey:              res.HostKey,
+		Passcode:             res.Passcode,
+		Password:             res.Password,
+		PublicLink:           res.PublicLink,
+		CreatedAt:            res.CreatedAt,
+		ModifiedAt:           res.ModifiedAt,
+		RegistrantCount:      res.RegistrantCount,
+	}
+	if res.Committees != nil {
+		body.Committees = make([]*CommitteeResponseBody, len(res.Committees))
+		for i, val := range res.Committees {
+			if val == nil {
+				body.Committees[i] = nil
+				continue
+			}
+			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeResponseBody(val)
+		}
+	}
+	if res.Recurrence != nil {
+		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceResponseBody(res.Recurrence)
+	}
+	if res.Occurrences != nil {
+		body.Occurrences = make([]*ITXOccurrenceResponseBody, len(res.Occurrences))
+		for i, val := range res.Occurrences {
+			if val == nil {
+				body.Occurrences[i] = nil
+				continue
+			}
+			body.Occurrences[i] = marshalMeetingserviceITXOccurrenceToITXOccurrenceResponseBody(val)
+		}
+	}
+	return body
+}
+
+// NewGetItxMeetingResponseBody builds the HTTP response body from the result
+// of the "get-itx-meeting" endpoint of the "Meeting Service" service.
+func NewGetItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *GetItxMeetingResponseBody {
+	body := &GetItxMeetingResponseBody{
+		ProjectUID:           res.ProjectUID,
+		Title:                res.Title,
+		StartTime:            res.StartTime,
+		Duration:             res.Duration,
+		Timezone:             res.Timezone,
+		Visibility:           res.Visibility,
+		Description:          res.Description,
+		Restricted:           res.Restricted,
+		MeetingType:          res.MeetingType,
+		EarlyJoinTimeMinutes: res.EarlyJoinTimeMinutes,
+		RecordingEnabled:     res.RecordingEnabled,
+		TranscriptEnabled:    res.TranscriptEnabled,
+		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
+		ArtifactVisibility:   res.ArtifactVisibility,
+		ID:                   res.ID,
+		HostKey:              res.HostKey,
+		Passcode:             res.Passcode,
+		Password:             res.Password,
+		PublicLink:           res.PublicLink,
+		CreatedAt:            res.CreatedAt,
+		ModifiedAt:           res.ModifiedAt,
+		RegistrantCount:      res.RegistrantCount,
+	}
+	if res.Committees != nil {
+		body.Committees = make([]*CommitteeResponseBody, len(res.Committees))
+		for i, val := range res.Committees {
+			if val == nil {
+				body.Committees[i] = nil
+				continue
+			}
+			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeResponseBody(val)
+		}
+	}
+	if res.Recurrence != nil {
+		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceResponseBody(res.Recurrence)
+	}
+	if res.Occurrences != nil {
+		body.Occurrences = make([]*ITXOccurrenceResponseBody, len(res.Occurrences))
+		for i, val := range res.Occurrences {
+			if val == nil {
+				body.Occurrences[i] = nil
+				continue
+			}
+			body.Occurrences[i] = marshalMeetingserviceITXOccurrenceToITXOccurrenceResponseBody(val)
+		}
 	}
 	return body
 }
@@ -5717,6 +6287,279 @@ func NewReadyzServiceUnavailableResponseBody(res *meetingservice.ServiceUnavaila
 	return body
 }
 
+// NewCreateItxMeetingBadRequestResponseBody builds the HTTP response body from
+// the result of the "create-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxMeetingBadRequestResponseBody(res *meetingservice.BadRequestError) *CreateItxMeetingBadRequestResponseBody {
+	body := &CreateItxMeetingBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingConflictResponseBody builds the HTTP response body from
+// the result of the "create-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxMeetingConflictResponseBody(res *meetingservice.ConflictError) *CreateItxMeetingConflictResponseBody {
+	body := &CreateItxMeetingConflictResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingForbiddenResponseBody builds the HTTP response body from
+// the result of the "create-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxMeetingForbiddenResponseBody(res *meetingservice.ForbiddenError) *CreateItxMeetingForbiddenResponseBody {
+	body := &CreateItxMeetingForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "create-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxMeetingInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *CreateItxMeetingInternalServerErrorResponseBody {
+	body := &CreateItxMeetingInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "create-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *CreateItxMeetingServiceUnavailableResponseBody {
+	body := &CreateItxMeetingServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "create-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxMeetingUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *CreateItxMeetingUnauthorizedResponseBody {
+	body := &CreateItxMeetingUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingBadRequestResponseBody builds the HTTP response body from
+// the result of the "get-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewGetItxMeetingBadRequestResponseBody(res *meetingservice.BadRequestError) *GetItxMeetingBadRequestResponseBody {
+	body := &GetItxMeetingBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingForbiddenResponseBody builds the HTTP response body from the
+// result of the "get-itx-meeting" endpoint of the "Meeting Service" service.
+func NewGetItxMeetingForbiddenResponseBody(res *meetingservice.ForbiddenError) *GetItxMeetingForbiddenResponseBody {
+	body := &GetItxMeetingForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "get-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewGetItxMeetingInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetItxMeetingInternalServerErrorResponseBody {
+	body := &GetItxMeetingInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingNotFoundResponseBody builds the HTTP response body from the
+// result of the "get-itx-meeting" endpoint of the "Meeting Service" service.
+func NewGetItxMeetingNotFoundResponseBody(res *meetingservice.NotFoundError) *GetItxMeetingNotFoundResponseBody {
+	body := &GetItxMeetingNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingServiceUnavailableResponseBody builds the HTTP response body
+// from the result of the "get-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewGetItxMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetItxMeetingServiceUnavailableResponseBody {
+	body := &GetItxMeetingServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingUnauthorizedResponseBody builds the HTTP response body from
+// the result of the "get-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewGetItxMeetingUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetItxMeetingUnauthorizedResponseBody {
+	body := &GetItxMeetingUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingBadRequestResponseBody builds the HTTP response body from
+// the result of the "delete-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewDeleteItxMeetingBadRequestResponseBody(res *meetingservice.BadRequestError) *DeleteItxMeetingBadRequestResponseBody {
+	body := &DeleteItxMeetingBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingForbiddenResponseBody builds the HTTP response body from
+// the result of the "delete-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewDeleteItxMeetingForbiddenResponseBody(res *meetingservice.ForbiddenError) *DeleteItxMeetingForbiddenResponseBody {
+	body := &DeleteItxMeetingForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "delete-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewDeleteItxMeetingInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *DeleteItxMeetingInternalServerErrorResponseBody {
+	body := &DeleteItxMeetingInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingNotFoundResponseBody builds the HTTP response body from
+// the result of the "delete-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewDeleteItxMeetingNotFoundResponseBody(res *meetingservice.NotFoundError) *DeleteItxMeetingNotFoundResponseBody {
+	body := &DeleteItxMeetingNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "delete-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewDeleteItxMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *DeleteItxMeetingServiceUnavailableResponseBody {
+	body := &DeleteItxMeetingServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "delete-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewDeleteItxMeetingUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *DeleteItxMeetingUnauthorizedResponseBody {
+	body := &DeleteItxMeetingUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingBadRequestResponseBody builds the HTTP response body from
+// the result of the "update-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewUpdateItxMeetingBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdateItxMeetingBadRequestResponseBody {
+	body := &UpdateItxMeetingBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingConflictResponseBody builds the HTTP response body from
+// the result of the "update-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewUpdateItxMeetingConflictResponseBody(res *meetingservice.ConflictError) *UpdateItxMeetingConflictResponseBody {
+	body := &UpdateItxMeetingConflictResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingForbiddenResponseBody builds the HTTP response body from
+// the result of the "update-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewUpdateItxMeetingForbiddenResponseBody(res *meetingservice.ForbiddenError) *UpdateItxMeetingForbiddenResponseBody {
+	body := &UpdateItxMeetingForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "update-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewUpdateItxMeetingInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdateItxMeetingInternalServerErrorResponseBody {
+	body := &UpdateItxMeetingInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingNotFoundResponseBody builds the HTTP response body from
+// the result of the "update-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewUpdateItxMeetingNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdateItxMeetingNotFoundResponseBody {
+	body := &UpdateItxMeetingNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "update-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewUpdateItxMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdateItxMeetingServiceUnavailableResponseBody {
+	body := &UpdateItxMeetingServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "update-itx-meeting" endpoint of the "Meeting
+// Service" service.
+func NewUpdateItxMeetingUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *UpdateItxMeetingUnauthorizedResponseBody {
+	body := &UpdateItxMeetingUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewGetMeetingsPayload builds a Meeting Service service get-meetings endpoint
 // payload.
 func NewGetMeetingsPayload(version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingsPayload {
@@ -6391,6 +7234,107 @@ func NewDeletePastMeetingAttachmentPayload(pastMeetingUID string, uid string, ve
 	return v
 }
 
+// NewCreateItxMeetingPayload builds a Meeting Service service
+// create-itx-meeting endpoint payload.
+func NewCreateItxMeetingPayload(body *CreateItxMeetingRequestBody, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateItxMeetingPayload {
+	v := &meetingservice.CreateItxMeetingPayload{
+		ProjectUID:           *body.ProjectUID,
+		Title:                *body.Title,
+		StartTime:            *body.StartTime,
+		Duration:             *body.Duration,
+		Timezone:             *body.Timezone,
+		Visibility:           *body.Visibility,
+		Description:          body.Description,
+		Restricted:           body.Restricted,
+		MeetingType:          body.MeetingType,
+		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
+		RecordingEnabled:     body.RecordingEnabled,
+		TranscriptEnabled:    body.TranscriptEnabled,
+		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		ArtifactVisibility:   body.ArtifactVisibility,
+	}
+	if body.Committees != nil {
+		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
+		for i, val := range body.Committees {
+			if val == nil {
+				v.Committees[i] = nil
+				continue
+			}
+			v.Committees[i] = unmarshalCommitteeRequestBodyToMeetingserviceCommittee(val)
+		}
+	}
+	if body.Recurrence != nil {
+		v.Recurrence = unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.XSync = xSync
+
+	return v
+}
+
+// NewGetItxMeetingPayload builds a Meeting Service service get-itx-meeting
+// endpoint payload.
+func NewGetItxMeetingPayload(meetingID string, version *string, bearerToken *string) *meetingservice.GetItxMeetingPayload {
+	v := &meetingservice.GetItxMeetingPayload{}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewDeleteItxMeetingPayload builds a Meeting Service service
+// delete-itx-meeting endpoint payload.
+func NewDeleteItxMeetingPayload(meetingID string, version *string, bearerToken *string) *meetingservice.DeleteItxMeetingPayload {
+	v := &meetingservice.DeleteItxMeetingPayload{}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewUpdateItxMeetingPayload builds a Meeting Service service
+// update-itx-meeting endpoint payload.
+func NewUpdateItxMeetingPayload(body *UpdateItxMeetingRequestBody, meetingID string, version *string, bearerToken *string, xSync *bool) *meetingservice.UpdateItxMeetingPayload {
+	v := &meetingservice.UpdateItxMeetingPayload{
+		ProjectUID:           *body.ProjectUID,
+		Title:                *body.Title,
+		StartTime:            *body.StartTime,
+		Duration:             *body.Duration,
+		Timezone:             *body.Timezone,
+		Visibility:           *body.Visibility,
+		Description:          body.Description,
+		Restricted:           body.Restricted,
+		MeetingType:          body.MeetingType,
+		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
+		RecordingEnabled:     body.RecordingEnabled,
+		TranscriptEnabled:    body.TranscriptEnabled,
+		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		ArtifactVisibility:   body.ArtifactVisibility,
+	}
+	if body.Committees != nil {
+		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
+		for i, val := range body.Committees {
+			if val == nil {
+				v.Committees[i] = nil
+				continue
+			}
+			v.Committees[i] = unmarshalCommitteeRequestBodyToMeetingserviceCommittee(val)
+		}
+	}
+	if body.Recurrence != nil {
+		v.Recurrence = unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+	v.XSync = xSync
+
+	return v
+}
+
 // ValidateCreateMeetingRequestBody runs the validations defined on
 // Create-MeetingRequestBody
 func ValidateCreateMeetingRequestBody(body *CreateMeetingRequestBody) (err error) {
@@ -6985,6 +7929,164 @@ func ValidateCreatePastMeetingAttachmentRequestBody(body *CreatePastMeetingAttac
 	}
 	if body.SourceObjectUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.source_object_uid", *body.SourceObjectUID, goa.FormatUUID))
+	}
+	return
+}
+
+// ValidateCreateItxMeetingRequestBody runs the validations defined on
+// Create-Itx-MeetingRequestBody
+func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err error) {
+	if body.ProjectUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("project_uid", "body"))
+	}
+	if body.Title == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("title", "body"))
+	}
+	if body.StartTime == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("start_time", "body"))
+	}
+	if body.Duration == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "body"))
+	}
+	if body.Timezone == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timezone", "body"))
+	}
+	if body.Visibility == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("visibility", "body"))
+	}
+	if body.StartTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
+	}
+	if body.Duration != nil {
+		if *body.Duration < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
+		}
+	}
+	if body.Duration != nil {
+		if *body.Duration > 600 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
+		}
+	}
+	if body.Visibility != nil {
+		if !(*body.Visibility == "public" || *body.Visibility == "private") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.visibility", *body.Visibility, []any{"public", "private"}))
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
+	for _, e := range body.Committees {
+		if e != nil {
+			if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	if body.MeetingType != nil {
+		if !(*body.MeetingType == "Board" || *body.MeetingType == "Maintainers" || *body.MeetingType == "Marketing" || *body.MeetingType == "Technical" || *body.MeetingType == "Legal" || *body.MeetingType == "Other" || *body.MeetingType == "None") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.meeting_type", *body.MeetingType, []any{"Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None"}))
+		}
+	}
+	if body.EarlyJoinTimeMinutes != nil {
+		if *body.EarlyJoinTimeMinutes < 10 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
+		}
+	}
+	if body.EarlyJoinTimeMinutes != nil {
+		if *body.EarlyJoinTimeMinutes > 60 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
+		}
+	}
+	if body.ArtifactVisibility != nil {
+		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+		}
+	}
+	if body.Recurrence != nil {
+		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateUpdateItxMeetingRequestBody runs the validations defined on
+// Update-Itx-MeetingRequestBody
+func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err error) {
+	if body.ProjectUID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("project_uid", "body"))
+	}
+	if body.Title == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("title", "body"))
+	}
+	if body.StartTime == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("start_time", "body"))
+	}
+	if body.Duration == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "body"))
+	}
+	if body.Timezone == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timezone", "body"))
+	}
+	if body.Visibility == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("visibility", "body"))
+	}
+	if body.StartTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
+	}
+	if body.Duration != nil {
+		if *body.Duration < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
+		}
+	}
+	if body.Duration != nil {
+		if *body.Duration > 600 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
+		}
+	}
+	if body.Visibility != nil {
+		if !(*body.Visibility == "public" || *body.Visibility == "private") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.visibility", *body.Visibility, []any{"public", "private"}))
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
+	for _, e := range body.Committees {
+		if e != nil {
+			if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	if body.MeetingType != nil {
+		if !(*body.MeetingType == "Board" || *body.MeetingType == "Maintainers" || *body.MeetingType == "Marketing" || *body.MeetingType == "Technical" || *body.MeetingType == "Legal" || *body.MeetingType == "Other" || *body.MeetingType == "None") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.meeting_type", *body.MeetingType, []any{"Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None"}))
+		}
+	}
+	if body.EarlyJoinTimeMinutes != nil {
+		if *body.EarlyJoinTimeMinutes < 10 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
+		}
+	}
+	if body.EarlyJoinTimeMinutes != nil {
+		if *body.EarlyJoinTimeMinutes > 60 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
+		}
+	}
+	if body.ArtifactVisibility != nil {
+		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+		}
+	}
+	if body.Recurrence != nil {
+		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
 	}
 	return
 }

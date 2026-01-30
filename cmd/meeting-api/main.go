@@ -13,12 +13,15 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
+	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -232,6 +235,22 @@ func run() int {
 		meetingService,
 	)
 
+	// Initialize ITX proxy client and service (if enabled)
+	var itxMeetingService *itxservice.MeetingService
+	if env.ITXConfig.Enabled {
+		itxProxyConfig := proxy.Config{
+			BaseURL:      env.ITXConfig.BaseURL,
+			ClientID:     env.ITXConfig.ClientID,
+			ClientSecret: env.ITXConfig.ClientSecret,
+			Auth0Domain:  env.ITXConfig.Auth0Domain,
+			Audience:     env.ITXConfig.Audience,
+			Timeout:      30 * time.Second,
+		}
+		itxProxyClient := proxy.NewClient(itxProxyConfig)
+		itxMeetingService = itxservice.NewMeetingService(itxProxyClient)
+		slog.InfoContext(ctx, "ITX proxy client initialized")
+	}
+
 	svc := NewMeetingsAPI(
 		authService,
 		meetingService,
@@ -247,6 +266,7 @@ func run() int {
 		meetingHandler,
 		committeeHandler,
 		projectHandler,
+		itxMeetingService,
 	)
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)

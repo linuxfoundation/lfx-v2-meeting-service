@@ -106,6 +106,14 @@ type Service interface {
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
 	Livez(context.Context) (res []byte, err error)
+	// Create a Zoom meeting through ITX API proxy
+	CreateItxMeeting(context.Context, *CreateItxMeetingPayload) (res *ITXZoomMeetingResponse, err error)
+	// Get a Zoom meeting through ITX API proxy
+	GetItxMeeting(context.Context, *GetItxMeetingPayload) (res *ITXZoomMeetingResponse, err error)
+	// Delete a Zoom meeting through ITX API proxy
+	DeleteItxMeeting(context.Context, *DeleteItxMeetingPayload) (err error)
+	// Update a Zoom meeting through ITX API proxy
+	UpdateItxMeeting(context.Context, *UpdateItxMeetingPayload) (err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -128,7 +136,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [41]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez"}
+var MethodNames = [45]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -151,6 +159,54 @@ type ConflictError struct {
 	Code string
 	// Error message
 	Message string
+}
+
+// CreateItxMeetingPayload is the payload type of the Meeting Service service
+// create-itx-meeting method.
+type CreateItxMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
+	// The UID of the LF project
+	ProjectUID string
+	// The title of the meeting
+	Title string
+	// The start time of the meeting in RFC3339 format
+	StartTime string
+	// The duration of the meeting in minutes
+	Duration int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string
+	// The visibility of the meeting's existence to other users
+	Visibility string
+	// The description of the meeting
+	Description *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
 }
 
 // CreateMeetingAttachmentPayload is the payload type of the Meeting Service
@@ -438,6 +494,17 @@ type CreatePastMeetingPayload struct {
 	Sessions []*Session
 }
 
+// DeleteItxMeetingPayload is the payload type of the Meeting Service service
+// delete-itx-meeting method.
+type DeleteItxMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The Zoom meeting ID
+	MeetingID string
+}
+
 // DeleteMeetingAttachmentPayload is the payload type of the Meeting Service
 // service delete-meeting-attachment method.
 type DeleteMeetingAttachmentPayload struct {
@@ -554,6 +621,24 @@ type DeletePastMeetingPayload struct {
 	Version *string
 	// The unique identifier of the past meeting
 	UID *string
+}
+
+type ForbiddenError struct {
+	// HTTP status code
+	Code string
+	// Error message
+	Message string
+}
+
+// GetItxMeetingPayload is the payload type of the Meeting Service service
+// get-itx-meeting method.
+type GetItxMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The Zoom meeting ID
+	MeetingID string
 }
 
 // GetMeetingAttachmentMetadataPayload is the payload type of the Meeting
@@ -877,6 +962,79 @@ type GetPastMeetingsResult struct {
 	PastMeetings []*PastMeeting
 	// Cache control header
 	CacheControl *string
+}
+
+// Meeting occurrence from ITX
+type ITXOccurrence struct {
+	// Unix timestamp
+	OccurrenceID *string
+	// RFC3339 start time
+	StartTime *string
+	// Duration in minutes
+	Duration *int
+	// available or cancel
+	Status *string
+	// Number of registrants for this occurrence
+	RegistrantCount *int
+}
+
+// ITXZoomMeetingResponse is the result type of the Meeting Service service
+// create-itx-meeting method.
+type ITXZoomMeetingResponse struct {
+	// The UID of the LF project
+	ProjectUID *string
+	// The title of the meeting
+	Title *string
+	// The start time of the meeting in RFC3339 format
+	StartTime *string
+	// The duration of the meeting in minutes
+	Duration *int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string
+	// The visibility of the meeting's existence to other users
+	Visibility *string
+	// The description of the meeting
+	Description *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
+	// Zoom meeting ID from ITX
+	ID *string
+	// 6-digit host key
+	HostKey *string
+	// Zoom meeting passcode
+	Passcode *string
+	// UUID password for join page
+	Password *string
+	// Public meeting join URL
+	PublicLink *string
+	// Creation timestamp (RFC3339)
+	CreatedAt *string
+	// Last modification timestamp (RFC3339)
+	ModifiedAt *string
+	// Meeting occurrences (for recurring)
+	Occurrences []*ITXOccurrence
+	// Number of registrants
+	RegistrantCount *int
 }
 
 type InternalServerError struct {
@@ -1498,6 +1656,56 @@ type UnauthorizedError struct {
 	Message string
 }
 
+// UpdateItxMeetingPayload is the payload type of the Meeting Service service
+// update-itx-meeting method.
+type UpdateItxMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Determines if the operation should be synchronous (true) or asynchronous
+	// (false, default)
+	XSync *bool
+	// The Zoom meeting ID
+	MeetingID string
+	// The UID of the LF project
+	ProjectUID string
+	// The title of the meeting
+	Title string
+	// The start time of the meeting in RFC3339 format
+	StartTime string
+	// The duration of the meeting in minutes
+	Duration int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string
+	// The visibility of the meeting's existence to other users
+	Visibility string
+	// The description of the meeting
+	Description *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting. This is usually dependent on the committee(s)
+	// associated with the meeting
+	MeetingType *string
+	// The number of minutes that users are allowed to join the meeting early
+	// without being kicked out
+	EarlyJoinTimeMinutes *int
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// The visibility of artifacts to users (e.g. public, only for registrants,
+	// only for hosts)
+	ArtifactVisibility *string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
+}
+
 // UpdateMeetingBasePayload is the payload type of the Meeting Service service
 // update-meeting-base method.
 type UpdateMeetingBasePayload struct {
@@ -1759,6 +1967,23 @@ func (e *ConflictError) ErrorName() string {
 // GoaErrorName returns "ConflictError".
 func (e *ConflictError) GoaErrorName() string {
 	return "Conflict"
+}
+
+// Error returns an error description.
+func (e *ForbiddenError) Error() string {
+	return ""
+}
+
+// ErrorName returns "ForbiddenError".
+//
+// Deprecated: Use GoaErrorName - https://github.com/goadesign/goa/issues/3105
+func (e *ForbiddenError) ErrorName() string {
+	return e.GoaErrorName()
+}
+
+// GoaErrorName returns "ForbiddenError".
+func (e *ForbiddenError) GoaErrorName() string {
+	return "Forbidden"
 }
 
 // Error returns an error description.

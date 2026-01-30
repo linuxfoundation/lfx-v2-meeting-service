@@ -29,6 +29,17 @@ type environment struct {
 	ProjectLogoBaseURL string
 	LFXAppOrigin       string
 	EmailConfig        emailConfig
+	ITXConfig          itxConfig
+}
+
+// itxConfig holds ITX proxy configuration
+type itxConfig struct {
+	Enabled      bool
+	BaseURL      string
+	ClientID     string
+	ClientSecret string
+	Auth0Domain  string
+	Audience     string
 }
 
 // emailConfig holds all email-related configuration
@@ -122,6 +133,7 @@ func parseEnv() environment {
 		ProjectLogoBaseURL: projectLogoBaseURL,
 		LFXAppOrigin:       lfxAppOrigin,
 		EmailConfig:        parseEmailConfig(),
+		ITXConfig:          parseITXConfig(),
 	}
 }
 
@@ -158,5 +170,38 @@ func parseEmailConfig() emailConfig {
 		SMTPFrom:     from,
 		SMTPUsername: os.Getenv("SMTP_USERNAME"),
 		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
+	}
+}
+
+// parseITXConfig parses ITX proxy configuration from environment variables
+func parseITXConfig() itxConfig {
+	enabled := false
+	enabledStr := os.Getenv("ITX_ENABLED")
+	if enabledStr == "true" {
+		enabled = true
+	}
+
+	baseURL := os.Getenv("ITX_BASE_URL")
+	if baseURL == "" {
+		baseURL = "https://api.dev.itx.linuxfoundation.org"
+	}
+
+	auth0Domain := os.Getenv("ITX_AUTH0_DOMAIN")
+	if auth0Domain == "" {
+		auth0Domain = "linuxfoundation-dev.auth0.com"
+	}
+
+	audience := os.Getenv("ITX_AUDIENCE")
+	if audience == "" {
+		audience = "https://api-gw.dev.platform.linuxfoundation.org/"
+	}
+
+	return itxConfig{
+		Enabled:      enabled,
+		BaseURL:      baseURL,
+		ClientID:     os.Getenv("ITX_CLIENT_ID"),
+		ClientSecret: os.Getenv("ITX_CLIENT_SECRET"),
+		Auth0Domain:  auth0Domain,
+		Audience:     audience,
 	}
 }

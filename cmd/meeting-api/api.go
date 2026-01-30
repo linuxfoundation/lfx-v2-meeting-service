@@ -15,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/middleware"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
+	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"goa.design/goa/v3/security"
 )
@@ -35,6 +36,7 @@ type MeetingsAPI struct {
 	committeeHandler              *handlers.CommitteeHandlers
 	projectHandler                *handlers.ProjectHandlers
 	zoomWebhookHandler            *handlers.ZoomWebhookHandler
+	itxMeetingService             *itxservice.MeetingService
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
@@ -53,6 +55,7 @@ func NewMeetingsAPI(
 	meetingHandler *handlers.MeetingHandler,
 	committeeHandler *handlers.CommitteeHandlers,
 	projectHandler *handlers.ProjectHandlers,
+	itxMeetingService *itxservice.MeetingService,
 ) *MeetingsAPI {
 	return &MeetingsAPI{
 		authService:                   authService,
@@ -69,6 +72,7 @@ func NewMeetingsAPI(
 		meetingHandler:                meetingHandler,
 		committeeHandler:              committeeHandler,
 		projectHandler:                projectHandler,
+		itxMeetingService:             itxMeetingService,
 	}
 }
 

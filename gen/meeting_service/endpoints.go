@@ -57,6 +57,10 @@ type Endpoints struct {
 	DeletePastMeetingAttachment       goa.Endpoint
 	Readyz                            goa.Endpoint
 	Livez                             goa.Endpoint
+	CreateItxMeeting                  goa.Endpoint
+	GetItxMeeting                     goa.Endpoint
+	DeleteItxMeeting                  goa.Endpoint
+	UpdateItxMeeting                  goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -106,6 +110,10 @@ func NewEndpoints(s Service) *Endpoints {
 		DeletePastMeetingAttachment:       NewDeletePastMeetingAttachmentEndpoint(s, a.JWTAuth),
 		Readyz:                            NewReadyzEndpoint(s),
 		Livez:                             NewLivezEndpoint(s),
+		CreateItxMeeting:                  NewCreateItxMeetingEndpoint(s, a.JWTAuth),
+		GetItxMeeting:                     NewGetItxMeetingEndpoint(s, a.JWTAuth),
+		DeleteItxMeeting:                  NewDeleteItxMeetingEndpoint(s, a.JWTAuth),
+		UpdateItxMeeting:                  NewUpdateItxMeetingEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -153,6 +161,10 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.DeletePastMeetingAttachment = m(e.DeletePastMeetingAttachment)
 	e.Readyz = m(e.Readyz)
 	e.Livez = m(e.Livez)
+	e.CreateItxMeeting = m(e.CreateItxMeeting)
+	e.GetItxMeeting = m(e.GetItxMeeting)
+	e.DeleteItxMeeting = m(e.DeleteItxMeeting)
+	e.UpdateItxMeeting = m(e.UpdateItxMeeting)
 }
 
 // NewGetMeetingsEndpoint returns an endpoint function that calls the method
@@ -1060,5 +1072,97 @@ func NewReadyzEndpoint(s Service) goa.Endpoint {
 func NewLivezEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
 		return s.Livez(ctx)
+	}
+}
+
+// NewCreateItxMeetingEndpoint returns an endpoint function that calls the
+// method "create-itx-meeting" of service "Meeting Service".
+func NewCreateItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreateItxMeetingPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreateItxMeeting(ctx, p)
+	}
+}
+
+// NewGetItxMeetingEndpoint returns an endpoint function that calls the method
+// "get-itx-meeting" of service "Meeting Service".
+func NewGetItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxMeetingPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxMeeting(ctx, p)
+	}
+}
+
+// NewDeleteItxMeetingEndpoint returns an endpoint function that calls the
+// method "delete-itx-meeting" of service "Meeting Service".
+func NewDeleteItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeleteItxMeetingPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeleteItxMeeting(ctx, p)
+	}
+}
+
+// NewUpdateItxMeetingEndpoint returns an endpoint function that calls the
+// method "update-itx-meeting" of service "Meeting Service".
+func NewUpdateItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdateItxMeetingPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.UpdateItxMeeting(ctx, p)
 	}
 }

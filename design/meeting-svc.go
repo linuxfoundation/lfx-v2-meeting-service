@@ -1554,6 +1554,191 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// ITX Zoom API Proxy endpoints
+	Method("create-itx-meeting", func() {
+		Description("Create a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			XSyncAttribute()
+			// Request fields
+			ITXProjectUIDAttribute()
+			TitleAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+			VisibilityAttribute()
+			DescriptionAttribute()
+			RestrictedAttribute()
+			CommitteesAttribute()
+			MeetingTypeAttribute()
+			EarlyJoinTimeMinutesAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			YoutubeUploadEnabledAttribute()
+			ArtifactVisibilityAttribute()
+			RecurrenceAttribute()
+			Required("project_uid", "title", "start_time", "duration", "timezone", "visibility")
+		})
+
+		Result(ITXZoomMeetingResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("Conflict", ConflictError, "Conflict with existing meeting")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-meeting", func() {
+		Description("Get a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The Zoom meeting ID", func() {
+				Example("1234567890")
+			})
+			Required("meeting_id")
+		})
+
+		Result(ITXZoomMeetingResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-meeting", func() {
+		Description("Delete a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The Zoom meeting ID", func() {
+				Example("1234567890")
+			})
+			Required("meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-meeting", func() {
+		Description("Update a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			XSyncAttribute()
+			Attribute("meeting_id", String, "The Zoom meeting ID", func() {
+				Example("1234567890")
+			})
+			// Request fields (same as create)
+			ITXProjectUIDAttribute()
+			TitleAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+			VisibilityAttribute()
+			DescriptionAttribute()
+			RestrictedAttribute()
+			CommitteesAttribute()
+			MeetingTypeAttribute()
+			EarlyJoinTimeMinutesAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			YoutubeUploadEnabledAttribute()
+			ArtifactVisibilityAttribute()
+			RecurrenceAttribute()
+			Required("meeting_id", "project_uid", "title", "start_time", "duration", "timezone", "visibility")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("Conflict", ConflictError, "Conflict with existing meeting")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/meetings/{meeting_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")
