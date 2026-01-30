@@ -6,6 +6,100 @@ servers:
     - url: http://localhost:80
       description: Default server for Meeting Service
 paths:
+    /itx/meeting_count:
+        get:
+            tags:
+                - Meeting Service
+            summary: get-itx-meeting-count Meeting Service
+            description: Get the count of Zoom meetings for a project through ITX API proxy
+            operationId: Meeting Service#get-itx-meeting-count
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: project_uid
+                  in: query
+                  description: The UID of the LF project
+                  allowEmptyValue: true
+                  required: true
+                  schema:
+                    type: string
+                    description: The UID of the LF project
+                    example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                  example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ITXMeetingCountResponse'
+                            example:
+                                meeting_count: 42
+                "400":
+                    description: 'BadRequest: Bad request'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BadRequestError'
+                            example:
+                                code: "400"
+                                message: The request was invalid.
+                "401":
+                    description: 'Unauthorized: Unauthorized'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UnauthorizedError'
+                            example:
+                                code: "401"
+                                message: Unauthorized request.
+                "403":
+                    description: 'Forbidden: Forbidden'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ForbiddenError'
+                            example:
+                                code: "403"
+                                message: Access forbidden.
+                "404":
+                    description: 'NotFound: Project not found'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
     /itx/meetings:
         post:
             tags:
@@ -9070,6 +9164,19 @@ components:
                         passcode: "147258"
             required:
                 - past_meetings
+        ITXMeetingCountResponse:
+            type: object
+            properties:
+                meeting_count:
+                    type: integer
+                    description: Number of meetings for the project
+                    example: 42
+                    format: int64
+            description: Response from getting meeting count through ITX API proxy
+            example:
+                meeting_count: 42
+            required:
+                - meeting_count
         ITXOccurrence:
             type: object
             properties:

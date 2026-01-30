@@ -83,3 +83,18 @@ func (s *MeetingsAPI) DeleteItxMeeting(ctx context.Context, p *meetingsvc.Delete
 
 	return nil
 }
+
+// GetItxMeetingCount retrieves the meeting count for a project via ITX proxy
+func (s *MeetingsAPI) GetItxMeetingCount(ctx context.Context, p *meetingsvc.GetItxMeetingCountPayload) (*meetingsvc.ITXMeetingCountResponse, error) {
+	// Call ITX service
+	resp, err := s.itxMeetingService.GetMeetingCount(ctx, p.ProjectUID)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	// Convert ITX response to Goa response
+	goaResp := &meetingsvc.ITXMeetingCountResponse{
+		MeetingCount: resp.MeetingCount,
+	}
+	return goaResp, nil
+}

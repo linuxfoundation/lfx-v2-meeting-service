@@ -83,6 +83,15 @@ var ITXOccurrence = Type("ITXOccurrence", func() {
 	Attribute("registrant_count", Int, "Number of registrants for this occurrence")
 })
 
+// ITXMeetingCountResponse represents the response from getting meeting count via ITX proxy
+var ITXMeetingCountResponse = Type("ITXMeetingCountResponse", func() {
+	Description("Response from getting meeting count through ITX API proxy")
+	Attribute("meeting_count", Int, "Number of meetings for the project", func() {
+		Example(42)
+	})
+	Required("meeting_count")
+})
+
 // ForbiddenError is the DSL type for a forbidden error (403).
 var ForbiddenError = Type("ForbiddenError", func() {
 	Attribute("code", String, "HTTP status code", func() {

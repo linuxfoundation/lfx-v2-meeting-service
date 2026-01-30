@@ -73,6 +73,17 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, meetingID string) er
 	return nil
 }
 
+// GetMeetingCount retrieves the count of meetings for a project via ITX proxy
+func (s *MeetingService) GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error) {
+	// Call ITX proxy
+	resp, err := s.proxyClient.GetMeetingCount(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{

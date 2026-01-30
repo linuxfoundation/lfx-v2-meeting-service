@@ -2919,3 +2919,37 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 
 	return v, nil
 }
+
+// BuildGetItxMeetingCountPayload builds the payload for the Meeting Service
+// get-itx-meeting-count endpoint from CLI flags.
+func BuildGetItxMeetingCountPayload(meetingServiceGetItxMeetingCountVersion string, meetingServiceGetItxMeetingCountProjectUID string, meetingServiceGetItxMeetingCountBearerToken string) (*meetingservice.GetItxMeetingCountPayload, error) {
+	var err error
+	var version *string
+	{
+		if meetingServiceGetItxMeetingCountVersion != "" {
+			version = &meetingServiceGetItxMeetingCountVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var projectUID string
+	{
+		projectUID = meetingServiceGetItxMeetingCountProjectUID
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetItxMeetingCountBearerToken != "" {
+			bearerToken = &meetingServiceGetItxMeetingCountBearerToken
+		}
+	}
+	v := &meetingservice.GetItxMeetingCountPayload{}
+	v.Version = version
+	v.ProjectUID = projectUID
+	v.BearerToken = bearerToken
+
+	return v, nil
+}

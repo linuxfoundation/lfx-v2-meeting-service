@@ -1252,6 +1252,13 @@ type GetItxMeetingResponseBody struct {
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 }
 
+// GetItxMeetingCountResponseBody is the type of the "Meeting Service" service
+// "get-itx-meeting-count" endpoint HTTP response body.
+type GetItxMeetingCountResponseBody struct {
+	// Number of meetings for the project
+	MeetingCount *int `form:"meeting_count,omitempty" json:"meeting_count,omitempty" xml:"meeting_count,omitempty"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -3006,6 +3013,66 @@ type UpdateItxMeetingServiceUnavailableResponseBody struct {
 // Service" service "update-itx-meeting" endpoint HTTP response body for the
 // "Unauthorized" error.
 type UpdateItxMeetingUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingCountBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-count" endpoint HTTP response body for the
+// "BadRequest" error.
+type GetItxMeetingCountBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingCountForbiddenResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting-count" endpoint HTTP response body for the
+// "Forbidden" error.
+type GetItxMeetingCountForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingCountInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-count" endpoint HTTP response
+// body for the "InternalServerError" error.
+type GetItxMeetingCountInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingCountNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting-count" endpoint HTTP response body for the
+// "NotFound" error.
+type GetItxMeetingCountNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingCountServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-count" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetItxMeetingCountServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingCountUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-count" endpoint HTTP response body for the
+// "Unauthorized" error.
+type GetItxMeetingCountUnauthorizedResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -6962,6 +7029,82 @@ func NewUpdateItxMeetingUnauthorized(body *UpdateItxMeetingUnauthorizedResponseB
 	return v
 }
 
+// NewGetItxMeetingCountITXMeetingCountResponseOK builds a "Meeting Service"
+// service "get-itx-meeting-count" endpoint result from a HTTP "OK" response.
+func NewGetItxMeetingCountITXMeetingCountResponseOK(body *GetItxMeetingCountResponseBody) *meetingservice.ITXMeetingCountResponse {
+	v := &meetingservice.ITXMeetingCountResponse{
+		MeetingCount: *body.MeetingCount,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingCountBadRequest builds a Meeting Service service
+// get-itx-meeting-count endpoint BadRequest error.
+func NewGetItxMeetingCountBadRequest(body *GetItxMeetingCountBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingCountForbidden builds a Meeting Service service
+// get-itx-meeting-count endpoint Forbidden error.
+func NewGetItxMeetingCountForbidden(body *GetItxMeetingCountForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingCountInternalServerError builds a Meeting Service service
+// get-itx-meeting-count endpoint InternalServerError error.
+func NewGetItxMeetingCountInternalServerError(body *GetItxMeetingCountInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingCountNotFound builds a Meeting Service service
+// get-itx-meeting-count endpoint NotFound error.
+func NewGetItxMeetingCountNotFound(body *GetItxMeetingCountNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingCountServiceUnavailable builds a Meeting Service service
+// get-itx-meeting-count endpoint ServiceUnavailable error.
+func NewGetItxMeetingCountServiceUnavailable(body *GetItxMeetingCountServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingCountUnauthorized builds a Meeting Service service
+// get-itx-meeting-count endpoint Unauthorized error.
+func NewGetItxMeetingCountUnauthorized(body *GetItxMeetingCountUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // ValidateGetMeetingsResponseBody runs the validations defined on
 // Get-MeetingsResponseBody
 func ValidateGetMeetingsResponseBody(body *GetMeetingsResponseBody) (err error) {
@@ -8730,6 +8873,15 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 				err = goa.MergeErrors(err, err2)
 			}
 		}
+	}
+	return
+}
+
+// ValidateGetItxMeetingCountResponseBody runs the validations defined on
+// Get-Itx-Meeting-CountResponseBody
+func ValidateGetItxMeetingCountResponseBody(body *GetItxMeetingCountResponseBody) (err error) {
+	if body.MeetingCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_count", "body"))
 	}
 	return
 }
@@ -10897,6 +11049,79 @@ func ValidateUpdateItxMeetingServiceUnavailableResponseBody(body *UpdateItxMeeti
 // ValidateUpdateItxMeetingUnauthorizedResponseBody runs the validations
 // defined on update-itx-meeting_Unauthorized_response_body
 func ValidateUpdateItxMeetingUnauthorizedResponseBody(body *UpdateItxMeetingUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingCountBadRequestResponseBody runs the validations
+// defined on get-itx-meeting-count_BadRequest_response_body
+func ValidateGetItxMeetingCountBadRequestResponseBody(body *GetItxMeetingCountBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingCountForbiddenResponseBody runs the validations defined
+// on get-itx-meeting-count_Forbidden_response_body
+func ValidateGetItxMeetingCountForbiddenResponseBody(body *GetItxMeetingCountForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingCountInternalServerErrorResponseBody runs the
+// validations defined on
+// get-itx-meeting-count_InternalServerError_response_body
+func ValidateGetItxMeetingCountInternalServerErrorResponseBody(body *GetItxMeetingCountInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingCountNotFoundResponseBody runs the validations defined
+// on get-itx-meeting-count_NotFound_response_body
+func ValidateGetItxMeetingCountNotFoundResponseBody(body *GetItxMeetingCountNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingCountServiceUnavailableResponseBody runs the
+// validations defined on get-itx-meeting-count_ServiceUnavailable_response_body
+func ValidateGetItxMeetingCountServiceUnavailableResponseBody(body *GetItxMeetingCountServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingCountUnauthorizedResponseBody runs the validations
+// defined on get-itx-meeting-count_Unauthorized_response_body
+func ValidateGetItxMeetingCountUnauthorizedResponseBody(body *GetItxMeetingCountUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

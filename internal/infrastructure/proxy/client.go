@@ -229,6 +229,48 @@ func (c *Client) UpdateZoomMeeting(ctx context.Context, meetingID string, req *i
 	return nil
 }
 
+// GetMeetingCount retrieves the count of meetings for a project from ITX
+func (c *Client) GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error) {
+	// Create HTTP request with query parameter
+	url := fmt.Sprintf("%s/v2/zoom/meeting_count?project=%s", c.config.BaseURL, projectID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.MeetingCountResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse response", err)
+	}
+
+	return &result, nil
+}
+
 // mapHTTPError maps HTTP status codes to domain errors
 func (c *Client) mapHTTPError(statusCode int, body []byte) error {
 	var errMsg itx.ErrorResponse

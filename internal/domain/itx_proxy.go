@@ -15,4 +15,5 @@ type ITXProxyClient interface {
 	GetZoomMeeting(ctx context.Context, meetingID string) (*itx.ZoomMeetingResponse, error)
 	UpdateZoomMeeting(ctx context.Context, meetingID string, req *itx.CreateZoomMeetingRequest) error
 	DeleteZoomMeeting(ctx context.Context, meetingID string) error
+	GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error)
 }

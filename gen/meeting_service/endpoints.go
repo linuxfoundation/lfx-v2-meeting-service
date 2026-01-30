@@ -61,6 +61,7 @@ type Endpoints struct {
 	GetItxMeeting                     goa.Endpoint
 	DeleteItxMeeting                  goa.Endpoint
 	UpdateItxMeeting                  goa.Endpoint
+	GetItxMeetingCount                goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -114,6 +115,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetItxMeeting:                     NewGetItxMeetingEndpoint(s, a.JWTAuth),
 		DeleteItxMeeting:                  NewDeleteItxMeetingEndpoint(s, a.JWTAuth),
 		UpdateItxMeeting:                  NewUpdateItxMeetingEndpoint(s, a.JWTAuth),
+		GetItxMeetingCount:                NewGetItxMeetingCountEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -165,6 +167,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetItxMeeting = m(e.GetItxMeeting)
 	e.DeleteItxMeeting = m(e.DeleteItxMeeting)
 	e.UpdateItxMeeting = m(e.UpdateItxMeeting)
+	e.GetItxMeetingCount = m(e.GetItxMeetingCount)
 }
 
 // NewGetMeetingsEndpoint returns an endpoint function that calls the method
@@ -1164,5 +1167,28 @@ func NewUpdateItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.
 			return nil, err
 		}
 		return nil, s.UpdateItxMeeting(ctx, p)
+	}
+}
+
+// NewGetItxMeetingCountEndpoint returns an endpoint function that calls the
+// method "get-itx-meeting-count" of service "Meeting Service".
+func NewGetItxMeetingCountEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxMeetingCountPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxMeetingCount(ctx, p)
 	}
 }

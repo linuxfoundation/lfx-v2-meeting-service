@@ -235,3 +235,8 @@ func DeleteItxMeetingMeetingServicePath(meetingID string) string {
 func UpdateItxMeetingMeetingServicePath(meetingID string) string {
 	return fmt.Sprintf("/itx/meetings/%v", meetingID)
 }
+
+// GetItxMeetingCountMeetingServicePath returns the URL path to the Meeting Service service get-itx-meeting-count HTTP endpoint.
+func GetItxMeetingCountMeetingServicePath() string {
+	return "/itx/meeting_count"
+}

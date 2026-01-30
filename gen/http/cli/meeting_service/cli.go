@@ -23,7 +23,7 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|create-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|get-past-meeting-attachment-metadata|delete-past-meeting-attachment|readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting)",
+		"meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|create-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|get-past-meeting-attachment-metadata|delete-past-meeting-attachment|readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count)",
 	}
 }
 
@@ -323,6 +323,11 @@ func ParseEndpoint(
 		meetingServiceUpdateItxMeetingVersionFlag     = meetingServiceUpdateItxMeetingFlags.String("version", "", "")
 		meetingServiceUpdateItxMeetingBearerTokenFlag = meetingServiceUpdateItxMeetingFlags.String("bearer-token", "", "")
 		meetingServiceUpdateItxMeetingXSyncFlag       = meetingServiceUpdateItxMeetingFlags.String("x-sync", "", "")
+
+		meetingServiceGetItxMeetingCountFlags           = flag.NewFlagSet("get-itx-meeting-count", flag.ExitOnError)
+		meetingServiceGetItxMeetingCountVersionFlag     = meetingServiceGetItxMeetingCountFlags.String("version", "", "")
+		meetingServiceGetItxMeetingCountProjectUIDFlag  = meetingServiceGetItxMeetingCountFlags.String("project-uid", "REQUIRED", "")
+		meetingServiceGetItxMeetingCountBearerTokenFlag = meetingServiceGetItxMeetingCountFlags.String("bearer-token", "", "")
 	)
 	meetingServiceFlags.Usage = meetingServiceUsage
 	meetingServiceGetMeetingsFlags.Usage = meetingServiceGetMeetingsUsage
@@ -370,6 +375,7 @@ func ParseEndpoint(
 	meetingServiceGetItxMeetingFlags.Usage = meetingServiceGetItxMeetingUsage
 	meetingServiceDeleteItxMeetingFlags.Usage = meetingServiceDeleteItxMeetingUsage
 	meetingServiceUpdateItxMeetingFlags.Usage = meetingServiceUpdateItxMeetingUsage
+	meetingServiceGetItxMeetingCountFlags.Usage = meetingServiceGetItxMeetingCountUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -540,6 +546,9 @@ func ParseEndpoint(
 			case "update-itx-meeting":
 				epf = meetingServiceUpdateItxMeetingFlags
 
+			case "get-itx-meeting-count":
+				epf = meetingServiceGetItxMeetingCountFlags
+
 			}
 
 		}
@@ -698,6 +707,9 @@ func ParseEndpoint(
 			case "update-itx-meeting":
 				endpoint = c.UpdateItxMeeting()
 				data, err = meetingservicec.BuildUpdateItxMeetingPayload(*meetingServiceUpdateItxMeetingBodyFlag, *meetingServiceUpdateItxMeetingMeetingIDFlag, *meetingServiceUpdateItxMeetingVersionFlag, *meetingServiceUpdateItxMeetingBearerTokenFlag, *meetingServiceUpdateItxMeetingXSyncFlag)
+			case "get-itx-meeting-count":
+				endpoint = c.GetItxMeetingCount()
+				data, err = meetingservicec.BuildGetItxMeetingCountPayload(*meetingServiceGetItxMeetingCountVersionFlag, *meetingServiceGetItxMeetingCountProjectUIDFlag, *meetingServiceGetItxMeetingCountBearerTokenFlag)
 			}
 		}
 	}
@@ -760,6 +772,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    get-itx-meeting: Get a Zoom meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-meeting: Delete a Zoom meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-meeting: Update a Zoom meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-meeting-count: Get the count of Zoom meetings for a project through ITX API proxy`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
 	fmt.Fprintf(os.Stderr, "    %s meeting-service COMMAND --help\n", os.Args[0])
@@ -1857,4 +1870,26 @@ func meetingServiceUpdateItxMeetingUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting --body '{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Ab natus doloribus et labore.\",\n               \"A blanditiis ex.\",\n               \"Quaerat perspiciatis dolorem.\"\n            ],\n            \"uid\": \"Eveniet dolores id vero consequuntur minus.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ab natus doloribus et labore.\",\n               \"A blanditiis ex.\",\n               \"Quaerat perspiciatis dolorem.\"\n            ],\n            \"uid\": \"Eveniet dolores id vero consequuntur minus.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Ab natus doloribus et labore.\",\n               \"A blanditiis ex.\",\n               \"Quaerat perspiciatis dolorem.\"\n            ],\n            \"uid\": \"Eveniet dolores id vero consequuntur minus.\"\n         }\n      ],\n      \"description\": \"n8z\",\n      \"duration\": 520,\n      \"early_join_time_minutes\": 42,\n      \"meeting_type\": \"Marketing\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2011-03-16T17:27:39Z\",\n         \"end_times\": 7082134896002866122,\n         \"monthly_day\": 24,\n         \"monthly_week\": 2,\n         \"monthly_week_day\": 7,\n         \"repeat_interval\": 6161276425892291304,\n         \"type\": 3,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Voluptatibus quibusdam laborum odit.\",\n      \"title\": \"Dolorum et molestias ad nam sequi.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
+}
+
+func meetingServiceGetItxMeetingCountUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-meeting-count", os.Args[0])
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -project-uid STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get the count of Zoom meetings for a project through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -project-uid STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-count --version \"1\" --project-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --bearer-token \"eyJhbGci...\"")
 }

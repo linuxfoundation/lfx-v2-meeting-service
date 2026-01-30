@@ -137,6 +137,11 @@ type Occurrence struct {
 	Agenda          string `json:"agenda,omitempty"`
 }
 
+// MeetingCountResponse represents the meeting count response from ITX
+type MeetingCountResponse struct {
+	MeetingCount int `json:"meeting_count"`
+}
+
 // ErrorResponse represents an error response from ITX
 type ErrorResponse struct {
 	Message string `json:"message"`

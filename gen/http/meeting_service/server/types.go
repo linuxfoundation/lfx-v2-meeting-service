@@ -1252,6 +1252,13 @@ type GetItxMeetingResponseBody struct {
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 }
 
+// GetItxMeetingCountResponseBody is the type of the "Meeting Service" service
+// "get-itx-meeting-count" endpoint HTTP response body.
+type GetItxMeetingCountResponseBody struct {
+	// Number of meetings for the project
+	MeetingCount int `form:"meeting_count" json:"meeting_count" xml:"meeting_count"`
+}
+
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-meetings" endpoint HTTP response body for the "BadRequest"
 // error.
@@ -3012,6 +3019,66 @@ type UpdateItxMeetingUnauthorizedResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// GetItxMeetingCountBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-count" endpoint HTTP response body for the
+// "BadRequest" error.
+type GetItxMeetingCountBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingCountForbiddenResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting-count" endpoint HTTP response body for the
+// "Forbidden" error.
+type GetItxMeetingCountForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingCountInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-count" endpoint HTTP response
+// body for the "InternalServerError" error.
+type GetItxMeetingCountInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingCountNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting-count" endpoint HTTP response body for the
+// "NotFound" error.
+type GetItxMeetingCountNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingCountServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-count" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetItxMeetingCountServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingCountUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-count" endpoint HTTP response body for the
+// "Unauthorized" error.
+type GetItxMeetingCountUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // MeetingFullResponseBody is used to define fields on response body types.
 type MeetingFullResponseBody struct {
 	// The UID of the meeting
@@ -4628,6 +4695,16 @@ func NewGetItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *G
 			}
 			body.Occurrences[i] = marshalMeetingserviceITXOccurrenceToITXOccurrenceResponseBody(val)
 		}
+	}
+	return body
+}
+
+// NewGetItxMeetingCountResponseBody builds the HTTP response body from the
+// result of the "get-itx-meeting-count" endpoint of the "Meeting Service"
+// service.
+func NewGetItxMeetingCountResponseBody(res *meetingservice.ITXMeetingCountResponse) *GetItxMeetingCountResponseBody {
+	body := &GetItxMeetingCountResponseBody{
+		MeetingCount: res.MeetingCount,
 	}
 	return body
 }
@@ -6560,6 +6637,72 @@ func NewUpdateItxMeetingUnauthorizedResponseBody(res *meetingservice.Unauthorize
 	return body
 }
 
+// NewGetItxMeetingCountBadRequestResponseBody builds the HTTP response body
+// from the result of the "get-itx-meeting-count" endpoint of the "Meeting
+// Service" service.
+func NewGetItxMeetingCountBadRequestResponseBody(res *meetingservice.BadRequestError) *GetItxMeetingCountBadRequestResponseBody {
+	body := &GetItxMeetingCountBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingCountForbiddenResponseBody builds the HTTP response body
+// from the result of the "get-itx-meeting-count" endpoint of the "Meeting
+// Service" service.
+func NewGetItxMeetingCountForbiddenResponseBody(res *meetingservice.ForbiddenError) *GetItxMeetingCountForbiddenResponseBody {
+	body := &GetItxMeetingCountForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingCountInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-itx-meeting-count" endpoint of the
+// "Meeting Service" service.
+func NewGetItxMeetingCountInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetItxMeetingCountInternalServerErrorResponseBody {
+	body := &GetItxMeetingCountInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingCountNotFoundResponseBody builds the HTTP response body from
+// the result of the "get-itx-meeting-count" endpoint of the "Meeting Service"
+// service.
+func NewGetItxMeetingCountNotFoundResponseBody(res *meetingservice.NotFoundError) *GetItxMeetingCountNotFoundResponseBody {
+	body := &GetItxMeetingCountNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingCountServiceUnavailableResponseBody builds the HTTP response
+// body from the result of the "get-itx-meeting-count" endpoint of the "Meeting
+// Service" service.
+func NewGetItxMeetingCountServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetItxMeetingCountServiceUnavailableResponseBody {
+	body := &GetItxMeetingCountServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingCountUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "get-itx-meeting-count" endpoint of the "Meeting
+// Service" service.
+func NewGetItxMeetingCountUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetItxMeetingCountUnauthorizedResponseBody {
+	body := &GetItxMeetingCountUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewGetMeetingsPayload builds a Meeting Service service get-meetings endpoint
 // payload.
 func NewGetMeetingsPayload(version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingsPayload {
@@ -7331,6 +7474,17 @@ func NewUpdateItxMeetingPayload(body *UpdateItxMeetingRequestBody, meetingID str
 	v.Version = version
 	v.BearerToken = bearerToken
 	v.XSync = xSync
+
+	return v
+}
+
+// NewGetItxMeetingCountPayload builds a Meeting Service service
+// get-itx-meeting-count endpoint payload.
+func NewGetItxMeetingCountPayload(version *string, projectUID string, bearerToken *string) *meetingservice.GetItxMeetingCountPayload {
+	v := &meetingservice.GetItxMeetingCountPayload{}
+	v.Version = version
+	v.ProjectUID = projectUID
+	v.BearerToken = bearerToken
 
 	return v
 }

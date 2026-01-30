@@ -197,6 +197,10 @@ type Client struct {
 	// update-itx-meeting endpoint.
 	UpdateItxMeetingDoer goahttp.Doer
 
+	// GetItxMeetingCount Doer is the HTTP client used to make requests to the
+	// get-itx-meeting-count endpoint.
+	GetItxMeetingCountDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -273,6 +277,7 @@ func NewClient(
 		GetItxMeetingDoer:                     doer,
 		DeleteItxMeetingDoer:                  doer,
 		UpdateItxMeetingDoer:                  doer,
+		GetItxMeetingCountDoer:                doer,
 		RestoreResponseBody:                   restoreBody,
 		scheme:                                scheme,
 		host:                                  host,
@@ -1348,6 +1353,30 @@ func (c *Client) UpdateItxMeeting() goa.Endpoint {
 		resp, err := c.UpdateItxMeetingDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxMeetingCount returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-itx-meeting-count server.
+func (c *Client) GetItxMeetingCount() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxMeetingCountRequest(c.encoder)
+		decodeResponse = DecodeGetItxMeetingCountResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxMeetingCountRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxMeetingCountDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-meeting-count", err)
 		}
 		return decodeResponse(resp)
 	}
