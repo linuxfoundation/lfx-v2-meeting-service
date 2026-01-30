@@ -30,6 +30,7 @@ type environment struct {
 	LFXAppOrigin       string
 	EmailConfig        emailConfig
 	ITXConfig          itxConfig
+	IDMappingDisabled  bool
 }
 
 // itxConfig holds ITX proxy configuration
@@ -125,6 +126,8 @@ func parseEnv() environment {
 
 	lfxAppOrigin := os.Getenv("LFX_APP_ORIGIN")
 
+	idMappingDisabled := os.Getenv("ID_MAPPING_DISABLED") == "true"
+
 	return environment{
 		NatsURL:            natsURL,
 		Port:               port,
@@ -134,6 +137,7 @@ func parseEnv() environment {
 		LFXAppOrigin:       lfxAppOrigin,
 		EmailConfig:        parseEmailConfig(),
 		ITXConfig:          parseITXConfig(),
+		IDMappingDisabled:  idMappingDisabled,
 	}
 }
 

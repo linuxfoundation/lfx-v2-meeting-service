@@ -14,23 +14,35 @@ import (
 // MeetingService handles ITX Zoom meeting operations
 type MeetingService struct {
 	proxyClient domain.ITXProxyClient
+	idMapper    domain.IDMapper
 }
 
 // NewMeetingService creates a new ITX meeting service
-func NewMeetingService(proxyClient domain.ITXProxyClient) *MeetingService {
+func NewMeetingService(proxyClient domain.ITXProxyClient, idMapper domain.IDMapper) *MeetingService {
 	return &MeetingService{
 		proxyClient: proxyClient,
+		idMapper:    idMapper,
 	}
 }
 
 // CreateMeeting creates a meeting via ITX proxy
 func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateITXMeetingRequest) (*itx.ZoomMeetingResponse, error) {
+	// Map v2 UIDs to v1 SFIDs before sending to ITX
+	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
+		return nil, err
+	}
+
 	// Transform to ITX format
 	itxReq := s.transformToITXRequest(req)
 
 	// Call ITX proxy
 	resp, err := s.proxyClient.CreateZoomMeeting(ctx, itxReq)
 	if err != nil {
+		return nil, err
+	}
+
+	// Map v1 SFIDs back to v2 UIDs in response
+	if err := s.mapResponseV1ToV2(ctx, resp); err != nil {
 		return nil, err
 	}
 
@@ -45,11 +57,21 @@ func (s *MeetingService) GetMeeting(ctx context.Context, meetingID string) (*itx
 		return nil, err
 	}
 
+	// Map v1 SFIDs back to v2 UIDs in response
+	if err := s.mapResponseV1ToV2(ctx, resp); err != nil {
+		return nil, err
+	}
+
 	return resp, nil
 }
 
 // UpdateMeeting updates a meeting via ITX proxy
 func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, req *models.CreateITXMeetingRequest) error {
+	// Map v2 UIDs to v1 SFIDs before sending to ITX
+	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
+		return err
+	}
+
 	// Transform to ITX format
 	itxReq := s.transformToITXRequest(req)
 
@@ -75,8 +97,14 @@ func (s *MeetingService) DeleteMeeting(ctx context.Context, meetingID string) er
 
 // GetMeetingCount retrieves the count of meetings for a project via ITX proxy
 func (s *MeetingService) GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error) {
-	// Call ITX proxy
-	resp, err := s.proxyClient.GetMeetingCount(ctx, projectID)
+	// Map v2 project UID to v1 SFID
+	v1SFID, err := s.idMapper.MapProjectV2ToV1(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Call ITX proxy with v1 SFID
+	resp, err := s.proxyClient.GetMeetingCount(ctx, v1SFID)
 	if err != nil {
 		return nil, err
 	}
@@ -135,4 +163,54 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 	}
 
 	return itxReq
+}
+
+// mapRequestV2ToV1 maps v2 UIDs to v1 SFIDs in the request
+func (s *MeetingService) mapRequestV2ToV1(ctx context.Context, req *models.CreateITXMeetingRequest) error {
+	// Map project UID (v2) to project SFID (v1)
+	if req.ProjectUID != "" {
+		v1SFID, err := s.idMapper.MapProjectV2ToV1(ctx, req.ProjectUID)
+		if err != nil {
+			return err
+		}
+		req.ProjectUID = v1SFID
+	}
+
+	// Map committee UIDs (v2) to committee SFIDs (v1)
+	for i := range req.Committees {
+		if req.Committees[i].UID != "" {
+			v1SFID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.Committees[i].UID)
+			if err != nil {
+				return err
+			}
+			req.Committees[i].UID = v1SFID
+		}
+	}
+
+	return nil
+}
+
+// mapResponseV1ToV2 maps v1 SFIDs to v2 UIDs in the response
+func (s *MeetingService) mapResponseV1ToV2(ctx context.Context, resp *itx.ZoomMeetingResponse) error {
+	// Map project SFID (v1) to project UID (v2)
+	if resp.Project != "" {
+		v2UID, err := s.idMapper.MapProjectV1ToV2(ctx, resp.Project)
+		if err != nil {
+			return err
+		}
+		resp.Project = v2UID
+	}
+
+	// Map committee SFIDs (v1) to committee UIDs (v2)
+	for i := range resp.Committees {
+		if resp.Committees[i].ID != "" {
+			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
+			if err != nil {
+				return err
+			}
+			resp.Committees[i].ID = v2UID
+		}
+	}
+
+	return nil
 }

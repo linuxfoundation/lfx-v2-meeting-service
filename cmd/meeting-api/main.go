@@ -16,7 +16,9 @@ import (
 	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -235,6 +237,25 @@ func run() int {
 		meetingService,
 	)
 
+	// Initialize ID mapper for v1/v2 ID conversions
+	var idMapper domain.IDMapper
+	if env.IDMappingDisabled {
+		slog.WarnContext(ctx, "ID mapping is DISABLED - using no-op mapper (IDs will pass through unchanged)")
+		idMapper = idmapper.NewNoOpMapper()
+	} else {
+		natsMapper, err := idmapper.NewNATSMapper(idmapper.Config{
+			URL:     env.NatsURL,
+			Timeout: 5 * time.Second,
+		})
+		if err != nil {
+			slog.With(logging.ErrKey, err).Error("Failed to initialize ID mapper")
+			return 1
+		}
+		defer natsMapper.Close()
+		idMapper = natsMapper
+		slog.InfoContext(ctx, "ID mapping enabled - using NATS mapper for v1/v2 ID conversions")
+	}
+
 	// Initialize ITX proxy client and service (if enabled)
 	var itxMeetingService *itxservice.MeetingService
 	if env.ITXConfig.Enabled {
@@ -247,7 +268,7 @@ func run() int {
 			Timeout:      30 * time.Second,
 		}
 		itxProxyClient := proxy.NewClient(itxProxyConfig)
-		itxMeetingService = itxservice.NewMeetingService(itxProxyClient)
+		itxMeetingService = itxservice.NewMeetingService(itxProxyClient, idMapper)
 		slog.InfoContext(ctx, "ITX proxy client initialized")
 	}
 
