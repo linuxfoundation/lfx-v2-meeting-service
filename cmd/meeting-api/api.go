@@ -37,6 +37,7 @@ type MeetingsAPI struct {
 	projectHandler                *handlers.ProjectHandlers
 	zoomWebhookHandler            *handlers.ZoomWebhookHandler
 	itxMeetingService             *itxservice.MeetingService
+	itxRegistrantService          *itxservice.RegistrantService
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
@@ -56,6 +57,7 @@ func NewMeetingsAPI(
 	committeeHandler *handlers.CommitteeHandlers,
 	projectHandler *handlers.ProjectHandlers,
 	itxMeetingService *itxservice.MeetingService,
+	itxRegistrantService *itxservice.RegistrantService,
 ) *MeetingsAPI {
 	return &MeetingsAPI{
 		authService:                   authService,
@@ -73,6 +75,7 @@ func NewMeetingsAPI(
 		committeeHandler:              committeeHandler,
 		projectHandler:                projectHandler,
 		itxMeetingService:             itxMeetingService,
+		itxRegistrantService:          itxRegistrantService,
 	}
 }
 

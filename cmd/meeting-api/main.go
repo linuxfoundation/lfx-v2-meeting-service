@@ -256,8 +256,9 @@ func run() int {
 		slog.InfoContext(ctx, "ID mapping enabled - using NATS mapper for v1/v2 ID conversions")
 	}
 
-	// Initialize ITX proxy client and service (if enabled)
+	// Initialize ITX proxy client and services (if enabled)
 	var itxMeetingService *itxservice.MeetingService
+	var itxRegistrantService *itxservice.RegistrantService
 	if env.ITXConfig.Enabled {
 		itxProxyConfig := proxy.Config{
 			BaseURL:      env.ITXConfig.BaseURL,
@@ -269,6 +270,7 @@ func run() int {
 		}
 		itxProxyClient := proxy.NewClient(itxProxyConfig)
 		itxMeetingService = itxservice.NewMeetingService(itxProxyClient, idMapper)
+		itxRegistrantService = itxservice.NewRegistrantService(itxProxyClient, idMapper)
 		slog.InfoContext(ctx, "ITX proxy client initialized")
 	}
 
@@ -288,6 +290,7 @@ func run() int {
 		committeeHandler,
 		projectHandler,
 		itxMeetingService,
+		itxRegistrantService,
 	)
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)
