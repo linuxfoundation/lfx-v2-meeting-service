@@ -102,3 +102,82 @@ var ForbiddenError = Type("ForbiddenError", func() {
 	})
 	Required("code", "message")
 })
+
+// ITXUser represents a user in the ITX system
+var ITXUser = Type("ITXUser", func() {
+	Description("User information from ITX")
+	Attribute("id", String, "User ID", func() {
+		Example("user123")
+	})
+	Attribute("username", String, "Username", func() {
+		Example("jdoe")
+	})
+	Attribute("name", String, "Full name", func() {
+		Example("John Doe")
+	})
+	Attribute("email", String, "Email address", func() {
+		Example("john.doe@example.com")
+		Format(FormatEmail)
+	})
+	Attribute("profile_picture", String, "Profile picture URL", func() {
+		Example("https://example.com/avatar.jpg")
+		Format(FormatURI)
+	})
+})
+
+// ITXZoomMeetingRegistrant represents a meeting registrant in ITX
+var ITXZoomMeetingRegistrant = Type("ITXZoomMeetingRegistrant", func() {
+	Description("Meeting registrant in ITX")
+
+	// Read-only fields
+	Attribute("id", String, "Registrant ID (read-only)")
+	Attribute("type", String, "Registrant type: direct or committee (read-only)", func() {
+		Enum("direct", "committee")
+	})
+
+	// Identity fields
+	Attribute("committee_id", String, "Committee ID (for committee registrants)")
+	Attribute("user_id", String, "LF user ID")
+	Attribute("email", String, "Registrant email", func() {
+		Format(FormatEmail)
+		Example("bobsmith@gmail.com")
+	})
+	Attribute("username", String, "LF username", func() {
+		Example("testuser")
+	})
+
+	// Personal info
+	Attribute("first_name", String, "First name (required with email)", func() {
+		Example("Bob")
+	})
+	Attribute("last_name", String, "Last name (required with email)", func() {
+		Example("Smith")
+	})
+	Attribute("org", String, "Organization", func() {
+		Example("google")
+	})
+	Attribute("job_title", String, "Job title", func() {
+		Example("developer")
+	})
+	Attribute("profile_picture", String, "Profile picture URL")
+
+	// Meeting settings
+	Attribute("host", Boolean, "Access to host key for the meeting")
+	Attribute("occurrence", String, "Specific occurrence ID (blank = all occurrences)", func() {
+		Example("1666848600")
+	})
+
+	// Tracking fields (read-only)
+	Attribute("attended_occurrence_count", Int, "Number of meetings attended (read-only)")
+	Attribute("total_occurrence_count", Int, "Total meetings registered (read-only)")
+	Attribute("last_invite_received_time", String, "Last invite timestamp RFC3339 (read-only)")
+	Attribute("last_invite_received_message_id", String, "Last email message ID (read-only)")
+	Attribute("last_invite_delivery_status", String, "delivered or failed (read-only)")
+	Attribute("last_invite_delivery_description", String, "Delivery status details (read-only)")
+
+	// Audit fields (read-only)
+	Attribute("created_at", String, "Creation timestamp RFC3339 (read-only)")
+	Attribute("created_by", ITXUser, "Creator user info (read-only)")
+	Attribute("modified_at", String, "Last modified timestamp RFC3339 (read-only)")
+	Attribute("updated_by", ITXUser, "Last updater user info (read-only)")
+})

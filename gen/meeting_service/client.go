@@ -61,10 +61,14 @@ type Client struct {
 	DeleteItxMeetingEndpoint                  goa.Endpoint
 	UpdateItxMeetingEndpoint                  goa.Endpoint
 	GetItxMeetingCountEndpoint                goa.Endpoint
+	CreateItxRegistrantEndpoint               goa.Endpoint
+	GetItxRegistrantEndpoint                  goa.Endpoint
+	UpdateItxRegistrantEndpoint               goa.Endpoint
+	DeleteItxRegistrantEndpoint               goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -112,6 +116,10 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		DeleteItxMeetingEndpoint:                  deleteItxMeeting,
 		UpdateItxMeetingEndpoint:                  updateItxMeeting,
 		GetItxMeetingCountEndpoint:                getItxMeetingCount,
+		CreateItxRegistrantEndpoint:               createItxRegistrant,
+		GetItxRegistrantEndpoint:                  getItxRegistrant,
+		UpdateItxRegistrantEndpoint:               updateItxRegistrant,
+		DeleteItxRegistrantEndpoint:               deleteItxRegistrant,
 	}
 }
 
@@ -851,4 +859,73 @@ func (c *Client) GetItxMeetingCount(ctx context.Context, p *GetItxMeetingCountPa
 		return
 	}
 	return ires.(*ITXMeetingCountResponse), nil
+}
+
+// CreateItxRegistrant calls the "create-itx-registrant" endpoint of the
+// "Meeting Service" service.
+// CreateItxRegistrant may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "Conflict" (type *ConflictError): Registrant already exists
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateItxRegistrant(ctx context.Context, p *CreateItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error) {
+	var ires any
+	ires, err = c.CreateItxRegistrantEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXZoomMeetingRegistrant), nil
+}
+
+// GetItxRegistrant calls the "get-itx-registrant" endpoint of the "Meeting
+// Service" service.
+// GetItxRegistrant may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxRegistrant(ctx context.Context, p *GetItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error) {
+	var ires any
+	ires, err = c.GetItxRegistrantEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXZoomMeetingRegistrant), nil
+}
+
+// UpdateItxRegistrant calls the "update-itx-registrant" endpoint of the
+// "Meeting Service" service.
+// UpdateItxRegistrant may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateItxRegistrant(ctx context.Context, p *UpdateItxRegistrantPayload) (err error) {
+	_, err = c.UpdateItxRegistrantEndpoint(ctx, p)
+	return
+}
+
+// DeleteItxRegistrant calls the "delete-itx-registrant" endpoint of the
+// "Meeting Service" service.
+// DeleteItxRegistrant may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteItxRegistrant(ctx context.Context, p *DeleteItxRegistrantPayload) (err error) {
+	_, err = c.DeleteItxRegistrantEndpoint(ctx, p)
+	return
 }

@@ -7154,6 +7154,741 @@ func DecodeGetItxMeetingCountResponse(decoder func(*http.Response) goahttp.Decod
 	}
 }
 
+// BuildCreateItxRegistrantRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "create-itx-registrant" endpoint
+func (c *Client) BuildCreateItxRegistrantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID string
+	)
+	{
+		p, ok := v.(*meetingservice.CreateItxRegistrantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "create-itx-registrant", "*meetingservice.CreateItxRegistrantPayload", v)
+		}
+		meetingID = p.MeetingID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateItxRegistrantMeetingServicePath(meetingID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-itx-registrant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeCreateItxRegistrantRequest returns an encoder for requests sent to the
+// Meeting Service create-itx-registrant server.
+func EncodeCreateItxRegistrantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.CreateItxRegistrantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "create-itx-registrant", "*meetingservice.CreateItxRegistrantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewCreateItxRegistrantRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-itx-registrant", err)
+		}
+		return nil
+	}
+}
+
+// DecodeCreateItxRegistrantResponse returns a decoder for responses returned
+// by the Meeting Service create-itx-registrant endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeCreateItxRegistrantResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeCreateItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body CreateItxRegistrantResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			res := NewCreateItxRegistrantITXZoomMeetingRegistrantCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CreateItxRegistrantBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			return nil, NewCreateItxRegistrantBadRequest(&body)
+		case http.StatusConflict:
+			var (
+				body CreateItxRegistrantConflictResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantConflictResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			return nil, NewCreateItxRegistrantConflict(&body)
+		case http.StatusForbidden:
+			var (
+				body CreateItxRegistrantForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			return nil, NewCreateItxRegistrantForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CreateItxRegistrantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			return nil, NewCreateItxRegistrantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body CreateItxRegistrantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			return nil, NewCreateItxRegistrantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body CreateItxRegistrantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			return nil, NewCreateItxRegistrantServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body CreateItxRegistrantUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
+			err = ValidateCreateItxRegistrantUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-registrant", err)
+			}
+			return nil, NewCreateItxRegistrantUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-registrant", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetItxRegistrantRequest instantiates a HTTP request object with method
+// and path set to call the "Meeting Service" service "get-itx-registrant"
+// endpoint
+func (c *Client) BuildGetItxRegistrantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		registrantID string
+	)
+	{
+		p, ok := v.(*meetingservice.GetItxRegistrantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-itx-registrant", "*meetingservice.GetItxRegistrantPayload", v)
+		}
+		meetingID = p.MeetingID
+		registrantID = p.RegistrantID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetItxRegistrantMeetingServicePath(meetingID, registrantID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-itx-registrant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetItxRegistrantRequest returns an encoder for requests sent to the
+// Meeting Service get-itx-registrant server.
+func EncodeGetItxRegistrantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetItxRegistrantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-itx-registrant", "*meetingservice.GetItxRegistrantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetItxRegistrantResponse returns a decoder for responses returned by
+// the Meeting Service get-itx-registrant endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeGetItxRegistrantResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeGetItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetItxRegistrantResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
+			err = ValidateGetItxRegistrantResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-registrant", err)
+			}
+			res := NewGetItxRegistrantITXZoomMeetingRegistrantOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetItxRegistrantBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
+			err = ValidateGetItxRegistrantBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-registrant", err)
+			}
+			return nil, NewGetItxRegistrantBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body GetItxRegistrantForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
+			err = ValidateGetItxRegistrantForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-registrant", err)
+			}
+			return nil, NewGetItxRegistrantForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetItxRegistrantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
+			err = ValidateGetItxRegistrantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-registrant", err)
+			}
+			return nil, NewGetItxRegistrantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetItxRegistrantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
+			err = ValidateGetItxRegistrantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-registrant", err)
+			}
+			return nil, NewGetItxRegistrantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetItxRegistrantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
+			err = ValidateGetItxRegistrantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-registrant", err)
+			}
+			return nil, NewGetItxRegistrantServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body GetItxRegistrantUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
+			err = ValidateGetItxRegistrantUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-registrant", err)
+			}
+			return nil, NewGetItxRegistrantUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-registrant", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildUpdateItxRegistrantRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "update-itx-registrant" endpoint
+func (c *Client) BuildUpdateItxRegistrantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		registrantID string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdateItxRegistrantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-itx-registrant", "*meetingservice.UpdateItxRegistrantPayload", v)
+		}
+		meetingID = p.MeetingID
+		registrantID = p.RegistrantID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateItxRegistrantMeetingServicePath(meetingID, registrantID)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-itx-registrant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdateItxRegistrantRequest returns an encoder for requests sent to the
+// Meeting Service update-itx-registrant server.
+func EncodeUpdateItxRegistrantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdateItxRegistrantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-itx-registrant", "*meetingservice.UpdateItxRegistrantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewUpdateItxRegistrantRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-itx-registrant", err)
+		}
+		return nil
+	}
+}
+
+// DecodeUpdateItxRegistrantResponse returns a decoder for responses returned
+// by the Meeting Service update-itx-registrant endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeUpdateItxRegistrantResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeUpdateItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdateItxRegistrantBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
+			}
+			err = ValidateUpdateItxRegistrantBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-registrant", err)
+			}
+			return nil, NewUpdateItxRegistrantBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body UpdateItxRegistrantForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
+			}
+			err = ValidateUpdateItxRegistrantForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-registrant", err)
+			}
+			return nil, NewUpdateItxRegistrantForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdateItxRegistrantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
+			}
+			err = ValidateUpdateItxRegistrantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-registrant", err)
+			}
+			return nil, NewUpdateItxRegistrantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body UpdateItxRegistrantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
+			}
+			err = ValidateUpdateItxRegistrantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-registrant", err)
+			}
+			return nil, NewUpdateItxRegistrantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body UpdateItxRegistrantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
+			}
+			err = ValidateUpdateItxRegistrantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-registrant", err)
+			}
+			return nil, NewUpdateItxRegistrantServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body UpdateItxRegistrantUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
+			}
+			err = ValidateUpdateItxRegistrantUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-registrant", err)
+			}
+			return nil, NewUpdateItxRegistrantUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-registrant", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildDeleteItxRegistrantRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "delete-itx-registrant" endpoint
+func (c *Client) BuildDeleteItxRegistrantRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		registrantID string
+	)
+	{
+		p, ok := v.(*meetingservice.DeleteItxRegistrantPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-registrant", "*meetingservice.DeleteItxRegistrantPayload", v)
+		}
+		meetingID = p.MeetingID
+		registrantID = p.RegistrantID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeleteItxRegistrantMeetingServicePath(meetingID, registrantID)}
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-itx-registrant", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDeleteItxRegistrantRequest returns an encoder for requests sent to the
+// Meeting Service delete-itx-registrant server.
+func EncodeDeleteItxRegistrantRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.DeleteItxRegistrantPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-registrant", "*meetingservice.DeleteItxRegistrantPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDeleteItxRegistrantResponse returns a decoder for responses returned
+// by the Meeting Service delete-itx-registrant endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeDeleteItxRegistrantResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeDeleteItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body DeleteItxRegistrantBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
+			}
+			err = ValidateDeleteItxRegistrantBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-registrant", err)
+			}
+			return nil, NewDeleteItxRegistrantBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body DeleteItxRegistrantForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
+			}
+			err = ValidateDeleteItxRegistrantForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-registrant", err)
+			}
+			return nil, NewDeleteItxRegistrantForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DeleteItxRegistrantInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
+			}
+			err = ValidateDeleteItxRegistrantInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-registrant", err)
+			}
+			return nil, NewDeleteItxRegistrantInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body DeleteItxRegistrantNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
+			}
+			err = ValidateDeleteItxRegistrantNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-registrant", err)
+			}
+			return nil, NewDeleteItxRegistrantNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body DeleteItxRegistrantServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
+			}
+			err = ValidateDeleteItxRegistrantServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-registrant", err)
+			}
+			return nil, NewDeleteItxRegistrantServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body DeleteItxRegistrantUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
+			}
+			err = ValidateDeleteItxRegistrantUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-registrant", err)
+			}
+			return nil, NewDeleteItxRegistrantUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-registrant", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull builds a value
 // of type *meetingservice.MeetingFull from a value of type
 // *MeetingFullResponseBody.
@@ -7742,6 +8477,57 @@ func unmarshalITXOccurrenceResponseBodyToMeetingserviceITXOccurrence(v *ITXOccur
 		Duration:        v.Duration,
 		Status:          v.Status,
 		RegistrantCount: v.RegistrantCount,
+	}
+
+	return res
+}
+
+// marshalMeetingserviceITXUserToITXUserRequestBody builds a value of type
+// *ITXUserRequestBody from a value of type *meetingservice.ITXUser.
+func marshalMeetingserviceITXUserToITXUserRequestBody(v *meetingservice.ITXUser) *ITXUserRequestBody {
+	if v == nil {
+		return nil
+	}
+	res := &ITXUserRequestBody{
+		ID:             v.ID,
+		Username:       v.Username,
+		Name:           v.Name,
+		Email:          v.Email,
+		ProfilePicture: v.ProfilePicture,
+	}
+
+	return res
+}
+
+// marshalITXUserRequestBodyToMeetingserviceITXUser builds a value of type
+// *meetingservice.ITXUser from a value of type *ITXUserRequestBody.
+func marshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *meetingservice.ITXUser {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.ITXUser{
+		ID:             v.ID,
+		Username:       v.Username,
+		Name:           v.Name,
+		Email:          v.Email,
+		ProfilePicture: v.ProfilePicture,
+	}
+
+	return res
+}
+
+// unmarshalITXUserResponseBodyToMeetingserviceITXUser builds a value of type
+// *meetingservice.ITXUser from a value of type *ITXUserResponseBody.
+func unmarshalITXUserResponseBodyToMeetingserviceITXUser(v *ITXUserResponseBody) *meetingservice.ITXUser {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.ITXUser{
+		ID:             v.ID,
+		Username:       v.Username,
+		Name:           v.Name,
+		Email:          v.Email,
+		ProfilePicture: v.ProfilePicture,
 	}
 
 	return res

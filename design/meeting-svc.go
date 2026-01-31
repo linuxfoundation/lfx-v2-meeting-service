@@ -1775,6 +1775,163 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("create-itx-registrant", func() {
+		Description("Create a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Extend(ITXZoomMeetingRegistrant)
+			Required("meeting_id")
+		})
+
+		Result(ITXZoomMeetingRegistrant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("Conflict", ConflictError, "Registrant already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/registrants")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-registrant", func() {
+		Description("Get a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Result(ITXZoomMeetingRegistrant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/registrants/{registrant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-registrant", func() {
+		Description("Update a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Extend(ITXZoomMeetingRegistrant)
+			Required("meeting_id", "registrant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/meetings/{meeting_id}/registrants/{registrant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-registrant", func() {
+		Description("Delete a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}/registrants/{registrant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")

@@ -214,3 +214,73 @@ func (s *MeetingService) mapResponseV1ToV2(ctx context.Context, resp *itx.ZoomMe
 
 	return nil
 }
+
+// CreateRegistrant creates a meeting registrant via ITX proxy
+func (s *MeetingService) CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
+	// Map committee UID to committee SFID if present
+	if req.CommitteeID != "" {
+		v1SFID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.CommitteeID)
+		if err != nil {
+			return nil, err
+		}
+		req.CommitteeID = v1SFID
+	}
+
+	// Call ITX proxy
+	resp, err := s.proxyClient.CreateRegistrant(ctx, meetingID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map committee SFID back to committee UID if present
+	if resp.CommitteeID != "" {
+		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
+		if err != nil {
+			return nil, err
+		}
+		resp.CommitteeID = v2UID
+	}
+
+	return resp, nil
+}
+
+// GetRegistrant retrieves a meeting registrant via ITX proxy
+func (s *MeetingService) GetRegistrant(ctx context.Context, meetingID, registrantID string) (*itx.ZoomMeetingRegistrant, error) {
+	// Call ITX proxy
+	resp, err := s.proxyClient.GetRegistrant(ctx, meetingID, registrantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map committee SFID back to committee UID if present
+	if resp.CommitteeID != "" {
+		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
+		if err != nil {
+			return nil, err
+		}
+		resp.CommitteeID = v2UID
+	}
+
+	return resp, nil
+}
+
+// UpdateRegistrant updates a meeting registrant via ITX proxy
+func (s *MeetingService) UpdateRegistrant(ctx context.Context, meetingID, registrantID string, req *itx.ZoomMeetingRegistrant) error {
+	// Map committee UID to committee SFID if present
+	if req.CommitteeID != "" {
+		v1SFID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.CommitteeID)
+		if err != nil {
+			return err
+		}
+		req.CommitteeID = v1SFID
+	}
+
+	// Call ITX proxy
+	return s.proxyClient.UpdateRegistrant(ctx, meetingID, registrantID, req)
+}
+
+// DeleteRegistrant deletes a meeting registrant via ITX proxy
+func (s *MeetingService) DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error {
+	// Call ITX proxy
+	return s.proxyClient.DeleteRegistrant(ctx, meetingID, registrantID)
+}

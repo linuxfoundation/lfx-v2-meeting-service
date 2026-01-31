@@ -450,6 +450,108 @@ type UpdateItxMeetingRequestBody struct {
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
 }
 
+// CreateItxRegistrantRequestBody is the type of the "Meeting Service" service
+// "create-itx-registrant" endpoint HTTP request body.
+type CreateItxRegistrantRequestBody struct {
+	// Registrant ID (read-only)
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant type: direct or committee (read-only)
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Committee ID (for committee registrants)
+	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// LF user ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	// Registrant email
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// LF username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// First name (required with email)
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// Last name (required with email)
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// Organization
+	Org *string `form:"org,omitempty" json:"org,omitempty" xml:"org,omitempty"`
+	// Job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+	// Access to host key for the meeting
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string `form:"occurrence,omitempty" json:"occurrence,omitempty" xml:"occurrence,omitempty"`
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int `form:"attended_occurrence_count,omitempty" json:"attended_occurrence_count,omitempty" xml:"attended_occurrence_count,omitempty"`
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int `form:"total_occurrence_count,omitempty" json:"total_occurrence_count,omitempty" xml:"total_occurrence_count,omitempty"`
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string `form:"last_invite_received_time,omitempty" json:"last_invite_received_time,omitempty" xml:"last_invite_received_time,omitempty"`
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string `form:"last_invite_received_message_id,omitempty" json:"last_invite_received_message_id,omitempty" xml:"last_invite_received_message_id,omitempty"`
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string `form:"last_invite_delivery_status,omitempty" json:"last_invite_delivery_status,omitempty" xml:"last_invite_delivery_status,omitempty"`
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string `form:"last_invite_delivery_description,omitempty" json:"last_invite_delivery_description,omitempty" xml:"last_invite_delivery_description,omitempty"`
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Creator user info (read-only)
+	CreatedBy *ITXUserRequestBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUserRequestBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
+// UpdateItxRegistrantRequestBody is the type of the "Meeting Service" service
+// "update-itx-registrant" endpoint HTTP request body.
+type UpdateItxRegistrantRequestBody struct {
+	// Registrant ID (read-only)
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant type: direct or committee (read-only)
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Committee ID (for committee registrants)
+	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// LF user ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	// Registrant email
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// LF username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// First name (required with email)
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// Last name (required with email)
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// Organization
+	Org *string `form:"org,omitempty" json:"org,omitempty" xml:"org,omitempty"`
+	// Job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+	// Access to host key for the meeting
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string `form:"occurrence,omitempty" json:"occurrence,omitempty" xml:"occurrence,omitempty"`
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int `form:"attended_occurrence_count,omitempty" json:"attended_occurrence_count,omitempty" xml:"attended_occurrence_count,omitempty"`
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int `form:"total_occurrence_count,omitempty" json:"total_occurrence_count,omitempty" xml:"total_occurrence_count,omitempty"`
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string `form:"last_invite_received_time,omitempty" json:"last_invite_received_time,omitempty" xml:"last_invite_received_time,omitempty"`
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string `form:"last_invite_received_message_id,omitempty" json:"last_invite_received_message_id,omitempty" xml:"last_invite_received_message_id,omitempty"`
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string `form:"last_invite_delivery_status,omitempty" json:"last_invite_delivery_status,omitempty" xml:"last_invite_delivery_status,omitempty"`
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string `form:"last_invite_delivery_description,omitempty" json:"last_invite_delivery_description,omitempty" xml:"last_invite_delivery_description,omitempty"`
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Creator user info (read-only)
+	CreatedBy *ITXUserRequestBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUserRequestBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -1257,6 +1359,108 @@ type GetItxMeetingResponseBody struct {
 type GetItxMeetingCountResponseBody struct {
 	// Number of meetings for the project
 	MeetingCount *int `form:"meeting_count,omitempty" json:"meeting_count,omitempty" xml:"meeting_count,omitempty"`
+}
+
+// CreateItxRegistrantResponseBody is the type of the "Meeting Service" service
+// "create-itx-registrant" endpoint HTTP response body.
+type CreateItxRegistrantResponseBody struct {
+	// Registrant ID (read-only)
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant type: direct or committee (read-only)
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Committee ID (for committee registrants)
+	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// LF user ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	// Registrant email
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// LF username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// First name (required with email)
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// Last name (required with email)
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// Organization
+	Org *string `form:"org,omitempty" json:"org,omitempty" xml:"org,omitempty"`
+	// Job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+	// Access to host key for the meeting
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string `form:"occurrence,omitempty" json:"occurrence,omitempty" xml:"occurrence,omitempty"`
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int `form:"attended_occurrence_count,omitempty" json:"attended_occurrence_count,omitempty" xml:"attended_occurrence_count,omitempty"`
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int `form:"total_occurrence_count,omitempty" json:"total_occurrence_count,omitempty" xml:"total_occurrence_count,omitempty"`
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string `form:"last_invite_received_time,omitempty" json:"last_invite_received_time,omitempty" xml:"last_invite_received_time,omitempty"`
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string `form:"last_invite_received_message_id,omitempty" json:"last_invite_received_message_id,omitempty" xml:"last_invite_received_message_id,omitempty"`
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string `form:"last_invite_delivery_status,omitempty" json:"last_invite_delivery_status,omitempty" xml:"last_invite_delivery_status,omitempty"`
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string `form:"last_invite_delivery_description,omitempty" json:"last_invite_delivery_description,omitempty" xml:"last_invite_delivery_description,omitempty"`
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Creator user info (read-only)
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
+// GetItxRegistrantResponseBody is the type of the "Meeting Service" service
+// "get-itx-registrant" endpoint HTTP response body.
+type GetItxRegistrantResponseBody struct {
+	// Registrant ID (read-only)
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant type: direct or committee (read-only)
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Committee ID (for committee registrants)
+	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// LF user ID
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
+	// Registrant email
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// LF username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// First name (required with email)
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// Last name (required with email)
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// Organization
+	Org *string `form:"org,omitempty" json:"org,omitempty" xml:"org,omitempty"`
+	// Job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+	// Access to host key for the meeting
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string `form:"occurrence,omitempty" json:"occurrence,omitempty" xml:"occurrence,omitempty"`
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int `form:"attended_occurrence_count,omitempty" json:"attended_occurrence_count,omitempty" xml:"attended_occurrence_count,omitempty"`
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int `form:"total_occurrence_count,omitempty" json:"total_occurrence_count,omitempty" xml:"total_occurrence_count,omitempty"`
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string `form:"last_invite_received_time,omitempty" json:"last_invite_received_time,omitempty" xml:"last_invite_received_time,omitempty"`
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string `form:"last_invite_received_message_id,omitempty" json:"last_invite_received_message_id,omitempty" xml:"last_invite_received_message_id,omitempty"`
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string `form:"last_invite_delivery_status,omitempty" json:"last_invite_delivery_status,omitempty" xml:"last_invite_delivery_status,omitempty"`
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string `form:"last_invite_delivery_description,omitempty" json:"last_invite_delivery_description,omitempty" xml:"last_invite_delivery_description,omitempty"`
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Creator user info (read-only)
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 }
 
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
@@ -3079,6 +3283,256 @@ type GetItxMeetingCountUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// CreateItxRegistrantBadRequestResponseBody is the type of the "Meeting
+// Service" service "create-itx-registrant" endpoint HTTP response body for the
+// "BadRequest" error.
+type CreateItxRegistrantBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateItxRegistrantConflictResponseBody is the type of the "Meeting Service"
+// service "create-itx-registrant" endpoint HTTP response body for the
+// "Conflict" error.
+type CreateItxRegistrantConflictResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateItxRegistrantForbiddenResponseBody is the type of the "Meeting
+// Service" service "create-itx-registrant" endpoint HTTP response body for the
+// "Forbidden" error.
+type CreateItxRegistrantForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateItxRegistrantInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "create-itx-registrant" endpoint HTTP response
+// body for the "InternalServerError" error.
+type CreateItxRegistrantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateItxRegistrantNotFoundResponseBody is the type of the "Meeting Service"
+// service "create-itx-registrant" endpoint HTTP response body for the
+// "NotFound" error.
+type CreateItxRegistrantNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateItxRegistrantServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "create-itx-registrant" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type CreateItxRegistrantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// CreateItxRegistrantUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "create-itx-registrant" endpoint HTTP response body for the
+// "Unauthorized" error.
+type CreateItxRegistrantUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantBadRequestResponseBody is the type of the "Meeting Service"
+// service "get-itx-registrant" endpoint HTTP response body for the
+// "BadRequest" error.
+type GetItxRegistrantBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantForbiddenResponseBody is the type of the "Meeting Service"
+// service "get-itx-registrant" endpoint HTTP response body for the "Forbidden"
+// error.
+type GetItxRegistrantForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "get-itx-registrant" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetItxRegistrantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-itx-registrant" endpoint HTTP response body for the "NotFound"
+// error.
+type GetItxRegistrantNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-itx-registrant" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetItxRegistrantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-registrant" endpoint HTTP response body for the
+// "Unauthorized" error.
+type GetItxRegistrantUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxRegistrantBadRequestResponseBody is the type of the "Meeting
+// Service" service "update-itx-registrant" endpoint HTTP response body for the
+// "BadRequest" error.
+type UpdateItxRegistrantBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxRegistrantForbiddenResponseBody is the type of the "Meeting
+// Service" service "update-itx-registrant" endpoint HTTP response body for the
+// "Forbidden" error.
+type UpdateItxRegistrantForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxRegistrantInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "update-itx-registrant" endpoint HTTP response
+// body for the "InternalServerError" error.
+type UpdateItxRegistrantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxRegistrantNotFoundResponseBody is the type of the "Meeting Service"
+// service "update-itx-registrant" endpoint HTTP response body for the
+// "NotFound" error.
+type UpdateItxRegistrantNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxRegistrantServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "update-itx-registrant" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type UpdateItxRegistrantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxRegistrantUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "update-itx-registrant" endpoint HTTP response body for the
+// "Unauthorized" error.
+type UpdateItxRegistrantUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteItxRegistrantBadRequestResponseBody is the type of the "Meeting
+// Service" service "delete-itx-registrant" endpoint HTTP response body for the
+// "BadRequest" error.
+type DeleteItxRegistrantBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteItxRegistrantForbiddenResponseBody is the type of the "Meeting
+// Service" service "delete-itx-registrant" endpoint HTTP response body for the
+// "Forbidden" error.
+type DeleteItxRegistrantForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteItxRegistrantInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "delete-itx-registrant" endpoint HTTP response
+// body for the "InternalServerError" error.
+type DeleteItxRegistrantInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteItxRegistrantNotFoundResponseBody is the type of the "Meeting Service"
+// service "delete-itx-registrant" endpoint HTTP response body for the
+// "NotFound" error.
+type DeleteItxRegistrantNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteItxRegistrantServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-itx-registrant" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type DeleteItxRegistrantServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// DeleteItxRegistrantUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "delete-itx-registrant" endpoint HTTP response body for the
+// "Unauthorized" error.
+type DeleteItxRegistrantUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // MeetingFullResponseBody is used to define fields on response body types.
 type MeetingFullResponseBody struct {
 	// The UID of the meeting
@@ -3757,6 +4211,34 @@ type ITXOccurrenceResponseBody struct {
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
 }
 
+// ITXUserRequestBody is used to define fields on request body types.
+type ITXUserRequestBody struct {
+	// User ID
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Full name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
+// ITXUserResponseBody is used to define fields on response body types.
+type ITXUserResponseBody struct {
+	// User ID
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Full name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
 // NewCreateMeetingRequestBody builds the HTTP request body from the payload of
 // the "create-meeting" endpoint of the "Meeting Service" service.
 func NewCreateMeetingRequestBody(p *meetingservice.CreateMeetingPayload) *CreateMeetingRequestBody {
@@ -4128,6 +4610,78 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 	}
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
+	}
+	return body
+}
+
+// NewCreateItxRegistrantRequestBody builds the HTTP request body from the
+// payload of the "create-itx-registrant" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxRegistrantRequestBody(p *meetingservice.CreateItxRegistrantPayload) *CreateItxRegistrantRequestBody {
+	body := &CreateItxRegistrantRequestBody{
+		ID:                            p.ID,
+		Type:                          p.Type,
+		CommitteeID:                   p.CommitteeID,
+		UserID:                        p.UserID,
+		Email:                         p.Email,
+		Username:                      p.Username,
+		FirstName:                     p.FirstName,
+		LastName:                      p.LastName,
+		Org:                           p.Org,
+		JobTitle:                      p.JobTitle,
+		ProfilePicture:                p.ProfilePicture,
+		Host:                          p.Host,
+		Occurrence:                    p.Occurrence,
+		AttendedOccurrenceCount:       p.AttendedOccurrenceCount,
+		TotalOccurrenceCount:          p.TotalOccurrenceCount,
+		LastInviteReceivedTime:        p.LastInviteReceivedTime,
+		LastInviteReceivedMessageID:   p.LastInviteReceivedMessageID,
+		LastInviteDeliveryStatus:      p.LastInviteDeliveryStatus,
+		LastInviteDeliveryDescription: p.LastInviteDeliveryDescription,
+		CreatedAt:                     p.CreatedAt,
+		ModifiedAt:                    p.ModifiedAt,
+	}
+	if p.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserRequestBody(p.CreatedBy)
+	}
+	if p.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserRequestBody(p.UpdatedBy)
+	}
+	return body
+}
+
+// NewUpdateItxRegistrantRequestBody builds the HTTP request body from the
+// payload of the "update-itx-registrant" endpoint of the "Meeting Service"
+// service.
+func NewUpdateItxRegistrantRequestBody(p *meetingservice.UpdateItxRegistrantPayload) *UpdateItxRegistrantRequestBody {
+	body := &UpdateItxRegistrantRequestBody{
+		ID:                            p.ID,
+		Type:                          p.Type,
+		CommitteeID:                   p.CommitteeID,
+		UserID:                        p.UserID,
+		Email:                         p.Email,
+		Username:                      p.Username,
+		FirstName:                     p.FirstName,
+		LastName:                      p.LastName,
+		Org:                           p.Org,
+		JobTitle:                      p.JobTitle,
+		ProfilePicture:                p.ProfilePicture,
+		Host:                          p.Host,
+		Occurrence:                    p.Occurrence,
+		AttendedOccurrenceCount:       p.AttendedOccurrenceCount,
+		TotalOccurrenceCount:          p.TotalOccurrenceCount,
+		LastInviteReceivedTime:        p.LastInviteReceivedTime,
+		LastInviteReceivedMessageID:   p.LastInviteReceivedMessageID,
+		LastInviteDeliveryStatus:      p.LastInviteDeliveryStatus,
+		LastInviteDeliveryDescription: p.LastInviteDeliveryDescription,
+		CreatedAt:                     p.CreatedAt,
+		ModifiedAt:                    p.ModifiedAt,
+	}
+	if p.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserRequestBody(p.CreatedBy)
+	}
+	if p.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserRequestBody(p.UpdatedBy)
 	}
 	return body
 }
@@ -7105,6 +7659,354 @@ func NewGetItxMeetingCountUnauthorized(body *GetItxMeetingCountUnauthorizedRespo
 	return v
 }
 
+// NewCreateItxRegistrantITXZoomMeetingRegistrantCreated builds a "Meeting
+// Service" service "create-itx-registrant" endpoint result from a HTTP
+// "Created" response.
+func NewCreateItxRegistrantITXZoomMeetingRegistrantCreated(body *CreateItxRegistrantResponseBody) *meetingservice.ITXZoomMeetingRegistrant {
+	v := &meetingservice.ITXZoomMeetingRegistrant{
+		ID:                            body.ID,
+		Type:                          body.Type,
+		CommitteeID:                   body.CommitteeID,
+		UserID:                        body.UserID,
+		Email:                         body.Email,
+		Username:                      body.Username,
+		FirstName:                     body.FirstName,
+		LastName:                      body.LastName,
+		Org:                           body.Org,
+		JobTitle:                      body.JobTitle,
+		ProfilePicture:                body.ProfilePicture,
+		Host:                          body.Host,
+		Occurrence:                    body.Occurrence,
+		AttendedOccurrenceCount:       body.AttendedOccurrenceCount,
+		TotalOccurrenceCount:          body.TotalOccurrenceCount,
+		LastInviteReceivedTime:        body.LastInviteReceivedTime,
+		LastInviteReceivedMessageID:   body.LastInviteReceivedMessageID,
+		LastInviteDeliveryStatus:      body.LastInviteDeliveryStatus,
+		LastInviteDeliveryDescription: body.LastInviteDeliveryDescription,
+		CreatedAt:                     body.CreatedAt,
+		ModifiedAt:                    body.ModifiedAt,
+	}
+	if body.CreatedBy != nil {
+		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+	}
+	if body.UpdatedBy != nil {
+		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+	}
+
+	return v
+}
+
+// NewCreateItxRegistrantBadRequest builds a Meeting Service service
+// create-itx-registrant endpoint BadRequest error.
+func NewCreateItxRegistrantBadRequest(body *CreateItxRegistrantBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateItxRegistrantConflict builds a Meeting Service service
+// create-itx-registrant endpoint Conflict error.
+func NewCreateItxRegistrantConflict(body *CreateItxRegistrantConflictResponseBody) *meetingservice.ConflictError {
+	v := &meetingservice.ConflictError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateItxRegistrantForbidden builds a Meeting Service service
+// create-itx-registrant endpoint Forbidden error.
+func NewCreateItxRegistrantForbidden(body *CreateItxRegistrantForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateItxRegistrantInternalServerError builds a Meeting Service service
+// create-itx-registrant endpoint InternalServerError error.
+func NewCreateItxRegistrantInternalServerError(body *CreateItxRegistrantInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateItxRegistrantNotFound builds a Meeting Service service
+// create-itx-registrant endpoint NotFound error.
+func NewCreateItxRegistrantNotFound(body *CreateItxRegistrantNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateItxRegistrantServiceUnavailable builds a Meeting Service service
+// create-itx-registrant endpoint ServiceUnavailable error.
+func NewCreateItxRegistrantServiceUnavailable(body *CreateItxRegistrantServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewCreateItxRegistrantUnauthorized builds a Meeting Service service
+// create-itx-registrant endpoint Unauthorized error.
+func NewCreateItxRegistrantUnauthorized(body *CreateItxRegistrantUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantITXZoomMeetingRegistrantOK builds a "Meeting Service"
+// service "get-itx-registrant" endpoint result from a HTTP "OK" response.
+func NewGetItxRegistrantITXZoomMeetingRegistrantOK(body *GetItxRegistrantResponseBody) *meetingservice.ITXZoomMeetingRegistrant {
+	v := &meetingservice.ITXZoomMeetingRegistrant{
+		ID:                            body.ID,
+		Type:                          body.Type,
+		CommitteeID:                   body.CommitteeID,
+		UserID:                        body.UserID,
+		Email:                         body.Email,
+		Username:                      body.Username,
+		FirstName:                     body.FirstName,
+		LastName:                      body.LastName,
+		Org:                           body.Org,
+		JobTitle:                      body.JobTitle,
+		ProfilePicture:                body.ProfilePicture,
+		Host:                          body.Host,
+		Occurrence:                    body.Occurrence,
+		AttendedOccurrenceCount:       body.AttendedOccurrenceCount,
+		TotalOccurrenceCount:          body.TotalOccurrenceCount,
+		LastInviteReceivedTime:        body.LastInviteReceivedTime,
+		LastInviteReceivedMessageID:   body.LastInviteReceivedMessageID,
+		LastInviteDeliveryStatus:      body.LastInviteDeliveryStatus,
+		LastInviteDeliveryDescription: body.LastInviteDeliveryDescription,
+		CreatedAt:                     body.CreatedAt,
+		ModifiedAt:                    body.ModifiedAt,
+	}
+	if body.CreatedBy != nil {
+		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+	}
+	if body.UpdatedBy != nil {
+		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantBadRequest builds a Meeting Service service
+// get-itx-registrant endpoint BadRequest error.
+func NewGetItxRegistrantBadRequest(body *GetItxRegistrantBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantForbidden builds a Meeting Service service
+// get-itx-registrant endpoint Forbidden error.
+func NewGetItxRegistrantForbidden(body *GetItxRegistrantForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantInternalServerError builds a Meeting Service service
+// get-itx-registrant endpoint InternalServerError error.
+func NewGetItxRegistrantInternalServerError(body *GetItxRegistrantInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantNotFound builds a Meeting Service service
+// get-itx-registrant endpoint NotFound error.
+func NewGetItxRegistrantNotFound(body *GetItxRegistrantNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantServiceUnavailable builds a Meeting Service service
+// get-itx-registrant endpoint ServiceUnavailable error.
+func NewGetItxRegistrantServiceUnavailable(body *GetItxRegistrantServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantUnauthorized builds a Meeting Service service
+// get-itx-registrant endpoint Unauthorized error.
+func NewGetItxRegistrantUnauthorized(body *GetItxRegistrantUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxRegistrantBadRequest builds a Meeting Service service
+// update-itx-registrant endpoint BadRequest error.
+func NewUpdateItxRegistrantBadRequest(body *UpdateItxRegistrantBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxRegistrantForbidden builds a Meeting Service service
+// update-itx-registrant endpoint Forbidden error.
+func NewUpdateItxRegistrantForbidden(body *UpdateItxRegistrantForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxRegistrantInternalServerError builds a Meeting Service service
+// update-itx-registrant endpoint InternalServerError error.
+func NewUpdateItxRegistrantInternalServerError(body *UpdateItxRegistrantInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxRegistrantNotFound builds a Meeting Service service
+// update-itx-registrant endpoint NotFound error.
+func NewUpdateItxRegistrantNotFound(body *UpdateItxRegistrantNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxRegistrantServiceUnavailable builds a Meeting Service service
+// update-itx-registrant endpoint ServiceUnavailable error.
+func NewUpdateItxRegistrantServiceUnavailable(body *UpdateItxRegistrantServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxRegistrantUnauthorized builds a Meeting Service service
+// update-itx-registrant endpoint Unauthorized error.
+func NewUpdateItxRegistrantUnauthorized(body *UpdateItxRegistrantUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteItxRegistrantBadRequest builds a Meeting Service service
+// delete-itx-registrant endpoint BadRequest error.
+func NewDeleteItxRegistrantBadRequest(body *DeleteItxRegistrantBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteItxRegistrantForbidden builds a Meeting Service service
+// delete-itx-registrant endpoint Forbidden error.
+func NewDeleteItxRegistrantForbidden(body *DeleteItxRegistrantForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteItxRegistrantInternalServerError builds a Meeting Service service
+// delete-itx-registrant endpoint InternalServerError error.
+func NewDeleteItxRegistrantInternalServerError(body *DeleteItxRegistrantInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteItxRegistrantNotFound builds a Meeting Service service
+// delete-itx-registrant endpoint NotFound error.
+func NewDeleteItxRegistrantNotFound(body *DeleteItxRegistrantNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteItxRegistrantServiceUnavailable builds a Meeting Service service
+// delete-itx-registrant endpoint ServiceUnavailable error.
+func NewDeleteItxRegistrantServiceUnavailable(body *DeleteItxRegistrantServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewDeleteItxRegistrantUnauthorized builds a Meeting Service service
+// delete-itx-registrant endpoint Unauthorized error.
+func NewDeleteItxRegistrantUnauthorized(body *DeleteItxRegistrantUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // ValidateGetMeetingsResponseBody runs the validations defined on
 // Get-MeetingsResponseBody
 func ValidateGetMeetingsResponseBody(body *GetMeetingsResponseBody) (err error) {
@@ -8882,6 +9784,54 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 func ValidateGetItxMeetingCountResponseBody(body *GetItxMeetingCountResponseBody) (err error) {
 	if body.MeetingCount == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_count", "body"))
+	}
+	return
+}
+
+// ValidateCreateItxRegistrantResponseBody runs the validations defined on
+// Create-Itx-RegistrantResponseBody
+func ValidateCreateItxRegistrantResponseBody(body *CreateItxRegistrantResponseBody) (err error) {
+	if body.Type != nil {
+		if !(*body.Type == "direct" || *body.Type == "committee") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
+		}
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.CreatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.UpdatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateGetItxRegistrantResponseBody runs the validations defined on
+// Get-Itx-RegistrantResponseBody
+func ValidateGetItxRegistrantResponseBody(body *GetItxRegistrantResponseBody) (err error) {
+	if body.Type != nil {
+		if !(*body.Type == "direct" || *body.Type == "committee") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
+		}
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.CreatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.UpdatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
 	}
 	return
 }
@@ -11131,6 +12081,309 @@ func ValidateGetItxMeetingCountUnauthorizedResponseBody(body *GetItxMeetingCount
 	return
 }
 
+// ValidateCreateItxRegistrantBadRequestResponseBody runs the validations
+// defined on create-itx-registrant_BadRequest_response_body
+func ValidateCreateItxRegistrantBadRequestResponseBody(body *CreateItxRegistrantBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateItxRegistrantConflictResponseBody runs the validations defined
+// on create-itx-registrant_Conflict_response_body
+func ValidateCreateItxRegistrantConflictResponseBody(body *CreateItxRegistrantConflictResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateItxRegistrantForbiddenResponseBody runs the validations
+// defined on create-itx-registrant_Forbidden_response_body
+func ValidateCreateItxRegistrantForbiddenResponseBody(body *CreateItxRegistrantForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateItxRegistrantInternalServerErrorResponseBody runs the
+// validations defined on
+// create-itx-registrant_InternalServerError_response_body
+func ValidateCreateItxRegistrantInternalServerErrorResponseBody(body *CreateItxRegistrantInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateItxRegistrantNotFoundResponseBody runs the validations defined
+// on create-itx-registrant_NotFound_response_body
+func ValidateCreateItxRegistrantNotFoundResponseBody(body *CreateItxRegistrantNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateItxRegistrantServiceUnavailableResponseBody runs the
+// validations defined on create-itx-registrant_ServiceUnavailable_response_body
+func ValidateCreateItxRegistrantServiceUnavailableResponseBody(body *CreateItxRegistrantServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateCreateItxRegistrantUnauthorizedResponseBody runs the validations
+// defined on create-itx-registrant_Unauthorized_response_body
+func ValidateCreateItxRegistrantUnauthorizedResponseBody(body *CreateItxRegistrantUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantBadRequestResponseBody runs the validations defined
+// on get-itx-registrant_BadRequest_response_body
+func ValidateGetItxRegistrantBadRequestResponseBody(body *GetItxRegistrantBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantForbiddenResponseBody runs the validations defined
+// on get-itx-registrant_Forbidden_response_body
+func ValidateGetItxRegistrantForbiddenResponseBody(body *GetItxRegistrantForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantInternalServerErrorResponseBody runs the validations
+// defined on get-itx-registrant_InternalServerError_response_body
+func ValidateGetItxRegistrantInternalServerErrorResponseBody(body *GetItxRegistrantInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantNotFoundResponseBody runs the validations defined on
+// get-itx-registrant_NotFound_response_body
+func ValidateGetItxRegistrantNotFoundResponseBody(body *GetItxRegistrantNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantServiceUnavailableResponseBody runs the validations
+// defined on get-itx-registrant_ServiceUnavailable_response_body
+func ValidateGetItxRegistrantServiceUnavailableResponseBody(body *GetItxRegistrantServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantUnauthorizedResponseBody runs the validations
+// defined on get-itx-registrant_Unauthorized_response_body
+func ValidateGetItxRegistrantUnauthorizedResponseBody(body *GetItxRegistrantUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxRegistrantBadRequestResponseBody runs the validations
+// defined on update-itx-registrant_BadRequest_response_body
+func ValidateUpdateItxRegistrantBadRequestResponseBody(body *UpdateItxRegistrantBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxRegistrantForbiddenResponseBody runs the validations
+// defined on update-itx-registrant_Forbidden_response_body
+func ValidateUpdateItxRegistrantForbiddenResponseBody(body *UpdateItxRegistrantForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxRegistrantInternalServerErrorResponseBody runs the
+// validations defined on
+// update-itx-registrant_InternalServerError_response_body
+func ValidateUpdateItxRegistrantInternalServerErrorResponseBody(body *UpdateItxRegistrantInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxRegistrantNotFoundResponseBody runs the validations defined
+// on update-itx-registrant_NotFound_response_body
+func ValidateUpdateItxRegistrantNotFoundResponseBody(body *UpdateItxRegistrantNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxRegistrantServiceUnavailableResponseBody runs the
+// validations defined on update-itx-registrant_ServiceUnavailable_response_body
+func ValidateUpdateItxRegistrantServiceUnavailableResponseBody(body *UpdateItxRegistrantServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxRegistrantUnauthorizedResponseBody runs the validations
+// defined on update-itx-registrant_Unauthorized_response_body
+func ValidateUpdateItxRegistrantUnauthorizedResponseBody(body *UpdateItxRegistrantUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteItxRegistrantBadRequestResponseBody runs the validations
+// defined on delete-itx-registrant_BadRequest_response_body
+func ValidateDeleteItxRegistrantBadRequestResponseBody(body *DeleteItxRegistrantBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteItxRegistrantForbiddenResponseBody runs the validations
+// defined on delete-itx-registrant_Forbidden_response_body
+func ValidateDeleteItxRegistrantForbiddenResponseBody(body *DeleteItxRegistrantForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteItxRegistrantInternalServerErrorResponseBody runs the
+// validations defined on
+// delete-itx-registrant_InternalServerError_response_body
+func ValidateDeleteItxRegistrantInternalServerErrorResponseBody(body *DeleteItxRegistrantInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteItxRegistrantNotFoundResponseBody runs the validations defined
+// on delete-itx-registrant_NotFound_response_body
+func ValidateDeleteItxRegistrantNotFoundResponseBody(body *DeleteItxRegistrantNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteItxRegistrantServiceUnavailableResponseBody runs the
+// validations defined on delete-itx-registrant_ServiceUnavailable_response_body
+func ValidateDeleteItxRegistrantServiceUnavailableResponseBody(body *DeleteItxRegistrantServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateDeleteItxRegistrantUnauthorizedResponseBody runs the validations
+// defined on delete-itx-registrant_Unauthorized_response_body
+func ValidateDeleteItxRegistrantUnauthorizedResponseBody(body *DeleteItxRegistrantUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
 // ValidateMeetingFullResponseBody runs the validations defined on
 // MeetingFullResponseBody
 func ValidateMeetingFullResponseBody(body *MeetingFullResponseBody) (err error) {
@@ -12079,6 +13332,29 @@ func ValidateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody) (err err
 		if !(*body.Status == "available" || *body.Status == "cancel") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"available", "cancel"}))
 		}
+	}
+	return
+}
+
+// ValidateITXUserRequestBody runs the validations defined on ITXUserRequestBody
+func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
+// ValidateITXUserResponseBody runs the validations defined on
+// ITXUserResponseBody
+func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
 	}
 	return
 }

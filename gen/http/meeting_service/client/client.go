@@ -201,6 +201,22 @@ type Client struct {
 	// get-itx-meeting-count endpoint.
 	GetItxMeetingCountDoer goahttp.Doer
 
+	// CreateItxRegistrant Doer is the HTTP client used to make requests to the
+	// create-itx-registrant endpoint.
+	CreateItxRegistrantDoer goahttp.Doer
+
+	// GetItxRegistrant Doer is the HTTP client used to make requests to the
+	// get-itx-registrant endpoint.
+	GetItxRegistrantDoer goahttp.Doer
+
+	// UpdateItxRegistrant Doer is the HTTP client used to make requests to the
+	// update-itx-registrant endpoint.
+	UpdateItxRegistrantDoer goahttp.Doer
+
+	// DeleteItxRegistrant Doer is the HTTP client used to make requests to the
+	// delete-itx-registrant endpoint.
+	DeleteItxRegistrantDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -278,6 +294,10 @@ func NewClient(
 		DeleteItxMeetingDoer:                  doer,
 		UpdateItxMeetingDoer:                  doer,
 		GetItxMeetingCountDoer:                doer,
+		CreateItxRegistrantDoer:               doer,
+		GetItxRegistrantDoer:                  doer,
+		UpdateItxRegistrantDoer:               doer,
+		DeleteItxRegistrantDoer:               doer,
 		RestoreResponseBody:                   restoreBody,
 		scheme:                                scheme,
 		host:                                  host,
@@ -1377,6 +1397,102 @@ func (c *Client) GetItxMeetingCount() goa.Endpoint {
 		resp, err := c.GetItxMeetingCountDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-meeting-count", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateItxRegistrant returns an endpoint that makes HTTP requests to the
+// Meeting Service service create-itx-registrant server.
+func (c *Client) CreateItxRegistrant() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateItxRegistrantRequest(c.encoder)
+		decodeResponse = DecodeCreateItxRegistrantResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateItxRegistrantRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateItxRegistrantDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-itx-registrant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxRegistrant returns an endpoint that makes HTTP requests to the Meeting
+// Service service get-itx-registrant server.
+func (c *Client) GetItxRegistrant() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxRegistrantRequest(c.encoder)
+		decodeResponse = DecodeGetItxRegistrantResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxRegistrantRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxRegistrantDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-registrant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateItxRegistrant returns an endpoint that makes HTTP requests to the
+// Meeting Service service update-itx-registrant server.
+func (c *Client) UpdateItxRegistrant() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateItxRegistrantRequest(c.encoder)
+		decodeResponse = DecodeUpdateItxRegistrantResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateItxRegistrantRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateItxRegistrantDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-registrant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteItxRegistrant returns an endpoint that makes HTTP requests to the
+// Meeting Service service delete-itx-registrant server.
+func (c *Client) DeleteItxRegistrant() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteItxRegistrantRequest(c.encoder)
+		decodeResponse = DecodeDeleteItxRegistrantResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteItxRegistrantRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteItxRegistrantDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-registrant", err)
 		}
 		return decodeResponse(resp)
 	}

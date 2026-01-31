@@ -116,6 +116,14 @@ type Service interface {
 	UpdateItxMeeting(context.Context, *UpdateItxMeetingPayload) (err error)
 	// Get the count of Zoom meetings for a project through ITX API proxy
 	GetItxMeetingCount(context.Context, *GetItxMeetingCountPayload) (res *ITXMeetingCountResponse, err error)
+	// Create a meeting registrant through ITX API proxy
+	CreateItxRegistrant(context.Context, *CreateItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
+	// Get a meeting registrant through ITX API proxy
+	GetItxRegistrant(context.Context, *GetItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
+	// Update a meeting registrant through ITX API proxy
+	UpdateItxRegistrant(context.Context, *UpdateItxRegistrantPayload) (err error)
+	// Delete a meeting registrant through ITX API proxy
+	DeleteItxRegistrant(context.Context, *DeleteItxRegistrantPayload) (err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -138,7 +146,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [46]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count"}
+var MethodNames = [50]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -209,6 +217,63 @@ type CreateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+}
+
+// CreateItxRegistrantPayload is the payload type of the Meeting Service
+// service create-itx-registrant method.
+type CreateItxRegistrantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// Registrant ID (read-only)
+	ID *string
+	// Registrant type: direct or committee (read-only)
+	Type *string
+	// Committee ID (for committee registrants)
+	CommitteeID *string
+	// LF user ID
+	UserID *string
+	// Registrant email
+	Email *string
+	// LF username
+	Username *string
+	// First name (required with email)
+	FirstName *string
+	// Last name (required with email)
+	LastName *string
+	// Organization
+	Org *string
+	// Job title
+	JobTitle *string
+	// Profile picture URL
+	ProfilePicture *string
+	// Access to host key for the meeting
+	Host *bool
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string
+	// Creator user info (read-only)
+	CreatedBy *ITXUser
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUser
 }
 
 // CreateMeetingAttachmentPayload is the payload type of the Meeting Service
@@ -507,6 +572,19 @@ type DeleteItxMeetingPayload struct {
 	MeetingID string
 }
 
+// DeleteItxRegistrantPayload is the payload type of the Meeting Service
+// service delete-itx-registrant method.
+type DeleteItxRegistrantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
+}
+
 // DeleteMeetingAttachmentPayload is the payload type of the Meeting Service
 // service delete-meeting-attachment method.
 type DeleteMeetingAttachmentPayload struct {
@@ -652,6 +730,19 @@ type GetItxMeetingPayload struct {
 	Version *string
 	// The Zoom meeting ID
 	MeetingID string
+}
+
+// GetItxRegistrantPayload is the payload type of the Meeting Service service
+// get-itx-registrant method.
+type GetItxRegistrantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
 }
 
 // GetMeetingAttachmentMetadataPayload is the payload type of the Meeting
@@ -996,6 +1087,71 @@ type ITXOccurrence struct {
 	Status *string
 	// Number of registrants for this occurrence
 	RegistrantCount *int
+}
+
+// User information from ITX
+type ITXUser struct {
+	// User ID
+	ID *string
+	// Username
+	Username *string
+	// Full name
+	Name *string
+	// Email address
+	Email *string
+	// Profile picture URL
+	ProfilePicture *string
+}
+
+// ITXZoomMeetingRegistrant is the result type of the Meeting Service service
+// create-itx-registrant method.
+type ITXZoomMeetingRegistrant struct {
+	// Registrant ID (read-only)
+	ID *string
+	// Registrant type: direct or committee (read-only)
+	Type *string
+	// Committee ID (for committee registrants)
+	CommitteeID *string
+	// LF user ID
+	UserID *string
+	// Registrant email
+	Email *string
+	// LF username
+	Username *string
+	// First name (required with email)
+	FirstName *string
+	// Last name (required with email)
+	LastName *string
+	// Organization
+	Org *string
+	// Job title
+	JobTitle *string
+	// Profile picture URL
+	ProfilePicture *string
+	// Access to host key for the meeting
+	Host *bool
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string
+	// Creator user info (read-only)
+	CreatedBy *ITXUser
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUser
 }
 
 // ITXZoomMeetingResponse is the result type of the Meeting Service service
@@ -1724,6 +1880,65 @@ type UpdateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+}
+
+// UpdateItxRegistrantPayload is the payload type of the Meeting Service
+// service update-itx-registrant method.
+type UpdateItxRegistrantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
+	// Registrant ID (read-only)
+	ID *string
+	// Registrant type: direct or committee (read-only)
+	Type *string
+	// Committee ID (for committee registrants)
+	CommitteeID *string
+	// LF user ID
+	UserID *string
+	// Registrant email
+	Email *string
+	// LF username
+	Username *string
+	// First name (required with email)
+	FirstName *string
+	// Last name (required with email)
+	LastName *string
+	// Organization
+	Org *string
+	// Job title
+	JobTitle *string
+	// Profile picture URL
+	ProfilePicture *string
+	// Access to host key for the meeting
+	Host *bool
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string
+	// Creator user info (read-only)
+	CreatedBy *ITXUser
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUser
 }
 
 // UpdateMeetingBasePayload is the payload type of the Meeting Service service
