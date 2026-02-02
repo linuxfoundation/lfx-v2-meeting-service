@@ -45,7 +45,7 @@ type OTelConfig struct {
 	// Env: OTEL_SERVICE_NAME (default: "lfx-v2-meeting-service")
 	ServiceName string
 	// ServiceVersion is the version of the service.
-	// Env: OTEL_SERVICE_VERSION
+	// Env: OTEL_SERVICE_VERSION (default: build-time version from ldflags)
 	ServiceVersion string
 	// Protocol specifies the OTLP protocol to use: "grpc" or "http".
 	// Env: OTEL_EXPORTER_OTLP_PROTOCOL (default: "grpc")
