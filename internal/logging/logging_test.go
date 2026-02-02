@@ -268,16 +268,20 @@ func TestInitStructureLogConfig_IncludesTraceAndSpanID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create pipe: %v", err)
 	}
+	defer func() { _ = r.Close() }()
 	os.Stdout = w
+	defer func() { os.Stdout = originalStdout }()
 
 	// Set up a trace provider
+	prevTP := otel.GetTracerProvider()
 	tp := trace.NewTracerProvider()
+	otel.SetTracerProvider(tp)
+	defer otel.SetTracerProvider(prevTP)
 	defer func() {
 		if err := tp.Shutdown(context.Background()); err != nil {
 			t.Errorf("failed to shutdown trace provider: %v", err)
 		}
 	}()
-	otel.SetTracerProvider(tp)
 
 	// Initialize logging (this sets up the slog-otel handler)
 	InitStructureLogConfig()
@@ -295,11 +299,10 @@ func TestInitStructureLogConfig_IncludesTraceAndSpanID(t *testing.T) {
 	// Log a message with the span context
 	slog.InfoContext(ctx, "test log message with trace context")
 
-	// Restore stdout and read captured output
+	// Close writer and read captured output
 	if err := w.Close(); err != nil {
 		t.Fatalf("failed to close pipe writer: %v", err)
 	}
-	os.Stdout = originalStdout
 	_, err = buf.ReadFrom(r)
 	if err != nil {
 		t.Fatalf("failed to read from pipe: %v", err)

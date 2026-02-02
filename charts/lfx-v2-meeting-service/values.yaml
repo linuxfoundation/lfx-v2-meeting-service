@@ -66,7 +66,7 @@ app:
     logsExporter: "none"
     # propagators specifies the propagators to use, comma-separated
     # Supported values: "tracecontext", "baggage", "jaeger"
-    # (default: "tracecontext,baggage")
+    # (default: "tracecontext,baggage,jaeger")
     propagators: "tracecontext,baggage,jaeger"
 
   environment:
