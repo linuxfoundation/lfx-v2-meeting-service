@@ -135,6 +135,18 @@ func (s *MeetingService) RegisterCommitteeMembers(ctx context.Context, meetingID
 	return s.proxyClient.RegisterCommitteeMembers(ctx, meetingID)
 }
 
+// UpdateOccurrence updates a specific occurrence of a recurring meeting via ITX proxy
+func (s *MeetingService) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
+	// Call ITX proxy
+	return s.proxyClient.UpdateOccurrence(ctx, meetingID, occurrenceID, req)
+}
+
+// DeleteOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
+func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error {
+	// Call ITX proxy
+	return s.proxyClient.DeleteOccurrence(ctx, meetingID, occurrenceID)
+}
+
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{

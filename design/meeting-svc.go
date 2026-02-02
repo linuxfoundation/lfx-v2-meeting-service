@@ -2139,6 +2139,93 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("update-itx-occurrence", func() {
+		Description("Update a specific occurrence of a recurring meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("occurrence_id", String, "The ID of the occurrence (Unix timestamp)", func() {
+				Example("1640995200")
+			})
+			Attribute("start_time", String, "Meeting start time in RFC3339 format", func() {
+				Example("2024-01-15T10:00:00Z")
+				Format(FormatDateTime)
+			})
+			Attribute("duration", Int, "Meeting duration in minutes", func() {
+				Example(60)
+				Minimum(1)
+			})
+			Attribute("topic", String, "Meeting topic/title")
+			Attribute("agenda", String, "Meeting agenda/description")
+			Attribute("recurrence", Recurrence, "Recurrence settings")
+			Required("meeting_id", "occurrence_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting or occurrence not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/meetings/{meeting_id}/occurrences/{occurrence_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-occurrence", func() {
+		Description("Delete a specific occurrence of a recurring meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("occurrence_id", String, "The ID of the occurrence (Unix timestamp)", func() {
+				Example("1640995200")
+			})
+			Required("meeting_id", "occurrence_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting or occurrence not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}/occurrences/{occurrence_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")

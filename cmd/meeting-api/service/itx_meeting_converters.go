@@ -163,6 +163,38 @@ func ConvertITXJoinLinkResponseToGoa(resp *itx.ZoomMeetingJoinLink) *meetingserv
 	}
 }
 
+// ConvertUpdateOccurrencePayloadToITX converts Goa payload to ITX update occurrence request
+func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePayload) *itx.UpdateOccurrenceRequest {
+	req := &itx.UpdateOccurrenceRequest{}
+
+	if p.StartTime != nil {
+		req.StartTime = *p.StartTime
+	}
+	if p.Duration != nil {
+		req.Duration = *p.Duration
+	}
+	if p.Topic != nil {
+		req.Topic = *p.Topic
+	}
+	if p.Agenda != nil {
+		req.Agenda = *p.Agenda
+	}
+	if p.Recurrence != nil {
+		req.Recurrence = &itx.Recurrence{
+			Type:           p.Recurrence.Type,
+			RepeatInterval: p.Recurrence.RepeatInterval,
+			WeeklyDays:     utils.StringValue(p.Recurrence.WeeklyDays),
+			MonthlyDay:     utils.IntValue(p.Recurrence.MonthlyDay),
+			MonthlyWeek:    utils.IntValue(p.Recurrence.MonthlyWeek),
+			MonthlyWeekDay: utils.IntValue(p.Recurrence.MonthlyWeekDay),
+			EndTimes:       utils.IntValue(p.Recurrence.EndTimes),
+			EndDateTime:    utils.StringValue(p.Recurrence.EndDateTime),
+		}
+	}
+
+	return req
+}
+
 // Helper functions for pointer conversion
 func ptrIfNotEmpty(s string) *string {
 	if s == "" {

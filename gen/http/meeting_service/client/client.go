@@ -237,6 +237,14 @@ type Client struct {
 	// the register-itx-committee-members endpoint.
 	RegisterItxCommitteeMembersDoer goahttp.Doer
 
+	// UpdateItxOccurrence Doer is the HTTP client used to make requests to the
+	// update-itx-occurrence endpoint.
+	UpdateItxOccurrenceDoer goahttp.Doer
+
+	// DeleteItxOccurrence Doer is the HTTP client used to make requests to the
+	// delete-itx-occurrence endpoint.
+	DeleteItxOccurrenceDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -323,6 +331,8 @@ func NewClient(
 		ResendItxRegistrantInvitationDoer:     doer,
 		ResendItxMeetingInvitationsDoer:       doer,
 		RegisterItxCommitteeMembersDoer:       doer,
+		UpdateItxOccurrenceDoer:               doer,
+		DeleteItxOccurrenceDoer:               doer,
 		RestoreResponseBody:                   restoreBody,
 		scheme:                                scheme,
 		host:                                  host,
@@ -1638,6 +1648,54 @@ func (c *Client) RegisterItxCommitteeMembers() goa.Endpoint {
 		resp, err := c.RegisterItxCommitteeMembersDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "register-itx-committee-members", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateItxOccurrence returns an endpoint that makes HTTP requests to the
+// Meeting Service service update-itx-occurrence server.
+func (c *Client) UpdateItxOccurrence() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateItxOccurrenceRequest(c.encoder)
+		decodeResponse = DecodeUpdateItxOccurrenceResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateItxOccurrenceRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateItxOccurrenceDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-occurrence", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteItxOccurrence returns an endpoint that makes HTTP requests to the
+// Meeting Service service delete-itx-occurrence server.
+func (c *Client) DeleteItxOccurrence() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteItxOccurrenceRequest(c.encoder)
+		decodeResponse = DecodeDeleteItxOccurrenceResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteItxOccurrenceRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteItxOccurrenceDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-occurrence", err)
 		}
 		return decodeResponse(resp)
 	}

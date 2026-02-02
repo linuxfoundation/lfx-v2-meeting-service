@@ -70,10 +70,12 @@ type Client struct {
 	ResendItxRegistrantInvitationEndpoint     goa.Endpoint
 	ResendItxMeetingInvitationsEndpoint       goa.Endpoint
 	RegisterItxCommitteeMembersEndpoint       goa.Endpoint
+	UpdateItxOccurrenceEndpoint               goa.Endpoint
+	DeleteItxOccurrenceEndpoint               goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -130,6 +132,8 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		ResendItxRegistrantInvitationEndpoint:     resendItxRegistrantInvitation,
 		ResendItxMeetingInvitationsEndpoint:       resendItxMeetingInvitations,
 		RegisterItxCommitteeMembersEndpoint:       registerItxCommitteeMembers,
+		UpdateItxOccurrenceEndpoint:               updateItxOccurrence,
+		DeleteItxOccurrenceEndpoint:               deleteItxOccurrence,
 	}
 }
 
@@ -1020,5 +1024,35 @@ func (c *Client) ResendItxMeetingInvitations(ctx context.Context, p *ResendItxMe
 //   - error: internal error
 func (c *Client) RegisterItxCommitteeMembers(ctx context.Context, p *RegisterItxCommitteeMembersPayload) (err error) {
 	_, err = c.RegisterItxCommitteeMembersEndpoint(ctx, p)
+	return
+}
+
+// UpdateItxOccurrence calls the "update-itx-occurrence" endpoint of the
+// "Meeting Service" service.
+// UpdateItxOccurrence may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting or occurrence not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateItxOccurrence(ctx context.Context, p *UpdateItxOccurrencePayload) (err error) {
+	_, err = c.UpdateItxOccurrenceEndpoint(ctx, p)
+	return
+}
+
+// DeleteItxOccurrence calls the "delete-itx-occurrence" endpoint of the
+// "Meeting Service" service.
+// DeleteItxOccurrence may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting or occurrence not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteItxOccurrence(ctx context.Context, p *DeleteItxOccurrencePayload) (err error) {
+	_, err = c.DeleteItxOccurrenceEndpoint(ctx, p)
 	return
 }

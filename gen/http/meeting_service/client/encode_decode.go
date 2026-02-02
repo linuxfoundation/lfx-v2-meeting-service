@@ -8786,6 +8786,354 @@ func DecodeRegisterItxCommitteeMembersResponse(decoder func(*http.Response) goah
 	}
 }
 
+// BuildUpdateItxOccurrenceRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "update-itx-occurrence" endpoint
+func (c *Client) BuildUpdateItxOccurrenceRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		occurrenceID string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdateItxOccurrencePayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-itx-occurrence", "*meetingservice.UpdateItxOccurrencePayload", v)
+		}
+		meetingID = p.MeetingID
+		occurrenceID = p.OccurrenceID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateItxOccurrenceMeetingServicePath(meetingID, occurrenceID)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-itx-occurrence", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdateItxOccurrenceRequest returns an encoder for requests sent to the
+// Meeting Service update-itx-occurrence server.
+func EncodeUpdateItxOccurrenceRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdateItxOccurrencePayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-itx-occurrence", "*meetingservice.UpdateItxOccurrencePayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewUpdateItxOccurrenceRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-itx-occurrence", err)
+		}
+		return nil
+	}
+}
+
+// DecodeUpdateItxOccurrenceResponse returns a decoder for responses returned
+// by the Meeting Service update-itx-occurrence endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeUpdateItxOccurrenceResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeUpdateItxOccurrenceResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdateItxOccurrenceBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
+			}
+			err = ValidateUpdateItxOccurrenceBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-occurrence", err)
+			}
+			return nil, NewUpdateItxOccurrenceBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body UpdateItxOccurrenceForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
+			}
+			err = ValidateUpdateItxOccurrenceForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-occurrence", err)
+			}
+			return nil, NewUpdateItxOccurrenceForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdateItxOccurrenceInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
+			}
+			err = ValidateUpdateItxOccurrenceInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-occurrence", err)
+			}
+			return nil, NewUpdateItxOccurrenceInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body UpdateItxOccurrenceNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
+			}
+			err = ValidateUpdateItxOccurrenceNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-occurrence", err)
+			}
+			return nil, NewUpdateItxOccurrenceNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body UpdateItxOccurrenceServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
+			}
+			err = ValidateUpdateItxOccurrenceServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-occurrence", err)
+			}
+			return nil, NewUpdateItxOccurrenceServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body UpdateItxOccurrenceUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
+			}
+			err = ValidateUpdateItxOccurrenceUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-occurrence", err)
+			}
+			return nil, NewUpdateItxOccurrenceUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-occurrence", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildDeleteItxOccurrenceRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "delete-itx-occurrence" endpoint
+func (c *Client) BuildDeleteItxOccurrenceRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		occurrenceID string
+	)
+	{
+		p, ok := v.(*meetingservice.DeleteItxOccurrencePayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-occurrence", "*meetingservice.DeleteItxOccurrencePayload", v)
+		}
+		meetingID = p.MeetingID
+		occurrenceID = p.OccurrenceID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeleteItxOccurrenceMeetingServicePath(meetingID, occurrenceID)}
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-itx-occurrence", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDeleteItxOccurrenceRequest returns an encoder for requests sent to the
+// Meeting Service delete-itx-occurrence server.
+func EncodeDeleteItxOccurrenceRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.DeleteItxOccurrencePayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-occurrence", "*meetingservice.DeleteItxOccurrencePayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDeleteItxOccurrenceResponse returns a decoder for responses returned
+// by the Meeting Service delete-itx-occurrence endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeDeleteItxOccurrenceResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeDeleteItxOccurrenceResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body DeleteItxOccurrenceBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			err = ValidateDeleteItxOccurrenceBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			return nil, NewDeleteItxOccurrenceBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body DeleteItxOccurrenceForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			err = ValidateDeleteItxOccurrenceForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			return nil, NewDeleteItxOccurrenceForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DeleteItxOccurrenceInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			err = ValidateDeleteItxOccurrenceInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			return nil, NewDeleteItxOccurrenceInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body DeleteItxOccurrenceNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			err = ValidateDeleteItxOccurrenceNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			return nil, NewDeleteItxOccurrenceNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body DeleteItxOccurrenceServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			err = ValidateDeleteItxOccurrenceServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			return nil, NewDeleteItxOccurrenceServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body DeleteItxOccurrenceUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			err = ValidateDeleteItxOccurrenceUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-occurrence", err)
+			}
+			return nil, NewDeleteItxOccurrenceUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-occurrence", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull builds a value
 // of type *meetingservice.MeetingFull from a value of type
 // *MeetingFullResponseBody.

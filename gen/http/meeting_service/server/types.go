@@ -559,6 +559,21 @@ type ResendItxMeetingInvitationsRequestBody struct {
 	ExcludeRegistrantIds []string `form:"exclude_registrant_ids,omitempty" json:"exclude_registrant_ids,omitempty" xml:"exclude_registrant_ids,omitempty"`
 }
 
+// UpdateItxOccurrenceRequestBody is the type of the "Meeting Service" service
+// "update-itx-occurrence" endpoint HTTP request body.
+type UpdateItxOccurrenceRequestBody struct {
+	// Meeting start time in RFC3339 format
+	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
+	// Meeting duration in minutes
+	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
+	// Meeting topic/title
+	Topic *string `form:"topic,omitempty" json:"topic,omitempty" xml:"topic,omitempty"`
+	// Meeting agenda/description
+	Agenda *string `form:"agenda,omitempty" json:"agenda,omitempty" xml:"agenda,omitempty"`
+	// Recurrence settings
+	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -3841,6 +3856,126 @@ type RegisterItxCommitteeMembersServiceUnavailableResponseBody struct {
 // "Meeting Service" service "register-itx-committee-members" endpoint HTTP
 // response body for the "Unauthorized" error.
 type RegisterItxCommitteeMembersUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxOccurrenceBadRequestResponseBody is the type of the "Meeting
+// Service" service "update-itx-occurrence" endpoint HTTP response body for the
+// "BadRequest" error.
+type UpdateItxOccurrenceBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxOccurrenceForbiddenResponseBody is the type of the "Meeting
+// Service" service "update-itx-occurrence" endpoint HTTP response body for the
+// "Forbidden" error.
+type UpdateItxOccurrenceForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxOccurrenceInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "update-itx-occurrence" endpoint HTTP response
+// body for the "InternalServerError" error.
+type UpdateItxOccurrenceInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxOccurrenceNotFoundResponseBody is the type of the "Meeting Service"
+// service "update-itx-occurrence" endpoint HTTP response body for the
+// "NotFound" error.
+type UpdateItxOccurrenceNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxOccurrenceServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "update-itx-occurrence" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type UpdateItxOccurrenceServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxOccurrenceUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "update-itx-occurrence" endpoint HTTP response body for the
+// "Unauthorized" error.
+type UpdateItxOccurrenceUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxOccurrenceBadRequestResponseBody is the type of the "Meeting
+// Service" service "delete-itx-occurrence" endpoint HTTP response body for the
+// "BadRequest" error.
+type DeleteItxOccurrenceBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxOccurrenceForbiddenResponseBody is the type of the "Meeting
+// Service" service "delete-itx-occurrence" endpoint HTTP response body for the
+// "Forbidden" error.
+type DeleteItxOccurrenceForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxOccurrenceInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "delete-itx-occurrence" endpoint HTTP response
+// body for the "InternalServerError" error.
+type DeleteItxOccurrenceInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxOccurrenceNotFoundResponseBody is the type of the "Meeting Service"
+// service "delete-itx-occurrence" endpoint HTTP response body for the
+// "NotFound" error.
+type DeleteItxOccurrenceNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxOccurrenceServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-itx-occurrence" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type DeleteItxOccurrenceServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxOccurrenceUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "delete-itx-occurrence" endpoint HTTP response body for the
+// "Unauthorized" error.
+type DeleteItxOccurrenceUnauthorizedResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
@@ -8183,6 +8318,138 @@ func NewRegisterItxCommitteeMembersUnauthorizedResponseBody(res *meetingservice.
 	return body
 }
 
+// NewUpdateItxOccurrenceBadRequestResponseBody builds the HTTP response body
+// from the result of the "update-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewUpdateItxOccurrenceBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdateItxOccurrenceBadRequestResponseBody {
+	body := &UpdateItxOccurrenceBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxOccurrenceForbiddenResponseBody builds the HTTP response body
+// from the result of the "update-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewUpdateItxOccurrenceForbiddenResponseBody(res *meetingservice.ForbiddenError) *UpdateItxOccurrenceForbiddenResponseBody {
+	body := &UpdateItxOccurrenceForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxOccurrenceInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "update-itx-occurrence" endpoint of the
+// "Meeting Service" service.
+func NewUpdateItxOccurrenceInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdateItxOccurrenceInternalServerErrorResponseBody {
+	body := &UpdateItxOccurrenceInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxOccurrenceNotFoundResponseBody builds the HTTP response body
+// from the result of the "update-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewUpdateItxOccurrenceNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdateItxOccurrenceNotFoundResponseBody {
+	body := &UpdateItxOccurrenceNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxOccurrenceServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "update-itx-occurrence" endpoint of the
+// "Meeting Service" service.
+func NewUpdateItxOccurrenceServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdateItxOccurrenceServiceUnavailableResponseBody {
+	body := &UpdateItxOccurrenceServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxOccurrenceUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "update-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewUpdateItxOccurrenceUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *UpdateItxOccurrenceUnauthorizedResponseBody {
+	body := &UpdateItxOccurrenceUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxOccurrenceBadRequestResponseBody builds the HTTP response body
+// from the result of the "delete-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewDeleteItxOccurrenceBadRequestResponseBody(res *meetingservice.BadRequestError) *DeleteItxOccurrenceBadRequestResponseBody {
+	body := &DeleteItxOccurrenceBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxOccurrenceForbiddenResponseBody builds the HTTP response body
+// from the result of the "delete-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewDeleteItxOccurrenceForbiddenResponseBody(res *meetingservice.ForbiddenError) *DeleteItxOccurrenceForbiddenResponseBody {
+	body := &DeleteItxOccurrenceForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxOccurrenceInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "delete-itx-occurrence" endpoint of the
+// "Meeting Service" service.
+func NewDeleteItxOccurrenceInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *DeleteItxOccurrenceInternalServerErrorResponseBody {
+	body := &DeleteItxOccurrenceInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxOccurrenceNotFoundResponseBody builds the HTTP response body
+// from the result of the "delete-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewDeleteItxOccurrenceNotFoundResponseBody(res *meetingservice.NotFoundError) *DeleteItxOccurrenceNotFoundResponseBody {
+	body := &DeleteItxOccurrenceNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxOccurrenceServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "delete-itx-occurrence" endpoint of the
+// "Meeting Service" service.
+func NewDeleteItxOccurrenceServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *DeleteItxOccurrenceServiceUnavailableResponseBody {
+	body := &DeleteItxOccurrenceServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxOccurrenceUnauthorizedResponseBody builds the HTTP response body
+// from the result of the "delete-itx-occurrence" endpoint of the "Meeting
+// Service" service.
+func NewDeleteItxOccurrenceUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *DeleteItxOccurrenceUnauthorizedResponseBody {
+	body := &DeleteItxOccurrenceUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewGetMeetingsPayload builds a Meeting Service service get-meetings endpoint
 // payload.
 func NewGetMeetingsPayload(version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingsPayload {
@@ -9140,6 +9407,38 @@ func NewRegisterItxCommitteeMembersPayload(meetingID string, version *string, be
 	return v
 }
 
+// NewUpdateItxOccurrencePayload builds a Meeting Service service
+// update-itx-occurrence endpoint payload.
+func NewUpdateItxOccurrencePayload(body *UpdateItxOccurrenceRequestBody, meetingID string, occurrenceID string, version *string, bearerToken *string) *meetingservice.UpdateItxOccurrencePayload {
+	v := &meetingservice.UpdateItxOccurrencePayload{
+		StartTime: body.StartTime,
+		Duration:  body.Duration,
+		Topic:     body.Topic,
+		Agenda:    body.Agenda,
+	}
+	if body.Recurrence != nil {
+		v.Recurrence = unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	v.MeetingID = meetingID
+	v.OccurrenceID = occurrenceID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewDeleteItxOccurrencePayload builds a Meeting Service service
+// delete-itx-occurrence endpoint payload.
+func NewDeleteItxOccurrencePayload(meetingID string, occurrenceID string, version *string, bearerToken *string) *meetingservice.DeleteItxOccurrencePayload {
+	v := &meetingservice.DeleteItxOccurrencePayload{}
+	v.MeetingID = meetingID
+	v.OccurrenceID = occurrenceID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
 // ValidateCreateMeetingRequestBody runs the validations defined on
 // Create-MeetingRequestBody
 func ValidateCreateMeetingRequestBody(body *CreateMeetingRequestBody) (err error) {
@@ -9938,6 +10237,25 @@ func ValidateUpdateItxRegistrantRequestBody(body *UpdateItxRegistrantRequestBody
 	}
 	if body.UpdatedBy != nil {
 		if err2 := ValidateITXUserRequestBody(body.UpdatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateUpdateItxOccurrenceRequestBody runs the validations defined on
+// Update-Itx-OccurrenceRequestBody
+func ValidateUpdateItxOccurrenceRequestBody(body *UpdateItxOccurrenceRequestBody) (err error) {
+	if body.StartTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
+	}
+	if body.Duration != nil {
+		if *body.Duration < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 1, true))
+		}
+	}
+	if body.Recurrence != nil {
+		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}

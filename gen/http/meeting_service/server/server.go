@@ -76,6 +76,8 @@ type Server struct {
 	ResendItxRegistrantInvitation     http.Handler
 	ResendItxMeetingInvitations       http.Handler
 	RegisterItxCommitteeMembers       http.Handler
+	UpdateItxOccurrence               http.Handler
+	DeleteItxOccurrence               http.Handler
 	GenHTTPOpenapiJSON                http.Handler
 	GenHTTPOpenapiYaml                http.Handler
 	GenHTTPOpenapi3JSON               http.Handler
@@ -196,6 +198,8 @@ func New(
 			{"ResendItxRegistrantInvitation", "POST", "/itx/meetings/{meeting_id}/registrants/{registrant_id}/resend"},
 			{"ResendItxMeetingInvitations", "POST", "/itx/meetings/{meeting_id}/resend"},
 			{"RegisterItxCommitteeMembers", "POST", "/itx/meetings/{meeting_id}/register_committee_members"},
+			{"UpdateItxOccurrence", "PUT", "/itx/meetings/{meeting_id}/occurrences/{occurrence_id}"},
+			{"DeleteItxOccurrence", "DELETE", "/itx/meetings/{meeting_id}/occurrences/{occurrence_id}"},
 			{"Serve gen/http/openapi.json", "GET", "/_meetings/openapi.json"},
 			{"Serve gen/http/openapi.yaml", "GET", "/_meetings/openapi.yaml"},
 			{"Serve gen/http/openapi3.json", "GET", "/_meetings/openapi3.json"},
@@ -256,6 +260,8 @@ func New(
 		ResendItxRegistrantInvitation:     NewResendItxRegistrantInvitationHandler(e.ResendItxRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
 		ResendItxMeetingInvitations:       NewResendItxMeetingInvitationsHandler(e.ResendItxMeetingInvitations, mux, decoder, encoder, errhandler, formatter),
 		RegisterItxCommitteeMembers:       NewRegisterItxCommitteeMembersHandler(e.RegisterItxCommitteeMembers, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxOccurrence:               NewUpdateItxOccurrenceHandler(e.UpdateItxOccurrence, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxOccurrence:               NewDeleteItxOccurrenceHandler(e.DeleteItxOccurrence, mux, decoder, encoder, errhandler, formatter),
 		GenHTTPOpenapiJSON:                http.FileServer(fileSystemGenHTTPOpenapiJSON),
 		GenHTTPOpenapiYaml:                http.FileServer(fileSystemGenHTTPOpenapiYaml),
 		GenHTTPOpenapi3JSON:               http.FileServer(fileSystemGenHTTPOpenapi3JSON),
@@ -323,6 +329,8 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.ResendItxRegistrantInvitation = m(s.ResendItxRegistrantInvitation)
 	s.ResendItxMeetingInvitations = m(s.ResendItxMeetingInvitations)
 	s.RegisterItxCommitteeMembers = m(s.RegisterItxCommitteeMembers)
+	s.UpdateItxOccurrence = m(s.UpdateItxOccurrence)
+	s.DeleteItxOccurrence = m(s.DeleteItxOccurrence)
 }
 
 // MethodNames returns the methods served.
@@ -385,6 +393,8 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountResendItxRegistrantInvitationHandler(mux, h.ResendItxRegistrantInvitation)
 	MountResendItxMeetingInvitationsHandler(mux, h.ResendItxMeetingInvitations)
 	MountRegisterItxCommitteeMembersHandler(mux, h.RegisterItxCommitteeMembers)
+	MountUpdateItxOccurrenceHandler(mux, h.UpdateItxOccurrence)
+	MountDeleteItxOccurrenceHandler(mux, h.DeleteItxOccurrence)
 	MountGenHTTPOpenapiJSON(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapiJSON))
 	MountGenHTTPOpenapiYaml(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapiYaml))
 	MountGenHTTPOpenapi3JSON(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapi3JSON))
@@ -3318,6 +3328,114 @@ func NewRegisterItxCommitteeMembersHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "register-itx-committee-members")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountUpdateItxOccurrenceHandler configures the mux to serve the "Meeting
+// Service" service "update-itx-occurrence" endpoint.
+func MountUpdateItxOccurrenceHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("PUT", "/itx/meetings/{meeting_id}/occurrences/{occurrence_id}", f)
+}
+
+// NewUpdateItxOccurrenceHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "update-itx-occurrence"
+// endpoint.
+func NewUpdateItxOccurrenceHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeUpdateItxOccurrenceRequest(mux, decoder)
+		encodeResponse = EncodeUpdateItxOccurrenceResponse(encoder)
+		encodeError    = EncodeUpdateItxOccurrenceError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "update-itx-occurrence")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountDeleteItxOccurrenceHandler configures the mux to serve the "Meeting
+// Service" service "delete-itx-occurrence" endpoint.
+func MountDeleteItxOccurrenceHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("DELETE", "/itx/meetings/{meeting_id}/occurrences/{occurrence_id}", f)
+}
+
+// NewDeleteItxOccurrenceHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "delete-itx-occurrence"
+// endpoint.
+func NewDeleteItxOccurrenceHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeDeleteItxOccurrenceRequest(mux, decoder)
+		encodeResponse = EncodeDeleteItxOccurrenceResponse(encoder)
+		encodeError    = EncodeDeleteItxOccurrenceError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "delete-itx-occurrence")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

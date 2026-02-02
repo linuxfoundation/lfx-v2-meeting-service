@@ -285,3 +285,13 @@ func ResendItxMeetingInvitationsMeetingServicePath(meetingID string) string {
 func RegisterItxCommitteeMembersMeetingServicePath(meetingID string) string {
 	return fmt.Sprintf("/itx/meetings/%v/register_committee_members", meetingID)
 }
+
+// UpdateItxOccurrenceMeetingServicePath returns the URL path to the Meeting Service service update-itx-occurrence HTTP endpoint.
+func UpdateItxOccurrenceMeetingServicePath(meetingID string, occurrenceID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/occurrences/%v", meetingID, occurrenceID)
+}
+
+// DeleteItxOccurrenceMeetingServicePath returns the URL path to the Meeting Service service delete-itx-occurrence HTTP endpoint.
+func DeleteItxOccurrenceMeetingServicePath(meetingID string, occurrenceID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/occurrences/%v", meetingID, occurrenceID)
+}

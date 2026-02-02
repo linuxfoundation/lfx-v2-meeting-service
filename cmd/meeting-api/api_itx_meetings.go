@@ -142,3 +142,28 @@ func (s *MeetingsAPI) RegisterItxCommitteeMembers(ctx context.Context, p *meetin
 
 	return nil
 }
+
+// UpdateItxOccurrence updates a specific occurrence of a recurring meeting via ITX proxy
+func (s *MeetingsAPI) UpdateItxOccurrence(ctx context.Context, p *meetingsvc.UpdateItxOccurrencePayload) error {
+	// Convert Goa payload to ITX request
+	req := service.ConvertUpdateOccurrencePayloadToITX(p)
+
+	// Call ITX service
+	err := s.itxMeetingService.UpdateOccurrence(ctx, p.MeetingID, p.OccurrenceID, req)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return nil
+}
+
+// DeleteItxOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
+func (s *MeetingsAPI) DeleteItxOccurrence(ctx context.Context, p *meetingsvc.DeleteItxOccurrencePayload) error {
+	// Call ITX service
+	err := s.itxMeetingService.DeleteOccurrence(ctx, p.MeetingID, p.OccurrenceID)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return nil
+}

@@ -661,6 +661,83 @@ func (c *Client) RegisterCommitteeMembers(ctx context.Context, meetingID string)
 	return nil
 }
 
+// UpdateOccurrence updates a specific occurrence of a recurring meeting via ITX proxy
+func (c *Client) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
+	// Marshal request
+	body, err := json.Marshal(req)
+	if err != nil {
+		return domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/occurrences/%s", c.config.BaseURL, meetingID, occurrenceID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body for error handling
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// DeleteOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
+func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/occurrences/%s", c.config.BaseURL, meetingID, occurrenceID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body for error handling
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
 // mapHTTPError maps HTTP status codes to domain errors
 func (c *Client) mapHTTPError(statusCode int, body []byte) error {
 	var errMsg itx.ErrorResponse

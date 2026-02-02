@@ -71,6 +71,8 @@ type Endpoints struct {
 	ResendItxRegistrantInvitation     goa.Endpoint
 	ResendItxMeetingInvitations       goa.Endpoint
 	RegisterItxCommitteeMembers       goa.Endpoint
+	UpdateItxOccurrence               goa.Endpoint
+	DeleteItxOccurrence               goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -134,6 +136,8 @@ func NewEndpoints(s Service) *Endpoints {
 		ResendItxRegistrantInvitation:     NewResendItxRegistrantInvitationEndpoint(s, a.JWTAuth),
 		ResendItxMeetingInvitations:       NewResendItxMeetingInvitationsEndpoint(s, a.JWTAuth),
 		RegisterItxCommitteeMembers:       NewRegisterItxCommitteeMembersEndpoint(s, a.JWTAuth),
+		UpdateItxOccurrence:               NewUpdateItxOccurrenceEndpoint(s, a.JWTAuth),
+		DeleteItxOccurrence:               NewDeleteItxOccurrenceEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -195,6 +199,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.ResendItxRegistrantInvitation = m(e.ResendItxRegistrantInvitation)
 	e.ResendItxMeetingInvitations = m(e.ResendItxMeetingInvitations)
 	e.RegisterItxCommitteeMembers = m(e.RegisterItxCommitteeMembers)
+	e.UpdateItxOccurrence = m(e.UpdateItxOccurrence)
+	e.DeleteItxOccurrence = m(e.DeleteItxOccurrence)
 }
 
 // NewGetMeetingsEndpoint returns an endpoint function that calls the method
@@ -1427,5 +1433,51 @@ func NewRegisterItxCommitteeMembersEndpoint(s Service, authJWTFn security.AuthJW
 			return nil, err
 		}
 		return nil, s.RegisterItxCommitteeMembers(ctx, p)
+	}
+}
+
+// NewUpdateItxOccurrenceEndpoint returns an endpoint function that calls the
+// method "update-itx-occurrence" of service "Meeting Service".
+func NewUpdateItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdateItxOccurrencePayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.UpdateItxOccurrence(ctx, p)
+	}
+}
+
+// NewDeleteItxOccurrenceEndpoint returns an endpoint function that calls the
+// method "delete-itx-occurrence" of service "Meeting Service".
+func NewDeleteItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeleteItxOccurrencePayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeleteItxOccurrence(ctx, p)
 	}
 }

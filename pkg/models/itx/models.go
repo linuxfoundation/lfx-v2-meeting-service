@@ -210,3 +210,13 @@ type RegistrantICS struct {
 type ResendMeetingInvitationsRequest struct {
 	ExcludeRegistrantIDs []string `json:"exclude_registrant_ids,omitempty"` // Registrant IDs to exclude
 }
+
+// UpdateOccurrenceRequest represents the request to update a meeting occurrence
+type UpdateOccurrenceRequest struct {
+	StartTime  string       `json:"start_time,omitempty"` // Meeting start time in RFC3339 format
+	Duration   int          `json:"duration,omitempty"`   // Meeting duration in minutes
+	Topic      string       `json:"topic,omitempty"`      // Meeting topic/title
+	Agenda     string       `json:"agenda,omitempty"`     // Meeting agenda/description
+	Recurrence *Recurrence  `json:"recurrence,omitempty"` // Recurrence settings
+	UpdatedBy  *User        `json:"updated_by,omitempty"` // User updating the occurrence (read-only, set by API)
+}

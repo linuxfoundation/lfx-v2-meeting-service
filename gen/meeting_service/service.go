@@ -134,6 +134,10 @@ type Service interface {
 	ResendItxMeetingInvitations(context.Context, *ResendItxMeetingInvitationsPayload) (err error)
 	// Register committee members to a meeting asynchronously through ITX API proxy
 	RegisterItxCommitteeMembers(context.Context, *RegisterItxCommitteeMembersPayload) (err error)
+	// Update a specific occurrence of a recurring meeting through ITX API proxy
+	UpdateItxOccurrence(context.Context, *UpdateItxOccurrencePayload) (err error)
+	// Delete a specific occurrence of a recurring meeting through ITX API proxy
+	DeleteItxOccurrence(context.Context, *DeleteItxOccurrencePayload) (err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -156,7 +160,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [55]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members"}
+var MethodNames = [57]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -580,6 +584,19 @@ type DeleteItxMeetingPayload struct {
 	Version *string
 	// The Zoom meeting ID
 	MeetingID string
+}
+
+// DeleteItxOccurrencePayload is the payload type of the Meeting Service
+// service delete-itx-occurrence method.
+type DeleteItxOccurrencePayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the occurrence (Unix timestamp)
+	OccurrenceID string
 }
 
 // DeleteItxRegistrantPayload is the payload type of the Meeting Service
@@ -1967,6 +1984,29 @@ type UpdateItxMeetingPayload struct {
 	// only for hosts)
 	ArtifactVisibility *string
 	// The recurrence of the meeting
+	Recurrence *Recurrence
+}
+
+// UpdateItxOccurrencePayload is the payload type of the Meeting Service
+// service update-itx-occurrence method.
+type UpdateItxOccurrencePayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the occurrence (Unix timestamp)
+	OccurrenceID string
+	// Meeting start time in RFC3339 format
+	StartTime *string
+	// Meeting duration in minutes
+	Duration *int
+	// Meeting topic/title
+	Topic *string
+	// Meeting agenda/description
+	Agenda *string
+	// Recurrence settings
 	Recurrence *Recurrence
 }
 
