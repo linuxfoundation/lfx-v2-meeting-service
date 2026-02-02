@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
@@ -54,7 +55,9 @@ func run() int {
 	}
 	// Handle shutdown properly so nothing leaks.
 	defer func() {
-		if shutdownErr := otelShutdown(context.Background()); shutdownErr != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownSeconds*time.Second)
+		defer cancel()
+		if shutdownErr := otelShutdown(ctx); shutdownErr != nil {
 			slog.With(logging.ErrKey, shutdownErr).Error("error shutting down OpenTelemetry SDK")
 		}
 	}()

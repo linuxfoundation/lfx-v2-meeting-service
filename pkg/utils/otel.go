@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/contrib/propagators/jaeger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -237,11 +238,12 @@ func newResource(cfg OTelConfig) (*resource.Resource, error) {
 	)
 }
 
-// newPropagator creates a composite text map propagator with W3C Trace Context and Baggage support.
+// newPropagator creates a composite text map propagator with W3C Trace Context, Baggage, and Jaeger support.
 func newPropagator() propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
+		jaeger.Jaeger{},
 	)
 }
 
