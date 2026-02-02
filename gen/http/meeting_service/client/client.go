@@ -233,6 +233,10 @@ type Client struct {
 	// the resend-itx-meeting-invitations endpoint.
 	ResendItxMeetingInvitationsDoer goahttp.Doer
 
+	// RegisterItxCommitteeMembers Doer is the HTTP client used to make requests to
+	// the register-itx-committee-members endpoint.
+	RegisterItxCommitteeMembersDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -318,6 +322,7 @@ func NewClient(
 		GetItxRegistrantIcsDoer:               doer,
 		ResendItxRegistrantInvitationDoer:     doer,
 		ResendItxMeetingInvitationsDoer:       doer,
+		RegisterItxCommitteeMembersDoer:       doer,
 		RestoreResponseBody:                   restoreBody,
 		scheme:                                scheme,
 		host:                                  host,
@@ -1609,6 +1614,30 @@ func (c *Client) ResendItxMeetingInvitations() goa.Endpoint {
 		resp, err := c.ResendItxMeetingInvitationsDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "resend-itx-meeting-invitations", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// RegisterItxCommitteeMembers returns an endpoint that makes HTTP requests to
+// the Meeting Service service register-itx-committee-members server.
+func (c *Client) RegisterItxCommitteeMembers() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeRegisterItxCommitteeMembersRequest(c.encoder)
+		decodeResponse = DecodeRegisterItxCommitteeMembersResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildRegisterItxCommitteeMembersRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.RegisterItxCommitteeMembersDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "register-itx-committee-members", err)
 		}
 		return decodeResponse(resp)
 	}

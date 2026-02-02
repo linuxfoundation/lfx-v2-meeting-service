@@ -3787,6 +3787,66 @@ type ResendItxMeetingInvitationsUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// RegisterItxCommitteeMembersBadRequestResponseBody is the type of the
+// "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "BadRequest" error.
+type RegisterItxCommitteeMembersBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// RegisterItxCommitteeMembersForbiddenResponseBody is the type of the "Meeting
+// Service" service "register-itx-committee-members" endpoint HTTP response
+// body for the "Forbidden" error.
+type RegisterItxCommitteeMembersForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// RegisterItxCommitteeMembersInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "InternalServerError" error.
+type RegisterItxCommitteeMembersInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// RegisterItxCommitteeMembersNotFoundResponseBody is the type of the "Meeting
+// Service" service "register-itx-committee-members" endpoint HTTP response
+// body for the "NotFound" error.
+type RegisterItxCommitteeMembersNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// RegisterItxCommitteeMembersServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type RegisterItxCommitteeMembersServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// RegisterItxCommitteeMembersUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "Unauthorized" error.
+type RegisterItxCommitteeMembersUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // MeetingFullResponseBody is used to define fields on response body types.
 type MeetingFullResponseBody struct {
 	// The UID of the meeting
@@ -8549,6 +8609,72 @@ func NewResendItxMeetingInvitationsUnauthorized(body *ResendItxMeetingInvitation
 	return v
 }
 
+// NewRegisterItxCommitteeMembersBadRequest builds a Meeting Service service
+// register-itx-committee-members endpoint BadRequest error.
+func NewRegisterItxCommitteeMembersBadRequest(body *RegisterItxCommitteeMembersBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewRegisterItxCommitteeMembersForbidden builds a Meeting Service service
+// register-itx-committee-members endpoint Forbidden error.
+func NewRegisterItxCommitteeMembersForbidden(body *RegisterItxCommitteeMembersForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewRegisterItxCommitteeMembersInternalServerError builds a Meeting Service
+// service register-itx-committee-members endpoint InternalServerError error.
+func NewRegisterItxCommitteeMembersInternalServerError(body *RegisterItxCommitteeMembersInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewRegisterItxCommitteeMembersNotFound builds a Meeting Service service
+// register-itx-committee-members endpoint NotFound error.
+func NewRegisterItxCommitteeMembersNotFound(body *RegisterItxCommitteeMembersNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewRegisterItxCommitteeMembersServiceUnavailable builds a Meeting Service
+// service register-itx-committee-members endpoint ServiceUnavailable error.
+func NewRegisterItxCommitteeMembersServiceUnavailable(body *RegisterItxCommitteeMembersServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewRegisterItxCommitteeMembersUnauthorized builds a Meeting Service service
+// register-itx-committee-members endpoint Unauthorized error.
+func NewRegisterItxCommitteeMembersUnauthorized(body *RegisterItxCommitteeMembersUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // ValidateGetMeetingsResponseBody runs the validations defined on
 // Get-MeetingsResponseBody
 func ValidateGetMeetingsResponseBody(body *GetMeetingsResponseBody) (err error) {
@@ -13229,6 +13355,82 @@ func ValidateResendItxMeetingInvitationsServiceUnavailableResponseBody(body *Res
 // validations defined on
 // resend-itx-meeting-invitations_Unauthorized_response_body
 func ValidateResendItxMeetingInvitationsUnauthorizedResponseBody(body *ResendItxMeetingInvitationsUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateRegisterItxCommitteeMembersBadRequestResponseBody runs the
+// validations defined on
+// register-itx-committee-members_BadRequest_response_body
+func ValidateRegisterItxCommitteeMembersBadRequestResponseBody(body *RegisterItxCommitteeMembersBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateRegisterItxCommitteeMembersForbiddenResponseBody runs the
+// validations defined on register-itx-committee-members_Forbidden_response_body
+func ValidateRegisterItxCommitteeMembersForbiddenResponseBody(body *RegisterItxCommitteeMembersForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateRegisterItxCommitteeMembersInternalServerErrorResponseBody runs the
+// validations defined on
+// register-itx-committee-members_InternalServerError_response_body
+func ValidateRegisterItxCommitteeMembersInternalServerErrorResponseBody(body *RegisterItxCommitteeMembersInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateRegisterItxCommitteeMembersNotFoundResponseBody runs the validations
+// defined on register-itx-committee-members_NotFound_response_body
+func ValidateRegisterItxCommitteeMembersNotFoundResponseBody(body *RegisterItxCommitteeMembersNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateRegisterItxCommitteeMembersServiceUnavailableResponseBody runs the
+// validations defined on
+// register-itx-committee-members_ServiceUnavailable_response_body
+func ValidateRegisterItxCommitteeMembersServiceUnavailableResponseBody(body *RegisterItxCommitteeMembersServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateRegisterItxCommitteeMembersUnauthorizedResponseBody runs the
+// validations defined on
+// register-itx-committee-members_Unauthorized_response_body
+func ValidateRegisterItxCommitteeMembersUnauthorizedResponseBody(body *RegisterItxCommitteeMembersUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

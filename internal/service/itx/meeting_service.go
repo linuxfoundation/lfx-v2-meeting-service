@@ -129,6 +129,12 @@ func (s *MeetingService) ResendMeetingInvitations(ctx context.Context, meetingID
 	return s.proxyClient.ResendMeetingInvitations(ctx, meetingID, req)
 }
 
+// RegisterCommitteeMembers registers committee members to a meeting asynchronously via ITX proxy
+func (s *MeetingService) RegisterCommitteeMembers(ctx context.Context, meetingID string) error {
+	// Call ITX proxy
+	return s.proxyClient.RegisterCommitteeMembers(ctx, meetingID)
+}
+
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{

@@ -23,7 +23,7 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|create-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|get-past-meeting-attachment-metadata|delete-past-meeting-attachment|readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations)",
+		"meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|create-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|get-past-meeting-attachment-metadata|delete-past-meeting-attachment|readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members)",
 	}
 }
 
@@ -381,6 +381,11 @@ func ParseEndpoint(
 		meetingServiceResendItxMeetingInvitationsMeetingIDFlag   = meetingServiceResendItxMeetingInvitationsFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
 		meetingServiceResendItxMeetingInvitationsVersionFlag     = meetingServiceResendItxMeetingInvitationsFlags.String("version", "", "")
 		meetingServiceResendItxMeetingInvitationsBearerTokenFlag = meetingServiceResendItxMeetingInvitationsFlags.String("bearer-token", "", "")
+
+		meetingServiceRegisterItxCommitteeMembersFlags           = flag.NewFlagSet("register-itx-committee-members", flag.ExitOnError)
+		meetingServiceRegisterItxCommitteeMembersMeetingIDFlag   = meetingServiceRegisterItxCommitteeMembersFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceRegisterItxCommitteeMembersVersionFlag     = meetingServiceRegisterItxCommitteeMembersFlags.String("version", "", "")
+		meetingServiceRegisterItxCommitteeMembersBearerTokenFlag = meetingServiceRegisterItxCommitteeMembersFlags.String("bearer-token", "", "")
 	)
 	meetingServiceFlags.Usage = meetingServiceUsage
 	meetingServiceGetMeetingsFlags.Usage = meetingServiceGetMeetingsUsage
@@ -437,6 +442,7 @@ func ParseEndpoint(
 	meetingServiceGetItxRegistrantIcsFlags.Usage = meetingServiceGetItxRegistrantIcsUsage
 	meetingServiceResendItxRegistrantInvitationFlags.Usage = meetingServiceResendItxRegistrantInvitationUsage
 	meetingServiceResendItxMeetingInvitationsFlags.Usage = meetingServiceResendItxMeetingInvitationsUsage
+	meetingServiceRegisterItxCommitteeMembersFlags.Usage = meetingServiceRegisterItxCommitteeMembersUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -634,6 +640,9 @@ func ParseEndpoint(
 			case "resend-itx-meeting-invitations":
 				epf = meetingServiceResendItxMeetingInvitationsFlags
 
+			case "register-itx-committee-members":
+				epf = meetingServiceRegisterItxCommitteeMembersFlags
+
 			}
 
 		}
@@ -819,6 +828,9 @@ func ParseEndpoint(
 			case "resend-itx-meeting-invitations":
 				endpoint = c.ResendItxMeetingInvitations()
 				data, err = meetingservicec.BuildResendItxMeetingInvitationsPayload(*meetingServiceResendItxMeetingInvitationsBodyFlag, *meetingServiceResendItxMeetingInvitationsMeetingIDFlag, *meetingServiceResendItxMeetingInvitationsVersionFlag, *meetingServiceResendItxMeetingInvitationsBearerTokenFlag)
+			case "register-itx-committee-members":
+				endpoint = c.RegisterItxCommitteeMembers()
+				data, err = meetingservicec.BuildRegisterItxCommitteeMembersPayload(*meetingServiceRegisterItxCommitteeMembersMeetingIDFlag, *meetingServiceRegisterItxCommitteeMembersVersionFlag, *meetingServiceRegisterItxCommitteeMembersBearerTokenFlag)
 			}
 		}
 	}
@@ -890,6 +902,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    get-itx-registrant-ics: Get ICS calendar file for a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    resend-itx-registrant-invitation: Resend meeting invitation to a registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    resend-itx-meeting-invitations: Resend meeting invitations to all registrants through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    register-itx-committee-members: Register committee members to a meeting asynchronously through ITX API proxy`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
 	fmt.Fprintf(os.Stderr, "    %s meeting-service COMMAND --help\n", os.Args[0])
@@ -2211,4 +2224,26 @@ func meetingServiceResendItxMeetingInvitationsUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service resend-itx-meeting-invitations --body '{\n      \"exclude_registrant_ids\": [\n         \"reg123\",\n         \"reg456\"\n      ]\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceRegisterItxCommitteeMembersUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service register-itx-committee-members", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Register committee members to a meeting asynchronously through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service register-itx-committee-members --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }

@@ -70,6 +70,7 @@ type Endpoints struct {
 	GetItxRegistrantIcs               goa.Endpoint
 	ResendItxRegistrantInvitation     goa.Endpoint
 	ResendItxMeetingInvitations       goa.Endpoint
+	RegisterItxCommitteeMembers       goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -132,6 +133,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetItxRegistrantIcs:               NewGetItxRegistrantIcsEndpoint(s, a.JWTAuth),
 		ResendItxRegistrantInvitation:     NewResendItxRegistrantInvitationEndpoint(s, a.JWTAuth),
 		ResendItxMeetingInvitations:       NewResendItxMeetingInvitationsEndpoint(s, a.JWTAuth),
+		RegisterItxCommitteeMembers:       NewRegisterItxCommitteeMembersEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -192,6 +194,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetItxRegistrantIcs = m(e.GetItxRegistrantIcs)
 	e.ResendItxRegistrantInvitation = m(e.ResendItxRegistrantInvitation)
 	e.ResendItxMeetingInvitations = m(e.ResendItxMeetingInvitations)
+	e.RegisterItxCommitteeMembers = m(e.RegisterItxCommitteeMembers)
 }
 
 // NewGetMeetingsEndpoint returns an endpoint function that calls the method
@@ -1400,5 +1403,29 @@ func NewResendItxMeetingInvitationsEndpoint(s Service, authJWTFn security.AuthJW
 			return nil, err
 		}
 		return nil, s.ResendItxMeetingInvitations(ctx, p)
+	}
+}
+
+// NewRegisterItxCommitteeMembersEndpoint returns an endpoint function that
+// calls the method "register-itx-committee-members" of service "Meeting
+// Service".
+func NewRegisterItxCommitteeMembersEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*RegisterItxCommitteeMembersPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.RegisterItxCommitteeMembers(ctx, p)
 	}
 }

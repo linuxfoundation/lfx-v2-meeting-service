@@ -3787,6 +3787,66 @@ type ResendItxMeetingInvitationsUnauthorizedResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// RegisterItxCommitteeMembersBadRequestResponseBody is the type of the
+// "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "BadRequest" error.
+type RegisterItxCommitteeMembersBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// RegisterItxCommitteeMembersForbiddenResponseBody is the type of the "Meeting
+// Service" service "register-itx-committee-members" endpoint HTTP response
+// body for the "Forbidden" error.
+type RegisterItxCommitteeMembersForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// RegisterItxCommitteeMembersInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "InternalServerError" error.
+type RegisterItxCommitteeMembersInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// RegisterItxCommitteeMembersNotFoundResponseBody is the type of the "Meeting
+// Service" service "register-itx-committee-members" endpoint HTTP response
+// body for the "NotFound" error.
+type RegisterItxCommitteeMembersNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// RegisterItxCommitteeMembersServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type RegisterItxCommitteeMembersServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// RegisterItxCommitteeMembersUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "register-itx-committee-members" endpoint HTTP
+// response body for the "Unauthorized" error.
+type RegisterItxCommitteeMembersUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // MeetingFullResponseBody is used to define fields on response body types.
 type MeetingFullResponseBody struct {
 	// The UID of the meeting
@@ -8057,6 +8117,72 @@ func NewResendItxMeetingInvitationsUnauthorizedResponseBody(res *meetingservice.
 	return body
 }
 
+// NewRegisterItxCommitteeMembersBadRequestResponseBody builds the HTTP
+// response body from the result of the "register-itx-committee-members"
+// endpoint of the "Meeting Service" service.
+func NewRegisterItxCommitteeMembersBadRequestResponseBody(res *meetingservice.BadRequestError) *RegisterItxCommitteeMembersBadRequestResponseBody {
+	body := &RegisterItxCommitteeMembersBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewRegisterItxCommitteeMembersForbiddenResponseBody builds the HTTP response
+// body from the result of the "register-itx-committee-members" endpoint of the
+// "Meeting Service" service.
+func NewRegisterItxCommitteeMembersForbiddenResponseBody(res *meetingservice.ForbiddenError) *RegisterItxCommitteeMembersForbiddenResponseBody {
+	body := &RegisterItxCommitteeMembersForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewRegisterItxCommitteeMembersInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the "register-itx-committee-members"
+// endpoint of the "Meeting Service" service.
+func NewRegisterItxCommitteeMembersInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *RegisterItxCommitteeMembersInternalServerErrorResponseBody {
+	body := &RegisterItxCommitteeMembersInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewRegisterItxCommitteeMembersNotFoundResponseBody builds the HTTP response
+// body from the result of the "register-itx-committee-members" endpoint of the
+// "Meeting Service" service.
+func NewRegisterItxCommitteeMembersNotFoundResponseBody(res *meetingservice.NotFoundError) *RegisterItxCommitteeMembersNotFoundResponseBody {
+	body := &RegisterItxCommitteeMembersNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewRegisterItxCommitteeMembersServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "register-itx-committee-members"
+// endpoint of the "Meeting Service" service.
+func NewRegisterItxCommitteeMembersServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *RegisterItxCommitteeMembersServiceUnavailableResponseBody {
+	body := &RegisterItxCommitteeMembersServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewRegisterItxCommitteeMembersUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "register-itx-committee-members"
+// endpoint of the "Meeting Service" service.
+func NewRegisterItxCommitteeMembersUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *RegisterItxCommitteeMembersUnauthorizedResponseBody {
+	body := &RegisterItxCommitteeMembersUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewGetMeetingsPayload builds a Meeting Service service get-meetings endpoint
 // payload.
 func NewGetMeetingsPayload(version *string, includeCancelledOccurrences bool, bearerToken *string) *meetingservice.GetMeetingsPayload {
@@ -8996,6 +9122,17 @@ func NewResendItxMeetingInvitationsPayload(body *ResendItxMeetingInvitationsRequ
 			v.ExcludeRegistrantIds[i] = val
 		}
 	}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewRegisterItxCommitteeMembersPayload builds a Meeting Service service
+// register-itx-committee-members endpoint payload.
+func NewRegisterItxCommitteeMembersPayload(meetingID string, version *string, bearerToken *string) *meetingservice.RegisterItxCommitteeMembersPayload {
+	v := &meetingservice.RegisterItxCommitteeMembersPayload{}
 	v.MeetingID = meetingID
 	v.Version = version
 	v.BearerToken = bearerToken

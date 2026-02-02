@@ -18,6 +18,7 @@ type ITXProxyClient interface {
 	GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error)
 	GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkRequest) (*itx.ZoomMeetingJoinLink, error)
 	ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error
+	RegisterCommitteeMembers(ctx context.Context, meetingID string) error
 
 	// Registrant operations
 	CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error)

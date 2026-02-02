@@ -3424,3 +3424,37 @@ func BuildResendItxMeetingInvitationsPayload(meetingServiceResendItxMeetingInvit
 
 	return v, nil
 }
+
+// BuildRegisterItxCommitteeMembersPayload builds the payload for the Meeting
+// Service register-itx-committee-members endpoint from CLI flags.
+func BuildRegisterItxCommitteeMembersPayload(meetingServiceRegisterItxCommitteeMembersMeetingID string, meetingServiceRegisterItxCommitteeMembersVersion string, meetingServiceRegisterItxCommitteeMembersBearerToken string) (*meetingservice.RegisterItxCommitteeMembersPayload, error) {
+	var err error
+	var meetingID string
+	{
+		meetingID = meetingServiceRegisterItxCommitteeMembersMeetingID
+	}
+	var version *string
+	{
+		if meetingServiceRegisterItxCommitteeMembersVersion != "" {
+			version = &meetingServiceRegisterItxCommitteeMembersVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceRegisterItxCommitteeMembersBearerToken != "" {
+			bearerToken = &meetingServiceRegisterItxCommitteeMembersBearerToken
+		}
+	}
+	v := &meetingservice.RegisterItxCommitteeMembersPayload{}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}

@@ -626,6 +626,41 @@ func (c *Client) ResendMeetingInvitations(ctx context.Context, meetingID string,
 	return nil
 }
 
+// RegisterCommitteeMembers registers committee members to a meeting asynchronously via ITX proxy
+func (c *Client) RegisterCommitteeMembers(ctx context.Context, meetingID string) error {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/register_committee_members", c.config.BaseURL, meetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body for error handling
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
 // mapHTTPError maps HTTP status codes to domain errors
 func (c *Client) mapHTTPError(statusCode int, body []byte) error {
 	var errMsg itx.ErrorResponse

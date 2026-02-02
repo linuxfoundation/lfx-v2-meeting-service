@@ -69,10 +69,11 @@ type Client struct {
 	GetItxRegistrantIcsEndpoint               goa.Endpoint
 	ResendItxRegistrantInvitationEndpoint     goa.Endpoint
 	ResendItxMeetingInvitationsEndpoint       goa.Endpoint
+	RegisterItxCommitteeMembersEndpoint       goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations goa.Endpoint) *Client {
+func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, getMeetingJoinURL, updateMeetingBase, updateMeetingSettings, deleteMeeting, deleteMeetingOccurrence, getMeetingRegistrants, createMeetingRegistrant, getMeetingRegistrant, updateMeetingRegistrant, deleteMeetingRegistrant, resendMeetingRegistrantInvitation, createMeetingRsvp, getMeetingRsvps, zoomWebhook, getPastMeetings, createPastMeeting, getPastMeeting, deletePastMeeting, getPastMeetingParticipants, createPastMeetingParticipant, getPastMeetingParticipant, updatePastMeetingParticipant, deletePastMeetingParticipant, getPastMeetingSummaries, getPastMeetingSummary, updatePastMeetingSummary, createMeetingAttachment, getMeetingAttachment, getMeetingAttachmentMetadata, deleteMeetingAttachment, createPastMeetingAttachment, getPastMeetingAttachments, getPastMeetingAttachment, getPastMeetingAttachmentMetadata, deletePastMeetingAttachment, readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers goa.Endpoint) *Client {
 	return &Client{
 		GetMeetingsEndpoint:                       getMeetings,
 		CreateMeetingEndpoint:                     createMeeting,
@@ -128,6 +129,7 @@ func NewClient(getMeetings, createMeeting, getMeetingBase, getMeetingSettings, g
 		GetItxRegistrantIcsEndpoint:               getItxRegistrantIcs,
 		ResendItxRegistrantInvitationEndpoint:     resendItxRegistrantInvitation,
 		ResendItxMeetingInvitationsEndpoint:       resendItxMeetingInvitations,
+		RegisterItxCommitteeMembersEndpoint:       registerItxCommitteeMembers,
 	}
 }
 
@@ -1003,5 +1005,20 @@ func (c *Client) ResendItxRegistrantInvitation(ctx context.Context, p *ResendItx
 //   - error: internal error
 func (c *Client) ResendItxMeetingInvitations(ctx context.Context, p *ResendItxMeetingInvitationsPayload) (err error) {
 	_, err = c.ResendItxMeetingInvitationsEndpoint(ctx, p)
+	return
+}
+
+// RegisterItxCommitteeMembers calls the "register-itx-committee-members"
+// endpoint of the "Meeting Service" service.
+// RegisterItxCommitteeMembers may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) RegisterItxCommitteeMembers(ctx context.Context, p *RegisterItxCommitteeMembersPayload) (err error) {
+	_, err = c.RegisterItxCommitteeMembersEndpoint(ctx, p)
 	return
 }

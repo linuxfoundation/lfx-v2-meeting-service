@@ -8615,6 +8615,177 @@ func DecodeResendItxMeetingInvitationsResponse(decoder func(*http.Response) goah
 	}
 }
 
+// BuildRegisterItxCommitteeMembersRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "register-itx-committee-members" endpoint
+func (c *Client) BuildRegisterItxCommitteeMembersRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID string
+	)
+	{
+		p, ok := v.(*meetingservice.RegisterItxCommitteeMembersPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "register-itx-committee-members", "*meetingservice.RegisterItxCommitteeMembersPayload", v)
+		}
+		meetingID = p.MeetingID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegisterItxCommitteeMembersMeetingServicePath(meetingID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "register-itx-committee-members", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeRegisterItxCommitteeMembersRequest returns an encoder for requests
+// sent to the Meeting Service register-itx-committee-members server.
+func EncodeRegisterItxCommitteeMembersRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.RegisterItxCommitteeMembersPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "register-itx-committee-members", "*meetingservice.RegisterItxCommitteeMembersPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeRegisterItxCommitteeMembersResponse returns a decoder for responses
+// returned by the Meeting Service register-itx-committee-members endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeRegisterItxCommitteeMembersResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeRegisterItxCommitteeMembersResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body RegisterItxCommitteeMembersBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
+			}
+			err = ValidateRegisterItxCommitteeMembersBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "register-itx-committee-members", err)
+			}
+			return nil, NewRegisterItxCommitteeMembersBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body RegisterItxCommitteeMembersForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
+			}
+			err = ValidateRegisterItxCommitteeMembersForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "register-itx-committee-members", err)
+			}
+			return nil, NewRegisterItxCommitteeMembersForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RegisterItxCommitteeMembersInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
+			}
+			err = ValidateRegisterItxCommitteeMembersInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "register-itx-committee-members", err)
+			}
+			return nil, NewRegisterItxCommitteeMembersInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body RegisterItxCommitteeMembersNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
+			}
+			err = ValidateRegisterItxCommitteeMembersNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "register-itx-committee-members", err)
+			}
+			return nil, NewRegisterItxCommitteeMembersNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body RegisterItxCommitteeMembersServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
+			}
+			err = ValidateRegisterItxCommitteeMembersServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "register-itx-committee-members", err)
+			}
+			return nil, NewRegisterItxCommitteeMembersServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body RegisterItxCommitteeMembersUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
+			}
+			err = ValidateRegisterItxCommitteeMembersUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "register-itx-committee-members", err)
+			}
+			return nil, NewRegisterItxCommitteeMembersUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "register-itx-committee-members", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // unmarshalMeetingFullResponseBodyToMeetingserviceMeetingFull builds a value
 // of type *meetingservice.MeetingFull from a value of type
 // *MeetingFullResponseBody.

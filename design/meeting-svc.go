@@ -2104,6 +2104,41 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("register-itx-committee-members", func() {
+		Description("Register committee members to a meeting asynchronously through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Required("meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/register_committee_members")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")

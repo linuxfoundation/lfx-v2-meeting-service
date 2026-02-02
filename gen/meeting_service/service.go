@@ -132,6 +132,8 @@ type Service interface {
 	ResendItxRegistrantInvitation(context.Context, *ResendItxRegistrantInvitationPayload) (err error)
 	// Resend meeting invitations to all registrants through ITX API proxy
 	ResendItxMeetingInvitations(context.Context, *ResendItxMeetingInvitationsPayload) (err error)
+	// Register committee members to a meeting asynchronously through ITX API proxy
+	RegisterItxCommitteeMembers(context.Context, *RegisterItxCommitteeMembersPayload) (err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -154,7 +156,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [54]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations"}
+var MethodNames = [55]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -1781,6 +1783,17 @@ type Recurrence struct {
 	// Cannot be used with 'end_times'. should be in GMT. should be in
 	// 'yyyy-MM-ddTHH:mm:ssZ' format.
 	EndDateTime *string
+}
+
+// RegisterItxCommitteeMembersPayload is the payload type of the Meeting
+// Service service register-itx-committee-members method.
+type RegisterItxCommitteeMembersPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
 }
 
 // Registrant is the result type of the Meeting Service service

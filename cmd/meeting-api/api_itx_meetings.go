@@ -131,3 +131,14 @@ func (s *MeetingsAPI) ResendItxMeetingInvitations(ctx context.Context, p *meetin
 
 	return nil
 }
+
+// RegisterItxCommitteeMembers registers committee members to a meeting asynchronously via ITX proxy
+func (s *MeetingsAPI) RegisterItxCommitteeMembers(ctx context.Context, p *meetingsvc.RegisterItxCommitteeMembersPayload) error {
+	// Call ITX service
+	err := s.itxMeetingService.RegisterCommitteeMembers(ctx, p.MeetingID)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return nil
+}
