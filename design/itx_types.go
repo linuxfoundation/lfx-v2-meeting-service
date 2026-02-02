@@ -136,7 +136,7 @@ var ITXZoomMeetingRegistrant = Type("ITXZoomMeetingRegistrant", func() {
 	})
 
 	// Identity fields
-	Attribute("committee_id", String, "Committee ID (for committee registrants)")
+	Attribute("committee_uid", String, "Committee UID (for committee registrants)")
 	Attribute("user_id", String, "LF user ID")
 	Attribute("email", String, "Registrant email", func() {
 		Format(FormatEmail)

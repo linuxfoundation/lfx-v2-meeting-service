@@ -246,8 +246,8 @@ type CreateItxRegistrantPayload struct {
 	ID *string
 	// Registrant type: direct or committee (read-only)
 	Type *string
-	// Committee ID (for committee registrants)
-	CommitteeID *string
+	// Committee UID (for committee registrants)
+	CommitteeUID *string
 	// LF user ID
 	UserID *string
 	// Registrant email
@@ -1178,8 +1178,8 @@ type ITXZoomMeetingRegistrant struct {
 	ID *string
 	// Registrant type: direct or committee (read-only)
 	Type *string
-	// Committee ID (for committee registrants)
-	CommitteeID *string
+	// Committee UID (for committee registrants)
+	CommitteeUID *string
 	// LF user ID
 	UserID *string
 	// Registrant email
@@ -2025,8 +2025,8 @@ type UpdateItxRegistrantPayload struct {
 	ID *string
 	// Registrant type: direct or committee (read-only)
 	Type *string
-	// Committee ID (for committee registrants)
-	CommitteeID *string
+	// Committee UID (for committee registrants)
+	CommitteeUID *string
 	// LF user ID
 	UserID *string
 	// Registrant email

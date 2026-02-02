@@ -12,7 +12,8 @@ import (
 // ConvertCreateITXRegistrantPayloadToITX converts Goa payload to ITX registrant
 func ConvertCreateITXRegistrantPayloadToITX(p *meetingservice.CreateItxRegistrantPayload) *itx.ZoomMeetingRegistrant {
 	req := &itx.ZoomMeetingRegistrant{
-		CommitteeID:    utils.StringValue(p.CommitteeID),
+		// Map committee_uid (proxy) to committee_id (ITX)
+		CommitteeID:    utils.StringValue(p.CommitteeUID),
 		UserID:         utils.StringValue(p.UserID),
 		Email:          utils.StringValue(p.Email),
 		Username:       utils.StringValue(p.Username),
@@ -30,7 +31,8 @@ func ConvertCreateITXRegistrantPayloadToITX(p *meetingservice.CreateItxRegistran
 // ConvertUpdateITXRegistrantPayloadToITX converts Goa update payload to ITX registrant
 func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistrantPayload) *itx.ZoomMeetingRegistrant {
 	req := &itx.ZoomMeetingRegistrant{
-		CommitteeID:    utils.StringValue(p.CommitteeID),
+		// Map committee_uid (proxy) to committee_id (ITX)
+		CommitteeID:    utils.StringValue(p.CommitteeUID),
 		UserID:         utils.StringValue(p.UserID),
 		Email:          utils.StringValue(p.Email),
 		Username:       utils.StringValue(p.Username),
@@ -52,11 +54,11 @@ func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.
 		ID:   ptrIfNotEmpty(resp.ID),
 		Type: ptrIfNotEmpty(resp.Type),
 
-		// Identity fields
-		CommitteeID: ptrIfNotEmpty(resp.CommitteeID),
-		UserID:      ptrIfNotEmpty(resp.UserID),
-		Email:       ptrIfNotEmpty(resp.Email),
-		Username:    ptrIfNotEmpty(resp.Username),
+		// Identity fields - map committee_id (ITX) to committee_uid (proxy)
+		CommitteeUID: ptrIfNotEmpty(resp.CommitteeID),
+		UserID:       ptrIfNotEmpty(resp.UserID),
+		Email:        ptrIfNotEmpty(resp.Email),
+		Username:     ptrIfNotEmpty(resp.Username),
 
 		// Personal info
 		FirstName:      ptrIfNotEmpty(resp.FirstName),

@@ -457,8 +457,8 @@ type CreateItxRegistrantRequestBody struct {
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
-	// Committee ID (for committee registrants)
-	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// Committee UID (for committee registrants)
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// LF user ID
 	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
@@ -508,8 +508,8 @@ type UpdateItxRegistrantRequestBody struct {
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
-	// Committee ID (for committee registrants)
-	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// Committee UID (for committee registrants)
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// LF user ID
 	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
@@ -1390,8 +1390,8 @@ type CreateItxRegistrantResponseBody struct {
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
-	// Committee ID (for committee registrants)
-	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// Committee UID (for committee registrants)
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// LF user ID
 	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
@@ -1441,8 +1441,8 @@ type GetItxRegistrantResponseBody struct {
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
-	// Committee ID (for committee registrants)
-	CommitteeID *string `form:"committee_id,omitempty" json:"committee_id,omitempty" xml:"committee_id,omitempty"`
+	// Committee UID (for committee registrants)
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
 	// LF user ID
 	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
@@ -5647,7 +5647,7 @@ func NewCreateItxRegistrantResponseBody(res *meetingservice.ITXZoomMeetingRegist
 	body := &CreateItxRegistrantResponseBody{
 		ID:                            res.ID,
 		Type:                          res.Type,
-		CommitteeID:                   res.CommitteeID,
+		CommitteeUID:                  res.CommitteeUID,
 		UserID:                        res.UserID,
 		Email:                         res.Email,
 		Username:                      res.Username,
@@ -5682,7 +5682,7 @@ func NewGetItxRegistrantResponseBody(res *meetingservice.ITXZoomMeetingRegistran
 	body := &GetItxRegistrantResponseBody{
 		ID:                            res.ID,
 		Type:                          res.Type,
-		CommitteeID:                   res.CommitteeID,
+		CommitteeUID:                  res.CommitteeUID,
 		UserID:                        res.UserID,
 		Email:                         res.Email,
 		Username:                      res.Username,
@@ -9242,7 +9242,7 @@ func NewCreateItxRegistrantPayload(body *CreateItxRegistrantRequestBody, meeting
 	v := &meetingservice.CreateItxRegistrantPayload{
 		ID:                            body.ID,
 		Type:                          body.Type,
-		CommitteeID:                   body.CommitteeID,
+		CommitteeUID:                  body.CommitteeUID,
 		UserID:                        body.UserID,
 		Email:                         body.Email,
 		Username:                      body.Username,
@@ -9293,7 +9293,7 @@ func NewUpdateItxRegistrantPayload(body *UpdateItxRegistrantRequestBody, meeting
 	v := &meetingservice.UpdateItxRegistrantPayload{
 		ID:                            body.ID,
 		Type:                          body.Type,
-		CommitteeID:                   body.CommitteeID,
+		CommitteeUID:                  body.CommitteeUID,
 		UserID:                        body.UserID,
 		Email:                         body.Email,
 		Username:                      body.Username,

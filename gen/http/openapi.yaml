@@ -4398,9 +4398,9 @@ definitions:
                 description: Number of meetings attended (read-only)
                 example: 7376821658960508437
                 format: int64
-            committee_id:
+            committee_uid:
                 type: string
-                description: Committee ID (for committee registrants)
+                description: Committee UID (for committee registrants)
                 example: Iste minima iure.
             created_at:
                 type: string
@@ -4489,7 +4489,7 @@ definitions:
                 example: testuser
         example:
             attended_occurrence_count: 1457531037167196075
-            committee_id: Quis et aut illum explicabo cum.
+            committee_uid: Quis et aut illum explicabo cum.
             created_at: Qui a.
             created_by:
                 email: john.doe@example.com
@@ -5783,9 +5783,9 @@ definitions:
                 description: Number of meetings attended (read-only)
                 example: 4666123235415011359
                 format: int64
-            committee_id:
+            committee_uid:
                 type: string
-                description: Committee ID (for committee registrants)
+                description: Committee UID (for committee registrants)
                 example: Ut eaque sint deleniti accusamus.
             created_at:
                 type: string
@@ -5874,7 +5874,7 @@ definitions:
                 example: testuser
         example:
             attended_occurrence_count: 3861467089228802196
-            committee_id: Qui similique sed quo incidunt debitis.
+            committee_uid: Qui similique sed quo incidunt debitis.
             created_at: Quo voluptatibus cumque et.
             created_by:
                 email: john.doe@example.com
@@ -8863,9 +8863,9 @@ definitions:
                 description: Number of meetings attended (read-only)
                 example: 3622802467240919648
                 format: int64
-            committee_id:
+            committee_uid:
                 type: string
-                description: Committee ID (for committee registrants)
+                description: Committee UID (for committee registrants)
                 example: Saepe hic qui.
             created_at:
                 type: string
@@ -8954,7 +8954,7 @@ definitions:
                 example: testuser
         example:
             attended_occurrence_count: 4471042201868833017
-            committee_id: Repellat earum et et.
+            committee_uid: Repellat earum et et.
             created_at: Mollitia quod vel sit error.
             created_by:
                 email: john.doe@example.com

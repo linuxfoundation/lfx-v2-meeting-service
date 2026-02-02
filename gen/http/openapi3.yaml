@@ -1182,7 +1182,7 @@ paths:
                             $ref: '#/components/schemas/CreateItxRegistrantRequestBody'
                         example:
                             attended_occurrence_count: 6774209161410307701
-                            committee_id: Fugit expedita.
+                            committee_uid: Fugit expedita.
                             created_at: Incidunt saepe architecto.
                             created_by:
                                 email: john.doe@example.com
@@ -1223,7 +1223,7 @@ paths:
                                 $ref: '#/components/schemas/ITXZoomMeetingRegistrant'
                             example:
                                 attended_occurrence_count: 4865073527736136087
-                                committee_id: In doloremque.
+                                committee_uid: In doloremque.
                                 created_at: Ducimus quae unde eos et.
                                 created_by:
                                     email: john.doe@example.com
@@ -1461,7 +1461,7 @@ paths:
                                 $ref: '#/components/schemas/ITXZoomMeetingRegistrant'
                             example:
                                 attended_occurrence_count: 8153228532116475264
-                                committee_id: Et sint rem non sunt.
+                                committee_uid: Et sint rem non sunt.
                                 created_at: Cum beatae iste odit.
                                 created_by:
                                     email: john.doe@example.com
@@ -1593,7 +1593,7 @@ paths:
                             $ref: '#/components/schemas/CreateItxRegistrantRequestBody'
                         example:
                             attended_occurrence_count: 8064655825721393362
-                            committee_id: Accusamus ad distinctio rerum sed est aut.
+                            committee_uid: Accusamus ad distinctio rerum sed est aut.
                             created_at: Enim id.
                             created_by:
                                 email: john.doe@example.com
@@ -7757,9 +7757,9 @@ components:
                     description: Number of meetings attended (read-only)
                     example: 6355416753416025749
                     format: int64
-                committee_id:
+                committee_uid:
                     type: string
-                    description: Committee ID (for committee registrants)
+                    description: Committee UID (for committee registrants)
                     example: Quas magnam sunt.
                 created_at:
                     type: string
@@ -7848,7 +7848,7 @@ components:
                     example: testuser
             example:
                 attended_occurrence_count: 337032278005751439
-                committee_id: Facere minus facere deleniti et.
+                committee_uid: Facere minus facere deleniti et.
                 created_at: Sunt velit quisquam eum inventore aut.
                 created_by:
                     email: john.doe@example.com
@@ -10832,9 +10832,9 @@ components:
                     description: Number of meetings attended (read-only)
                     example: 1988969064744812803
                     format: int64
-                committee_id:
+                committee_uid:
                     type: string
-                    description: Committee ID (for committee registrants)
+                    description: Committee UID (for committee registrants)
                     example: Assumenda sapiente est eaque et nihil earum.
                 created_at:
                     type: string
@@ -10924,7 +10924,7 @@ components:
             description: Meeting registrant in ITX
             example:
                 attended_occurrence_count: 6762068094148750782
-                committee_id: Aut mollitia qui consequatur nesciunt et debitis.
+                committee_uid: Aut mollitia qui consequatur nesciunt et debitis.
                 created_at: Ut iure est nam consequuntur similique.
                 created_by:
                     email: john.doe@example.com

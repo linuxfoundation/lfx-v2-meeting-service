@@ -197,7 +197,7 @@ func parseITXConfig() itxConfig {
 
 	audience := os.Getenv("ITX_AUDIENCE")
 	if audience == "" {
-		audience = "https://api-gw.dev.platform.linuxfoundation.org/"
+		audience = "https://api.dev.itx.linuxfoundation.org/"
 	}
 
 	return itxConfig{
