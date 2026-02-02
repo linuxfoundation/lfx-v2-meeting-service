@@ -30,7 +30,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 	}
 
 	// Convert committees
-	if p.Committees != nil && len(p.Committees) > 0 {
+	if len(p.Committees) > 0 {
 		req.Committees = make([]models.Committee, len(p.Committees))
 		for i, c := range p.Committees {
 			if c != nil {
@@ -129,6 +129,38 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 	}
 
 	return goaResp
+}
+
+// ConvertGetJoinLinkPayloadToITX converts Goa payload to ITX join link request
+func ConvertGetJoinLinkPayloadToITX(p *meetingservice.GetItxJoinLinkPayload) *itx.GetJoinLinkRequest {
+	req := &itx.GetJoinLinkRequest{
+		MeetingID: p.MeetingID,
+	}
+
+	if p.UseEmail != nil {
+		req.UseEmail = *p.UseEmail
+	}
+	if p.UserID != nil {
+		req.UserID = *p.UserID
+	}
+	if p.Name != nil {
+		req.Name = *p.Name
+	}
+	if p.Email != nil {
+		req.Email = *p.Email
+	}
+	if p.Register != nil {
+		req.Register = *p.Register
+	}
+
+	return req
+}
+
+// ConvertITXJoinLinkResponseToGoa converts ITX join link response to Goa response
+func ConvertITXJoinLinkResponseToGoa(resp *itx.ZoomMeetingJoinLink) *meetingservice.ITXZoomMeetingJoinLink {
+	return &meetingservice.ITXZoomMeetingJoinLink{
+		Link: resp.Link,
+	}
 }
 
 // Helper functions for pointer conversion

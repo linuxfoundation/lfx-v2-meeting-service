@@ -233,6 +233,20 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 			})
 		}
 
+		// Check if we're returning binary data (ICS files, etc.)
+		// The generated code sets ContentTypeKey in context for non-JSON responses
+		if contentType, ok := ctx.Value(goahttp.ContentTypeKey).(string); ok && contentType == "text/calendar" {
+			// Return a custom encoder that writes raw bytes for ICS files
+			return goahttp.EncodingFunc(func(v any) error {
+				if bytes, ok := v.([]byte); ok {
+					_, err := w.Write(bytes)
+					return err
+				}
+				// Fallback to regular encoding if not bytes
+				return encoder.Encode(v)
+			})
+		}
+
 		return encoder
 	}
 

@@ -112,6 +112,23 @@ func (s *MeetingService) GetMeetingCount(ctx context.Context, projectID string) 
 	return resp, nil
 }
 
+// GetMeetingJoinLink retrieves a join link for a meeting via ITX proxy
+func (s *MeetingService) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkRequest) (*itx.ZoomMeetingJoinLink, error) {
+	// Call ITX proxy
+	resp, err := s.proxyClient.GetMeetingJoinLink(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// ResendMeetingInvitations resends meeting invitations to all registrants via ITX proxy
+func (s *MeetingService) ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error {
+	// Call ITX proxy
+	return s.proxyClient.ResendMeetingInvitations(ctx, meetingID, req)
+}
+
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{

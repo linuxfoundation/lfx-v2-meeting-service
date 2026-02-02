@@ -63,3 +63,26 @@ func (s *MeetingsAPI) DeleteItxRegistrant(ctx context.Context, p *meetingsvc.Del
 
 	return nil
 }
+
+// GetItxRegistrantIcs retrieves an ICS calendar file for a meeting registrant via ITX proxy
+func (s *MeetingsAPI) GetItxRegistrantIcs(ctx context.Context, p *meetingsvc.GetItxRegistrantIcsPayload) ([]byte, error) {
+	// Call ITX service
+	resp, err := s.itxRegistrantService.GetRegistrantICS(ctx, p.MeetingID, p.RegistrantID)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	// Return raw ICS content
+	return resp.Content, nil
+}
+
+// ResendItxRegistrantInvitation resends a meeting invitation to a registrant via ITX proxy
+func (s *MeetingsAPI) ResendItxRegistrantInvitation(ctx context.Context, p *meetingsvc.ResendItxRegistrantInvitationPayload) error {
+	// Call ITX service
+	err := s.itxRegistrantService.ResendRegistrantInvitation(ctx, p.MeetingID, p.RegistrantID)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return nil
+}

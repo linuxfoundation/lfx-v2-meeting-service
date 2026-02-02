@@ -8,6 +8,7 @@ import (
 
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
 // CreateItxMeeting creates a meeting via ITX proxy
@@ -97,4 +98,36 @@ func (s *MeetingsAPI) GetItxMeetingCount(ctx context.Context, p *meetingsvc.GetI
 		MeetingCount: resp.MeetingCount,
 	}
 	return goaResp, nil
+}
+
+// GetItxJoinLink retrieves a join link for a meeting via ITX proxy
+func (s *MeetingsAPI) GetItxJoinLink(ctx context.Context, p *meetingsvc.GetItxJoinLinkPayload) (*meetingsvc.ITXZoomMeetingJoinLink, error) {
+	// Build request from Goa payload
+	req := service.ConvertGetJoinLinkPayloadToITX(p)
+
+	// Call ITX service
+	resp, err := s.itxMeetingService.GetMeetingJoinLink(ctx, req)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	// Convert ITX response to Goa response
+	goaResp := service.ConvertITXJoinLinkResponseToGoa(resp)
+	return goaResp, nil
+}
+
+// ResendItxMeetingInvitations resends meeting invitations to all registrants via ITX proxy
+func (s *MeetingsAPI) ResendItxMeetingInvitations(ctx context.Context, p *meetingsvc.ResendItxMeetingInvitationsPayload) error {
+	// Build request from Goa payload
+	req := &itx.ResendMeetingInvitationsRequest{
+		ExcludeRegistrantIDs: p.ExcludeRegistrantIds,
+	}
+
+	// Call ITX service
+	err := s.itxMeetingService.ResendMeetingInvitations(ctx, p.MeetingID, req)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return nil
 }

@@ -157,7 +157,7 @@ func getStorageRepos(ctx context.Context, natsConn *nats.Conn) (*Repositories, e
 		kv, err := js.KeyValue(ctx, storeName)
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting NATS JetStream key-value store", "nats_url", natsConn.ConnectedUrl(), logging.ErrKey, err, "store", storeName)
-			return nil, err
+			//return nil, err
 		}
 		kvStores[storeName] = kv
 	}

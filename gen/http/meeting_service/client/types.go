@@ -552,6 +552,13 @@ type UpdateItxRegistrantRequestBody struct {
 	UpdatedBy *ITXUserRequestBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 }
 
+// ResendItxMeetingInvitationsRequestBody is the type of the "Meeting Service"
+// service "resend-itx-meeting-invitations" endpoint HTTP request body.
+type ResendItxMeetingInvitationsRequestBody struct {
+	// Registrant IDs to exclude from resend
+	ExcludeRegistrantIds []string `form:"exclude_registrant_ids,omitempty" json:"exclude_registrant_ids,omitempty" xml:"exclude_registrant_ids,omitempty"`
+}
+
 // GetMeetingsResponseBody is the type of the "Meeting Service" service
 // "get-meetings" endpoint HTTP response body.
 type GetMeetingsResponseBody struct {
@@ -1461,6 +1468,13 @@ type GetItxRegistrantResponseBody struct {
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last updater user info (read-only)
 	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
+// GetItxJoinLinkResponseBody is the type of the "Meeting Service" service
+// "get-itx-join-link" endpoint HTTP response body.
+type GetItxJoinLinkResponseBody struct {
+	// Zoom meeting join URL
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
 }
 
 // GetMeetingsBadRequestResponseBody is the type of the "Meeting Service"
@@ -3533,6 +3547,246 @@ type DeleteItxRegistrantUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// GetItxJoinLinkBadRequestResponseBody is the type of the "Meeting Service"
+// service "get-itx-join-link" endpoint HTTP response body for the "BadRequest"
+// error.
+type GetItxJoinLinkBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxJoinLinkForbiddenResponseBody is the type of the "Meeting Service"
+// service "get-itx-join-link" endpoint HTTP response body for the "Forbidden"
+// error.
+type GetItxJoinLinkForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxJoinLinkInternalServerErrorResponseBody is the type of the "Meeting
+// Service" service "get-itx-join-link" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetItxJoinLinkInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxJoinLinkNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-itx-join-link" endpoint HTTP response body for the "NotFound"
+// error.
+type GetItxJoinLinkNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxJoinLinkServiceUnavailableResponseBody is the type of the "Meeting
+// Service" service "get-itx-join-link" endpoint HTTP response body for the
+// "ServiceUnavailable" error.
+type GetItxJoinLinkServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxJoinLinkUnauthorizedResponseBody is the type of the "Meeting Service"
+// service "get-itx-join-link" endpoint HTTP response body for the
+// "Unauthorized" error.
+type GetItxJoinLinkUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantIcsBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-registrant-ics" endpoint HTTP response body for
+// the "BadRequest" error.
+type GetItxRegistrantIcsBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantIcsForbiddenResponseBody is the type of the "Meeting
+// Service" service "get-itx-registrant-ics" endpoint HTTP response body for
+// the "Forbidden" error.
+type GetItxRegistrantIcsForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantIcsInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-registrant-ics" endpoint HTTP response
+// body for the "InternalServerError" error.
+type GetItxRegistrantIcsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantIcsNotFoundResponseBody is the type of the "Meeting Service"
+// service "get-itx-registrant-ics" endpoint HTTP response body for the
+// "NotFound" error.
+type GetItxRegistrantIcsNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantIcsServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-itx-registrant-ics" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type GetItxRegistrantIcsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxRegistrantIcsUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-registrant-ics" endpoint HTTP response body for
+// the "Unauthorized" error.
+type GetItxRegistrantIcsUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxRegistrantInvitationBadRequestResponseBody is the type of the
+// "Meeting Service" service "resend-itx-registrant-invitation" endpoint HTTP
+// response body for the "BadRequest" error.
+type ResendItxRegistrantInvitationBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxRegistrantInvitationForbiddenResponseBody is the type of the
+// "Meeting Service" service "resend-itx-registrant-invitation" endpoint HTTP
+// response body for the "Forbidden" error.
+type ResendItxRegistrantInvitationForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxRegistrantInvitationInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "resend-itx-registrant-invitation" endpoint
+// HTTP response body for the "InternalServerError" error.
+type ResendItxRegistrantInvitationInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxRegistrantInvitationNotFoundResponseBody is the type of the
+// "Meeting Service" service "resend-itx-registrant-invitation" endpoint HTTP
+// response body for the "NotFound" error.
+type ResendItxRegistrantInvitationNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxRegistrantInvitationServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "resend-itx-registrant-invitation" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type ResendItxRegistrantInvitationServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxRegistrantInvitationUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "resend-itx-registrant-invitation" endpoint HTTP
+// response body for the "Unauthorized" error.
+type ResendItxRegistrantInvitationUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxMeetingInvitationsBadRequestResponseBody is the type of the
+// "Meeting Service" service "resend-itx-meeting-invitations" endpoint HTTP
+// response body for the "BadRequest" error.
+type ResendItxMeetingInvitationsBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxMeetingInvitationsForbiddenResponseBody is the type of the "Meeting
+// Service" service "resend-itx-meeting-invitations" endpoint HTTP response
+// body for the "Forbidden" error.
+type ResendItxMeetingInvitationsForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxMeetingInvitationsInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "resend-itx-meeting-invitations" endpoint HTTP
+// response body for the "InternalServerError" error.
+type ResendItxMeetingInvitationsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxMeetingInvitationsNotFoundResponseBody is the type of the "Meeting
+// Service" service "resend-itx-meeting-invitations" endpoint HTTP response
+// body for the "NotFound" error.
+type ResendItxMeetingInvitationsNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxMeetingInvitationsServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "resend-itx-meeting-invitations" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type ResendItxMeetingInvitationsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// ResendItxMeetingInvitationsUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "resend-itx-meeting-invitations" endpoint HTTP
+// response body for the "Unauthorized" error.
+type ResendItxMeetingInvitationsUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // MeetingFullResponseBody is used to define fields on response body types.
 type MeetingFullResponseBody struct {
 	// The UID of the meeting
@@ -4682,6 +4936,20 @@ func NewUpdateItxRegistrantRequestBody(p *meetingservice.UpdateItxRegistrantPayl
 	}
 	if p.UpdatedBy != nil {
 		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserRequestBody(p.UpdatedBy)
+	}
+	return body
+}
+
+// NewResendItxMeetingInvitationsRequestBody builds the HTTP request body from
+// the payload of the "resend-itx-meeting-invitations" endpoint of the "Meeting
+// Service" service.
+func NewResendItxMeetingInvitationsRequestBody(p *meetingservice.ResendItxMeetingInvitationsPayload) *ResendItxMeetingInvitationsRequestBody {
+	body := &ResendItxMeetingInvitationsRequestBody{}
+	if p.ExcludeRegistrantIds != nil {
+		body.ExcludeRegistrantIds = make([]string, len(p.ExcludeRegistrantIds))
+		for i, val := range p.ExcludeRegistrantIds {
+			body.ExcludeRegistrantIds[i] = val
+		}
 	}
 	return body
 }
@@ -8007,6 +8275,280 @@ func NewDeleteItxRegistrantUnauthorized(body *DeleteItxRegistrantUnauthorizedRes
 	return v
 }
 
+// NewGetItxJoinLinkITXZoomMeetingJoinLinkOK builds a "Meeting Service" service
+// "get-itx-join-link" endpoint result from a HTTP "OK" response.
+func NewGetItxJoinLinkITXZoomMeetingJoinLinkOK(body *GetItxJoinLinkResponseBody) *meetingservice.ITXZoomMeetingJoinLink {
+	v := &meetingservice.ITXZoomMeetingJoinLink{
+		Link: *body.Link,
+	}
+
+	return v
+}
+
+// NewGetItxJoinLinkBadRequest builds a Meeting Service service
+// get-itx-join-link endpoint BadRequest error.
+func NewGetItxJoinLinkBadRequest(body *GetItxJoinLinkBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxJoinLinkForbidden builds a Meeting Service service
+// get-itx-join-link endpoint Forbidden error.
+func NewGetItxJoinLinkForbidden(body *GetItxJoinLinkForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxJoinLinkInternalServerError builds a Meeting Service service
+// get-itx-join-link endpoint InternalServerError error.
+func NewGetItxJoinLinkInternalServerError(body *GetItxJoinLinkInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxJoinLinkNotFound builds a Meeting Service service get-itx-join-link
+// endpoint NotFound error.
+func NewGetItxJoinLinkNotFound(body *GetItxJoinLinkNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxJoinLinkServiceUnavailable builds a Meeting Service service
+// get-itx-join-link endpoint ServiceUnavailable error.
+func NewGetItxJoinLinkServiceUnavailable(body *GetItxJoinLinkServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxJoinLinkUnauthorized builds a Meeting Service service
+// get-itx-join-link endpoint Unauthorized error.
+func NewGetItxJoinLinkUnauthorized(body *GetItxJoinLinkUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantIcsBadRequest builds a Meeting Service service
+// get-itx-registrant-ics endpoint BadRequest error.
+func NewGetItxRegistrantIcsBadRequest(body *GetItxRegistrantIcsBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantIcsForbidden builds a Meeting Service service
+// get-itx-registrant-ics endpoint Forbidden error.
+func NewGetItxRegistrantIcsForbidden(body *GetItxRegistrantIcsForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantIcsInternalServerError builds a Meeting Service service
+// get-itx-registrant-ics endpoint InternalServerError error.
+func NewGetItxRegistrantIcsInternalServerError(body *GetItxRegistrantIcsInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantIcsNotFound builds a Meeting Service service
+// get-itx-registrant-ics endpoint NotFound error.
+func NewGetItxRegistrantIcsNotFound(body *GetItxRegistrantIcsNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantIcsServiceUnavailable builds a Meeting Service service
+// get-itx-registrant-ics endpoint ServiceUnavailable error.
+func NewGetItxRegistrantIcsServiceUnavailable(body *GetItxRegistrantIcsServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxRegistrantIcsUnauthorized builds a Meeting Service service
+// get-itx-registrant-ics endpoint Unauthorized error.
+func NewGetItxRegistrantIcsUnauthorized(body *GetItxRegistrantIcsUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxRegistrantInvitationBadRequest builds a Meeting Service service
+// resend-itx-registrant-invitation endpoint BadRequest error.
+func NewResendItxRegistrantInvitationBadRequest(body *ResendItxRegistrantInvitationBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxRegistrantInvitationForbidden builds a Meeting Service service
+// resend-itx-registrant-invitation endpoint Forbidden error.
+func NewResendItxRegistrantInvitationForbidden(body *ResendItxRegistrantInvitationForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxRegistrantInvitationInternalServerError builds a Meeting Service
+// service resend-itx-registrant-invitation endpoint InternalServerError error.
+func NewResendItxRegistrantInvitationInternalServerError(body *ResendItxRegistrantInvitationInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxRegistrantInvitationNotFound builds a Meeting Service service
+// resend-itx-registrant-invitation endpoint NotFound error.
+func NewResendItxRegistrantInvitationNotFound(body *ResendItxRegistrantInvitationNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxRegistrantInvitationServiceUnavailable builds a Meeting Service
+// service resend-itx-registrant-invitation endpoint ServiceUnavailable error.
+func NewResendItxRegistrantInvitationServiceUnavailable(body *ResendItxRegistrantInvitationServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxRegistrantInvitationUnauthorized builds a Meeting Service
+// service resend-itx-registrant-invitation endpoint Unauthorized error.
+func NewResendItxRegistrantInvitationUnauthorized(body *ResendItxRegistrantInvitationUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxMeetingInvitationsBadRequest builds a Meeting Service service
+// resend-itx-meeting-invitations endpoint BadRequest error.
+func NewResendItxMeetingInvitationsBadRequest(body *ResendItxMeetingInvitationsBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxMeetingInvitationsForbidden builds a Meeting Service service
+// resend-itx-meeting-invitations endpoint Forbidden error.
+func NewResendItxMeetingInvitationsForbidden(body *ResendItxMeetingInvitationsForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxMeetingInvitationsInternalServerError builds a Meeting Service
+// service resend-itx-meeting-invitations endpoint InternalServerError error.
+func NewResendItxMeetingInvitationsInternalServerError(body *ResendItxMeetingInvitationsInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxMeetingInvitationsNotFound builds a Meeting Service service
+// resend-itx-meeting-invitations endpoint NotFound error.
+func NewResendItxMeetingInvitationsNotFound(body *ResendItxMeetingInvitationsNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxMeetingInvitationsServiceUnavailable builds a Meeting Service
+// service resend-itx-meeting-invitations endpoint ServiceUnavailable error.
+func NewResendItxMeetingInvitationsServiceUnavailable(body *ResendItxMeetingInvitationsServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewResendItxMeetingInvitationsUnauthorized builds a Meeting Service service
+// resend-itx-meeting-invitations endpoint Unauthorized error.
+func NewResendItxMeetingInvitationsUnauthorized(body *ResendItxMeetingInvitationsUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // ValidateGetMeetingsResponseBody runs the validations defined on
 // Get-MeetingsResponseBody
 func ValidateGetMeetingsResponseBody(body *GetMeetingsResponseBody) (err error) {
@@ -9832,6 +10374,18 @@ func ValidateGetItxRegistrantResponseBody(body *GetItxRegistrantResponseBody) (e
 		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
+	}
+	return
+}
+
+// ValidateGetItxJoinLinkResponseBody runs the validations defined on
+// Get-Itx-Join-LinkResponseBody
+func ValidateGetItxJoinLinkResponseBody(body *GetItxJoinLinkResponseBody) (err error) {
+	if body.Link == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("link", "body"))
+	}
+	if body.Link != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.link", *body.Link, goa.FormatURI))
 	}
 	return
 }
@@ -12375,6 +12929,306 @@ func ValidateDeleteItxRegistrantServiceUnavailableResponseBody(body *DeleteItxRe
 // ValidateDeleteItxRegistrantUnauthorizedResponseBody runs the validations
 // defined on delete-itx-registrant_Unauthorized_response_body
 func ValidateDeleteItxRegistrantUnauthorizedResponseBody(body *DeleteItxRegistrantUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxJoinLinkBadRequestResponseBody runs the validations defined on
+// get-itx-join-link_BadRequest_response_body
+func ValidateGetItxJoinLinkBadRequestResponseBody(body *GetItxJoinLinkBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxJoinLinkForbiddenResponseBody runs the validations defined on
+// get-itx-join-link_Forbidden_response_body
+func ValidateGetItxJoinLinkForbiddenResponseBody(body *GetItxJoinLinkForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxJoinLinkInternalServerErrorResponseBody runs the validations
+// defined on get-itx-join-link_InternalServerError_response_body
+func ValidateGetItxJoinLinkInternalServerErrorResponseBody(body *GetItxJoinLinkInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxJoinLinkNotFoundResponseBody runs the validations defined on
+// get-itx-join-link_NotFound_response_body
+func ValidateGetItxJoinLinkNotFoundResponseBody(body *GetItxJoinLinkNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxJoinLinkServiceUnavailableResponseBody runs the validations
+// defined on get-itx-join-link_ServiceUnavailable_response_body
+func ValidateGetItxJoinLinkServiceUnavailableResponseBody(body *GetItxJoinLinkServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxJoinLinkUnauthorizedResponseBody runs the validations defined
+// on get-itx-join-link_Unauthorized_response_body
+func ValidateGetItxJoinLinkUnauthorizedResponseBody(body *GetItxJoinLinkUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantIcsBadRequestResponseBody runs the validations
+// defined on get-itx-registrant-ics_BadRequest_response_body
+func ValidateGetItxRegistrantIcsBadRequestResponseBody(body *GetItxRegistrantIcsBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantIcsForbiddenResponseBody runs the validations
+// defined on get-itx-registrant-ics_Forbidden_response_body
+func ValidateGetItxRegistrantIcsForbiddenResponseBody(body *GetItxRegistrantIcsForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantIcsInternalServerErrorResponseBody runs the
+// validations defined on
+// get-itx-registrant-ics_InternalServerError_response_body
+func ValidateGetItxRegistrantIcsInternalServerErrorResponseBody(body *GetItxRegistrantIcsInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantIcsNotFoundResponseBody runs the validations defined
+// on get-itx-registrant-ics_NotFound_response_body
+func ValidateGetItxRegistrantIcsNotFoundResponseBody(body *GetItxRegistrantIcsNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantIcsServiceUnavailableResponseBody runs the
+// validations defined on
+// get-itx-registrant-ics_ServiceUnavailable_response_body
+func ValidateGetItxRegistrantIcsServiceUnavailableResponseBody(body *GetItxRegistrantIcsServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxRegistrantIcsUnauthorizedResponseBody runs the validations
+// defined on get-itx-registrant-ics_Unauthorized_response_body
+func ValidateGetItxRegistrantIcsUnauthorizedResponseBody(body *GetItxRegistrantIcsUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxRegistrantInvitationBadRequestResponseBody runs the
+// validations defined on
+// resend-itx-registrant-invitation_BadRequest_response_body
+func ValidateResendItxRegistrantInvitationBadRequestResponseBody(body *ResendItxRegistrantInvitationBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxRegistrantInvitationForbiddenResponseBody runs the
+// validations defined on
+// resend-itx-registrant-invitation_Forbidden_response_body
+func ValidateResendItxRegistrantInvitationForbiddenResponseBody(body *ResendItxRegistrantInvitationForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxRegistrantInvitationInternalServerErrorResponseBody runs
+// the validations defined on
+// resend-itx-registrant-invitation_InternalServerError_response_body
+func ValidateResendItxRegistrantInvitationInternalServerErrorResponseBody(body *ResendItxRegistrantInvitationInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxRegistrantInvitationNotFoundResponseBody runs the
+// validations defined on
+// resend-itx-registrant-invitation_NotFound_response_body
+func ValidateResendItxRegistrantInvitationNotFoundResponseBody(body *ResendItxRegistrantInvitationNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxRegistrantInvitationServiceUnavailableResponseBody runs the
+// validations defined on
+// resend-itx-registrant-invitation_ServiceUnavailable_response_body
+func ValidateResendItxRegistrantInvitationServiceUnavailableResponseBody(body *ResendItxRegistrantInvitationServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxRegistrantInvitationUnauthorizedResponseBody runs the
+// validations defined on
+// resend-itx-registrant-invitation_Unauthorized_response_body
+func ValidateResendItxRegistrantInvitationUnauthorizedResponseBody(body *ResendItxRegistrantInvitationUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxMeetingInvitationsBadRequestResponseBody runs the
+// validations defined on
+// resend-itx-meeting-invitations_BadRequest_response_body
+func ValidateResendItxMeetingInvitationsBadRequestResponseBody(body *ResendItxMeetingInvitationsBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxMeetingInvitationsForbiddenResponseBody runs the
+// validations defined on resend-itx-meeting-invitations_Forbidden_response_body
+func ValidateResendItxMeetingInvitationsForbiddenResponseBody(body *ResendItxMeetingInvitationsForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxMeetingInvitationsInternalServerErrorResponseBody runs the
+// validations defined on
+// resend-itx-meeting-invitations_InternalServerError_response_body
+func ValidateResendItxMeetingInvitationsInternalServerErrorResponseBody(body *ResendItxMeetingInvitationsInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxMeetingInvitationsNotFoundResponseBody runs the validations
+// defined on resend-itx-meeting-invitations_NotFound_response_body
+func ValidateResendItxMeetingInvitationsNotFoundResponseBody(body *ResendItxMeetingInvitationsNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxMeetingInvitationsServiceUnavailableResponseBody runs the
+// validations defined on
+// resend-itx-meeting-invitations_ServiceUnavailable_response_body
+func ValidateResendItxMeetingInvitationsServiceUnavailableResponseBody(body *ResendItxMeetingInvitationsServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateResendItxMeetingInvitationsUnauthorizedResponseBody runs the
+// validations defined on
+// resend-itx-meeting-invitations_Unauthorized_response_body
+func ValidateResendItxMeetingInvitationsUnauthorizedResponseBody(body *ResendItxMeetingInvitationsUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

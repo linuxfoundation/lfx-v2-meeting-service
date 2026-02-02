@@ -93,3 +93,15 @@ func (s *RegistrantService) DeleteRegistrant(ctx context.Context, meetingID, reg
 	// Call ITX proxy
 	return s.proxyClient.DeleteRegistrant(ctx, meetingID, registrantID)
 }
+
+// GetRegistrantICS retrieves an ICS calendar file for a meeting registrant via ITX proxy
+func (s *RegistrantService) GetRegistrantICS(ctx context.Context, meetingID, registrantID string) (*itx.RegistrantICS, error) {
+	// Call ITX proxy
+	return s.proxyClient.GetRegistrantICS(ctx, meetingID, registrantID)
+}
+
+// ResendRegistrantInvitation resends a meeting invitation to a registrant via ITX proxy
+func (s *RegistrantService) ResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error {
+	// Call ITX proxy
+	return s.proxyClient.ResendRegistrantInvitation(ctx, meetingID, registrantID)
+}

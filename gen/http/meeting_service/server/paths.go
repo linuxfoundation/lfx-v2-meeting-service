@@ -260,3 +260,23 @@ func UpdateItxRegistrantMeetingServicePath(meetingID string, registrantID string
 func DeleteItxRegistrantMeetingServicePath(meetingID string, registrantID string) string {
 	return fmt.Sprintf("/itx/meetings/%v/registrants/%v", meetingID, registrantID)
 }
+
+// GetItxJoinLinkMeetingServicePath returns the URL path to the Meeting Service service get-itx-join-link HTTP endpoint.
+func GetItxJoinLinkMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/join_link", meetingID)
+}
+
+// GetItxRegistrantIcsMeetingServicePath returns the URL path to the Meeting Service service get-itx-registrant-ics HTTP endpoint.
+func GetItxRegistrantIcsMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v/ics", meetingID, registrantID)
+}
+
+// ResendItxRegistrantInvitationMeetingServicePath returns the URL path to the Meeting Service service resend-itx-registrant-invitation HTTP endpoint.
+func ResendItxRegistrantInvitationMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v/resend", meetingID, registrantID)
+}
+
+// ResendItxMeetingInvitationsMeetingServicePath returns the URL path to the Meeting Service service resend-itx-meeting-invitations HTTP endpoint.
+func ResendItxMeetingInvitationsMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/resend", meetingID)
+}

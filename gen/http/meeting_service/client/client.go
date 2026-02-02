@@ -217,6 +217,22 @@ type Client struct {
 	// delete-itx-registrant endpoint.
 	DeleteItxRegistrantDoer goahttp.Doer
 
+	// GetItxJoinLink Doer is the HTTP client used to make requests to the
+	// get-itx-join-link endpoint.
+	GetItxJoinLinkDoer goahttp.Doer
+
+	// GetItxRegistrantIcs Doer is the HTTP client used to make requests to the
+	// get-itx-registrant-ics endpoint.
+	GetItxRegistrantIcsDoer goahttp.Doer
+
+	// ResendItxRegistrantInvitation Doer is the HTTP client used to make requests
+	// to the resend-itx-registrant-invitation endpoint.
+	ResendItxRegistrantInvitationDoer goahttp.Doer
+
+	// ResendItxMeetingInvitations Doer is the HTTP client used to make requests to
+	// the resend-itx-meeting-invitations endpoint.
+	ResendItxMeetingInvitationsDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -298,6 +314,10 @@ func NewClient(
 		GetItxRegistrantDoer:                  doer,
 		UpdateItxRegistrantDoer:               doer,
 		DeleteItxRegistrantDoer:               doer,
+		GetItxJoinLinkDoer:                    doer,
+		GetItxRegistrantIcsDoer:               doer,
+		ResendItxRegistrantInvitationDoer:     doer,
+		ResendItxMeetingInvitationsDoer:       doer,
 		RestoreResponseBody:                   restoreBody,
 		scheme:                                scheme,
 		host:                                  host,
@@ -1493,6 +1513,102 @@ func (c *Client) DeleteItxRegistrant() goa.Endpoint {
 		resp, err := c.DeleteItxRegistrantDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-registrant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxJoinLink returns an endpoint that makes HTTP requests to the Meeting
+// Service service get-itx-join-link server.
+func (c *Client) GetItxJoinLink() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxJoinLinkRequest(c.encoder)
+		decodeResponse = DecodeGetItxJoinLinkResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxJoinLinkRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxJoinLinkDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-join-link", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxRegistrantIcs returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-itx-registrant-ics server.
+func (c *Client) GetItxRegistrantIcs() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxRegistrantIcsRequest(c.encoder)
+		decodeResponse = DecodeGetItxRegistrantIcsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxRegistrantIcsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxRegistrantIcsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-registrant-ics", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// ResendItxRegistrantInvitation returns an endpoint that makes HTTP requests
+// to the Meeting Service service resend-itx-registrant-invitation server.
+func (c *Client) ResendItxRegistrantInvitation() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeResendItxRegistrantInvitationRequest(c.encoder)
+		decodeResponse = DecodeResendItxRegistrantInvitationResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildResendItxRegistrantInvitationRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.ResendItxRegistrantInvitationDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "resend-itx-registrant-invitation", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// ResendItxMeetingInvitations returns an endpoint that makes HTTP requests to
+// the Meeting Service service resend-itx-meeting-invitations server.
+func (c *Client) ResendItxMeetingInvitations() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeResendItxMeetingInvitationsRequest(c.encoder)
+		decodeResponse = DecodeResendItxMeetingInvitationsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildResendItxMeetingInvitationsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.ResendItxMeetingInvitationsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "resend-itx-meeting-invitations", err)
 		}
 		return decodeResponse(resp)
 	}

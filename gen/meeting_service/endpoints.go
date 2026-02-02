@@ -66,6 +66,10 @@ type Endpoints struct {
 	GetItxRegistrant                  goa.Endpoint
 	UpdateItxRegistrant               goa.Endpoint
 	DeleteItxRegistrant               goa.Endpoint
+	GetItxJoinLink                    goa.Endpoint
+	GetItxRegistrantIcs               goa.Endpoint
+	ResendItxRegistrantInvitation     goa.Endpoint
+	ResendItxMeetingInvitations       goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -124,6 +128,10 @@ func NewEndpoints(s Service) *Endpoints {
 		GetItxRegistrant:                  NewGetItxRegistrantEndpoint(s, a.JWTAuth),
 		UpdateItxRegistrant:               NewUpdateItxRegistrantEndpoint(s, a.JWTAuth),
 		DeleteItxRegistrant:               NewDeleteItxRegistrantEndpoint(s, a.JWTAuth),
+		GetItxJoinLink:                    NewGetItxJoinLinkEndpoint(s, a.JWTAuth),
+		GetItxRegistrantIcs:               NewGetItxRegistrantIcsEndpoint(s, a.JWTAuth),
+		ResendItxRegistrantInvitation:     NewResendItxRegistrantInvitationEndpoint(s, a.JWTAuth),
+		ResendItxMeetingInvitations:       NewResendItxMeetingInvitationsEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -180,6 +188,10 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetItxRegistrant = m(e.GetItxRegistrant)
 	e.UpdateItxRegistrant = m(e.UpdateItxRegistrant)
 	e.DeleteItxRegistrant = m(e.DeleteItxRegistrant)
+	e.GetItxJoinLink = m(e.GetItxJoinLink)
+	e.GetItxRegistrantIcs = m(e.GetItxRegistrantIcs)
+	e.ResendItxRegistrantInvitation = m(e.ResendItxRegistrantInvitation)
+	e.ResendItxMeetingInvitations = m(e.ResendItxMeetingInvitations)
 }
 
 // NewGetMeetingsEndpoint returns an endpoint function that calls the method
@@ -1294,5 +1306,99 @@ func NewDeleteItxRegistrantEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 			return nil, err
 		}
 		return nil, s.DeleteItxRegistrant(ctx, p)
+	}
+}
+
+// NewGetItxJoinLinkEndpoint returns an endpoint function that calls the method
+// "get-itx-join-link" of service "Meeting Service".
+func NewGetItxJoinLinkEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxJoinLinkPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxJoinLink(ctx, p)
+	}
+}
+
+// NewGetItxRegistrantIcsEndpoint returns an endpoint function that calls the
+// method "get-itx-registrant-ics" of service "Meeting Service".
+func NewGetItxRegistrantIcsEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxRegistrantIcsPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxRegistrantIcs(ctx, p)
+	}
+}
+
+// NewResendItxRegistrantInvitationEndpoint returns an endpoint function that
+// calls the method "resend-itx-registrant-invitation" of service "Meeting
+// Service".
+func NewResendItxRegistrantInvitationEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*ResendItxRegistrantInvitationPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.ResendItxRegistrantInvitation(ctx, p)
+	}
+}
+
+// NewResendItxMeetingInvitationsEndpoint returns an endpoint function that
+// calls the method "resend-itx-meeting-invitations" of service "Meeting
+// Service".
+func NewResendItxMeetingInvitationsEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*ResendItxMeetingInvitationsPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.ResendItxMeetingInvitations(ctx, p)
 	}
 }

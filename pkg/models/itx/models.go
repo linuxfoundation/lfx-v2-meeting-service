@@ -185,3 +185,28 @@ type ZoomMeetingRegistrant struct {
 	ModifiedAt string `json:"modified_at,omitempty"` // Last modified timestamp (RFC3339)
 	UpdatedBy  *User  `json:"updated_by,omitempty"`  // Last updater user info
 }
+
+// ZoomMeetingJoinLink represents a join link response from ITX
+type ZoomMeetingJoinLink struct {
+	Link string `json:"link"` // Zoom meeting join URL
+}
+
+// GetJoinLinkRequest represents the request parameters for getting a join link
+type GetJoinLinkRequest struct {
+	MeetingID string
+	UseEmail  bool
+	UserID    string
+	Name      string
+	Email     string
+	Register  bool
+}
+
+// RegistrantICS represents an ICS calendar file response from ITX
+type RegistrantICS struct {
+	Content []byte // ICS file content
+}
+
+// ResendMeetingInvitationsRequest represents the request to resend invitations to all registrants
+type ResendMeetingInvitationsRequest struct {
+	ExcludeRegistrantIDs []string `json:"exclude_registrant_ids,omitempty"` // Registrant IDs to exclude
+}

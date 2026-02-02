@@ -271,6 +271,72 @@ func (c *Client) GetMeetingCount(ctx context.Context, projectID string) (*itx.Me
 	return &result, nil
 }
 
+// GetMeetingJoinLink retrieves a join link for a meeting from ITX
+func (c *Client) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkRequest) (*itx.ZoomMeetingJoinLink, error) {
+	// Build URL with query parameters
+	queryURL := fmt.Sprintf("%s/v2/zoom/meetings/%s/join_link", c.config.BaseURL, req.MeetingID)
+
+	// Build query parameters
+	params := url.Values{}
+	if req.UseEmail {
+		params.Add("use_email", "true")
+	}
+	if req.UserID != "" {
+		params.Add("user_id", req.UserID)
+	}
+	if req.Name != "" {
+		params.Add("name", req.Name)
+	}
+	if req.Email != "" {
+		params.Add("email", req.Email)
+	}
+	if req.Register {
+		params.Add("register", "true")
+	}
+
+	if len(params) > 0 {
+		queryURL = fmt.Sprintf("%s?%s", queryURL, params.Encode())
+	}
+
+	// Create HTTP request
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, queryURL, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.ZoomMeetingJoinLink
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse response", err)
+	}
+
+	return &result, nil
+}
+
 // CreateRegistrant creates a meeting registrant via ITX proxy
 func (c *Client) CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
 	// Marshal request
@@ -426,6 +492,127 @@ func (c *Client) DeleteRegistrant(ctx context.Context, meetingID, registrantID s
 	}()
 
 	// Read response body (for error messages)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// GetRegistrantICS retrieves an ICS calendar file for a meeting registrant via ITX proxy
+func (c *Client) GetRegistrantICS(ctx context.Context, meetingID, registrantID string) (*itx.RegistrantICS, error) {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/registrants/%s/ics", c.config.BaseURL, meetingID, registrantID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Accept", "text/calendar")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Return ICS content as-is (binary data)
+	return &itx.RegistrantICS{
+		Content: respBody,
+	}, nil
+}
+
+// ResendRegistrantInvitation resends a meeting invitation to a registrant via ITX proxy
+func (c *Client) ResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/registrants/%s/resend", c.config.BaseURL, meetingID, registrantID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body for error handling
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// ResendMeetingInvitations resends meeting invitations to all registrants via ITX proxy
+func (c *Client) ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error {
+	// Always marshal the request body, even if empty
+	// ITX API expects a JSON body (empty object {} is fine)
+	if req == nil {
+		req = &itx.ResendMeetingInvitationsRequest{}
+	}
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/resend", c.config.BaseURL, meetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body for error handling
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)

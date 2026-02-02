@@ -16,10 +16,14 @@ type ITXProxyClient interface {
 	UpdateZoomMeeting(ctx context.Context, meetingID string, req *itx.CreateZoomMeetingRequest) error
 	DeleteZoomMeeting(ctx context.Context, meetingID string) error
 	GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error)
+	GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkRequest) (*itx.ZoomMeetingJoinLink, error)
+	ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error
 
 	// Registrant operations
 	CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error)
 	GetRegistrant(ctx context.Context, meetingID, registrantID string) (*itx.ZoomMeetingRegistrant, error)
 	UpdateRegistrant(ctx context.Context, meetingID, registrantID string, req *itx.ZoomMeetingRegistrant) error
 	DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error
+	GetRegistrantICS(ctx context.Context, meetingID, registrantID string) (*itx.RegistrantICS, error)
+	ResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error
 }

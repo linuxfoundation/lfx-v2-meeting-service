@@ -1932,6 +1932,178 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("get-itx-join-link", func() {
+		Description("Get join link for a meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("use_email", Boolean, "Use email for identification instead of user_id")
+			Attribute("user_id", String, "LF user ID", func() {
+				Example("user123")
+			})
+			Attribute("name", String, "User's full name", func() {
+				Example("John Doe")
+			})
+			Attribute("email", String, "User's email address", func() {
+				Example("john.doe@example.com")
+				Format(FormatEmail)
+			})
+			Attribute("register", Boolean, "Register user as guest if not already registered")
+			Required("meeting_id")
+		})
+
+		Result(ITXZoomMeetingJoinLink)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/join_link")
+			Param("version:v")
+			Param("use_email")
+			Param("user_id")
+			Param("name")
+			Param("email")
+			Param("register")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-registrant-ics", func() {
+		Description("Get ICS calendar file for a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Result(Bytes)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/registrants/{registrant_id}/ics")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				ContentType("text/calendar")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("resend-itx-registrant-invitation", func() {
+		Description("Resend meeting invitation to a registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/registrants/{registrant_id}/resend")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("resend-itx-meeting-invitations", func() {
+		Description("Resend meeting invitations to all registrants through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("exclude_registrant_ids", ArrayOf(String), "Registrant IDs to exclude from resend", func() {
+				Example([]string{"reg123", "reg456"})
+			})
+			Required("meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/resend")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")

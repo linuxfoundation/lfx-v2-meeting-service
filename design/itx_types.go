@@ -181,3 +181,14 @@ var ITXZoomMeetingRegistrant = Type("ITXZoomMeetingRegistrant", func() {
 	Attribute("modified_at", String, "Last modified timestamp RFC3339 (read-only)")
 	Attribute("updated_by", ITXUser, "Last updater user info (read-only)")
 })
+
+// ITXZoomMeetingJoinLink represents a join link response from ITX
+var ITXZoomMeetingJoinLink = Type("ITXZoomMeetingJoinLink", func() {
+	Description("Zoom meeting join link from ITX API proxy")
+	Attribute("link", String, "Zoom meeting join URL", func() {
+		Example("https://zoom.us/j/1234567891?pwd=NTNubnB4bnpPTm9zT2VLZFJnQ1RkUT11")
+		Format(FormatURI)
+	})
+	Required("link")
+})
+
