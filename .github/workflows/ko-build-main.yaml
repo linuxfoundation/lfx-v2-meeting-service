@@ -30,13 +30,15 @@ jobs:
       - name: Build and publish meeting-api image
         env:
           VERSION: development
-          GIT_COMMIT: ${{ github.sha }}
         run: |
           BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
+          GIT_COMMIT="${{ github.sha }}"
+          GIT_COMMIT="${GIT_COMMIT:0:7}"
+          export BUILD_TIME
+          export GIT_COMMIT
           ko build github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api \
             -B \
             --platform linux/amd64,linux/arm64 \
             -t ${{ github.sha }} \
             -t development \
-            --sbom spdx \
-            --ldflags "-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT:0:7}"
+            --sbom spdx
