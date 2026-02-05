@@ -26,16 +26,10 @@ resources:
 app:
   # audience is the JWT audience required for this authentication with this app
   audience: lfx-v2-meeting-service
-  # skipEtagValidation is a boolean to determine if the etag validation should be skipped
-  # (only use for local development)
-  skipEtagValidation: false
   # use_oidc_contextualizer is a boolean to determine if the OIDC contextualizer should be used
   use_oidc_contextualizer: true
 
   environment:
-    # NATS_URL is required
-    NATS_URL:
-      value: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
     # LOG_LEVEL is optional
     LOG_LEVEL:
       value: info
@@ -48,45 +42,38 @@ app:
     # JWT_AUDIENCE is required
     JWT_AUDIENCE:
       value: lfx-v2-meeting-service
-    # SKIP_ETAG_VALIDATION is optional
-    SKIP_ETAG_VALIDATION:
-      value: "false"
-    # JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL is optional
+    # JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL is optional (for local dev only)
     JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL:
       value: ''
-    # EMAIL_ENABLED is optional
-    EMAIL_ENABLED:
-      value: "true"
-    # SMTP_HOST is optional
-    SMTP_HOST:
-      value: lfx-platform-mailpit-smtp.lfx.svc.cluster.local
-    # SMTP_PORT is optional
-    SMTP_PORT:
-      value: "25"
-    # SMTP_FROM is optional
-    SMTP_FROM:
-      value: noreply@lfx.linuxfoundation.org
-    # SMTP_USERNAME is optional
-    SMTP_USERNAME:
-      value: null
-    # SMTP_PASSWORD is optional
-    SMTP_PASSWORD:
-      value: null
-    # ZOOM_ACCOUNT_ID is optional
-    ZOOM_ACCOUNT_ID:
-      value: null
-    # ZOOM_CLIENT_ID is optional
-    ZOOM_CLIENT_ID:
-      value: null
-    # ZOOM_CLIENT_SECRET is optional
-    ZOOM_CLIENT_SECRET:
-      value: null
-    # ZOOM_WEBHOOK_SECRET_TOKEN is optional
-    ZOOM_WEBHOOK_SECRET_TOKEN:
-      value: null
     # LFX_ENVIRONMENT is optional (dev, staging, prod) - defaults to prod if not set
     LFX_ENVIRONMENT:
       value: prod
+    # ITX_ENABLED enables the ITX proxy functionality (required)
+    ITX_ENABLED:
+      value: "true"
+    # ITX_BASE_URL is the base URL for the ITX service
+    ITX_BASE_URL:
+      value: https://api.dev.itx.linuxfoundation.org
+    # ITX_CLIENT_ID is the OAuth2 client ID for ITX service authentication
+    ITX_CLIENT_ID:
+      value: null
+    # ITX_CLIENT_SECRET is the OAuth2 client secret for ITX service authentication
+    ITX_CLIENT_SECRET:
+      value: null
+    # ITX_AUTH0_DOMAIN is the Auth0 domain for ITX OAuth2 authentication
+    ITX_AUTH0_DOMAIN:
+      value: linuxfoundation-dev.auth0.com
+    # ITX_AUDIENCE is the OAuth2 audience for ITX service
+    ITX_AUDIENCE:
+      value: https://api.dev.itx.linuxfoundation.org/
+    # ID_MAPPING_DISABLED disables v1/v2 ID mapping (optional, defaults to false)
+    # Set to "true" to disable ID mapping and pass IDs through unchanged
+    ID_MAPPING_DISABLED:
+      value: "false"
+    # NATS_URL is optional - only needed if ID mapping is enabled and using NATS mapper
+    # If ID_MAPPING_DISABLED=true, this is not used
+    NATS_URL:
+      value: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
     # OTEL_SERVICE_NAME is the service name for OpenTelemetry resource identification
     # (default: "lfx-v2-meeting-service")
     # OTEL_SERVICE_NAME:
@@ -155,255 +142,6 @@ serviceAccount:
   annotations: {}
   # automountServiceAccountToken is a boolean to determine if the service account token should be automatically mounted
   automountServiceAccountToken: true
-
-# nats is the configuration for the NATS server
-nats:
-
-  # kv_bucket_meetings is the configuration for the KV bucket for storing meeting base information
-  kv_bucket_meetings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting base information
-    name: meetings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_meeting_settings is the configuration for the KV bucket for storing meeting settings
-  kv_bucket_meeting_settings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting settings
-    name: meeting-settings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_meeting_registrants is the configuration for the KV bucket for storing meeting registrants
-  kv_bucket_meeting_registrants:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting registrants
-    name: meeting-registrants
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_meeting_rsvps is the configuration for the KV bucket for storing meeting RSVP responses
-  kv_bucket_meeting_rsvps:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting RSVP responses
-    name: meeting-rsvps
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_past_meetings is the configuration for the KV bucket for storing past meetings
-  kv_bucket_past_meetings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meetings
-    name: past-meetings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 5368709120  # 5GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_past_meeting_participants is the configuration for the KV bucket for storing past meeting participants
-  kv_bucket_past_meeting_participants:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting participants
-    name: past-meeting-participants
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 5368709120  # 5GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_past_meeting_recordings is the configuration for the KV bucket for storing past meeting recordings
-  kv_bucket_past_meeting_recordings:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting recordings
-    name: past-meeting-recordings
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 10737418240  # 10GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_past_meeting_transcripts is the configuration for the KV bucket for storing past meeting transcripts
-  kv_bucket_past_meeting_transcripts:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting transcripts
-    name: past-meeting-transcripts
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 5368709120  # 5GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_past_meeting_summaries is the configuration for the KV bucket for storing past meeting summaries
-  kv_bucket_past_meeting_summaries:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting summaries
-    name: past-meeting-summaries
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_meeting_attachments_metadata is the configuration for the KV bucket for storing meeting attachment metadata
-  kv_bucket_meeting_attachments_metadata:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing meeting attachment metadata
-    name: meeting-attachments-metadata
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB (for attachment metadata JSON)
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # kv_bucket_past_meeting_attachments_metadata is the configuration for the KV bucket for storing past meeting attachment metadata
-  kv_bucket_past_meeting_attachments_metadata:
-    # creation is a boolean to determine if the KV bucket should be created via the helm chart.
-    # set it to false if you want to use an existing KV bucket.
-    creation: true
-    # keep is a boolean to determine if the KV bucket should be preserved during helm uninstall
-    # set it to false if you want the bucket to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the KV bucket for storing past meeting attachment metadata
-    name: past-meeting-attachments-metadata
-    # history is the number of history entries to keep for the KV bucket
-    history: 20
-    # storage is the storage type for the KV bucket
-    storage: file
-    # maxValueSize is the maximum size of a value in the KV bucket
-    maxValueSize: 10485760  # 10MB (for attachment metadata JSON)
-    # maxBytes is the maximum number of bytes in the KV bucket
-    maxBytes: 1073741824  # 1GB
-    # compression is a boolean to determine if the KV bucket should be compressed
-    compression: true
-
-  # object_store_meeting_attachments is the configuration for the Object Store for storing meeting attachments
-  object_store_meeting_attachments:
-    # creation is a boolean to determine if the Object Store should be created via the helm chart.
-    # set it to false if you want to use an existing Object Store.
-    creation: true
-    # keep is a boolean to determine if the Object Store should be preserved during helm uninstall
-    # set it to false if you want the store to be deleted when the chart is uninstalled
-    keep: true
-    # name is the name of the Object Store for storing meeting attachments
-    name: meeting-attachments
-    # storage is the storage type for the Object Store
-    storage: file
-    # maxBytes is the maximum number of bytes in the Object Store
-    maxBytes: 1073741824  # 1GB
 
 # openfga is the configuration for the OpenFGA server
 openfga:

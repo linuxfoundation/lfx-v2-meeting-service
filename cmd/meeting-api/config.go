@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
-	"strconv"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
@@ -22,13 +21,10 @@ type flags struct {
 
 // environment are the environment variables for the meeting service.
 type environment struct {
-	NatsURL            string
 	Port               string
-	SkipEtagValidation bool
 	LFXEnvironment     string
 	ProjectLogoBaseURL string
 	LFXAppOrigin       string
-	EmailConfig        emailConfig
 	ITXConfig          itxConfig
 	IDMappingDisabled  bool
 }
@@ -41,16 +37,6 @@ type itxConfig struct {
 	ClientSecret string
 	Auth0Domain  string
 	Audience     string
-}
-
-// emailConfig holds all email-related configuration
-type emailConfig struct {
-	Enabled      bool
-	SMTPHost     string
-	SMTPPort     int
-	SMTPFrom     string
-	SMTPUsername string
-	SMTPPassword string
 }
 
 // parseFlags parses command line flags for the meeting service
@@ -87,15 +73,6 @@ func parseEnv() environment {
 	if port == "" {
 		port = "8080"
 	}
-	natsURL := os.Getenv("NATS_URL")
-	if natsURL == "" {
-		natsURL = "nats://localhost:4222"
-	}
-	skipEtagValidation := false
-	skipEtagValidationStr := os.Getenv("SKIP_ETAG_VALIDATION")
-	if skipEtagValidationStr == "true" {
-		skipEtagValidation = true
-	}
 
 	lfxEnvironmentRaw := os.Getenv("LFX_ENVIRONMENT")
 	var lfxEnvironment string
@@ -129,51 +106,12 @@ func parseEnv() environment {
 	idMappingDisabled := os.Getenv("ID_MAPPING_DISABLED") == "true"
 
 	return environment{
-		NatsURL:            natsURL,
 		Port:               port,
-		SkipEtagValidation: skipEtagValidation,
 		LFXEnvironment:     lfxEnvironment,
 		ProjectLogoBaseURL: projectLogoBaseURL,
 		LFXAppOrigin:       lfxAppOrigin,
-		EmailConfig:        parseEmailConfig(),
 		ITXConfig:          parseITXConfig(),
 		IDMappingDisabled:  idMappingDisabled,
-	}
-}
-
-// parseEmailConfig parses all email-related environment variables
-func parseEmailConfig() emailConfig {
-	enabled := true
-	enabledStr := os.Getenv("EMAIL_ENABLED")
-	if enabledStr == "false" {
-		enabled = false
-	}
-
-	host := os.Getenv("SMTP_HOST")
-	if host == "" {
-		host = "localhost"
-	}
-
-	port := 1025 // Default for Mailpit
-	portStr := os.Getenv("SMTP_PORT")
-	if portStr != "" {
-		if p, err := strconv.Atoi(portStr); err == nil {
-			port = p
-		}
-	}
-
-	from := os.Getenv("SMTP_FROM")
-	if from == "" {
-		from = "noreply@lfx.linuxfoundation.org"
-	}
-
-	return emailConfig{
-		Enabled:      enabled,
-		SMTPHost:     host,
-		SMTPPort:     port,
-		SMTPFrom:     from,
-		SMTPUsername: os.Getenv("SMTP_USERNAME"),
-		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
 	}
 }
 

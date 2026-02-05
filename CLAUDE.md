@@ -2,19 +2,56 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Features
+## Architecture Overview
 
-### Email Notifications
+The ITX Meeting Proxy Service is a lightweight stateless proxy built with Go and the Goa framework. It provides a thin authentication and authorization layer between LFX clients and the ITX Zoom API service.
 
-The service supports sending invitation and cancellation emails for meeting registrants:
+The service follows a clean architecture pattern with:
 
-- **Email Service**: SMTP-based email service with HTML and plain text templates
-- **Local Development**: Uses Mailpit (localhost:1025) to capture emails without sending real emails
-- **Templates**: Professional email templates with descriptive names:
-  - `meeting_invitation.html/txt` - Meeting invitation emails
-  - `meeting_invitation_cancellation.html/txt` - Registration cancellation emails
-- **Configuration**: Configurable via environment variables and Helm chart values
-- **Graceful Handling**: Email failures don't prevent registrant operations
+- **API Layer**: Goa-generated HTTP handlers and OpenAPI specifications
+- **Service Layer**: Request validation and ITX client orchestration
+- **Domain Layer**: Core request/response models and interfaces
+- **Infrastructure Layer**: ITX HTTP client with OAuth2 authentication
+
+### Key Features
+
+- **Stateless Proxy**: No data persistence, all state managed by ITX service
+- **ITX Meeting Operations**: Full CRUD operations for meetings via ITX API
+- **ITX Registrant Operations**: Complete registrant management via ITX API
+- **JWT Authentication**: Secure API access via Heimdall integration
+- **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
+- **OpenAPI Documentation**: Auto-generated API specifications
+- **OAuth2 M2M**: Machine-to-machine authentication with ITX service
+
+### Key Architectural Components
+
+**API Layer (Goa-generated)**
+
+- Design specifications in `design/` directory define API contracts
+- Generated code in `gen/` directory (HTTP handlers, client, OpenAPI specs)
+- Main API types: ITX meetings and registrants with full CRUD operations
+
+**Domain Layer** (`internal/domain/`)
+
+- Core request/response models in `models/` (ITXMeetingRequest, Committee, ITXRecurrence)
+- Domain interfaces for ITX proxy and ID mapping
+- Business logic isolated from infrastructure concerns
+
+**Service Layer** (`internal/service/`)
+
+- Auth service for JWT validation
+- ITX services in `itx/` subdirectory (meeting_service.go, registrant_service.go)
+- Orchestrates between API layer and infrastructure
+
+**Infrastructure Layer** (`internal/infrastructure/`)
+
+- ITX HTTP client (`proxy/`) with OAuth2 authentication
+- JWT authentication (`auth/`)
+- Optional NATS-based ID mapping (`idmapper/`)
+
+**Middleware** (`internal/middleware/`)
+
+- Request logging, authorization, and request ID handling
 
 ## Development Commands
 
@@ -47,84 +84,6 @@ The service supports sending invitation and cancellation emails for meeting regi
 - `make helm-templates` - Print Helm templates
 - `make helm-uninstall` - Uninstall Helm chart
 
-## Architecture Overview
-
-The LFX v2 Meeting Service is a comprehensive microservice built with Go and the Goa framework. It provides robust CRUD operations for meetings and registrants with NATS JetStream persistence and JWT authentication.
-
-The service is built using a clean architecture pattern with the following layers:
-
-- **API Layer**: Goa-generated HTTP handlers and OpenAPI specifications
-- **Service Layer**: Business logic and orchestration
-- **Domain Layer**: Core business models and interfaces
-- **Infrastructure Layer**: NATS persistence, JWT authentication, and messaging
-
-### Key Features
-
-- **Meeting Management**: Complete CRUD operations with platform integration (Zoom support)
-- **Registrant Management**: Registration handling with email uniqueness validation
-- **Historical Tracking**: Past meeting records with session tracking and participant attendance
-- **Webhook Integration**: Platform event processing for real-time meeting state updates
-- **NATS JetStream Storage**: Scalable and resilient data persistence across 6 KV buckets
-- **NATS Messaging**: Event-driven communication with other services
-- **JWT Authentication**: Secure API access via Heimdall integration
-- **OpenAPI Documentation**: Auto-generated API specifications
-- **Comprehensive Testing**: Full unit test coverage with mocks
-
-### Key Architectural Components
-
-**API Layer (Goa-generated)**
-
-- Design specifications in `design/` directory define API contracts
-- Generated code in `gen/` directory (HTTP handlers, client, OpenAPI specs)
-- Main API types: meetings, registrants, and past meetings with full CRUD operations
-
-**Domain Layer** (`internal/domain/`)
-
-- Core business models in `models/` (Meeting, Registrant, Committee, Recurrence, PastMeeting, PastMeetingRecording)
-- Domain interfaces for repository and messaging abstractions
-- Business logic isolated from infrastructure concerns
-
-**Service Layer** (`internal/service/`)
-
-- Business operations and handlers
-- Orchestrates between domain models and infrastructure
-- Implements Goa service interfaces
-
-**Infrastructure Layer** (`internal/infrastructure/`)
-
-- NATS integration for messaging (`messaging/`) and key-value storage (`store/`)
-- JWT authentication (`auth/`)
-- Zoom integration (`zoom/`) for meeting platform services
-- Webhook handling (`webhook/`) for platform event processing
-- Six NATS KV buckets: "meetings", "meeting-settings", "meeting-registrants", "past-meetings", "past-meeting-participants", and "past-meeting-recordings"
-
-**Handlers Layer** (`internal/handlers/`)
-
-- Message and webhook event handlers
-- Orchestrates business logic for async event processing
-
-**Middleware** (`internal/middleware/`)
-
-- Request logging, authorization, and request ID handling
-
-### Data Storage
-
-- Uses NATS JetStream KV stores for persistence
-- Six main buckets:
-  - `meetings`: Core meeting information
-  - `meeting-settings`: Meeting configuration and organizers
-  - `meeting-registrants`: Meeting registration data
-  - `past-meetings`: Historical meeting occurrences with session tracking
-  - `past-meeting-participants`: Historical participant data with attendance tracking
-  - `past-meeting-recordings`: Recording metadata with session-based access URLs and file information
-- NATS messaging for event publishing (indexer integration)
-
-### Meeting Types and Platforms
-
-- Supports multiple meeting platforms (primary: Zoom)
-- Meeting types include recurring meetings with complex recurrence patterns
-- Platform-specific configurations (ZoomConfig for Zoom meetings)
-
 ## Development Guidelines
 
 ### Code Generation
@@ -135,10 +94,9 @@ The service is built using a clean architecture pattern with the following layer
 
 ### Testing Strategy
 
-- Unit tests for all domain models and business logic
-- Mock interfaces provided for external dependencies (including Zoom API clients)
+- Unit tests for service logic and converters
+- Mock interfaces provided for external dependencies (ITX client, ID mapper)
 - Test files follow `*_test.go` naming convention
-- External service integrations use mock implementations in `/mocks/` subdirectories
 
 ### Error Handling
 
@@ -156,94 +114,123 @@ The service is built using a clean architecture pattern with the following layer
 
 - Built with Go 1.24+
 - Primary framework: Goa v3 for API generation
-- NATS for messaging and storage
+- Optional: NATS for ID mapping (can be disabled)
 - Standard testing with testify
 
 ## Environment Variables
 
-### Zoom Integration
+### ITX Configuration (Required)
 
-For Zoom meeting platform support, configure these environment variables:
+For ITX proxy functionality, configure these environment variables:
 
-- `ZOOM_ACCOUNT_ID`: OAuth Server-to-Server Account ID
-- `ZOOM_CLIENT_ID`: OAuth App Client ID  
-- `ZOOM_CLIENT_SECRET`: OAuth App Client Secret
+- `ITX_ENABLED`: Must be set to `true` (service requires ITX)
+- `ITX_BASE_URL`: Base URL for ITX service (e.g., `https://api.itx.linuxfoundation.org`)
+- `ITX_CLIENT_ID`: OAuth2 client ID for ITX authentication
+- `ITX_CLIENT_SECRET`: OAuth2 client secret for ITX authentication
+- `ITX_AUTH0_DOMAIN`: Auth0 domain for OAuth2 (e.g., `linuxfoundation.auth0.com`)
+- `ITX_AUDIENCE`: OAuth2 audience for ITX service (e.g., `https://api.itx.linuxfoundation.org/`)
 
-**Note**: Get these values from 1Password (search for "LFX Zoom Integration"). Required only when creating meetings with `platform="Zoom"`.
+### ID Mapping Configuration (Optional)
 
-### Zoom Webhook Development
+The service supports optional ID mapping between v1 and v2 systems:
 
-For local webhook development, you'll need to expose your local service to receive webhook events from Zoom:
+- `ID_MAPPING_DISABLED`: Set to `true` to disable ID mapping (default: `false`)
+- `NATS_URL`: NATS server URL for ID mapping (only needed if mapping is enabled)
 
-- `ZOOM_WEBHOOK_SECRET_TOKEN`: Webhook secret token for signature validation
-- `MOCK_ZOOM_WEBHOOK`: Set to `true` to bypass webhook signature validation for testing (default: `false`)
+**Note**: If ID mapping is disabled, IDs are passed through unchanged. If enabled and NATS is unavailable, the service falls back to no-op mapping with a warning.
 
-#### Local Webhook Testing with ngrok
+### Authentication Configuration
 
-To test Zoom webhooks locally:
+- `JWKS_URL`: JWKS URL for JWT verification
+- `JWT_AUDIENCE`: JWT token audience (default: `lfx-v2-meeting-service`)
+- `JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL`: Mock principal for local dev (dev only)
 
-1. **Install ngrok**: Download from [ngrok.com](https://ngrok.com/) or use package manager
+### Logging Configuration
 
-   ```bash
-   brew install ngrok  # macOS
-   # or download from https://ngrok.com/download
-   ```
+- `LOG_LEVEL`: Log level (debug, info, warn, error) - default: `info`
+- `LOG_ADD_SOURCE`: Add source location to logs - default: `true`
 
-2. **Start your local service**:
+## ITX API Integration
 
-   ```bash
-   make run  # Starts service on localhost:8080
-   ```
+The service acts as a proxy to the ITX Zoom API service. All meeting and registrant operations are forwarded to ITX.
 
-3. **Expose your service with ngrok** (in a separate terminal):
+### ITX Request Flow
 
-   ```bash
-   ngrok http 8080
-   ```
+1. Client sends authenticated request to proxy service
+2. Proxy validates JWT token via Heimdall
+3. Proxy converts Goa payload to ITX request format
+4. Proxy authenticates with ITX using OAuth2 M2M flow
+5. Proxy forwards request to ITX service
+6. ITX processes request and returns response
+7. Proxy converts ITX response to Goa format
+8. Proxy returns response to client
 
-   This creates a public URL like `https://abc123.ngrok.io` that forwards to your local service.
+### ITX Data Models
 
-4. **Configure Zoom webhook URL**: In your Zoom App settings, set webhook endpoint to:
+Key models in `pkg/models/itx/`:
 
-   ```
-   https://abc123.ngrok.io/webhooks/zoom
-   ```
+- `ZoomMeetingRequest`: Request to create/update meetings
+- `ZoomMeetingResponse`: Response with meeting details
+- `Recurrence`: Meeting recurrence settings (Type is integer: 1=Daily, 2=Weekly, 3=Monthly)
+- `Committee`: Committee associated with meeting
+- `GetJoinLinkRequest`: Request for user-specific join link
+- `ZoomMeetingJoinLink`: Join link response
 
-5. **Set webhook secret**: Copy the webhook secret from Zoom App settings to your environment:
+### Converter Functions
 
-   ```bash
-   export ZOOM_WEBHOOK_SECRET_TOKEN="your_webhook_secret_here"
-   ```
+Converters in `cmd/meeting-api/service/`:
 
-**Supported Zoom Webhook Events:**
+- `itx_meeting_converters.go`: Converts between Goa payloads and ITX meeting requests/responses
+- `itx_registrant_converters.go`: Converts between Goa payloads and ITX registrant requests/responses
 
-- `meeting.started` - Meeting begins
-- `meeting.ended` - Meeting concludes  
-- `meeting.deleted` - Meeting is deleted
-- `meeting.participant_joined` - Participant joins
-- `meeting.participant_left` - Participant leaves
-- `recording.completed` - Recording is ready
-- `recording.transcript_completed` - Transcript is ready
-- `meeting.summary_completed` - AI summary is ready
+**Important**: Always use appropriate pointer conversion helpers (`ptrIfNotZero` for ints, `ptrIfNotEmpty` for strings, `ptrIfTrue` for bools).
 
-**Webhook Processing Flow:**
+## Project Structure Notes
 
-1. HTTP webhook endpoint validates Zoom signature
-2. Event published to NATS for async processing
-3. Service handlers process business logic (no reply expected)
+### What Was Removed
 
-## HTTP Header Conventions
+This service was originally a comprehensive V2 meeting service with:
+- NATS JetStream storage (6 KV buckets)
+- Direct Zoom API integration
+- Email notification service
+- Past meeting tracking
+- Webhook processing
+- NATS messaging for indexing
 
-### ETag and Conditional Requests
+All V2 functionality has been removed. The service is now a lightweight stateless proxy similar to lfx-v2-voting-service.
 
-This service follows proper HTTP conditional request semantics:
+### What Remains
 
-- **GET responses**: Include `ETag` header with current resource version
-- **PUT/DELETE requests**: Include `If-Match` header for optimistic concurrency control
+- ITX proxy functionality (meetings and registrants)
+- JWT authentication via Heimdall
+- Optional ID mapping via NATS
+- Goa-based API design and code generation
+- Middleware (logging, authorization, request ID)
+- OpenTelemetry tracing support
 
-**Example flow:**
+## API Endpoints
 
-1. Client makes GET request: `GET /meetings/{id}`
-2. Server responds with: `ETag: "123"` header  
-3. Client makes update request: `PUT /meetings/{id}` with `If-Match: "123"` header
-4. Server validates the If-Match value against current resource version
+### Health Checks
+
+- `GET /livez` - Liveness check
+- `GET /readyz` - Readiness check
+
+### ITX Meeting Operations
+
+- `POST /itx/meetings` - Create meeting
+- `GET /itx/meetings/{meeting_id}` - Get meeting details
+- `PUT /itx/meetings/{meeting_id}` - Update meeting
+- `DELETE /itx/meetings/{meeting_id}` - Delete meeting
+- `GET /itx/meetings/{meeting_id}/join_link` - Get join link
+- `PATCH /itx/meetings/{meeting_id}/occurrences/{occurrence_id}` - Update occurrence
+- `DELETE /itx/meetings/{meeting_id}/occurrences/{occurrence_id}` - Delete occurrence
+- `GET /itx/meeting_count` - Get meeting count
+
+### ITX Registrant Operations
+
+- `POST /itx/meetings/{meeting_id}/registrants` - Add registrant
+- `GET /itx/meetings/{meeting_id}/registrants` - List registrants
+- `GET /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Get registrant
+- `PATCH /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Update registrant
+- `PUT /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Update status
+- `DELETE /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Delete registrant

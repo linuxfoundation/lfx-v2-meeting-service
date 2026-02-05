@@ -7,6 +7,113 @@ import (
 	. "goa.design/goa/v3/dsl" //nolint:staticcheck // ST1001: the recommended way of using the goa DSL package is with the . import
 )
 
+// Shared attribute definitions used by ITX types
+
+func TitleAttribute() {
+	Attribute("title", String, "The title of the meeting")
+}
+
+func StartTimeAttribute() {
+	Attribute("start_time", String, "The start time of the meeting in RFC3339 format", func() {
+		Example("2021-01-01T00:00:00Z")
+		Format(FormatDateTime)
+	})
+}
+
+func DurationAttribute() {
+	Attribute("duration", Int, "The duration of the meeting in minutes", func() {
+		Minimum(0)
+		Maximum(600)
+	})
+}
+
+func TimezoneAttribute() {
+	Attribute("timezone", String, "The timezone of the meeting (e.g. 'America/New_York')")
+}
+
+func VisibilityAttribute() {
+	Attribute("visibility", String, "The visibility of the meeting's existence to other users", func() {
+		Enum("public", "private")
+	})
+}
+
+func DescriptionAttribute() {
+	Attribute("description", String, "The description of the meeting", func() {
+		MaxLength(2000) // Zoom's Agenda max length
+	})
+}
+
+func RestrictedAttribute() {
+	Attribute("restricted", Boolean, "The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)")
+}
+
+func CommitteesAttribute() {
+	Attribute("committees", ArrayOf(Committee), "The committees associated with the meeting")
+}
+
+func MeetingTypeAttribute() {
+	Attribute("meeting_type", String, "The type of meeting", func() {
+		Enum("Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None")
+	})
+}
+
+func EarlyJoinTimeMinutesAttribute() {
+	Attribute("early_join_time_minutes", Int, "The number of minutes that users are allowed to join the meeting early", func() {
+		Minimum(10)
+		Maximum(60)
+	})
+}
+
+func RecordingEnabledAttribute() {
+	Attribute("recording_enabled", Boolean, "Whether recording is enabled for the meeting")
+}
+
+func TranscriptEnabledAttribute() {
+	Attribute("transcript_enabled", Boolean, "Whether transcription is enabled for the meeting")
+}
+
+func YoutubeUploadEnabledAttribute() {
+	Attribute("youtube_upload_enabled", Boolean, "Whether automatic youtube uploading is enabled for the meeting")
+}
+
+func ArtifactVisibilityAttribute() {
+	Attribute("artifact_visibility", String, "The visibility of artifacts to users", func() {
+		Enum("meeting_hosts", "meeting_participants", "public")
+	})
+}
+
+func RecurrenceAttribute() {
+	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
+}
+
+// Committee represents a committee associated with a meeting
+var Committee = Type("Committee", func() {
+	Description("A committee associated with a meeting")
+	Attribute("uid", String, "Committee UID", func() {
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+		Format(FormatUUID)
+	})
+	Attribute("allowed_voting_statuses", ArrayOf(String), "Allowed voting statuses for committee members")
+})
+
+// Recurrence represents meeting recurrence settings
+var Recurrence = Type("Recurrence", func() {
+	Description("Meeting recurrence settings")
+	Attribute("type", Int, "Recurrence type: 1=Daily, 2=Weekly, 3=Monthly", func() {
+		Enum(1, 2, 3)
+		Example(2)
+	})
+	Attribute("repeat_interval", Int, "Repeat interval")
+	Attribute("weekly_days", String, "Days of week for weekly recurrence")
+	Attribute("monthly_day", Int, "Day of month for monthly recurrence")
+	Attribute("monthly_week", Int, "Week of month for monthly recurrence")
+	Attribute("monthly_week_day", Int, "Day of week for monthly recurrence")
+	Attribute("end_times", Int, "Number of occurrences")
+	Attribute("end_date_time", String, "End date/time in RFC3339", func() {
+		Format(FormatDateTime)
+	})
+})
+
 // ITXProjectUIDAttribute is the DSL attribute for project UID.
 func ITXProjectUIDAttribute() {
 	Attribute("project_uid", String, "The UID of the LF project", func() {

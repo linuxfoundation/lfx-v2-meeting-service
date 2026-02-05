@@ -35,7 +35,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		for i, c := range p.Committees {
 			if c != nil {
 				req.Committees[i] = models.Committee{
-					UID:                   c.UID,
+					UID:                   utils.StringValue(c.UID),
 					AllowedVotingStatuses: c.AllowedVotingStatuses,
 				}
 			}
@@ -45,8 +45,8 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 	// Convert recurrence if present
 	if p.Recurrence != nil {
 		req.Recurrence = &models.ITXRecurrence{
-			Type:           p.Recurrence.Type,
-			RepeatInterval: p.Recurrence.RepeatInterval,
+			Type:           utils.IntValue(p.Recurrence.Type),
+			RepeatInterval: utils.IntValue(p.Recurrence.RepeatInterval),
 			WeeklyDays:     utils.StringValue(p.Recurrence.WeeklyDays),
 			MonthlyDay:     utils.IntValue(p.Recurrence.MonthlyDay),
 			MonthlyWeek:    utils.IntValue(p.Recurrence.MonthlyWeek),
@@ -94,7 +94,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		goaResp.Committees = make([]*meetingservice.Committee, len(resp.Committees))
 		for i, c := range resp.Committees {
 			goaResp.Committees[i] = &meetingservice.Committee{
-				UID:                   c.ID,
+				UID:                   &c.ID,
 				AllowedVotingStatuses: c.Filters,
 			}
 		}
@@ -103,8 +103,8 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 	// Convert recurrence if present
 	if resp.Recurrence != nil {
 		goaResp.Recurrence = &meetingservice.Recurrence{
-			Type:           resp.Recurrence.Type,
-			RepeatInterval: resp.Recurrence.RepeatInterval,
+			Type:           ptrIfNotZero(resp.Recurrence.Type),
+			RepeatInterval: ptrIfNotZero(resp.Recurrence.RepeatInterval),
 			WeeklyDays:     ptrIfNotEmpty(resp.Recurrence.WeeklyDays),
 			MonthlyDay:     ptrIfNotZero(resp.Recurrence.MonthlyDay),
 			MonthlyWeek:    ptrIfNotZero(resp.Recurrence.MonthlyWeek),
@@ -181,8 +181,8 @@ func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePa
 	}
 	if p.Recurrence != nil {
 		req.Recurrence = &itx.Recurrence{
-			Type:           p.Recurrence.Type,
-			RepeatInterval: p.Recurrence.RepeatInterval,
+			Type:           utils.IntValue(p.Recurrence.Type),
+			RepeatInterval: utils.IntValue(p.Recurrence.RepeatInterval),
 			WeeklyDays:     utils.StringValue(p.Recurrence.WeeklyDays),
 			MonthlyDay:     utils.IntValue(p.Recurrence.MonthlyDay),
 			MonthlyWeek:    utils.IntValue(p.Recurrence.MonthlyWeek),
@@ -215,4 +215,31 @@ func ptrIfNotZero(i int) *int {
 		return nil
 	}
 	return &i
+}
+
+// Helper functions for recurrence type conversion between ITX (int) and Goa (string)
+func recurrenceTypeToString(t int) string {
+	switch t {
+	case 1:
+		return "daily"
+	case 2:
+		return "weekly"
+	case 3:
+		return "monthly"
+	default:
+		return ""
+	}
+}
+
+func recurrenceTypeToInt(t string) int {
+	switch t {
+	case "daily":
+		return 1
+	case "weekly":
+		return 2
+	case "monthly":
+		return 3
+	default:
+		return 0
+	}
 }

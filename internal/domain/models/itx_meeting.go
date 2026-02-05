@@ -3,6 +3,12 @@
 
 package models
 
+// Committee represents a committee associated with a meeting
+type Committee struct {
+	UID                   string   `json:"uid"`
+	AllowedVotingStatuses []string `json:"allowed_voting_statuses,omitempty"`
+}
+
 // CreateITXMeetingRequest represents a domain request to create a meeting via ITX proxy
 type CreateITXMeetingRequest struct {
 	ProjectUID           string
@@ -25,7 +31,7 @@ type CreateITXMeetingRequest struct {
 
 // ITXRecurrence represents recurrence for ITX requests (with string EndDateTime)
 type ITXRecurrence struct {
-	Type           int
+	Type           int // 1=Daily, 2=Weekly, 3=Monthly
 	RepeatInterval int
 	WeeklyDays     string
 	MonthlyDay     int
