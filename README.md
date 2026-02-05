@@ -323,7 +323,6 @@ The service can be configured via environment variables:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `ITX_ENABLED` | Enable ITX proxy functionality | `true` |
 | `ITX_BASE_URL` | Base URL for ITX service | `https://api.itx.linuxfoundation.org` |
 | `ITX_CLIENT_ID` | OAuth2 client ID for ITX | `your-client-id` |
 | `ITX_CLIENT_SECRET` | OAuth2 client secret for ITX | `your-client-secret` |

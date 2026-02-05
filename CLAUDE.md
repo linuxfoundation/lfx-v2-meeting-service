@@ -123,7 +123,6 @@ The service follows a clean architecture pattern with:
 
 For ITX proxy functionality, configure these environment variables:
 
-- `ITX_ENABLED`: Must be set to `true` (service requires ITX)
 - `ITX_BASE_URL`: Base URL for ITX service (e.g., `https://api.itx.linuxfoundation.org`)
 - `ITX_CLIENT_ID`: OAuth2 client ID for ITX authentication
 - `ITX_CLIENT_SECRET`: OAuth2 client secret for ITX authentication

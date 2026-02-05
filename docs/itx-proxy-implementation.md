@@ -304,7 +304,6 @@ func (c *Client) ensureValidToken(ctx context.Context) error {
 
 ```bash
 # ITX Service Configuration
-ITX_ENABLED=true                                          # Must be true
 ITX_BASE_URL=https://api.itx.linuxfoundation.org         # ITX service URL
 ITX_CLIENT_ID=your-client-id                             # OAuth2 client ID
 ITX_CLIENT_SECRET=your-client-secret                      # OAuth2 client secret
@@ -339,8 +338,6 @@ LFX_ENVIRONMENT=prod                                      # dev, staging, prod
 app:
   environment:
     # ITX Proxy Configuration
-    ITX_ENABLED:
-      value: "true"
     ITX_BASE_URL:
       value: https://api.itx.linuxfoundation.org
     ITX_CLIENT_ID:

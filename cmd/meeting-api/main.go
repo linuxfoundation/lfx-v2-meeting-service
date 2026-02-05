@@ -106,25 +106,18 @@ func run() int {
 	}
 
 	// Initialize ITX proxy client and services
-	var itxMeetingService *itxservice.MeetingService
-	var itxRegistrantService *itxservice.RegistrantService
-	if env.ITXConfig.Enabled {
-		itxProxyConfig := proxy.Config{
-			BaseURL:      env.ITXConfig.BaseURL,
-			ClientID:     env.ITXConfig.ClientID,
-			ClientSecret: env.ITXConfig.ClientSecret,
-			Auth0Domain:  env.ITXConfig.Auth0Domain,
-			Audience:     env.ITXConfig.Audience,
-			Timeout:      30 * time.Second,
-		}
-		itxProxyClient := proxy.NewClient(itxProxyConfig)
-		itxMeetingService = itxservice.NewMeetingService(itxProxyClient, idMapper)
-		itxRegistrantService = itxservice.NewRegistrantService(itxProxyClient, idMapper)
-		slog.InfoContext(ctx, "ITX proxy client initialized")
-	} else {
-		slog.ErrorContext(ctx, "ITX proxy is not enabled - this service requires ITX to be enabled")
-		return 1
+	itxProxyConfig := proxy.Config{
+		BaseURL:      env.ITXConfig.BaseURL,
+		ClientID:     env.ITXConfig.ClientID,
+		ClientSecret: env.ITXConfig.ClientSecret,
+		Auth0Domain:  env.ITXConfig.Auth0Domain,
+		Audience:     env.ITXConfig.Audience,
+		Timeout:      30 * time.Second,
 	}
+	itxProxyClient := proxy.NewClient(itxProxyConfig)
+	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper)
+	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
+	slog.InfoContext(ctx, "ITX proxy client initialized")
 
 	svc := NewMeetingsAPI(
 		authService,

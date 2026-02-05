@@ -31,7 +31,6 @@ type environment struct {
 
 // itxConfig holds ITX proxy configuration
 type itxConfig struct {
-	Enabled      bool
 	BaseURL      string
 	ClientID     string
 	ClientSecret string
@@ -117,11 +116,6 @@ func parseEnv() environment {
 
 // parseITXConfig parses ITX proxy configuration from environment variables
 func parseITXConfig() itxConfig {
-	enabled := false
-	enabledStr := os.Getenv("ITX_ENABLED")
-	if enabledStr == "true" {
-		enabled = true
-	}
 
 	baseURL := os.Getenv("ITX_BASE_URL")
 	if baseURL == "" {
@@ -139,7 +133,6 @@ func parseITXConfig() itxConfig {
 	}
 
 	return itxConfig{
-		Enabled:      enabled,
 		BaseURL:      baseURL,
 		ClientID:     os.Getenv("ITX_CLIENT_ID"),
 		ClientSecret: os.Getenv("ITX_CLIENT_SECRET"),

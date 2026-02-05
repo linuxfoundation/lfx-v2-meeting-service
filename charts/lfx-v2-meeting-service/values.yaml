@@ -48,10 +48,7 @@ app:
     # LFX_ENVIRONMENT is optional (dev, staging, prod) - defaults to prod if not set
     LFX_ENVIRONMENT:
       value: prod
-    # ITX_ENABLED enables the ITX proxy functionality (required)
-    ITX_ENABLED:
-      value: "true"
-    # ITX_BASE_URL is the base URL for the ITX service
+    # ITX_BASE_URL is the base URL for the ITX service (required)
     ITX_BASE_URL:
       value: https://api.dev.itx.linuxfoundation.org
     # ITX_CLIENT_ID is the OAuth2 client ID for ITX service authentication
