@@ -152,14 +152,12 @@ type CreateItxRegistrantPayload struct {
 	Version *string
 	// The ID of the meeting
 	MeetingID string
-	// Registrant ID (read-only)
-	ID *string
+	// Registrant UID (read-only)
+	UID *string
 	// Registrant type: direct or committee (read-only)
 	Type *string
 	// Committee UID (for committee registrants)
 	CommitteeUID *string
-	// LF user ID
-	UserID *string
 	// Registrant email
 	Email *string
 	// LF username
@@ -336,8 +334,6 @@ type ITXOccurrence struct {
 
 // User information from ITX
 type ITXUser struct {
-	// User ID
-	ID *string
 	// Username
 	Username *string
 	// Full name
@@ -358,14 +354,12 @@ type ITXZoomMeetingJoinLink struct {
 // ITXZoomMeetingRegistrant is the result type of the Meeting Service service
 // create-itx-registrant method.
 type ITXZoomMeetingRegistrant struct {
-	// Registrant ID (read-only)
-	ID *string
+	// Registrant UID (read-only)
+	UID *string
 	// Registrant type: direct or committee (read-only)
 	Type *string
 	// Committee UID (for committee registrants)
 	CommitteeUID *string
-	// LF user ID
-	UserID *string
 	// Registrant email
 	Email *string
 	// LF username
@@ -628,14 +622,12 @@ type UpdateItxRegistrantPayload struct {
 	MeetingID string
 	// The ID of the registrant
 	RegistrantID string
-	// Registrant ID (read-only)
-	ID *string
+	// Registrant UID (read-only)
+	UID *string
 	// Registrant type: direct or committee (read-only)
 	Type *string
 	// Committee UID (for committee registrants)
 	CommitteeUID *string
-	// LF user ID
-	UserID *string
 	// Registrant email
 	Email *string
 	// LF username

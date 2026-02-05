@@ -93,14 +93,12 @@ type UpdateItxMeetingRequestBody struct {
 // CreateItxRegistrantRequestBody is the type of the "Meeting Service" service
 // "create-itx-registrant" endpoint HTTP request body.
 type CreateItxRegistrantRequestBody struct {
-	// Registrant ID (read-only)
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant UID (read-only)
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// Committee UID (for committee registrants)
 	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
-	// LF user ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
@@ -144,14 +142,12 @@ type CreateItxRegistrantRequestBody struct {
 // UpdateItxRegistrantRequestBody is the type of the "Meeting Service" service
 // "update-itx-registrant" endpoint HTTP request body.
 type UpdateItxRegistrantRequestBody struct {
-	// Registrant ID (read-only)
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant UID (read-only)
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// Committee UID (for committee registrants)
 	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
-	// LF user ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
@@ -336,14 +332,12 @@ type GetItxMeetingCountResponseBody struct {
 // CreateItxRegistrantResponseBody is the type of the "Meeting Service" service
 // "create-itx-registrant" endpoint HTTP response body.
 type CreateItxRegistrantResponseBody struct {
-	// Registrant ID (read-only)
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant UID (read-only)
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// Committee UID (for committee registrants)
 	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
-	// LF user ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
@@ -387,14 +381,12 @@ type CreateItxRegistrantResponseBody struct {
 // GetItxRegistrantResponseBody is the type of the "Meeting Service" service
 // "get-itx-registrant" endpoint HTTP response body.
 type GetItxRegistrantResponseBody struct {
-	// Registrant ID (read-only)
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Registrant UID (read-only)
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Registrant type: direct or committee (read-only)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// Committee UID (for committee registrants)
 	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
-	// LF user ID
-	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// Registrant email
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
@@ -1504,8 +1496,6 @@ type ITXOccurrenceResponseBody struct {
 
 // ITXUserRequestBody is used to define fields on request body types.
 type ITXUserRequestBody struct {
-	// User ID
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Full name
@@ -1518,8 +1508,6 @@ type ITXUserRequestBody struct {
 
 // ITXUserResponseBody is used to define fields on response body types.
 type ITXUserResponseBody struct {
-	// User ID
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Full name
@@ -1605,10 +1593,9 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 // service.
 func NewCreateItxRegistrantRequestBody(p *meetingservice.CreateItxRegistrantPayload) *CreateItxRegistrantRequestBody {
 	body := &CreateItxRegistrantRequestBody{
-		ID:                            p.ID,
+		UID:                           p.UID,
 		Type:                          p.Type,
 		CommitteeUID:                  p.CommitteeUID,
-		UserID:                        p.UserID,
 		Email:                         p.Email,
 		Username:                      p.Username,
 		FirstName:                     p.FirstName,
@@ -1641,10 +1628,9 @@ func NewCreateItxRegistrantRequestBody(p *meetingservice.CreateItxRegistrantPayl
 // service.
 func NewUpdateItxRegistrantRequestBody(p *meetingservice.UpdateItxRegistrantPayload) *UpdateItxRegistrantRequestBody {
 	body := &UpdateItxRegistrantRequestBody{
-		ID:                            p.ID,
+		UID:                           p.UID,
 		Type:                          p.Type,
 		CommitteeUID:                  p.CommitteeUID,
-		UserID:                        p.UserID,
 		Email:                         p.Email,
 		Username:                      p.Username,
 		FirstName:                     p.FirstName,
@@ -2177,10 +2163,9 @@ func NewGetItxMeetingCountUnauthorized(body *GetItxMeetingCountUnauthorizedRespo
 // "Created" response.
 func NewCreateItxRegistrantITXZoomMeetingRegistrantCreated(body *CreateItxRegistrantResponseBody) *meetingservice.ITXZoomMeetingRegistrant {
 	v := &meetingservice.ITXZoomMeetingRegistrant{
-		ID:                            body.ID,
+		UID:                           body.UID,
 		Type:                          body.Type,
 		CommitteeUID:                  body.CommitteeUID,
-		UserID:                        body.UserID,
 		Email:                         body.Email,
 		Username:                      body.Username,
 		FirstName:                     body.FirstName,
@@ -2290,10 +2275,9 @@ func NewCreateItxRegistrantUnauthorized(body *CreateItxRegistrantUnauthorizedRes
 // service "get-itx-registrant" endpoint result from a HTTP "OK" response.
 func NewGetItxRegistrantITXZoomMeetingRegistrantOK(body *GetItxRegistrantResponseBody) *meetingservice.ITXZoomMeetingRegistrant {
 	v := &meetingservice.ITXZoomMeetingRegistrant{
-		ID:                            body.ID,
+		UID:                           body.UID,
 		Type:                          body.Type,
 		CommitteeUID:                  body.CommitteeUID,
-		UserID:                        body.UserID,
 		Email:                         body.Email,
 		Username:                      body.Username,
 		FirstName:                     body.FirstName,

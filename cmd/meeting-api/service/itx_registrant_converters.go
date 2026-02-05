@@ -14,7 +14,6 @@ func ConvertCreateITXRegistrantPayloadToITX(p *meetingservice.CreateItxRegistran
 	req := &itx.ZoomMeetingRegistrant{
 		// Map committee_uid (proxy) to committee_id (ITX)
 		CommitteeID:    utils.StringValue(p.CommitteeUID),
-		UserID:         utils.StringValue(p.UserID),
 		Email:          utils.StringValue(p.Email),
 		Username:       utils.StringValue(p.Username),
 		FirstName:      utils.StringValue(p.FirstName),
@@ -33,7 +32,6 @@ func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistran
 	req := &itx.ZoomMeetingRegistrant{
 		// Map committee_uid (proxy) to committee_id (ITX)
 		CommitteeID:    utils.StringValue(p.CommitteeUID),
-		UserID:         utils.StringValue(p.UserID),
 		Email:          utils.StringValue(p.Email),
 		Username:       utils.StringValue(p.Username),
 		FirstName:      utils.StringValue(p.FirstName),
@@ -51,12 +49,11 @@ func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistran
 func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.ITXZoomMeetingRegistrant {
 	goaResp := &meetingservice.ITXZoomMeetingRegistrant{
 		// Read-only fields
-		ID:   ptrIfNotEmpty(resp.ID),
+		UID:  ptrIfNotEmpty(resp.ID),
 		Type: ptrIfNotEmpty(resp.Type),
 
 		// Identity fields - map committee_id (ITX) to committee_uid (proxy)
 		CommitteeUID: ptrIfNotEmpty(resp.CommitteeID),
-		UserID:       ptrIfNotEmpty(resp.UserID),
 		Email:        ptrIfNotEmpty(resp.Email),
 		Username:     ptrIfNotEmpty(resp.Username),
 
@@ -87,7 +84,6 @@ func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.
 	// Convert created_by user if present
 	if resp.CreatedBy != nil {
 		goaResp.CreatedBy = &meetingservice.ITXUser{
-			ID:             ptrIfNotEmpty(resp.CreatedBy.ID),
 			Username:       ptrIfNotEmpty(resp.CreatedBy.Username),
 			Name:           ptrIfNotEmpty(resp.CreatedBy.Name),
 			Email:          ptrIfNotEmpty(resp.CreatedBy.Email),
@@ -98,7 +94,6 @@ func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.
 	// Convert updated_by user if present
 	if resp.UpdatedBy != nil {
 		goaResp.UpdatedBy = &meetingservice.ITXUser{
-			ID:             ptrIfNotEmpty(resp.UpdatedBy.ID),
 			Username:       ptrIfNotEmpty(resp.UpdatedBy.Username),
 			Name:           ptrIfNotEmpty(resp.UpdatedBy.Name),
 			Email:          ptrIfNotEmpty(resp.UpdatedBy.Email),

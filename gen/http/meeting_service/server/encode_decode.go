@@ -2731,7 +2731,6 @@ func unmarshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *
 		return nil
 	}
 	res := &meetingservice.ITXUser{
-		ID:             v.ID,
 		Username:       v.Username,
 		Name:           v.Name,
 		Email:          v.Email,
@@ -2748,7 +2747,6 @@ func marshalMeetingserviceITXUserToITXUserResponseBody(v *meetingservice.ITXUser
 		return nil
 	}
 	res := &ITXUserResponseBody{
-		ID:             v.ID,
 		Username:       v.Username,
 		Name:           v.Name,
 		Email:          v.Email,

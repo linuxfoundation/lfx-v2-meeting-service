@@ -213,9 +213,6 @@ var ForbiddenError = Type("ForbiddenError", func() {
 // ITXUser represents a user in the ITX system
 var ITXUser = Type("ITXUser", func() {
 	Description("User information from ITX")
-	Attribute("id", String, "User ID", func() {
-		Example("user123")
-	})
 	Attribute("username", String, "Username", func() {
 		Example("jdoe")
 	})
@@ -237,14 +234,13 @@ var ITXZoomMeetingRegistrant = Type("ITXZoomMeetingRegistrant", func() {
 	Description("Meeting registrant in ITX")
 
 	// Read-only fields
-	Attribute("id", String, "Registrant ID (read-only)")
+	Attribute("uid", String, "Registrant UID (read-only)")
 	Attribute("type", String, "Registrant type: direct or committee (read-only)", func() {
 		Enum("direct", "committee")
 	})
 
 	// Identity fields
 	Attribute("committee_uid", String, "Committee UID (for committee registrants)")
-	Attribute("user_id", String, "LF user ID")
 	Attribute("email", String, "Registrant email", func() {
 		Format(FormatEmail)
 		Example("bobsmith@gmail.com")
