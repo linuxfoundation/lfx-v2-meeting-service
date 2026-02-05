@@ -13,15 +13,15 @@ import (
 
 // MeetingService handles ITX Zoom meeting operations
 type MeetingService struct {
-	proxyClient domain.ITXProxyClient
-	idMapper    domain.IDMapper
+	meetingClient domain.ITXMeetingClient
+	idMapper      domain.IDMapper
 }
 
 // NewMeetingService creates a new ITX meeting service
-func NewMeetingService(proxyClient domain.ITXProxyClient, idMapper domain.IDMapper) *MeetingService {
+func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper) *MeetingService {
 	return &MeetingService{
-		proxyClient: proxyClient,
-		idMapper:    idMapper,
+		meetingClient: meetingClient,
+		idMapper:      idMapper,
 	}
 }
 
@@ -36,7 +36,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 	itxReq := s.transformToITXRequest(req)
 
 	// Call ITX proxy
-	resp, err := s.proxyClient.CreateZoomMeeting(ctx, itxReq)
+	resp, err := s.meetingClient.CreateZoomMeeting(ctx, itxReq)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 // GetMeeting retrieves a meeting via ITX proxy
 func (s *MeetingService) GetMeeting(ctx context.Context, meetingID string) (*itx.ZoomMeetingResponse, error) {
 	// Call ITX proxy
-	resp, err := s.proxyClient.GetZoomMeeting(ctx, meetingID)
+	resp, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 	itxReq := s.transformToITXRequest(req)
 
 	// Call ITX proxy
-	err := s.proxyClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
+	err := s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 // DeleteMeeting deletes a meeting via ITX proxy
 func (s *MeetingService) DeleteMeeting(ctx context.Context, meetingID string) error {
 	// Call ITX proxy
-	err := s.proxyClient.DeleteZoomMeeting(ctx, meetingID)
+	err := s.meetingClient.DeleteZoomMeeting(ctx, meetingID)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (s *MeetingService) GetMeetingCount(ctx context.Context, projectID string) 
 	}
 
 	// Call ITX proxy with v1 SFID
-	resp, err := s.proxyClient.GetMeetingCount(ctx, v1SFID)
+	resp, err := s.meetingClient.GetMeetingCount(ctx, v1SFID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *MeetingService) GetMeetingCount(ctx context.Context, projectID string) 
 // GetMeetingJoinLink retrieves a join link for a meeting via ITX proxy
 func (s *MeetingService) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkRequest) (*itx.ZoomMeetingJoinLink, error) {
 	// Call ITX proxy
-	resp, err := s.proxyClient.GetMeetingJoinLink(ctx, req)
+	resp, err := s.meetingClient.GetMeetingJoinLink(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -126,25 +126,25 @@ func (s *MeetingService) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoi
 // ResendMeetingInvitations resends meeting invitations to all registrants via ITX proxy
 func (s *MeetingService) ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error {
 	// Call ITX proxy
-	return s.proxyClient.ResendMeetingInvitations(ctx, meetingID, req)
+	return s.meetingClient.ResendMeetingInvitations(ctx, meetingID, req)
 }
 
 // RegisterCommitteeMembers registers committee members to a meeting asynchronously via ITX proxy
 func (s *MeetingService) RegisterCommitteeMembers(ctx context.Context, meetingID string) error {
 	// Call ITX proxy
-	return s.proxyClient.RegisterCommitteeMembers(ctx, meetingID)
+	return s.meetingClient.RegisterCommitteeMembers(ctx, meetingID)
 }
 
 // UpdateOccurrence updates a specific occurrence of a recurring meeting via ITX proxy
 func (s *MeetingService) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
 	// Call ITX proxy
-	return s.proxyClient.UpdateOccurrence(ctx, meetingID, occurrenceID, req)
+	return s.meetingClient.UpdateOccurrence(ctx, meetingID, occurrenceID, req)
 }
 
 // DeleteOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
 func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error {
 	// Call ITX proxy
-	return s.proxyClient.DeleteOccurrence(ctx, meetingID, occurrenceID)
+	return s.meetingClient.DeleteOccurrence(ctx, meetingID, occurrenceID)
 }
 
 // transformToITXRequest transforms domain request to ITX request format

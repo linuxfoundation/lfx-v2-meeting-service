@@ -117,12 +117,14 @@ func run() int {
 	itxProxyClient := proxy.NewClient(itxProxyConfig)
 	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper)
 	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
+	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
 
 	svc := NewMeetingsAPI(
 		authService,
 		itxMeetingService,
 		itxRegistrantService,
+		itxPastMeetingService,
 	)
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)

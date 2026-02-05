@@ -529,3 +529,123 @@ spec:
           config:
             values:
               aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:create"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /itx/past_meetings
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: json_content_type
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: writer
+              object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /itx/past_meetings/{past_meeting_id}
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: viewer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:delete"
+      match:
+        methods:
+          - DELETE
+        routes:
+          - path: /itx/past_meetings/{past_meeting_id}
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+- id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:update"
+  match:
+    methods:
+      - PUT
+    routes:
+      - path: /itx/past_meetings/{past_meeting_id}
+  allow_encoded_slashes: "off"
+  execute:
+    - authenticator: oidc
+    - authenticator: anonymous_authenticator
+    {{- if .Values.app.use_oidc_contextualizer }}
+    - contextualizer: oidc_contextualizer
+    {{- end }}
+    {{- if .Values.openfga.enabled }}
+    - authorizer: openfga_check
+      config:
+        values:
+          relation: organizer
+          object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+    {{- else }}
+    - authorizer: allow_all
+    {{- end }}
+    - finalizer: create_jwt
+      config:
+        values:
+          aud: {{ .Values.app.audience }}

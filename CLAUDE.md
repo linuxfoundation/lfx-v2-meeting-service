@@ -200,7 +200,7 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 
 ### What Remains
 
-- ITX proxy functionality (meetings and registrants)
+- ITX proxy functionality (meetings, registrants, and past meetings)
 - JWT authentication via Heimdall
 - Optional ID mapping via NATS
 - Goa-based API design and code generation
@@ -233,3 +233,10 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 - `PATCH /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Update registrant
 - `PUT /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Update status
 - `DELETE /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Delete registrant
+
+### ITX Past Meeting Operations
+
+- `POST /itx/past_meetings` - Create past meeting
+- `GET /itx/past_meetings/{past_meeting_id}` - Get past meeting
+- `PUT /itx/past_meetings/{past_meeting_id}` - Update past meeting
+- `DELETE /itx/past_meetings/{past_meeting_id}` - Delete past meeting

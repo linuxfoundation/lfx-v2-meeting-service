@@ -52,6 +52,14 @@ type Service interface {
 	UpdateItxOccurrence(context.Context, *UpdateItxOccurrencePayload) (err error)
 	// Delete a specific occurrence of a recurring meeting through ITX API proxy
 	DeleteItxOccurrence(context.Context, *DeleteItxOccurrencePayload) (err error)
+	// Create a past meeting through ITX API proxy
+	CreateItxPastMeeting(context.Context, *CreateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
+	// Get a past meeting through ITX API proxy
+	GetItxPastMeeting(context.Context, *GetItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
+	// Delete a past meeting through ITX API proxy
+	DeleteItxPastMeeting(context.Context, *DeleteItxPastMeetingPayload) (err error)
+	// Update a past meeting through ITX API proxy
+	UpdateItxPastMeeting(context.Context, *UpdateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -74,7 +82,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [18]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence"}
+var MethodNames = [22]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -141,6 +149,46 @@ type CreateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+}
+
+// CreateItxPastMeetingPayload is the payload type of the Meeting Service
+// service create-itx-past-meeting method.
+type CreateItxPastMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Zoom meeting ID
+	MeetingID string
+	// Zoom occurrence ID (Unix timestamp)
+	OccurrenceID string
+	// The UID of the LF project
+	ProjectUID string
+	// The start time of the meeting in RFC3339 format
+	StartTime string
+	// The duration of the meeting in minutes
+	Duration int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string
+	// The description of the meeting
+	Description *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting
+	MeetingType *string
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// The visibility of artifacts to users
+	ArtifactVisibility *string
+	// The visibility of the meeting's existence to other users
+	Visibility *string
+	// The title of the meeting
+	Title *string
 }
 
 // CreateItxRegistrantPayload is the payload type of the Meeting Service
@@ -222,6 +270,17 @@ type DeleteItxOccurrencePayload struct {
 	OccurrenceID string
 }
 
+// DeleteItxPastMeetingPayload is the payload type of the Meeting Service
+// service delete-itx-past-meeting method.
+type DeleteItxPastMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
+}
+
 // DeleteItxRegistrantPayload is the payload type of the Meeting Service
 // service delete-itx-registrant method.
 type DeleteItxRegistrantPayload struct {
@@ -285,6 +344,17 @@ type GetItxMeetingPayload struct {
 	MeetingID string
 }
 
+// GetItxPastMeetingPayload is the payload type of the Meeting Service service
+// get-itx-past-meeting method.
+type GetItxPastMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
+}
+
 // GetItxRegistrantIcsPayload is the payload type of the Meeting Service
 // service get-itx-registrant-ics method.
 type GetItxRegistrantIcsPayload struct {
@@ -330,6 +400,45 @@ type ITXOccurrence struct {
 	Status *string
 	// Number of registrants for this occurrence
 	RegistrantCount *int
+}
+
+// ITXPastZoomMeeting is the result type of the Meeting Service service
+// create-itx-past-meeting method.
+type ITXPastZoomMeeting struct {
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	ID *string
+	// Zoom meeting ID
+	MeetingID *string
+	// Zoom occurrence ID (Unix timestamp)
+	OccurrenceID *string
+	// LF project UID
+	ProjectUID *string
+	// Meeting title
+	Title *string
+	// Meeting description/agenda
+	Description *string
+	// Meeting start time (RFC3339)
+	StartTime *string
+	// Meeting duration in minutes
+	Duration *int
+	// Meeting timezone
+	Timezone *string
+	// Meeting visibility
+	Visibility *string
+	// Whether meeting was restricted to invited users only
+	Restricted *bool
+	// Type of meeting
+	MeetingType *string
+	// Committees associated with the past meeting
+	Committees []*Committee
+	// Whether recording was enabled
+	RecordingEnabled *bool
+	// Who has access to meeting artifacts
+	ArtifactVisibility *string
+	// Whether transcription was enabled
+	TranscriptEnabled *bool
+	// Whether past meeting was manually created
+	IsManuallyCreated *bool
 }
 
 // User information from ITX
@@ -609,6 +718,47 @@ type UpdateItxOccurrencePayload struct {
 	Agenda *string
 	// Recurrence settings
 	Recurrence *Recurrence
+}
+
+// UpdateItxPastMeetingPayload is the payload type of the Meeting Service
+// service update-itx-past-meeting method.
+type UpdateItxPastMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
+	// Project UID (v2)
+	ProjectUID *string
+	// Zoom meeting ID
+	MeetingID *string
+	// Zoom occurrence ID
+	OccurrenceID *string
+	// Meeting start time in RFC3339 format
+	StartTime *string
+	// Meeting duration in minutes
+	Duration *int
+	// Meeting timezone
+	Timezone *string
+	// Meeting title/topic
+	Title *string
+	// Meeting description/agenda
+	Description *string
+	// Whether the meeting is restricted
+	Restricted *bool
+	// Type of meeting (e.g., regular, webinar)
+	MeetingType *string
+	// Meeting visibility
+	Visibility *string
+	// Whether recording is enabled
+	RecordingEnabled *bool
+	// Whether transcript is enabled
+	TranscriptEnabled *bool
+	// Visibility of meeting artifacts (recordings, transcripts)
+	ArtifactVisibility *string
+	// Committees associated with the meeting
+	Committees []*Committee
 }
 
 // UpdateItxRegistrantPayload is the payload type of the Meeting Service

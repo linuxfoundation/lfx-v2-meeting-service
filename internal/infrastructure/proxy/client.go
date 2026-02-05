@@ -738,6 +738,181 @@ func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID s
 	return nil
 }
 
+// CreatePastMeeting creates a past meeting record via ITX proxy
+func (c *Client) CreatePastMeeting(ctx context.Context, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
+	// Marshal request
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings", c.config.BaseURL)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var result itx.PastMeetingResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+
+	return &result, nil
+}
+
+// GetPastMeeting retrieves a past meeting record via ITX proxy
+func (c *Client) GetPastMeeting(ctx context.Context, pastMeetingID string) (*itx.PastMeetingResponse, error) {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s", c.config.BaseURL, pastMeetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var result itx.PastMeetingResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+
+	return &result, nil
+}
+
+// DeletePastMeeting deletes a past meeting record via ITX proxy
+// UpdatePastMeeting updates a past meeting record via ITX proxy
+func (c *Client) UpdatePastMeeting(ctx context.Context, pastMeetingID string, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
+	// Marshal request
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s", c.config.BaseURL, pastMeetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var result itx.PastMeetingResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+
+	return &result, nil
+}
+
+func (c *Client) DeletePastMeeting(ctx context.Context, pastMeetingID string) error {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s", c.config.BaseURL, pastMeetingID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body for error handling
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
 // mapHTTPError maps HTTP status codes to domain errors
 func (c *Client) mapHTTPError(statusCode int, body []byte) error {
 	var errMsg itx.ErrorResponse

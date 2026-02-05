@@ -295,3 +295,57 @@ var ITXZoomMeetingJoinLink = Type("ITXZoomMeetingJoinLink", func() {
 	Required("link")
 })
 
+// ITXPastZoomMeeting represents a past meeting from ITX
+var ITXPastZoomMeeting = Type("ITXPastZoomMeeting", func() {
+	Description("Past Zoom meeting from ITX API proxy")
+
+	// Identifiers (read-only)
+	Attribute("id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+		Example("12343245463-1630560600000")
+	})
+	Attribute("meeting_id", String, "Zoom meeting ID", func() {
+		Example("12343245463")
+	})
+	Attribute("occurrence_id", String, "Zoom occurrence ID (Unix timestamp)", func() {
+		Example("1630560600000")
+	})
+
+	// Project association
+	Attribute("project_uid", String, "LF project UID", func() {
+		Example("a1234567-89ab-cdef-0123-456789abcdef")
+		Format(FormatUUID)
+	})
+
+	// Meeting details
+	Attribute("title", String, "Meeting title")
+	Attribute("description", String, "Meeting description/agenda")
+	Attribute("start_time", String, "Meeting start time (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:30:00Z")
+	})
+	Attribute("duration", Int, "Meeting duration in minutes")
+	Attribute("timezone", String, "Meeting timezone", func() {
+		Example("America/Los_Angeles")
+	})
+	Attribute("visibility", String, "Meeting visibility", func() {
+		Enum("public", "private")
+	})
+	Attribute("restricted", Boolean, "Whether meeting was restricted to invited users only")
+	Attribute("meeting_type", String, "Type of meeting", func() {
+		Enum("Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None")
+	})
+
+	// Committee association
+	Attribute("committees", ArrayOf(Committee), "Committees associated with the past meeting")
+
+	// Recording/Transcript settings
+	Attribute("recording_enabled", Boolean, "Whether recording was enabled")
+	Attribute("artifact_visibility", String, "Who has access to meeting artifacts", func() {
+		Enum("meeting_hosts", "meeting_participants", "public")
+	})
+	Attribute("transcript_enabled", Boolean, "Whether transcription was enabled")
+
+	// Metadata
+	Attribute("is_manually_created", Boolean, "Whether past meeting was manually created")
+})
+

@@ -75,6 +75,7 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **Stateless Proxy**: No data persistence, all state managed by ITX service
 - **ITX Meeting Operations**: Create, read, update, delete meetings via ITX
 - **ITX Registrant Operations**: Manage meeting registrants via ITX
+- **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications
@@ -306,6 +307,7 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/itx/meeting_count` | GET | Get meeting count |
 
 #### ITX Registrant Operations
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/itx/meetings/{meeting_id}/registrants` | POST | Add registrant |
@@ -314,6 +316,15 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/itx/meetings/{meeting_id}/registrants/{registrant_uid}` | PATCH | Update registrant |
 | `/itx/meetings/{meeting_id}/registrants/{registrant_uid}` | PUT | Update registrant status |
 | `/itx/meetings/{meeting_id}/registrants/{registrant_uid}` | DELETE | Delete registrant |
+
+#### ITX Past Meeting Operations
+
+| Endpoint                                 | Method | Description          |
+|------------------------------------------|--------|----------------------|
+| `/itx/past_meetings`                     | POST   | Create past meeting  |
+| `/itx/past_meetings/{past_meeting_id}`   | GET    | Get past meeting     |
+| `/itx/past_meetings/{past_meeting_id}`   | PUT    | Update past meeting  |
+| `/itx/past_meetings/{past_meeting_id}`   | DELETE | Delete past meeting  |
 
 ## 🔧 Configuration
 

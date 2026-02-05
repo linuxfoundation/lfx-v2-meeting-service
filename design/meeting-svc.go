@@ -717,6 +717,210 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("create-itx-past-meeting", func() {
+		Description("Create a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+
+			// Required fields
+			Attribute("meeting_id", String, "Zoom meeting ID", func() {
+				Example("12343245463")
+			})
+			Attribute("occurrence_id", String, "Zoom occurrence ID (Unix timestamp)", func() {
+				Example("1630560600000")
+			})
+			ITXProjectUIDAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+
+			// Optional fields
+			DescriptionAttribute()
+			RestrictedAttribute()
+			CommitteesAttribute()
+			MeetingTypeAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			ArtifactVisibilityAttribute()
+			VisibilityAttribute()
+			TitleAttribute()
+
+			Required("meeting_id", "occurrence_id", "project_uid", "start_time", "duration", "timezone")
+		})
+
+		Result(ITXPastZoomMeeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Project or meeting not found")
+		Error("Conflict", ConflictError, "Past meeting already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/past_meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-past-meeting", func() {
+		Description("Get a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Required("past_meeting_id")
+		})
+
+		Result(ITXPastZoomMeeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/past_meetings/{past_meeting_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-past-meeting", func() {
+		Description("Delete a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Required("past_meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/past_meetings/{past_meeting_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-past-meeting", func() {
+		Description("Update a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("project_uid", String, "Project UID (v2)", func() {
+				Example("a09eaa48-231b-43e5-93ba-91c2e0a0e5f1")
+			})
+			Attribute("meeting_id", String, "Zoom meeting ID", func() {
+				Example("12343245463")
+			})
+			Attribute("occurrence_id", String, "Zoom occurrence ID", func() {
+				Example("1630560600000")
+			})
+			Attribute("start_time", String, "Meeting start time in RFC3339 format", func() {
+				Example("2024-01-15T10:00:00Z")
+				Format(FormatDateTime)
+			})
+			Attribute("duration", Int, "Meeting duration in minutes", func() {
+				Example(60)
+				Minimum(1)
+			})
+			Attribute("timezone", String, "Meeting timezone", func() {
+				Example("UTC")
+			})
+			Attribute("title", String, "Meeting title/topic")
+			Attribute("description", String, "Meeting description/agenda")
+			Attribute("restricted", Boolean, "Whether the meeting is restricted")
+			Attribute("meeting_type", String, "Type of meeting (e.g., regular, webinar)", func() {
+				Enum("regular", "webinar")
+			})
+			Attribute("visibility", String, "Meeting visibility", func() {
+				Enum("public", "private")
+			})
+			Attribute("recording_enabled", Boolean, "Whether recording is enabled")
+			Attribute("transcript_enabled", Boolean, "Whether transcript is enabled")
+			Attribute("artifact_visibility", String, "Visibility of meeting artifacts (recordings, transcripts)", func() {
+				Enum("meeting_hosts", "meeting_participants", "public")
+			})
+			Attribute("committees", ArrayOf(Committee), "Committees associated with the meeting")
+			Required("past_meeting_id")
+		})
+
+		Result(ITXPastZoomMeeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/past_meetings/{past_meeting_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")

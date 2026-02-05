@@ -12,15 +12,15 @@ import (
 
 // RegistrantService handles ITX Zoom registrant operations
 type RegistrantService struct {
-	proxyClient domain.ITXProxyClient
-	idMapper    domain.IDMapper
+	registrantClient domain.ITXRegistrantClient
+	idMapper         domain.IDMapper
 }
 
 // NewRegistrantService creates a new ITX registrant service
-func NewRegistrantService(proxyClient domain.ITXProxyClient, idMapper domain.IDMapper) *RegistrantService {
+func NewRegistrantService(registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper) *RegistrantService {
 	return &RegistrantService{
-		proxyClient: proxyClient,
-		idMapper:    idMapper,
+		registrantClient: registrantClient,
+		idMapper:         idMapper,
 	}
 }
 
@@ -36,7 +36,7 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 	}
 
 	// Call ITX proxy
-	resp, err := s.proxyClient.CreateRegistrant(ctx, meetingID, req)
+	resp, err := s.registrantClient.CreateRegistrant(ctx, meetingID, req)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 // GetRegistrant retrieves a meeting registrant via ITX proxy
 func (s *RegistrantService) GetRegistrant(ctx context.Context, meetingID, registrantID string) (*itx.ZoomMeetingRegistrant, error) {
 	// Call ITX proxy
-	resp, err := s.proxyClient.GetRegistrant(ctx, meetingID, registrantID)
+	resp, err := s.registrantClient.GetRegistrant(ctx, meetingID, registrantID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,23 +85,23 @@ func (s *RegistrantService) UpdateRegistrant(ctx context.Context, meetingID, reg
 	}
 
 	// Call ITX proxy
-	return s.proxyClient.UpdateRegistrant(ctx, meetingID, registrantID, req)
+	return s.registrantClient.UpdateRegistrant(ctx, meetingID, registrantID, req)
 }
 
 // DeleteRegistrant deletes a meeting registrant via ITX proxy
 func (s *RegistrantService) DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error {
 	// Call ITX proxy
-	return s.proxyClient.DeleteRegistrant(ctx, meetingID, registrantID)
+	return s.registrantClient.DeleteRegistrant(ctx, meetingID, registrantID)
 }
 
 // GetRegistrantICS retrieves an ICS calendar file for a meeting registrant via ITX proxy
 func (s *RegistrantService) GetRegistrantICS(ctx context.Context, meetingID, registrantID string) (*itx.RegistrantICS, error) {
 	// Call ITX proxy
-	return s.proxyClient.GetRegistrantICS(ctx, meetingID, registrantID)
+	return s.registrantClient.GetRegistrantICS(ctx, meetingID, registrantID)
 }
 
 // ResendRegistrantInvitation resends a meeting invitation to a registrant via ITX proxy
 func (s *RegistrantService) ResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error {
 	// Call ITX proxy
-	return s.proxyClient.ResendRegistrantInvitation(ctx, meetingID, registrantID)
+	return s.registrantClient.ResendRegistrantInvitation(ctx, meetingID, registrantID)
 }
