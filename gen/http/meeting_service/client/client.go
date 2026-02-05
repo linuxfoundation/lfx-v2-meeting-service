@@ -103,6 +103,14 @@ type Client struct {
 	// update-itx-past-meeting endpoint.
 	UpdateItxPastMeetingDoer goahttp.Doer
 
+	// GetItxPastMeetingSummary Doer is the HTTP client used to make requests to
+	// the get-itx-past-meeting-summary endpoint.
+	GetItxPastMeetingSummaryDoer goahttp.Doer
+
+	// UpdateItxPastMeetingSummary Doer is the HTTP client used to make requests to
+	// the update-itx-past-meeting-summary endpoint.
+	UpdateItxPastMeetingSummaryDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -146,6 +154,8 @@ func NewClient(
 		GetItxPastMeetingDoer:             doer,
 		DeleteItxPastMeetingDoer:          doer,
 		UpdateItxPastMeetingDoer:          doer,
+		GetItxPastMeetingSummaryDoer:      doer,
+		UpdateItxPastMeetingSummaryDoer:   doer,
 		RestoreResponseBody:               restoreBody,
 		scheme:                            scheme,
 		host:                              host,
@@ -667,6 +677,54 @@ func (c *Client) UpdateItxPastMeeting() goa.Endpoint {
 		resp, err := c.UpdateItxPastMeetingDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-past-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxPastMeetingSummary returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-itx-past-meeting-summary server.
+func (c *Client) GetItxPastMeetingSummary() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxPastMeetingSummaryRequest(c.encoder)
+		decodeResponse = DecodeGetItxPastMeetingSummaryResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxPastMeetingSummaryRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxPastMeetingSummaryDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-past-meeting-summary", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateItxPastMeetingSummary returns an endpoint that makes HTTP requests to
+// the Meeting Service service update-itx-past-meeting-summary server.
+func (c *Client) UpdateItxPastMeetingSummary() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateItxPastMeetingSummaryRequest(c.encoder)
+		decodeResponse = DecodeUpdateItxPastMeetingSummaryResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateItxPastMeetingSummaryRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateItxPastMeetingSummaryDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-past-meeting-summary", err)
 		}
 		return decodeResponse(resp)
 	}

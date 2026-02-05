@@ -41,9 +41,16 @@ type ITXPastMeetingClient interface {
 	DeletePastMeeting(ctx context.Context, pastMeetingID string) error
 }
 
-// ITXProxyClient combines meeting, registrant, and past meeting operations
+// ITXPastMeetingSummaryClient defines the interface for ITX past meeting summary operations
+type ITXPastMeetingSummaryClient interface {
+	GetPastMeetingSummary(ctx context.Context, pastMeetingID, summaryID string) (*itx.PastMeetingSummaryResponse, error)
+	UpdatePastMeetingSummary(ctx context.Context, pastMeetingID, summaryID string, req *itx.UpdatePastMeetingSummaryRequest) (*itx.PastMeetingSummaryResponse, error)
+}
+
+// ITXProxyClient combines meeting, registrant, past meeting, and past meeting summary operations
 type ITXProxyClient interface {
 	ITXMeetingClient
 	ITXRegistrantClient
 	ITXPastMeetingClient
+	ITXPastMeetingSummaryClient
 }

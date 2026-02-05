@@ -921,6 +921,90 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("get-itx-past-meeting-summary", func() {
+		Description("Get a specific past meeting summary through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("summary_id", String, "Summary UUID", func() {
+				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			})
+			Required("past_meeting_id", "summary_id")
+		})
+
+		Result(ITXPastMeetingSummary)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Summary not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-past-meeting-summary", func() {
+		Description("Update a past meeting summary through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("summary_id", String, "Summary UUID", func() {
+				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			})
+			Attribute("edited_summary_overview", String, "Edited summary overview")
+			Attribute("edited_summary_details", ArrayOf(ZoomMeetingSummaryDetails), "Edited summary details")
+			Attribute("edited_next_steps", ArrayOf(String), "Edited next steps")
+			Attribute("approved", Boolean, "Approval status")
+			Required("past_meeting_id", "summary_id")
+		})
+
+		Result(ITXPastMeetingSummary)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Summary not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")

@@ -18,6 +18,8 @@ The service follows a clean architecture pattern with:
 - **Stateless Proxy**: No data persistence, all state managed by ITX service
 - **ITX Meeting Operations**: Full CRUD operations for meetings via ITX API
 - **ITX Registrant Operations**: Complete registrant management via ITX API
+- **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX API
+- **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications
@@ -40,7 +42,7 @@ The service follows a clean architecture pattern with:
 **Service Layer** (`internal/service/`)
 
 - Auth service for JWT validation
-- ITX services in `itx/` subdirectory (meeting_service.go, registrant_service.go)
+- ITX services in `itx/` subdirectory (meeting_service.go, registrant_service.go, past_meeting_service.go, past_meeting_summary_service.go)
 - Orchestrates between API layer and infrastructure
 
 **Infrastructure Layer** (`internal/infrastructure/`)

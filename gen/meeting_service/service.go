@@ -60,6 +60,10 @@ type Service interface {
 	DeleteItxPastMeeting(context.Context, *DeleteItxPastMeetingPayload) (err error)
 	// Update a past meeting through ITX API proxy
 	UpdateItxPastMeeting(context.Context, *UpdateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
+	// Get a specific past meeting summary through ITX API proxy
+	GetItxPastMeetingSummary(context.Context, *GetItxPastMeetingSummaryPayload) (res *ITXPastMeetingSummary, err error)
+	// Update a past meeting summary through ITX API proxy
+	UpdateItxPastMeetingSummary(context.Context, *UpdateItxPastMeetingSummaryPayload) (res *ITXPastMeetingSummary, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -82,7 +86,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [22]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting"}
+var MethodNames = [24]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -355,6 +359,19 @@ type GetItxPastMeetingPayload struct {
 	PastMeetingID string
 }
 
+// GetItxPastMeetingSummaryPayload is the payload type of the Meeting Service
+// service get-itx-past-meeting-summary method.
+type GetItxPastMeetingSummaryPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
+	// Summary UUID
+	SummaryID string
+}
+
 // GetItxRegistrantIcsPayload is the payload type of the Meeting Service
 // service get-itx-registrant-ics method.
 type GetItxRegistrantIcsPayload struct {
@@ -400,6 +417,55 @@ type ITXOccurrence struct {
 	Status *string
 	// Number of registrants for this occurrence
 	RegistrantCount *int
+}
+
+// ITXPastMeetingSummary is the result type of the Meeting Service service
+// get-itx-past-meeting-summary method.
+type ITXPastMeetingSummary struct {
+	// Summary UUID
+	ID *string
+	// Past meeting ID (meeting_id-occurrence_id)
+	MeetingAndOccurrenceID *string
+	// Zoom meeting ID
+	MeetingID *string
+	// Zoom occurrence ID (Unix timestamp)
+	OccurrenceID *string
+	// Zoom meeting UUID
+	ZoomMeetingUUID *string
+	// When summary was created (RFC3339)
+	SummaryCreatedTime *string
+	// When summary was last modified (RFC3339)
+	SummaryLastModifiedTime *string
+	// Summary period start time (RFC3339)
+	SummaryStartTime *string
+	// Summary period end time (RFC3339)
+	SummaryEndTime *string
+	// Summary title from Zoom AI
+	SummaryTitle *string
+	// Summary overview from Zoom AI
+	SummaryOverview *string
+	// Summary details from Zoom AI
+	SummaryDetails []*ZoomMeetingSummaryDetails
+	// Next steps from Zoom AI
+	NextSteps []string
+	// Edited summary overview
+	EditedSummaryOverview *string
+	// Edited summary details
+	EditedSummaryDetails []*ZoomMeetingSummaryDetails
+	// Edited next steps
+	EditedNextSteps []string
+	// Whether approval is required
+	RequiresApproval *bool
+	// Whether summary has been approved
+	Approved *bool
+	// Creation timestamp (RFC3339)
+	CreatedAt *string
+	// Creator user info
+	CreatedBy *ITXUser
+	// Last modified timestamp (RFC3339)
+	ModifiedAt *string
+	// Last modifier user info
+	ModifiedBy *ITXUser
 }
 
 // ITXPastZoomMeeting is the result type of the Meeting Service service
@@ -761,6 +827,27 @@ type UpdateItxPastMeetingPayload struct {
 	Committees []*Committee
 }
 
+// UpdateItxPastMeetingSummaryPayload is the payload type of the Meeting
+// Service service update-itx-past-meeting-summary method.
+type UpdateItxPastMeetingSummaryPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
+	// Summary UUID
+	SummaryID string
+	// Edited summary overview
+	EditedSummaryOverview *string
+	// Edited summary details
+	EditedSummaryDetails []*ZoomMeetingSummaryDetails
+	// Edited next steps
+	EditedNextSteps []string
+	// Approval status
+	Approved *bool
+}
+
 // UpdateItxRegistrantPayload is the payload type of the Meeting Service
 // service update-itx-registrant method.
 type UpdateItxRegistrantPayload struct {
@@ -816,6 +903,14 @@ type UpdateItxRegistrantPayload struct {
 	ModifiedAt *string
 	// Last updater user info (read-only)
 	UpdatedBy *ITXUser
+}
+
+// A section of a Zoom meeting AI summary
+type ZoomMeetingSummaryDetails struct {
+	// Section label
+	Label *string
+	// Section summary text
+	Summary *string
 }
 
 // Error returns an error description.

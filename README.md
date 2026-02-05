@@ -76,6 +76,7 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **ITX Meeting Operations**: Create, read, update, delete meetings via ITX
 - **ITX Registrant Operations**: Manage meeting registrants via ITX
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX
+- **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications

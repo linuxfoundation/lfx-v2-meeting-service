@@ -281,6 +281,19 @@ type UpdateItxPastMeetingRequestBody struct {
 	Committees []*CommitteeRequestBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
 }
 
+// UpdateItxPastMeetingSummaryRequestBody is the type of the "Meeting Service"
+// service "update-itx-past-meeting-summary" endpoint HTTP request body.
+type UpdateItxPastMeetingSummaryRequestBody struct {
+	// Edited summary overview
+	EditedSummaryOverview *string `form:"edited_summary_overview,omitempty" json:"edited_summary_overview,omitempty" xml:"edited_summary_overview,omitempty"`
+	// Edited summary details
+	EditedSummaryDetails []*ZoomMeetingSummaryDetailsRequestBody `form:"edited_summary_details,omitempty" json:"edited_summary_details,omitempty" xml:"edited_summary_details,omitempty"`
+	// Edited next steps
+	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
+	// Approval status
+	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
+}
+
 // CreateItxMeetingResponseBody is the type of the "Meeting Service" service
 // "create-itx-meeting" endpoint HTTP response body.
 type CreateItxMeetingResponseBody struct {
@@ -620,6 +633,104 @@ type UpdateItxPastMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
+}
+
+// GetItxPastMeetingSummaryResponseBody is the type of the "Meeting Service"
+// service "get-itx-past-meeting-summary" endpoint HTTP response body.
+type GetItxPastMeetingSummaryResponseBody struct {
+	// Summary UUID
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Past meeting ID (meeting_id-occurrence_id)
+	MeetingAndOccurrenceID *string `form:"meeting_and_occurrence_id,omitempty" json:"meeting_and_occurrence_id,omitempty" xml:"meeting_and_occurrence_id,omitempty"`
+	// Zoom meeting ID
+	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Zoom occurrence ID (Unix timestamp)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Zoom meeting UUID
+	ZoomMeetingUUID *string `form:"zoom_meeting_uuid,omitempty" json:"zoom_meeting_uuid,omitempty" xml:"zoom_meeting_uuid,omitempty"`
+	// When summary was created (RFC3339)
+	SummaryCreatedTime *string `form:"summary_created_time,omitempty" json:"summary_created_time,omitempty" xml:"summary_created_time,omitempty"`
+	// When summary was last modified (RFC3339)
+	SummaryLastModifiedTime *string `form:"summary_last_modified_time,omitempty" json:"summary_last_modified_time,omitempty" xml:"summary_last_modified_time,omitempty"`
+	// Summary period start time (RFC3339)
+	SummaryStartTime *string `form:"summary_start_time,omitempty" json:"summary_start_time,omitempty" xml:"summary_start_time,omitempty"`
+	// Summary period end time (RFC3339)
+	SummaryEndTime *string `form:"summary_end_time,omitempty" json:"summary_end_time,omitempty" xml:"summary_end_time,omitempty"`
+	// Summary title from Zoom AI
+	SummaryTitle *string `form:"summary_title,omitempty" json:"summary_title,omitempty" xml:"summary_title,omitempty"`
+	// Summary overview from Zoom AI
+	SummaryOverview *string `form:"summary_overview,omitempty" json:"summary_overview,omitempty" xml:"summary_overview,omitempty"`
+	// Summary details from Zoom AI
+	SummaryDetails []*ZoomMeetingSummaryDetailsResponseBody `form:"summary_details,omitempty" json:"summary_details,omitempty" xml:"summary_details,omitempty"`
+	// Next steps from Zoom AI
+	NextSteps []string `form:"next_steps,omitempty" json:"next_steps,omitempty" xml:"next_steps,omitempty"`
+	// Edited summary overview
+	EditedSummaryOverview *string `form:"edited_summary_overview,omitempty" json:"edited_summary_overview,omitempty" xml:"edited_summary_overview,omitempty"`
+	// Edited summary details
+	EditedSummaryDetails []*ZoomMeetingSummaryDetailsResponseBody `form:"edited_summary_details,omitempty" json:"edited_summary_details,omitempty" xml:"edited_summary_details,omitempty"`
+	// Edited next steps
+	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
+	// Whether approval is required
+	RequiresApproval *bool `form:"requires_approval,omitempty" json:"requires_approval,omitempty" xml:"requires_approval,omitempty"`
+	// Whether summary has been approved
+	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
+	// Creation timestamp (RFC3339)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Creator user info
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// Last modified timestamp (RFC3339)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Last modifier user info
+	ModifiedBy *ITXUserResponseBody `form:"modified_by,omitempty" json:"modified_by,omitempty" xml:"modified_by,omitempty"`
+}
+
+// UpdateItxPastMeetingSummaryResponseBody is the type of the "Meeting Service"
+// service "update-itx-past-meeting-summary" endpoint HTTP response body.
+type UpdateItxPastMeetingSummaryResponseBody struct {
+	// Summary UUID
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Past meeting ID (meeting_id-occurrence_id)
+	MeetingAndOccurrenceID *string `form:"meeting_and_occurrence_id,omitempty" json:"meeting_and_occurrence_id,omitempty" xml:"meeting_and_occurrence_id,omitempty"`
+	// Zoom meeting ID
+	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Zoom occurrence ID (Unix timestamp)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Zoom meeting UUID
+	ZoomMeetingUUID *string `form:"zoom_meeting_uuid,omitempty" json:"zoom_meeting_uuid,omitempty" xml:"zoom_meeting_uuid,omitempty"`
+	// When summary was created (RFC3339)
+	SummaryCreatedTime *string `form:"summary_created_time,omitempty" json:"summary_created_time,omitempty" xml:"summary_created_time,omitempty"`
+	// When summary was last modified (RFC3339)
+	SummaryLastModifiedTime *string `form:"summary_last_modified_time,omitempty" json:"summary_last_modified_time,omitempty" xml:"summary_last_modified_time,omitempty"`
+	// Summary period start time (RFC3339)
+	SummaryStartTime *string `form:"summary_start_time,omitempty" json:"summary_start_time,omitempty" xml:"summary_start_time,omitempty"`
+	// Summary period end time (RFC3339)
+	SummaryEndTime *string `form:"summary_end_time,omitempty" json:"summary_end_time,omitempty" xml:"summary_end_time,omitempty"`
+	// Summary title from Zoom AI
+	SummaryTitle *string `form:"summary_title,omitempty" json:"summary_title,omitempty" xml:"summary_title,omitempty"`
+	// Summary overview from Zoom AI
+	SummaryOverview *string `form:"summary_overview,omitempty" json:"summary_overview,omitempty" xml:"summary_overview,omitempty"`
+	// Summary details from Zoom AI
+	SummaryDetails []*ZoomMeetingSummaryDetailsResponseBody `form:"summary_details,omitempty" json:"summary_details,omitempty" xml:"summary_details,omitempty"`
+	// Next steps from Zoom AI
+	NextSteps []string `form:"next_steps,omitempty" json:"next_steps,omitempty" xml:"next_steps,omitempty"`
+	// Edited summary overview
+	EditedSummaryOverview *string `form:"edited_summary_overview,omitempty" json:"edited_summary_overview,omitempty" xml:"edited_summary_overview,omitempty"`
+	// Edited summary details
+	EditedSummaryDetails []*ZoomMeetingSummaryDetailsResponseBody `form:"edited_summary_details,omitempty" json:"edited_summary_details,omitempty" xml:"edited_summary_details,omitempty"`
+	// Edited next steps
+	EditedNextSteps []string `form:"edited_next_steps,omitempty" json:"edited_next_steps,omitempty" xml:"edited_next_steps,omitempty"`
+	// Whether approval is required
+	RequiresApproval *bool `form:"requires_approval,omitempty" json:"requires_approval,omitempty" xml:"requires_approval,omitempty"`
+	// Whether summary has been approved
+	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
+	// Creation timestamp (RFC3339)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Creator user info
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// Last modified timestamp (RFC3339)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Last modifier user info
+	ModifiedBy *ITXUserResponseBody `form:"modified_by,omitempty" json:"modified_by,omitempty" xml:"modified_by,omitempty"`
 }
 
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
@@ -1862,6 +1973,126 @@ type UpdateItxPastMeetingUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// GetItxPastMeetingSummaryBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-summary" endpoint HTTP response body
+// for the "BadRequest" error.
+type GetItxPastMeetingSummaryBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingSummaryForbiddenResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-summary" endpoint HTTP response body
+// for the "Forbidden" error.
+type GetItxPastMeetingSummaryForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingSummaryInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-summary" endpoint HTTP
+// response body for the "InternalServerError" error.
+type GetItxPastMeetingSummaryInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingSummaryNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-summary" endpoint HTTP response body
+// for the "NotFound" error.
+type GetItxPastMeetingSummaryNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingSummaryServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-summary" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetItxPastMeetingSummaryServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingSummaryUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-summary" endpoint HTTP response body
+// for the "Unauthorized" error.
+type GetItxPastMeetingSummaryUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxPastMeetingSummaryBadRequestResponseBody is the type of the
+// "Meeting Service" service "update-itx-past-meeting-summary" endpoint HTTP
+// response body for the "BadRequest" error.
+type UpdateItxPastMeetingSummaryBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxPastMeetingSummaryForbiddenResponseBody is the type of the "Meeting
+// Service" service "update-itx-past-meeting-summary" endpoint HTTP response
+// body for the "Forbidden" error.
+type UpdateItxPastMeetingSummaryForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxPastMeetingSummaryInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "update-itx-past-meeting-summary" endpoint
+// HTTP response body for the "InternalServerError" error.
+type UpdateItxPastMeetingSummaryInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxPastMeetingSummaryNotFoundResponseBody is the type of the "Meeting
+// Service" service "update-itx-past-meeting-summary" endpoint HTTP response
+// body for the "NotFound" error.
+type UpdateItxPastMeetingSummaryNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxPastMeetingSummaryServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "update-itx-past-meeting-summary" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type UpdateItxPastMeetingSummaryServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// UpdateItxPastMeetingSummaryUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "update-itx-past-meeting-summary" endpoint HTTP
+// response body for the "Unauthorized" error.
+type UpdateItxPastMeetingSummaryUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // CommitteeRequestBody is used to define fields on request body types.
 type CommitteeRequestBody struct {
 	// Committee UID
@@ -1954,6 +2185,24 @@ type ITXUserResponseBody struct {
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// Profile picture URL
 	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
+// ZoomMeetingSummaryDetailsResponseBody is used to define fields on response
+// body types.
+type ZoomMeetingSummaryDetailsResponseBody struct {
+	// Section label
+	Label *string `form:"label,omitempty" json:"label,omitempty" xml:"label,omitempty"`
+	// Section summary text
+	Summary *string `form:"summary,omitempty" json:"summary,omitempty" xml:"summary,omitempty"`
+}
+
+// ZoomMeetingSummaryDetailsRequestBody is used to define fields on request
+// body types.
+type ZoomMeetingSummaryDetailsRequestBody struct {
+	// Section label
+	Label *string `form:"label,omitempty" json:"label,omitempty" xml:"label,omitempty"`
+	// Section summary text
+	Summary *string `form:"summary,omitempty" json:"summary,omitempty" xml:"summary,omitempty"`
 }
 
 // NewCreateItxMeetingRequestBody builds the HTTP request body from the payload
@@ -2187,6 +2436,33 @@ func NewUpdateItxPastMeetingRequestBody(p *meetingservice.UpdateItxPastMeetingPa
 				continue
 			}
 			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeRequestBody(val)
+		}
+	}
+	return body
+}
+
+// NewUpdateItxPastMeetingSummaryRequestBody builds the HTTP request body from
+// the payload of the "update-itx-past-meeting-summary" endpoint of the
+// "Meeting Service" service.
+func NewUpdateItxPastMeetingSummaryRequestBody(p *meetingservice.UpdateItxPastMeetingSummaryPayload) *UpdateItxPastMeetingSummaryRequestBody {
+	body := &UpdateItxPastMeetingSummaryRequestBody{
+		EditedSummaryOverview: p.EditedSummaryOverview,
+		Approved:              p.Approved,
+	}
+	if p.EditedSummaryDetails != nil {
+		body.EditedSummaryDetails = make([]*ZoomMeetingSummaryDetailsRequestBody, len(p.EditedSummaryDetails))
+		for i, val := range p.EditedSummaryDetails {
+			if val == nil {
+				body.EditedSummaryDetails[i] = nil
+				continue
+			}
+			body.EditedSummaryDetails[i] = marshalMeetingserviceZoomMeetingSummaryDetailsToZoomMeetingSummaryDetailsRequestBody(val)
+		}
+	}
+	if p.EditedNextSteps != nil {
+		body.EditedNextSteps = make([]string, len(p.EditedNextSteps))
+		for i, val := range p.EditedNextSteps {
+			body.EditedNextSteps[i] = val
 		}
 	}
 	return body
@@ -3861,6 +4137,266 @@ func NewUpdateItxPastMeetingUnauthorized(body *UpdateItxPastMeetingUnauthorizedR
 	return v
 }
 
+// NewGetItxPastMeetingSummaryITXPastMeetingSummaryOK builds a "Meeting
+// Service" service "get-itx-past-meeting-summary" endpoint result from a HTTP
+// "OK" response.
+func NewGetItxPastMeetingSummaryITXPastMeetingSummaryOK(body *GetItxPastMeetingSummaryResponseBody) *meetingservice.ITXPastMeetingSummary {
+	v := &meetingservice.ITXPastMeetingSummary{
+		ID:                      body.ID,
+		MeetingAndOccurrenceID:  body.MeetingAndOccurrenceID,
+		MeetingID:               body.MeetingID,
+		OccurrenceID:            body.OccurrenceID,
+		ZoomMeetingUUID:         body.ZoomMeetingUUID,
+		SummaryCreatedTime:      body.SummaryCreatedTime,
+		SummaryLastModifiedTime: body.SummaryLastModifiedTime,
+		SummaryStartTime:        body.SummaryStartTime,
+		SummaryEndTime:          body.SummaryEndTime,
+		SummaryTitle:            body.SummaryTitle,
+		SummaryOverview:         body.SummaryOverview,
+		EditedSummaryOverview:   body.EditedSummaryOverview,
+		RequiresApproval:        body.RequiresApproval,
+		Approved:                body.Approved,
+		CreatedAt:               body.CreatedAt,
+		ModifiedAt:              body.ModifiedAt,
+	}
+	if body.SummaryDetails != nil {
+		v.SummaryDetails = make([]*meetingservice.ZoomMeetingSummaryDetails, len(body.SummaryDetails))
+		for i, val := range body.SummaryDetails {
+			if val == nil {
+				v.SummaryDetails[i] = nil
+				continue
+			}
+			v.SummaryDetails[i] = unmarshalZoomMeetingSummaryDetailsResponseBodyToMeetingserviceZoomMeetingSummaryDetails(val)
+		}
+	}
+	if body.NextSteps != nil {
+		v.NextSteps = make([]string, len(body.NextSteps))
+		for i, val := range body.NextSteps {
+			v.NextSteps[i] = val
+		}
+	}
+	if body.EditedSummaryDetails != nil {
+		v.EditedSummaryDetails = make([]*meetingservice.ZoomMeetingSummaryDetails, len(body.EditedSummaryDetails))
+		for i, val := range body.EditedSummaryDetails {
+			if val == nil {
+				v.EditedSummaryDetails[i] = nil
+				continue
+			}
+			v.EditedSummaryDetails[i] = unmarshalZoomMeetingSummaryDetailsResponseBodyToMeetingserviceZoomMeetingSummaryDetails(val)
+		}
+	}
+	if body.EditedNextSteps != nil {
+		v.EditedNextSteps = make([]string, len(body.EditedNextSteps))
+		for i, val := range body.EditedNextSteps {
+			v.EditedNextSteps[i] = val
+		}
+	}
+	if body.CreatedBy != nil {
+		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+	}
+	if body.ModifiedBy != nil {
+		v.ModifiedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.ModifiedBy)
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingSummaryBadRequest builds a Meeting Service service
+// get-itx-past-meeting-summary endpoint BadRequest error.
+func NewGetItxPastMeetingSummaryBadRequest(body *GetItxPastMeetingSummaryBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingSummaryForbidden builds a Meeting Service service
+// get-itx-past-meeting-summary endpoint Forbidden error.
+func NewGetItxPastMeetingSummaryForbidden(body *GetItxPastMeetingSummaryForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingSummaryInternalServerError builds a Meeting Service
+// service get-itx-past-meeting-summary endpoint InternalServerError error.
+func NewGetItxPastMeetingSummaryInternalServerError(body *GetItxPastMeetingSummaryInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingSummaryNotFound builds a Meeting Service service
+// get-itx-past-meeting-summary endpoint NotFound error.
+func NewGetItxPastMeetingSummaryNotFound(body *GetItxPastMeetingSummaryNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingSummaryServiceUnavailable builds a Meeting Service
+// service get-itx-past-meeting-summary endpoint ServiceUnavailable error.
+func NewGetItxPastMeetingSummaryServiceUnavailable(body *GetItxPastMeetingSummaryServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingSummaryUnauthorized builds a Meeting Service service
+// get-itx-past-meeting-summary endpoint Unauthorized error.
+func NewGetItxPastMeetingSummaryUnauthorized(body *GetItxPastMeetingSummaryUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxPastMeetingSummaryITXPastMeetingSummaryOK builds a "Meeting
+// Service" service "update-itx-past-meeting-summary" endpoint result from a
+// HTTP "OK" response.
+func NewUpdateItxPastMeetingSummaryITXPastMeetingSummaryOK(body *UpdateItxPastMeetingSummaryResponseBody) *meetingservice.ITXPastMeetingSummary {
+	v := &meetingservice.ITXPastMeetingSummary{
+		ID:                      body.ID,
+		MeetingAndOccurrenceID:  body.MeetingAndOccurrenceID,
+		MeetingID:               body.MeetingID,
+		OccurrenceID:            body.OccurrenceID,
+		ZoomMeetingUUID:         body.ZoomMeetingUUID,
+		SummaryCreatedTime:      body.SummaryCreatedTime,
+		SummaryLastModifiedTime: body.SummaryLastModifiedTime,
+		SummaryStartTime:        body.SummaryStartTime,
+		SummaryEndTime:          body.SummaryEndTime,
+		SummaryTitle:            body.SummaryTitle,
+		SummaryOverview:         body.SummaryOverview,
+		EditedSummaryOverview:   body.EditedSummaryOverview,
+		RequiresApproval:        body.RequiresApproval,
+		Approved:                body.Approved,
+		CreatedAt:               body.CreatedAt,
+		ModifiedAt:              body.ModifiedAt,
+	}
+	if body.SummaryDetails != nil {
+		v.SummaryDetails = make([]*meetingservice.ZoomMeetingSummaryDetails, len(body.SummaryDetails))
+		for i, val := range body.SummaryDetails {
+			if val == nil {
+				v.SummaryDetails[i] = nil
+				continue
+			}
+			v.SummaryDetails[i] = unmarshalZoomMeetingSummaryDetailsResponseBodyToMeetingserviceZoomMeetingSummaryDetails(val)
+		}
+	}
+	if body.NextSteps != nil {
+		v.NextSteps = make([]string, len(body.NextSteps))
+		for i, val := range body.NextSteps {
+			v.NextSteps[i] = val
+		}
+	}
+	if body.EditedSummaryDetails != nil {
+		v.EditedSummaryDetails = make([]*meetingservice.ZoomMeetingSummaryDetails, len(body.EditedSummaryDetails))
+		for i, val := range body.EditedSummaryDetails {
+			if val == nil {
+				v.EditedSummaryDetails[i] = nil
+				continue
+			}
+			v.EditedSummaryDetails[i] = unmarshalZoomMeetingSummaryDetailsResponseBodyToMeetingserviceZoomMeetingSummaryDetails(val)
+		}
+	}
+	if body.EditedNextSteps != nil {
+		v.EditedNextSteps = make([]string, len(body.EditedNextSteps))
+		for i, val := range body.EditedNextSteps {
+			v.EditedNextSteps[i] = val
+		}
+	}
+	if body.CreatedBy != nil {
+		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+	}
+	if body.ModifiedBy != nil {
+		v.ModifiedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.ModifiedBy)
+	}
+
+	return v
+}
+
+// NewUpdateItxPastMeetingSummaryBadRequest builds a Meeting Service service
+// update-itx-past-meeting-summary endpoint BadRequest error.
+func NewUpdateItxPastMeetingSummaryBadRequest(body *UpdateItxPastMeetingSummaryBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxPastMeetingSummaryForbidden builds a Meeting Service service
+// update-itx-past-meeting-summary endpoint Forbidden error.
+func NewUpdateItxPastMeetingSummaryForbidden(body *UpdateItxPastMeetingSummaryForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxPastMeetingSummaryInternalServerError builds a Meeting Service
+// service update-itx-past-meeting-summary endpoint InternalServerError error.
+func NewUpdateItxPastMeetingSummaryInternalServerError(body *UpdateItxPastMeetingSummaryInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxPastMeetingSummaryNotFound builds a Meeting Service service
+// update-itx-past-meeting-summary endpoint NotFound error.
+func NewUpdateItxPastMeetingSummaryNotFound(body *UpdateItxPastMeetingSummaryNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxPastMeetingSummaryServiceUnavailable builds a Meeting Service
+// service update-itx-past-meeting-summary endpoint ServiceUnavailable error.
+func NewUpdateItxPastMeetingSummaryServiceUnavailable(body *UpdateItxPastMeetingSummaryServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewUpdateItxPastMeetingSummaryUnauthorized builds a Meeting Service service
+// update-itx-past-meeting-summary endpoint Unauthorized error.
+func NewUpdateItxPastMeetingSummaryUnauthorized(body *UpdateItxPastMeetingSummaryUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // ValidateCreateItxMeetingResponseBody runs the validations defined on
 // Create-Itx-MeetingResponseBody
 func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (err error) {
@@ -4187,6 +4723,80 @@ func ValidateUpdateItxPastMeetingResponseBody(body *UpdateItxPastMeetingResponse
 	if body.ArtifactVisibility != nil {
 		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
+		}
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingSummaryResponseBody runs the validations defined on
+// Get-Itx-Past-Meeting-SummaryResponseBody
+func ValidateGetItxPastMeetingSummaryResponseBody(body *GetItxPastMeetingSummaryResponseBody) (err error) {
+	if body.ID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.id", *body.ID, goa.FormatUUID))
+	}
+	if body.SummaryCreatedTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_created_time", *body.SummaryCreatedTime, goa.FormatDateTime))
+	}
+	if body.SummaryLastModifiedTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_last_modified_time", *body.SummaryLastModifiedTime, goa.FormatDateTime))
+	}
+	if body.SummaryStartTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_start_time", *body.SummaryStartTime, goa.FormatDateTime))
+	}
+	if body.SummaryEndTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_end_time", *body.SummaryEndTime, goa.FormatDateTime))
+	}
+	if body.CreatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
+	}
+	if body.CreatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.ModifiedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.modified_at", *body.ModifiedAt, goa.FormatDateTime))
+	}
+	if body.ModifiedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.ModifiedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingSummaryResponseBody runs the validations defined
+// on Update-Itx-Past-Meeting-SummaryResponseBody
+func ValidateUpdateItxPastMeetingSummaryResponseBody(body *UpdateItxPastMeetingSummaryResponseBody) (err error) {
+	if body.ID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.id", *body.ID, goa.FormatUUID))
+	}
+	if body.SummaryCreatedTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_created_time", *body.SummaryCreatedTime, goa.FormatDateTime))
+	}
+	if body.SummaryLastModifiedTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_last_modified_time", *body.SummaryLastModifiedTime, goa.FormatDateTime))
+	}
+	if body.SummaryStartTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_start_time", *body.SummaryStartTime, goa.FormatDateTime))
+	}
+	if body.SummaryEndTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.summary_end_time", *body.SummaryEndTime, goa.FormatDateTime))
+	}
+	if body.CreatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
+	}
+	if body.CreatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.ModifiedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.modified_at", *body.ModifiedAt, goa.FormatDateTime))
+	}
+	if body.ModifiedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.ModifiedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	return
@@ -5699,6 +6309,158 @@ func ValidateUpdateItxPastMeetingServiceUnavailableResponseBody(body *UpdateItxP
 // ValidateUpdateItxPastMeetingUnauthorizedResponseBody runs the validations
 // defined on update-itx-past-meeting_Unauthorized_response_body
 func ValidateUpdateItxPastMeetingUnauthorizedResponseBody(body *UpdateItxPastMeetingUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingSummaryBadRequestResponseBody runs the validations
+// defined on get-itx-past-meeting-summary_BadRequest_response_body
+func ValidateGetItxPastMeetingSummaryBadRequestResponseBody(body *GetItxPastMeetingSummaryBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingSummaryForbiddenResponseBody runs the validations
+// defined on get-itx-past-meeting-summary_Forbidden_response_body
+func ValidateGetItxPastMeetingSummaryForbiddenResponseBody(body *GetItxPastMeetingSummaryForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingSummaryInternalServerErrorResponseBody runs the
+// validations defined on
+// get-itx-past-meeting-summary_InternalServerError_response_body
+func ValidateGetItxPastMeetingSummaryInternalServerErrorResponseBody(body *GetItxPastMeetingSummaryInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingSummaryNotFoundResponseBody runs the validations
+// defined on get-itx-past-meeting-summary_NotFound_response_body
+func ValidateGetItxPastMeetingSummaryNotFoundResponseBody(body *GetItxPastMeetingSummaryNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingSummaryServiceUnavailableResponseBody runs the
+// validations defined on
+// get-itx-past-meeting-summary_ServiceUnavailable_response_body
+func ValidateGetItxPastMeetingSummaryServiceUnavailableResponseBody(body *GetItxPastMeetingSummaryServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingSummaryUnauthorizedResponseBody runs the
+// validations defined on
+// get-itx-past-meeting-summary_Unauthorized_response_body
+func ValidateGetItxPastMeetingSummaryUnauthorizedResponseBody(body *GetItxPastMeetingSummaryUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingSummaryBadRequestResponseBody runs the
+// validations defined on
+// update-itx-past-meeting-summary_BadRequest_response_body
+func ValidateUpdateItxPastMeetingSummaryBadRequestResponseBody(body *UpdateItxPastMeetingSummaryBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingSummaryForbiddenResponseBody runs the
+// validations defined on
+// update-itx-past-meeting-summary_Forbidden_response_body
+func ValidateUpdateItxPastMeetingSummaryForbiddenResponseBody(body *UpdateItxPastMeetingSummaryForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingSummaryInternalServerErrorResponseBody runs the
+// validations defined on
+// update-itx-past-meeting-summary_InternalServerError_response_body
+func ValidateUpdateItxPastMeetingSummaryInternalServerErrorResponseBody(body *UpdateItxPastMeetingSummaryInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingSummaryNotFoundResponseBody runs the validations
+// defined on update-itx-past-meeting-summary_NotFound_response_body
+func ValidateUpdateItxPastMeetingSummaryNotFoundResponseBody(body *UpdateItxPastMeetingSummaryNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingSummaryServiceUnavailableResponseBody runs the
+// validations defined on
+// update-itx-past-meeting-summary_ServiceUnavailable_response_body
+func ValidateUpdateItxPastMeetingSummaryServiceUnavailableResponseBody(body *UpdateItxPastMeetingSummaryServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingSummaryUnauthorizedResponseBody runs the
+// validations defined on
+// update-itx-past-meeting-summary_Unauthorized_response_body
+func ValidateUpdateItxPastMeetingSummaryUnauthorizedResponseBody(body *UpdateItxPastMeetingSummaryUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

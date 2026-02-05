@@ -1655,6 +1655,172 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
+    /itx/past_meetings/{past_meeting_id}/summaries/{summary_id}:
+        get:
+            tags:
+                - Meeting Service
+            summary: get-itx-past-meeting-summary Meeting Service
+            description: Get a specific past meeting summary through ITX API proxy
+            operationId: Meeting Service#get-itx-past-meeting-summary
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: past_meeting_id
+                  in: path
+                  description: Past meeting ID (meeting_id or meeting_id-occurrence_id)
+                  required: true
+                  type: string
+                - name: summary_id
+                  in: path
+                  description: Summary UUID
+                  required: true
+                  type: string
+                - name: Authorization
+                  in: header
+                  description: JWT token issued by Heimdall
+                  required: false
+                  type: string
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/ITXPastMeetingSummary'
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/BadRequestError'
+                        required:
+                            - code
+                            - message
+                "401":
+                    description: Unauthorized response.
+                    schema:
+                        $ref: '#/definitions/UnauthorizedError'
+                        required:
+                            - code
+                            - message
+                "403":
+                    description: Forbidden response.
+                    schema:
+                        $ref: '#/definitions/ForbiddenError'
+                        required:
+                            - code
+                            - message
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: Service Unavailable response.
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
+        put:
+            tags:
+                - Meeting Service
+            summary: update-itx-past-meeting-summary Meeting Service
+            description: Update a past meeting summary through ITX API proxy
+            operationId: Meeting Service#update-itx-past-meeting-summary
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: past_meeting_id
+                  in: path
+                  description: Past meeting ID (meeting_id or meeting_id-occurrence_id)
+                  required: true
+                  type: string
+                - name: summary_id
+                  in: path
+                  description: Summary UUID
+                  required: true
+                  type: string
+                - name: Authorization
+                  in: header
+                  description: JWT token issued by Heimdall
+                  required: false
+                  type: string
+                - name: Update-Itx-Past-Meeting-SummaryRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/MeetingServiceUpdateItxPastMeetingSummaryRequestBody'
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/ITXPastMeetingSummary'
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/BadRequestError'
+                        required:
+                            - code
+                            - message
+                "401":
+                    description: Unauthorized response.
+                    schema:
+                        $ref: '#/definitions/UnauthorizedError'
+                        required:
+                            - code
+                            - message
+                "403":
+                    description: Forbidden response.
+                    schema:
+                        $ref: '#/definitions/ForbiddenError'
+                        required:
+                            - code
+                            - message
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: Service Unavailable response.
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
 definitions:
     BadRequestError:
         title: BadRequestError
@@ -1683,12 +1849,13 @@ definitions:
                 type: array
                 items:
                     type: string
-                    example: Corporis nisi.
+                    example: Et doloremque.
                 description: Allowed voting statuses for committee members
                 example:
-                    - Odio magni distinctio quia.
-                    - Officia sit ea corrupti quod id nulla.
-                    - Molestiae et aut.
+                    - Vel voluptates consequatur numquam.
+                    - Fugiat et unde molestiae.
+                    - Et tempore vel qui placeat.
+                    - Voluptas quo ut earum.
             uid:
                 type: string
                 description: Committee UID
@@ -1697,8 +1864,10 @@ definitions:
         description: A committee associated with a meeting
         example:
             allowed_voting_statuses:
-                - Nobis repudiandae quia necessitatibus placeat minima.
-                - Qui nihil facilis iusto est voluptates repellendus.
+                - Praesentium perferendis facilis dignissimos fuga ratione qui.
+                - Consequatur perferendis quis at omnis.
+                - Accusamus maxime sit ut tempora accusantium nobis.
+                - Neque iste.
             uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
     ConflictError:
         title: ConflictError
@@ -1758,7 +1927,7 @@ definitions:
             duration:
                 type: integer
                 description: Duration in minutes
-                example: 8744326375704438407
+                example: 9044320860763421831
                 format: int64
             occurrence_id:
                 type: string
@@ -1767,7 +1936,7 @@ definitions:
             registrant_count:
                 type: integer
                 description: Number of registrants for this occurrence
-                example: 5803171754749080033
+                example: 5686872988197614037
                 format: int64
             start_time:
                 type: string
@@ -1783,11 +1952,181 @@ definitions:
                     - cancel
         description: Meeting occurrence from ITX
         example:
-            duration: 6155149685900468231
+            duration: 2781282563458394208
             occurrence_id: "1640995200"
-            registrant_count: 920918492582894917
+            registrant_count: 8302047151503195640
             start_time: "2021-01-01T10:00:00Z"
             status: cancel
+    ITXPastMeetingSummary:
+        title: ITXPastMeetingSummary
+        type: object
+        properties:
+            approved:
+                type: boolean
+                description: Whether summary has been approved
+                example: true
+            created_at:
+                type: string
+                description: Creation timestamp (RFC3339)
+                example: "2021-06-27T05:30:00Z"
+                format: date-time
+            created_by:
+                $ref: '#/definitions/ITXUser'
+            edited_next_steps:
+                type: array
+                items:
+                    type: string
+                    example: Eius est non dolor quasi inventore ipsam.
+                description: Edited next steps
+                example:
+                    - Voluptatem eligendi voluptas.
+                    - Assumenda voluptas aliquam dolores repellendus laborum aspernatur.
+            edited_summary_details:
+                type: array
+                items:
+                    $ref: '#/definitions/ZoomMeetingSummaryDetails'
+                description: Edited summary details
+                example:
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+            edited_summary_overview:
+                type: string
+                description: Edited summary overview
+                example: Sit quidem veniam qui neque nisi sint.
+            id:
+                type: string
+                description: Summary UUID
+                example: ea1e8536-a985-4cf5-b981-a170927a1d11
+                format: uuid
+            meeting_and_occurrence_id:
+                type: string
+                description: Past meeting ID (meeting_id-occurrence_id)
+                example: 12343245463-1630560600000
+            meeting_id:
+                type: string
+                description: Zoom meeting ID
+                example: "12343245463"
+            modified_at:
+                type: string
+                description: Last modified timestamp (RFC3339)
+                example: "2021-06-27T05:35:00Z"
+                format: date-time
+            modified_by:
+                $ref: '#/definitions/ITXUser'
+            next_steps:
+                type: array
+                items:
+                    type: string
+                    example: Rem assumenda natus quod quidem id magnam.
+                description: Next steps from Zoom AI
+                example:
+                    - Complete project documentation
+                    - Schedule follow-up meeting
+            occurrence_id:
+                type: string
+                description: Zoom occurrence ID (Unix timestamp)
+                example: "1630560600000"
+            requires_approval:
+                type: boolean
+                description: Whether approval is required
+                example: true
+            summary_created_time:
+                type: string
+                description: When summary was created (RFC3339)
+                example: "2021-06-27T05:30:00Z"
+                format: date-time
+            summary_details:
+                type: array
+                items:
+                    $ref: '#/definitions/ZoomMeetingSummaryDetails'
+                description: Summary details from Zoom AI
+                example:
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+            summary_end_time:
+                type: string
+                description: Summary period end time (RFC3339)
+                example: "2021-06-27T06:30:00Z"
+                format: date-time
+            summary_last_modified_time:
+                type: string
+                description: When summary was last modified (RFC3339)
+                example: "2021-06-27T05:35:00Z"
+                format: date-time
+            summary_overview:
+                type: string
+                description: Summary overview from Zoom AI
+                example: Sed aut cumque natus sequi.
+            summary_start_time:
+                type: string
+                description: Summary period start time (RFC3339)
+                example: "2021-06-27T05:30:00Z"
+                format: date-time
+            summary_title:
+                type: string
+                description: Summary title from Zoom AI
+                example: Weekly Team Sync
+            zoom_meeting_uuid:
+                type: string
+                description: Zoom meeting UUID
+                example: Aspernatur mollitia dicta non sint animi maxime.
+        example:
+            approved: false
+            created_at: "2021-06-27T05:30:00Z"
+            created_by:
+                email: john.doe@example.com
+                name: John Doe
+                profile_picture: https://example.com/avatar.jpg
+                username: jdoe
+            edited_next_steps:
+                - Asperiores modi fugit architecto ea fugiat reiciendis.
+                - Ipsa eveniet dolor labore saepe ea.
+                - Omnis aut.
+                - Vel sit porro incidunt et id optio.
+            edited_summary_details:
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+            edited_summary_overview: Eos ut.
+            id: ea1e8536-a985-4cf5-b981-a170927a1d11
+            meeting_and_occurrence_id: 12343245463-1630560600000
+            meeting_id: "12343245463"
+            modified_at: "2021-06-27T05:35:00Z"
+            modified_by:
+                email: john.doe@example.com
+                name: John Doe
+                profile_picture: https://example.com/avatar.jpg
+                username: jdoe
+            next_steps:
+                - Complete project documentation
+                - Schedule follow-up meeting
+            occurrence_id: "1630560600000"
+            requires_approval: true
+            summary_created_time: "2021-06-27T05:30:00Z"
+            summary_details:
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+            summary_end_time: "2021-06-27T06:30:00Z"
+            summary_last_modified_time: "2021-06-27T05:35:00Z"
+            summary_overview: Dolores consequatur qui quod qui.
+            summary_start_time: "2021-06-27T05:30:00Z"
+            summary_title: Weekly Team Sync
+            zoom_meeting_uuid: Omnis aut explicabo ut facere fugit.
     ITXPastZoomMeeting:
         title: ITXPastZoomMeeting
         type: object
@@ -1795,7 +2134,7 @@ definitions:
             artifact_visibility:
                 type: string
                 description: Who has access to meeting artifacts
-                example: public
+                example: meeting_hosts
                 enum:
                     - meeting_hosts
                     - meeting_participants
@@ -1807,28 +2146,25 @@ definitions:
                 description: Committees associated with the past meeting
                 example:
                     - allowed_voting_statuses:
-                        - Nihil labore quasi laboriosam quis aperiam et.
-                        - Distinctio dolorum minus quaerat.
-                        - Beatae omnis.
+                        - Rerum velit sit eligendi voluptates.
+                        - Voluptate animi saepe.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Nihil labore quasi laboriosam quis aperiam et.
-                        - Distinctio dolorum minus quaerat.
-                        - Beatae omnis.
+                        - Rerum velit sit eligendi voluptates.
+                        - Voluptate animi saepe.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Nihil labore quasi laboriosam quis aperiam et.
-                        - Distinctio dolorum minus quaerat.
-                        - Beatae omnis.
+                        - Rerum velit sit eligendi voluptates.
+                        - Voluptate animi saepe.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             description:
                 type: string
                 description: Meeting description/agenda
-                example: Est eligendi itaque molestiae eum.
+                example: Ut dolores maxime molestias.
             duration:
                 type: integer
                 description: Meeting duration in minutes
-                example: 7600908687663915461
+                example: 4183247615580998002
                 format: int64
             id:
                 type: string
@@ -1845,7 +2181,7 @@ definitions:
             meeting_type:
                 type: string
                 description: Type of meeting
-                example: Board
+                example: Marketing
                 enum:
                     - Board
                     - Maintainers
@@ -1870,7 +2206,7 @@ definitions:
             restricted:
                 type: boolean
                 description: Whether meeting was restricted to invited users only
-                example: false
+                example: true
             start_time:
                 type: string
                 description: Meeting start time (RFC3339)
@@ -1883,51 +2219,44 @@ definitions:
             title:
                 type: string
                 description: Meeting title
-                example: Labore vel expedita eos aperiam ut aliquam.
+                example: Asperiores est rerum.
             transcript_enabled:
                 type: boolean
                 description: Whether transcription was enabled
-                example: false
+                example: true
             visibility:
                 type: string
                 description: Meeting visibility
-                example: private
+                example: public
                 enum:
                     - public
                     - private
         example:
-            artifact_visibility: public
+            artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Nihil labore quasi laboriosam quis aperiam et.
-                    - Distinctio dolorum minus quaerat.
-                    - Beatae omnis.
+                    - Rerum velit sit eligendi voluptates.
+                    - Voluptate animi saepe.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Nihil labore quasi laboriosam quis aperiam et.
-                    - Distinctio dolorum minus quaerat.
-                    - Beatae omnis.
+                    - Rerum velit sit eligendi voluptates.
+                    - Voluptate animi saepe.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                - allowed_voting_statuses:
-                    - Nihil labore quasi laboriosam quis aperiam et.
-                    - Distinctio dolorum minus quaerat.
-                    - Beatae omnis.
-                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            description: Et officia officia optio iusto et voluptatem.
-            duration: 2829559267858742499
+            description: Voluptas est ut possimus.
+            duration: 4863227025147615214
             id: 12343245463-1630560600000
             is_manually_created: true
             meeting_id: "12343245463"
             meeting_type: Technical
             occurrence_id: "1630560600000"
             project_uid: a1234567-89ab-cdef-0123-456789abcdef
-            recording_enabled: true
-            restricted: false
+            recording_enabled: false
+            restricted: true
             start_time: "2021-06-27T05:30:00Z"
             timezone: America/Los_Angeles
-            title: Dolor consequatur sint rerum.
-            transcript_enabled: true
-            visibility: private
+            title: Rerum impedit aliquid.
+            transcript_enabled: false
+            visibility: public
     ITXUser:
         title: ITXUser
         type: object
@@ -1976,16 +2305,16 @@ definitions:
             attended_occurrence_count:
                 type: integer
                 description: Number of meetings attended (read-only)
-                example: 2415232529273358694
+                example: 8404350800227962640
                 format: int64
             committee_uid:
                 type: string
                 description: Committee UID (for committee registrants)
-                example: Natus sit aperiam consequatur labore est autem.
+                example: Maxime soluta officiis in et reiciendis.
             created_at:
                 type: string
                 description: Creation timestamp RFC3339 (read-only)
-                example: Et deserunt explicabo.
+                example: At occaecati reprehenderit.
             created_by:
                 $ref: '#/definitions/ITXUser'
             email:
@@ -2008,19 +2337,19 @@ definitions:
             last_invite_delivery_description:
                 type: string
                 description: Delivery status details (read-only)
-                example: Sed eveniet consequuntur illo tempore.
+                example: Temporibus rerum quidem voluptatem est nobis optio.
             last_invite_delivery_status:
                 type: string
                 description: delivered or failed (read-only)
-                example: Ut et autem iste enim ut aperiam.
+                example: Provident molestias ducimus itaque quaerat voluptatibus magni.
             last_invite_received_message_id:
                 type: string
                 description: Last email message ID (read-only)
-                example: Aut voluptatem.
+                example: Itaque culpa commodi maiores.
             last_invite_received_time:
                 type: string
                 description: Last invite timestamp RFC3339 (read-only)
-                example: Unde sequi doloribus numquam eveniet qui.
+                example: Voluptas sed.
             last_name:
                 type: string
                 description: Last name (required with email)
@@ -2028,7 +2357,7 @@ definitions:
             modified_at:
                 type: string
                 description: Last modified timestamp RFC3339 (read-only)
-                example: Et soluta velit sunt impedit in dicta.
+                example: Unde aut dicta quod.
             occurrence:
                 type: string
                 description: Specific occurrence ID (blank = all occurrences)
@@ -2040,11 +2369,11 @@ definitions:
             profile_picture:
                 type: string
                 description: Profile picture URL
-                example: Voluptas sapiente temporibus qui magnam.
+                example: Quam non.
             total_occurrence_count:
                 type: integer
                 description: Total meetings registered (read-only)
-                example: 9039606314117922851
+                example: 7877240968007033639
                 format: int64
             type:
                 type: string
@@ -2056,7 +2385,7 @@ definitions:
             uid:
                 type: string
                 description: Registrant UID (read-only)
-                example: Modi quisquam non recusandae soluta.
+                example: Sint aperiam.
             updated_by:
                 $ref: '#/definitions/ITXUser'
             username:
@@ -2064,9 +2393,9 @@ definitions:
                 description: LF username
                 example: testuser
         example:
-            attended_occurrence_count: 4957207606457943584
-            committee_uid: Ad numquam corporis distinctio.
-            created_at: Voluptatibus natus quisquam eveniet ullam.
+            attended_occurrence_count: 9178369744328334804
+            committee_uid: Ut delectus repudiandae dolores explicabo.
+            created_at: Qui et accusantium qui ipsum.
             created_by:
                 email: john.doe@example.com
                 name: John Doe
@@ -2076,18 +2405,18 @@ definitions:
             first_name: Bob
             host: true
             job_title: developer
-            last_invite_delivery_description: Cumque possimus quas architecto eos.
-            last_invite_delivery_status: Voluptatum suscipit ipsam.
-            last_invite_received_message_id: Perspiciatis fuga omnis recusandae autem.
-            last_invite_received_time: Ipsa hic exercitationem aperiam.
+            last_invite_delivery_description: Tempore dolor ad sit voluptatem delectus qui.
+            last_invite_delivery_status: Porro at itaque qui nemo dolores ea.
+            last_invite_received_message_id: Quas ipsum voluptatem ut voluptas laboriosam officia.
+            last_invite_received_time: Iure ut.
             last_name: Smith
-            modified_at: Quasi recusandae.
+            modified_at: Quia consequatur ab rerum officiis expedita.
             occurrence: "1666848600"
             org: google
-            profile_picture: Quia ut officia necessitatibus quis reprehenderit.
-            total_occurrence_count: 3704431465517150161
+            profile_picture: Est non.
+            total_occurrence_count: 2516047719102407696
             type: committee
-            uid: Et ipsum corrupti consequatur velit aut blanditiis.
+            uid: Quasi non ut repudiandae quia et eligendi.
             updated_by:
                 email: john.doe@example.com
                 name: John Doe
@@ -2113,19 +2442,12 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Nihil labore quasi laboriosam quis aperiam et.
-                        - Distinctio dolorum minus quaerat.
-                        - Beatae omnis.
+                        - Rerum velit sit eligendi voluptates.
+                        - Voluptate animi saepe.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Nihil labore quasi laboriosam quis aperiam et.
-                        - Distinctio dolorum minus quaerat.
-                        - Beatae omnis.
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    - allowed_voting_statuses:
-                        - Nihil labore quasi laboriosam quis aperiam et.
-                        - Distinctio dolorum minus quaerat.
-                        - Beatae omnis.
+                        - Rerum velit sit eligendi voluptates.
+                        - Voluptate animi saepe.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             created_at:
                 type: string
@@ -2135,19 +2457,19 @@ definitions:
             description:
                 type: string
                 description: The description of the meeting
-                example: v3o
+                example: 0er
                 maxLength: 2000
             duration:
                 type: integer
                 description: The duration of the meeting in minutes
-                example: 338
+                example: 219
                 format: int64
                 minimum: 0
                 maximum: 600
             early_join_time_minutes:
                 type: integer
                 description: The number of minutes that users are allowed to join the meeting early
-                example: 30
+                example: 35
                 format: int64
                 minimum: 10
                 maximum: 60
@@ -2162,7 +2484,7 @@ definitions:
             meeting_type:
                 type: string
                 description: The type of meeting
-                example: Technical
+                example: Marketing
                 enum:
                     - Board
                     - Maintainers
@@ -2182,26 +2504,16 @@ definitions:
                     $ref: '#/definitions/ITXOccurrence'
                 description: Meeting occurrences (for recurring)
                 example:
-                    - duration: 734313072140617424
+                    - duration: 3953758655124803480
                       occurrence_id: "1640995200"
-                      registrant_count: 5911468135838275655
+                      registrant_count: 7511622239105811699
                       start_time: "2021-01-01T10:00:00Z"
-                      status: cancel
-                    - duration: 734313072140617424
+                      status: available
+                    - duration: 3953758655124803480
                       occurrence_id: "1640995200"
-                      registrant_count: 5911468135838275655
+                      registrant_count: 7511622239105811699
                       start_time: "2021-01-01T10:00:00Z"
-                      status: cancel
-                    - duration: 734313072140617424
-                      occurrence_id: "1640995200"
-                      registrant_count: 5911468135838275655
-                      start_time: "2021-01-01T10:00:00Z"
-                      status: cancel
-                    - duration: 734313072140617424
-                      occurrence_id: "1640995200"
-                      registrant_count: 5911468135838275655
-                      start_time: "2021-01-01T10:00:00Z"
-                      status: cancel
+                      status: available
             passcode:
                 type: string
                 description: Zoom meeting passcode
@@ -2223,18 +2535,18 @@ definitions:
             recording_enabled:
                 type: boolean
                 description: Whether recording is enabled for the meeting
-                example: true
+                example: false
             recurrence:
                 $ref: '#/definitions/Recurrence'
             registrant_count:
                 type: integer
                 description: Number of registrants
-                example: 7413541973755079090
+                example: 2283992585571454817
                 format: int64
             restricted:
                 type: boolean
                 description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
-                example: false
+                example: true
             start_time:
                 type: string
                 description: The start time of the meeting in RFC3339 format
@@ -2243,19 +2555,19 @@ definitions:
             timezone:
                 type: string
                 description: The timezone of the meeting (e.g. 'America/New_York')
-                example: Dolorem eius et dolorem iusto consequuntur labore.
+                example: Facilis exercitationem rem unde dolorum sed aspernatur.
             title:
                 type: string
                 description: The title of the meeting
-                example: Ut enim officiis nisi dolorem voluptates.
+                example: Et ut molestias quis sit quia.
             transcript_enabled:
                 type: boolean
                 description: Whether transcription is enabled for the meeting
-                example: false
+                example: true
             visibility:
                 type: string
                 description: The visibility of the meeting's existence to other users
-                example: public
+                example: private
                 enum:
                     - public
                     - private
@@ -2264,68 +2576,64 @@ definitions:
                 description: Whether automatic youtube uploading is enabled for the meeting
                 example: false
         example:
-            artifact_visibility: meeting_participants
+            artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Nihil labore quasi laboriosam quis aperiam et.
-                    - Distinctio dolorum minus quaerat.
-                    - Beatae omnis.
+                    - Rerum velit sit eligendi voluptates.
+                    - Voluptate animi saepe.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Nihil labore quasi laboriosam quis aperiam et.
-                    - Distinctio dolorum minus quaerat.
-                    - Beatae omnis.
+                    - Rerum velit sit eligendi voluptates.
+                    - Voluptate animi saepe.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Nihil labore quasi laboriosam quis aperiam et.
-                    - Distinctio dolorum minus quaerat.
-                    - Beatae omnis.
+                    - Rerum velit sit eligendi voluptates.
+                    - Voluptate animi saepe.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Nihil labore quasi laboriosam quis aperiam et.
-                    - Distinctio dolorum minus quaerat.
-                    - Beatae omnis.
+                    - Rerum velit sit eligendi voluptates.
+                    - Voluptate animi saepe.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             created_at: "2021-01-01T00:00:00Z"
-            description: 74v
-            duration: 269
-            early_join_time_minutes: 47
+            description: eqj
+            duration: 478
+            early_join_time_minutes: 31
             host_key: "123456"
             id: "1234567890"
-            meeting_type: Marketing
+            meeting_type: Board
             modified_at: "2021-01-01T00:00:00Z"
             occurrences:
-                - duration: 734313072140617424
+                - duration: 3953758655124803480
                   occurrence_id: "1640995200"
-                  registrant_count: 5911468135838275655
+                  registrant_count: 7511622239105811699
                   start_time: "2021-01-01T10:00:00Z"
-                  status: cancel
-                - duration: 734313072140617424
+                  status: available
+                - duration: 3953758655124803480
                   occurrence_id: "1640995200"
-                  registrant_count: 5911468135838275655
+                  registrant_count: 7511622239105811699
                   start_time: "2021-01-01T10:00:00Z"
-                  status: cancel
+                  status: available
             passcode: abc123
             password: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             public_link: https://zoom-lfx.platform.linuxfoundation.org/meeting/1234567890
-            recording_enabled: true
+            recording_enabled: false
             recurrence:
-                end_date_time: "2003-08-14T19:49:05Z"
-                end_times: 7126905755880140625
-                monthly_day: 5905370148384259384
-                monthly_week: 8268475841580627083
-                monthly_week_day: 8216192821406399321
-                repeat_interval: 1765197207128075589
+                end_date_time: "2011-02-28T21:24:17Z"
+                end_times: 7667781809979694311
+                monthly_day: 2787220704941342507
+                monthly_week: 4844404071419507600
+                monthly_week_day: 5867911692968312843
+                repeat_interval: 2802624290332683148
                 type: 2
-                weekly_days: Ex eveniet libero ducimus neque nam.
-            registrant_count: 8542913008063566690
-            restricted: true
+                weekly_days: Atque sit.
+            registrant_count: 6305358429433564235
+            restricted: false
             start_time: "2021-01-01T00:00:00Z"
-            timezone: Aliquam deleniti omnis.
-            title: Nulla porro necessitatibus et ab nobis.
+            timezone: Temporibus qui magnam nulla sequi dolorem expedita.
+            title: Aperiam consequatur labore est autem dicta.
             transcript_enabled: true
-            visibility: public
+            visibility: private
             youtube_upload_enabled: true
     InternalServerError:
         title: InternalServerError
@@ -2353,7 +2661,7 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users
-                example: public
+                example: meeting_hosts
                 enum:
                     - meeting_hosts
                     - meeting_participants
@@ -2365,52 +2673,38 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             description:
                 type: string
                 description: The description of the meeting
-                example: "572"
+                example: sr9
                 maxLength: 2000
             duration:
                 type: integer
                 description: The duration of the meeting in minutes
-                example: 156
+                example: 383
                 format: int64
                 minimum: 0
                 maximum: 600
             early_join_time_minutes:
                 type: integer
                 description: The number of minutes that users are allowed to join the meeting early
-                example: 53
+                example: 13
                 format: int64
                 minimum: 10
                 maximum: 60
             meeting_type:
                 type: string
                 description: The type of meeting
-                example: Other
+                example: Technical
                 enum:
                     - Board
                     - Maintainers
@@ -2432,7 +2726,7 @@ definitions:
             restricted:
                 type: boolean
                 description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
-                example: true
+                example: false
             start_time:
                 type: string
                 description: The start time of the meeting in RFC3339 format
@@ -2441,15 +2735,15 @@ definitions:
             timezone:
                 type: string
                 description: The timezone of the meeting (e.g. 'America/New_York')
-                example: Ad maiores id velit ratione et.
+                example: Tempore beatae et.
             title:
                 type: string
                 description: The title of the meeting
-                example: Perspiciatis sed est laudantium quasi officia.
+                example: Aperiam consequatur sed eveniet.
             transcript_enabled:
                 type: boolean
                 description: Whether transcription is enabled for the meeting
-                example: true
+                example: false
             visibility:
                 type: string
                 description: The visibility of the meeting's existence to other users
@@ -2465,37 +2759,45 @@ definitions:
             artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            description: ssu
-            duration: 568
-            early_join_time_minutes: 45
-            meeting_type: Legal
+                - allowed_voting_statuses:
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - allowed_voting_statuses:
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            description: zs1
+            duration: 489
+            early_join_time_minutes: 40
+            meeting_type: Technical
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            recording_enabled: true
+            recording_enabled: false
             recurrence:
-                end_date_time: "2014-04-02T05:38:16Z"
-                end_times: 120399705115706953
-                monthly_day: 7910503097266476950
-                monthly_week: 8787136186165936403
-                monthly_week_day: 9193095801292129811
-                repeat_interval: 152478627945557464
+                end_date_time: "1987-04-13T13:49:56Z"
+                end_times: 1913219190205894832
+                monthly_day: 6131235544668774105
+                monthly_week: 6089942116645938903
+                monthly_week_day: 7677655015065989947
+                repeat_interval: 7700972562276912878
                 type: 2
-                weekly_days: Quidem qui eos quae eligendi sed.
-            restricted: false
+                weekly_days: Iure dolorem nobis et nihil quia.
+            restricted: true
             start_time: "2021-01-01T00:00:00Z"
-            timezone: Consectetur quod voluptatibus in necessitatibus rerum.
-            title: Enim ut quae.
-            transcript_enabled: true
+            timezone: Corporis distinctio neque quia.
+            title: Consequatur velit aut blanditiis deleniti voluptas.
+            transcript_enabled: false
             visibility: public
             youtube_upload_enabled: false
         required:
@@ -2512,7 +2814,7 @@ definitions:
             artifact_visibility:
                 type: string
                 description: The visibility of artifacts to users
-                example: meeting_hosts
+                example: public
                 enum:
                     - meeting_hosts
                     - meeting_participants
@@ -2524,38 +2826,29 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
-                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                    - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             description:
                 type: string
                 description: The description of the meeting
-                example: u2c
+                example: kki
                 maxLength: 2000
             duration:
                 type: integer
                 description: The duration of the meeting in minutes
-                example: 419
+                example: 211
                 format: int64
                 minimum: 0
                 maximum: 600
@@ -2566,7 +2859,7 @@ definitions:
             meeting_type:
                 type: string
                 description: The type of meeting
-                example: Board
+                example: None
                 enum:
                     - Board
                     - Maintainers
@@ -2590,7 +2883,7 @@ definitions:
             restricted:
                 type: boolean
                 description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
-                example: true
+                example: false
             start_time:
                 type: string
                 description: The start time of the meeting in RFC3339 format
@@ -2599,11 +2892,11 @@ definitions:
             timezone:
                 type: string
                 description: The timezone of the meeting (e.g. 'America/New_York')
-                example: Consequatur aut aut praesentium qui.
+                example: Quia mollitia.
             title:
                 type: string
                 description: The title of the meeting
-                example: Voluptates dolore cupiditate.
+                example: Dicta est.
             transcript_enabled:
                 type: boolean
                 description: Whether transcription is enabled for the meeting
@@ -2616,31 +2909,39 @@ definitions:
                     - public
                     - private
         example:
-            artifact_visibility: public
+            artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            description: 9zo
-            duration: 524
+                - allowed_voting_statuses:
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                - allowed_voting_statuses:
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            description: xi8
+            duration: 140
             meeting_id: "12343245463"
-            meeting_type: Technical
+            meeting_type: Board
             occurrence_id: "1630560600000"
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            recording_enabled: false
+            recording_enabled: true
             restricted: true
             start_time: "2021-01-01T00:00:00Z"
-            timezone: Eligendi laudantium et voluptatem voluptatem ex.
-            title: Et aut illo deleniti.
+            timezone: Sapiente est cupiditate pariatur soluta quaerat eius.
+            title: Accusantium quaerat illum.
             transcript_enabled: false
             visibility: public
         required:
@@ -2657,16 +2958,16 @@ definitions:
             attended_occurrence_count:
                 type: integer
                 description: Number of meetings attended (read-only)
-                example: 361395044868670573
+                example: 6921597910220208893
                 format: int64
             committee_uid:
                 type: string
                 description: Committee UID (for committee registrants)
-                example: Magni molestiae esse occaecati rem recusandae architecto.
+                example: Quisquam quo voluptatibus et ducimus eos tempora.
             created_at:
                 type: string
                 description: Creation timestamp RFC3339 (read-only)
-                example: Itaque culpa commodi maiores.
+                example: Aut quod.
             created_by:
                 $ref: '#/definitions/ITXUser'
             email:
@@ -2681,7 +2982,7 @@ definitions:
             host:
                 type: boolean
                 description: Access to host key for the meeting
-                example: true
+                example: false
             job_title:
                 type: string
                 description: Job title
@@ -2689,19 +2990,19 @@ definitions:
             last_invite_delivery_description:
                 type: string
                 description: Delivery status details (read-only)
-                example: Fugit aut velit fugiat voluptas sed.
+                example: Quos esse officia necessitatibus aliquid.
             last_invite_delivery_status:
                 type: string
                 description: delivered or failed (read-only)
-                example: Soluta officiis in et reiciendis rerum quam.
+                example: Ea omnis quo velit enim tempora.
             last_invite_received_message_id:
                 type: string
                 description: Last email message ID (read-only)
-                example: Officiis aut sint aperiam beatae et.
+                example: Perferendis placeat qui perspiciatis ea maiores.
             last_invite_received_time:
                 type: string
                 description: Last invite timestamp RFC3339 (read-only)
-                example: Qui tenetur.
+                example: Alias sunt sed quasi porro neque.
             last_name:
                 type: string
                 description: Last name (required with email)
@@ -2709,7 +3010,7 @@ definitions:
             modified_at:
                 type: string
                 description: Last modified timestamp RFC3339 (read-only)
-                example: Provident molestias ducimus itaque quaerat voluptatibus magni.
+                example: Iusto velit.
             occurrence:
                 type: string
                 description: Specific occurrence ID (blank = all occurrences)
@@ -2721,23 +3022,23 @@ definitions:
             profile_picture:
                 type: string
                 description: Profile picture URL
-                example: Qui impedit.
+                example: Dolor repudiandae sint tenetur.
             total_occurrence_count:
                 type: integer
                 description: Total meetings registered (read-only)
-                example: 1444691900176572212
+                example: 3031893627797633945
                 format: int64
             type:
                 type: string
                 description: 'Registrant type: direct or committee (read-only)'
-                example: committee
+                example: direct
                 enum:
                     - direct
                     - committee
             uid:
                 type: string
                 description: Registrant UID (read-only)
-                example: Omnis consequatur voluptas sapiente.
+                example: Quaerat minima.
             updated_by:
                 $ref: '#/definitions/ITXUser'
             username:
@@ -2745,9 +3046,9 @@ definitions:
                 description: LF username
                 example: testuser
         example:
-            attended_occurrence_count: 1141348464539120259
-            committee_uid: Occaecati reprehenderit possimus unde aut dicta quod.
-            created_at: Officia maiores.
+            attended_occurrence_count: 6750343470494421951
+            committee_uid: Laboriosam ea qui quia maiores.
+            created_at: Alias asperiores.
             created_by:
                 email: john.doe@example.com
                 name: John Doe
@@ -2757,18 +3058,18 @@ definitions:
             first_name: Bob
             host: false
             job_title: developer
-            last_invite_delivery_description: Ipsum voluptatem ut voluptas.
-            last_invite_delivery_status: Ut magnam.
-            last_invite_received_message_id: Tenetur aliquid est voluptas.
-            last_invite_received_time: Repudiandae dolores explicabo minima est.
+            last_invite_delivery_description: Rerum a aut blanditiis illum praesentium magni.
+            last_invite_delivery_status: Voluptatem ut minus vel qui animi.
+            last_invite_received_message_id: Eaque aut distinctio magnam.
+            last_invite_received_time: Totam officiis enim veritatis est ducimus sed.
             last_name: Smith
-            modified_at: At itaque qui.
+            modified_at: Labore vel expedita eos aperiam ut aliquam.
             occurrence: "1666848600"
             org: google
-            profile_picture: Quasi non ut repudiandae quia et eligendi.
-            total_occurrence_count: 1026675683919953968
+            profile_picture: Dolore omnis fugiat.
+            total_occurrence_count: 3636232356948027987
             type: committee
-            uid: Temporibus rerum quidem voluptatem est nobis optio.
+            uid: Qui ut quisquam debitis sint voluptatem repellendus.
             updated_by:
                 email: john.doe@example.com
                 name: John Doe
@@ -2783,7 +3084,7 @@ definitions:
                 type: array
                 items:
                     type: string
-                    example: Sed magni.
+                    example: Natus minus voluptas ut corrupti.
                 description: Registrant IDs to exclude from resend
                 example:
                     - reg123
@@ -2811,40 +3112,48 @@ definitions:
                 description: The committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    - allowed_voting_statuses:
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    - allowed_voting_statuses:
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             description:
                 type: string
                 description: The description of the meeting
-                example: 8my
+                example: hkp
                 maxLength: 2000
             duration:
                 type: integer
                 description: The duration of the meeting in minutes
-                example: 385
+                example: 571
                 format: int64
                 minimum: 0
                 maximum: 600
             early_join_time_minutes:
                 type: integer
                 description: The number of minutes that users are allowed to join the meeting early
-                example: 59
+                example: 43
                 format: int64
                 minimum: 10
                 maximum: 60
             meeting_type:
                 type: string
                 description: The type of meeting
-                example: Maintainers
+                example: Technical
                 enum:
                     - Board
                     - Maintainers
@@ -2860,13 +3169,13 @@ definitions:
             recording_enabled:
                 type: boolean
                 description: Whether recording is enabled for the meeting
-                example: true
+                example: false
             recurrence:
                 $ref: '#/definitions/Recurrence'
             restricted:
                 type: boolean
                 description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
-                example: true
+                example: false
             start_time:
                 type: string
                 description: The start time of the meeting in RFC3339 format
@@ -2875,11 +3184,11 @@ definitions:
             timezone:
                 type: string
                 description: The timezone of the meeting (e.g. 'America/New_York')
-                example: Dolores quam officia provident perspiciatis nihil tenetur.
+                example: Suscipit ipsam accusamus.
             title:
                 type: string
                 description: The title of the meeting
-                example: Corporis molestiae qui et ratione mollitia nemo.
+                example: Perspiciatis fuga omnis recusandae autem.
             transcript_enabled:
                 type: boolean
                 description: Whether transcription is enabled for the meeting
@@ -2887,63 +3196,54 @@ definitions:
             visibility:
                 type: string
                 description: The visibility of the meeting's existence to other users
-                example: public
+                example: private
                 enum:
                     - public
                     - private
             youtube_upload_enabled:
                 type: boolean
                 description: Whether automatic youtube uploading is enabled for the meeting
-                example: true
+                example: false
         example:
             artifact_visibility: meeting_participants
             committees:
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-                - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
-                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            description: i6s
-            duration: 192
+            description: 5h1
+            duration: 103
             early_join_time_minutes: 18
-            meeting_type: None
+            meeting_type: Legal
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: true
             recurrence:
-                end_date_time: "2014-04-02T05:38:16Z"
-                end_times: 120399705115706953
-                monthly_day: 7910503097266476950
-                monthly_week: 8787136186165936403
-                monthly_week_day: 9193095801292129811
-                repeat_interval: 152478627945557464
+                end_date_time: "1987-04-13T13:49:56Z"
+                end_times: 1913219190205894832
+                monthly_day: 6131235544668774105
+                monthly_week: 6089942116645938903
+                monthly_week_day: 7677655015065989947
+                repeat_interval: 7700972562276912878
                 type: 2
-                weekly_days: Quidem qui eos quae eligendi sed.
-            restricted: false
+                weekly_days: Iure dolorem nobis et nihil quia.
+            restricted: true
             start_time: "2021-01-01T00:00:00Z"
-            timezone: Ex qui quaerat perspiciatis.
-            title: Natus doloribus et labore esse.
+            timezone: Molestiae esse occaecati rem.
+            title: Et omnis consequatur voluptas sapiente qui.
             transcript_enabled: true
             visibility: private
-            youtube_upload_enabled: true
+            youtube_upload_enabled: false
         required:
             - project_uid
             - title
@@ -2958,7 +3258,7 @@ definitions:
             agenda:
                 type: string
                 description: Meeting agenda/description
-                example: Expedita voluptatem ut minus vel qui animi.
+                example: Sed asperiores ipsa eveniet sed.
             duration:
                 type: integer
                 description: Meeting duration in minutes
@@ -2975,21 +3275,21 @@ definitions:
             topic:
                 type: string
                 description: Meeting topic/title
-                example: Aut distinctio.
+                example: Blanditiis qui explicabo quae quae.
         example:
-            agenda: Alias asperiores.
+            agenda: Sint odio.
             duration: 60
             recurrence:
-                end_date_time: "2014-04-02T05:38:16Z"
-                end_times: 120399705115706953
-                monthly_day: 7910503097266476950
-                monthly_week: 8787136186165936403
-                monthly_week_day: 9193095801292129811
-                repeat_interval: 152478627945557464
+                end_date_time: "1987-04-13T13:49:56Z"
+                end_times: 1913219190205894832
+                monthly_day: 6131235544668774105
+                monthly_week: 6089942116645938903
+                monthly_week_day: 7677655015065989947
+                repeat_interval: 7700972562276912878
                 type: 2
-                weekly_days: Quidem qui eos quae eligendi sed.
+                weekly_days: Iure dolorem nobis et nihil quia.
             start_time: "2024-01-15T10:00:00Z"
-            topic: Rerum a aut blanditiis illum praesentium magni.
+            topic: Molestiae et facilis.
     MeetingServiceUpdateItxPastMeetingRequestBody:
         title: MeetingServiceUpdateItxPastMeetingRequestBody
         type: object
@@ -2997,7 +3297,7 @@ definitions:
             artifact_visibility:
                 type: string
                 description: Visibility of meeting artifacts (recordings, transcripts)
-                example: public
+                example: meeting_hosts
                 enum:
                     - meeting_hosts
                     - meeting_participants
@@ -3009,27 +3309,29 @@ definitions:
                 description: Committees associated with the meeting
                 example:
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
-                        - Quos ea.
-                        - Adipisci fuga dolor dolor minima.
-                        - Porro nostrum adipisci.
-                        - Autem esse expedita adipisci reprehenderit id officia.
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    - allowed_voting_statuses:
+                        - Nisi explicabo eos.
+                        - Odit ut assumenda maxime aut occaecati.
+                        - Non fuga.
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             description:
                 type: string
                 description: Meeting description/agenda
-                example: Iste sed sunt.
+                example: Laboriosam enim sit autem consequatur.
             duration:
                 type: integer
                 description: Meeting duration in minutes
@@ -3062,7 +3364,7 @@ definitions:
             restricted:
                 type: boolean
                 description: Whether the meeting is restricted
-                example: true
+                example: false
             start_time:
                 type: string
                 description: Meeting start time in RFC3339 format
@@ -3075,11 +3377,11 @@ definitions:
             title:
                 type: string
                 description: Meeting title/topic
-                example: Quos aliquam.
+                example: Dolor voluptatem id amet.
             transcript_enabled:
                 type: boolean
                 description: Whether transcript is enabled
-                example: false
+                example: true
             visibility:
                 type: string
                 description: Meeting visibility
@@ -3088,45 +3390,88 @@ definitions:
                     - public
                     - private
         example:
-            artifact_visibility: public
+            artifact_visibility: meeting_hosts
             committees:
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
-                    - Quos ea.
-                    - Adipisci fuga dolor dolor minima.
-                    - Porro nostrum adipisci.
-                    - Autem esse expedita adipisci reprehenderit id officia.
+                    - Nisi explicabo eos.
+                    - Odit ut assumenda maxime aut occaecati.
+                    - Non fuga.
                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            description: Laboriosam fugit doloremque a.
+            description: Magnam sed et.
             duration: 60
             meeting_id: "12343245463"
             meeting_type: regular
             occurrence_id: "1630560600000"
             project_uid: a09eaa48-231b-43e5-93ba-91c2e0a0e5f1
-            recording_enabled: false
-            restricted: false
+            recording_enabled: true
+            restricted: true
             start_time: "2024-01-15T10:00:00Z"
             timezone: UTC
-            title: Reprehenderit voluptate qui ipsa est sint.
-            transcript_enabled: false
-            visibility: private
+            title: Alias voluptates veritatis praesentium deserunt.
+            transcript_enabled: true
+            visibility: public
+    MeetingServiceUpdateItxPastMeetingSummaryRequestBody:
+        title: MeetingServiceUpdateItxPastMeetingSummaryRequestBody
+        type: object
+        properties:
+            approved:
+                type: boolean
+                description: Approval status
+                example: true
+            edited_next_steps:
+                type: array
+                items:
+                    type: string
+                    example: Aliquam vitae dolore.
+                description: Edited next steps
+                example:
+                    - Excepturi nulla quia aliquam neque quasi.
+                    - Fugiat quis qui quam explicabo.
+                    - Porro iste non commodi sint sed est.
+            edited_summary_details:
+                type: array
+                items:
+                    $ref: '#/definitions/ZoomMeetingSummaryDetails'
+                description: Edited summary details
+                example:
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+                    - label: Discussion Topics
+                      summary: The team discussed the project roadmap and upcoming milestones
+            edited_summary_overview:
+                type: string
+                description: Edited summary overview
+                example: Delectus excepturi iste non sed.
+        example:
+            approved: false
+            edited_next_steps:
+                - Et dicta nemo.
+                - Cupiditate tempora voluptatem inventore in officia.
+            edited_summary_details:
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+                - label: Discussion Topics
+                  summary: The team discussed the project roadmap and upcoming milestones
+            edited_summary_overview: Cupiditate perferendis quam alias animi.
     MeetingServiceUpdateItxRegistrantRequestBody:
         title: MeetingServiceUpdateItxRegistrantRequestBody
         type: object
@@ -3134,16 +3479,16 @@ definitions:
             attended_occurrence_count:
                 type: integer
                 description: Number of meetings attended (read-only)
-                example: 329474305011486173
+                example: 3660876398910389929
                 format: int64
             committee_uid:
                 type: string
                 description: Committee UID (for committee registrants)
-                example: Ad sit voluptatem delectus.
+                example: Optio dignissimos animi molestiae autem vero ut.
             created_at:
                 type: string
                 description: Creation timestamp RFC3339 (read-only)
-                example: Sint tenetur eligendi ut voluptatem dolorum alias.
+                example: Repudiandae pariatur aut necessitatibus molestias et sunt.
             created_by:
                 $ref: '#/definitions/ITXUser'
             email:
@@ -3166,19 +3511,19 @@ definitions:
             last_invite_delivery_description:
                 type: string
                 description: Delivery status details (read-only)
-                example: Et ducimus eos tempora quis dolor.
+                example: Facilis dolor.
             last_invite_delivery_status:
                 type: string
                 description: delivered or failed (read-only)
-                example: Inventore quisquam quo.
+                example: Sequi et consequatur aut aut praesentium qui.
             last_invite_received_message_id:
                 type: string
                 description: Last email message ID (read-only)
-                example: In quaerat minima.
+                example: Molestiae magnam dolor mollitia neque ducimus voluptate.
             last_invite_received_time:
                 type: string
                 description: Last invite timestamp RFC3339 (read-only)
-                example: Rerum officiis.
+                example: Optio iusto et voluptatem.
             last_name:
                 type: string
                 description: Last name (required with email)
@@ -3186,7 +3531,7 @@ definitions:
             modified_at:
                 type: string
                 description: Last modified timestamp RFC3339 (read-only)
-                example: Sed quasi porro.
+                example: Voluptates dolore cupiditate.
             occurrence:
                 type: string
                 description: Specific occurrence ID (blank = all occurrences)
@@ -3198,23 +3543,23 @@ definitions:
             profile_picture:
                 type: string
                 description: Profile picture URL
-                example: Sint qui et accusantium qui ipsum.
+                example: Dolor consequatur sint rerum.
             total_occurrence_count:
                 type: integer
                 description: Total meetings registered (read-only)
-                example: 4785356923257814647
+                example: 3479749702017009458
                 format: int64
             type:
                 type: string
                 description: 'Registrant type: direct or committee (read-only)'
-                example: direct
+                example: committee
                 enum:
                     - direct
                     - committee
             uid:
                 type: string
                 description: Registrant UID (read-only)
-                example: Dolores ea autem.
+                example: Est eligendi itaque molestiae eum.
             updated_by:
                 $ref: '#/definitions/ITXUser'
             username:
@@ -3222,9 +3567,9 @@ definitions:
                 description: LF username
                 example: testuser
         example:
-            attended_occurrence_count: 8403210733898086714
-            committee_uid: Ea omnis quo velit enim tempora.
-            created_at: Repudiandae et.
+            attended_occurrence_count: 6038322049554811667
+            committee_uid: Ex sapiente laudantium ipsum velit quod minus.
+            created_at: Corrupti nemo iure perferendis voluptas ut.
             created_by:
                 email: john.doe@example.com
                 name: John Doe
@@ -3234,18 +3579,18 @@ definitions:
             first_name: Bob
             host: false
             job_title: developer
-            last_invite_delivery_description: Qui quia maiores veniam dolore omnis.
-            last_invite_delivery_status: Sint laboriosam.
-            last_invite_received_message_id: Qui ut quisquam debitis sint voluptatem repellendus.
-            last_invite_received_time: Iusto velit.
+            last_invite_delivery_description: Assumenda laboriosam fugit doloremque.
+            last_invite_delivery_status: Sit reprehenderit voluptate qui ipsa est.
+            last_invite_received_message_id: Assumenda molestiae quam odio ut quae.
+            last_invite_received_time: Aliquam officiis iste sed.
             last_name: Smith
-            modified_at: Repellat totam officiis enim veritatis est.
+            modified_at: Expedita quis ipsum aut consequatur.
             occurrence: "1666848600"
             org: google
-            profile_picture: Quos esse officia necessitatibus aliquid.
-            total_occurrence_count: 2062714596679842888
-            type: direct
-            uid: Natus perferendis placeat qui perspiciatis ea.
+            profile_picture: Perspiciatis eum necessitatibus error voluptate et aut.
+            total_occurrence_count: 968994798372449513
+            type: committee
+            uid: Temporibus eligendi laudantium et.
             updated_by:
                 email: john.doe@example.com
                 name: John Doe
@@ -3278,32 +3623,32 @@ definitions:
             end_date_time:
                 type: string
                 description: End date/time in RFC3339
-                example: "2013-01-28T17:23:56Z"
+                example: "1977-09-25T20:34:17Z"
                 format: date-time
             end_times:
                 type: integer
                 description: Number of occurrences
-                example: 8147032454990676392
+                example: 1256677810044658796
                 format: int64
             monthly_day:
                 type: integer
                 description: Day of month for monthly recurrence
-                example: 3786683990616017545
+                example: 2520336585234319711
                 format: int64
             monthly_week:
                 type: integer
                 description: Week of month for monthly recurrence
-                example: 2368020361800503641
+                example: 3573593765792481710
                 format: int64
             monthly_week_day:
                 type: integer
                 description: Day of week for monthly recurrence
-                example: 8254097039850669108
+                example: 5633685267848683469
                 format: int64
             repeat_interval:
                 type: integer
                 description: Repeat interval
-                example: 3556866464011747935
+                example: 9126944254672570075
                 format: int64
             type:
                 type: integer
@@ -3317,17 +3662,17 @@ definitions:
             weekly_days:
                 type: string
                 description: Days of week for weekly recurrence
-                example: Maiores excepturi.
+                example: Est molestias eligendi nulla porro necessitatibus et.
         description: Meeting recurrence settings
         example:
-            end_date_time: "1982-02-16T02:33:37Z"
-            end_times: 3580906016053923780
-            monthly_day: 6495198376186248545
-            monthly_week: 7700406239905879970
-            monthly_week_day: 8318910668245858315
-            repeat_interval: 3586681468407806611
+            end_date_time: "1995-06-30T12:19:39Z"
+            end_times: 7745598002265691970
+            monthly_day: 5463535017881637253
+            monthly_week: 3402617053354171035
+            monthly_week_day: 5154606006362721936
+            repeat_interval: 8938781769015742132
             type: 2
-            weekly_days: Sit quia quasi dolor facilis exercitationem rem.
+            weekly_days: Voluptates mollitia explicabo aperiam in.
     ServiceUnavailableError:
         title: ServiceUnavailableError
         type: object
@@ -3366,6 +3711,22 @@ definitions:
         required:
             - code
             - message
+    ZoomMeetingSummaryDetails:
+        title: ZoomMeetingSummaryDetails
+        type: object
+        properties:
+            label:
+                type: string
+                description: Section label
+                example: Discussion Topics
+            summary:
+                type: string
+                description: Section summary text
+                example: The team discussed the project roadmap and upcoming milestones
+        description: A section of a Zoom meeting AI summary
+        example:
+            label: Discussion Topics
+            summary: The team discussed the project roadmap and upcoming milestones
 securityDefinitions:
     jwt_header_Authorization:
         type: apiKey

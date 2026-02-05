@@ -349,3 +349,84 @@ var ITXPastZoomMeeting = Type("ITXPastZoomMeeting", func() {
 	Attribute("is_manually_created", Boolean, "Whether past meeting was manually created")
 })
 
+// ZoomMeetingSummaryDetails represents a section of a meeting summary
+var ZoomMeetingSummaryDetails = Type("ZoomMeetingSummaryDetails", func() {
+	Description("A section of a Zoom meeting AI summary")
+	Attribute("label", String, "Section label", func() {
+		Example("Discussion Topics")
+	})
+	Attribute("summary", String, "Section summary text", func() {
+		Example("The team discussed the project roadmap and upcoming milestones")
+	})
+})
+
+// ITXPastMeetingSummary represents a past meeting AI summary from ITX
+var ITXPastMeetingSummary = Type("ITXPastMeetingSummary", func() {
+	Description("Past meeting AI summary from ITX API proxy")
+
+	// Identifiers (read-only)
+	Attribute("id", String, "Summary UUID", func() {
+		Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+		Format(FormatUUID)
+	})
+	Attribute("meeting_and_occurrence_id", String, "Past meeting ID (meeting_id-occurrence_id)", func() {
+		Example("12343245463-1630560600000")
+	})
+	Attribute("meeting_id", String, "Zoom meeting ID", func() {
+		Example("12343245463")
+	})
+	Attribute("occurrence_id", String, "Zoom occurrence ID (Unix timestamp)", func() {
+		Example("1630560600000")
+	})
+	Attribute("zoom_meeting_uuid", String, "Zoom meeting UUID")
+
+	// Summary metadata
+	Attribute("summary_created_time", String, "When summary was created (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:30:00Z")
+	})
+	Attribute("summary_last_modified_time", String, "When summary was last modified (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:35:00Z")
+	})
+	Attribute("summary_start_time", String, "Summary period start time (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:30:00Z")
+	})
+	Attribute("summary_end_time", String, "Summary period end time (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T06:30:00Z")
+	})
+
+	// Original Zoom AI summary
+	Attribute("summary_title", String, "Summary title from Zoom AI", func() {
+		Example("Weekly Team Sync")
+	})
+	Attribute("summary_overview", String, "Summary overview from Zoom AI")
+	Attribute("summary_details", ArrayOf(ZoomMeetingSummaryDetails), "Summary details from Zoom AI")
+	Attribute("next_steps", ArrayOf(String), "Next steps from Zoom AI", func() {
+		Example([]string{"Complete project documentation", "Schedule follow-up meeting"})
+	})
+
+	// Edited versions
+	Attribute("edited_summary_overview", String, "Edited summary overview")
+	Attribute("edited_summary_details", ArrayOf(ZoomMeetingSummaryDetails), "Edited summary details")
+	Attribute("edited_next_steps", ArrayOf(String), "Edited next steps")
+
+	// Approval workflow
+	Attribute("requires_approval", Boolean, "Whether approval is required")
+	Attribute("approved", Boolean, "Whether summary has been approved")
+
+	// Audit fields (read-only)
+	Attribute("created_at", String, "Creation timestamp (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:30:00Z")
+	})
+	Attribute("created_by", ITXUser, "Creator user info")
+	Attribute("modified_at", String, "Last modified timestamp (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:35:00Z")
+	})
+	Attribute("modified_by", ITXUser, "Last modifier user info")
+})
+

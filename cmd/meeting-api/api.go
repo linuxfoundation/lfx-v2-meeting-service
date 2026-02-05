@@ -19,10 +19,11 @@ import (
 
 // MeetingsAPI implements the meetingsvc.Service interface
 type MeetingsAPI struct {
-	authService           *service.AuthService
-	itxMeetingService     *itxservice.MeetingService
-	itxRegistrantService  *itxservice.RegistrantService
-	itxPastMeetingService *itxservice.PastMeetingService
+	authService                  *service.AuthService
+	itxMeetingService            *itxservice.MeetingService
+	itxRegistrantService         *itxservice.RegistrantService
+	itxPastMeetingService        *itxservice.PastMeetingService
+	itxPastMeetingSummaryService *itxservice.PastMeetingSummaryService
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
@@ -31,12 +32,14 @@ func NewMeetingsAPI(
 	itxMeetingService *itxservice.MeetingService,
 	itxRegistrantService *itxservice.RegistrantService,
 	itxPastMeetingService *itxservice.PastMeetingService,
+	itxPastMeetingSummaryService *itxservice.PastMeetingSummaryService,
 ) *MeetingsAPI {
 	return &MeetingsAPI{
-		authService:           authService,
-		itxMeetingService:     itxMeetingService,
-		itxRegistrantService:  itxRegistrantService,
-		itxPastMeetingService: itxPastMeetingService,
+		authService:                  authService,
+		itxMeetingService:            itxMeetingService,
+		itxRegistrantService:         itxRegistrantService,
+		itxPastMeetingService:        itxPastMeetingService,
+		itxPastMeetingSummaryService: itxPastMeetingSummaryService,
 	}
 }
 

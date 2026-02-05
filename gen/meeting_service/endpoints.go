@@ -38,6 +38,8 @@ type Endpoints struct {
 	GetItxPastMeeting             goa.Endpoint
 	DeleteItxPastMeeting          goa.Endpoint
 	UpdateItxPastMeeting          goa.Endpoint
+	GetItxPastMeetingSummary      goa.Endpoint
+	UpdateItxPastMeetingSummary   goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -68,6 +70,8 @@ func NewEndpoints(s Service) *Endpoints {
 		GetItxPastMeeting:             NewGetItxPastMeetingEndpoint(s, a.JWTAuth),
 		DeleteItxPastMeeting:          NewDeleteItxPastMeetingEndpoint(s, a.JWTAuth),
 		UpdateItxPastMeeting:          NewUpdateItxPastMeetingEndpoint(s, a.JWTAuth),
+		GetItxPastMeetingSummary:      NewGetItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
+		UpdateItxPastMeetingSummary:   NewUpdateItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -96,6 +100,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetItxPastMeeting = m(e.GetItxPastMeeting)
 	e.DeleteItxPastMeeting = m(e.DeleteItxPastMeeting)
 	e.UpdateItxPastMeeting = m(e.UpdateItxPastMeeting)
+	e.GetItxPastMeetingSummary = m(e.GetItxPastMeetingSummary)
+	e.UpdateItxPastMeetingSummary = m(e.UpdateItxPastMeetingSummary)
 }
 
 // NewReadyzEndpoint returns an endpoint function that calls the method
@@ -574,5 +580,52 @@ func NewUpdateItxPastMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) 
 			return nil, err
 		}
 		return s.UpdateItxPastMeeting(ctx, p)
+	}
+}
+
+// NewGetItxPastMeetingSummaryEndpoint returns an endpoint function that calls
+// the method "get-itx-past-meeting-summary" of service "Meeting Service".
+func NewGetItxPastMeetingSummaryEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxPastMeetingSummaryPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxPastMeetingSummary(ctx, p)
+	}
+}
+
+// NewUpdateItxPastMeetingSummaryEndpoint returns an endpoint function that
+// calls the method "update-itx-past-meeting-summary" of service "Meeting
+// Service".
+func NewUpdateItxPastMeetingSummaryEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdateItxPastMeetingSummaryPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.UpdateItxPastMeetingSummary(ctx, p)
 	}
 }

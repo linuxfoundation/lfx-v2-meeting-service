@@ -37,10 +37,12 @@ type Client struct {
 	GetItxPastMeetingEndpoint             goa.Endpoint
 	DeleteItxPastMeetingEndpoint          goa.Endpoint
 	UpdateItxPastMeetingEndpoint          goa.Endpoint
+	GetItxPastMeetingSummaryEndpoint      goa.Endpoint
+	UpdateItxPastMeetingSummaryEndpoint   goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary goa.Endpoint) *Client {
 	return &Client{
 		ReadyzEndpoint:                        readyz,
 		LivezEndpoint:                         livez,
@@ -64,6 +66,8 @@ func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting,
 		GetItxPastMeetingEndpoint:             getItxPastMeeting,
 		DeleteItxPastMeetingEndpoint:          deleteItxPastMeeting,
 		UpdateItxPastMeetingEndpoint:          updateItxPastMeeting,
+		GetItxPastMeetingSummaryEndpoint:      getItxPastMeetingSummary,
+		UpdateItxPastMeetingSummaryEndpoint:   updateItxPastMeetingSummary,
 	}
 }
 
@@ -431,4 +435,42 @@ func (c *Client) UpdateItxPastMeeting(ctx context.Context, p *UpdateItxPastMeeti
 		return
 	}
 	return ires.(*ITXPastZoomMeeting), nil
+}
+
+// GetItxPastMeetingSummary calls the "get-itx-past-meeting-summary" endpoint
+// of the "Meeting Service" service.
+// GetItxPastMeetingSummary may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Summary not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxPastMeetingSummary(ctx context.Context, p *GetItxPastMeetingSummaryPayload) (res *ITXPastMeetingSummary, err error) {
+	var ires any
+	ires, err = c.GetItxPastMeetingSummaryEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXPastMeetingSummary), nil
+}
+
+// UpdateItxPastMeetingSummary calls the "update-itx-past-meeting-summary"
+// endpoint of the "Meeting Service" service.
+// UpdateItxPastMeetingSummary may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Summary not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateItxPastMeetingSummary(ctx context.Context, p *UpdateItxPastMeetingSummaryPayload) (res *ITXPastMeetingSummary, err error) {
+	var ires any
+	ires, err = c.UpdateItxPastMeetingSummaryEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXPastMeetingSummary), nil
 }
