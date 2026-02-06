@@ -6,12 +6,12 @@ package itx
 // CreateZoomMeetingRequest represents the request to create a Zoom meeting in ITX
 type CreateZoomMeetingRequest struct {
 	// Core fields (required)
-	Project    string `json:"project"`              // LFX project ID
-	Topic      string `json:"topic"`                // Meeting title
-	StartTime  string `json:"start_time"`           // RFC3339 format
-	Duration   int    `json:"duration"`             // Minutes
-	Timezone   string `json:"timezone"`             // IANA timezone
-	Visibility string `json:"visibility"`           // "public" or "private"
+	Project    string `json:"project"`    // LFX project ID
+	Topic      string `json:"topic"`      // Meeting title
+	StartTime  string `json:"start_time"` // RFC3339 format
+	Duration   int    `json:"duration"`   // Minutes
+	Timezone   string `json:"timezone"`   // IANA timezone
+	Visibility string `json:"visibility"` // "public" or "private"
 
 	// Optional core fields
 	Agenda     string `json:"agenda,omitempty"`
@@ -43,14 +43,14 @@ type CreateZoomMeetingRequest struct {
 	AutoEmailReminderTime    int  `json:"auto_email_reminder_time,omitempty"` // 120-1440 minutes
 
 	// Advanced
-	MailingListGroupIDs []string     `json:"mailing_list_group_ids,omitempty"`
-	Recurrence          *Recurrence  `json:"recurrence,omitempty"`
+	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`
+	Recurrence          *Recurrence `json:"recurrence,omitempty"`
 }
 
 // Committee represents a committee associated with a meeting
 type Committee struct {
 	ID            string   `json:"id"`
-	Filters       []string `json:"filters,omitempty"`        // voting_rep, alt_voting_rep, observer, emeritus
+	Filters       []string `json:"filters,omitempty"` // voting_rep, alt_voting_rep, observer, emeritus
 	VotingEnabled bool     `json:"voting_enabled,omitempty"`
 }
 
@@ -103,13 +103,13 @@ type ZoomMeetingResponse struct {
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
 
 	// Read-only fields (set by ITX)
-	ID                      string       `json:"id"`                        // Zoom meeting ID
-	HostKey                 string       `json:"host_key"`                  // 6-digit PIN
-	Passcode                string       `json:"passcode"`                  // Zoom passcode
-	Password                string       `json:"password"`                  // UUID for join page
-	PublicLink              string       `json:"public_link"`               // Public meeting URL
-	CreatedAt               string       `json:"created_at"`                // RFC3339
-	ModifiedAt              string       `json:"modified_at"`               // RFC3339
+	ID                      string       `json:"id"`          // Zoom meeting ID
+	HostKey                 string       `json:"host_key"`    // 6-digit PIN
+	Passcode                string       `json:"passcode"`    // Zoom passcode
+	Password                string       `json:"password"`    // UUID for join page
+	PublicLink              string       `json:"public_link"` // Public meeting URL
+	CreatedAt               string       `json:"created_at"`  // RFC3339
+	ModifiedAt              string       `json:"modified_at"` // RFC3339
 	CreatedBy               *User        `json:"created_by,omitempty"`
 	UpdatedBy               *User        `json:"updated_by,omitempty"`
 	Occurrences             []Occurrence `json:"occurrences,omitempty"`
@@ -128,10 +128,10 @@ type User struct {
 
 // Occurrence represents a single occurrence of a recurring meeting
 type Occurrence struct {
-	OccurrenceID    string `json:"occurrence_id"`              // Unix timestamp
-	StartTime       string `json:"start_time"`                 // RFC3339
-	Duration        int    `json:"duration"`                   // Minutes
-	Status          string `json:"status"`                     // "available" or "cancel"
+	OccurrenceID    string `json:"occurrence_id"` // Unix timestamp
+	StartTime       string `json:"start_time"`    // RFC3339
+	Duration        int    `json:"duration"`      // Minutes
+	Status          string `json:"status"`        // "available" or "cancel"
 	RegistrantCount int    `json:"registrant_count,omitempty"`
 	Topic           string `json:"topic,omitempty"`
 	Agenda          string `json:"agenda,omitempty"`
@@ -213,12 +213,12 @@ type ResendMeetingInvitationsRequest struct {
 
 // UpdateOccurrenceRequest represents the request to update a meeting occurrence
 type UpdateOccurrenceRequest struct {
-	StartTime  string       `json:"start_time,omitempty"` // Meeting start time in RFC3339 format
-	Duration   int          `json:"duration,omitempty"`   // Meeting duration in minutes
-	Topic      string       `json:"topic,omitempty"`      // Meeting topic/title
-	Agenda     string       `json:"agenda,omitempty"`     // Meeting agenda/description
-	Recurrence *Recurrence  `json:"recurrence,omitempty"` // Recurrence settings
-	UpdatedBy  *User        `json:"updated_by,omitempty"` // User updating the occurrence (read-only, set by API)
+	StartTime  string      `json:"start_time,omitempty"` // Meeting start time in RFC3339 format
+	Duration   int         `json:"duration,omitempty"`   // Meeting duration in minutes
+	Topic      string      `json:"topic,omitempty"`      // Meeting topic/title
+	Agenda     string      `json:"agenda,omitempty"`     // Meeting agenda/description
+	Recurrence *Recurrence `json:"recurrence,omitempty"` // Recurrence settings
+	UpdatedBy  *User       `json:"updated_by,omitempty"` // User updating the occurrence (read-only, set by API)
 }
 
 // CreatePastMeetingRequest represents the request to create a past meeting
@@ -232,18 +232,18 @@ type CreatePastMeetingRequest struct {
 	Timezone     string `json:"timezone"`      // Meeting timezone
 
 	// Optional fields
-	Topic               string      `json:"topic,omitempty"`         // Meeting title/topic
-	Agenda              string      `json:"agenda,omitempty"`        // Meeting description/agenda
-	Restricted          bool        `json:"restricted,omitempty"`    // Whether meeting was restricted
-	Committees          []Committee `json:"committees,omitempty"`    // Associated committees
-	CommitteeID         string      `json:"committee_id,omitempty"`  // Single committee ID
-	CommitteeFilters    []string    `json:"committee_filters,omitempty"` // Committee member filters
-	MeetingType         string      `json:"meeting_type,omitempty"`  // Meeting type
-	RecordingEnabled    bool        `json:"recording_enabled,omitempty"` // Was recording enabled
-	RecordingAccess     string      `json:"recording_access,omitempty"`  // Who can access recordings
-	TranscriptEnabled   bool        `json:"transcript_enabled,omitempty"` // Was transcription enabled
-	TranscriptAccess    string      `json:"transcript_access,omitempty"`  // Who can access transcripts
-	Visibility          string      `json:"visibility,omitempty"` // Meeting visibility (public/private)
+	Topic             string      `json:"topic,omitempty"`              // Meeting title/topic
+	Agenda            string      `json:"agenda,omitempty"`             // Meeting description/agenda
+	Restricted        bool        `json:"restricted,omitempty"`         // Whether meeting was restricted
+	Committees        []Committee `json:"committees,omitempty"`         // Associated committees
+	CommitteeID       string      `json:"committee_id,omitempty"`       // Single committee ID
+	CommitteeFilters  []string    `json:"committee_filters,omitempty"`  // Committee member filters
+	MeetingType       string      `json:"meeting_type,omitempty"`       // Meeting type
+	RecordingEnabled  bool        `json:"recording_enabled,omitempty"`  // Was recording enabled
+	RecordingAccess   string      `json:"recording_access,omitempty"`   // Who can access recordings
+	TranscriptEnabled bool        `json:"transcript_enabled,omitempty"` // Was transcription enabled
+	TranscriptAccess  string      `json:"transcript_access,omitempty"`  // Who can access transcripts
+	Visibility        string      `json:"visibility,omitempty"`         // Meeting visibility (public/private)
 }
 
 // PastMeetingResponse represents the response from creating/retrieving a past meeting
@@ -261,7 +261,7 @@ type PastMeetingResponse struct {
 	Duration   int    `json:"duration"`             // Meeting duration in minutes
 	Timezone   string `json:"timezone"`             // Meeting timezone
 	Visibility string `json:"visibility,omitempty"` // Meeting visibility
-	Restricted bool   `json:"restricted,omitempty"` // Whether meeting was restricted
+	Restricted bool   `json:"restricted"`           // Whether meeting was restricted
 
 	// Committee association
 	Committees       []Committee `json:"committees,omitempty"`        // Associated committees
@@ -272,10 +272,10 @@ type PastMeetingResponse struct {
 	MeetingType string `json:"meeting_type,omitempty"` // Type of meeting
 
 	// Recording/Transcript settings
-	RecordingEnabled  bool   `json:"recording_enabled,omitempty"`  // Was recording enabled
-	RecordingAccess   string `json:"recording_access,omitempty"`   // Who can access recordings
-	TranscriptEnabled bool   `json:"transcript_enabled,omitempty"` // Was transcription enabled
-	TranscriptAccess  string `json:"transcript_access,omitempty"`  // Who can access transcripts
+	RecordingEnabled  bool   `json:"recording_enabled"`           // Was recording enabled
+	RecordingAccess   string `json:"recording_access,omitempty"`  // Who can access recordings
+	TranscriptEnabled bool   `json:"transcript_enabled"`          // Was transcription enabled
+	TranscriptAccess  string `json:"transcript_access,omitempty"` // Who can access transcripts
 
 	// Metadata
 	IsManuallyCreated bool `json:"is_manually_created,omitempty"` // Whether manually created
@@ -284,17 +284,17 @@ type PastMeetingResponse struct {
 // PastMeetingSummaryResponse represents a past meeting summary from ITX
 type PastMeetingSummaryResponse struct {
 	// Identifiers
-	ID                        string `json:"id"`                            // UUID of the summary
-	MeetingAndOccurrenceID    string `json:"meeting_and_occurrence_id"`     // Past meeting ID
-	MeetingID                 string `json:"meeting_id"`                    // Zoom meeting ID
-	OccurrenceID              string `json:"occurrence_id"`                 // Zoom occurrence ID
-	ZoomMeetingUUID           string `json:"zoom_meeting_uuid,omitempty"`   // Zoom meeting UUID
+	ID                     string `json:"id"`                          // UUID of the summary
+	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`   // Past meeting ID
+	MeetingID              string `json:"meeting_id"`                  // Zoom meeting ID
+	OccurrenceID           string `json:"occurrence_id"`               // Zoom occurrence ID
+	ZoomMeetingUUID        string `json:"zoom_meeting_uuid,omitempty"` // Zoom meeting UUID
 
 	// Summary metadata
-	SummaryCreatedTime       string `json:"summary_created_time,omitempty"`        // When summary was created (RFC3339)
-	SummaryLastModifiedTime  string `json:"summary_last_modified_time,omitempty"`  // When summary was last modified (RFC3339)
-	SummaryStartTime         string `json:"summary_start_time,omitempty"`          // Summary start time (RFC3339)
-	SummaryEndTime           string `json:"summary_end_time,omitempty"`            // Summary end time (RFC3339)
+	SummaryCreatedTime      string `json:"summary_created_time,omitempty"`       // When summary was created (RFC3339)
+	SummaryLastModifiedTime string `json:"summary_last_modified_time,omitempty"` // When summary was last modified (RFC3339)
+	SummaryStartTime        string `json:"summary_start_time,omitempty"`         // Summary start time (RFC3339)
+	SummaryEndTime          string `json:"summary_end_time,omitempty"`           // Summary end time (RFC3339)
 
 	// Original Zoom AI summary
 	SummaryTitle    string                      `json:"summary_title,omitempty"`    // Title from Zoom
@@ -326,9 +326,116 @@ type ZoomMeetingSummaryDetails struct {
 
 // UpdatePastMeetingSummaryRequest represents the request to update a past meeting summary
 type UpdatePastMeetingSummaryRequest struct {
-	EditedSummaryOverview string                      `json:"edited_summary_overview,omitempty"` // Edited overview
-	EditedSummaryDetails  []ZoomMeetingSummaryDetails `json:"edited_summary_details,omitempty"`  // Edited details
-	EditedNextSteps       []string                    `json:"edited_next_steps,omitempty"`       // Edited next steps
-	Approved              *bool                       `json:"approved,omitempty"`                // Approval status
-	ModifiedBy            *User                       `json:"modified_by,omitempty"`             // User making the update
+	EditedContent string `json:"edited_content,omitempty"` // User-edited summary content
+	Approved      *bool  `json:"approved,omitempty"`       // Approval status
+	ModifiedBy    *User  `json:"modified_by,omitempty"`    // User making the update
+}
+
+// InviteeResponse represents an invitee from ITX
+type InviteeResponse struct {
+	UUID                  string `json:"uuid"`                              // UUID of the invitee record
+	FirstName             string `json:"first_name,omitempty"`              // First name
+	LastName              string `json:"last_name,omitempty"`               // Last name
+	PrimaryEmail          string `json:"primary_email,omitempty"`           // Primary email address
+	LFSSO                 string `json:"lf_sso,omitempty"`                  // LF SSO username
+	LFUserID              string `json:"lf_user_id,omitempty"`              // LF user ID
+	Org                   string `json:"org,omitempty"`                     // Organization name
+	JobTitle              string `json:"job_title,omitempty"`               // Job title
+	ProfilePicture        string `json:"profile_picture,omitempty"`         // URL to profile picture
+	CommitteeID           string `json:"committee_id,omitempty"`            // Associated committee UUID
+	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within committee
+	IsCommitteeMember     bool   `json:"is_committee_member,omitempty"`     // Whether invitee is a committee member
+	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
+	OrgIsMember           bool   `json:"org_is_member,omitempty"`           // Whether org has LF membership
+	OrgIsProjectMember    bool   `json:"org_is_project_member,omitempty"`   // Whether org has project membership
+	CreatedAt             string `json:"created_at,omitempty"`              // Creation timestamp (RFC3339)
+	CreatedBy             *User  `json:"created_by,omitempty"`              // User who created the invitee
+	ModifiedAt            string `json:"modified_at,omitempty"`             // Last modification timestamp (RFC3339)
+	UpdatedBy             *User  `json:"updated_by,omitempty"`              // User who last updated the invitee
+}
+
+// CreateInviteeRequest represents the request to create an invitee
+type CreateInviteeRequest struct {
+	FirstName             string `json:"first_name,omitempty"`              // First name of the invitee
+	LastName              string `json:"last_name,omitempty"`               // Last name of the invitee
+	PrimaryEmail          string `json:"primary_email,omitempty"`           // Primary email address
+	LFUserID              string `json:"lf_user_id,omitempty"`              // LF user ID
+	LFSSO                 string `json:"lf_sso,omitempty"`                  // LF SSO username
+	Org                   string `json:"org,omitempty"`                     // Organization name
+	JobTitle              string `json:"job_title,omitempty"`               // Job title
+	ProfilePicture        string `json:"profile_picture,omitempty"`         // URL to profile picture
+	CommitteeID           string `json:"committee_id,omitempty"`            // UUID of associated committee (if applicable)
+	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within the committee
+	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
+	OrgIsMember           bool   `json:"org_is_member,omitempty"`           // Whether org has LF membership
+	OrgIsProjectMember    bool   `json:"org_is_project_member,omitempty"`   // Whether org has project membership
+}
+
+// UpdateInviteeRequest represents the request to update an invitee
+type UpdateInviteeRequest struct {
+	Org                   string `json:"org,omitempty"`                     // Organization name
+	JobTitle              string `json:"job_title,omitempty"`               // Job title
+	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within the committee
+	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
+}
+
+// AttendeeSession represents a join/leave session
+type AttendeeSession struct {
+	ParticipantUUID string `json:"participant_uuid,omitempty"` // Zoom participant UUID
+	JoinTime        string `json:"join_time,omitempty"`        // When the participant joined (RFC3339)
+	LeaveTime       string `json:"leave_time,omitempty"`       // When the participant left (RFC3339)
+	LeaveReason     string `json:"leave_reason,omitempty"`     // Reason for leaving
+}
+
+// AttendeeResponse represents an attendee from ITX
+type AttendeeResponse struct {
+	ID                    string            `json:"id"`                                // UUID of the attendee record
+	RegistrantID          string            `json:"registrant_id,omitempty"`           // UUID of associated registrant (if any)
+	Name                  string            `json:"name,omitempty"`                    // Full name of the attendee
+	Email                 string            `json:"email,omitempty"`                   // Email address
+	LFSSO                 string            `json:"lf_sso,omitempty"`                  // LF SSO username
+	LFUserID              string            `json:"lf_user_id,omitempty"`              // LF user ID
+	IsVerified            bool              `json:"is_verified,omitempty"`             // Whether the attendee has been verified
+	IsUnknown             bool              `json:"is_unknown,omitempty"`              // Whether attendee is marked as unknown
+	Org                   string            `json:"org,omitempty"`                     // Organization name
+	JobTitle              string            `json:"job_title,omitempty"`               // Job title
+	ProfilePicture        string            `json:"profile_picture,omitempty"`         // URL to profile picture
+	AverageAttendance     int               `json:"average_attendance,omitempty"`      // Average attendance percentage (calculated)
+	MeetingID             string            `json:"meeting_id,omitempty"`              // Meeting ID
+	OccurrenceID          string            `json:"occurrence_id,omitempty"`           // Occurrence ID
+	CommitteeID           string            `json:"committee_id,omitempty"`            // Associated committee UUID
+	CommitteeRole         string            `json:"committee_role,omitempty"`          // Role within committee
+	IsCommitteeMember     bool              `json:"is_committee_member,omitempty"`     // Whether attendee is a committee member
+	CommitteeVotingStatus string            `json:"committee_voting_status,omitempty"` // Voting status in committee
+	OrgIsMember           bool              `json:"org_is_member,omitempty"`           // Whether org has LF membership
+	OrgIsProjectMember    bool              `json:"org_is_project_member,omitempty"`   // Whether org has project membership
+	Sessions              []AttendeeSession `json:"sessions,omitempty"`                // Array of session objects with join/leave times
+}
+
+// CreateAttendeeRequest represents the request to create an attendee
+type CreateAttendeeRequest struct {
+	Name                  string            `json:"name,omitempty"`                    // Full name of the attendee
+	Email                 string            `json:"email,omitempty"`                   // Email address
+	LFUserID              string            `json:"lf_user_id,omitempty"`              // LF user ID
+	LFSSO                 string            `json:"lf_sso,omitempty"`                  // LF SSO username
+	Org                   string            `json:"org,omitempty"`                     // Organization name
+	JobTitle              string            `json:"job_title,omitempty"`               // Job title
+	ProfilePicture        string            `json:"profile_picture,omitempty"`         // URL to profile picture
+	IsVerified            bool              `json:"is_verified,omitempty"`             // Whether the attendee has been verified
+	IsUnknown             bool              `json:"is_unknown,omitempty"`              // Whether attendee is marked as unknown
+	CommitteeID           string            `json:"committee_id,omitempty"`            // UUID of associated committee (if applicable)
+	CommitteeRole         string            `json:"committee_role,omitempty"`          // Role within the committee
+	CommitteeVotingStatus string            `json:"committee_voting_status,omitempty"` // Voting status in committee
+	OrgIsMember           bool              `json:"org_is_member,omitempty"`           // Whether org has LF membership
+	OrgIsProjectMember    bool              `json:"org_is_project_member,omitempty"`   // Whether org has project membership
+	Sessions              []AttendeeSession `json:"sessions,omitempty"`                // Array of session objects with join/leave times
+}
+
+// UpdateAttendeeRequest represents the request to update an attendee
+type UpdateAttendeeRequest struct {
+	Org                   string `json:"org,omitempty"`                     // Organization name
+	JobTitle              string `json:"job_title,omitempty"`               // Job title
+	IsVerified            bool   `json:"is_verified,omitempty"`             // Whether the attendee has been verified
+	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within the committee
+	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
 }

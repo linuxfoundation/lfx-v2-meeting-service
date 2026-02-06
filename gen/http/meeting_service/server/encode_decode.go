@@ -3268,7 +3268,7 @@ func EncodeUpdateItxPastMeetingError(encoder func(context.Context, http.Response
 // returned by the Meeting Service get-itx-past-meeting-summary endpoint.
 func EncodeGetItxPastMeetingSummaryResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
-		res, _ := v.(*meetingservice.ITXPastMeetingSummary)
+		res, _ := v.(*meetingservice.PastMeetingSummary)
 		enc := encoder(ctx, w)
 		body := NewGetItxPastMeetingSummaryResponseBody(res)
 		w.WriteHeader(http.StatusOK)
@@ -3282,7 +3282,7 @@ func DecodeGetItxPastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 	return func(r *http.Request) (*meetingservice.GetItxPastMeetingSummaryPayload, error) {
 		var (
 			pastMeetingID string
-			summaryID     string
+			summaryUID    string
 			version       *string
 			bearerToken   *string
 			err           error
@@ -3290,7 +3290,8 @@ func DecodeGetItxPastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 			params = mux.Vars(r)
 		)
 		pastMeetingID = params["past_meeting_id"]
-		summaryID = params["summary_id"]
+		summaryUID = params["summary_uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("summary_uid", summaryUID, goa.FormatUUID))
 		versionRaw := r.URL.Query().Get("v")
 		if versionRaw != "" {
 			version = &versionRaw
@@ -3307,7 +3308,7 @@ func DecodeGetItxPastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetItxPastMeetingSummaryPayload(pastMeetingID, summaryID, version, bearerToken)
+		payload := NewGetItxPastMeetingSummaryPayload(pastMeetingID, summaryUID, version, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -3418,7 +3419,7 @@ func EncodeGetItxPastMeetingSummaryError(encoder func(context.Context, http.Resp
 // returned by the Meeting Service update-itx-past-meeting-summary endpoint.
 func EncodeUpdateItxPastMeetingSummaryResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
-		res, _ := v.(*meetingservice.ITXPastMeetingSummary)
+		res, _ := v.(*meetingservice.PastMeetingSummary)
 		enc := encoder(ctx, w)
 		body := NewUpdateItxPastMeetingSummaryResponseBody(res)
 		w.WriteHeader(http.StatusOK)
@@ -3448,14 +3449,15 @@ func DecodeUpdateItxPastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*h
 
 		var (
 			pastMeetingID string
-			summaryID     string
+			summaryUID    string
 			version       *string
 			bearerToken   *string
 
 			params = mux.Vars(r)
 		)
 		pastMeetingID = params["past_meeting_id"]
-		summaryID = params["summary_id"]
+		summaryUID = params["summary_uid"]
+		err = goa.MergeErrors(err, goa.ValidateFormat("summary_uid", summaryUID, goa.FormatUUID))
 		versionRaw := r.URL.Query().Get("v")
 		if versionRaw != "" {
 			version = &versionRaw
@@ -3472,7 +3474,7 @@ func DecodeUpdateItxPastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*h
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUpdateItxPastMeetingSummaryPayload(&body, pastMeetingID, summaryID, version, bearerToken)
+		payload := NewUpdateItxPastMeetingSummaryPayload(&body, pastMeetingID, summaryUID, version, bearerToken)
 		if payload.BearerToken != nil {
 			if strings.Contains(*payload.BearerToken, " ") {
 				// Remove authorization scheme prefix (e.g. "Bearer")
@@ -3569,6 +3571,488 @@ func EncodeUpdateItxPastMeetingSummaryError(encoder func(context.Context, http.R
 				body = formatter(ctx, res)
 			} else {
 				body = NewUpdateItxPastMeetingSummaryUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeCreateItxPastMeetingParticipantResponse returns an encoder for
+// responses returned by the Meeting Service
+// create-itx-past-meeting-participant endpoint.
+func EncodeCreateItxPastMeetingParticipantResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*meetingservice.ITXPastMeetingParticipant)
+		enc := encoder(ctx, w)
+		body := NewCreateItxPastMeetingParticipantResponseBody(res)
+		w.WriteHeader(http.StatusCreated)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeCreateItxPastMeetingParticipantRequest returns a decoder for requests
+// sent to the Meeting Service create-itx-past-meeting-participant endpoint.
+func DecodeCreateItxPastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*meetingservice.CreateItxPastMeetingParticipantPayload, error) {
+	return func(r *http.Request) (*meetingservice.CreateItxPastMeetingParticipantPayload, error) {
+		var (
+			body CreateItxPastMeetingParticipantRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return nil, gerr
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateCreateItxPastMeetingParticipantRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			pastMeetingID string
+			version       *string
+			bearerToken   *string
+
+			params = mux.Vars(r)
+		)
+		pastMeetingID = params["past_meeting_id"]
+		versionRaw := r.URL.Query().Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewCreateItxPastMeetingParticipantPayload(&body, pastMeetingID, version, bearerToken)
+		if payload.BearerToken != nil {
+			if strings.Contains(*payload.BearerToken, " ") {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeCreateItxPastMeetingParticipantError returns an encoder for errors
+// returned by the create-itx-past-meeting-participant Meeting Service endpoint.
+func EncodeCreateItxPastMeetingParticipantError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCreateItxPastMeetingParticipantBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "Forbidden":
+			var res *meetingservice.ForbiddenError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCreateItxPastMeetingParticipantForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCreateItxPastMeetingParticipantInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCreateItxPastMeetingParticipantNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCreateItxPastMeetingParticipantServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "Unauthorized":
+			var res *meetingservice.UnauthorizedError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCreateItxPastMeetingParticipantUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeUpdateItxPastMeetingParticipantResponse returns an encoder for
+// responses returned by the Meeting Service
+// update-itx-past-meeting-participant endpoint.
+func EncodeUpdateItxPastMeetingParticipantResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*meetingservice.ITXPastMeetingParticipant)
+		enc := encoder(ctx, w)
+		body := NewUpdateItxPastMeetingParticipantResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeUpdateItxPastMeetingParticipantRequest returns a decoder for requests
+// sent to the Meeting Service update-itx-past-meeting-participant endpoint.
+func DecodeUpdateItxPastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*meetingservice.UpdateItxPastMeetingParticipantPayload, error) {
+	return func(r *http.Request) (*meetingservice.UpdateItxPastMeetingParticipantPayload, error) {
+		var (
+			body UpdateItxPastMeetingParticipantRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return nil, gerr
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+
+		var (
+			pastMeetingID string
+			participantID string
+			version       *string
+			bearerToken   *string
+
+			params = mux.Vars(r)
+		)
+		pastMeetingID = params["past_meeting_id"]
+		participantID = params["participant_id"]
+		versionRaw := r.URL.Query().Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewUpdateItxPastMeetingParticipantPayload(&body, pastMeetingID, participantID, version, bearerToken)
+		if payload.BearerToken != nil {
+			if strings.Contains(*payload.BearerToken, " ") {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeUpdateItxPastMeetingParticipantError returns an encoder for errors
+// returned by the update-itx-past-meeting-participant Meeting Service endpoint.
+func EncodeUpdateItxPastMeetingParticipantError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdateItxPastMeetingParticipantBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "Forbidden":
+			var res *meetingservice.ForbiddenError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdateItxPastMeetingParticipantForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdateItxPastMeetingParticipantInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdateItxPastMeetingParticipantNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdateItxPastMeetingParticipantServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "Unauthorized":
+			var res *meetingservice.UnauthorizedError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdateItxPastMeetingParticipantUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeDeleteItxPastMeetingParticipantResponse returns an encoder for
+// responses returned by the Meeting Service
+// delete-itx-past-meeting-participant endpoint.
+func EncodeDeleteItxPastMeetingParticipantResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+}
+
+// DecodeDeleteItxPastMeetingParticipantRequest returns a decoder for requests
+// sent to the Meeting Service delete-itx-past-meeting-participant endpoint.
+func DecodeDeleteItxPastMeetingParticipantRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*meetingservice.DeleteItxPastMeetingParticipantPayload, error) {
+	return func(r *http.Request) (*meetingservice.DeleteItxPastMeetingParticipantPayload, error) {
+		var (
+			pastMeetingID string
+			participantID string
+			version       *string
+			bearerToken   *string
+			err           error
+
+			params = mux.Vars(r)
+		)
+		pastMeetingID = params["past_meeting_id"]
+		participantID = params["participant_id"]
+		versionRaw := r.URL.Query().Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewDeleteItxPastMeetingParticipantPayload(pastMeetingID, participantID, version, bearerToken)
+		if payload.BearerToken != nil {
+			if strings.Contains(*payload.BearerToken, " ") {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeDeleteItxPastMeetingParticipantError returns an encoder for errors
+// returned by the delete-itx-past-meeting-participant Meeting Service endpoint.
+func EncodeDeleteItxPastMeetingParticipantError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteItxPastMeetingParticipantBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "Forbidden":
+			var res *meetingservice.ForbiddenError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteItxPastMeetingParticipantForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteItxPastMeetingParticipantInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteItxPastMeetingParticipantNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteItxPastMeetingParticipantServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "Unauthorized":
+			var res *meetingservice.UnauthorizedError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewDeleteItxPastMeetingParticipantUnauthorizedResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.GoaErrorName())
 			w.WriteHeader(http.StatusUnauthorized)
@@ -3707,31 +4191,66 @@ func marshalMeetingserviceITXUserToITXUserResponseBody(v *meetingservice.ITXUser
 	return res
 }
 
-// marshalMeetingserviceZoomMeetingSummaryDetailsToZoomMeetingSummaryDetailsResponseBody
-// builds a value of type *ZoomMeetingSummaryDetailsResponseBody from a value
-// of type *meetingservice.ZoomMeetingSummaryDetails.
-func marshalMeetingserviceZoomMeetingSummaryDetailsToZoomMeetingSummaryDetailsResponseBody(v *meetingservice.ZoomMeetingSummaryDetails) *ZoomMeetingSummaryDetailsResponseBody {
+// marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody
+// builds a value of type *PastMeetingSummaryZoomConfigResponseBody from a
+// value of type *meetingservice.PastMeetingSummaryZoomConfig.
+func marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody(v *meetingservice.PastMeetingSummaryZoomConfig) *PastMeetingSummaryZoomConfigResponseBody {
 	if v == nil {
 		return nil
 	}
-	res := &ZoomMeetingSummaryDetailsResponseBody{
-		Label:   v.Label,
-		Summary: v.Summary,
+	res := &PastMeetingSummaryZoomConfigResponseBody{
+		MeetingID:   v.MeetingID,
+		MeetingUUID: v.MeetingUUID,
 	}
 
 	return res
 }
 
-// unmarshalZoomMeetingSummaryDetailsRequestBodyToMeetingserviceZoomMeetingSummaryDetails
-// builds a value of type *meetingservice.ZoomMeetingSummaryDetails from a
-// value of type *ZoomMeetingSummaryDetailsRequestBody.
-func unmarshalZoomMeetingSummaryDetailsRequestBodyToMeetingserviceZoomMeetingSummaryDetails(v *ZoomMeetingSummaryDetailsRequestBody) *meetingservice.ZoomMeetingSummaryDetails {
+// marshalMeetingserviceSummaryDataToSummaryDataResponseBody builds a value of
+// type *SummaryDataResponseBody from a value of type
+// *meetingservice.SummaryData.
+func marshalMeetingserviceSummaryDataToSummaryDataResponseBody(v *meetingservice.SummaryData) *SummaryDataResponseBody {
+	res := &SummaryDataResponseBody{
+		StartTime:     v.StartTime,
+		EndTime:       v.EndTime,
+		Title:         v.Title,
+		Content:       v.Content,
+		DocURL:        v.DocURL,
+		EditedContent: v.EditedContent,
+	}
+
+	return res
+}
+
+// unmarshalParticipantSessionRequestBodyToMeetingserviceParticipantSession
+// builds a value of type *meetingservice.ParticipantSession from a value of
+// type *ParticipantSessionRequestBody.
+func unmarshalParticipantSessionRequestBodyToMeetingserviceParticipantSession(v *ParticipantSessionRequestBody) *meetingservice.ParticipantSession {
 	if v == nil {
 		return nil
 	}
-	res := &meetingservice.ZoomMeetingSummaryDetails{
-		Label:   v.Label,
-		Summary: v.Summary,
+	res := &meetingservice.ParticipantSession{
+		ParticipantUUID: v.ParticipantUUID,
+		JoinTime:        v.JoinTime,
+		LeaveTime:       v.LeaveTime,
+		LeaveReason:     v.LeaveReason,
+	}
+
+	return res
+}
+
+// marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody
+// builds a value of type *ParticipantSessionResponseBody from a value of type
+// *meetingservice.ParticipantSession.
+func marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(v *meetingservice.ParticipantSession) *ParticipantSessionResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &ParticipantSessionResponseBody{
+		ParticipantUUID: v.ParticipantUUID,
+		JoinTime:        v.JoinTime,
+		LeaveTime:       v.LeaveTime,
+		LeaveReason:     v.LeaveReason,
 	}
 
 	return res

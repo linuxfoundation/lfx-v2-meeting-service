@@ -111,6 +111,18 @@ type Client struct {
 	// the update-itx-past-meeting-summary endpoint.
 	UpdateItxPastMeetingSummaryDoer goahttp.Doer
 
+	// CreateItxPastMeetingParticipant Doer is the HTTP client used to make
+	// requests to the create-itx-past-meeting-participant endpoint.
+	CreateItxPastMeetingParticipantDoer goahttp.Doer
+
+	// UpdateItxPastMeetingParticipant Doer is the HTTP client used to make
+	// requests to the update-itx-past-meeting-participant endpoint.
+	UpdateItxPastMeetingParticipantDoer goahttp.Doer
+
+	// DeleteItxPastMeetingParticipant Doer is the HTTP client used to make
+	// requests to the delete-itx-past-meeting-participant endpoint.
+	DeleteItxPastMeetingParticipantDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -132,35 +144,38 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		ReadyzDoer:                        doer,
-		LivezDoer:                         doer,
-		CreateItxMeetingDoer:              doer,
-		GetItxMeetingDoer:                 doer,
-		DeleteItxMeetingDoer:              doer,
-		UpdateItxMeetingDoer:              doer,
-		GetItxMeetingCountDoer:            doer,
-		CreateItxRegistrantDoer:           doer,
-		GetItxRegistrantDoer:              doer,
-		UpdateItxRegistrantDoer:           doer,
-		DeleteItxRegistrantDoer:           doer,
-		GetItxJoinLinkDoer:                doer,
-		GetItxRegistrantIcsDoer:           doer,
-		ResendItxRegistrantInvitationDoer: doer,
-		ResendItxMeetingInvitationsDoer:   doer,
-		RegisterItxCommitteeMembersDoer:   doer,
-		UpdateItxOccurrenceDoer:           doer,
-		DeleteItxOccurrenceDoer:           doer,
-		CreateItxPastMeetingDoer:          doer,
-		GetItxPastMeetingDoer:             doer,
-		DeleteItxPastMeetingDoer:          doer,
-		UpdateItxPastMeetingDoer:          doer,
-		GetItxPastMeetingSummaryDoer:      doer,
-		UpdateItxPastMeetingSummaryDoer:   doer,
-		RestoreResponseBody:               restoreBody,
-		scheme:                            scheme,
-		host:                              host,
-		decoder:                           dec,
-		encoder:                           enc,
+		ReadyzDoer:                          doer,
+		LivezDoer:                           doer,
+		CreateItxMeetingDoer:                doer,
+		GetItxMeetingDoer:                   doer,
+		DeleteItxMeetingDoer:                doer,
+		UpdateItxMeetingDoer:                doer,
+		GetItxMeetingCountDoer:              doer,
+		CreateItxRegistrantDoer:             doer,
+		GetItxRegistrantDoer:                doer,
+		UpdateItxRegistrantDoer:             doer,
+		DeleteItxRegistrantDoer:             doer,
+		GetItxJoinLinkDoer:                  doer,
+		GetItxRegistrantIcsDoer:             doer,
+		ResendItxRegistrantInvitationDoer:   doer,
+		ResendItxMeetingInvitationsDoer:     doer,
+		RegisterItxCommitteeMembersDoer:     doer,
+		UpdateItxOccurrenceDoer:             doer,
+		DeleteItxOccurrenceDoer:             doer,
+		CreateItxPastMeetingDoer:            doer,
+		GetItxPastMeetingDoer:               doer,
+		DeleteItxPastMeetingDoer:            doer,
+		UpdateItxPastMeetingDoer:            doer,
+		GetItxPastMeetingSummaryDoer:        doer,
+		UpdateItxPastMeetingSummaryDoer:     doer,
+		CreateItxPastMeetingParticipantDoer: doer,
+		UpdateItxPastMeetingParticipantDoer: doer,
+		DeleteItxPastMeetingParticipantDoer: doer,
+		RestoreResponseBody:                 restoreBody,
+		scheme:                              scheme,
+		host:                                host,
+		decoder:                             dec,
+		encoder:                             enc,
 	}
 }
 
@@ -725,6 +740,78 @@ func (c *Client) UpdateItxPastMeetingSummary() goa.Endpoint {
 		resp, err := c.UpdateItxPastMeetingSummaryDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-past-meeting-summary", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateItxPastMeetingParticipant returns an endpoint that makes HTTP requests
+// to the Meeting Service service create-itx-past-meeting-participant server.
+func (c *Client) CreateItxPastMeetingParticipant() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateItxPastMeetingParticipantRequest(c.encoder)
+		decodeResponse = DecodeCreateItxPastMeetingParticipantResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateItxPastMeetingParticipantRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateItxPastMeetingParticipantDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-itx-past-meeting-participant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateItxPastMeetingParticipant returns an endpoint that makes HTTP requests
+// to the Meeting Service service update-itx-past-meeting-participant server.
+func (c *Client) UpdateItxPastMeetingParticipant() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateItxPastMeetingParticipantRequest(c.encoder)
+		decodeResponse = DecodeUpdateItxPastMeetingParticipantResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateItxPastMeetingParticipantRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateItxPastMeetingParticipantDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-past-meeting-participant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteItxPastMeetingParticipant returns an endpoint that makes HTTP requests
+// to the Meeting Service service delete-itx-past-meeting-participant server.
+func (c *Client) DeleteItxPastMeetingParticipant() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteItxPastMeetingParticipantRequest(c.encoder)
+		decodeResponse = DecodeDeleteItxPastMeetingParticipantResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteItxPastMeetingParticipantRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteItxPastMeetingParticipantDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-past-meeting-participant", err)
 		}
 		return decodeResponse(resp)
 	}

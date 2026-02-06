@@ -4,29 +4,22 @@
 package service
 
 import (
+	"fmt"
+	"strings"
+
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
-// ConvertUpdatePastMeetingSummaryPayload converts Goa payload to ITX update past meeting summary request
+// ConvertUpdatePastMeetingSummaryPayload converts V2 Goa payload to ITX update request
 func ConvertUpdatePastMeetingSummaryPayload(payload *meetingservice.UpdateItxPastMeetingSummaryPayload) *itx.UpdatePastMeetingSummaryRequest {
 	req := &itx.UpdatePastMeetingSummaryRequest{}
 
-	// Optional fields - only set if provided
-	if payload.EditedSummaryOverview != nil {
-		req.EditedSummaryOverview = *payload.EditedSummaryOverview
-	}
-	if payload.EditedSummaryDetails != nil {
-		req.EditedSummaryDetails = make([]itx.ZoomMeetingSummaryDetails, len(payload.EditedSummaryDetails))
-		for i, d := range payload.EditedSummaryDetails {
-			req.EditedSummaryDetails[i] = itx.ZoomMeetingSummaryDetails{
-				Label:   ptrToString(d.Label),
-				Summary: ptrToString(d.Summary),
-			}
-		}
-	}
-	if payload.EditedNextSteps != nil {
-		req.EditedNextSteps = payload.EditedNextSteps
+	// V2 has a single edited_content field, ITX has separate fields
+	// For simplicity, we'll put the entire edited_content into edited_summary_overview
+	// A more sophisticated implementation could parse the content into sections
+	if payload.EditedContent != nil {
+		req.EditedContent = *payload.EditedContent
 	}
 	if payload.Approved != nil {
 		req.Approved = payload.Approved
@@ -36,91 +29,107 @@ func ConvertUpdatePastMeetingSummaryPayload(payload *meetingservice.UpdateItxPas
 	return req
 }
 
-// ConvertPastMeetingSummaryToGoa converts ITX past meeting summary response to Goa type
-func ConvertPastMeetingSummaryToGoa(resp *itx.PastMeetingSummaryResponse) *meetingservice.ITXPastMeetingSummary {
-	goaResp := &meetingservice.ITXPastMeetingSummary{
-		// Identifiers
-		ID:                     ptrIfNotEmpty(resp.ID),
-		MeetingAndOccurrenceID: ptrIfNotEmpty(resp.MeetingAndOccurrenceID),
-		MeetingID:              ptrIfNotEmpty(resp.MeetingID),
-		OccurrenceID:           ptrIfNotEmpty(resp.OccurrenceID),
-		ZoomMeetingUUID:        ptrIfNotEmpty(resp.ZoomMeetingUUID),
+// ConvertPastMeetingSummaryToGoa converts ITX response to V2 Goa type
+func ConvertPastMeetingSummaryToGoa(resp *itx.PastMeetingSummaryResponse) *meetingservice.PastMeetingSummary {
+	// Build the main content from ITX summary parts (overview + details + next steps)
+	content := buildContentFromITX(resp)
 
-		// Summary metadata
-		SummaryCreatedTime:      ptrIfNotEmpty(resp.SummaryCreatedTime),
-		SummaryLastModifiedTime: ptrIfNotEmpty(resp.SummaryLastModifiedTime),
-		SummaryStartTime:        ptrIfNotEmpty(resp.SummaryStartTime),
-		SummaryEndTime:          ptrIfNotEmpty(resp.SummaryEndTime),
+	// Build edited content from ITX edited parts (edited_overview + edited_details + edited_next_steps)
+	editedContent := buildEditedContentFromITX(resp)
 
-		// Original Zoom AI summary
-		SummaryTitle:    ptrIfNotEmpty(resp.SummaryTitle),
-		SummaryOverview: ptrIfNotEmpty(resp.SummaryOverview),
-		NextSteps:       resp.NextSteps,
-
-		// Edited versions
-		EditedSummaryOverview: ptrIfNotEmpty(resp.EditedSummaryOverview),
-		EditedNextSteps:       resp.EditedNextSteps,
-
-		// Approval workflow
-		RequiresApproval: ptrBool(resp.RequiresApproval),
-		Approved:         ptrBool(resp.Approved),
-
-		// Audit fields
-		CreatedAt:  ptrIfNotEmpty(resp.CreatedAt),
-		ModifiedAt: ptrIfNotEmpty(resp.ModifiedAt),
+	// Create the summary_data object (start_time and end_time are required)
+	summaryData := &meetingservice.SummaryData{
+		StartTime:     resp.SummaryStartTime,
+		EndTime:       resp.SummaryEndTime,
+		Title:         ptrIfNotEmpty(resp.SummaryTitle),
+		Content:       ptrIfNotEmpty(content),
+		DocURL:        ptrIfNotEmpty(""), // ITX doesn't provide doc_url
+		EditedContent: ptrIfNotEmpty(editedContent),
 	}
 
-	// Convert summary details
-	if resp.SummaryDetails != nil {
-		goaResp.SummaryDetails = make([]*meetingservice.ZoomMeetingSummaryDetails, len(resp.SummaryDetails))
-		for i, d := range resp.SummaryDetails {
-			goaResp.SummaryDetails[i] = &meetingservice.ZoomMeetingSummaryDetails{
-				Label:   ptrIfNotEmpty(d.Label),
-				Summary: ptrIfNotEmpty(d.Summary),
-			}
+	// Build Zoom config if available
+	var zoomConfig *meetingservice.PastMeetingSummaryZoomConfig
+	if resp.MeetingID != "" || resp.ZoomMeetingUUID != "" {
+		zoomConfig = &meetingservice.PastMeetingSummaryZoomConfig{
+			MeetingID:   ptrIfNotEmpty(resp.MeetingID),
+			MeetingUUID: ptrIfNotEmpty(resp.ZoomMeetingUUID),
 		}
 	}
 
-	// Convert edited summary details
-	if resp.EditedSummaryDetails != nil {
-		goaResp.EditedSummaryDetails = make([]*meetingservice.ZoomMeetingSummaryDetails, len(resp.EditedSummaryDetails))
-		for i, d := range resp.EditedSummaryDetails {
-			goaResp.EditedSummaryDetails[i] = &meetingservice.ZoomMeetingSummaryDetails{
-				Label:   ptrIfNotEmpty(d.Label),
-				Summary: ptrIfNotEmpty(d.Summary),
-			}
-		}
-	}
-
-	// Convert created_by
-	if resp.CreatedBy != nil {
-		goaResp.CreatedBy = &meetingservice.ITXUser{
-			Username:       ptrIfNotEmpty(resp.CreatedBy.Username),
-			Name:           ptrIfNotEmpty(resp.CreatedBy.Name),
-			Email:          ptrIfNotEmpty(resp.CreatedBy.Email),
-			ProfilePicture: ptrIfNotEmpty(resp.CreatedBy.ProfilePicture),
-		}
-	}
-
-	// Convert modified_by
-	if resp.ModifiedBy != nil {
-		goaResp.ModifiedBy = &meetingservice.ITXUser{
-			Username:       ptrIfNotEmpty(resp.ModifiedBy.Username),
-			Name:           ptrIfNotEmpty(resp.ModifiedBy.Name),
-			Email:          ptrIfNotEmpty(resp.ModifiedBy.Email),
-			ProfilePicture: ptrIfNotEmpty(resp.ModifiedBy.ProfilePicture),
-		}
+	// Create the V2-style response (required fields are non-pointer strings and bools)
+	goaResp := &meetingservice.PastMeetingSummary{
+		UID:              resp.ID,
+		PastMeetingID:    resp.MeetingAndOccurrenceID,
+		MeetingID:        resp.MeetingID,
+		Platform:         "Zoom",
+		Password:         ptrIfNotEmpty(""),
+		ZoomConfig:       zoomConfig,
+		SummaryData:      summaryData,
+		RequiresApproval: resp.RequiresApproval,
+		Approved:         resp.Approved,
+		EmailSent:        false, // ITX doesn't track this
+		CreatedAt:        resp.CreatedAt,
+		UpdatedAt:        resp.ModifiedAt,
 	}
 
 	return goaResp
 }
 
-// Helper function to convert pointer to string value
-func ptrToString(ptr *string) string {
-	if ptr == nil {
-		return ""
+// buildContentFromITX combines ITX summary parts into a single content string
+func buildContentFromITX(resp *itx.PastMeetingSummaryResponse) string {
+	var parts []string
+
+	if resp.SummaryOverview != "" {
+		parts = append(parts, resp.SummaryOverview)
 	}
-	return *ptr
+
+	if len(resp.SummaryDetails) > 0 {
+		for _, detail := range resp.SummaryDetails {
+			if detail.Label != "" && detail.Summary != "" {
+				parts = append(parts, fmt.Sprintf("%s: %s", detail.Label, detail.Summary))
+			}
+		}
+	}
+
+	if len(resp.NextSteps) > 0 {
+		parts = append(parts, "Next Steps:")
+		for _, step := range resp.NextSteps {
+			parts = append(parts, fmt.Sprintf("- %s", step))
+		}
+	}
+
+	return strings.Join(parts, "\n\n")
+}
+
+// buildEditedContentFromITX combines ITX edited summary parts into a single edited content string
+func buildEditedContentFromITX(resp *itx.PastMeetingSummaryResponse) string {
+	var parts []string
+
+	if resp.EditedSummaryOverview != "" {
+		parts = append(parts, resp.EditedSummaryOverview)
+	}
+
+	if len(resp.EditedSummaryDetails) > 0 {
+		for _, detail := range resp.EditedSummaryDetails {
+			if detail.Label != "" && detail.Summary != "" {
+				parts = append(parts, fmt.Sprintf("%s: %s", detail.Label, detail.Summary))
+			}
+		}
+	}
+
+	if len(resp.EditedNextSteps) > 0 {
+		parts = append(parts, "Next Steps:")
+		for _, step := range resp.EditedNextSteps {
+			parts = append(parts, fmt.Sprintf("- %s", step))
+		}
+	}
+
+	return strings.Join(parts, "\n\n")
+}
+
+// Helper function to convert string to pointer
+func ptrString(s string) *string {
+	return &s
 }
 
 // Helper function to convert bool to pointer

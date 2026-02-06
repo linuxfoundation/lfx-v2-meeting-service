@@ -19,11 +19,12 @@ import (
 
 // MeetingsAPI implements the meetingsvc.Service interface
 type MeetingsAPI struct {
-	authService                  *service.AuthService
-	itxMeetingService            *itxservice.MeetingService
-	itxRegistrantService         *itxservice.RegistrantService
-	itxPastMeetingService        *itxservice.PastMeetingService
-	itxPastMeetingSummaryService *itxservice.PastMeetingSummaryService
+	authService                     *service.AuthService
+	itxMeetingService               *itxservice.MeetingService
+	itxRegistrantService            *itxservice.RegistrantService
+	itxPastMeetingService           *itxservice.PastMeetingService
+	itxPastMeetingSummaryService    *itxservice.PastMeetingSummaryService
+	itxPastMeetingParticipantService *itxservice.PastMeetingParticipantService
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
@@ -33,13 +34,15 @@ func NewMeetingsAPI(
 	itxRegistrantService *itxservice.RegistrantService,
 	itxPastMeetingService *itxservice.PastMeetingService,
 	itxPastMeetingSummaryService *itxservice.PastMeetingSummaryService,
+	itxPastMeetingParticipantService *itxservice.PastMeetingParticipantService,
 ) *MeetingsAPI {
 	return &MeetingsAPI{
-		authService:                  authService,
-		itxMeetingService:            itxMeetingService,
-		itxRegistrantService:         itxRegistrantService,
-		itxPastMeetingService:        itxPastMeetingService,
-		itxPastMeetingSummaryService: itxPastMeetingSummaryService,
+		authService:                     authService,
+		itxMeetingService:               itxMeetingService,
+		itxRegistrantService:            itxRegistrantService,
+		itxPastMeetingService:           itxPastMeetingService,
+		itxPastMeetingSummaryService:    itxPastMeetingSummaryService,
+		itxPastMeetingParticipantService: itxPastMeetingParticipantService,
 	}
 }
 

@@ -1032,3 +1032,271 @@ func (c *Client) mapHTTPError(statusCode int, body []byte) error {
 		return domain.NewInternalError(message)
 	}
 }
+
+// CreateInvitee creates an invitee for a past meeting via the ITX proxy
+func (c *Client) CreateInvitee(ctx context.Context, pastMeetingID string, req *itx.CreateInviteeRequest) (*itx.InviteeResponse, error) {
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/invitees", c.config.BaseURL, pastMeetingID)
+
+	// Marshal request body
+	bodyBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var inviteeResp itx.InviteeResponse
+	if err := json.Unmarshal(respBody, &inviteeResp); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+
+	return &inviteeResp, nil
+}
+
+// UpdateInvitee updates an invitee for a past meeting via the ITX proxy
+func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID string, req *itx.UpdateInviteeRequest) (*itx.InviteeResponse, error) {
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/invitees/%s", c.config.BaseURL, pastMeetingID, inviteeID)
+
+	// Marshal request body
+	bodyBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var inviteeResp itx.InviteeResponse
+	if err := json.Unmarshal(respBody, &inviteeResp); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+
+	return &inviteeResp, nil
+}
+
+// DeleteInvitee deletes an invitee from a past meeting via the ITX proxy
+func (c *Client) DeleteInvitee(ctx context.Context, pastMeetingID, inviteeID string) error {
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/invitees/%s", c.config.BaseURL, pastMeetingID, inviteeID)
+
+	// Create HTTP request
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// CreateAttendee creates an attendee for a past meeting via the ITX proxy
+func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *itx.CreateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attendees", c.config.BaseURL, pastMeetingID)
+
+	// Marshal request body
+	bodyBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var attendeeResp itx.AttendeeResponse
+	if err := json.Unmarshal(respBody, &attendeeResp); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+
+	return &attendeeResp, nil
+}
+
+// UpdateAttendee updates an attendee for a past meeting via the ITX proxy
+func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attendees/%s", c.config.BaseURL, pastMeetingID, attendeeID)
+
+	// Marshal request body
+	bodyBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var attendeeResp itx.AttendeeResponse
+	if err := json.Unmarshal(respBody, &attendeeResp); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+
+	return &attendeeResp, nil
+}
+
+// DeleteAttendee deletes an attendee from a past meeting via the ITX proxy
+func (c *Client) DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID string) error {
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attendees/%s", c.config.BaseURL, pastMeetingID, attendeeID)
+
+	// Create HTTP request
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}

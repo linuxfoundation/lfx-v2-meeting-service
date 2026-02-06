@@ -349,75 +349,198 @@ var ITXPastZoomMeeting = Type("ITXPastZoomMeeting", func() {
 	Attribute("is_manually_created", Boolean, "Whether past meeting was manually created")
 })
 
-// ZoomMeetingSummaryDetails represents a section of a meeting summary
-var ZoomMeetingSummaryDetails = Type("ZoomMeetingSummaryDetails", func() {
-	Description("A section of a Zoom meeting AI summary")
-	Attribute("label", String, "Section label", func() {
-		Example("Discussion Topics")
+// SummaryDetail represents a detailed summary item with label and content
+var SummaryDetail = Type("SummaryDetail", func() {
+	Description("Detailed summary item with label and content")
+
+	Attribute("label", String, "Summary label", func() {
+		Example("Meeting Summary Label")
 	})
-	Attribute("summary", String, "Section summary text", func() {
-		Example("The team discussed the project roadmap and upcoming milestones")
+	Attribute("summary", String, "Summary content", func() {
+		Example("Meeting summary details")
 	})
+
+	Required("label", "summary")
 })
 
-// ITXPastMeetingSummary represents a past meeting AI summary from ITX
-var ITXPastMeetingSummary = Type("ITXPastMeetingSummary", func() {
-	Description("Past meeting AI summary from ITX API proxy")
+// PastMeetingSummaryZoomConfig represents Zoom-specific configuration for a past meeting summary
+var PastMeetingSummaryZoomConfig = Type("PastMeetingSummaryZoomConfig", func() {
+	Description("Zoom-specific configuration for a past meeting summary")
 
-	// Identifiers (read-only)
-	Attribute("id", String, "Summary UUID", func() {
-		Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
-		Format(FormatUUID)
-	})
-	Attribute("meeting_and_occurrence_id", String, "Past meeting ID (meeting_id-occurrence_id)", func() {
-		Example("12343245463-1630560600000")
-	})
 	Attribute("meeting_id", String, "Zoom meeting ID", func() {
 		Example("12343245463")
 	})
-	Attribute("occurrence_id", String, "Zoom occurrence ID (Unix timestamp)", func() {
-		Example("1630560600000")
+	Attribute("meeting_uuid", String, "Zoom meeting UUID", func() {
+		Example("aDYlohsHRtCd4ii1uC2+hA==")
 	})
-	Attribute("zoom_meeting_uuid", String, "Zoom meeting UUID")
+})
 
-	// Summary metadata
-	Attribute("summary_created_time", String, "When summary was created (RFC3339)", func() {
+// SummaryData represents the actual AI-generated summary content
+var SummaryData = Type("SummaryData", func() {
+	Description("AI-generated summary content for a past meeting")
+
+	Attribute("start_time", String, "Summary start time", func() {
 		Format(FormatDateTime)
-		Example("2021-06-27T05:30:00Z")
+		Example("2024-01-15T10:00:00Z")
 	})
-	Attribute("summary_last_modified_time", String, "When summary was last modified (RFC3339)", func() {
+	Attribute("end_time", String, "Summary end time", func() {
 		Format(FormatDateTime)
-		Example("2021-06-27T05:35:00Z")
+		Example("2024-01-15T11:00:00Z")
 	})
-	Attribute("summary_start_time", String, "Summary period start time (RFC3339)", func() {
+	Attribute("title", String, "Summary title", func() {
+		Example("Weekly Team Standup Meeting")
+	})
+	Attribute("content", String, "The main AI-generated summary content", func() {
+		Example("This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.")
+	})
+	Attribute("doc_url", String, "URL to the full summary document", func() {
+		Example("https://zoom.us/rec/summary/abc123")
+	})
+	Attribute("edited_content", String, "User-edited summary content", func() {
+		Example("Updated meeting summary with additional details and action items.")
+	})
+
+	Required("start_time", "end_time")
+})
+
+// PastMeetingSummary represents an AI-generated summary for a past meeting occurrence
+var PastMeetingSummary = Type("PastMeetingSummary", func() {
+	Description("AI-generated summary for a past meeting occurrence")
+
+	Attribute("uid", String, "The unique identifier of the summary", func() {
+		Example("456e7890-e89b-12d3-a456-426614174000")
+		Format(FormatUUID)
+	})
+	Attribute("past_meeting_id", String, "The past meeting identifier (meeting_id-occurrence_id)", func() {
+		Example("12343245463-1630560600000")
+	})
+	Attribute("meeting_id", String, "The meeting identifier", func() {
+		Example("12343245463")
+	})
+	Attribute("platform", String, "Meeting platform", func() {
+		Enum("Zoom", "GoogleMeet", "MSTeams", "None")
+		Example("Zoom")
+	})
+	Attribute("password", String, "Password for accessing the summary (if required)", func() {
+		Example("abc123")
+	})
+	Attribute("zoom_config", PastMeetingSummaryZoomConfig, "Zoom-specific configuration")
+	Attribute("summary_data", SummaryData, "The actual summary content")
+	Attribute("requires_approval", Boolean, "Whether the summary requires approval", func() {
+		Example(false)
+	})
+	Attribute("approved", Boolean, "Whether the summary has been approved", func() {
+		Example(true)
+	})
+	Attribute("email_sent", Boolean, "Whether summary email has been sent", func() {
+		Example(true)
+	})
+	Attribute("created_at", String, "Creation timestamp (RFC3339)", func() {
 		Format(FormatDateTime)
-		Example("2021-06-27T05:30:00Z")
+		Example("2024-01-01T00:00:00Z")
 	})
-	Attribute("summary_end_time", String, "Summary period end time (RFC3339)", func() {
+	Attribute("updated_at", String, "Update timestamp (RFC3339)", func() {
 		Format(FormatDateTime)
-		Example("2021-06-27T06:30:00Z")
+		Example("2024-01-01T00:00:00Z")
 	})
 
-	// Original Zoom AI summary
-	Attribute("summary_title", String, "Summary title from Zoom AI", func() {
-		Example("Weekly Team Sync")
+	Required("uid", "past_meeting_id", "meeting_id", "platform", "summary_data",
+		"requires_approval", "approved", "email_sent", "created_at", "updated_at")
+})
+
+// ParticipantSession represents a single join/leave session
+var ParticipantSession = Type("ParticipantSession", func() {
+	Description("A single join/leave session of a participant in a meeting")
+	Attribute("participant_uuid", String, "Zoom participant UUID")
+	Attribute("join_time", String, "When the participant joined (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:30:37Z")
 	})
-	Attribute("summary_overview", String, "Summary overview from Zoom AI")
-	Attribute("summary_details", ArrayOf(ZoomMeetingSummaryDetails), "Summary details from Zoom AI")
-	Attribute("next_steps", ArrayOf(String), "Next steps from Zoom AI", func() {
-		Example([]string{"Complete project documentation", "Schedule follow-up meeting"})
+	Attribute("leave_time", String, "When the participant left (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-06-27T05:59:12Z")
+	})
+	Attribute("leave_reason", String, "Reason for leaving")
+})
+
+// ITXPastMeetingParticipant represents a V2-style unified participant (invitee/attendee)
+var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
+	Description("Past meeting participant - unified view of invitees and attendees from ITX API")
+
+	// Identifiers
+	Attribute("participant_id", String, "Participant identifier (invitee_id or attendee_id or both)", func() {
+		Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+	})
+	Attribute("invitee_id", String, "Invitee record UUID (if is_invited=true)", func() {
+		Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+	})
+	Attribute("attendee_id", String, "Attendee record UUID (if is_attended=true)", func() {
+		Example("fb2f9647-b096-5dg6-c092-b281938b2e22")
 	})
 
-	// Edited versions
-	Attribute("edited_summary_overview", String, "Edited summary overview")
-	Attribute("edited_summary_details", ArrayOf(ZoomMeetingSummaryDetails), "Edited summary details")
-	Attribute("edited_next_steps", ArrayOf(String), "Edited next steps")
+	// Identity
+	Attribute("email", String, "Primary email address", func() {
+		Example("john.doe@example.com")
+		Format(FormatEmail)
+	})
+	Attribute("first_name", String, "First name", func() {
+		Example("John")
+	})
+	Attribute("last_name", String, "Last name", func() {
+		Example("Doe")
+	})
+	Attribute("username", String, "LF SSO username", func() {
+		Example("jdoe")
+	})
+	Attribute("lf_user_id", String, "LF user ID (Salesforce ID)", func() {
+		Example("003P000001cRZVVI9A")
+	})
 
-	// Approval workflow
-	Attribute("requires_approval", Boolean, "Whether approval is required")
-	Attribute("approved", Boolean, "Whether summary has been approved")
+	// Organization
+	Attribute("org_name", String, "Organization name", func() {
+		Example("Google")
+	})
+	Attribute("job_title", String, "Job title", func() {
+		Example("Software Engineer")
+	})
+	Attribute("org_is_member", Boolean, "Whether org has LF membership")
+	Attribute("org_is_project_member", Boolean, "Whether org has project membership")
 
-	// Audit fields (read-only)
+	// Committee
+	Attribute("committee_id", String, "Associated committee UUID", func() {
+		Format(FormatUUID)
+	})
+	Attribute("committee_role", String, "Role within committee", func() {
+		Example("Developer Seat")
+	})
+	Attribute("is_committee_member", Boolean, "Whether participant is a committee member")
+	Attribute("committee_voting_status", String, "Voting status in committee", func() {
+		Example("Voting Rep")
+	})
+
+	// Profile
+	Attribute("avatar_url", String, "URL to profile picture", func() {
+		Format(FormatURI)
+		Example("https://avatars.example.com/jdoe.jpg")
+	})
+
+	// Participation flags
+	Attribute("is_invited", Boolean, "Whether the participant was invited/registered to this past meeting", func() {
+		Example(true)
+	})
+	Attribute("is_attended", Boolean, "Whether the participant attended this past meeting", func() {
+		Example(true)
+	})
+	Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendees only)")
+	Attribute("is_unknown", Boolean, "Whether attendee is marked as unknown (attendees only)")
+
+	// Attendance tracking
+	Attribute("sessions", ArrayOf(ParticipantSession), "Array of session objects with join/leave times (attendees only)")
+	Attribute("average_attendance", Int, "Average attendance percentage (attendees only, calculated)", func() {
+		Example(85)
+	})
+
+	// Audit fields
 	Attribute("created_at", String, "Creation timestamp (RFC3339)", func() {
 		Format(FormatDateTime)
 		Example("2021-06-27T05:30:00Z")

@@ -929,16 +929,17 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			BearerTokenAttribute()
 			VersionAttribute()
-			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id)", func() {
 				Example("12343245463-1630560600000")
 			})
-			Attribute("summary_id", String, "Summary UUID", func() {
-				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			Attribute("summary_uid", String, "Summary UID", func() {
+				Example("456e7890-e89b-12d3-a456-426614174000")
+				Format(FormatUUID)
 			})
-			Required("past_meeting_id", "summary_id")
+			Required("past_meeting_id", "summary_uid")
 		})
 
-		Result(ITXPastMeetingSummary)
+		Result(PastMeetingSummary)
 
 		Error("BadRequest", BadRequestError, "Bad request")
 		Error("Unauthorized", UnauthorizedError, "Unauthorized")
@@ -948,7 +949,7 @@ var _ = Service("Meeting Service", func() {
 		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
 
 		HTTP(func() {
-			GET("/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}")
+			GET("/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}")
 			Param("version:v")
 			Header("bearer_token:Authorization")
 			Response(StatusOK)
@@ -969,20 +970,19 @@ var _ = Service("Meeting Service", func() {
 		Payload(func() {
 			BearerTokenAttribute()
 			VersionAttribute()
-			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id)", func() {
 				Example("12343245463-1630560600000")
 			})
-			Attribute("summary_id", String, "Summary UUID", func() {
-				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			Attribute("summary_uid", String, "Summary UID", func() {
+				Example("456e7890-e89b-12d3-a456-426614174000")
+				Format(FormatUUID)
 			})
-			Attribute("edited_summary_overview", String, "Edited summary overview")
-			Attribute("edited_summary_details", ArrayOf(ZoomMeetingSummaryDetails), "Edited summary details")
-			Attribute("edited_next_steps", ArrayOf(String), "Edited next steps")
+			Attribute("edited_content", String, "User-edited summary content")
 			Attribute("approved", Boolean, "Approval status")
-			Required("past_meeting_id", "summary_id")
+			Required("past_meeting_id", "summary_uid")
 		})
 
-		Result(ITXPastMeetingSummary)
+		Result(PastMeetingSummary)
 
 		Error("BadRequest", BadRequestError, "Bad request")
 		Error("Unauthorized", UnauthorizedError, "Unauthorized")
@@ -992,10 +992,202 @@ var _ = Service("Meeting Service", func() {
 		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
 
 		HTTP(func() {
-			PUT("/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}")
+			PUT("/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}")
 			Param("version:v")
 			Header("bearer_token:Authorization")
 			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// Past Meeting Participant Endpoints (unified invitee/attendee interface)
+	Method("create-itx-past-meeting-participant", func() {
+		Description("Create a past meeting participant through ITX API proxy - routes to invitee and/or attendee endpoints based on flags")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id format)", func() {
+				Example("12343245463-1630560600000")
+			})
+
+			// Identity fields - at least one required
+			Attribute("email", String, "Email address", func() {
+				Format(FormatEmail)
+				Example("john.doe@example.com")
+			})
+			Attribute("first_name", String, "First name", func() {
+				Example("John")
+			})
+			Attribute("last_name", String, "Last name", func() {
+				Example("Doe")
+			})
+			Attribute("username", String, "LF SSO username", func() {
+				Example("jdoe")
+			})
+			Attribute("lf_user_id", String, "LF user ID (Salesforce ID)", func() {
+				Example("003P000001cRZVVI9A")
+			})
+
+			// Organization fields
+			Attribute("org_name", String, "Organization name", func() {
+				Example("Google")
+			})
+			Attribute("job_title", String, "Job title", func() {
+				Example("Software Engineer")
+			})
+			Attribute("org_is_member", Boolean, "Whether org has LF membership")
+			Attribute("org_is_project_member", Boolean, "Whether org has project membership")
+
+			// Committee fields
+			Attribute("committee_id", String, "Associated committee UUID", func() {
+				Format(FormatUUID)
+			})
+			Attribute("committee_role", String, "Role within committee", func() {
+				Example("Developer Seat")
+			})
+			Attribute("committee_voting_status", String, "Voting status in committee", func() {
+				Example("Voting Rep")
+			})
+
+			// Profile
+			Attribute("avatar_url", String, "URL to profile picture", func() {
+				Format(FormatURI)
+				Example("https://avatars.example.com/jdoe.jpg")
+			})
+
+			// Participation flags
+			Attribute("is_invited", Boolean, "Whether the participant was invited/registered - creates invitee record if true", func() {
+				Example(true)
+			})
+			Attribute("is_attended", Boolean, "Whether the participant attended - creates attendee record if true", func() {
+				Example(true)
+			})
+
+			// Attendee-specific fields
+			Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendee only)")
+			Attribute("is_unknown", Boolean, "Whether attendee is marked as unknown (attendee only)")
+			Attribute("sessions", ArrayOf(ParticipantSession), "Array of session objects with join/leave times (attendee only)")
+
+			Required("past_meeting_id")
+		})
+
+		Result(ITXPastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Invalid request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/past_meetings/{past_meeting_id}/participants")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-past-meeting-participant", func() {
+		Description("Update a past meeting participant through ITX API proxy - updates invitee and/or attendee records as needed")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id format)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("participant_id", String, "Participant ID (invitee_id or attendee_id)", func() {
+				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			})
+
+			// Updatable fields
+			Attribute("org_name", String, "Organization name", func() {
+				Example("Microsoft")
+			})
+			Attribute("job_title", String, "Job title", func() {
+				Example("Senior Software Engineer")
+			})
+			Attribute("committee_role", String, "Role within committee", func() {
+				Example("Lead Developer")
+			})
+			Attribute("committee_voting_status", String, "Voting status in committee", func() {
+				Example("Alt Voting Rep")
+			})
+			Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendee only)")
+
+			Required("past_meeting_id", "participant_id")
+		})
+
+		Result(ITXPastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Invalid request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Participant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/past_meetings/{past_meeting_id}/participants/{participant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-past-meeting-participant", func() {
+		Description("Delete a past meeting participant through ITX API proxy - deletes invitee and/or attendee records as needed")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id format)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("participant_id", String, "Participant ID (invitee_id or attendee_id)", func() {
+				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			})
+
+			Required("past_meeting_id", "participant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Invalid request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Participant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/past_meetings/{past_meeting_id}/participants/{participant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
 			Response("BadRequest", StatusBadRequest)
 			Response("Unauthorized", StatusUnauthorized)
 			Response("Forbidden", StatusForbidden)

@@ -19,35 +19,38 @@ import (
 
 // Server lists the Meeting Service service endpoint HTTP handlers.
 type Server struct {
-	Mounts                        []*MountPoint
-	Readyz                        http.Handler
-	Livez                         http.Handler
-	CreateItxMeeting              http.Handler
-	GetItxMeeting                 http.Handler
-	DeleteItxMeeting              http.Handler
-	UpdateItxMeeting              http.Handler
-	GetItxMeetingCount            http.Handler
-	CreateItxRegistrant           http.Handler
-	GetItxRegistrant              http.Handler
-	UpdateItxRegistrant           http.Handler
-	DeleteItxRegistrant           http.Handler
-	GetItxJoinLink                http.Handler
-	GetItxRegistrantIcs           http.Handler
-	ResendItxRegistrantInvitation http.Handler
-	ResendItxMeetingInvitations   http.Handler
-	RegisterItxCommitteeMembers   http.Handler
-	UpdateItxOccurrence           http.Handler
-	DeleteItxOccurrence           http.Handler
-	CreateItxPastMeeting          http.Handler
-	GetItxPastMeeting             http.Handler
-	DeleteItxPastMeeting          http.Handler
-	UpdateItxPastMeeting          http.Handler
-	GetItxPastMeetingSummary      http.Handler
-	UpdateItxPastMeetingSummary   http.Handler
-	GenHTTPOpenapiJSON            http.Handler
-	GenHTTPOpenapiYaml            http.Handler
-	GenHTTPOpenapi3JSON           http.Handler
-	GenHTTPOpenapi3Yaml           http.Handler
+	Mounts                          []*MountPoint
+	Readyz                          http.Handler
+	Livez                           http.Handler
+	CreateItxMeeting                http.Handler
+	GetItxMeeting                   http.Handler
+	DeleteItxMeeting                http.Handler
+	UpdateItxMeeting                http.Handler
+	GetItxMeetingCount              http.Handler
+	CreateItxRegistrant             http.Handler
+	GetItxRegistrant                http.Handler
+	UpdateItxRegistrant             http.Handler
+	DeleteItxRegistrant             http.Handler
+	GetItxJoinLink                  http.Handler
+	GetItxRegistrantIcs             http.Handler
+	ResendItxRegistrantInvitation   http.Handler
+	ResendItxMeetingInvitations     http.Handler
+	RegisterItxCommitteeMembers     http.Handler
+	UpdateItxOccurrence             http.Handler
+	DeleteItxOccurrence             http.Handler
+	CreateItxPastMeeting            http.Handler
+	GetItxPastMeeting               http.Handler
+	DeleteItxPastMeeting            http.Handler
+	UpdateItxPastMeeting            http.Handler
+	GetItxPastMeetingSummary        http.Handler
+	UpdateItxPastMeetingSummary     http.Handler
+	CreateItxPastMeetingParticipant http.Handler
+	UpdateItxPastMeetingParticipant http.Handler
+	DeleteItxPastMeetingParticipant http.Handler
+	GenHTTPOpenapiJSON              http.Handler
+	GenHTTPOpenapiYaml              http.Handler
+	GenHTTPOpenapi3JSON             http.Handler
+	GenHTTPOpenapi3Yaml             http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -119,41 +122,47 @@ func New(
 			{"GetItxPastMeeting", "GET", "/itx/past_meetings/{past_meeting_id}"},
 			{"DeleteItxPastMeeting", "DELETE", "/itx/past_meetings/{past_meeting_id}"},
 			{"UpdateItxPastMeeting", "PUT", "/itx/past_meetings/{past_meeting_id}"},
-			{"GetItxPastMeetingSummary", "GET", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}"},
-			{"UpdateItxPastMeetingSummary", "PUT", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}"},
+			{"GetItxPastMeetingSummary", "GET", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}"},
+			{"UpdateItxPastMeetingSummary", "PUT", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}"},
+			{"CreateItxPastMeetingParticipant", "POST", "/itx/past_meetings/{past_meeting_id}/participants"},
+			{"UpdateItxPastMeetingParticipant", "PUT", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}"},
+			{"DeleteItxPastMeetingParticipant", "DELETE", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}"},
 			{"Serve gen/http/openapi.json", "GET", "/_meetings/openapi.json"},
 			{"Serve gen/http/openapi.yaml", "GET", "/_meetings/openapi.yaml"},
 			{"Serve gen/http/openapi3.json", "GET", "/_meetings/openapi3.json"},
 			{"Serve gen/http/openapi3.yaml", "GET", "/_meetings/openapi3.yaml"},
 		},
-		Readyz:                        NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
-		Livez:                         NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
-		CreateItxMeeting:              NewCreateItxMeetingHandler(e.CreateItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxMeeting:                 NewGetItxMeetingHandler(e.GetItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxMeeting:              NewDeleteItxMeetingHandler(e.DeleteItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxMeeting:              NewUpdateItxMeetingHandler(e.UpdateItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxMeetingCount:            NewGetItxMeetingCountHandler(e.GetItxMeetingCount, mux, decoder, encoder, errhandler, formatter),
-		CreateItxRegistrant:           NewCreateItxRegistrantHandler(e.CreateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		GetItxRegistrant:              NewGetItxRegistrantHandler(e.GetItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxRegistrant:           NewUpdateItxRegistrantHandler(e.UpdateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxRegistrant:           NewDeleteItxRegistrantHandler(e.DeleteItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		GetItxJoinLink:                NewGetItxJoinLinkHandler(e.GetItxJoinLink, mux, decoder, encoder, errhandler, formatter),
-		GetItxRegistrantIcs:           NewGetItxRegistrantIcsHandler(e.GetItxRegistrantIcs, mux, decoder, encoder, errhandler, formatter),
-		ResendItxRegistrantInvitation: NewResendItxRegistrantInvitationHandler(e.ResendItxRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
-		ResendItxMeetingInvitations:   NewResendItxMeetingInvitationsHandler(e.ResendItxMeetingInvitations, mux, decoder, encoder, errhandler, formatter),
-		RegisterItxCommitteeMembers:   NewRegisterItxCommitteeMembersHandler(e.RegisterItxCommitteeMembers, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxOccurrence:           NewUpdateItxOccurrenceHandler(e.UpdateItxOccurrence, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxOccurrence:           NewDeleteItxOccurrenceHandler(e.DeleteItxOccurrence, mux, decoder, encoder, errhandler, formatter),
-		CreateItxPastMeeting:          NewCreateItxPastMeetingHandler(e.CreateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxPastMeeting:             NewGetItxPastMeetingHandler(e.GetItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxPastMeeting:          NewDeleteItxPastMeetingHandler(e.DeleteItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxPastMeeting:          NewUpdateItxPastMeetingHandler(e.UpdateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxPastMeetingSummary:      NewGetItxPastMeetingSummaryHandler(e.GetItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxPastMeetingSummary:   NewUpdateItxPastMeetingSummaryHandler(e.UpdateItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
-		GenHTTPOpenapiJSON:            http.FileServer(fileSystemGenHTTPOpenapiJSON),
-		GenHTTPOpenapiYaml:            http.FileServer(fileSystemGenHTTPOpenapiYaml),
-		GenHTTPOpenapi3JSON:           http.FileServer(fileSystemGenHTTPOpenapi3JSON),
-		GenHTTPOpenapi3Yaml:           http.FileServer(fileSystemGenHTTPOpenapi3Yaml),
+		Readyz:                          NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
+		Livez:                           NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
+		CreateItxMeeting:                NewCreateItxMeetingHandler(e.CreateItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxMeeting:                   NewGetItxMeetingHandler(e.GetItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxMeeting:                NewDeleteItxMeetingHandler(e.DeleteItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxMeeting:                NewUpdateItxMeetingHandler(e.UpdateItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxMeetingCount:              NewGetItxMeetingCountHandler(e.GetItxMeetingCount, mux, decoder, encoder, errhandler, formatter),
+		CreateItxRegistrant:             NewCreateItxRegistrantHandler(e.CreateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		GetItxRegistrant:                NewGetItxRegistrantHandler(e.GetItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxRegistrant:             NewUpdateItxRegistrantHandler(e.UpdateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxRegistrant:             NewDeleteItxRegistrantHandler(e.DeleteItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		GetItxJoinLink:                  NewGetItxJoinLinkHandler(e.GetItxJoinLink, mux, decoder, encoder, errhandler, formatter),
+		GetItxRegistrantIcs:             NewGetItxRegistrantIcsHandler(e.GetItxRegistrantIcs, mux, decoder, encoder, errhandler, formatter),
+		ResendItxRegistrantInvitation:   NewResendItxRegistrantInvitationHandler(e.ResendItxRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
+		ResendItxMeetingInvitations:     NewResendItxMeetingInvitationsHandler(e.ResendItxMeetingInvitations, mux, decoder, encoder, errhandler, formatter),
+		RegisterItxCommitteeMembers:     NewRegisterItxCommitteeMembersHandler(e.RegisterItxCommitteeMembers, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxOccurrence:             NewUpdateItxOccurrenceHandler(e.UpdateItxOccurrence, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxOccurrence:             NewDeleteItxOccurrenceHandler(e.DeleteItxOccurrence, mux, decoder, encoder, errhandler, formatter),
+		CreateItxPastMeeting:            NewCreateItxPastMeetingHandler(e.CreateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxPastMeeting:               NewGetItxPastMeetingHandler(e.GetItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxPastMeeting:            NewDeleteItxPastMeetingHandler(e.DeleteItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxPastMeeting:            NewUpdateItxPastMeetingHandler(e.UpdateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxPastMeetingSummary:        NewGetItxPastMeetingSummaryHandler(e.GetItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxPastMeetingSummary:     NewUpdateItxPastMeetingSummaryHandler(e.UpdateItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
+		CreateItxPastMeetingParticipant: NewCreateItxPastMeetingParticipantHandler(e.CreateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxPastMeetingParticipant: NewUpdateItxPastMeetingParticipantHandler(e.UpdateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxPastMeetingParticipant: NewDeleteItxPastMeetingParticipantHandler(e.DeleteItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		GenHTTPOpenapiJSON:              http.FileServer(fileSystemGenHTTPOpenapiJSON),
+		GenHTTPOpenapiYaml:              http.FileServer(fileSystemGenHTTPOpenapiYaml),
+		GenHTTPOpenapi3JSON:             http.FileServer(fileSystemGenHTTPOpenapi3JSON),
+		GenHTTPOpenapi3Yaml:             http.FileServer(fileSystemGenHTTPOpenapi3Yaml),
 	}
 }
 
@@ -186,6 +195,9 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UpdateItxPastMeeting = m(s.UpdateItxPastMeeting)
 	s.GetItxPastMeetingSummary = m(s.GetItxPastMeetingSummary)
 	s.UpdateItxPastMeetingSummary = m(s.UpdateItxPastMeetingSummary)
+	s.CreateItxPastMeetingParticipant = m(s.CreateItxPastMeetingParticipant)
+	s.UpdateItxPastMeetingParticipant = m(s.UpdateItxPastMeetingParticipant)
+	s.DeleteItxPastMeetingParticipant = m(s.DeleteItxPastMeetingParticipant)
 }
 
 // MethodNames returns the methods served.
@@ -217,6 +229,9 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountUpdateItxPastMeetingHandler(mux, h.UpdateItxPastMeeting)
 	MountGetItxPastMeetingSummaryHandler(mux, h.GetItxPastMeetingSummary)
 	MountUpdateItxPastMeetingSummaryHandler(mux, h.UpdateItxPastMeetingSummary)
+	MountCreateItxPastMeetingParticipantHandler(mux, h.CreateItxPastMeetingParticipant)
+	MountUpdateItxPastMeetingParticipantHandler(mux, h.UpdateItxPastMeetingParticipant)
+	MountDeleteItxPastMeetingParticipantHandler(mux, h.DeleteItxPastMeetingParticipant)
 	MountGenHTTPOpenapiJSON(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapiJSON))
 	MountGenHTTPOpenapiYaml(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapiYaml))
 	MountGenHTTPOpenapi3JSON(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapi3JSON))
@@ -1407,7 +1422,7 @@ func MountGetItxPastMeetingSummaryHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}", f)
+	mux.Handle("GET", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}", f)
 }
 
 // NewGetItxPastMeetingSummaryHandler creates a HTTP handler which loads the
@@ -1461,7 +1476,7 @@ func MountUpdateItxPastMeetingSummaryHandler(mux goahttp.Muxer, h http.Handler) 
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("PUT", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_id}", f)
+	mux.Handle("PUT", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}", f)
 }
 
 // NewUpdateItxPastMeetingSummaryHandler creates a HTTP handler which loads the
@@ -1483,6 +1498,168 @@ func NewUpdateItxPastMeetingSummaryHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "update-itx-past-meeting-summary")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountCreateItxPastMeetingParticipantHandler configures the mux to serve the
+// "Meeting Service" service "create-itx-past-meeting-participant" endpoint.
+func MountCreateItxPastMeetingParticipantHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/itx/past_meetings/{past_meeting_id}/participants", f)
+}
+
+// NewCreateItxPastMeetingParticipantHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "create-itx-past-meeting-participant" endpoint.
+func NewCreateItxPastMeetingParticipantHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreateItxPastMeetingParticipantRequest(mux, decoder)
+		encodeResponse = EncodeCreateItxPastMeetingParticipantResponse(encoder)
+		encodeError    = EncodeCreateItxPastMeetingParticipantError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "create-itx-past-meeting-participant")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountUpdateItxPastMeetingParticipantHandler configures the mux to serve the
+// "Meeting Service" service "update-itx-past-meeting-participant" endpoint.
+func MountUpdateItxPastMeetingParticipantHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("PUT", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}", f)
+}
+
+// NewUpdateItxPastMeetingParticipantHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "update-itx-past-meeting-participant" endpoint.
+func NewUpdateItxPastMeetingParticipantHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeUpdateItxPastMeetingParticipantRequest(mux, decoder)
+		encodeResponse = EncodeUpdateItxPastMeetingParticipantResponse(encoder)
+		encodeError    = EncodeUpdateItxPastMeetingParticipantError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "update-itx-past-meeting-participant")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountDeleteItxPastMeetingParticipantHandler configures the mux to serve the
+// "Meeting Service" service "delete-itx-past-meeting-participant" endpoint.
+func MountDeleteItxPastMeetingParticipantHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("DELETE", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}", f)
+}
+
+// NewDeleteItxPastMeetingParticipantHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "delete-itx-past-meeting-participant" endpoint.
+func NewDeleteItxPastMeetingParticipantHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeDeleteItxPastMeetingParticipantRequest(mux, decoder)
+		encodeResponse = EncodeDeleteItxPastMeetingParticipantResponse(encoder)
+		encodeError    = EncodeDeleteItxPastMeetingParticipantError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "delete-itx-past-meeting-participant")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

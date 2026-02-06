@@ -47,10 +47,31 @@ type ITXPastMeetingSummaryClient interface {
 	UpdatePastMeetingSummary(ctx context.Context, pastMeetingID, summaryID string, req *itx.UpdatePastMeetingSummaryRequest) (*itx.PastMeetingSummaryResponse, error)
 }
 
-// ITXProxyClient combines meeting, registrant, past meeting, and past meeting summary operations
+// ITXInviteeClient defines the interface for ITX invitee operations
+type ITXInviteeClient interface {
+	CreateInvitee(ctx context.Context, pastMeetingID string, req *itx.CreateInviteeRequest) (*itx.InviteeResponse, error)
+	UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID string, req *itx.UpdateInviteeRequest) (*itx.InviteeResponse, error)
+	DeleteInvitee(ctx context.Context, pastMeetingID, inviteeID string) error
+}
+
+// ITXAttendeeClient defines the interface for ITX attendee operations
+type ITXAttendeeClient interface {
+	CreateAttendee(ctx context.Context, pastMeetingID string, req *itx.CreateAttendeeRequest) (*itx.AttendeeResponse, error)
+	UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error)
+	DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID string) error
+}
+
+// ITXPastMeetingParticipantClient combines invitee and attendee operations
+type ITXPastMeetingParticipantClient interface {
+	ITXInviteeClient
+	ITXAttendeeClient
+}
+
+// ITXProxyClient combines meeting, registrant, past meeting, past meeting summary, and participant operations
 type ITXProxyClient interface {
 	ITXMeetingClient
 	ITXRegistrantClient
 	ITXPastMeetingClient
 	ITXPastMeetingSummaryClient
+	ITXPastMeetingParticipantClient
 }

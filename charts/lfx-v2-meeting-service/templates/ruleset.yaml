@@ -655,7 +655,7 @@ spec:
         methods:
           - GET
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_id}
+          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -668,7 +668,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_id -}}" }}"
+              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_uid -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -686,7 +686,7 @@ spec:
         methods:
           - PUT
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_id}
+          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -699,7 +699,100 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_id -}}" }}"
+              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_uid -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_participants:create"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /itx/past_meetings/{past_meeting_id}/participants
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_participants:update"
+      match:
+        methods:
+          - PUT
+        routes:
+          - path: /itx/past_meetings/{past_meeting_id}/participants/{participant_id}
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_participants:delete"
+      match:
+        methods:
+          - DELETE
+        routes:
+          - path: /itx/past_meetings/{past_meeting_id}/participants/{participant_id}
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests

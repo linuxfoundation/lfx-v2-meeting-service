@@ -122,11 +122,26 @@ func UpdateItxPastMeetingMeetingServicePath(pastMeetingID string) string {
 }
 
 // GetItxPastMeetingSummaryMeetingServicePath returns the URL path to the Meeting Service service get-itx-past-meeting-summary HTTP endpoint.
-func GetItxPastMeetingSummaryMeetingServicePath(pastMeetingID string, summaryID string) string {
-	return fmt.Sprintf("/itx/past_meetings/%v/summaries/%v", pastMeetingID, summaryID)
+func GetItxPastMeetingSummaryMeetingServicePath(pastMeetingID string, summaryUID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/summaries/%v", pastMeetingID, summaryUID)
 }
 
 // UpdateItxPastMeetingSummaryMeetingServicePath returns the URL path to the Meeting Service service update-itx-past-meeting-summary HTTP endpoint.
-func UpdateItxPastMeetingSummaryMeetingServicePath(pastMeetingID string, summaryID string) string {
-	return fmt.Sprintf("/itx/past_meetings/%v/summaries/%v", pastMeetingID, summaryID)
+func UpdateItxPastMeetingSummaryMeetingServicePath(pastMeetingID string, summaryUID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/summaries/%v", pastMeetingID, summaryUID)
+}
+
+// CreateItxPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service create-itx-past-meeting-participant HTTP endpoint.
+func CreateItxPastMeetingParticipantMeetingServicePath(pastMeetingID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/participants", pastMeetingID)
+}
+
+// UpdateItxPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service update-itx-past-meeting-participant HTTP endpoint.
+func UpdateItxPastMeetingParticipantMeetingServicePath(pastMeetingID string, participantID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/participants/%v", pastMeetingID, participantID)
+}
+
+// DeleteItxPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service delete-itx-past-meeting-participant HTTP endpoint.
+func DeleteItxPastMeetingParticipantMeetingServicePath(pastMeetingID string, participantID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/participants/%v", pastMeetingID, participantID)
 }

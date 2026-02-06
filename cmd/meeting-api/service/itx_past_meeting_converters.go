@@ -139,27 +139,17 @@ func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXP
 		Description: ptrIfNotEmpty(resp.Agenda),
 		StartTime:   ptrIfNotEmpty(resp.StartTime),
 		Timezone:    ptrIfNotEmpty(resp.Timezone),
+		Duration:    &resp.Duration,
 		Visibility:  ptrIfNotEmpty(resp.Visibility),
+		Restricted:  &resp.Restricted,
 		MeetingType: ptrIfNotEmpty(resp.MeetingType),
 
 		// Recording/Transcript settings
+		RecordingEnabled:   &resp.RecordingEnabled,
+		TranscriptEnabled:  &resp.TranscriptEnabled,
 		ArtifactVisibility: ptrIfNotEmpty(resp.RecordingAccess),
-	}
 
-	if resp.Duration != 0 {
-		goaResp.Duration = &resp.Duration
-	}
-	if resp.Restricted {
-		goaResp.Restricted = &resp.Restricted
-	}
-	if resp.RecordingEnabled {
-		goaResp.RecordingEnabled = &resp.RecordingEnabled
-	}
-	if resp.TranscriptEnabled {
-		goaResp.TranscriptEnabled = &resp.TranscriptEnabled
-	}
-	if resp.IsManuallyCreated {
-		goaResp.IsManuallyCreated = &resp.IsManuallyCreated
+		IsManuallyCreated: &resp.IsManuallyCreated,
 	}
 
 	// Convert committees

@@ -15,59 +15,65 @@ import (
 
 // Client is the "Meeting Service" service client.
 type Client struct {
-	ReadyzEndpoint                        goa.Endpoint
-	LivezEndpoint                         goa.Endpoint
-	CreateItxMeetingEndpoint              goa.Endpoint
-	GetItxMeetingEndpoint                 goa.Endpoint
-	DeleteItxMeetingEndpoint              goa.Endpoint
-	UpdateItxMeetingEndpoint              goa.Endpoint
-	GetItxMeetingCountEndpoint            goa.Endpoint
-	CreateItxRegistrantEndpoint           goa.Endpoint
-	GetItxRegistrantEndpoint              goa.Endpoint
-	UpdateItxRegistrantEndpoint           goa.Endpoint
-	DeleteItxRegistrantEndpoint           goa.Endpoint
-	GetItxJoinLinkEndpoint                goa.Endpoint
-	GetItxRegistrantIcsEndpoint           goa.Endpoint
-	ResendItxRegistrantInvitationEndpoint goa.Endpoint
-	ResendItxMeetingInvitationsEndpoint   goa.Endpoint
-	RegisterItxCommitteeMembersEndpoint   goa.Endpoint
-	UpdateItxOccurrenceEndpoint           goa.Endpoint
-	DeleteItxOccurrenceEndpoint           goa.Endpoint
-	CreateItxPastMeetingEndpoint          goa.Endpoint
-	GetItxPastMeetingEndpoint             goa.Endpoint
-	DeleteItxPastMeetingEndpoint          goa.Endpoint
-	UpdateItxPastMeetingEndpoint          goa.Endpoint
-	GetItxPastMeetingSummaryEndpoint      goa.Endpoint
-	UpdateItxPastMeetingSummaryEndpoint   goa.Endpoint
+	ReadyzEndpoint                          goa.Endpoint
+	LivezEndpoint                           goa.Endpoint
+	CreateItxMeetingEndpoint                goa.Endpoint
+	GetItxMeetingEndpoint                   goa.Endpoint
+	DeleteItxMeetingEndpoint                goa.Endpoint
+	UpdateItxMeetingEndpoint                goa.Endpoint
+	GetItxMeetingCountEndpoint              goa.Endpoint
+	CreateItxRegistrantEndpoint             goa.Endpoint
+	GetItxRegistrantEndpoint                goa.Endpoint
+	UpdateItxRegistrantEndpoint             goa.Endpoint
+	DeleteItxRegistrantEndpoint             goa.Endpoint
+	GetItxJoinLinkEndpoint                  goa.Endpoint
+	GetItxRegistrantIcsEndpoint             goa.Endpoint
+	ResendItxRegistrantInvitationEndpoint   goa.Endpoint
+	ResendItxMeetingInvitationsEndpoint     goa.Endpoint
+	RegisterItxCommitteeMembersEndpoint     goa.Endpoint
+	UpdateItxOccurrenceEndpoint             goa.Endpoint
+	DeleteItxOccurrenceEndpoint             goa.Endpoint
+	CreateItxPastMeetingEndpoint            goa.Endpoint
+	GetItxPastMeetingEndpoint               goa.Endpoint
+	DeleteItxPastMeetingEndpoint            goa.Endpoint
+	UpdateItxPastMeetingEndpoint            goa.Endpoint
+	GetItxPastMeetingSummaryEndpoint        goa.Endpoint
+	UpdateItxPastMeetingSummaryEndpoint     goa.Endpoint
+	CreateItxPastMeetingParticipantEndpoint goa.Endpoint
+	UpdateItxPastMeetingParticipantEndpoint goa.Endpoint
+	DeleteItxPastMeetingParticipantEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant goa.Endpoint) *Client {
 	return &Client{
-		ReadyzEndpoint:                        readyz,
-		LivezEndpoint:                         livez,
-		CreateItxMeetingEndpoint:              createItxMeeting,
-		GetItxMeetingEndpoint:                 getItxMeeting,
-		DeleteItxMeetingEndpoint:              deleteItxMeeting,
-		UpdateItxMeetingEndpoint:              updateItxMeeting,
-		GetItxMeetingCountEndpoint:            getItxMeetingCount,
-		CreateItxRegistrantEndpoint:           createItxRegistrant,
-		GetItxRegistrantEndpoint:              getItxRegistrant,
-		UpdateItxRegistrantEndpoint:           updateItxRegistrant,
-		DeleteItxRegistrantEndpoint:           deleteItxRegistrant,
-		GetItxJoinLinkEndpoint:                getItxJoinLink,
-		GetItxRegistrantIcsEndpoint:           getItxRegistrantIcs,
-		ResendItxRegistrantInvitationEndpoint: resendItxRegistrantInvitation,
-		ResendItxMeetingInvitationsEndpoint:   resendItxMeetingInvitations,
-		RegisterItxCommitteeMembersEndpoint:   registerItxCommitteeMembers,
-		UpdateItxOccurrenceEndpoint:           updateItxOccurrence,
-		DeleteItxOccurrenceEndpoint:           deleteItxOccurrence,
-		CreateItxPastMeetingEndpoint:          createItxPastMeeting,
-		GetItxPastMeetingEndpoint:             getItxPastMeeting,
-		DeleteItxPastMeetingEndpoint:          deleteItxPastMeeting,
-		UpdateItxPastMeetingEndpoint:          updateItxPastMeeting,
-		GetItxPastMeetingSummaryEndpoint:      getItxPastMeetingSummary,
-		UpdateItxPastMeetingSummaryEndpoint:   updateItxPastMeetingSummary,
+		ReadyzEndpoint:                          readyz,
+		LivezEndpoint:                           livez,
+		CreateItxMeetingEndpoint:                createItxMeeting,
+		GetItxMeetingEndpoint:                   getItxMeeting,
+		DeleteItxMeetingEndpoint:                deleteItxMeeting,
+		UpdateItxMeetingEndpoint:                updateItxMeeting,
+		GetItxMeetingCountEndpoint:              getItxMeetingCount,
+		CreateItxRegistrantEndpoint:             createItxRegistrant,
+		GetItxRegistrantEndpoint:                getItxRegistrant,
+		UpdateItxRegistrantEndpoint:             updateItxRegistrant,
+		DeleteItxRegistrantEndpoint:             deleteItxRegistrant,
+		GetItxJoinLinkEndpoint:                  getItxJoinLink,
+		GetItxRegistrantIcsEndpoint:             getItxRegistrantIcs,
+		ResendItxRegistrantInvitationEndpoint:   resendItxRegistrantInvitation,
+		ResendItxMeetingInvitationsEndpoint:     resendItxMeetingInvitations,
+		RegisterItxCommitteeMembersEndpoint:     registerItxCommitteeMembers,
+		UpdateItxOccurrenceEndpoint:             updateItxOccurrence,
+		DeleteItxOccurrenceEndpoint:             deleteItxOccurrence,
+		CreateItxPastMeetingEndpoint:            createItxPastMeeting,
+		GetItxPastMeetingEndpoint:               getItxPastMeeting,
+		DeleteItxPastMeetingEndpoint:            deleteItxPastMeeting,
+		UpdateItxPastMeetingEndpoint:            updateItxPastMeeting,
+		GetItxPastMeetingSummaryEndpoint:        getItxPastMeetingSummary,
+		UpdateItxPastMeetingSummaryEndpoint:     updateItxPastMeetingSummary,
+		CreateItxPastMeetingParticipantEndpoint: createItxPastMeetingParticipant,
+		UpdateItxPastMeetingParticipantEndpoint: updateItxPastMeetingParticipant,
+		DeleteItxPastMeetingParticipantEndpoint: deleteItxPastMeetingParticipant,
 	}
 }
 
@@ -447,13 +453,13 @@ func (c *Client) UpdateItxPastMeeting(ctx context.Context, p *UpdateItxPastMeeti
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) GetItxPastMeetingSummary(ctx context.Context, p *GetItxPastMeetingSummaryPayload) (res *ITXPastMeetingSummary, err error) {
+func (c *Client) GetItxPastMeetingSummary(ctx context.Context, p *GetItxPastMeetingSummaryPayload) (res *PastMeetingSummary, err error) {
 	var ires any
 	ires, err = c.GetItxPastMeetingSummaryEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*ITXPastMeetingSummary), nil
+	return ires.(*PastMeetingSummary), nil
 }
 
 // UpdateItxPastMeetingSummary calls the "update-itx-past-meeting-summary"
@@ -466,11 +472,67 @@ func (c *Client) GetItxPastMeetingSummary(ctx context.Context, p *GetItxPastMeet
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) UpdateItxPastMeetingSummary(ctx context.Context, p *UpdateItxPastMeetingSummaryPayload) (res *ITXPastMeetingSummary, err error) {
+func (c *Client) UpdateItxPastMeetingSummary(ctx context.Context, p *UpdateItxPastMeetingSummaryPayload) (res *PastMeetingSummary, err error) {
 	var ires any
 	ires, err = c.UpdateItxPastMeetingSummaryEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*ITXPastMeetingSummary), nil
+	return ires.(*PastMeetingSummary), nil
+}
+
+// CreateItxPastMeetingParticipant calls the
+// "create-itx-past-meeting-participant" endpoint of the "Meeting Service"
+// service.
+// CreateItxPastMeetingParticipant may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Invalid request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Past meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateItxPastMeetingParticipant(ctx context.Context, p *CreateItxPastMeetingParticipantPayload) (res *ITXPastMeetingParticipant, err error) {
+	var ires any
+	ires, err = c.CreateItxPastMeetingParticipantEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXPastMeetingParticipant), nil
+}
+
+// UpdateItxPastMeetingParticipant calls the
+// "update-itx-past-meeting-participant" endpoint of the "Meeting Service"
+// service.
+// UpdateItxPastMeetingParticipant may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Invalid request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Participant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateItxPastMeetingParticipant(ctx context.Context, p *UpdateItxPastMeetingParticipantPayload) (res *ITXPastMeetingParticipant, err error) {
+	var ires any
+	ires, err = c.UpdateItxPastMeetingParticipantEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXPastMeetingParticipant), nil
+}
+
+// DeleteItxPastMeetingParticipant calls the
+// "delete-itx-past-meeting-participant" endpoint of the "Meeting Service"
+// service.
+// DeleteItxPastMeetingParticipant may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Invalid request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Participant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteItxPastMeetingParticipant(ctx context.Context, p *DeleteItxPastMeetingParticipantPayload) (err error) {
+	_, err = c.DeleteItxPastMeetingParticipantEndpoint(ctx, p)
+	return
 }
