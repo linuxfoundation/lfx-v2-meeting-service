@@ -18,4 +18,16 @@ type IDMapper interface {
 
 	// MapCommitteeV1ToV2 maps a v1 committee SFID to v2 committee UID
 	MapCommitteeV1ToV2(ctx context.Context, v1SFID string) (string, error)
+
+	// MapInviteeIDToParticipantV2 maps ITX invitee ID to V2 participant ID
+	MapInviteeIDToParticipantV2(ctx context.Context, inviteeID string) (string, error)
+
+	// MapAttendeeIDToParticipantV2 maps ITX attendee ID to V2 participant ID
+	MapAttendeeIDToParticipantV2(ctx context.Context, attendeeID string) (string, error)
+
+	// MapParticipantV2ToInviteeID maps a V2 participant ID to ITX invitee ID
+	MapParticipantV2ToInviteeID(ctx context.Context, v2ParticipantID string) (string, error)
+
+	// MapParticipantV2ToAttendeeID maps a V2 participant ID to ITX attendee ID
+	MapParticipantV2ToAttendeeID(ctx context.Context, v2ParticipantID string) (string, error)
 }

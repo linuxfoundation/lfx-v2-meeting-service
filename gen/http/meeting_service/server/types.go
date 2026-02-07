@@ -337,6 +337,20 @@ type CreateItxPastMeetingParticipantRequestBody struct {
 // Service" service "update-itx-past-meeting-participant" endpoint HTTP request
 // body.
 type UpdateItxPastMeetingParticipantRequestBody struct {
+	// Whether the participant is invited (if false, invitee record will be deleted)
+	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
+	// Whether the participant attended (if false, attendee record will be deleted)
+	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
+	// Email address (used for creation)
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// LF SSO username (used for creation)
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// LF user ID (used for creation)
+	LfUserID *string `form:"lf_user_id,omitempty" json:"lf_user_id,omitempty" xml:"lf_user_id,omitempty"`
+	// First name (required for invitee updates)
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// Last name (required for invitee updates)
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
 	// Organization name
 	OrgName *string `form:"org_name,omitempty" json:"org_name,omitempty" xml:"org_name,omitempty"`
 	// Job title
@@ -753,11 +767,15 @@ type UpdateItxPastMeetingSummaryResponseBody struct {
 // response body.
 type CreateItxPastMeetingParticipantResponseBody struct {
 	// Participant identifier (invitee_id or attendee_id or both)
-	ParticipantID *string `form:"participant_id,omitempty" json:"participant_id,omitempty" xml:"participant_id,omitempty"`
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Invitee record UUID (if is_invited=true)
 	InviteeID *string `form:"invitee_id,omitempty" json:"invitee_id,omitempty" xml:"invitee_id,omitempty"`
 	// Attendee record UUID (if is_attended=true)
 	AttendeeID *string `form:"attendee_id,omitempty" json:"attendee_id,omitempty" xml:"attendee_id,omitempty"`
+	// Past meeting ID (meeting_id-occurrence_id)
+	PastMeetingID *string `form:"past_meeting_id,omitempty" json:"past_meeting_id,omitempty" xml:"past_meeting_id,omitempty"`
+	// Meeting ID
+	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Primary email address
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// First name
@@ -813,11 +831,15 @@ type CreateItxPastMeetingParticipantResponseBody struct {
 // response body.
 type UpdateItxPastMeetingParticipantResponseBody struct {
 	// Participant identifier (invitee_id or attendee_id or both)
-	ParticipantID *string `form:"participant_id,omitempty" json:"participant_id,omitempty" xml:"participant_id,omitempty"`
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Invitee record UUID (if is_invited=true)
 	InviteeID *string `form:"invitee_id,omitempty" json:"invitee_id,omitempty" xml:"invitee_id,omitempty"`
 	// Attendee record UUID (if is_attended=true)
 	AttendeeID *string `form:"attendee_id,omitempty" json:"attendee_id,omitempty" xml:"attendee_id,omitempty"`
+	// Past meeting ID (meeting_id-occurrence_id)
+	PastMeetingID *string `form:"past_meeting_id,omitempty" json:"past_meeting_id,omitempty" xml:"past_meeting_id,omitempty"`
+	// Meeting ID
+	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Primary email address
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// First name
@@ -2906,9 +2928,11 @@ func NewUpdateItxPastMeetingSummaryResponseBody(res *meetingservice.PastMeetingS
 // "Meeting Service" service.
 func NewCreateItxPastMeetingParticipantResponseBody(res *meetingservice.ITXPastMeetingParticipant) *CreateItxPastMeetingParticipantResponseBody {
 	body := &CreateItxPastMeetingParticipantResponseBody{
-		ParticipantID:         res.ParticipantID,
+		ID:                    res.ID,
 		InviteeID:             res.InviteeID,
 		AttendeeID:            res.AttendeeID,
+		PastMeetingID:         res.PastMeetingID,
+		MeetingID:             res.MeetingID,
 		Email:                 res.Email,
 		FirstName:             res.FirstName,
 		LastName:              res.LastName,
@@ -2955,9 +2979,11 @@ func NewCreateItxPastMeetingParticipantResponseBody(res *meetingservice.ITXPastM
 // "Meeting Service" service.
 func NewUpdateItxPastMeetingParticipantResponseBody(res *meetingservice.ITXPastMeetingParticipant) *UpdateItxPastMeetingParticipantResponseBody {
 	body := &UpdateItxPastMeetingParticipantResponseBody{
-		ParticipantID:         res.ParticipantID,
+		ID:                    res.ID,
 		InviteeID:             res.InviteeID,
 		AttendeeID:            res.AttendeeID,
+		PastMeetingID:         res.PastMeetingID,
+		MeetingID:             res.MeetingID,
 		Email:                 res.Email,
 		FirstName:             res.FirstName,
 		LastName:              res.LastName,
@@ -5171,6 +5197,13 @@ func NewCreateItxPastMeetingParticipantPayload(body *CreateItxPastMeetingPartici
 // update-itx-past-meeting-participant endpoint payload.
 func NewUpdateItxPastMeetingParticipantPayload(body *UpdateItxPastMeetingParticipantRequestBody, pastMeetingID string, participantID string, version *string, bearerToken *string) *meetingservice.UpdateItxPastMeetingParticipantPayload {
 	v := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+		IsInvited:             body.IsInvited,
+		IsAttended:            body.IsAttended,
+		Email:                 body.Email,
+		Username:              body.Username,
+		LfUserID:              body.LfUserID,
+		FirstName:             body.FirstName,
+		LastName:              body.LastName,
 		OrgName:               body.OrgName,
 		JobTitle:              body.JobTitle,
 		CommitteeRole:         body.CommitteeRole,

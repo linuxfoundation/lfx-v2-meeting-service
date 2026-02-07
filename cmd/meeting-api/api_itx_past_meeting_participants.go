@@ -35,8 +35,17 @@ func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *me
 	// Convert Goa payload to ITX requests
 	inviteeReq, attendeeReq := service.ConvertUpdateParticipantPayload(p)
 
+	// Extract status flags
+	var isInvited, isAttended *bool
+	if p.IsInvited != nil {
+		isInvited = p.IsInvited
+	}
+	if p.IsAttended != nil {
+		isAttended = p.IsAttended
+	}
+
 	// Call service
-	resp, err := s.itxPastMeetingParticipantService.UpdateParticipant(ctx, p.PastMeetingID, p.ParticipantID, inviteeReq, attendeeReq)
+	resp, err := s.itxPastMeetingParticipantService.UpdateParticipant(ctx, p.PastMeetingID, p.ParticipantID, isInvited, isAttended, inviteeReq, attendeeReq)
 	if err != nil {
 		return nil, handleError(err)
 	}

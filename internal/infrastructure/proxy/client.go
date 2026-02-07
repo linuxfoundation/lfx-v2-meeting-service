@@ -1122,6 +1122,11 @@ func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID str
 		return nil, c.mapHTTPError(resp.StatusCode, respBody)
 	}
 
+	// Handle 204 No Content response - ITX returns 204 for successful updates
+	if resp.StatusCode == http.StatusNoContent {
+		return nil, nil
+	}
+
 	// Unmarshal response
 	var inviteeResp itx.InviteeResponse
 	if err := json.Unmarshal(respBody, &inviteeResp); err != nil {
@@ -1254,6 +1259,11 @@ func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID s
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Handle 204 No Content response - ITX returns 204 for successful updates
+	if resp.StatusCode == http.StatusNoContent {
+		return nil, nil
 	}
 
 	// Unmarshal response

@@ -144,11 +144,33 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 	var attendeeReq *itx.UpdateAttendeeRequest
 
 	// Check if any invitee-updatable fields are present
-	hasInviteeFields := payload.OrgName != nil || payload.JobTitle != nil ||
-		payload.CommitteeRole != nil || payload.CommitteeVotingStatus != nil
+	hasInviteeFields := payload.FirstName != nil || payload.LastName != nil ||
+		payload.OrgName != nil || payload.JobTitle != nil ||
+		payload.CommitteeRole != nil || payload.CommitteeVotingStatus != nil ||
+		payload.Email != nil || payload.LfUserID != nil || payload.Username != nil
 
 	if hasInviteeFields {
 		inviteeReq = &itx.UpdateInviteeRequest{}
+
+		// Identity fields (used for creating invitee if it doesn't exist)
+		if payload.Email != nil {
+			inviteeReq.PrimaryEmail = *payload.Email
+		}
+		if payload.LfUserID != nil {
+			inviteeReq.LFUserID = *payload.LfUserID
+		}
+		if payload.Username != nil {
+			inviteeReq.LFSSO = *payload.Username
+		}
+
+		// Updatable fields
+		// FirstName and LastName are required by ITX API
+		if payload.FirstName != nil {
+			inviteeReq.FirstName = *payload.FirstName
+		}
+		if payload.LastName != nil {
+			inviteeReq.LastName = *payload.LastName
+		}
 		if payload.OrgName != nil {
 			inviteeReq.Org = *payload.OrgName
 		}
@@ -194,8 +216,10 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meetingservice.ITXPastMeetingParticipant {
 	goaResp := &meetingservice.ITXPastMeetingParticipant{
 		// IDs
-		InviteeID:  ptrIfNotEmpty(resp.InviteeID),
-		AttendeeID: ptrIfNotEmpty(resp.AttendeeID),
+		InviteeID:     ptrIfNotEmpty(resp.InviteeID),
+		AttendeeID:    ptrIfNotEmpty(resp.AttendeeID),
+		PastMeetingID: ptrIfNotEmpty(resp.PastMeetingID),
+		MeetingID:     ptrIfNotEmpty(resp.MeetingID),
 
 		// Flags
 		IsInvited:  ptrBool(resp.IsInvited),
@@ -228,11 +252,11 @@ func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meet
 		ModifiedAt: ptrIfNotEmpty(resp.ModifiedAt),
 	}
 
-	// Add participant ID (use invitee_id if present, otherwise attendee_id)
+	// Add ID (use invitee_id if present, otherwise attendee_id)
 	if resp.InviteeID != "" {
-		goaResp.ParticipantID = ptrIfNotEmpty(resp.InviteeID)
+		goaResp.ID = ptrIfNotEmpty(resp.InviteeID)
 	} else if resp.AttendeeID != "" {
-		goaResp.ParticipantID = ptrIfNotEmpty(resp.AttendeeID)
+		goaResp.ID = ptrIfNotEmpty(resp.AttendeeID)
 	}
 
 	// Convert average attendance

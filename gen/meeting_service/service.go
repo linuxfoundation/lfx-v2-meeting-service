@@ -493,11 +493,15 @@ type ITXOccurrence struct {
 // create-itx-past-meeting-participant method.
 type ITXPastMeetingParticipant struct {
 	// Participant identifier (invitee_id or attendee_id or both)
-	ParticipantID *string
+	ID *string
 	// Invitee record UUID (if is_invited=true)
 	InviteeID *string
 	// Attendee record UUID (if is_attended=true)
 	AttendeeID *string
+	// Past meeting ID (meeting_id-occurrence_id)
+	PastMeetingID *string
+	// Meeting ID
+	MeetingID *string
 	// Primary email address
 	Email *string
 	// First name
@@ -942,6 +946,20 @@ type UpdateItxPastMeetingParticipantPayload struct {
 	PastMeetingID string
 	// Participant ID (invitee_id or attendee_id)
 	ParticipantID string
+	// Whether the participant is invited (if false, invitee record will be deleted)
+	IsInvited *bool
+	// Whether the participant attended (if false, attendee record will be deleted)
+	IsAttended *bool
+	// Email address (used for creation)
+	Email *string
+	// LF SSO username (used for creation)
+	Username *string
+	// LF user ID (used for creation)
+	LfUserID *string
+	// First name (required for invitee updates)
+	FirstName *string
+	// Last name (required for invitee updates)
+	LastName *string
 	// Organization name
 	OrgName *string
 	// Job title

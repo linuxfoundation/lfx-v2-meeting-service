@@ -35,3 +35,23 @@ func (m *NoOpMapper) MapCommitteeV2ToV1(ctx context.Context, v2UID string) (stri
 func (m *NoOpMapper) MapCommitteeV1ToV2(ctx context.Context, v1SFID string) (string, error) {
 	return v1SFID, nil
 }
+
+// MapInviteeIDToParticipantV2 returns the input ID unchanged
+func (m *NoOpMapper) MapInviteeIDToParticipantV2(ctx context.Context, inviteeID string) (string, error) {
+	return inviteeID, nil
+}
+
+// MapAttendeeIDToParticipantV2 returns the input ID unchanged
+func (m *NoOpMapper) MapAttendeeIDToParticipantV2(ctx context.Context, attendeeID string) (string, error) {
+	return attendeeID, nil
+}
+
+// MapParticipantV2ToInviteeID returns the input ID unchanged
+func (m *NoOpMapper) MapParticipantV2ToInviteeID(ctx context.Context, v2ParticipantID string) (string, error) {
+	return v2ParticipantID, nil
+}
+
+// MapParticipantV2ToAttendeeID returns the input ID unchanged
+func (m *NoOpMapper) MapParticipantV2ToAttendeeID(ctx context.Context, v2ParticipantID string) (string, error) {
+	return v2ParticipantID, nil
+}

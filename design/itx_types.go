@@ -468,7 +468,7 @@ var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
 	Description("Past meeting participant - unified view of invitees and attendees from ITX API")
 
 	// Identifiers
-	Attribute("participant_id", String, "Participant identifier (invitee_id or attendee_id or both)", func() {
+	Attribute("id", String, "Participant identifier (invitee_id or attendee_id or both)", func() {
 		Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
 	})
 	Attribute("invitee_id", String, "Invitee record UUID (if is_invited=true)", func() {
@@ -476,6 +476,12 @@ var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
 	})
 	Attribute("attendee_id", String, "Attendee record UUID (if is_attended=true)", func() {
 		Example("fb2f9647-b096-5dg6-c092-b281938b2e22")
+	})
+	Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id)", func() {
+		Example("99549310079-1747067400000")
+	})
+	Attribute("meeting_id", String, "Meeting ID", func() {
+		Example("99549310079")
 	})
 
 	// Identity

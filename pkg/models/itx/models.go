@@ -326,9 +326,11 @@ type ZoomMeetingSummaryDetails struct {
 
 // UpdatePastMeetingSummaryRequest represents the request to update a past meeting summary
 type UpdatePastMeetingSummaryRequest struct {
-	EditedContent string `json:"edited_content,omitempty"` // User-edited summary content
-	Approved      *bool  `json:"approved,omitempty"`       // Approval status
-	ModifiedBy    *User  `json:"modified_by,omitempty"`    // User making the update
+	EditedSummaryOverview string                      `json:"edited_summary_overview,omitempty"` // Edited overview
+	EditedSummaryDetails  []ZoomMeetingSummaryDetails `json:"edited_summary_details,omitempty"`  // Edited details
+	EditedNextSteps       []string                    `json:"edited_next_steps,omitempty"`       // Edited next steps
+	Approved              *bool                       `json:"approved,omitempty"`                // Approval status
+	ModifiedBy            *User                       `json:"modified_by,omitempty"`             // User making the update
 }
 
 // InviteeResponse represents an invitee from ITX
@@ -373,6 +375,14 @@ type CreateInviteeRequest struct {
 
 // UpdateInviteeRequest represents the request to update an invitee
 type UpdateInviteeRequest struct {
+	// Identity fields (used only for creating invitee during update, not sent to ITX update endpoint)
+	PrimaryEmail string `json:"primary_email,omitempty"` // Primary email address (for creation only)
+	LFUserID     string `json:"lf_user_id,omitempty"`    // LF user ID (for creation only)
+	LFSSO        string `json:"lf_sso,omitempty"`        // LF SSO username (for creation only)
+
+	// Updatable fields
+	FirstName             string `json:"first_name"`                        // First name (required by ITX API)
+	LastName              string `json:"last_name"`                         // Last name (required by ITX API)
 	Org                   string `json:"org,omitempty"`                     // Organization name
 	JobTitle              string `json:"job_title,omitempty"`               // Job title
 	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within the committee

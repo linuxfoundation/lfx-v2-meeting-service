@@ -1117,7 +1117,28 @@ var _ = Service("Meeting Service", func() {
 				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
 			})
 
+			// Status flags
+			Attribute("is_invited", Boolean, "Whether the participant is invited (if false, invitee record will be deleted)")
+			Attribute("is_attended", Boolean, "Whether the participant attended (if false, attendee record will be deleted)")
+
+			// Identity fields (used for creating invitee/attendee if they don't exist)
+			Attribute("email", String, "Email address (used for creation)", func() {
+				Example("john.doe@example.com")
+			})
+			Attribute("username", String, "LF SSO username (used for creation)", func() {
+				Example("johndoe")
+			})
+			Attribute("lf_user_id", String, "LF user ID (used for creation)", func() {
+				Example("abc123")
+			})
+
 			// Updatable fields
+			Attribute("first_name", String, "First name (required for invitee updates)", func() {
+				Example("John")
+			})
+			Attribute("last_name", String, "Last name (required for invitee updates)", func() {
+				Example("Doe")
+			})
 			Attribute("org_name", String, "Organization name", func() {
 				Example("Microsoft")
 			})

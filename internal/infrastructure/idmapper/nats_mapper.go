@@ -157,3 +157,47 @@ func (m *NATSMapper) lookup(ctx context.Context, key string) (string, error) {
 
 	return response, nil
 }
+
+// MapInviteeIDToParticipantV2 maps ITX invitee ID to V2 participant ID
+func (m *NATSMapper) MapInviteeIDToParticipantV2(ctx context.Context, inviteeID string) (string, error) {
+	if inviteeID == "" {
+		return "", domain.NewValidationError("invitee ID is required")
+	}
+
+	// Request format: past_meeting_participant.invitee_id.{invitee_id} returns {v2_participant_id}
+	key := fmt.Sprintf("past_meeting_participant.invitee_id.%s", inviteeID)
+	return m.lookup(ctx, key)
+}
+
+// MapAttendeeIDToParticipantV2 maps ITX attendee ID to V2 participant ID
+func (m *NATSMapper) MapAttendeeIDToParticipantV2(ctx context.Context, attendeeID string) (string, error) {
+	if attendeeID == "" {
+		return "", domain.NewValidationError("attendee ID is required")
+	}
+
+	// Request format: past_meeting_participant.attendee_id.{attendee_id} returns {v2_participant_id}
+	key := fmt.Sprintf("past_meeting_participant.attendee_id.%s", attendeeID)
+	return m.lookup(ctx, key)
+}
+
+// MapParticipantV2ToInviteeID maps a V2 participant ID to ITX invitee ID
+func (m *NATSMapper) MapParticipantV2ToInviteeID(ctx context.Context, v2ParticipantID string) (string, error) {
+	if v2ParticipantID == "" {
+		return "", domain.NewValidationError("v2 participant ID is required")
+	}
+
+	// Request format: past_meeting_participant.participant_to_invitee_id.{v2_participant_id} returns {invitee_id}
+	key := fmt.Sprintf("past_meeting_participant.participant_to_invitee_id.%s", v2ParticipantID)
+	return m.lookup(ctx, key)
+}
+
+// MapParticipantV2ToAttendeeID maps a V2 participant ID to ITX attendee ID
+func (m *NATSMapper) MapParticipantV2ToAttendeeID(ctx context.Context, v2ParticipantID string) (string, error) {
+	if v2ParticipantID == "" {
+		return "", domain.NewValidationError("v2 participant ID is required")
+	}
+
+	// Request format: past_meeting_participant.participant_to_attendee_id.{v2_participant_id} returns {attendee_id}
+	key := fmt.Sprintf("past_meeting_participant.participant_to_attendee_id.%s", v2ParticipantID)
+	return m.lookup(ctx, key)
+}

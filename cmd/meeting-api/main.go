@@ -119,7 +119,7 @@ func run() int {
 	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient)
-	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient)
+	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
 
 	svc := NewMeetingsAPI(

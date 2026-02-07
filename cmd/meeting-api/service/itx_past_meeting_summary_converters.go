@@ -16,10 +16,12 @@ func ConvertUpdatePastMeetingSummaryPayload(payload *meetingservice.UpdateItxPas
 	req := &itx.UpdatePastMeetingSummaryRequest{}
 
 	// V2 has a single edited_content field, ITX has separate fields
-	// For simplicity, we'll put the entire edited_content into edited_summary_overview
-	// A more sophisticated implementation could parse the content into sections
-	if payload.EditedContent != nil {
-		req.EditedContent = *payload.EditedContent
+	// Parse the edited_content into overview, details, and next steps
+	if payload.EditedContent != nil && *payload.EditedContent != "" {
+		overview, details, nextSteps := parseContentIntoITXParts(*payload.EditedContent)
+		req.EditedSummaryOverview = overview
+		req.EditedSummaryDetails = details
+		req.EditedNextSteps = nextSteps
 	}
 	if payload.Approved != nil {
 		req.Approved = payload.Approved
@@ -125,6 +127,100 @@ func buildEditedContentFromITX(resp *itx.PastMeetingSummaryResponse) string {
 	}
 
 	return strings.Join(parts, "\n\n")
+}
+
+// parseContentIntoITXParts parses a V2 content string into ITX overview, details, and next steps
+// This is a best-effort parser that handles common patterns but may not be perfect for all cases
+func parseContentIntoITXParts(content string) (overview string, details []itx.ZoomMeetingSummaryDetails, nextSteps []string) {
+	if content == "" {
+		return "", nil, nil
+	}
+
+	// Split content into paragraphs (separated by double newlines)
+	paragraphs := strings.Split(content, "\n\n")
+
+	var overviewParts []string
+	var detailsParts []string
+	var inNextSteps bool
+
+	for _, para := range paragraphs {
+		para = strings.TrimSpace(para)
+		if para == "" {
+			continue
+		}
+
+		// Check if this is the "Next Steps:" section
+		if strings.HasPrefix(para, "Next Steps:") {
+			inNextSteps = true
+			// Extract next steps from this paragraph
+			lines := strings.Split(para, "\n")
+			for i, line := range lines {
+				if i == 0 {
+					continue // Skip "Next Steps:" header
+				}
+				line = strings.TrimSpace(line)
+				// Remove leading dash and whitespace
+				line = strings.TrimPrefix(line, "-")
+				line = strings.TrimPrefix(line, "•")
+				line = strings.TrimSpace(line)
+				if line != "" {
+					nextSteps = append(nextSteps, line)
+				}
+			}
+			continue
+		}
+
+		if inNextSteps {
+			// After "Next Steps:", treat each line as a next step
+			lines := strings.Split(para, "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				line = strings.TrimPrefix(line, "-")
+				line = strings.TrimPrefix(line, "•")
+				line = strings.TrimSpace(line)
+				if line != "" {
+					nextSteps = append(nextSteps, line)
+				}
+			}
+			continue
+		}
+
+		// Check if this paragraph contains "Label: Summary" patterns (details)
+		lines := strings.Split(para, "\n")
+		hasLabelPattern := false
+		for _, line := range lines {
+			if strings.Contains(line, ":") && !strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "•") {
+				// This looks like a "Label: Summary" pattern
+				parts := strings.SplitN(line, ":", 2)
+				if len(parts) == 2 {
+					label := strings.TrimSpace(parts[0])
+					summary := strings.TrimSpace(parts[1])
+					if label != "" && summary != "" {
+						details = append(details, itx.ZoomMeetingSummaryDetails{
+							Label:   label,
+							Summary: summary,
+						})
+						hasLabelPattern = true
+					}
+				}
+			}
+		}
+
+		// If this paragraph has label patterns, treat as details
+		if hasLabelPattern {
+			detailsParts = append(detailsParts, para)
+		} else {
+			// Otherwise, treat as overview
+			overviewParts = append(overviewParts, para)
+		}
+	}
+
+	// Combine overview parts
+	if len(overviewParts) > 0 {
+		overview = strings.Join(overviewParts, "\n\n")
+	}
+
+	return overview, details, nextSteps
 }
 
 // Helper function to convert string to pointer
