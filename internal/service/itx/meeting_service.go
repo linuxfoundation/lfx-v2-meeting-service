@@ -150,6 +150,7 @@ func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurr
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{
+		ID:                   req.ID, // Only used for updates
 		Project:              req.ProjectUID,
 		Topic:                req.Title,
 		StartTime:            req.StartTime,

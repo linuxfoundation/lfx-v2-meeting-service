@@ -4,6 +4,8 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -27,7 +29,8 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 
 	// Use default encoders and decoders (ITX proxy only needs JSON)
 	requestDecoder := goahttp.RequestDecoder
-	responseEncoder := goahttp.ResponseEncoder
+	// Use custom response encoder to handle raw bytes for ICS endpoint
+	responseEncoder := createResponseEncoder()
 
 	koDataPath := os.Getenv("KO_DATA_PATH")
 	if koDataPath == "" {
@@ -89,4 +92,34 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 	}()
 
 	return httpServer
+}
+
+// createResponseEncoder creates a custom response encoder that handles raw bytes for ICS endpoints
+func createResponseEncoder() func(context.Context, http.ResponseWriter) goahttp.Encoder {
+	return func(ctx context.Context, w http.ResponseWriter) goahttp.Encoder {
+		contentType, _ := ctx.Value(goahttp.ContentTypeKey).(string)
+
+		// For text/calendar content type, write raw bytes directly
+		if contentType == "text/calendar" {
+			return &rawBytesEncoder{w: w}
+		}
+
+		// For other content types, use default JSON encoder
+		return goahttp.ResponseEncoder(ctx, w)
+	}
+}
+
+// rawBytesEncoder writes raw bytes directly to the response writer without encoding
+type rawBytesEncoder struct {
+	w http.ResponseWriter
+}
+
+// Encode writes raw bytes directly to the response
+func (e *rawBytesEncoder) Encode(v any) error {
+	if bytes, ok := v.([]byte); ok {
+		_, err := e.w.Write(bytes)
+		return err
+	}
+	// Fallback for non-bytes (shouldn't happen for ICS endpoint)
+	return json.NewEncoder(e.w).Encode(v)
 }

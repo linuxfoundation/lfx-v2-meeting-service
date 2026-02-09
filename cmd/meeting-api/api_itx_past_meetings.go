@@ -40,19 +40,18 @@ func (s *MeetingsAPI) GetItxPastMeeting(ctx context.Context, p *meetingsvc.GetIt
 }
 
 // UpdateItxPastMeeting updates a past meeting via ITX proxy
-func (s *MeetingsAPI) UpdateItxPastMeeting(ctx context.Context, p *meetingsvc.UpdateItxPastMeetingPayload) (*meetingsvc.ITXPastZoomMeeting, error) {
+func (s *MeetingsAPI) UpdateItxPastMeeting(ctx context.Context, p *meetingsvc.UpdateItxPastMeetingPayload) error {
 	// Convert Goa payload to ITX request
 	req := service.ConvertUpdatePastMeetingPayload(p)
 
 	// Call ITX service
-	resp, err := s.itxPastMeetingService.UpdatePastMeeting(ctx, p.PastMeetingID, req)
+	// ITX returns 204 No Content on success
+	_, err := s.itxPastMeetingService.UpdatePastMeeting(ctx, p.PastMeetingID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return handleError(err)
 	}
 
-	// Convert ITX response to Goa response
-	goaResp := service.ConvertPastMeetingToGoa(resp)
-	return goaResp, nil
+	return nil
 }
 
 // DeleteItxPastMeeting deletes a past meeting via ITX proxy

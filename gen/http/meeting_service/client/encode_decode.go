@@ -3646,21 +3646,8 @@ func DecodeUpdateItxPastMeetingResponse(decoder func(*http.Response) goahttp.Dec
 			defer resp.Body.Close()
 		}
 		switch resp.StatusCode {
-		case http.StatusOK:
-			var (
-				body UpdateItxPastMeetingResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting", err)
-			}
-			err = ValidateUpdateItxPastMeetingResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-past-meeting", err)
-			}
-			res := NewUpdateItxPastMeetingITXPastZoomMeetingOK(&body)
-			return res, nil
+		case http.StatusNoContent:
+			return nil, nil
 		case http.StatusBadRequest:
 			var (
 				body UpdateItxPastMeetingBadRequestResponseBody

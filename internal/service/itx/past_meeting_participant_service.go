@@ -9,6 +9,7 @@ import (
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -111,98 +112,92 @@ func (s *PastMeetingParticipantService) CreateParticipant(
 	return mergeParticipantResponses(pastMeetingID, inviteeResp, attendeeResp, isInvited, isAttended), nil
 }
 
-// UpdateParticipant updates a participant
-// Handles creating, updating, and deleting invitee and attendee records based on status flags
 func (s *PastMeetingParticipantService) UpdateParticipant(
 	ctx context.Context,
-	pastMeetingID, participantID string,
-	isInvited, isAttended *bool,
+	p *models.UpdatePastMeetingParticipant,
 	inviteeReq *itx.UpdateInviteeRequest,
 	attendeeReq *itx.UpdateAttendeeRequest,
 ) (*ParticipantResponse, error) {
-	// Handle invitee operations
-	inviteeResp, inviteeExists := s.handleInviteeOperation(ctx, pastMeetingID, participantID, isInvited, inviteeReq)
-
-	// Handle attendee operations
-	attendeeResp, attendeeExists := s.handleAttendeeOperation(ctx, pastMeetingID, participantID, isAttended, attendeeReq)
-
-	// Merge into unified response
-	return mergeParticipantResponses(pastMeetingID, inviteeResp, attendeeResp, inviteeExists, attendeeExists), nil
+	inviteeResp, inviteeExists := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq)
+	attendeeResp, attendeeExists := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq)
+	return mergeParticipantResponses(p.PastMeetingID, inviteeResp, attendeeResp, inviteeExists, attendeeExists), nil
 }
 
-// handleInviteeOperation handles CRUD operations for invitee based on is_invited flag
-// Returns invitee response and whether invitee exists after the operation
 func (s *PastMeetingParticipantService) handleInviteeOperation(
 	ctx context.Context,
-	pastMeetingID, participantID string,
+	pastMeetingID, participantID, inviteeID string,
 	isInvited *bool,
 	inviteeReq *itx.UpdateInviteeRequest,
 ) (*itx.InviteeResponse, bool) {
-	// If is_invited is not set, no operation needed
 	if isInvited == nil {
 		return nil, false
 	}
 
-	// Check if invitee exists by attempting ID mapping
-	inviteeID, inviteeExists := s.checkInviteeExists(ctx, participantID)
+	var actualInviteeID string
+	var inviteeExists bool
 
-	// Determine operation based on flag and existence
-	if !*isInvited {
-		// Delete if is_invited=false and exists
+	if inviteeID != "" {
+		inviteeExists = s.checkInviteeExistsFromInviteeID(ctx, inviteeID)
 		if inviteeExists {
-			s.deleteInvitee(ctx, pastMeetingID, inviteeID, participantID)
+			actualInviteeID = inviteeID
+		}
+	} else {
+		actualInviteeID, inviteeExists = s.checkInviteeExists(ctx, participantID)
+	}
+
+	if !*isInvited {
+		if inviteeExists && actualInviteeID != "" {
+			s.deleteInvitee(ctx, pastMeetingID, actualInviteeID, participantID)
 		}
 		return nil, false
 	}
 
-	// is_invited=true: create or update
 	if !inviteeExists && inviteeReq != nil {
-		// Create new invitee
 		return s.createInviteeFromUpdate(ctx, pastMeetingID, inviteeReq), true
 	}
 
-	// Update existing invitee
-	if inviteeExists && inviteeReq != nil {
-		return s.updateInvitee(ctx, pastMeetingID, inviteeID, participantID, inviteeReq), true
+	if inviteeExists && inviteeReq != nil && actualInviteeID != "" {
+		return s.updateInvitee(ctx, pastMeetingID, actualInviteeID, participantID, inviteeReq), true
 	}
 
 	return nil, inviteeExists
 }
 
-// handleAttendeeOperation handles CRUD operations for attendee based on is_attended flag
-// Returns attendee response and whether attendee exists after the operation
 func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	ctx context.Context,
-	pastMeetingID, participantID string,
+	pastMeetingID, participantID, attendeeID string,
 	isAttended *bool,
 	attendeeReq *itx.UpdateAttendeeRequest,
 ) (*itx.AttendeeResponse, bool) {
-	// If is_attended is not set, no operation needed
 	if isAttended == nil {
 		return nil, false
 	}
 
-	// Check if attendee exists by attempting ID mapping
-	attendeeID, attendeeExists := s.checkAttendeeExists(ctx, participantID)
+	var actualAttendeeID string
+	var attendeeExists bool
 
-	// Determine operation based on flag and existence
-	if !*isAttended {
-		// Delete if is_attended=false and exists
+	if attendeeID != "" {
+		attendeeExists = s.checkAttendeeExistsFromAttendeeID(ctx, attendeeID)
 		if attendeeExists {
-			s.deleteAttendee(ctx, pastMeetingID, attendeeID, participantID)
+			actualAttendeeID = attendeeID
+		}
+	} else {
+		actualAttendeeID, attendeeExists = s.checkAttendeeExists(ctx, participantID)
+	}
+
+	if !*isAttended {
+		if attendeeExists && actualAttendeeID != "" {
+			s.deleteAttendee(ctx, pastMeetingID, actualAttendeeID, participantID)
 		}
 		return nil, false
 	}
 
-	// is_attended=true: create or update
 	if !attendeeExists && attendeeReq != nil {
-		// Create new attendee
 		return s.createAttendeeFromUpdate(ctx, pastMeetingID, attendeeReq), true
 	}
 
-	// Update existing attendee
-	if attendeeExists && attendeeReq != nil {
-		return s.updateAttendee(ctx, pastMeetingID, attendeeID, participantID, attendeeReq), true
+	if attendeeExists && attendeeReq != nil && actualAttendeeID != "" {
+		return s.updateAttendee(ctx, pastMeetingID, actualAttendeeID, participantID, attendeeReq), true
 	}
 
 	return nil, attendeeExists
@@ -225,8 +220,6 @@ func (s *PastMeetingParticipantService) checkInviteeExists(ctx context.Context, 
 	return inviteeID, true
 }
 
-// checkAttendeeExists checks if attendee exists by attempting ID mapping
-// Returns attendee ID and existence flag
 func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context, participantID string) (string, bool) {
 	attendeeID, err := s.idMapper.MapParticipantV2ToAttendeeID(ctx, participantID)
 	if err != nil || attendeeID == "" {
@@ -240,6 +233,26 @@ func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context,
 		"participant_id", participantID,
 		"attendee_id", attendeeID)
 	return attendeeID, true
+}
+
+func (s *PastMeetingParticipantService) checkInviteeExistsFromInviteeID(ctx context.Context, inviteeID string) bool {
+	inviteeID, err := s.idMapper.MapInviteeIDToParticipantV2(ctx, inviteeID)
+	exists := inviteeID != "" && err == nil
+	slog.DebugContext(ctx, "Checked invitee existence from invitee ID",
+		"invitee_id", inviteeID,
+		"exists", exists,
+		"error", err)
+	return exists
+}
+
+func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx context.Context, attendeeID string) bool {
+	attendeeID, err := s.idMapper.MapAttendeeIDToParticipantV2(ctx, attendeeID)
+	exists := attendeeID != "" && err == nil
+	slog.DebugContext(ctx, "Checked attendee existence from attendee ID",
+		"attendee_id", attendeeID,
+		"exists", exists,
+		"error", err)
+	return exists
 }
 
 // deleteInvitee deletes invitee record
@@ -279,9 +292,9 @@ func (s *PastMeetingParticipantService) createInviteeFromUpdate(
 	// Convert UpdateInviteeRequest to CreateInviteeRequest
 	createReq := &itx.CreateInviteeRequest{
 		// Identity fields
-		PrimaryEmail:          updateReq.PrimaryEmail,
-		LFUserID:              updateReq.LFUserID,
-		LFSSO:                 updateReq.LFSSO,
+		PrimaryEmail: updateReq.PrimaryEmail,
+		LFUserID:     updateReq.LFUserID,
+		LFSSO:        updateReq.LFSSO,
 		// Updatable fields
 		FirstName:             updateReq.FirstName,
 		LastName:              updateReq.LastName,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 )
 
 // CreateItxPastMeetingParticipant creates a past meeting participant via ITX proxy
@@ -30,27 +31,29 @@ func (s *MeetingsAPI) CreateItxPastMeetingParticipant(ctx context.Context, p *me
 	return goaResp, nil
 }
 
-// UpdateItxPastMeetingParticipant updates a past meeting participant via ITX proxy
 func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *meetingsvc.UpdateItxPastMeetingParticipantPayload) (*meetingsvc.ITXPastMeetingParticipant, error) {
-	// Convert Goa payload to ITX requests
 	inviteeReq, attendeeReq := service.ConvertUpdateParticipantPayload(p)
 
-	// Extract status flags
-	var isInvited, isAttended *bool
-	if p.IsInvited != nil {
-		isInvited = p.IsInvited
+	var inviteeID, attendeeID string
+	if p.InviteeID != nil {
+		inviteeID = *p.InviteeID
 	}
-	if p.IsAttended != nil {
-		isAttended = p.IsAttended
+	if p.AttendeeID != nil {
+		attendeeID = *p.AttendeeID
 	}
 
-	// Call service
-	resp, err := s.itxPastMeetingParticipantService.UpdateParticipant(ctx, p.PastMeetingID, p.ParticipantID, isInvited, isAttended, inviteeReq, attendeeReq)
+	resp, err := s.itxPastMeetingParticipantService.UpdateParticipant(ctx, &models.UpdatePastMeetingParticipant{
+		PastMeetingID: p.PastMeetingID,
+		ParticipantID: p.ParticipantID,
+		InviteeID:     inviteeID,
+		AttendeeID:    attendeeID,
+		IsInvited:     p.IsInvited,
+		IsAttended:    p.IsAttended,
+	}, inviteeReq, attendeeReq)
 	if err != nil {
 		return nil, handleError(err)
 	}
 
-	// Convert to Goa response
 	goaResp := service.ConvertParticipantResponseToGoa(resp)
 	return goaResp, nil
 }

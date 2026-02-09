@@ -5,6 +5,9 @@ package itx
 
 // CreateZoomMeetingRequest represents the request to create a Zoom meeting in ITX
 type CreateZoomMeetingRequest struct {
+	// ID is only used for updates - must match the ID in the URL path
+	ID string `json:"id,omitempty"`
+
 	// Core fields (required)
 	Project    string `json:"project"`    // LFX project ID
 	Topic      string `json:"topic"`      // Meeting title
@@ -27,8 +30,8 @@ type CreateZoomMeetingRequest struct {
 	EarlyJoinTime int    `json:"early_join_time,omitempty"` // 10-60 minutes
 
 	// Recording settings
-	RecordingEnabled     bool   `json:"recording_enabled,omitempty"`
-	TranscriptEnabled    bool   `json:"transcript_enabled,omitempty"`
+	RecordingEnabled     bool   `json:"recording_enabled"`           // Required by ITX API
+	TranscriptEnabled    bool   `json:"transcript_enabled"`          // Required by ITX API
 	RecordingAccess      string `json:"recording_access,omitempty"`  // meeting_hosts, meeting_participants, public
 	TranscriptAccess     string `json:"transcript_access,omitempty"` // meeting_hosts, meeting_participants, public
 	YoutubeUploadEnabled bool   `json:"youtube_upload_enabled,omitempty"`

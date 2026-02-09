@@ -3101,11 +3101,8 @@ func EncodeDeleteItxPastMeetingError(encoder func(context.Context, http.Response
 // by the Meeting Service update-itx-past-meeting endpoint.
 func EncodeUpdateItxPastMeetingResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
-		res, _ := v.(*meetingservice.ITXPastZoomMeeting)
-		enc := encoder(ctx, w)
-		body := NewUpdateItxPastMeetingResponseBody(res)
-		w.WriteHeader(http.StatusOK)
-		return enc.Encode(body)
+		w.WriteHeader(http.StatusNoContent)
+		return nil
 	}
 }
 

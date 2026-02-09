@@ -337,6 +337,10 @@ type CreateItxPastMeetingParticipantRequestBody struct {
 // Service" service "update-itx-past-meeting-participant" endpoint HTTP request
 // body.
 type UpdateItxPastMeetingParticipantRequestBody struct {
+	// Optional invitee ID to use directly (avoids ID mapping lookup)
+	InviteeID *string `form:"invitee_id,omitempty" json:"invitee_id,omitempty" xml:"invitee_id,omitempty"`
+	// Optional attendee ID to use directly (avoids ID mapping lookup)
+	AttendeeID *string `form:"attendee_id,omitempty" json:"attendee_id,omitempty" xml:"attendee_id,omitempty"`
 	// Whether the participant is invited (if false, invitee record will be deleted)
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended (if false, attendee record will be deleted)
@@ -629,45 +633,6 @@ type CreateItxPastMeetingResponseBody struct {
 // GetItxPastMeetingResponseBody is the type of the "Meeting Service" service
 // "get-itx-past-meeting" endpoint HTTP response body.
 type GetItxPastMeetingResponseBody struct {
-	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// Zoom meeting ID
-	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
-	// Zoom occurrence ID (Unix timestamp)
-	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
-	// LF project UID
-	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
-	// Meeting title
-	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
-	// Meeting description/agenda
-	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// Meeting start time (RFC3339)
-	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
-	// Meeting duration in minutes
-	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
-	// Meeting timezone
-	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
-	// Meeting visibility
-	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
-	// Whether meeting was restricted to invited users only
-	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
-	// Type of meeting
-	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
-	// Committees associated with the past meeting
-	Committees []*CommitteeResponseBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
-	// Whether recording was enabled
-	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
-	// Who has access to meeting artifacts
-	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
-	// Whether transcription was enabled
-	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
-	// Whether past meeting was manually created
-	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
-}
-
-// UpdateItxPastMeetingResponseBody is the type of the "Meeting Service"
-// service "update-itx-past-meeting" endpoint HTTP response body.
-type UpdateItxPastMeetingResponseBody struct {
 	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Zoom meeting ID
@@ -2862,6 +2827,8 @@ func NewCreateItxPastMeetingParticipantRequestBody(p *meetingservice.CreateItxPa
 // the "Meeting Service" service.
 func NewUpdateItxPastMeetingParticipantRequestBody(p *meetingservice.UpdateItxPastMeetingParticipantPayload) *UpdateItxPastMeetingParticipantRequestBody {
 	body := &UpdateItxPastMeetingParticipantRequestBody{
+		InviteeID:             p.InviteeID,
+		AttendeeID:            p.AttendeeID,
 		IsInvited:             p.IsInvited,
 		IsAttended:            p.IsAttended,
 		Email:                 p.Email,
@@ -4446,41 +4413,6 @@ func NewDeleteItxPastMeetingUnauthorized(body *DeleteItxPastMeetingUnauthorizedR
 	return v
 }
 
-// NewUpdateItxPastMeetingITXPastZoomMeetingOK builds a "Meeting Service"
-// service "update-itx-past-meeting" endpoint result from a HTTP "OK" response.
-func NewUpdateItxPastMeetingITXPastZoomMeetingOK(body *UpdateItxPastMeetingResponseBody) *meetingservice.ITXPastZoomMeeting {
-	v := &meetingservice.ITXPastZoomMeeting{
-		ID:                 body.ID,
-		MeetingID:          body.MeetingID,
-		OccurrenceID:       body.OccurrenceID,
-		ProjectUID:         body.ProjectUID,
-		Title:              body.Title,
-		Description:        body.Description,
-		StartTime:          body.StartTime,
-		Duration:           body.Duration,
-		Timezone:           body.Timezone,
-		Visibility:         body.Visibility,
-		Restricted:         body.Restricted,
-		MeetingType:        body.MeetingType,
-		RecordingEnabled:   body.RecordingEnabled,
-		ArtifactVisibility: body.ArtifactVisibility,
-		TranscriptEnabled:  body.TranscriptEnabled,
-		IsManuallyCreated:  body.IsManuallyCreated,
-	}
-	if body.Committees != nil {
-		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
-		for i, val := range body.Committees {
-			if val == nil {
-				v.Committees[i] = nil
-				continue
-			}
-			v.Committees[i] = unmarshalCommitteeResponseBodyToMeetingserviceCommittee(val)
-		}
-	}
-
-	return v
-}
-
 // NewUpdateItxPastMeetingBadRequest builds a Meeting Service service
 // update-itx-past-meeting endpoint BadRequest error.
 func NewUpdateItxPastMeetingBadRequest(body *UpdateItxPastMeetingBadRequestResponseBody) *meetingservice.BadRequestError {
@@ -5301,40 +5233,6 @@ func ValidateCreateItxPastMeetingResponseBody(body *CreateItxPastMeetingResponse
 // ValidateGetItxPastMeetingResponseBody runs the validations defined on
 // Get-Itx-Past-MeetingResponseBody
 func ValidateGetItxPastMeetingResponseBody(body *GetItxPastMeetingResponseBody) (err error) {
-	if body.ProjectUID != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", *body.ProjectUID, goa.FormatUUID))
-	}
-	if body.StartTime != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
-	}
-	if body.Visibility != nil {
-		if !(*body.Visibility == "public" || *body.Visibility == "private") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.visibility", *body.Visibility, []any{"public", "private"}))
-		}
-	}
-	if body.MeetingType != nil {
-		if !(*body.MeetingType == "Board" || *body.MeetingType == "Maintainers" || *body.MeetingType == "Marketing" || *body.MeetingType == "Technical" || *body.MeetingType == "Legal" || *body.MeetingType == "Other" || *body.MeetingType == "None") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.meeting_type", *body.MeetingType, []any{"Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None"}))
-		}
-	}
-	for _, e := range body.Committees {
-		if e != nil {
-			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	if body.ArtifactVisibility != nil {
-		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
-		}
-	}
-	return
-}
-
-// ValidateUpdateItxPastMeetingResponseBody runs the validations defined on
-// Update-Itx-Past-MeetingResponseBody
-func ValidateUpdateItxPastMeetingResponseBody(body *UpdateItxPastMeetingResponseBody) (err error) {
 	if body.ProjectUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", *body.ProjectUID, goa.FormatUUID))
 	}

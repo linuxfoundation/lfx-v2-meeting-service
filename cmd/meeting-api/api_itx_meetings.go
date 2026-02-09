@@ -65,6 +65,9 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 		Recurrence:           p.Recurrence,
 	})
 
+	// Set the meeting ID in the request payload (required by ITX API for updates)
+	req.ID = p.MeetingID
+
 	// Call ITX service
 	err := s.itxMeetingService.UpdateMeeting(ctx, p.MeetingID, req)
 	if err != nil {

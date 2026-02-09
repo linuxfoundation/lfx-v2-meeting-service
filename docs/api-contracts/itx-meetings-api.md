@@ -668,6 +668,234 @@ x-scope: manage:zoom
 
 ---
 
+## Create Past Meeting Participant
+
+### Proxy API Endpoint
+
+**Method**: `POST /itx/past_meetings/{past_meeting_id}/participants?v=1`
+
+**Authorization**: Requires `organizer` permission on the meeting
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Path Parameters**:
+
+- `past_meeting_id` (string, required) - The past meeting ID
+
+**Request Body**:
+
+```json
+{
+  "is_invited": true,
+  "is_attended": true,
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "email": "jane.doe@example.com",
+  "username": "janedoe",
+  "lf_user_id": "user-uuid",
+  "org_name": "Example Corp",
+  "job_title": "Software Engineer",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "committee_id": "committee-uuid",
+  "committee_role": "member",
+  "committee_voting_status": "active",
+  "org_is_member": true,
+  "org_is_project_member": true,
+  "is_verified": true,
+  "is_unknown": false,
+  "sessions": [
+    {
+      "participant_uuid": "session-uuid",
+      "join_time": "2024-01-15T10:00:00Z",
+      "leave_time": "2024-01-15T11:00:00Z",
+      "leave_reason": "Left meeting"
+    }
+  ]
+}
+```
+
+**Response**: `201 Created`
+
+```json
+{
+  "id": "participant-id",
+  "invitee_id": "inv_abc123",
+  "attendee_id": "att_xyz789",
+  "past_meeting_id": "past-meeting-uuid",
+  "meeting_id": "meeting-id",
+  "is_invited": true,
+  "is_attended": true,
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "email": "jane.doe@example.com",
+  "username": "janedoe",
+  "lf_user_id": "user-uuid",
+  "org_name": "Example Corp",
+  "job_title": "Software Engineer",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "committee_id": "committee-uuid",
+  "committee_role": "member",
+  "is_committee_member": true,
+  "committee_voting_status": "active",
+  "org_is_member": true,
+  "org_is_project_member": true,
+  "is_verified": true,
+  "is_unknown": false,
+  "average_attendance": 0.85,
+  "sessions": [
+    {
+      "participant_uuid": "session-uuid",
+      "join_time": "2024-01-15T10:00:00Z",
+      "leave_time": "2024-01-15T11:00:00Z",
+      "leave_reason": "Left meeting"
+    }
+  ],
+  "created_at": "2024-01-15T09:00:00Z",
+  "modified_at": "2024-01-15T09:00:00Z",
+  "created_by": {
+    "username": "admin",
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "profile_picture": "https://example.com/admin.jpg"
+  },
+  "modified_by": {
+    "username": "admin",
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "profile_picture": "https://example.com/admin.jpg"
+  }
+}
+```
+
+### ITX API Endpoints
+
+Creates invitee and/or attendee records through the ITX API based on the `is_invited` and `is_attended` flags.
+
+**Method (Invitee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/invitees`
+
+**Method (Attendee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/attendees`
+
+---
+
+## Update Past Meeting Participant
+
+### Proxy API Endpoint
+
+**Method**: `PUT /itx/past_meetings/{past_meeting_id}/participants/{participant_id}?v=1`
+
+**Authorization**: Requires `organizer` permission on the meeting
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Path Parameters**:
+
+- `past_meeting_id` (string, required) - The past meeting ID
+- `participant_id` (string, required) - The participant ID (V2 participant ID, invitee_id, or attendee_id)
+
+**Request Body**:
+
+```json
+{
+  "invitee_id": "inv_abc123",
+  "attendee_id": "att_xyz789",
+  "is_invited": true,
+  "is_attended": true,
+  "first_name": "Jane",
+  "last_name": "Smith",
+  "email": "jane.smith@example.com",
+  "username": "janesmith",
+  "lf_user_id": "user-uuid",
+  "org_name": "New Corp",
+  "job_title": "Senior Engineer",
+  "avatar_url": "https://example.com/new-avatar.jpg",
+  "committee_role": "chair",
+  "committee_voting_status": "active",
+  "is_verified": true
+}
+```
+
+**Optional Fields for Performance Optimization**:
+
+- `invitee_id` (string, optional) - If provided, the service uses this ITX invitee ID directly instead of performing a NATS ID mapping lookup from the participant_id. This is an optimization to reduce latency when the client already has the ITX ID.
+- `attendee_id` (string, optional) - If provided, the service uses this ITX attendee ID directly instead of performing a NATS ID mapping lookup from the participant_id. This is an optimization to reduce latency when the client already has the ITX ID.
+
+**Behavior**:
+
+1. **With optional IDs**: If `invitee_id` or `attendee_id` are provided, the service:
+   - Uses the provided ID directly
+   - Verifies the ID exists by mapping it back to a participant_id via NATS
+   - Skips the participant_id → invitee_id/attendee_id lookup
+   - Falls back to participant_id mapping if the provided ID doesn't exist
+
+2. **Without optional IDs**: If `invitee_id` or `attendee_id` are not provided, the service:
+   - Uses the `participant_id` from the path parameter
+   - Performs NATS ID mapping to resolve invitee_id and/or attendee_id
+
+3. **State transitions**:
+   - Setting `is_invited: true` creates or updates the invitee record
+   - Setting `is_invited: false` deletes the invitee record if it exists
+   - Setting `is_attended: true` creates or updates the attendee record
+   - Setting `is_attended: false` deletes the attendee record if it exists
+
+**Response**: `200 OK`
+
+Response body is identical to Create Past Meeting Participant response.
+
+### ITX API Endpoints
+
+Updates invitee and/or attendee records through the ITX API based on the provided fields.
+
+**Method (Invitee)**: `PUT /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
+
+**Method (Attendee)**: `PUT /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}`
+
+**Method (Delete Invitee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
+
+**Method (Delete Attendee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}`
+
+---
+
+## Delete Past Meeting Participant
+
+### Proxy API Endpoint
+
+**Method**: `DELETE /itx/past_meetings/{past_meeting_id}/participants/{participant_id}?v=1`
+
+**Authorization**: Requires `organizer` permission on the meeting
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters**:
+
+- `past_meeting_id` (string, required) - The past meeting ID
+- `participant_id` (string, required) - The participant ID
+
+**Response**: `204 No Content`
+
+### ITX API Endpoints
+
+Deletes both invitee and attendee records if they exist.
+
+**Method (Invitee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
+
+**Method (Attendee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}`
+
+---
+
 ## Error Responses
 
 Both APIs return similar error structures:

@@ -59,7 +59,7 @@ type Service interface {
 	// Delete a past meeting through ITX API proxy
 	DeleteItxPastMeeting(context.Context, *DeleteItxPastMeetingPayload) (err error)
 	// Update a past meeting through ITX API proxy
-	UpdateItxPastMeeting(context.Context, *UpdateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
+	UpdateItxPastMeeting(context.Context, *UpdateItxPastMeetingPayload) (err error)
 	// Get a specific past meeting summary through ITX API proxy
 	GetItxPastMeetingSummary(context.Context, *GetItxPastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
 	// Update a past meeting summary through ITX API proxy
@@ -946,6 +946,10 @@ type UpdateItxPastMeetingParticipantPayload struct {
 	PastMeetingID string
 	// Participant ID (invitee_id or attendee_id)
 	ParticipantID string
+	// Optional invitee ID to use directly (avoids ID mapping lookup)
+	InviteeID *string
+	// Optional attendee ID to use directly (avoids ID mapping lookup)
+	AttendeeID *string
 	// Whether the participant is invited (if false, invitee record will be deleted)
 	IsInvited *bool
 	// Whether the participant attended (if false, attendee record will be deleted)

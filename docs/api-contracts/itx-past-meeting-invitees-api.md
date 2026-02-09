@@ -13,6 +13,7 @@ Creates a new invitee record for a specific past meeting occurrence.
 **ITX Endpoint**: `POST /v2/zoom/past_meetings/{past_meeting}/invitees`
 
 **Path Parameters**:
+
 - `past_meeting_id` (string, required): The hyphenated meeting and occurrence ID (e.g., "12343245463-1630560600000")
 
 **Authorization**: Requires `organizer` permission on the meeting
@@ -28,6 +29,7 @@ Updates an existing invitee for a specific past meeting occurrence. If the invit
 **ITX Endpoint**: `PUT /v2/zoom/past_meetings/{past_meeting}/invitees/{invitee}`
 
 **Path Parameters**:
+
 - `past_meeting_id` (string, required): The hyphenated meeting and occurrence ID
 - `invitee_id` (string, required): UUID of the invitee record
 
@@ -44,6 +46,7 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
 **ITX Endpoint**: `DELETE /v2/zoom/past_meetings/{past_meeting}/invitees/{invitee}`
 
 **Path Parameters**:
+
 - `past_meeting_id` (string, required): The hyphenated meeting and occurrence ID
 - `invitee_id` (string, required): UUID of the invitee record
 
@@ -56,6 +59,7 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
 ### Create Invitee Request
 
 **Proxy API & ITX API** (Identical):
+
 ```json
 {
   "first_name": "John",
@@ -73,9 +77,11 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
 ```
 
 **Required Fields**:
+
 - At least one of: `primary_email`, `lf_user_id`, or `lf_sso`
 
 **Optional Fields**:
+
 - `first_name` (string): First name of the invitee
 - `last_name` (string): Last name of the invitee
 - `org` (string): Organization name
@@ -92,6 +98,7 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
 ### Update Invitee Request
 
 **Proxy API & ITX API** (Identical):
+
 ```json
 {
   "org": "Microsoft",
@@ -112,6 +119,7 @@ All fields are optional - only include fields you want to update.
 ### Invitee Response
 
 **Proxy API & ITX API** (Identical):
+
 ```json
 {
   "uuid": "ea1e8536-a985-4cf5-b981-a170927a1d11",
@@ -147,6 +155,7 @@ All fields are optional - only include fields you want to update.
 ```
 
 **Response Fields**:
+
 - `uuid` (string): UUID of the invitee record (read-only)
 - `first_name` (string): First name
 - `last_name` (string): Last name

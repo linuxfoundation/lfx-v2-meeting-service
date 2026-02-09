@@ -898,8 +898,6 @@ var _ = Service("Meeting Service", func() {
 			Required("past_meeting_id")
 		})
 
-		Result(ITXPastZoomMeeting)
-
 		Error("BadRequest", BadRequestError, "Bad request")
 		Error("Unauthorized", UnauthorizedError, "Unauthorized")
 		Error("Forbidden", ForbiddenError, "Forbidden")
@@ -911,7 +909,7 @@ var _ = Service("Meeting Service", func() {
 			PUT("/itx/past_meetings/{past_meeting_id}")
 			Param("version:v")
 			Header("bearer_token:Authorization")
-			Response(StatusOK)
+			Response(StatusNoContent)
 			Response("BadRequest", StatusBadRequest)
 			Response("Unauthorized", StatusUnauthorized)
 			Response("Forbidden", StatusForbidden)
@@ -1115,6 +1113,12 @@ var _ = Service("Meeting Service", func() {
 			})
 			Attribute("participant_id", String, "Participant ID (invitee_id or attendee_id)", func() {
 				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			})
+			Attribute("invitee_id", String, "Optional invitee ID to use directly (avoids ID mapping lookup)", func() {
+				Example("inv_abc123")
+			})
+			Attribute("attendee_id", String, "Optional attendee ID to use directly (avoids ID mapping lookup)", func() {
+				Example("att_xyz789")
 			})
 
 			// Status flags

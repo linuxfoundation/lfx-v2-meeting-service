@@ -588,7 +588,7 @@ func NewUpdateItxPastMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) 
 		if err != nil {
 			return nil, err
 		}
-		return s.UpdateItxPastMeeting(ctx, p)
+		return nil, s.UpdateItxPastMeeting(ctx, p)
 	}
 }
 

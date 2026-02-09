@@ -337,6 +337,10 @@ type CreateItxPastMeetingParticipantRequestBody struct {
 // Service" service "update-itx-past-meeting-participant" endpoint HTTP request
 // body.
 type UpdateItxPastMeetingParticipantRequestBody struct {
+	// Optional invitee ID to use directly (avoids ID mapping lookup)
+	InviteeID *string `form:"invitee_id,omitempty" json:"invitee_id,omitempty" xml:"invitee_id,omitempty"`
+	// Optional attendee ID to use directly (avoids ID mapping lookup)
+	AttendeeID *string `form:"attendee_id,omitempty" json:"attendee_id,omitempty" xml:"attendee_id,omitempty"`
 	// Whether the participant is invited (if false, invitee record will be deleted)
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended (if false, attendee record will be deleted)
@@ -629,45 +633,6 @@ type CreateItxPastMeetingResponseBody struct {
 // GetItxPastMeetingResponseBody is the type of the "Meeting Service" service
 // "get-itx-past-meeting" endpoint HTTP response body.
 type GetItxPastMeetingResponseBody struct {
-	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// Zoom meeting ID
-	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
-	// Zoom occurrence ID (Unix timestamp)
-	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
-	// LF project UID
-	ProjectUID *string `form:"project_uid,omitempty" json:"project_uid,omitempty" xml:"project_uid,omitempty"`
-	// Meeting title
-	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
-	// Meeting description/agenda
-	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// Meeting start time (RFC3339)
-	StartTime *string `form:"start_time,omitempty" json:"start_time,omitempty" xml:"start_time,omitempty"`
-	// Meeting duration in minutes
-	Duration *int `form:"duration,omitempty" json:"duration,omitempty" xml:"duration,omitempty"`
-	// Meeting timezone
-	Timezone *string `form:"timezone,omitempty" json:"timezone,omitempty" xml:"timezone,omitempty"`
-	// Meeting visibility
-	Visibility *string `form:"visibility,omitempty" json:"visibility,omitempty" xml:"visibility,omitempty"`
-	// Whether meeting was restricted to invited users only
-	Restricted *bool `form:"restricted,omitempty" json:"restricted,omitempty" xml:"restricted,omitempty"`
-	// Type of meeting
-	MeetingType *string `form:"meeting_type,omitempty" json:"meeting_type,omitempty" xml:"meeting_type,omitempty"`
-	// Committees associated with the past meeting
-	Committees []*CommitteeResponseBody `form:"committees,omitempty" json:"committees,omitempty" xml:"committees,omitempty"`
-	// Whether recording was enabled
-	RecordingEnabled *bool `form:"recording_enabled,omitempty" json:"recording_enabled,omitempty" xml:"recording_enabled,omitempty"`
-	// Who has access to meeting artifacts
-	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
-	// Whether transcription was enabled
-	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
-	// Whether past meeting was manually created
-	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
-}
-
-// UpdateItxPastMeetingResponseBody is the type of the "Meeting Service"
-// service "update-itx-past-meeting" endpoint HTTP response body.
-type UpdateItxPastMeetingResponseBody struct {
 	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Zoom meeting ID
@@ -2808,41 +2773,6 @@ func NewCreateItxPastMeetingResponseBody(res *meetingservice.ITXPastZoomMeeting)
 // service.
 func NewGetItxPastMeetingResponseBody(res *meetingservice.ITXPastZoomMeeting) *GetItxPastMeetingResponseBody {
 	body := &GetItxPastMeetingResponseBody{
-		ID:                 res.ID,
-		MeetingID:          res.MeetingID,
-		OccurrenceID:       res.OccurrenceID,
-		ProjectUID:         res.ProjectUID,
-		Title:              res.Title,
-		Description:        res.Description,
-		StartTime:          res.StartTime,
-		Duration:           res.Duration,
-		Timezone:           res.Timezone,
-		Visibility:         res.Visibility,
-		Restricted:         res.Restricted,
-		MeetingType:        res.MeetingType,
-		RecordingEnabled:   res.RecordingEnabled,
-		ArtifactVisibility: res.ArtifactVisibility,
-		TranscriptEnabled:  res.TranscriptEnabled,
-		IsManuallyCreated:  res.IsManuallyCreated,
-	}
-	if res.Committees != nil {
-		body.Committees = make([]*CommitteeResponseBody, len(res.Committees))
-		for i, val := range res.Committees {
-			if val == nil {
-				body.Committees[i] = nil
-				continue
-			}
-			body.Committees[i] = marshalMeetingserviceCommitteeToCommitteeResponseBody(val)
-		}
-	}
-	return body
-}
-
-// NewUpdateItxPastMeetingResponseBody builds the HTTP response body from the
-// result of the "update-itx-past-meeting" endpoint of the "Meeting Service"
-// service.
-func NewUpdateItxPastMeetingResponseBody(res *meetingservice.ITXPastZoomMeeting) *UpdateItxPastMeetingResponseBody {
-	body := &UpdateItxPastMeetingResponseBody{
 		ID:                 res.ID,
 		MeetingID:          res.MeetingID,
 		OccurrenceID:       res.OccurrenceID,
@@ -5197,6 +5127,8 @@ func NewCreateItxPastMeetingParticipantPayload(body *CreateItxPastMeetingPartici
 // update-itx-past-meeting-participant endpoint payload.
 func NewUpdateItxPastMeetingParticipantPayload(body *UpdateItxPastMeetingParticipantRequestBody, pastMeetingID string, participantID string, version *string, bearerToken *string) *meetingservice.UpdateItxPastMeetingParticipantPayload {
 	v := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+		InviteeID:             body.InviteeID,
+		AttendeeID:            body.AttendeeID,
 		IsInvited:             body.IsInvited,
 		IsAttended:            body.IsAttended,
 		Email:                 body.Email,

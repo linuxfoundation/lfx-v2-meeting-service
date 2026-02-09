@@ -434,13 +434,9 @@ func (c *Client) DeleteItxPastMeeting(ctx context.Context, p *DeleteItxPastMeeti
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) UpdateItxPastMeeting(ctx context.Context, p *UpdateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error) {
-	var ires any
-	ires, err = c.UpdateItxPastMeetingEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*ITXPastZoomMeeting), nil
+func (c *Client) UpdateItxPastMeeting(ctx context.Context, p *UpdateItxPastMeetingPayload) (err error) {
+	_, err = c.UpdateItxPastMeetingEndpoint(ctx, p)
+	return
 }
 
 // GetItxPastMeetingSummary calls the "get-itx-past-meeting-summary" endpoint

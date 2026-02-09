@@ -829,8 +829,8 @@ func (c *Client) GetPastMeeting(ctx context.Context, pastMeetingID string) (*itx
 	return &result, nil
 }
 
-// DeletePastMeeting deletes a past meeting record via ITX proxy
 // UpdatePastMeeting updates a past meeting record via ITX proxy
+// Returns nil on success (ITX API returns 204 No Content)
 func (c *Client) UpdatePastMeeting(ctx context.Context, pastMeetingID string, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
 	// Marshal request
 	body, err := json.Marshal(req)
@@ -859,7 +859,7 @@ func (c *Client) UpdatePastMeeting(ctx context.Context, pastMeetingID string, re
 		_ = resp.Body.Close()
 	}()
 
-	// Read response body
+	// Read response body for error handling
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
@@ -870,14 +870,11 @@ func (c *Client) UpdatePastMeeting(ctx context.Context, pastMeetingID string, re
 		return nil, c.mapHTTPError(resp.StatusCode, respBody)
 	}
 
-	// Unmarshal response
-	var result itx.PastMeetingResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, domain.NewInternalError("failed to unmarshal response", err)
-	}
-
-	return &result, nil
+	// Success - ITX returns 204 No Content, return nil
+	return nil, nil
 }
+
+// DeletePastMeeting deletes a past meeting record via ITX proxy
 
 func (c *Client) DeletePastMeeting(ctx context.Context, pastMeetingID string) error {
 	// Create HTTP request
@@ -1122,18 +1119,8 @@ func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID str
 		return nil, c.mapHTTPError(resp.StatusCode, respBody)
 	}
 
-	// Handle 204 No Content response - ITX returns 204 for successful updates
-	if resp.StatusCode == http.StatusNoContent {
-		return nil, nil
-	}
-
-	// Unmarshal response
-	var inviteeResp itx.InviteeResponse
-	if err := json.Unmarshal(respBody, &inviteeResp); err != nil {
-		return nil, domain.NewInternalError("failed to unmarshal response", err)
-	}
-
-	return &inviteeResp, nil
+	// Success - ITX returns 204 No Content, return nil
+	return nil, nil
 }
 
 // DeleteInvitee deletes an invitee from a past meeting via the ITX proxy
@@ -1261,18 +1248,8 @@ func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID s
 		return nil, c.mapHTTPError(resp.StatusCode, respBody)
 	}
 
-	// Handle 204 No Content response - ITX returns 204 for successful updates
-	if resp.StatusCode == http.StatusNoContent {
-		return nil, nil
-	}
-
-	// Unmarshal response
-	var attendeeResp itx.AttendeeResponse
-	if err := json.Unmarshal(respBody, &attendeeResp); err != nil {
-		return nil, domain.NewInternalError("failed to unmarshal response", err)
-	}
-
-	return &attendeeResp, nil
+	// Success - ITX returns 204 No Content, return nil
+	return nil, nil
 }
 
 // DeleteAttendee deletes an attendee from a past meeting via the ITX proxy

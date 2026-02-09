@@ -9,8 +9,18 @@ type Committee struct {
 	AllowedVotingStatuses []string `json:"allowed_voting_statuses,omitempty"`
 }
 
+type UpdatePastMeetingParticipant struct {
+	PastMeetingID string
+	ParticipantID string
+	InviteeID     string
+	AttendeeID    string
+	IsInvited     *bool
+	IsAttended    *bool
+}
+
 // CreateITXMeetingRequest represents a domain request to create a meeting via ITX proxy
 type CreateITXMeetingRequest struct {
+	ID                   string // Meeting ID (only used for updates - must match URL path)
 	ProjectUID           string
 	Title                string
 	StartTime            string // RFC3339 format
