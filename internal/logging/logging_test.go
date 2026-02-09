@@ -4,11 +4,16 @@
 package logging
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestErrKeyConstant(t *testing.T) {
@@ -252,6 +257,98 @@ func TestInitStructureLogConfig_WithAddSource(t *testing.T) {
 				t.Error("expected non-nil handler")
 			}
 		})
+	}
+}
+
+func TestInitStructureLogConfig_IncludesTraceAndSpanID(t *testing.T) {
+	// Capture stdout to verify log output
+	var buf bytes.Buffer
+	originalStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
+	defer func() { _ = r.Close() }()
+	os.Stdout = w
+	defer func() { os.Stdout = originalStdout }()
+
+	// Set up a trace provider
+	prevTP := otel.GetTracerProvider()
+	tp := trace.NewTracerProvider()
+	otel.SetTracerProvider(tp)
+	defer otel.SetTracerProvider(prevTP)
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			t.Errorf("failed to shutdown trace provider: %v", err)
+		}
+	}()
+
+	// Initialize logging (this sets up the slog-otel handler)
+	InitStructureLogConfig()
+
+	// Create a span and log within its context
+	tracer := otel.Tracer("test-tracer")
+	ctx, span := tracer.Start(context.Background(), "test-span")
+	defer span.End()
+
+	// Get the span context to verify IDs later
+	spanCtx := span.SpanContext()
+	expectedTraceID := spanCtx.TraceID().String()
+	expectedSpanID := spanCtx.SpanID().String()
+
+	// Log a message with the span context
+	slog.InfoContext(ctx, "test log message with trace context")
+
+	// Close writer and read captured output
+	if err := w.Close(); err != nil {
+		t.Fatalf("failed to close pipe writer: %v", err)
+	}
+	_, err = buf.ReadFrom(r)
+	if err != nil {
+		t.Fatalf("failed to read from pipe: %v", err)
+	}
+
+	// Parse the JSON log output
+	logOutput := buf.String()
+	if logOutput == "" {
+		t.Fatal("expected log output, got empty string")
+	}
+
+	// Find the test log message in output (there may be multiple log lines)
+	lines := bytes.Split(buf.Bytes(), []byte("\n"))
+	var testLogLine map[string]interface{}
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		var logEntry map[string]interface{}
+		if err := json.Unmarshal(line, &logEntry); err != nil {
+			continue
+		}
+		if msg, ok := logEntry["msg"].(string); ok && msg == "test log message with trace context" {
+			testLogLine = logEntry
+			break
+		}
+	}
+
+	if testLogLine == nil {
+		t.Fatalf("could not find test log message in output: %s", logOutput)
+	}
+
+	// Verify trace_id is present and matches
+	traceID, ok := testLogLine["trace_id"].(string)
+	if !ok {
+		t.Errorf("expected trace_id in log output, got: %v", testLogLine)
+	} else if traceID != expectedTraceID {
+		t.Errorf("expected trace_id %q, got %q", expectedTraceID, traceID)
+	}
+
+	// Verify span_id is present and matches
+	spanID, ok := testLogLine["span_id"].(string)
+	if !ok {
+		t.Errorf("expected span_id in log output, got: %v", testLogLine)
+	} else if spanID != expectedSpanID {
+		t.Errorf("expected span_id %q, got %q", expectedSpanID, spanID)
 	}
 }
 

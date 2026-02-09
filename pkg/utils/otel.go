@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/contrib/propagators/jaeger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -24,7 +25,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.39.0"
 )
 
 const (
@@ -45,7 +46,7 @@ type OTelConfig struct {
 	// Env: OTEL_SERVICE_NAME (default: "lfx-v2-meeting-service")
 	ServiceName string
 	// ServiceVersion is the version of the service.
-	// Env: OTEL_SERVICE_VERSION
+	// Env: OTEL_SERVICE_VERSION (default: build-time version from ldflags)
 	ServiceVersion string
 	// Protocol specifies the OTLP protocol to use: "grpc" or "http".
 	// Env: OTEL_EXPORTER_OTLP_PROTOCOL (default: "grpc")
@@ -237,11 +238,12 @@ func newResource(cfg OTelConfig) (*resource.Resource, error) {
 	)
 }
 
-// newPropagator creates a composite text map propagator with W3C Trace Context and Baggage support.
+// newPropagator creates a composite text map propagator with W3C Trace Context, Baggage, and Jaeger support.
 func newPropagator() propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
+		jaeger.Jaeger{},
 	)
 }
 
