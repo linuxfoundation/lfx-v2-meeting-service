@@ -116,6 +116,17 @@ func parseEnv() environment {
 
 // parseITXConfig parses ITX proxy configuration from environment variables
 func parseITXConfig() itxConfig {
+	clientID := os.Getenv("ITX_CLIENT_ID")
+	if clientID == "" {
+		slog.Error("ITX_CLIENT_ID environment variable is required but not set")
+		os.Exit(1)
+	}
+
+	clientSecret := os.Getenv("ITX_CLIENT_SECRET")
+	if clientSecret == "" {
+		slog.Error("ITX_CLIENT_SECRET environment variable is required but not set")
+		os.Exit(1)
+	}
 
 	baseURL := os.Getenv("ITX_BASE_URL")
 	if baseURL == "" {
@@ -134,8 +145,8 @@ func parseITXConfig() itxConfig {
 
 	return itxConfig{
 		BaseURL:      baseURL,
-		ClientID:     os.Getenv("ITX_CLIENT_ID"),
-		ClientSecret: os.Getenv("ITX_CLIENT_SECRET"),
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		Auth0Domain:  auth0Domain,
 		Audience:     audience,
 	}

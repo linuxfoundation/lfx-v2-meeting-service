@@ -92,10 +92,11 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 	// Convert committees
 	if len(resp.Committees) > 0 {
 		goaResp.Committees = make([]*meetingservice.Committee, len(resp.Committees))
-		for i, c := range resp.Committees {
+		for i := range resp.Committees {
+			id := resp.Committees[i].ID
 			goaResp.Committees[i] = &meetingservice.Committee{
-				UID:                   &c.ID,
-				AllowedVotingStatuses: c.Filters,
+				UID:                   &id,
+				AllowedVotingStatuses: resp.Committees[i].Filters,
 			}
 		}
 	}
@@ -117,13 +118,17 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 	// Convert occurrences
 	if len(resp.Occurrences) > 0 {
 		goaResp.Occurrences = make([]*meetingservice.ITXOccurrence, len(resp.Occurrences))
-		for i, occ := range resp.Occurrences {
+		for i := range resp.Occurrences {
+			occurrenceID := resp.Occurrences[i].OccurrenceID
+			startTime := resp.Occurrences[i].StartTime
+			duration := resp.Occurrences[i].Duration
+			status := resp.Occurrences[i].Status
 			goaResp.Occurrences[i] = &meetingservice.ITXOccurrence{
-				OccurrenceID:    &occ.OccurrenceID,
-				StartTime:       &occ.StartTime,
-				Duration:        &occ.Duration,
-				Status:          &occ.Status,
-				RegistrantCount: ptrIfNotZero(occ.RegistrantCount),
+				OccurrenceID:    &occurrenceID,
+				StartTime:       &startTime,
+				Duration:        &duration,
+				Status:          &status,
+				RegistrantCount: ptrIfNotZero(resp.Occurrences[i].RegistrantCount),
 			}
 		}
 	}

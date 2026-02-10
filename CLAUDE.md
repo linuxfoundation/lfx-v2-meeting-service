@@ -223,7 +223,7 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 - `PUT /itx/meetings/{meeting_id}` - Update meeting
 - `DELETE /itx/meetings/{meeting_id}` - Delete meeting
 - `GET /itx/meetings/{meeting_id}/join_link` - Get join link
-- `PATCH /itx/meetings/{meeting_id}/occurrences/{occurrence_id}` - Update occurrence
+- `PUT /itx/meetings/{meeting_id}/occurrences/{occurrence_id}` - Update occurrence
 - `DELETE /itx/meetings/{meeting_id}/occurrences/{occurrence_id}` - Delete occurrence
 - `GET /itx/meeting_count` - Get meeting count
 
@@ -232,8 +232,7 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 - `POST /itx/meetings/{meeting_id}/registrants` - Add registrant
 - `GET /itx/meetings/{meeting_id}/registrants` - List registrants
 - `GET /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Get registrant
-- `PATCH /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Update registrant
-- `PUT /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Update status
+- `PUT /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Update registrant
 - `DELETE /itx/meetings/{meeting_id}/registrants/{registrant_uid}` - Delete registrant
 
 ### ITX Past Meeting Operations

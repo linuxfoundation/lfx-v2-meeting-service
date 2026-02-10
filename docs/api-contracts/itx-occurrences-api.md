@@ -241,7 +241,7 @@ Occurrence IDs are Unix timestamps representing the start time of the occurrence
 occurrence_id: "1640995200"
 ```
 
-This corresponds to `2021-12-31T20:00:00Z` in Unix time.
+This corresponds to `2022-01-01T00:00:00Z` in Unix time (UTC).
 
 **How to get occurrence IDs**:
 
@@ -256,7 +256,7 @@ This corresponds to `2021-12-31T20:00:00Z` in Unix time.
   "occurrences": [
     {
       "occurrence_id": "1640995200",
-      "start_time": "2021-12-31T20:00:00Z",
+      "start_time": "2022-01-01T00:00:00Z",
       "duration": 60,
       "status": "available",
       "registrant_count": 0

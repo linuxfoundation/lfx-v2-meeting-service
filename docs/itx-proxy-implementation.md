@@ -268,7 +268,7 @@ func (c *Client) ensureValidToken(ctx context.Context) error {
 
 4. ITX Proxy Client:
    - Obtains OAuth2 token from Auth0
-   - POST https://api.itx.linuxfoundation.org/v1/zoom/meetings
+   - POST https://api.itx.linuxfoundation.org/v2/zoom/meetings
    - Receives itx.ZoomMeetingResponse
 
 5. Service Layer converts itx.ZoomMeetingResponse → Goa ITXZoomMeetingResponse

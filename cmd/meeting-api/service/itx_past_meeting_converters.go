@@ -57,14 +57,16 @@ func ConvertUpdatePastMeetingPayload(payload *meetingservice.UpdateItxPastMeetin
 		req.TranscriptAccess = *payload.ArtifactVisibility
 	}
 
-	// Convert committees
 	if payload.Committees != nil {
-		req.Committees = make([]itx.Committee, len(payload.Committees))
-		for i, c := range payload.Committees {
-			req.Committees[i] = itx.Committee{
+		req.Committees = make([]itx.Committee, 0, len(payload.Committees))
+		for _, c := range payload.Committees {
+			if c == nil || c.UID == nil {
+				continue
+			}
+			req.Committees = append(req.Committees, itx.Committee{
 				ID:      *c.UID,
 				Filters: c.AllowedVotingStatuses,
-			}
+			})
 		}
 	}
 
@@ -109,14 +111,16 @@ func ConvertCreatePastMeetingPayload(payload *meetingservice.CreateItxPastMeetin
 		req.TranscriptAccess = *payload.ArtifactVisibility
 	}
 
-	// Convert committees
 	if payload.Committees != nil {
-		req.Committees = make([]itx.Committee, len(payload.Committees))
-		for i, c := range payload.Committees {
-			req.Committees[i] = itx.Committee{
+		req.Committees = make([]itx.Committee, 0, len(payload.Committees))
+		for _, c := range payload.Committees {
+			if c == nil || c.UID == nil {
+				continue
+			}
+			req.Committees = append(req.Committees, itx.Committee{
 				ID:      *c.UID,
 				Filters: c.AllowedVotingStatuses,
-			}
+			})
 		}
 	}
 

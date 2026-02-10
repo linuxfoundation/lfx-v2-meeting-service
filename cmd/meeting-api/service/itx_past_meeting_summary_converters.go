@@ -140,7 +140,6 @@ func parseContentIntoITXParts(content string) (overview string, details []itx.Zo
 	paragraphs := strings.Split(content, "\n\n")
 
 	var overviewParts []string
-	var detailsParts []string
 	var inNextSteps bool
 
 	for _, para := range paragraphs {
@@ -206,11 +205,8 @@ func parseContentIntoITXParts(content string) (overview string, details []itx.Zo
 			}
 		}
 
-		// If this paragraph has label patterns, treat as details
-		if hasLabelPattern {
-			detailsParts = append(detailsParts, para)
-		} else {
-			// Otherwise, treat as overview
+		// If this paragraph doesn't have label patterns, treat as overview
+		if !hasLabelPattern {
 			overviewParts = append(overviewParts, para)
 		}
 	}
