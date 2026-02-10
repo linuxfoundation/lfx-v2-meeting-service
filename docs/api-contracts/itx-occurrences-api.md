@@ -263,7 +263,7 @@ This corresponds to `2022-01-01T00:00:00Z` in Unix time (UTC).
     },
     {
       "occurrence_id": "1641600000",
-      "start_time": "2022-01-07T20:00:00Z",
+      "start_time": "2022-01-08T00:00:00Z",
       "duration": 60,
       "status": "available",
       "registrant_count": 0

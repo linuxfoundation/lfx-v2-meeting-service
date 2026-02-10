@@ -221,30 +221,3 @@ func ptrIfNotZero(i int) *int {
 	}
 	return &i
 }
-
-// Helper functions for recurrence type conversion between ITX (int) and Goa (string)
-func recurrenceTypeToString(t int) string {
-	switch t {
-	case 1:
-		return "daily"
-	case 2:
-		return "weekly"
-	case 3:
-		return "monthly"
-	default:
-		return ""
-	}
-}
-
-func recurrenceTypeToInt(t string) int {
-	switch t {
-	case "daily":
-		return 1
-	case "weekly":
-		return 2
-	case "monthly":
-		return 3
-	default:
-		return 0
-	}
-}
