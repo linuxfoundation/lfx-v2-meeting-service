@@ -8,8 +8,8 @@ import (
 	"errors"
 	"log/slog"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/contrib/propagators/jaeger"

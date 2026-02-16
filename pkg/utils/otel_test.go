@@ -516,7 +516,6 @@ func TestSetupOTelSDKWithConfig_IPEndpoint(t *testing.T) {
 		TracesSampleRatio: 1.0,
 		MetricsExporter:   OTelExporterNone,
 		LogsExporter:      OTelExporterNone,
-		
 	}
 
 	ctx := context.Background()
