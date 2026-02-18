@@ -127,7 +127,7 @@ For ITX proxy functionality, configure these environment variables:
 
 - `ITX_BASE_URL`: Base URL for ITX service (e.g., `https://api.itx.linuxfoundation.org`)
 - `ITX_CLIENT_ID`: OAuth2 client ID for ITX authentication
-- `ITX_CLIENT_SECRET`: OAuth2 client secret for ITX authentication
+- `ITX_CLIENT_PRIVATE_KEY`: RSA private key in PEM format for ITX OAuth2 M2M authentication (load from file: `export ITX_CLIENT_PRIVATE_KEY="$(cat path/to/private.key)"`)
 - `ITX_AUTH0_DOMAIN`: Auth0 domain for OAuth2 (e.g., `linuxfoundation.auth0.com`)
 - `ITX_AUDIENCE`: OAuth2 audience for ITX service (e.g., `https://api.itx.linuxfoundation.org/`)
 
