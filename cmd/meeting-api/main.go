@@ -1,26 +1,26 @@
 // Copyright The Linux Foundation and each contributor to LFX.
 // SPDX-License-Identifier: MIT
 
-// Package main is the meeting service API that provides a RESTful API for managing meetings
-// and handles NATS messages for the meeting service.
+// Package main is the ITX meeting proxy service that provides a lightweight proxy layer to the ITX Zoom API.
 package main
 
 import (
 	"context"
 	_ "expvar"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/platforms"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/handlers"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/messaging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -55,7 +55,7 @@ func run() int {
 	}
 	// Handle shutdown properly so nothing leaks.
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownSeconds*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
 		if shutdownErr := otelShutdown(ctx); shutdownErr != nil {
 			slog.With(logging.ErrKey, shutdownErr).Error("error shutting down OpenTelemetry SDK")
@@ -69,18 +69,6 @@ func run() int {
 		return 1
 	}
 
-	// Initialize platform providers
-	platformConfigs := platforms.NewPlatformConfigsFromEnv()
-	platformConfigs.Zoom = platforms.SetupZoom(platformConfigs.Zoom)
-	platformRegistry := platforms.NewPlatformRegistry(platformConfigs)
-
-	// Initialize email service (independent of NATS)
-	emailService, err := setupEmailService(env)
-	if err != nil {
-		slog.With(logging.ErrKey, err).Error("error setting up email service")
-		return 1
-	}
-
 	// Setup graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -88,183 +76,97 @@ func run() int {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	gracefulCloseWG := sync.WaitGroup{}
 
-	// Setup NATS connection
-	natsConn, err := setupNATS(ctx, env, &gracefulCloseWG, done)
-	if err != nil {
-		slog.With(logging.ErrKey, err).Error("error setting up NATS")
-		return 1
-	}
-
-	// Get the key-value stores for the service.
-	repos, err := getStorageRepos(ctx, natsConn)
-	if err != nil {
-		slog.With(logging.ErrKey, err).Error("error getting key-value stores")
-		return 1
-	}
-
 	// Initialize services
-	serviceConfig := service.ServiceConfig{
-		SkipEtagValidation: env.SkipEtagValidation,
-		ProjectLogoBaseURL: env.ProjectLogoBaseURL,
-		LfxURLGenerator:    constants.NewLfxURLGenerator(env.LFXEnvironment, env.LFXAppOrigin),
-	}
-	messageBuilder := messaging.NewMessageBuilder(natsConn)
 	authService := service.NewAuthService(jwtAuth)
-	occurrenceService := service.NewOccurrenceService()
-	attachmentService := service.NewMeetingAttachmentService(
-		repos.Attachment,
-		repos.Meeting,
-		messageBuilder, // Implements MeetingAttachmentIndexSender
-		messageBuilder, // Implements MeetingAttachmentAccessSender
-	)
-	meetingService := service.NewMeetingService(
-		repos.Meeting,
-		repos.Registrant,
-		repos.MeetingRSVP,
-		messageBuilder,
-		messageBuilder,
-		platformRegistry,
-		occurrenceService,
-		emailService,
-		attachmentService,
-		serviceConfig,
-	)
-	registrantService := service.NewMeetingRegistrantService(
-		repos.Meeting,
-		repos.Registrant,
-		emailService,
-		messageBuilder,
-		messageBuilder,
-		attachmentService,
-		occurrenceService,
-		serviceConfig,
-	)
-	meetingRSVPService := service.NewMeetingRSVPService(
-		repos.MeetingRSVP,
-		repos.Meeting,
-		repos.Registrant,
-		occurrenceService,
-		messageBuilder, // Implements MeetingRSVPIndexSender
-	)
-	pastMeetingService := service.NewPastMeetingService(
-		repos.Meeting,
-		repos.PastMeeting,
-		repos.Attachment,
-		repos.PastMeetingAttachment,
-		messageBuilder, // Implements PastMeetingBasicMessageSender
-		serviceConfig,
-	)
-	pastMeetingParticipantService := service.NewPastMeetingParticipantService(
-		repos.Meeting,
-		repos.PastMeeting,
-		repos.PastMeetingParticipant,
-		messageBuilder, // Implements PastMeetingParticipantMessageSender
-		serviceConfig,
-	)
-	pastMeetingRecordingService := service.NewPastMeetingRecordingService(
-		repos.PastMeetingRecording,
-		repos.PastMeeting,
-		repos.PastMeetingParticipant,
-		messageBuilder, // Implements PastMeetingRecordingMessageSender
-		serviceConfig,
-	)
-	pastMeetingTranscriptService := service.NewPastMeetingTranscriptService(
-		repos.PastMeetingTranscript,
-		repos.PastMeeting,
-		repos.PastMeetingParticipant,
-		messageBuilder, // Implements PastMeetingTranscriptMessageSender
-		serviceConfig,
-	)
-	pastMeetingSummaryService := service.NewPastMeetingSummaryService(
-		repos.PastMeetingSummary,
-		repos.PastMeeting,
-		repos.PastMeetingParticipant,
-		repos.Registrant,
-		repos.Meeting,
-		emailService,
-		messageBuilder, // Implements PastMeetingSummaryMessageSender
-		messageBuilder, // Implements ExternalServiceClient
-		serviceConfig,
-	)
-	pastMeetingAttachmentService := service.NewPastMeetingAttachmentService(
-		repos.PastMeeting,
-		repos.PastMeetingAttachment,
-		repos.Attachment,
-		messageBuilder, // Implements PastMeetingAttachmentIndexSender
-		messageBuilder, // Implements PastMeetingAttachmentAccessSender
-		serviceConfig,
-	)
-	committeeSyncService := service.NewCommitteeSyncService(
-		repos.Meeting,
-		repos.Registrant,
-		registrantService,
-		messageBuilder, // Implements MeetingRegistrantIndexSender
-		messageBuilder, // Implements ExternalServiceClient
-	)
-	zoomWebhookService := service.NewZoomWebhookService(
-		messageBuilder, // Implements WebhookEventSender
-		platformConfigs.Zoom.Validator,
-	)
 
-	// Initialize handlers
-	meetingHandler := handlers.NewMeetingHandler(
-		meetingService,
-		registrantService,
-		pastMeetingService,
-		pastMeetingParticipantService,
-		committeeSyncService,
-	)
-	zoomWebhookHandler := handlers.NewZoomWebhookHandler(
-		meetingService,
-		registrantService,
-		pastMeetingService,
-		pastMeetingParticipantService,
-		pastMeetingRecordingService,
-		pastMeetingTranscriptService,
-		pastMeetingSummaryService,
-		occurrenceService,
-		platformConfigs.Zoom.Validator,
-	)
-	committeeHandler := handlers.NewCommitteeHandlers(
-		meetingService,
-		registrantService,
-		committeeSyncService,
-		messageBuilder,
-	)
-	projectHandler := handlers.NewProjectHandlers(
-		meetingService,
-	)
+	// Initialize ID mapper for v1/v2 ID conversions
+	var idMapper domain.IDMapper
+	if env.IDMappingDisabled {
+		slog.WarnContext(ctx, "ID mapping is DISABLED - using no-op mapper (IDs will pass through unchanged)")
+		idMapper = idmapper.NewNoOpMapper()
+	} else {
+		// For ITX proxy, we still need ID mapping if NATS is available
+		// Check if NATS_URL is set for ID mapping
+		natsURL := os.Getenv("NATS_URL")
+		if natsURL != "" {
+			natsMapper, err := idmapper.NewNATSMapper(idmapper.Config{
+				URL:     natsURL,
+				Timeout: 5 * time.Second,
+			})
+			if err != nil {
+				slog.With(logging.ErrKey, err).Warn("Failed to initialize NATS ID mapper, falling back to no-op mapper")
+				idMapper = idmapper.NewNoOpMapper()
+			} else {
+				defer natsMapper.Close()
+				idMapper = natsMapper
+				slog.InfoContext(ctx, "ID mapping enabled - using NATS mapper for v1/v2 ID conversions")
+			}
+		} else {
+			slog.WarnContext(ctx, "NATS_URL not set, using no-op ID mapper")
+			idMapper = idmapper.NewNoOpMapper()
+		}
+	}
+
+	// Initialize ITX proxy client and services
+	itxProxyConfig := proxy.Config{
+		BaseURL:      env.ITXConfig.BaseURL,
+		ClientID:     env.ITXConfig.ClientID,
+		ClientSecret: env.ITXConfig.ClientSecret,
+		Auth0Domain:  env.ITXConfig.Auth0Domain,
+		Audience:     env.ITXConfig.Audience,
+		Timeout:      30 * time.Second,
+	}
+	itxProxyClient := proxy.NewClient(itxProxyConfig)
+	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper)
+	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
+	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper)
+	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient)
+	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper)
+	slog.InfoContext(ctx, "ITX proxy client initialized")
 
 	svc := NewMeetingsAPI(
 		authService,
-		meetingService,
-		registrantService,
-		meetingRSVPService,
-		attachmentService,
-		pastMeetingService,
-		pastMeetingParticipantService,
-		pastMeetingSummaryService,
-		pastMeetingAttachmentService,
-		zoomWebhookService,
-		zoomWebhookHandler,
-		meetingHandler,
-		committeeHandler,
-		projectHandler,
+		itxMeetingService,
+		itxRegistrantService,
+		itxPastMeetingService,
+		itxPastMeetingSummaryService,
+		itxPastMeetingParticipantService,
 	)
 
 	httpServer := setupHTTPServer(flags, svc, &gracefulCloseWG)
 
-	// Create NATS subscriptions for the service.
-	err = createNatsSubcriptions(ctx, svc, natsConn)
-	if err != nil {
-		slog.With(logging.ErrKey, err).Error("error creating NATS subscriptions")
-		return 1
-	}
+	slog.InfoContext(ctx, "ITX meeting proxy service started",
+		"version", Version,
+		"build_time", BuildTime,
+		"git_commit", GitCommit,
+		"port", flags.Port,
+	)
 
 	// This next line blocks until SIGINT or SIGTERM is received.
 	<-done
 
-	gracefulShutdown(httpServer, natsConn, &gracefulCloseWG, cancel)
+	gracefulShutdown(httpServer, &gracefulCloseWG, cancel)
 
 	return 0
+}
+
+// gracefulShutdown handles graceful shutdown of the application
+func gracefulShutdown(httpServer *http.Server, gracefulCloseWG *sync.WaitGroup, cancel context.CancelFunc) {
+	// Cancel the background context.
+	cancel()
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+		defer cancel()
+
+		slog.With("addr", httpServer.Addr).Info("shutting down http server")
+		if err := httpServer.Shutdown(ctx); err != nil {
+			slog.With(logging.ErrKey, err).Error("http shutdown error")
+		}
+		// Decrement the wait group.
+		gracefulCloseWG.Done()
+	}()
+
+	// Wait for the HTTP graceful shutdown
+	gracefulCloseWG.Wait()
 }

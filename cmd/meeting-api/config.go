@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
-	"strconv"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
@@ -22,23 +21,21 @@ type flags struct {
 
 // environment are the environment variables for the meeting service.
 type environment struct {
-	NatsURL            string
 	Port               string
-	SkipEtagValidation bool
 	LFXEnvironment     string
 	ProjectLogoBaseURL string
 	LFXAppOrigin       string
-	EmailConfig        emailConfig
+	ITXConfig          itxConfig
+	IDMappingDisabled  bool
 }
 
-// emailConfig holds all email-related configuration
-type emailConfig struct {
-	Enabled      bool
-	SMTPHost     string
-	SMTPPort     int
-	SMTPFrom     string
-	SMTPUsername string
-	SMTPPassword string
+// itxConfig holds ITX proxy configuration
+type itxConfig struct {
+	BaseURL      string
+	ClientID     string
+	ClientSecret string
+	Auth0Domain  string
+	Audience     string
 }
 
 // parseFlags parses command line flags for the meeting service
@@ -75,15 +72,6 @@ func parseEnv() environment {
 	if port == "" {
 		port = "8080"
 	}
-	natsURL := os.Getenv("NATS_URL")
-	if natsURL == "" {
-		natsURL = "nats://localhost:4222"
-	}
-	skipEtagValidation := false
-	skipEtagValidationStr := os.Getenv("SKIP_ETAG_VALIDATION")
-	if skipEtagValidationStr == "true" {
-		skipEtagValidation = true
-	}
 
 	lfxEnvironmentRaw := os.Getenv("LFX_ENVIRONMENT")
 	var lfxEnvironment string
@@ -114,49 +102,52 @@ func parseEnv() environment {
 
 	lfxAppOrigin := os.Getenv("LFX_APP_ORIGIN")
 
+	idMappingDisabled := os.Getenv("ID_MAPPING_DISABLED") == "true"
+
 	return environment{
-		NatsURL:            natsURL,
 		Port:               port,
-		SkipEtagValidation: skipEtagValidation,
 		LFXEnvironment:     lfxEnvironment,
 		ProjectLogoBaseURL: projectLogoBaseURL,
 		LFXAppOrigin:       lfxAppOrigin,
-		EmailConfig:        parseEmailConfig(),
+		ITXConfig:          parseITXConfig(),
+		IDMappingDisabled:  idMappingDisabled,
 	}
 }
 
-// parseEmailConfig parses all email-related environment variables
-func parseEmailConfig() emailConfig {
-	enabled := true
-	enabledStr := os.Getenv("EMAIL_ENABLED")
-	if enabledStr == "false" {
-		enabled = false
+// parseITXConfig parses ITX proxy configuration from environment variables
+func parseITXConfig() itxConfig {
+	clientID := os.Getenv("ITX_CLIENT_ID")
+	if clientID == "" {
+		slog.Error("ITX_CLIENT_ID environment variable is required but not set")
+		os.Exit(1)
 	}
 
-	host := os.Getenv("SMTP_HOST")
-	if host == "" {
-		host = "localhost"
+	clientSecret := os.Getenv("ITX_CLIENT_SECRET")
+	if clientSecret == "" {
+		slog.Error("ITX_CLIENT_SECRET environment variable is required but not set")
+		os.Exit(1)
 	}
 
-	port := 1025 // Default for Mailpit
-	portStr := os.Getenv("SMTP_PORT")
-	if portStr != "" {
-		if p, err := strconv.Atoi(portStr); err == nil {
-			port = p
-		}
+	baseURL := os.Getenv("ITX_BASE_URL")
+	if baseURL == "" {
+		baseURL = "https://api.dev.itx.linuxfoundation.org"
 	}
 
-	from := os.Getenv("SMTP_FROM")
-	if from == "" {
-		from = "noreply@lfx.linuxfoundation.org"
+	auth0Domain := os.Getenv("ITX_AUTH0_DOMAIN")
+	if auth0Domain == "" {
+		auth0Domain = "linuxfoundation-dev.auth0.com"
 	}
 
-	return emailConfig{
-		Enabled:      enabled,
-		SMTPHost:     host,
-		SMTPPort:     port,
-		SMTPFrom:     from,
-		SMTPUsername: os.Getenv("SMTP_USERNAME"),
-		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
+	audience := os.Getenv("ITX_AUDIENCE")
+	if audience == "" {
+		audience = "https://api.dev.itx.linuxfoundation.org/"
+	}
+
+	return itxConfig{
+		BaseURL:      baseURL,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Auth0Domain:  auth0Domain,
+		Audience:     audience,
 	}
 }

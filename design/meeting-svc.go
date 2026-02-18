@@ -13,1516 +13,7 @@ var JWTAuth = JWTSecurity("jwt", func() {
 })
 
 var _ = Service("Meeting Service", func() {
-	Description("The meeting service handles all meeting-related operations for LF projects.")
-
-	// TODO: delete this endpoint once the query service supports meeting queries
-	// GET all meetings endpoint
-	Method("get-meetings", func() {
-		Description("Get all meetings.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			Attribute("include_cancelled_occurrences", Boolean, "Include cancelled occurrences in the response", func() {
-				Default(false)
-			})
-		})
-
-		Result(func() {
-			Attribute("meetings", ArrayOf(MeetingFull), "Resources found", func() {})
-			Attribute("cache_control", String, "Cache control header", func() {
-				Example("public, max-age=300")
-			})
-			Required("meetings")
-		})
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings")
-			Param("version:v")
-			Param("include_cancelled_occurrences")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Header("cache_control:Cache-Control")
-			})
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST meeting endpoint
-	Method("create-meeting", func() {
-		Description(`Create a new meeting for a project. An actual meeting in the specific platform will be created by
-		this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.`)
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			// Meeting fields from CreateMeetingPayload
-			ProjectUIDAttribute()
-			StartTimeAttribute()
-			DurationAttribute()
-			TimezoneAttribute()
-			RecurrenceAttribute()
-			TitleAttribute()
-			DescriptionAttribute()
-			CommitteesAttribute()
-			PlatformAttribute()
-			EarlyJoinTimeMinutesAttribute()
-			MeetingTypeAttribute()
-			VisibilityAttribute()
-			RestrictedAttribute()
-			ArtifactVisibilityAttribute()
-			RecordingEnabledAttribute()
-			TranscriptEnabledAttribute()
-			YoutubeUploadEnabledAttribute()
-			ShowMeetingAttendeesAttribute()
-			MeetingOrganizersAttribute()
-			Attribute("zoom_config", ZoomConfigPost, "For zoom platform meetings: the configuration for the meeting")
-			Required("project_uid", "start_time", "duration", "timezone", "title", "description")
-		})
-
-		Result(MeetingFull)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("Conflict", ConflictError, "Conflict")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/meetings")
-			Param("version:v")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Response(StatusCreated)
-			Response("BadRequest", StatusBadRequest)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET meeting base by ID endpoint
-	Method("get-meeting-base", func() {
-		Description("Get a meeting by ID")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			MeetingUIDAttribute()
-			Attribute("include_cancelled_occurrences", Boolean, "Include cancelled occurrences in the response", func() {
-				Default(false)
-			})
-		})
-
-		Result(func() {
-			Attribute("meeting", MeetingBase)
-			EtagAttribute()
-			Required("meeting")
-		})
-
-		Error("NotFound", NotFoundError, "Resource not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{uid}")
-			Param("version:v")
-			Param("uid")
-			Param("include_cancelled_occurrences")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Body("meeting")
-				Header("etag:ETag")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET meeting settings by ID endpoint
-	Method("get-meeting-settings", func() {
-		Description("Get a single meeting's settings.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			MeetingUIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("meeting_settings", MeetingSettings)
-			EtagAttribute()
-			Required("meeting_settings")
-		})
-
-		Error("NotFound", NotFoundError, "Resource not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{uid}/settings")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Body("meeting_settings")
-				Header("etag:ETag")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET meeting join URL by ID endpoint
-	Method("get-meeting-join-url", func() {
-		Description("Get the join URL for a meeting. Requires the user to be either a participant or organizer of the meeting.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			MeetingUIDAttribute()
-		})
-
-		Result(func() {
-			JoinURLAttribute()
-			Required("join_url")
-		})
-
-		Error("NotFound", NotFoundError, "Meeting not found")
-		Error("Unauthorized", UnauthorizedError, "User is not authorized to access the join URL")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{uid}/join_url")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK)
-			Response("NotFound", StatusNotFound)
-			Response("Unauthorized", StatusUnauthorized)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// PUT meeting base endpoint by ID
-	Method("update-meeting-base", func() {
-		Description("Update an existing meeting base.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			// Meeting fields from UpdateMeetingPayload
-			MeetingUIDAttribute()
-			ProjectUIDAttribute()
-			StartTimeAttribute()
-			DurationAttribute()
-			TimezoneAttribute()
-			RecurrenceAttribute()
-			TitleAttribute()
-			DescriptionAttribute()
-			CommitteesAttribute()
-			PlatformAttribute()
-			EarlyJoinTimeMinutesAttribute()
-			MeetingTypeAttribute()
-			VisibilityAttribute()
-			RestrictedAttribute()
-			ArtifactVisibilityAttribute()
-			RecordingEnabledAttribute()
-			TranscriptEnabledAttribute()
-			YoutubeUploadEnabledAttribute()
-			ShowMeetingAttendeesAttribute()
-			Attribute("zoom_config", ZoomConfigPost, "For zoom platform meetings: the configuration for the meeting")
-			Required("uid", "project_uid", "start_time", "duration", "timezone", "title", "description")
-		})
-
-		Result(MeetingBase)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Resource not found")
-		Error("Conflict", ConflictError, "Conflict")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			PUT("/meetings/{uid}")
-			Params(func() {
-				Param("version:v")
-				Param("uid")
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	Method("update-meeting-settings", func() {
-		Description("Update an existing meeting's settings.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			MeetingUIDAttribute()
-			MeetingOrganizersAttribute()
-		})
-
-		Result(MeetingSettings)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Resource not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			PUT("/meetings/{uid}/settings")
-			Params(func() {
-				Param("version:v")
-				Param("uid")
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// DELETE meeting endpoint by ID
-	Method("delete-meeting", func() {
-		Description("Delete an existing meeting.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			MeetingUIDAttribute()
-		})
-
-		Error("NotFound", NotFoundError, "Resource not found")
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/meetings/{uid}")
-			Params(func() {
-				Param("version:v")
-				Param("uid")
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusNoContent)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// DELETE meeting occurrence endpoint
-	Method("delete-meeting-occurrence", func() {
-		Description("Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			MeetingUIDAttribute()
-			Attribute("occurrence_id", String, "The ID of the occurrence to cancel", func() {
-				Example("1640995200")
-			})
-			Required("uid", "occurrence_id")
-		})
-
-		Error("NotFound", NotFoundError, "Meeting or occurrence not found")
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("Conflict", ConflictError, "Conflict")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/meetings/{uid}/occurrences/{occurrence_id}")
-			Params(func() {
-				Param("version:v")
-				Param("uid")
-				Param("occurrence_id")
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusNoContent)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// TODO: delete this endpoint once the query service supports meeting registrant queries
-	// GET meeting registrants endpoint
-	Method("get-meeting-registrants", func() {
-		Description("Get all registrants for a meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			MeetingUIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("registrants", ArrayOf(Registrant), "Meeting registrants")
-			Attribute("cache_control", String, "Cache control header", func() {
-				Example("public, max-age=300")
-			})
-			Required("registrants")
-		})
-
-		Error("NotFound", NotFoundError, "Meeting not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{uid}/registrants")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Header("cache_control:Cache-Control")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST meeting registrant endpoint
-	Method("create-meeting-registrant", func() {
-		Description("Create a new registrant for a meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			Extend(CreateRegistrantPayload)
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			RegistrantMeetingUIDAttribute()
-		})
-
-		Result(Registrant)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Meeting not found")
-		Error("Conflict", ConflictError, "Registrant already exists")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/meetings/{meeting_uid}/registrants")
-			Param("version:v")
-			Param("meeting_uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Response(StatusCreated)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET meeting registrant by UID endpoint
-	Method("get-meeting-registrant", func() {
-		Description("Get a specific registrant for a meeting by UID")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			RegistrantMeetingUIDAttribute()
-			RegistrantUIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("registrant", Registrant)
-			EtagAttribute()
-			Required("registrant")
-		})
-
-		Error("NotFound", NotFoundError, "Meeting or registrant not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{meeting_uid}/registrants/{uid}")
-			Param("version:v")
-			Param("meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Body("registrant")
-				Header("etag:ETag")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// PUT meeting registrant endpoint
-	Method("update-meeting-registrant", func() {
-		Description("Update an existing registrant for a meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			Extend(UpdateRegistrantPayload)
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			RegistrantMeetingUIDAttribute()
-			RegistrantUIDAttribute()
-		})
-
-		Result(Registrant)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Meeting or registrant not found")
-		Error("Conflict", ConflictError, "Conflict")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			PUT("/meetings/{meeting_uid}/registrants/{uid}")
-			Params(func() {
-				Param("version:v")
-				Param("meeting_uid")
-				Param("uid")
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// DELETE meeting registrant endpoint
-	Method("delete-meeting-registrant", func() {
-		Description("Delete a registrant from a meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			RegistrantMeetingUIDAttribute()
-			RegistrantUIDAttribute()
-		})
-
-		Error("NotFound", NotFoundError, "Meeting or registrant not found")
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("Conflict", ConflictError, "Conflict")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/meetings/{meeting_uid}/registrants/{uid}")
-			Params(func() {
-				Param("version:v")
-				Param("meeting_uid")
-				Param("uid")
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusNoContent)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST resend meeting registrant invitation endpoint
-	Method("resend-meeting-registrant-invitation", func() {
-		Description("Resend an invitation email to a meeting registrant")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			RegistrantMeetingUIDAttribute()
-			RegistrantUIDAttribute()
-		})
-
-		Error("NotFound", NotFoundError, "Meeting or registrant not found")
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/meetings/{meeting_uid}/registrants/{uid}/resend")
-			Params(func() {
-				Param("version:v")
-				Param("meeting_uid")
-				Param("uid")
-			})
-			Header("bearer_token:Authorization")
-			Response(StatusNoContent)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST meeting RSVP endpoint
-	Method("create-meeting-rsvp", func() {
-		Description("Create or update an RSVP response for a meeting. Username is automatically extracted from the JWT token. The most recent RSVP takes precedence.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			RSVPMeetingUIDAttribute()
-			RSVPRegistrantIDAttribute()
-			RSVPUsernameAttribute()
-			RSVPResponseAttribute()
-			RSVPScopeAttribute()
-			RSVPOccurrenceIDAttribute()
-			Required("meeting_uid", "response", "scope")
-		})
-
-		Result(RSVPResponse)
-
-		Error("BadRequest", BadRequestError, "Bad request - invalid scope or missing occurrence_id")
-		Error("NotFound", NotFoundError, "Meeting or registrant not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/meetings/{meeting_uid}/rsvp")
-			Param("version:v")
-			Param("meeting_uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Response(StatusCreated)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET meeting RSVPs endpoint (for organizers)
-	Method("get-meeting-rsvps", func() {
-		Description("Get all RSVP responses for a meeting (organizers only)")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			RSVPMeetingUIDAttribute()
-			Required("meeting_uid")
-		})
-
-		Result(RSVPListResult)
-
-		Error("NotFound", NotFoundError, "Meeting not found")
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{meeting_uid}/rsvp")
-			Param("version:v")
-			Param("meeting_uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	Method("zoom-webhook", func() {
-		Description("Handle Zoom webhook events for meeting lifecycle, participants, and recordings.")
-
-		// No authentication required for webhooks - validation is done via signature
-		NoSecurity()
-
-		Payload(ZoomWebhookPayload)
-
-		Result(ZoomWebhookResponse)
-
-		Error("BadRequest", BadRequestError, "Invalid webhook payload or signature")
-		Error("Unauthorized", UnauthorizedError, "Invalid webhook signature")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-
-		HTTP(func() {
-			POST("/webhooks/zoom")
-			Header("zoom_signature:x-zm-signature")
-			Header("zoom_timestamp:x-zm-request-timestamp")
-			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
-			Response("Unauthorized", StatusUnauthorized)
-			Response("InternalServerError", StatusInternalServerError)
-		})
-	})
-
-	// GET all past meetings endpoint
-	Method("get-past-meetings", func() {
-		Description("Get all past meetings.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-		})
-
-		Result(func() {
-			Attribute("past_meetings", ArrayOf(PastMeeting), "Past meetings found")
-			Attribute("cache_control", String, "Cache control header", func() {
-				Example("public, max-age=300")
-			})
-			Required("past_meetings")
-		})
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings")
-			Param("version:v")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Header("cache_control:Cache-Control")
-			})
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST past meeting endpoint
-	Method("create-past-meeting", func() {
-		Description("Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			Extend(CreatePastMeetingPayload)
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-		})
-
-		Result(PastMeeting)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("Conflict", ConflictError, "Past meeting already exists")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/past_meetings")
-			Param("version:v")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Response(StatusCreated)
-			Response("BadRequest", StatusBadRequest)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET past meeting by ID endpoint
-	Method("get-past-meeting", func() {
-		Description("Get a past meeting by ID")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			PastMeetingUIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("past_meeting", PastMeeting)
-			EtagAttribute()
-			Required("past_meeting")
-		})
-
-		Error("NotFound", NotFoundError, "Past meeting not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings/{uid}")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Body("past_meeting")
-				Header("etag:ETag")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// DELETE past meeting endpoint by ID
-	Method("delete-past-meeting", func() {
-		Description("Delete an existing past meeting.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			PastMeetingUIDAttribute()
-		})
-
-		Error("NotFound", NotFoundError, "Past meeting not found")
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/past_meetings/{uid}")
-			Params(func() {
-				Param("version:v")
-				Param("uid")
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusNoContent)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// TODO: delete this endpoint once the query service supports meeting registrant queries
-	// GET past meeting participants endpoint
-	Method("get-past-meeting-participants", func() {
-		Description("Get all participants for a past meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			PastMeetingUIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("participants", ArrayOf(PastMeetingParticipant), "Past meeting participants")
-			Attribute("cache_control", String, "Cache control header", func() {
-				Example("public, max-age=300")
-			})
-			Required("participants")
-		})
-
-		Error("NotFound", NotFoundError, "Past meeting not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings/{uid}/participants")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Header("cache_control:Cache-Control")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST past meeting participant endpoint
-	Method("create-past-meeting-participant", func() {
-		Description("Create a new participant for a past meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			Extend(CreatePastMeetingParticipantPayload)
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			PastMeetingUIDAttribute()
-		})
-
-		Result(PastMeetingParticipant)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Past meeting not found")
-		Error("Conflict", ConflictError, "Past meeting participant already exists")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/past_meetings/{uid}/participants")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Response(StatusCreated)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET past meeting participant by UID endpoint
-	Method("get-past-meeting-participant", func() {
-		Description("Get a specific participant for a past meeting by UID")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			PastMeetingParticipantPastMeetingUIDAttribute()
-			PastMeetingParticipantUIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("participant", PastMeetingParticipant)
-			EtagAttribute()
-			Required("participant")
-		})
-
-		Error("NotFound", NotFoundError, "Past meeting or participant not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings/{past_meeting_uid}/participants/{uid}")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Body("participant")
-				Header("etag:ETag")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// PUT past meeting participant endpoint
-	Method("update-past-meeting-participant", func() {
-		Description("Update an existing participant for a past meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			Extend(UpdatePastMeetingParticipantPayload)
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			PastMeetingParticipantPastMeetingUIDAttribute()
-			PastMeetingParticipantUIDAttribute()
-		})
-
-		Result(PastMeetingParticipant)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Past meeting or participant not found")
-		Error("Conflict", ConflictError, "Conflict")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			PUT("/past_meetings/{past_meeting_uid}/participants/{uid}")
-			Params(func() {
-				Param("version:v")
-				Param("past_meeting_uid") // past meeting uid
-				Param("uid")              // past meeting participant uid
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("Conflict", StatusConflict)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// DELETE past meeting participant endpoint
-	Method("delete-past-meeting-participant", func() {
-		Description("Delete a participant from a past meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			IfMatchAttribute()
-			VersionAttribute()
-			PastMeetingParticipantPastMeetingUIDAttribute()
-			PastMeetingParticipantUIDAttribute()
-		})
-
-		Error("NotFound", NotFoundError, "Past meeting or participant not found")
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/past_meetings/{past_meeting_uid}/participants/{uid}")
-			Params(func() {
-				Param("version:v")
-				Param("past_meeting_uid") // past meeting uid
-				Param("uid")              // past meeting participant uid
-			})
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusNoContent)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET past meeting summaries endpoint
-	Method("get-past-meeting-summaries", func() {
-		Description("Get all summaries for a past meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			UIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("summaries", ArrayOf(PastMeetingSummary), "Past meeting summaries")
-			Attribute("cache_control", String, "Cache control header", func() {
-				Example("public, max-age=300")
-			})
-			Required("summaries")
-		})
-
-		Error("NotFound", NotFoundError, "Past meeting not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings/{uid}/summaries")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Header("cache_control:Cache-Control")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET a single past meeting summary endpoint
-	Method("get-past-meeting-summary", func() {
-		Description("Get a specific summary for a past meeting")
-		Security(JWTAuth)
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			PastMeetingSummaryPastMeetingUIDAttribute()
-			SummaryUIDAttribute()
-			Required("past_meeting_uid", "summary_uid")
-		})
-		Result(func() {
-			Attribute("summary", PastMeetingSummary)
-			EtagAttribute()
-			Required("summary")
-		})
-		Error("NotFound", NotFoundError, "Past meeting or summary not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-		HTTP(func() {
-			GET("/past_meetings/{past_meeting_uid}/summaries/{summary_uid}")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Param("summary_uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Body("summary")
-				Header("etag:ETag")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// PUT past meeting summary endpoint
-	Method("update-past-meeting-summary", func() {
-		Description("Update an existing past meeting summary")
-		Security(JWTAuth)
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			IfMatchAttribute()
-			PastMeetingSummaryPastMeetingUIDAttribute()
-			SummaryUIDAttribute()
-			EditedContentAttribute()
-			ApprovedAttribute()
-			Required("past_meeting_uid", "summary_uid")
-		})
-		Result(PastMeetingSummary)
-		Error("NotFound", NotFoundError, "Past meeting or summary not found")
-		Error("BadRequest", BadRequestError, "Invalid request")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-		HTTP(func() {
-			PUT("/past_meetings/{past_meeting_uid}/summaries/{summary_uid}")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Param("summary_uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Header("if_match:If-Match")
-			Response(StatusOK)
-			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST meeting attachment create endpoint
-	Method("create-meeting-attachment", func() {
-		Description("Create a file or link attachment for a meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			AttachmentMeetingUIDAttribute()
-			AttachmentTypeAttribute()
-			AttachmentLinkAttribute()
-			AttachmentNameAttribute()
-			AttachmentDescriptionAttribute()
-			Attribute("file", Bytes, "Optional: The file data to upload (for type='file')", func() {
-				Meta("swagger:type", "file")
-			})
-			Attribute("file_name", String, "The filename extracted from multipart form data (populated by decoder)")
-			Attribute("file_content_type", String, "The content type extracted from multipart form data (populated by decoder)")
-			Required("meeting_uid", "type", "name")
-		})
-
-		Result(MeetingAttachment)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Meeting not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/meetings/{meeting_uid}/attachments")
-			Param("version:v")
-			Param("meeting_uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			MultipartRequest()
-			Response(StatusCreated)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET meeting attachment endpoint
-	Method("get-meeting-attachment", func() {
-		Description("Download a file attachment for a meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			AttachmentMeetingUIDAttribute()
-			AttachmentUIDAttribute()
-			Required("meeting_uid", "uid")
-		})
-
-		Result(Bytes)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Attachment not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{meeting_uid}/attachments/{uid}")
-			Param("version:v")
-			Param("meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				ContentType("application/octet-stream")
-			})
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET meeting attachment metadata endpoint
-	Method("get-meeting-attachment-metadata", func() {
-		Description("Get metadata for a meeting attachment without downloading the file")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			AttachmentMeetingUIDAttribute()
-			AttachmentUIDAttribute()
-			Required("meeting_uid", "uid")
-		})
-
-		Result(MeetingAttachment)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Attachment not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/meetings/{meeting_uid}/attachments/{uid}/metadata")
-			Param("version:v")
-			Param("meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	Method("delete-meeting-attachment", func() {
-		Description("Delete a file attachment for a meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			AttachmentMeetingUIDAttribute()
-			AttachmentUIDAttribute()
-			Required("meeting_uid", "uid")
-		})
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Attachment not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/meetings/{meeting_uid}/attachments/{uid}")
-			Param("version:v")
-			Param("meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Response(StatusNoContent)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// POST past meeting attachment endpoint
-	Method("create-past-meeting-attachment", func() {
-		Description("Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			PastMeetingAttachmentPastMeetingUIDAttribute()
-			PastMeetingAttachmentTypeAttribute()
-			PastMeetingAttachmentLinkAttribute()
-			PastMeetingAttachmentNameAttribute()
-			PastMeetingAttachmentDescriptionAttribute()
-			Attribute("source_object_uid", String, "Optional: UID of an existing file in Object Store to reference (for type='file')", func() {
-				Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
-				Format(FormatUUID)
-			})
-			Attribute("file", Bytes, "Optional: The file data to upload (for type='file', required if source_object_uid is not provided)", func() {
-				Meta("swagger:type", "file")
-			})
-			Attribute("file_name", String, "The filename extracted from multipart form data (populated by decoder)")
-			Attribute("file_content_type", String, "The content type extracted from multipart form data (populated by decoder)")
-			Required("past_meeting_uid", "type", "name")
-		})
-
-		Result(PastMeetingAttachment)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Past meeting not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			POST("/past_meetings/{past_meeting_uid}/attachments")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			MultipartRequest()
-			Response(StatusCreated)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET past meeting attachments endpoint
-	Method("get-past-meeting-attachments", func() {
-		Description("Get all attachments for a past meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			UIDAttribute()
-		})
-
-		Result(func() {
-			Attribute("attachments", ArrayOf(PastMeetingAttachment), "Past meeting attachments")
-			Attribute("cache_control", String, "Cache control header", func() {
-				Example("public, max-age=300")
-			})
-			Required("attachments")
-		})
-
-		Error("NotFound", NotFoundError, "Past meeting not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings/{uid}/attachments")
-			Param("version:v")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				Header("cache_control:Cache-Control")
-			})
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET past meeting attachment file endpoint
-	Method("get-past-meeting-attachment", func() {
-		Description("Download a file attachment for a past meeting")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			PastMeetingAttachmentPastMeetingUIDAttribute()
-			PastMeetingAttachmentUIDAttribute()
-			Required("past_meeting_uid", "uid")
-		})
-
-		Result(Bytes)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Attachment not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings/{past_meeting_uid}/attachments/{uid}")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK, func() {
-				ContentType("application/octet-stream")
-			})
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// GET past meeting attachment metadata endpoint
-	Method("get-past-meeting-attachment-metadata", func() {
-		Description("Get metadata for a past meeting attachment without downloading the file")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			VersionAttribute()
-			PastMeetingAttachmentPastMeetingUIDAttribute()
-			PastMeetingAttachmentUIDAttribute()
-			Required("past_meeting_uid", "uid")
-		})
-
-		Result(PastMeetingAttachment)
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Attachment not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			GET("/past_meetings/{past_meeting_uid}/attachments/{uid}/metadata")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
-
-	// DELETE past meeting attachment endpoint
-	Method("delete-past-meeting-attachment", func() {
-		Description("Delete a past meeting attachment")
-
-		Security(JWTAuth)
-
-		Payload(func() {
-			BearerTokenAttribute()
-			XSyncAttribute()
-			VersionAttribute()
-			PastMeetingAttachmentPastMeetingUIDAttribute()
-			PastMeetingAttachmentUIDAttribute()
-			Required("past_meeting_uid", "uid")
-		})
-
-		Error("BadRequest", BadRequestError, "Bad request")
-		Error("NotFound", NotFoundError, "Attachment not found")
-		Error("InternalServerError", InternalServerError, "Internal server error")
-		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
-
-		HTTP(func() {
-			DELETE("/past_meetings/{past_meeting_uid}/attachments/{uid}")
-			Param("version:v")
-			Param("past_meeting_uid")
-			Param("uid")
-			Header("bearer_token:Authorization")
-			Header("x_sync:X-Sync")
-			Response(StatusNoContent)
-			Response("BadRequest", StatusBadRequest)
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response("ServiceUnavailable", StatusServiceUnavailable)
-		})
-	})
+	Description("The ITX Meeting Proxy service provides a lightweight proxy layer to the ITX Zoom API for LF projects.")
 
 	Method("readyz", func() {
 		Description("Check if the service is able to take inbound requests.")
@@ -1551,6 +42,1183 @@ var _ = Service("Meeting Service", func() {
 			Response(StatusOK, func() {
 				ContentType("text/plain")
 			})
+		})
+	})
+
+	// ITX Zoom API Proxy endpoints
+	Method("create-itx-meeting", func() {
+		Description("Create a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			XSyncAttribute()
+			// Request fields
+			ITXProjectUIDAttribute()
+			TitleAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+			VisibilityAttribute()
+			DescriptionAttribute()
+			RestrictedAttribute()
+			CommitteesAttribute()
+			MeetingTypeAttribute()
+			EarlyJoinTimeMinutesAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			YoutubeUploadEnabledAttribute()
+			ArtifactVisibilityAttribute()
+			RecurrenceAttribute()
+			Required("project_uid", "title", "start_time", "duration", "timezone", "visibility")
+		})
+
+		Result(ITXZoomMeetingResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("Conflict", ConflictError, "Conflict with existing meeting")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-meeting", func() {
+		Description("Get a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The Zoom meeting ID", func() {
+				Example("1234567890")
+			})
+			Required("meeting_id")
+		})
+
+		Result(ITXZoomMeetingResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-meeting", func() {
+		Description("Delete a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The Zoom meeting ID", func() {
+				Example("1234567890")
+			})
+			Required("meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-meeting", func() {
+		Description("Update a Zoom meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			XSyncAttribute()
+			Attribute("meeting_id", String, "The Zoom meeting ID", func() {
+				Example("1234567890")
+			})
+			// Request fields (same as create)
+			ITXProjectUIDAttribute()
+			TitleAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+			VisibilityAttribute()
+			DescriptionAttribute()
+			RestrictedAttribute()
+			CommitteesAttribute()
+			MeetingTypeAttribute()
+			EarlyJoinTimeMinutesAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			YoutubeUploadEnabledAttribute()
+			ArtifactVisibilityAttribute()
+			RecurrenceAttribute()
+			Required("meeting_id", "project_uid", "title", "start_time", "duration", "timezone", "visibility")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("Conflict", ConflictError, "Conflict with existing meeting")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/meetings/{meeting_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Header("x_sync:X-Sync")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-meeting-count", func() {
+		Description("Get the count of Zoom meetings for a project through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			ITXProjectUIDAttribute()
+			Required("project_uid")
+		})
+
+		Result(ITXMeetingCountResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Project not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meeting_count")
+			Param("version:v")
+			Param("project_uid")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("create-itx-registrant", func() {
+		Description("Create a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Extend(ITXZoomMeetingRegistrant)
+			Required("meeting_id")
+		})
+
+		Result(ITXZoomMeetingRegistrant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("Conflict", ConflictError, "Registrant already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/registrants")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-registrant", func() {
+		Description("Get a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Result(ITXZoomMeetingRegistrant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/registrants/{registrant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-registrant", func() {
+		Description("Update a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Extend(ITXZoomMeetingRegistrant)
+			Required("meeting_id", "registrant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/meetings/{meeting_id}/registrants/{registrant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-registrant", func() {
+		Description("Delete a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}/registrants/{registrant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-join-link", func() {
+		Description("Get join link for a meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("use_email", Boolean, "Use email for identification instead of user_id")
+			Attribute("user_id", String, "LF user ID", func() {
+				Example("user123")
+			})
+			Attribute("name", String, "User's full name", func() {
+				Example("John Doe")
+			})
+			Attribute("email", String, "User's email address", func() {
+				Example("john.doe@example.com")
+				Format(FormatEmail)
+			})
+			Attribute("register", Boolean, "Register user as guest if not already registered")
+			Required("meeting_id")
+		})
+
+		Result(ITXZoomMeetingJoinLink)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/join_link")
+			Param("version:v")
+			Param("use_email")
+			Param("user_id")
+			Param("name")
+			Param("email")
+			Param("register")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-registrant-ics", func() {
+		Description("Get ICS calendar file for a meeting registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Result(Bytes)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/registrants/{registrant_id}/ics")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK, func() {
+				ContentType("text/calendar")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("resend-itx-registrant-invitation", func() {
+		Description("Resend meeting invitation to a registrant through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/registrants/{registrant_id}/resend")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("resend-itx-meeting-invitations", func() {
+		Description("Resend meeting invitations to all registrants through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("exclude_registrant_ids", ArrayOf(String), "Registrant IDs to exclude from resend", func() {
+				Example([]string{"reg123", "reg456"})
+			})
+			Required("meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/resend")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("register-itx-committee-members", func() {
+		Description("Register committee members to a meeting asynchronously through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Required("meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/register_committee_members")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-occurrence", func() {
+		Description("Update a specific occurrence of a recurring meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("occurrence_id", String, "The ID of the occurrence (Unix timestamp)", func() {
+				Example("1640995200")
+			})
+			Attribute("start_time", String, "Meeting start time in RFC3339 format", func() {
+				Example("2024-01-15T10:00:00Z")
+				Format(FormatDateTime)
+			})
+			Attribute("duration", Int, "Meeting duration in minutes", func() {
+				Example(60)
+				Minimum(1)
+			})
+			Attribute("topic", String, "Meeting topic/title")
+			Attribute("agenda", String, "Meeting agenda/description")
+			Attribute("recurrence", Recurrence, "Recurrence settings")
+			Required("meeting_id", "occurrence_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting or occurrence not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/meetings/{meeting_id}/occurrences/{occurrence_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-occurrence", func() {
+		Description("Delete a specific occurrence of a recurring meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("occurrence_id", String, "The ID of the occurrence (Unix timestamp)", func() {
+				Example("1640995200")
+			})
+			Required("meeting_id", "occurrence_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting or occurrence not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}/occurrences/{occurrence_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("create-itx-past-meeting", func() {
+		Description("Create a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+
+			// Required fields
+			Attribute("meeting_id", String, "Zoom meeting ID", func() {
+				Example("12343245463")
+			})
+			Attribute("occurrence_id", String, "Zoom occurrence ID (Unix timestamp)", func() {
+				Example("1630560600000")
+			})
+			ITXProjectUIDAttribute()
+			StartTimeAttribute()
+			DurationAttribute()
+			TimezoneAttribute()
+
+			// Optional fields
+			DescriptionAttribute()
+			RestrictedAttribute()
+			CommitteesAttribute()
+			MeetingTypeAttribute()
+			RecordingEnabledAttribute()
+			TranscriptEnabledAttribute()
+			ArtifactVisibilityAttribute()
+			VisibilityAttribute()
+			TitleAttribute()
+
+			Required("meeting_id", "occurrence_id", "project_uid", "start_time", "duration", "timezone")
+		})
+
+		Result(ITXPastZoomMeeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Project or meeting not found")
+		Error("Conflict", ConflictError, "Past meeting already exists")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/past_meetings")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-past-meeting", func() {
+		Description("Get a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Required("past_meeting_id")
+		})
+
+		Result(ITXPastZoomMeeting)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/past_meetings/{past_meeting_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-past-meeting", func() {
+		Description("Delete a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Required("past_meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/past_meetings/{past_meeting_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-past-meeting", func() {
+		Description("Update a past meeting through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id or meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("project_uid", String, "Project UID (v2)", func() {
+				Example("a09eaa48-231b-43e5-93ba-91c2e0a0e5f1")
+			})
+			Attribute("meeting_id", String, "Zoom meeting ID", func() {
+				Example("12343245463")
+			})
+			Attribute("occurrence_id", String, "Zoom occurrence ID", func() {
+				Example("1630560600000")
+			})
+			Attribute("start_time", String, "Meeting start time in RFC3339 format", func() {
+				Example("2024-01-15T10:00:00Z")
+				Format(FormatDateTime)
+			})
+			Attribute("duration", Int, "Meeting duration in minutes", func() {
+				Example(60)
+				Minimum(1)
+			})
+			Attribute("timezone", String, "Meeting timezone", func() {
+				Example("UTC")
+			})
+			Attribute("title", String, "Meeting title/topic")
+			Attribute("description", String, "Meeting description/agenda")
+			Attribute("restricted", Boolean, "Whether the meeting is restricted")
+			Attribute("meeting_type", String, "Type of meeting (e.g., regular, webinar)", func() {
+				Enum("regular", "webinar")
+			})
+			Attribute("visibility", String, "Meeting visibility", func() {
+				Enum("public", "private")
+			})
+			Attribute("recording_enabled", Boolean, "Whether recording is enabled")
+			Attribute("transcript_enabled", Boolean, "Whether transcript is enabled")
+			Attribute("artifact_visibility", String, "Visibility of meeting artifacts (recordings, transcripts)", func() {
+				Enum("meeting_hosts", "meeting_participants", "public")
+			})
+			Attribute("committees", ArrayOf(Committee), "Committees associated with the meeting")
+			Required("past_meeting_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/past_meetings/{past_meeting_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-past-meeting-summary", func() {
+		Description("Get a specific past meeting summary through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("summary_uid", String, "Summary UID", func() {
+				Example("456e7890-e89b-12d3-a456-426614174000")
+				Format(FormatUUID)
+			})
+			Required("past_meeting_id", "summary_uid")
+		})
+
+		Result(PastMeetingSummary)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Summary not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-past-meeting-summary", func() {
+		Description("Update a past meeting summary through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("summary_uid", String, "Summary UID", func() {
+				Example("456e7890-e89b-12d3-a456-426614174000")
+				Format(FormatUUID)
+			})
+			Attribute("edited_content", String, "User-edited summary content")
+			Attribute("approved", Boolean, "Approval status")
+			Required("past_meeting_id", "summary_uid")
+		})
+
+		Result(PastMeetingSummary)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Summary not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// Past Meeting Participant Endpoints (unified invitee/attendee interface)
+	Method("create-itx-past-meeting-participant", func() {
+		Description("Create a past meeting participant through ITX API proxy - routes to invitee and/or attendee endpoints based on flags")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id format)", func() {
+				Example("12343245463-1630560600000")
+			})
+
+			// Identity fields - at least one required
+			Attribute("email", String, "Email address", func() {
+				Format(FormatEmail)
+				Example("john.doe@example.com")
+			})
+			Attribute("first_name", String, "First name", func() {
+				Example("John")
+			})
+			Attribute("last_name", String, "Last name", func() {
+				Example("Doe")
+			})
+			Attribute("username", String, "LF SSO username", func() {
+				Example("jdoe")
+			})
+			Attribute("lf_user_id", String, "LF user ID (Salesforce ID)", func() {
+				Example("003P000001cRZVVI9A")
+			})
+
+			// Organization fields
+			Attribute("org_name", String, "Organization name", func() {
+				Example("Google")
+			})
+			Attribute("job_title", String, "Job title", func() {
+				Example("Software Engineer")
+			})
+			Attribute("org_is_member", Boolean, "Whether org has LF membership")
+			Attribute("org_is_project_member", Boolean, "Whether org has project membership")
+
+			// Committee fields
+			Attribute("committee_id", String, "Associated committee UUID", func() {
+				Format(FormatUUID)
+			})
+			Attribute("committee_role", String, "Role within committee", func() {
+				Example("Developer Seat")
+			})
+			Attribute("committee_voting_status", String, "Voting status in committee", func() {
+				Example("Voting Rep")
+			})
+
+			// Profile
+			Attribute("avatar_url", String, "URL to profile picture", func() {
+				Format(FormatURI)
+				Example("https://avatars.example.com/jdoe.jpg")
+			})
+
+			// Participation flags
+			Attribute("is_invited", Boolean, "Whether the participant was invited/registered - creates invitee record if true", func() {
+				Example(true)
+			})
+			Attribute("is_attended", Boolean, "Whether the participant attended - creates attendee record if true", func() {
+				Example(true)
+			})
+
+			// Attendee-specific fields
+			Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendee only)")
+			Attribute("is_unknown", Boolean, "Whether attendee is marked as unknown (attendee only)")
+			Attribute("sessions", ArrayOf(ParticipantSession), "Array of session objects with join/leave times (attendee only)")
+
+			Required("past_meeting_id")
+		})
+
+		Result(ITXPastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Invalid request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/past_meetings/{past_meeting_id}/participants")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-past-meeting-participant", func() {
+		Description("Update a past meeting participant through ITX API proxy - updates invitee and/or attendee records as needed")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id format)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("participant_id", String, "Participant ID (invitee_id or attendee_id)", func() {
+				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			})
+			Attribute("invitee_id", String, "Optional invitee ID to use directly (avoids ID mapping lookup)", func() {
+				Example("inv_abc123")
+			})
+			Attribute("attendee_id", String, "Optional attendee ID to use directly (avoids ID mapping lookup)", func() {
+				Example("att_xyz789")
+			})
+
+			// Status flags
+			Attribute("is_invited", Boolean, "Whether the participant is invited (if false, invitee record will be deleted)")
+			Attribute("is_attended", Boolean, "Whether the participant attended (if false, attendee record will be deleted)")
+
+			// Identity fields (used for creating invitee/attendee if they don't exist)
+			Attribute("email", String, "Email address (used for creation)", func() {
+				Example("john.doe@example.com")
+			})
+			Attribute("username", String, "LF SSO username (used for creation)", func() {
+				Example("johndoe")
+			})
+			Attribute("lf_user_id", String, "LF user ID (used for creation)", func() {
+				Example("abc123")
+			})
+
+			// Updatable fields
+			Attribute("first_name", String, "First name (required for invitee updates)", func() {
+				Example("John")
+			})
+			Attribute("last_name", String, "Last name (required for invitee updates)", func() {
+				Example("Doe")
+			})
+			Attribute("org_name", String, "Organization name", func() {
+				Example("Microsoft")
+			})
+			Attribute("job_title", String, "Job title", func() {
+				Example("Senior Software Engineer")
+			})
+			Attribute("committee_role", String, "Role within committee", func() {
+				Example("Lead Developer")
+			})
+			Attribute("committee_voting_status", String, "Voting status in committee", func() {
+				Example("Alt Voting Rep")
+			})
+			Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendee only)")
+
+			Required("past_meeting_id", "participant_id")
+		})
+
+		Result(ITXPastMeetingParticipant)
+
+		Error("BadRequest", BadRequestError, "Invalid request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Participant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/past_meetings/{past_meeting_id}/participants/{participant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-past-meeting-participant", func() {
+		Description("Delete a past meeting participant through ITX API proxy - deletes invitee and/or attendee records as needed")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("past_meeting_id", String, "Past meeting ID (meeting_id-occurrence_id format)", func() {
+				Example("12343245463-1630560600000")
+			})
+			Attribute("participant_id", String, "Participant ID (invitee_id or attendee_id)", func() {
+				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+			})
+
+			Required("past_meeting_id", "participant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Invalid request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Participant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/past_meetings/{past_meeting_id}/participants/{participant_id}")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
 		})
 	})
 

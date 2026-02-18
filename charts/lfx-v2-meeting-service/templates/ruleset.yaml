@@ -29,32 +29,16 @@ spec:
           config:
             values:
               aud: {{ .Values.app.audience }}
-    - id: "rule:lfx:lfx-v2-meeting-service:webhooks:zoom"
+
+    # =============== ITX Zoom API Proxy Endpoints ==================
+    # These endpoints proxy requests to the ITX Zoom API service
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meetings:create"
       match:
         methods:
           - POST
         routes:
-          - path: /webhooks/zoom
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        # Allow all requests on the zoom webhook endpoint because the endpoint does validation
-        # of the request to check that it is coming from Zoom.
-        - authorizer: allow_all
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:create"
-      match:
-        methods:
-          - POST
-        routes:
-          - path: /meetings
+          - path: /itx/meetings
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -81,12 +65,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:get"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meetings:get"
       match:
         methods:
           - GET
         routes:
-          - path: /meetings/:id
+          - path: /itx/meetings/:meeting_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -99,7 +83,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -112,74 +96,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:join_url"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /meetings/:id/join_url
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: viewer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:get"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /meetings/:id/settings
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: auditor
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meetings:update"
       match:
         methods:
           - PUT
         routes:
-          - path: /meetings/:id
+          - path: /itx/meetings/:meeting_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -192,7 +114,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -205,12 +127,198 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_settings:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meetings:delete"
+      match:
+        methods:
+          - DELETE
+        routes:
+          - path: /itx/meetings/:meeting_id
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meeting_count:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /itx/meeting_count
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: viewer
+              object: "project:{{ "{{- .Request.URL.Query.project_uid -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meetings:join_link"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /itx/meetings/:meeting_id/join_link
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: viewer
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meetings:resend_invitations"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /itx/meetings/:meeting_id/resend
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:registrants:create"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /itx/meetings/:meeting_id/registrants
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:registrants:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /itx/meetings/:meeting_id/registrants/:registrant_id
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: auditor
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:registrants:update"
       match:
         methods:
           - PUT
         routes:
-          - path: /meetings/:id/settings
+          - path: /itx/meetings/:meeting_id/registrants/:registrant_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -223,7 +331,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -236,12 +344,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:meeting:delete"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:registrants:delete"
       match:
         methods:
           - DELETE
         routes:
-          - path: /meetings/:id
+          - path: /itx/meetings/:meeting_id/registrants/:registrant_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -254,7 +362,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -267,77 +375,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meetings:occurrence:delete"
-      match:
-        methods:
-          - DELETE
-        routes:
-          - path: /meetings/:id/occurrences/:occurrence_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:create"
-      match:
-        methods:
-          - POST
-        routes:
-          - path: /meetings/:id/registrants
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # TODO: remove this rule once we remove the list meeting registrants endpoint.
-    # It is not meant to be used by applications, it should only be used
-    # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:list"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:registrants:get_ics"
       match:
         methods:
           - GET
         routes:
-          - path: /meetings/:id/registrants
+          - path: /itx/meetings/:meeting_id/registrants/:registrant_id/ics
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -349,8 +392,8 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: auditor
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              relation: viewer
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -363,12 +406,74 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:registrants:resend_invitation"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /itx/meetings/:meeting_id/registrants/:registrant_id/resend
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:meetings:register_committee_members"
+      match:
+        methods:
+          - POST
+        routes:
+          - path: /itx/meetings/:meeting_id/register_committee_members
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:occurrences:update"
       match:
         methods:
           - PUT
         routes:
-          - path: /meetings/:id/registrants/:registrant_id
+          - path: /itx/meetings/:meeting_id/occurrences/:occurrence_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -381,7 +486,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -394,43 +499,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:get"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /meetings/:id/registrants/:registrant_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: auditor
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:delete"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:occurrences:delete"
       match:
         methods:
           - DELETE
         routes:
-          - path: /meetings/:id/registrants/:registrant_id
+          - path: /itx/meetings/:meeting_id/occurrences/:occurrence_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -443,7 +517,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -456,235 +530,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_registrants:resend_invitation"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:create"
       match:
         methods:
           - POST
         routes:
-          - path: /meetings/:id/registrants/:registrant_id/resend
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # =============== Meeting Attachments ==================
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_attachments:create"
-      match:
-        methods:
-          - POST
-        routes:
-          - path: /meetings/:id/attachments
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_attachments:get"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /meetings/:id/attachments/:attachment_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: viewer
-              object: "meeting_attachment:{{ "{{- .Request.URL.Captures.attachment_id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_attachments:get_metadata"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /meetings/:id/attachments/:attachment_id/metadata
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: viewer
-              object: "meeting_attachment:{{ "{{- .Request.URL.Captures.attachment_id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_attachments:delete"
-      match:
-        methods:
-          - DELETE
-        routes:
-          - path: /meetings/:id/attachments/:attachment_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # =============== Meeting RSVPs ==================
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_rsvp:create"
-      match:
-        methods:
-          - POST
-        routes:
-          - path: /meetings/:id/rsvp
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: viewer
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-  # TODO: remove this rule once we remove the list meeting rsvps endpoint.
-  # It is not meant to be used by applications, it should only be used
-  # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:meeting_rsvp:list"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /meetings/:id/rsvp
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: auditor
-              object: "meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # =============== Past meetings ==================
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:create"
-      match:
-        methods:
-          - POST
-        routes:
-          - path: /past_meetings
+          - path: /itx/past_meetings
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -710,39 +561,12 @@ spec:
           config:
             values:
               aud: {{ .Values.app.audience }}
-
-    # TODO: remove this rule once we remove the list past meetings endpoint.
-    # It is not meant to be used by applications, it should only be used
-    # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:list"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:get"
       match:
         methods:
           - GET
         routes:
-          - path: /past_meetings
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{/*
-          This rule is on an endpoint that is just used for local development,
-          it will get removed once we remove the list meetings endpoint.
-        */}}
-        - authorizer: allow_all
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:past_meeting:get"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /past_meetings/:id
+          - path: /itx/past_meetings/{past_meeting_id}
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -755,7 +579,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -768,12 +592,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meetings:past_meeting:delete"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:delete"
       match:
         methods:
           - DELETE
         routes:
-          - path: /past_meetings/:id
+          - path: /itx/past_meetings/{past_meeting_id}
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -786,7 +610,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -799,77 +623,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:create"
-      match:
-        methods:
-          - POST
-        routes:
-          - path: /past_meetings/:id/participants
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # TODO: remove this rule once we remove the list past meeting participants endpoint.
-    # It is not meant to be used by applications, it should only be used
-    # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:list"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /past_meetings/:id/participants
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: auditor
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meetings:update"
       match:
         methods:
           - PUT
         routes:
-          - path: /past_meetings/:id/participants/:participant_id
+          - path: /itx/past_meetings/{past_meeting_id}
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -882,12 +641,8 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
         {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
         - authorizer: allow_all
         {{- end }}
         - finalizer: create_jwt
@@ -895,109 +650,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:get"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_summaries:get"
       match:
         methods:
           - GET
         routes:
-          - path: /past_meetings/:id/participants/:participant_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: auditor
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_participants:delete"
-      match:
-        methods:
-          - DELETE
-        routes:
-          - path: /past_meetings/:id/participants/:participant_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # =============== Past Meeting Attachments ==================
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_attachments:create"
-      match:
-        methods:
-          - POST
-        routes:
-          - path: /past_meetings/:id/attachments
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # TODO: remove this rule once we remove the list past meeting attachments endpoint.
-    # It is not meant to be used by applications, it should only be used
-    # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_attachments:list"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /past_meetings/:id/attachments
+          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -1010,7 +668,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_uid -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -1023,139 +681,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_attachments:get"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /past_meetings/:id/attachments/:attachment_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: viewer
-              object: "past_meeting_attachment:{{ "{{- .Request.URL.Captures.attachment_id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_attachments:get_metadata"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /past_meetings/:id/attachments/:attachment_id/metadata
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: viewer
-              object: "past_meeting_attachment:{{ "{{- .Request.URL.Captures.attachment_id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_attachments:delete"
-      match:
-        methods:
-          - DELETE
-        routes:
-          - path: /past_meetings/:id/attachments/:attachment_id
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: organizer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    # TODO: remove this rule once we remove the list past meeting summaries endpoint.
-    # It is not meant to be used by applications, it should only be used
-    # in local development, therefore the authorizer allows all requests.
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_summaries:list"
-      match:
-        methods:
-          - GET
-        routes:
-          - path: /past_meetings/:id/summaries
-      allow_encoded_slashes: "off"
-      execute:
-        - authenticator: oidc
-        - authenticator: anonymous_authenticator
-        {{- if .Values.app.use_oidc_contextualizer }}
-        - contextualizer: oidc_contextualizer
-        {{- end }}
-        {{- if .Values.openfga.enabled }}
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: auditor
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
-        {{- else }}
-        {{/*
-          When OpenFGA is disabled, allow all requests
-          (Only meant for *local development* because OpenFGA should be enabled when deployed)
-        */}}
-        - authorizer: allow_all
-        {{- end }}
-        - finalizer: create_jwt
-          config:
-            values:
-              aud: {{ .Values.app.audience }}
-
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_summaries:update"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_summaries:update"
       match:
         methods:
           - PUT
         routes:
-          - path: /past_meetings/:id/summaries/:summary_id
+          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -1168,7 +699,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_uid -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -1181,12 +712,12 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
-    - id: "rule:lfx:lfx-v2-meeting-service:past_meeting_summaries:get"
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_participants:create"
       match:
         methods:
-          - GET
+          - POST
         routes:
-          - path: /past_meetings/:id/summaries/:summary_id
+          - path: /itx/past_meetings/{past_meeting_id}/participants
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -1198,8 +729,70 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: auditor
-              object: "past_meeting:{{ "{{- .Request.URL.Captures.id -}}" }}"
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_participants:update"
+      match:
+        methods:
+          - PUT
+        routes:
+          - path: /itx/past_meetings/{past_meeting_id}/participants/{participant_id}
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_participants:delete"
+      match:
+        methods:
+          - DELETE
+        routes:
+          - path: /itx/past_meetings/{past_meeting_id}/participants/{participant_id}
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: organizer
+              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests

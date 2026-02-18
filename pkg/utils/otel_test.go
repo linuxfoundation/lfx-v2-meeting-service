@@ -26,7 +26,7 @@ func TestOTelConfigFromEnv_Defaults(t *testing.T) {
 		"OTEL_LOGS_EXPORTER",
 	}
 	for _, env := range envVars {
-		os.Unsetenv(env)
+		_ = os.Unsetenv(env)
 	}
 
 	cfg := OTelConfigFromEnv()
@@ -64,26 +64,26 @@ func TestOTelConfigFromEnv_Defaults(t *testing.T) {
 // reads and parses all supported OTEL_* environment variables.
 func TestOTelConfigFromEnv_CustomValues(t *testing.T) {
 	// Set all environment variables
-	os.Setenv("OTEL_SERVICE_NAME", "test-service")
-	os.Setenv("OTEL_SERVICE_VERSION", "1.2.3")
-	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
-	os.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4318")
-	os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", "true")
-	os.Setenv("OTEL_TRACES_EXPORTER", "otlp")
-	os.Setenv("OTEL_TRACES_SAMPLE_RATIO", "0.5")
-	os.Setenv("OTEL_METRICS_EXPORTER", "otlp")
-	os.Setenv("OTEL_LOGS_EXPORTER", "otlp")
+	_ = os.Setenv("OTEL_SERVICE_NAME", "test-service")
+	_ = os.Setenv("OTEL_SERVICE_VERSION", "1.2.3")
+	_ = os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
+	_ = os.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4318")
+	_ = os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", "true")
+	_ = os.Setenv("OTEL_TRACES_EXPORTER", "otlp")
+	_ = os.Setenv("OTEL_TRACES_SAMPLE_RATIO", "0.5")
+	_ = os.Setenv("OTEL_METRICS_EXPORTER", "otlp")
+	_ = os.Setenv("OTEL_LOGS_EXPORTER", "otlp")
 
 	defer func() {
-		os.Unsetenv("OTEL_SERVICE_NAME")
-		os.Unsetenv("OTEL_SERVICE_VERSION")
-		os.Unsetenv("OTEL_EXPORTER_OTLP_PROTOCOL")
-		os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-		os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
-		os.Unsetenv("OTEL_TRACES_EXPORTER")
-		os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
-		os.Unsetenv("OTEL_METRICS_EXPORTER")
-		os.Unsetenv("OTEL_LOGS_EXPORTER")
+		_ = os.Unsetenv("OTEL_SERVICE_NAME")
+		_ = os.Unsetenv("OTEL_SERVICE_VERSION")
+		_ = os.Unsetenv("OTEL_EXPORTER_OTLP_PROTOCOL")
+		_ = os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+		_ = os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
+		_ = os.Unsetenv("OTEL_TRACES_EXPORTER")
+		_ = os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
+		_ = os.Unsetenv("OTEL_METRICS_EXPORTER")
+		_ = os.Unsetenv("OTEL_LOGS_EXPORTER")
 	}()
 
 	cfg := OTelConfigFromEnv()
@@ -139,11 +139,11 @@ func TestOTelConfigFromEnv_TracesSampleRatio(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear and set the env var
-			os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
+			_ = os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
 			if tt.envValue != "" {
-				os.Setenv("OTEL_TRACES_SAMPLE_RATIO", tt.envValue)
+				_ = os.Setenv("OTEL_TRACES_SAMPLE_RATIO", tt.envValue)
 			}
-			defer os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
+			defer func() { _ = os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO") }()
 
 			cfg := OTelConfigFromEnv()
 
@@ -173,11 +173,11 @@ func TestOTelConfigFromEnv_InsecureFlag(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
+			_ = os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
 			if tt.envValue != "" {
-				os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", tt.envValue)
+				_ = os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", tt.envValue)
 			}
-			defer os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
+			defer func() { _ = os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE") }()
 
 			cfg := OTelConfigFromEnv()
 
@@ -369,7 +369,7 @@ func TestSetupOTelSDK(t *testing.T) {
 		"OTEL_LOGS_EXPORTER",
 	}
 	for _, env := range envVars {
-		os.Unsetenv(env)
+		_ = os.Unsetenv(env)
 	}
 
 	ctx := context.Background()
