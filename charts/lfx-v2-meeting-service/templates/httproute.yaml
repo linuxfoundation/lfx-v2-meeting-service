@@ -15,23 +15,17 @@ spec:
   hostnames:
   - "lfx-api.{{ .Values.lfx.domain }}"
   rules:
-  # Main application endpoints (with authentication)
+  # ITX proxy endpoints and OpenAPI documentation
   - matches:
     - path:
+        type: PathPrefix
+        value: /itx/meetings
+    - path:
+        type: PathPrefix
+        value: /itx/past_meetings
+    - path:
         type: Exact
-        value: /meetings
-    - path:
-        type: PathPrefix
-        value: /meetings/
-    - path:
-        type: Exact
-        value: /past_meetings
-    - path:
-        type: PathPrefix
-        value: /past_meetings/
-    - path:
-        type: PathPrefix
-        value: /webhooks/
+        value: /itx/meeting_count
     - path:
         type: PathPrefix
         value: /_meetings/
