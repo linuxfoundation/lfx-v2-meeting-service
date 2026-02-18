@@ -219,11 +219,6 @@ func parseContentIntoITXParts(content string) (overview string, details []itx.Zo
 	return overview, details, nextSteps
 }
 
-// Helper function to convert string to pointer
-func ptrString(s string) *string {
-	return &s
-}
-
 // Helper function to convert bool to pointer
 func ptrBool(b bool) *bool {
 	return &b

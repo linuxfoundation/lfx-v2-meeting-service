@@ -70,11 +70,12 @@ func ConvertCreateParticipantPayload(payload *meetingservice.CreateItxPastMeetin
 
 		// Attendee uses full name instead of first/last
 		var name string
-		if payload.FirstName != nil && payload.LastName != nil {
+		switch {
+		case payload.FirstName != nil && payload.LastName != nil:
 			name = strings.TrimSpace(fmt.Sprintf("%s %s", *payload.FirstName, *payload.LastName))
-		} else if payload.FirstName != nil {
+		case payload.FirstName != nil:
 			name = *payload.FirstName
-		} else if payload.LastName != nil {
+		case payload.LastName != nil:
 			name = *payload.LastName
 		}
 		if name != "" {
