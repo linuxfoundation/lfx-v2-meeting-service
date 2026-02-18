@@ -83,7 +83,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -114,7 +114,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -145,7 +145,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -207,7 +207,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -238,7 +238,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -269,7 +269,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -300,7 +300,7 @@ spec:
           config:
             values:
               relation: auditor
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -331,7 +331,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -362,7 +362,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -393,7 +393,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -424,7 +424,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -455,7 +455,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -486,7 +486,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -517,7 +517,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
+              object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -579,7 +579,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -610,7 +610,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -641,7 +641,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         - authorizer: allow_all
         {{- end }}
@@ -668,7 +668,7 @@ spec:
           config:
             values:
               relation: viewer
-              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_uid -}}" }}"
+              object: "v1_past_meeting_summary:{{ "{{- .Request.URL.Captures.summary_uid -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -699,7 +699,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting_summary:{{ "{{- .Request.PathParameters.summary_uid -}}" }}"
+              object: "v1_past_meeting_summary:{{ "{{- .Request.URL.Captures.summary_uid -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -730,7 +730,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -761,7 +761,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -792,7 +792,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "past_meeting:{{ "{{- .Request.PathParameters.past_meeting_id -}}" }}"
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
