@@ -6,8 +6,8 @@ package main
 import (
 	"context"
 
-	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
+	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 )
 
 // CreateItxRegistrant creates a meeting registrant via ITX proxy

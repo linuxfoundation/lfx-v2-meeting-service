@@ -103,4 +103,3 @@ func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.
 
 	return goaResp
 }
-

@@ -55,7 +55,7 @@ func run() int {
 	}
 	// Handle shutdown properly so nothing leaks.
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownSeconds*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
 		defer cancel()
 		if shutdownErr := otelShutdown(ctx); shutdownErr != nil {
 			slog.With(logging.ErrKey, shutdownErr).Error("error shutting down OpenTelemetry SDK")

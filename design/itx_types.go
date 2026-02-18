@@ -558,4 +558,3 @@ var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
 	})
 	Attribute("modified_by", ITXUser, "Last modifier user info")
 })
-
