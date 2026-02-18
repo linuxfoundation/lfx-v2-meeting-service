@@ -14,7 +14,7 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --set image.tag=latest \
   --set app.environment.ITX_BASE_URL.value="https://api.itx.linuxfoundation.org" \
   --set app.environment.ITX_CLIENT_ID.value="your-client-id" \
-  --set app.environment.ITX_CLIENT_SECRET.value="your-client-secret"
+  --set-file app.environment.ITX_CLIENT_PRIVATE_KEY.value=path/to/private.key
 ```
 
 ### For Local Development
@@ -46,7 +46,7 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
    ITX_ENABLED=true
    ITX_BASE_URL=https://api.dev.itx.linuxfoundation.org
    ITX_CLIENT_ID=your-client-id
-   ITX_CLIENT_SECRET=your-client-secret
+   ITX_CLIENT_PRIVATE_KEY="$(cat path/to/private.key)"
    ITX_AUTH0_DOMAIN=linuxfoundation-dev.auth0.com
    ITX_AUDIENCE=https://api.dev.itx.linuxfoundation.org/
    ```
@@ -273,7 +273,7 @@ docker run -p 8080:8080 \
   -e ITX_ENABLED=true \
   -e ITX_BASE_URL=https://api.itx.linuxfoundation.org \
   -e ITX_CLIENT_ID=your-client-id \
-  -e ITX_CLIENT_SECRET=your-client-secret \
+  -e ITX_CLIENT_PRIVATE_KEY="$(cat path/to/private.key)" \
   linuxfoundation/lfx-v2-meeting-service:latest
 ```
 
@@ -337,7 +337,7 @@ The service can be configured via environment variables:
 |----------|-------------|---------|
 | `ITX_BASE_URL` | Base URL for ITX service | `https://api.itx.linuxfoundation.org` |
 | `ITX_CLIENT_ID` | OAuth2 client ID for ITX | `your-client-id` |
-| `ITX_CLIENT_SECRET` | OAuth2 client secret for ITX | `your-client-secret` |
+| `ITX_CLIENT_PRIVATE_KEY` | RSA private key in PEM format for ITX OAuth2 M2M authentication | `"$(cat path/to/private.key)"` |
 | `ITX_AUTH0_DOMAIN` | Auth0 domain for ITX OAuth2 | `linuxfoundation.auth0.com` |
 | `ITX_AUDIENCE` | OAuth2 audience for ITX | `https://api.itx.linuxfoundation.org/` |
 

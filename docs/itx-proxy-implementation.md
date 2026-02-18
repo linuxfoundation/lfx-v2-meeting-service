@@ -304,11 +304,11 @@ func (c *Client) ensureValidToken(ctx context.Context) error {
 
 ```bash
 # ITX Service Configuration
-ITX_BASE_URL=https://api.itx.linuxfoundation.org         # ITX service URL
-ITX_CLIENT_ID=your-client-id                             # OAuth2 client ID
-ITX_CLIENT_SECRET=your-client-secret                      # OAuth2 client secret
-ITX_AUTH0_DOMAIN=linuxfoundation.auth0.com               # Auth0 domain
-ITX_AUDIENCE=https://api.itx.linuxfoundation.org/        # OAuth2 audience
+ITX_BASE_URL=https://api.itx.linuxfoundation.org              # ITX service URL
+ITX_CLIENT_ID=your-client-id                                  # OAuth2 client ID
+ITX_CLIENT_PRIVATE_KEY="$(cat path/to/private.key)"          # RSA private key in PEM format
+ITX_AUTH0_DOMAIN=linuxfoundation.auth0.com                    # Auth0 domain
+ITX_AUDIENCE=https://api.itx.linuxfoundation.org/             # OAuth2 audience
 
 # Authentication
 JWKS_URL=http://lfx-platform-heimdall.lfx.svc.cluster.local:4457/.well-known/jwks
@@ -342,8 +342,8 @@ app:
       value: https://api.itx.linuxfoundation.org
     ITX_CLIENT_ID:
       value: null  # Set via sealed secret
-    ITX_CLIENT_SECRET:
-      value: null  # Set via sealed secret
+    ITX_CLIENT_PRIVATE_KEY:
+      value: null  # Set via sealed secret (RSA private key in PEM format)
     ITX_AUTH0_DOMAIN:
       value: linuxfoundation.auth0.com
     ITX_AUDIENCE:

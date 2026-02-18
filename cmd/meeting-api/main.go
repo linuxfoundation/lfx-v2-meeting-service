@@ -109,12 +109,12 @@ func run() int {
 
 	// Initialize ITX proxy client and services
 	itxProxyConfig := proxy.Config{
-		BaseURL:      env.ITXConfig.BaseURL,
-		ClientID:     env.ITXConfig.ClientID,
-		ClientSecret: env.ITXConfig.ClientSecret,
-		Auth0Domain:  env.ITXConfig.Auth0Domain,
-		Audience:     env.ITXConfig.Audience,
-		Timeout:      30 * time.Second,
+		BaseURL:     env.ITXConfig.BaseURL,
+		ClientID:    env.ITXConfig.ClientID,
+		PrivateKey:  env.ITXConfig.PrivateKey,
+		Auth0Domain: env.ITXConfig.Auth0Domain,
+		Audience:    env.ITXConfig.Audience,
+		Timeout:     30 * time.Second,
 	}
 	itxProxyClient := proxy.NewClient(itxProxyConfig)
 	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper)

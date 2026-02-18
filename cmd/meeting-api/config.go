@@ -31,11 +31,11 @@ type environment struct {
 
 // itxConfig holds ITX proxy configuration
 type itxConfig struct {
-	BaseURL      string
-	ClientID     string
-	ClientSecret string
-	Auth0Domain  string
-	Audience     string
+	BaseURL     string
+	ClientID    string
+	PrivateKey  string
+	Auth0Domain string
+	Audience    string
 }
 
 // parseFlags parses command line flags for the meeting service
@@ -122,9 +122,9 @@ func parseITXConfig() itxConfig {
 		os.Exit(1)
 	}
 
-	clientSecret := os.Getenv("ITX_CLIENT_SECRET")
-	if clientSecret == "" {
-		slog.Error("ITX_CLIENT_SECRET environment variable is required but not set")
+	privateKey := os.Getenv("ITX_CLIENT_PRIVATE_KEY")
+	if privateKey == "" {
+		slog.Error("ITX_CLIENT_PRIVATE_KEY environment variable is required but not set")
 		os.Exit(1)
 	}
 
@@ -144,10 +144,10 @@ func parseITXConfig() itxConfig {
 	}
 
 	return itxConfig{
-		BaseURL:      baseURL,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Auth0Domain:  auth0Domain,
-		Audience:     audience,
+		BaseURL:     baseURL,
+		ClientID:    clientID,
+		PrivateKey:  privateKey,
+		Auth0Domain: auth0Domain,
+		Audience:    audience,
 	}
 }
