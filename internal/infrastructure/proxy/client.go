@@ -9,8 +9,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/auth0/go-auth0/authentication"
@@ -86,6 +88,9 @@ func NewClient(config Config) *Client {
 		panic("ITX_CLIENT_PRIVATE_KEY is required but not set")
 	}
 
+	// Strip trailing slash from base URL to prevent double slashes in URL construction
+	config.BaseURL = strings.TrimRight(config.BaseURL, "/")
+
 	// Create Auth0 authentication client with private key assertion (JWT)
 	// The private key should be in PEM format (raw, not base64-encoded)
 	authConfig, err := authentication.New(
@@ -118,6 +123,30 @@ func NewClient(config Config) *Client {
 	}
 }
 
+// logRequest logs the outgoing HTTP request for debugging
+func (c *Client) logRequest(ctx context.Context, method, url string, body []byte) {
+	slog.DebugContext(ctx, "ITX API Request",
+		"method", method,
+		"url", url,
+		"body", string(body),
+	)
+}
+
+// logResponse logs the incoming HTTP response for debugging
+func (c *Client) logResponse(ctx context.Context, statusCode int, body []byte) {
+	if statusCode < 200 || statusCode >= 300 {
+		slog.ErrorContext(ctx, "ITX API Response Error",
+			"status_code", statusCode,
+			"body", string(body),
+		)
+	} else {
+		slog.DebugContext(ctx, "ITX API Response",
+			"status_code", statusCode,
+			"body", string(body),
+		)
+	}
+}
+
 // CreateZoomMeeting creates a new Zoom meeting in ITX
 func (c *Client) CreateZoomMeeting(ctx context.Context, req *itx.CreateZoomMeetingRequest) (*itx.ZoomMeetingResponse, error) {
 	// Marshal request
@@ -138,6 +167,9 @@ func (c *Client) CreateZoomMeeting(ctx context.Context, req *itx.CreateZoomMeeti
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -152,6 +184,9 @@ func (c *Client) CreateZoomMeeting(ctx context.Context, req *itx.CreateZoomMeeti
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -180,6 +215,9 @@ func (c *Client) GetZoomMeeting(ctx context.Context, meetingID string) (*itx.Zoo
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodGet, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -194,6 +232,9 @@ func (c *Client) GetZoomMeeting(ctx context.Context, meetingID string) (*itx.Zoo
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -221,6 +262,9 @@ func (c *Client) DeleteZoomMeeting(ctx context.Context, meetingID string) error 
 	// Set headers (Authorization automatically added by OAuth2 transport)
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodDelete, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -235,6 +279,9 @@ func (c *Client) DeleteZoomMeeting(ctx context.Context, meetingID string) error 
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -263,6 +310,9 @@ func (c *Client) UpdateZoomMeeting(ctx context.Context, meetingID string, req *i
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPut, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -277,6 +327,9 @@ func (c *Client) UpdateZoomMeeting(ctx context.Context, meetingID string, req *i
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -299,6 +352,9 @@ func (c *Client) GetMeetingCount(ctx context.Context, projectID string) (*itx.Me
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodGet, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -313,6 +369,9 @@ func (c *Client) GetMeetingCount(ctx context.Context, projectID string) (*itx.Me
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -365,6 +424,9 @@ func (c *Client) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkReq
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodGet, queryURL, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -379,6 +441,9 @@ func (c *Client) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkReq
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -414,6 +479,9 @@ func (c *Client) CreateRegistrant(ctx context.Context, meetingID string, req *it
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -428,6 +496,9 @@ func (c *Client) CreateRegistrant(ctx context.Context, meetingID string, req *it
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -456,6 +527,9 @@ func (c *Client) GetRegistrant(ctx context.Context, meetingID, registrantID stri
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodGet, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -470,6 +544,9 @@ func (c *Client) GetRegistrant(ctx context.Context, meetingID, registrantID stri
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -504,6 +581,9 @@ func (c *Client) UpdateRegistrant(ctx context.Context, meetingID, registrantID s
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPut, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -518,6 +598,9 @@ func (c *Client) UpdateRegistrant(ctx context.Context, meetingID, registrantID s
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -539,6 +622,9 @@ func (c *Client) DeleteRegistrant(ctx context.Context, meetingID, registrantID s
 	// Set headers (Authorization automatically added by OAuth2 transport)
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodDelete, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -553,6 +639,9 @@ func (c *Client) DeleteRegistrant(ctx context.Context, meetingID, registrantID s
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -575,6 +664,9 @@ func (c *Client) GetRegistrantICS(ctx context.Context, meetingID, registrantID s
 	httpReq.Header.Set("Accept", "text/calendar")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodGet, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -589,6 +681,9 @@ func (c *Client) GetRegistrantICS(ctx context.Context, meetingID, registrantID s
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -613,6 +708,9 @@ func (c *Client) ResendRegistrantInvitation(ctx context.Context, meetingID, regi
 	// Set headers (Authorization automatically added by OAuth2 transport)
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -627,6 +725,9 @@ func (c *Client) ResendRegistrantInvitation(ctx context.Context, meetingID, regi
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -660,6 +761,9 @@ func (c *Client) ResendMeetingInvitations(ctx context.Context, meetingID string,
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -674,6 +778,9 @@ func (c *Client) ResendMeetingInvitations(ctx context.Context, meetingID string,
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -695,6 +802,9 @@ func (c *Client) RegisterCommitteeMembers(ctx context.Context, meetingID string)
 	// Set headers (Authorization automatically added by OAuth2 transport)
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -709,6 +819,9 @@ func (c *Client) RegisterCommitteeMembers(ctx context.Context, meetingID string)
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -737,6 +850,9 @@ func (c *Client) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID s
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPut, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -751,6 +867,9 @@ func (c *Client) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID s
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -772,6 +891,9 @@ func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID s
 	// Set headers (Authorization automatically added by OAuth2 transport)
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodDelete, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -786,6 +908,9 @@ func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID s
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -815,6 +940,9 @@ func (c *Client) CreatePastMeeting(ctx context.Context, req *itx.CreatePastMeeti
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -829,6 +957,9 @@ func (c *Client) CreatePastMeeting(ctx context.Context, req *itx.CreatePastMeeti
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -857,6 +988,9 @@ func (c *Client) GetPastMeeting(ctx context.Context, pastMeetingID string) (*itx
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodGet, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -871,6 +1005,9 @@ func (c *Client) GetPastMeeting(ctx context.Context, pastMeetingID string) (*itx
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -907,6 +1044,9 @@ func (c *Client) UpdatePastMeeting(ctx context.Context, pastMeetingID string, re
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPut, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -921,6 +1061,9 @@ func (c *Client) UpdatePastMeeting(ctx context.Context, pastMeetingID string, re
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -944,6 +1087,8 @@ func (c *Client) DeletePastMeeting(ctx context.Context, pastMeetingID string) er
 	// Set headers (Authorization automatically added by OAuth2 transport)
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	c.logRequest(ctx, http.MethodDelete, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -958,6 +1103,9 @@ func (c *Client) DeletePastMeeting(ctx context.Context, pastMeetingID string) er
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -980,6 +1128,9 @@ func (c *Client) GetPastMeetingSummary(ctx context.Context, pastMeetingID, summa
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodGet, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -994,6 +1145,9 @@ func (c *Client) GetPastMeetingSummary(ctx context.Context, pastMeetingID, summa
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1029,6 +1183,9 @@ func (c *Client) UpdatePastMeetingSummary(ctx context.Context, pastMeetingID, su
 	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPut, url, body)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -1043,6 +1200,9 @@ func (c *Client) UpdatePastMeetingSummary(ctx context.Context, pastMeetingID, su
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1107,6 +1267,9 @@ func (c *Client) CreateInvitee(ctx context.Context, pastMeetingID string, req *i
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, bodyBytes)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -1121,6 +1284,8 @@ func (c *Client) CreateInvitee(ctx context.Context, pastMeetingID string, req *i
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1156,6 +1321,9 @@ func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID str
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPut, url, bodyBytes)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -1170,6 +1338,8 @@ func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID str
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1193,6 +1363,9 @@ func (c *Client) DeleteInvitee(ctx context.Context, pastMeetingID, inviteeID str
 	// Set headers
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodDelete, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -1207,6 +1380,9 @@ func (c *Client) DeleteInvitee(ctx context.Context, pastMeetingID, inviteeID str
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1236,6 +1412,9 @@ func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPost, url, bodyBytes)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -1250,6 +1429,9 @@ func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1285,6 +1467,9 @@ func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID s
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodPut, url, bodyBytes)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -1299,6 +1484,9 @@ func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID s
 	if err != nil {
 		return nil, domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1322,6 +1510,9 @@ func (c *Client) DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID s
 	// Set headers
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
+	// Log request
+	c.logRequest(ctx, http.MethodDelete, url, nil)
+
 	// Execute request
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -1336,6 +1527,9 @@ func (c *Client) DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID s
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Log response
+	c.logResponse(ctx, resp.StatusCode, respBody)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
