@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/auth0/go-auth0/authentication"
@@ -86,6 +87,9 @@ func NewClient(config Config) *Client {
 	if config.PrivateKey == "" {
 		panic("ITX_CLIENT_PRIVATE_KEY is required but not set")
 	}
+
+	// Strip trailing slash from base URL to prevent double slashes in URL construction
+	config.BaseURL = strings.TrimRight(config.BaseURL, "/")
 
 	// Create Auth0 authentication client with private key assertion (JWT)
 	// The private key should be in PEM format (raw, not base64-encoded)
