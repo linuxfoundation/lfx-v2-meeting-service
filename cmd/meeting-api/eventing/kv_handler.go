@@ -1,0 +1,223 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
+package eventing
+
+import (
+	"context"
+	"encoding/json"
+	"log/slog"
+	"strings"
+
+	"github.com/nats-io/nats.go/jetstream"
+	"github.com/vmihailenco/msgpack/v5"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+)
+
+// EventHandlers contains all the specific event type handlers
+type EventHandlers struct {
+	publisher    domain.EventPublisher
+	userLookup   domain.V1UserLookup
+	idMapper     domain.IDMapper
+	v1ObjectsKV  jetstream.KeyValue
+	v1MappingsKV jetstream.KeyValue
+	logger       *slog.Logger
+}
+
+// NewEventHandlers creates a new event handlers struct
+func NewEventHandlers(
+	publisher domain.EventPublisher,
+	userLookup domain.V1UserLookup,
+	idMapper domain.IDMapper,
+	v1ObjectsKV jetstream.KeyValue,
+	v1MappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) *EventHandlers {
+	return &EventHandlers{
+		publisher:    publisher,
+		userLookup:   userLookup,
+		idMapper:     idMapper,
+		v1ObjectsKV:  v1ObjectsKV,
+		v1MappingsKV: v1MappingsKV,
+		logger:       logger,
+	}
+}
+
+// kvHandler routes KV bucket events to appropriate handlers
+// Returns true if the message should be retried (NAK), false if done (ACK)
+func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) bool {
+	// Extract key from subject (format: $KV.v1-objects.{key})
+	subject := msg.Subject()
+	parts := strings.Split(subject, ".")
+	if len(parts) < 3 {
+		handlers.logger.Error("invalid subject format", "subject", subject)
+		return false // ACK - malformed subject
+	}
+	key := strings.Join(parts[2:], ".")
+
+	// Get operation type
+	metadata, err := msg.Metadata()
+	if err != nil {
+		handlers.logger.With(logging.ErrKey, err).Error("failed to get message metadata")
+		return false // ACK - can't get metadata
+	}
+
+	operation := getOperation(metadata)
+	handlers.logger.Info("processing KV event",
+		"key", key,
+		"operation", operation,
+		"num_delivered", metadata.NumDelivered,
+	)
+
+	// Handle delete operations
+	if operation == jetstream.KeyValueDelete || operation == jetstream.KeyValuePurge {
+		return handleKVDelete(ctx, key, handlers)
+	}
+
+	// Handle put operations - decode the data
+	data, err := decodeData(msg.Data())
+	if err != nil {
+		handlers.logger.With(logging.ErrKey, err).Error("failed to decode message data", "key", key)
+		return false // ACK - permanent error
+	}
+
+	return handleKVPut(ctx, key, data, handlers)
+}
+
+// handleKVPut routes put/update operations to specific handlers
+func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) bool {
+	switch {
+	case strings.HasPrefix(key, "itx-zoom-meetings-v2."):
+		return handlers.handleMeetingUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-meetings-mappings-v2."):
+		return handlers.handleMeetingMappingUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-meetings-registrants-v2."):
+		return handlers.handleRegistrantUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-meetings-invite-responses-v2."):
+		return handlers.handleInviteResponseUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-past-meetings."):
+		return handlers.handlePastMeetingUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-past-meetings-mappings."):
+		return handlers.handlePastMeetingMappingUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-past-meetings-invitees."):
+		return handlers.handlePastMeetingInviteeUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-past-meetings-attendees."):
+		return handlers.handlePastMeetingAttendeeUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-past-meetings-recordings."):
+		return handlers.handlePastMeetingRecordingUpdate(ctx, key, data)
+
+	case strings.HasPrefix(key, "itx-zoom-past-meetings-summaries."):
+		return handlers.handlePastMeetingSummaryUpdate(ctx, key, data)
+
+	default:
+		// Not a meeting-related event, skip
+		handlers.logger.Debug("skipping non-meeting event", "key", key)
+		return false // ACK
+	}
+}
+
+// handleKVDelete routes delete operations to specific handlers
+func handleKVDelete(ctx context.Context, key string, handlers *EventHandlers) bool {
+	handlers.logger.Info("handling delete operation", "key", key)
+
+	// TODO: Implement delete handlers for each event type
+	// For now, just ACK all deletes
+	return false
+}
+
+// getOperation determines the operation type from metadata
+func getOperation(metadata *jetstream.MsgMetadata) jetstream.KeyValueOp {
+	// The operation is encoded in the metadata
+	// For KV buckets, we check the headers
+	return jetstream.KeyValuePut // Default to PUT
+}
+
+// decodeData attempts to decode message data as JSON or MessagePack
+func decodeData(data []byte) (map[string]any, error) {
+	var result map[string]any
+
+	// Try JSON first
+	if err := json.Unmarshal(data, &result); err == nil {
+		return result, nil
+	}
+
+	// Try MessagePack
+	if err := msgpack.Unmarshal(data, &result); err == nil {
+		return result, nil
+	}
+
+	// If both fail, return JSON error
+	return nil, json.Unmarshal(data, &result)
+}
+
+// Placeholder handler methods - will be implemented in separate files
+
+func (h *EventHandlers) handleMeetingUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "meeting update", "key", key)
+	// TODO: Implement in meeting_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handleMeetingMappingUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "meeting mapping update", "key", key)
+	// TODO: Implement in meeting_mapping_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handleRegistrantUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "registrant update", "key", key)
+	// TODO: Implement in registrant_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handleInviteResponseUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "invite response update", "key", key)
+	// TODO: Implement in invite_response_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handlePastMeetingUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "past meeting update", "key", key)
+	// TODO: Implement in past_meeting_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handlePastMeetingMappingUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "past meeting mapping update", "key", key)
+	// TODO: Implement in past_meeting_mapping_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "past meeting invitee update", "key", key)
+	// TODO: Implement in past_meeting_invitee_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handlePastMeetingAttendeeUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "past meeting attendee update", "key", key)
+	// TODO: Implement in past_meeting_attendee_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handlePastMeetingRecordingUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "past meeting recording update", "key", key)
+	// TODO: Implement in past_meeting_recording_event_handler.go
+	return false // ACK for now
+}
+
+func (h *EventHandlers) handlePastMeetingSummaryUpdate(ctx context.Context, key string, data map[string]any) bool {
+	h.logger.InfoContext(ctx, "past meeting summary update", "key", key)
+	// TODO: Implement in past_meeting_summary_event_handler.go
+	return false // ACK for now
+}
