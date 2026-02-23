@@ -652,46 +652,46 @@ func handlePastMeetingAttendeeDelete(
 // =============================================================================
 
 type InviteeDBRaw struct {
-	ID                     string  `json:"id"`
-	InviteeID              string  `json:"invitee_id"`
-	FirstName              string  `json:"first_name"`
-	LastName               string  `json:"last_name"`
-	Email                  string  `json:"email"`
-	ProfilePicture         string  `json:"profile_picture"`
-	LFSSO                  string  `json:"lf_sso"`
-	LFUserID               string  `json:"lf_user_id,omitempty"`
-	Org                    string  `json:"org"`
-	OrgIsMember            *bool   `json:"org_is_member,omitempty"`
-	OrgIsProjectMember     *bool   `json:"org_is_project_member,omitempty"`
-	JobTitle               string  `json:"job_title"`
-	RegistrantID           string  `json:"registrant_id"`
-	ProjectID              string  `json:"proj_id,omitempty"`
-	MeetingAndOccurrenceID string  `json:"meeting_and_occurrence_id,omitempty"`
-	MeetingID              string  `json:"meeting_id,omitempty"`
-	OccurrenceID           string  `json:"occurrence_id"`
-	CreatedAt              string  `json:"created_at"`
-	ModifiedAt             string  `json:"modified_at"`
+	ID                     string `json:"id"`
+	InviteeID              string `json:"invitee_id"`
+	FirstName              string `json:"first_name"`
+	LastName               string `json:"last_name"`
+	Email                  string `json:"email"`
+	ProfilePicture         string `json:"profile_picture"`
+	LFSSO                  string `json:"lf_sso"`
+	LFUserID               string `json:"lf_user_id,omitempty"`
+	Org                    string `json:"org"`
+	OrgIsMember            *bool  `json:"org_is_member,omitempty"`
+	OrgIsProjectMember     *bool  `json:"org_is_project_member,omitempty"`
+	JobTitle               string `json:"job_title"`
+	RegistrantID           string `json:"registrant_id"`
+	ProjectID              string `json:"proj_id,omitempty"`
+	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id,omitempty"`
+	MeetingID              string `json:"meeting_id,omitempty"`
+	OccurrenceID           string `json:"occurrence_id"`
+	CreatedAt              string `json:"created_at"`
+	ModifiedAt             string `json:"modified_at"`
 }
 
 type AttendeeDBRaw struct {
-	ID                     string                     `json:"id"`
-	ProjectID              string                     `json:"proj_id"`
-	RegistrantID           string                     `json:"registrant_id"`
-	Email                  string                     `json:"email"`
-	Name                   string                     `json:"name"`
-	LFSSO                  string                     `json:"lf_sso"`
-	LFUserID               string                     `json:"lf_user_id"`
-	Org                    string                     `json:"org"`
-	OrgIsMember            *bool                      `json:"org_is_member,omitempty"`
-	OrgIsProjectMember     *bool                      `json:"org_is_project_member,omitempty"`
-	JobTitle               string                     `json:"job_title"`
-	ProfilePicture         string                     `json:"profile_picture"`
-	MeetingID              string                     `json:"meeting_id"`
-	OccurrenceID           string                     `json:"occurrence_id"`
-	MeetingAndOccurrenceID string                     `json:"meeting_and_occurrence_id"`
-	Sessions               []AttendeeSessionDBRaw     `json:"sessions"`
-	CreatedAt              string                     `json:"created_at"`
-	ModifiedAt             string                     `json:"modified_at"`
+	ID                     string                 `json:"id"`
+	ProjectID              string                 `json:"proj_id"`
+	RegistrantID           string                 `json:"registrant_id"`
+	Email                  string                 `json:"email"`
+	Name                   string                 `json:"name"`
+	LFSSO                  string                 `json:"lf_sso"`
+	LFUserID               string                 `json:"lf_user_id"`
+	Org                    string                 `json:"org"`
+	OrgIsMember            *bool                  `json:"org_is_member,omitempty"`
+	OrgIsProjectMember     *bool                  `json:"org_is_project_member,omitempty"`
+	JobTitle               string                 `json:"job_title"`
+	ProfilePicture         string                 `json:"profile_picture"`
+	MeetingID              string                 `json:"meeting_id"`
+	OccurrenceID           string                 `json:"occurrence_id"`
+	MeetingAndOccurrenceID string                 `json:"meeting_and_occurrence_id"`
+	Sessions               []AttendeeSessionDBRaw `json:"sessions"`
+	CreatedAt              string                 `json:"created_at"`
+	ModifiedAt             string                 `json:"modified_at"`
 }
 
 type AttendeeSessionDBRaw struct {
@@ -954,6 +954,588 @@ func generateParticipantTags(id, pastMeetingID, projectUID, username, email stri
 	}
 	if isAttended {
 		tags = append(tags, "is_attended:true")
+	}
+	return tags
+}
+
+// =============================================================================
+// Past Meeting Recording Event Handler
+// =============================================================================
+
+// handlePastMeetingRecordingUpdate processes updates to past meeting recordings
+func handlePastMeetingRecordingUpdate(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	userLookup domain.V1UserLookup,
+	idMapper domain.IDMapper,
+	v1ObjectsKV jetstream.KeyValue,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	funcLogger := logger.With("key", key, "handler", "past_meeting_recording")
+	funcLogger.DebugContext(ctx, "processing past meeting recording update")
+
+	// Check if this is a soft delete
+	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
+		return handlePastMeetingRecordingDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+	}
+
+	// Convert v1Data to recording event data
+	recordingData, transcriptData, err := convertMapToRecordingData(ctx, v1Data, idMapper, funcLogger)
+	if err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to recording")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Validate required fields
+	if recordingData.ID == "" || recordingData.MeetingAndOccurrenceID == "" {
+		funcLogger.ErrorContext(ctx, "missing required fields in recording data")
+		return false // Permanent error, ACK and skip
+	}
+	funcLogger = funcLogger.With("recording_id", recordingData.ID)
+
+	// Determine action (created vs updated)
+	mappingKey := fmt.Sprintf("v1_past_meeting_recordings.%s", recordingData.ID)
+	indexerAction := indexerConstants.ActionCreated
+	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+		indexerAction = indexerConstants.ActionUpdated
+	}
+
+	// Publish recording event to indexer and FGA-sync
+	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// If transcript is enabled, publish separate transcript event
+	if transcriptData != nil {
+		if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData); err != nil {
+			funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish transcript event")
+			if isTransientError(err) {
+				return true // NAK for retry
+			}
+			return false // Permanent error, ACK and skip
+		}
+	}
+
+	// Store mapping
+	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store recording mapping")
+	}
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting recording")
+	return false // Success, ACK
+}
+
+// handlePastMeetingRecordingDelete processes recording deletions
+func handlePastMeetingRecordingDelete(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	recordingID := extractIDFromKey(key, "itx-zoom-past-meetings-recordings.")
+	funcLogger := logger.With("recording_id", recordingID, "handler", "past_meeting_recording_delete")
+	funcLogger.InfoContext(ctx, "processing past meeting recording deletion")
+
+	// Create minimal event data for deletion
+	eventData := &models.RecordingEventData{ID: recordingID}
+
+	// Publish recording delete event
+	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording delete event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Also publish transcript delete event
+	transcriptData := &models.TranscriptEventData{ID: recordingID}
+	if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerConstants.ActionDeleted), transcriptData); err != nil {
+		funcLogger.With(errKey, err).WarnContext(ctx, "failed to publish transcript delete event")
+	}
+
+	// Remove mapping
+	mappingKey := fmt.Sprintf("v1_past_meeting_recordings.%s", recordingID)
+	_ = mappingsKV.Delete(ctx, mappingKey)
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting recording deletion")
+	return false // Success, ACK
+}
+
+// =============================================================================
+// Past Meeting Summary Event Handler
+// =============================================================================
+
+// handlePastMeetingSummaryUpdate processes updates to past meeting summaries
+func handlePastMeetingSummaryUpdate(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	userLookup domain.V1UserLookup,
+	idMapper domain.IDMapper,
+	v1ObjectsKV jetstream.KeyValue,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	funcLogger := logger.With("key", key, "handler", "past_meeting_summary")
+	funcLogger.DebugContext(ctx, "processing past meeting summary update")
+
+	// Check if this is a soft delete
+	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
+		return handlePastMeetingSummaryDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+	}
+
+	// Convert v1Data to summary event data
+	summaryData, err := convertMapToSummaryData(ctx, v1Data, idMapper, funcLogger)
+	if err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to summary")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Validate required fields
+	if summaryData.ID == "" || summaryData.MeetingAndOccurrenceID == "" {
+		funcLogger.ErrorContext(ctx, "missing required fields in summary data")
+		return false // Permanent error, ACK and skip
+	}
+	funcLogger = funcLogger.With("summary_id", summaryData.ID)
+
+	// Determine action (created vs updated)
+	mappingKey := fmt.Sprintf("v1_past_meeting_summaries.%s", summaryData.ID)
+	indexerAction := indexerConstants.ActionCreated
+	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+		indexerAction = indexerConstants.ActionUpdated
+	}
+
+	// Publish to indexer and FGA-sync
+	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Store mapping
+	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store summary mapping")
+	}
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting summary")
+	return false // Success, ACK
+}
+
+// handlePastMeetingSummaryDelete processes summary deletions
+func handlePastMeetingSummaryDelete(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	summaryID := extractIDFromKey(key, "itx-zoom-past-meetings-summaries.")
+	funcLogger := logger.With("summary_id", summaryID, "handler", "past_meeting_summary_delete")
+	funcLogger.InfoContext(ctx, "processing past meeting summary deletion")
+
+	// Create minimal event data for deletion
+	eventData := &models.SummaryEventData{ID: summaryID}
+
+	// Publish delete event
+	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary delete event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Remove mapping
+	mappingKey := fmt.Sprintf("v1_past_meeting_summaries.%s", summaryID)
+	_ = mappingsKV.Delete(ctx, mappingKey)
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting summary deletion")
+	return false // Success, ACK
+}
+
+// =============================================================================
+// Recording Conversion Functions
+// =============================================================================
+
+type RecordingDBRaw struct {
+	ID                     string                  `json:"id"`
+	MeetingAndOccurrenceID string                  `json:"meeting_and_occurrence_id"`
+	ProjectID              string                  `json:"proj_id"`
+	HostEmail              string                  `json:"host_email"`
+	HostID                 string                  `json:"host_id"`
+	MeetingID              string                  `json:"meeting_id"`
+	OccurrenceID           string                  `json:"occurrence_id,omitempty"`
+	PlatformMeetingID      string                  `json:"platform_meeting_id"`
+	RecordingAccess        string                  `json:"recording_access,omitempty"`
+	Topic                  string                  `json:"topic"` // v1 field name
+	TranscriptAccess       string                  `json:"transcript_access,omitempty"`
+	TranscriptEnabled      bool                    `json:"transcript_enabled"`
+	Visibility             string                  `json:"visibility,omitempty"`
+	RecordingCount         int                     `json:"recording_count"`
+	RecordingFiles         []RecordingFileDBRaw    `json:"recording_files"`
+	Sessions               []RecordingSessionDBRaw `json:"sessions"`
+	StartTime              string                  `json:"start_time"`
+	TotalSize              int64                   `json:"total_size"`
+	CreatedAt              string                  `json:"created_at"`
+	ModifiedAt             string                  `json:"modified_at"`
+}
+
+type RecordingFileDBRaw struct {
+	DownloadURL    string `json:"download_url,omitempty"`
+	FileExtension  string `json:"file_extension"`
+	FileSize       int64  `json:"file_size"`
+	FileType       string `json:"file_type"`
+	ID             string `json:"id"`
+	MeetingID      string `json:"meeting_id"`
+	PlayURL        string `json:"play_url,omitempty"`
+	RecordingStart string `json:"recording_start"`
+	RecordingEnd   string `json:"recording_end"`
+	RecordingType  string `json:"recording_type"`
+	Status         string `json:"status"`
+}
+
+type RecordingSessionDBRaw struct {
+	UUID      string `json:"uuid"`
+	ShareURL  string `json:"share_url,omitempty"`
+	TotalSize int64  `json:"total_size"`
+	StartTime string `json:"start_time"`
+}
+
+func convertMapToRecordingData(
+	ctx context.Context,
+	v1Data map[string]interface{},
+	idMapper domain.IDMapper,
+	logger *slog.Logger,
+) (*models.RecordingEventData, *models.TranscriptEventData, error) {
+	// Convert map to JSON bytes, then to RecordingDBRaw
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+
+	var rawRecording RecordingDBRaw
+	if err := json.Unmarshal(jsonBytes, &rawRecording); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal recording data: %w", err)
+	}
+
+	// Validate required fields
+	if rawRecording.ID == "" || rawRecording.MeetingAndOccurrenceID == "" {
+		return nil, nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	}
+
+	// Use ProjectID from recording record directly
+	projectSFID := rawRecording.ProjectID
+	if projectSFID == "" {
+		return nil, nil, fmt.Errorf("recording missing project ID")
+	}
+
+	// Map project ID
+	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	}
+
+	// Default recording access to meeting_hosts (most restrictive)
+	recordingAccess := rawRecording.RecordingAccess
+	if recordingAccess == "" {
+		recordingAccess = "meeting_hosts"
+	}
+
+	// Convert recording files
+	var recordingFiles []models.RecordingFile
+	hasTranscript := false
+	for _, rawFile := range rawRecording.RecordingFiles {
+		recordingStart, _ := parseTime(rawFile.RecordingStart)
+		recordingEnd, _ := parseTime(rawFile.RecordingEnd)
+
+		recordingFiles = append(recordingFiles, models.RecordingFile{
+			DownloadURL:    rawFile.DownloadURL,
+			FileExtension:  rawFile.FileExtension,
+			FileSize:       rawFile.FileSize,
+			FileType:       rawFile.FileType,
+			ID:             rawFile.ID,
+			MeetingID:      rawFile.MeetingID,
+			PlayURL:        rawFile.PlayURL,
+			RecordingStart: recordingStart,
+			RecordingEnd:   recordingEnd,
+			RecordingType:  rawFile.RecordingType,
+			Status:         rawFile.Status,
+		})
+
+		// Check if this is a transcript file
+		if rawFile.FileType == "TRANSCRIPT" || rawFile.FileType == "TIMELINE" {
+			hasTranscript = true
+		}
+	}
+
+	// Convert recording sessions
+	var sessions []models.RecordingSession
+	for _, rawSession := range rawRecording.Sessions {
+		startTime, _ := parseTime(rawSession.StartTime)
+		sessions = append(sessions, models.RecordingSession{
+			UUID:      rawSession.UUID,
+			ShareURL:  rawSession.ShareURL,
+			TotalSize: rawSession.TotalSize,
+			StartTime: startTime,
+		})
+	}
+
+	// Parse times
+	startTime, _ := parseTime(rawRecording.StartTime)
+	createdAt, _ := parseTime(rawRecording.CreatedAt)
+	updatedAt, _ := parseTime(rawRecording.ModifiedAt)
+
+	// Set transcript enabled flag
+	transcriptEnabled := hasTranscript
+	transcriptAccess := rawRecording.TranscriptAccess
+	if hasTranscript && transcriptAccess == "" {
+		transcriptAccess = "meeting_hosts" // Default to most restrictive
+	}
+
+	recordingData := &models.RecordingEventData{
+		ID:                     rawRecording.ID,
+		MeetingAndOccurrenceID: rawRecording.MeetingAndOccurrenceID,
+		ProjectUID:             projectUID,
+		HostEmail:              rawRecording.HostEmail,
+		HostID:                 rawRecording.HostID,
+		MeetingID:              rawRecording.MeetingID,
+		OccurrenceID:           rawRecording.OccurrenceID,
+		Platform:               "Zoom",
+		PlatformMeetingID:      rawRecording.PlatformMeetingID,
+		RecordingAccess:        recordingAccess,
+		Title:                  rawRecording.Topic, // Map topic to title
+		TranscriptAccess:       transcriptAccess,
+		TranscriptEnabled:      transcriptEnabled,
+		Visibility:             rawRecording.Visibility,
+		RecordingCount:         rawRecording.RecordingCount,
+		RecordingFiles:         recordingFiles,
+		Sessions:               sessions,
+		StartTime:              startTime,
+		TotalSize:              rawRecording.TotalSize,
+		CreatedAt:              createdAt,
+		UpdatedAt:              updatedAt,
+		Tags:                   generateRecordingTags(rawRecording.ID, rawRecording.MeetingAndOccurrenceID, rawRecording.PlatformMeetingID, sessions),
+	}
+
+	// Create transcript event data if transcript is enabled
+	var transcriptData *models.TranscriptEventData
+	if hasTranscript {
+		transcriptData = &models.TranscriptEventData{
+			ID:                     rawRecording.ID,
+			MeetingAndOccurrenceID: rawRecording.MeetingAndOccurrenceID,
+			ProjectUID:             projectUID,
+			TranscriptAccess:       transcriptAccess,
+			Platform:               "Zoom",
+			Tags:                   generateTranscriptTags(rawRecording.ID, rawRecording.MeetingAndOccurrenceID),
+		}
+	}
+
+	return recordingData, transcriptData, nil
+}
+
+func generateRecordingTags(id, meetingAndOccurrenceID, platformMeetingID string, sessions []models.RecordingSession) []string {
+	tags := []string{
+		id,
+		"past_meeting_recording_id:" + id,
+		"meeting_and_occurrence_id:" + meetingAndOccurrenceID,
+		"platform:Zoom",
+		"platform_meeting_id:" + platformMeetingID,
+	}
+	for _, session := range sessions {
+		tags = append(tags, "platform_meeting_instance_id:"+session.UUID)
+	}
+	return tags
+}
+
+func generateTranscriptTags(id, meetingAndOccurrenceID string) []string {
+	return []string{
+		id,
+		"past_meeting_transcript_id:" + id,
+		"meeting_and_occurrence_id:" + meetingAndOccurrenceID,
+		"platform:Zoom",
+	}
+}
+
+// =============================================================================
+// Summary Conversion Functions
+// =============================================================================
+
+type SummaryDBRaw struct {
+	ID                     string               `json:"id"`
+	MeetingAndOccurrenceID string               `json:"meeting_and_occurrence_id"`
+	ProjectID              string               `json:"proj_id,omitempty"`
+	MeetingID              string               `json:"meeting_id"`
+	OccurrenceID           string               `json:"occurrence_id,omitempty"`
+	ZoomMeetingUUID        string               `json:"zoom_meeting_uuid"`
+	ZoomMeetingHostID      string               `json:"zoom_meeting_host_id"`
+	ZoomMeetingHostEmail   string               `json:"zoom_meeting_host_email"`
+	ZoomMeetingTopic       string               `json:"zoom_meeting_topic"`
+	SummaryOverview        string               `json:"summary_overview"`
+	SummaryTitle           string               `json:"summary_title"`
+	SummaryDetails         []SummaryDetailDBRaw `json:"summary_details"`
+	NextSteps              []string             `json:"next_steps"`
+	EditedSummaryOverview  string               `json:"edited_summary_overview,omitempty"`
+	EditedSummaryDetails   []SummaryDetailDBRaw `json:"edited_summary_details,omitempty"`
+	EditedNextSteps        []string             `json:"edited_next_steps,omitempty"`
+	RequiresApproval       bool                 `json:"requires_approval"`
+	Approved               bool                 `json:"approved"`
+	EmailSent              bool                 `json:"email_sent"`
+	CreatedAt              string               `json:"created_at"`
+	ModifiedAt             string               `json:"modified_at"`
+}
+
+type SummaryDetailDBRaw struct {
+	Label   string `json:"label"`
+	Summary string `json:"summary"`
+}
+
+func convertMapToSummaryData(
+	ctx context.Context,
+	v1Data map[string]interface{},
+	idMapper domain.IDMapper,
+	logger *slog.Logger,
+) (*models.SummaryEventData, error) {
+	// Convert map to JSON bytes, then to SummaryDBRaw
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+
+	var rawSummary SummaryDBRaw
+	if err := json.Unmarshal(jsonBytes, &rawSummary); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal summary data: %w", err)
+	}
+
+	// Validate required fields
+	if rawSummary.ID == "" || rawSummary.MeetingAndOccurrenceID == "" {
+		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	}
+
+	// Get project ID - may need to look up from past meeting if not in summary
+	projectSFID := rawSummary.ProjectID
+	if projectSFID == "" {
+		// Project ID should be available, but if not this is not fatal
+		logger.WarnContext(ctx, "summary missing project ID", "summary_id", rawSummary.ID)
+	}
+
+	// Map project ID
+	var projectUID string
+	if projectSFID != "" {
+		projectUID, err = idMapper.MapProjectV1ToV2(ctx, projectSFID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+		}
+	}
+
+	// Consolidate original summary fields into markdown content
+	content := buildSummaryMarkdown(rawSummary.SummaryOverview, rawSummary.SummaryDetails, rawSummary.NextSteps)
+
+	// Consolidate edited summary fields into markdown edited content
+	editedContent := buildSummaryMarkdown(rawSummary.EditedSummaryOverview, rawSummary.EditedSummaryDetails, rawSummary.EditedNextSteps)
+
+	// Parse times
+	createdAt, _ := parseTime(rawSummary.CreatedAt)
+	updatedAt, _ := parseTime(rawSummary.ModifiedAt)
+
+	return &models.SummaryEventData{
+		ID:                     rawSummary.ID,
+		MeetingAndOccurrenceID: rawSummary.MeetingAndOccurrenceID,
+		ProjectUID:             projectUID,
+		MeetingID:              rawSummary.MeetingID,
+		OccurrenceID:           rawSummary.OccurrenceID,
+		ZoomMeetingUUID:        rawSummary.ZoomMeetingUUID,
+		ZoomMeetingHostID:      rawSummary.ZoomMeetingHostID,
+		ZoomMeetingHostEmail:   rawSummary.ZoomMeetingHostEmail,
+		ZoomMeetingTopic:       rawSummary.ZoomMeetingTopic,
+		Content:                content,
+		EditedContent:          editedContent,
+		RequiresApproval:       rawSummary.RequiresApproval,
+		Approved:               rawSummary.Approved,
+		Platform:               "Zoom",
+		ZoomConfig: models.SummaryZoomConfig{
+			MeetingID:   rawSummary.MeetingID,
+			MeetingUUID: rawSummary.ZoomMeetingUUID,
+		},
+		EmailSent: rawSummary.EmailSent,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+		Tags:      generateSummaryTags(rawSummary.ID, rawSummary.MeetingAndOccurrenceID, rawSummary.MeetingID, rawSummary.SummaryTitle),
+	}, nil
+}
+
+// buildSummaryMarkdown consolidates sparse summary fields into markdown format
+func buildSummaryMarkdown(overview string, details []SummaryDetailDBRaw, nextSteps []string) string {
+	if overview == "" && len(details) == 0 && len(nextSteps) == 0 {
+		return ""
+	}
+
+	var sb strings.Builder
+
+	if overview != "" {
+		sb.WriteString("## Overview\n")
+		sb.WriteString(overview)
+		sb.WriteString("\n\n")
+	}
+
+	if len(details) > 0 {
+		sb.WriteString("## Key Topics\n")
+		for _, detail := range details {
+			if detail.Label != "" {
+				sb.WriteString("### ")
+				sb.WriteString(detail.Label)
+				sb.WriteString("\n")
+			}
+			if detail.Summary != "" {
+				sb.WriteString(detail.Summary)
+				sb.WriteString("\n\n")
+			}
+		}
+	}
+
+	if len(nextSteps) > 0 {
+		sb.WriteString("## Next Steps\n")
+		for _, step := range nextSteps {
+			if step != "" {
+				sb.WriteString("- ")
+				sb.WriteString(step)
+				sb.WriteString("\n")
+			}
+		}
+	}
+
+	return strings.TrimSpace(sb.String())
+}
+
+func generateSummaryTags(id, meetingAndOccurrenceID, meetingID, title string) []string {
+	tags := []string{
+		id,
+		"past_meeting_summary_id:" + id,
+		"meeting_and_occurrence_id:" + meetingAndOccurrenceID,
+		"meeting_id:" + meetingID,
+		"platform:Zoom",
+	}
+	if title != "" {
+		tags = append(tags, "title:"+title)
 	}
 	return tags
 }

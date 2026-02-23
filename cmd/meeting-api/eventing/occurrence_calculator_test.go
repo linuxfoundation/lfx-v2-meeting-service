@@ -58,10 +58,10 @@ func TestOccurrenceCalculator_WeeklyRecurrence(t *testing.T) {
 	// Start on Monday, Jan 15, 2024
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	rec := &RecurrenceInput{
-		Type:           2,      // Weekly
-		RepeatInterval: 1,      // Every week
-		WeeklyDays:     "2,4",  // Monday and Wednesday (2=Mon, 4=Wed)
-		EndTimes:       4,      // 4 occurrences
+		Type:           2,     // Weekly
+		RepeatInterval: 1,     // Every week
+		WeeklyDays:     "2,4", // Monday and Wednesday (2=Mon, 4=Wed)
+		EndTimes:       4,     // 4 occurrences
 	}
 
 	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
@@ -179,7 +179,7 @@ func TestOccurrenceCalculator_UpdatedOccurrences(t *testing.T) {
 	updatedOccurrences := map[string]OccurrenceUpdate{
 		secondOccTime.Format("20060102T150405Z"): {
 			StartTime: secondOccTime.Add(2 * time.Hour), // Move 2 hours later
-			Duration:  90,                                // Change duration to 90 minutes
+			Duration:  90,                               // Change duration to 90 minutes
 		},
 	}
 
@@ -236,10 +236,10 @@ func TestOccurrenceCalculator_BiWeeklyRecurrence(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	rec := &RecurrenceInput{
-		Type:           2,     // Weekly
-		RepeatInterval: 2,     // Every 2 weeks
-		WeeklyDays:     "2",   // Monday
-		EndTimes:       4,     // 4 occurrences
+		Type:           2,   // Weekly
+		RepeatInterval: 2,   // Every 2 weeks
+		WeeklyDays:     "2", // Monday
+		EndTimes:       4,   // 4 occurrences
 	}
 
 	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
