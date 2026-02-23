@@ -90,34 +90,40 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) bool {
 	switch {
 	case strings.HasPrefix(key, "itx-zoom-meetings-v2."):
-		return handlers.handleMeetingUpdate(ctx, key, data)
+		return handleMeetingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-mappings-v2."):
-		return handlers.handleMeetingMappingUpdate(ctx, key, data)
+		return handleMeetingMappingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-registrants-v2."):
-		return handlers.handleRegistrantUpdate(ctx, key, data)
+		return handleRegistrantUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-invite-responses-v2."):
-		return handlers.handleInviteResponseUpdate(ctx, key, data)
+		return handleInviteResponseUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings."):
-		return handlers.handlePastMeetingUpdate(ctx, key, data)
+		handlers.logger.Debug("past meeting event - not yet implemented", "key", key)
+		return false // ACK for now - will implement in phase 5
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-mappings."):
-		return handlers.handlePastMeetingMappingUpdate(ctx, key, data)
+		handlers.logger.Debug("past meeting mapping event - not yet implemented", "key", key)
+		return false // ACK for now - will implement in phase 5
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-invitees."):
-		return handlers.handlePastMeetingInviteeUpdate(ctx, key, data)
+		handlers.logger.Debug("past meeting invitee event - not yet implemented", "key", key)
+		return false // ACK for now - will implement in phase 5
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-attendees."):
-		return handlers.handlePastMeetingAttendeeUpdate(ctx, key, data)
+		handlers.logger.Debug("past meeting attendee event - not yet implemented", "key", key)
+		return false // ACK for now - will implement in phase 5
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-recordings."):
-		return handlers.handlePastMeetingRecordingUpdate(ctx, key, data)
+		handlers.logger.Debug("past meeting recording event - not yet implemented", "key", key)
+		return false // ACK for now - will implement in phase 5
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-summaries."):
-		return handlers.handlePastMeetingSummaryUpdate(ctx, key, data)
+		handlers.logger.Debug("past meeting summary event - not yet implemented", "key", key)
+		return false // ACK for now - will implement in phase 5
 
 	default:
 		// Not a meeting-related event, skip
@@ -158,66 +164,4 @@ func decodeData(data []byte) (map[string]any, error) {
 
 	// If both fail, return JSON error
 	return nil, json.Unmarshal(data, &result)
-}
-
-// Placeholder handler methods - will be implemented in separate files
-
-func (h *EventHandlers) handleMeetingUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "meeting update", "key", key)
-	// TODO: Implement in meeting_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handleMeetingMappingUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "meeting mapping update", "key", key)
-	// TODO: Implement in meeting_mapping_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handleRegistrantUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "registrant update", "key", key)
-	// TODO: Implement in registrant_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handleInviteResponseUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "invite response update", "key", key)
-	// TODO: Implement in invite_response_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handlePastMeetingUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "past meeting update", "key", key)
-	// TODO: Implement in past_meeting_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handlePastMeetingMappingUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "past meeting mapping update", "key", key)
-	// TODO: Implement in past_meeting_mapping_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "past meeting invitee update", "key", key)
-	// TODO: Implement in past_meeting_invitee_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handlePastMeetingAttendeeUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "past meeting attendee update", "key", key)
-	// TODO: Implement in past_meeting_attendee_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handlePastMeetingRecordingUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "past meeting recording update", "key", key)
-	// TODO: Implement in past_meeting_recording_event_handler.go
-	return false // ACK for now
-}
-
-func (h *EventHandlers) handlePastMeetingSummaryUpdate(ctx context.Context, key string, data map[string]any) bool {
-	h.logger.InfoContext(ctx, "past meeting summary update", "key", key)
-	// TODO: Implement in past_meeting_summary_event_handler.go
-	return false // ACK for now
 }
