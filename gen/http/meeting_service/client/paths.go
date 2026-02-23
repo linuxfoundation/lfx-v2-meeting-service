@@ -11,201 +11,6 @@ import (
 	"fmt"
 )
 
-// GetMeetingsMeetingServicePath returns the URL path to the Meeting Service service get-meetings HTTP endpoint.
-func GetMeetingsMeetingServicePath() string {
-	return "/meetings"
-}
-
-// CreateMeetingMeetingServicePath returns the URL path to the Meeting Service service create-meeting HTTP endpoint.
-func CreateMeetingMeetingServicePath() string {
-	return "/meetings"
-}
-
-// GetMeetingBaseMeetingServicePath returns the URL path to the Meeting Service service get-meeting-base HTTP endpoint.
-func GetMeetingBaseMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v", uid)
-}
-
-// GetMeetingSettingsMeetingServicePath returns the URL path to the Meeting Service service get-meeting-settings HTTP endpoint.
-func GetMeetingSettingsMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v/settings", uid)
-}
-
-// GetMeetingJoinURLMeetingServicePath returns the URL path to the Meeting Service service get-meeting-join-url HTTP endpoint.
-func GetMeetingJoinURLMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v/join_url", uid)
-}
-
-// UpdateMeetingBaseMeetingServicePath returns the URL path to the Meeting Service service update-meeting-base HTTP endpoint.
-func UpdateMeetingBaseMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v", uid)
-}
-
-// UpdateMeetingSettingsMeetingServicePath returns the URL path to the Meeting Service service update-meeting-settings HTTP endpoint.
-func UpdateMeetingSettingsMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v/settings", uid)
-}
-
-// DeleteMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-meeting HTTP endpoint.
-func DeleteMeetingMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v", uid)
-}
-
-// DeleteMeetingOccurrenceMeetingServicePath returns the URL path to the Meeting Service service delete-meeting-occurrence HTTP endpoint.
-func DeleteMeetingOccurrenceMeetingServicePath(uid string, occurrenceID string) string {
-	return fmt.Sprintf("/meetings/%v/occurrences/%v", uid, occurrenceID)
-}
-
-// GetMeetingRegistrantsMeetingServicePath returns the URL path to the Meeting Service service get-meeting-registrants HTTP endpoint.
-func GetMeetingRegistrantsMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/meetings/%v/registrants", uid)
-}
-
-// CreateMeetingRegistrantMeetingServicePath returns the URL path to the Meeting Service service create-meeting-registrant HTTP endpoint.
-func CreateMeetingRegistrantMeetingServicePath(meetingUID string) string {
-	return fmt.Sprintf("/meetings/%v/registrants", meetingUID)
-}
-
-// GetMeetingRegistrantMeetingServicePath returns the URL path to the Meeting Service service get-meeting-registrant HTTP endpoint.
-func GetMeetingRegistrantMeetingServicePath(meetingUID string, uid string) string {
-	return fmt.Sprintf("/meetings/%v/registrants/%v", meetingUID, uid)
-}
-
-// UpdateMeetingRegistrantMeetingServicePath returns the URL path to the Meeting Service service update-meeting-registrant HTTP endpoint.
-func UpdateMeetingRegistrantMeetingServicePath(meetingUID string, uid string) string {
-	return fmt.Sprintf("/meetings/%v/registrants/%v", meetingUID, uid)
-}
-
-// DeleteMeetingRegistrantMeetingServicePath returns the URL path to the Meeting Service service delete-meeting-registrant HTTP endpoint.
-func DeleteMeetingRegistrantMeetingServicePath(meetingUID string, uid string) string {
-	return fmt.Sprintf("/meetings/%v/registrants/%v", meetingUID, uid)
-}
-
-// ResendMeetingRegistrantInvitationMeetingServicePath returns the URL path to the Meeting Service service resend-meeting-registrant-invitation HTTP endpoint.
-func ResendMeetingRegistrantInvitationMeetingServicePath(meetingUID string, uid string) string {
-	return fmt.Sprintf("/meetings/%v/registrants/%v/resend", meetingUID, uid)
-}
-
-// CreateMeetingRsvpMeetingServicePath returns the URL path to the Meeting Service service create-meeting-rsvp HTTP endpoint.
-func CreateMeetingRsvpMeetingServicePath(meetingUID string) string {
-	return fmt.Sprintf("/meetings/%v/rsvp", meetingUID)
-}
-
-// GetMeetingRsvpsMeetingServicePath returns the URL path to the Meeting Service service get-meeting-rsvps HTTP endpoint.
-func GetMeetingRsvpsMeetingServicePath(meetingUID string) string {
-	return fmt.Sprintf("/meetings/%v/rsvp", meetingUID)
-}
-
-// ZoomWebhookMeetingServicePath returns the URL path to the Meeting Service service zoom-webhook HTTP endpoint.
-func ZoomWebhookMeetingServicePath() string {
-	return "/webhooks/zoom"
-}
-
-// GetPastMeetingsMeetingServicePath returns the URL path to the Meeting Service service get-past-meetings HTTP endpoint.
-func GetPastMeetingsMeetingServicePath() string {
-	return "/past_meetings"
-}
-
-// CreatePastMeetingMeetingServicePath returns the URL path to the Meeting Service service create-past-meeting HTTP endpoint.
-func CreatePastMeetingMeetingServicePath() string {
-	return "/past_meetings"
-}
-
-// GetPastMeetingMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting HTTP endpoint.
-func GetPastMeetingMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/past_meetings/%v", uid)
-}
-
-// DeletePastMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-past-meeting HTTP endpoint.
-func DeletePastMeetingMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/past_meetings/%v", uid)
-}
-
-// GetPastMeetingParticipantsMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-participants HTTP endpoint.
-func GetPastMeetingParticipantsMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/participants", uid)
-}
-
-// CreatePastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service create-past-meeting-participant HTTP endpoint.
-func CreatePastMeetingParticipantMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/participants", uid)
-}
-
-// GetPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-participant HTTP endpoint.
-func GetPastMeetingParticipantMeetingServicePath(pastMeetingUID string, uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/participants/%v", pastMeetingUID, uid)
-}
-
-// UpdatePastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service update-past-meeting-participant HTTP endpoint.
-func UpdatePastMeetingParticipantMeetingServicePath(pastMeetingUID string, uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/participants/%v", pastMeetingUID, uid)
-}
-
-// DeletePastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service delete-past-meeting-participant HTTP endpoint.
-func DeletePastMeetingParticipantMeetingServicePath(pastMeetingUID string, uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/participants/%v", pastMeetingUID, uid)
-}
-
-// GetPastMeetingSummariesMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-summaries HTTP endpoint.
-func GetPastMeetingSummariesMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/summaries", uid)
-}
-
-// GetPastMeetingSummaryMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-summary HTTP endpoint.
-func GetPastMeetingSummaryMeetingServicePath(pastMeetingUID string, summaryUID string) string {
-	return fmt.Sprintf("/past_meetings/%v/summaries/%v", pastMeetingUID, summaryUID)
-}
-
-// UpdatePastMeetingSummaryMeetingServicePath returns the URL path to the Meeting Service service update-past-meeting-summary HTTP endpoint.
-func UpdatePastMeetingSummaryMeetingServicePath(pastMeetingUID string, summaryUID string) string {
-	return fmt.Sprintf("/past_meetings/%v/summaries/%v", pastMeetingUID, summaryUID)
-}
-
-// CreateMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service create-meeting-attachment HTTP endpoint.
-func CreateMeetingAttachmentMeetingServicePath(meetingUID string) string {
-	return fmt.Sprintf("/meetings/%v/attachments", meetingUID)
-}
-
-// GetMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service get-meeting-attachment HTTP endpoint.
-func GetMeetingAttachmentMeetingServicePath(meetingUID string, uid string) string {
-	return fmt.Sprintf("/meetings/%v/attachments/%v", meetingUID, uid)
-}
-
-// GetMeetingAttachmentMetadataMeetingServicePath returns the URL path to the Meeting Service service get-meeting-attachment-metadata HTTP endpoint.
-func GetMeetingAttachmentMetadataMeetingServicePath(meetingUID string, uid string) string {
-	return fmt.Sprintf("/meetings/%v/attachments/%v/metadata", meetingUID, uid)
-}
-
-// DeleteMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service delete-meeting-attachment HTTP endpoint.
-func DeleteMeetingAttachmentMeetingServicePath(meetingUID string, uid string) string {
-	return fmt.Sprintf("/meetings/%v/attachments/%v", meetingUID, uid)
-}
-
-// CreatePastMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service create-past-meeting-attachment HTTP endpoint.
-func CreatePastMeetingAttachmentMeetingServicePath(pastMeetingUID string) string {
-	return fmt.Sprintf("/past_meetings/%v/attachments", pastMeetingUID)
-}
-
-// GetPastMeetingAttachmentsMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-attachments HTTP endpoint.
-func GetPastMeetingAttachmentsMeetingServicePath(uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/attachments", uid)
-}
-
-// GetPastMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-attachment HTTP endpoint.
-func GetPastMeetingAttachmentMeetingServicePath(pastMeetingUID string, uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/attachments/%v", pastMeetingUID, uid)
-}
-
-// GetPastMeetingAttachmentMetadataMeetingServicePath returns the URL path to the Meeting Service service get-past-meeting-attachment-metadata HTTP endpoint.
-func GetPastMeetingAttachmentMetadataMeetingServicePath(pastMeetingUID string, uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/attachments/%v/metadata", pastMeetingUID, uid)
-}
-
-// DeletePastMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service delete-past-meeting-attachment HTTP endpoint.
-func DeletePastMeetingAttachmentMeetingServicePath(pastMeetingUID string, uid string) string {
-	return fmt.Sprintf("/past_meetings/%v/attachments/%v", pastMeetingUID, uid)
-}
-
 // ReadyzMeetingServicePath returns the URL path to the Meeting Service service readyz HTTP endpoint.
 func ReadyzMeetingServicePath() string {
 	return "/readyz"
@@ -214,4 +19,129 @@ func ReadyzMeetingServicePath() string {
 // LivezMeetingServicePath returns the URL path to the Meeting Service service livez HTTP endpoint.
 func LivezMeetingServicePath() string {
 	return "/livez"
+}
+
+// CreateItxMeetingMeetingServicePath returns the URL path to the Meeting Service service create-itx-meeting HTTP endpoint.
+func CreateItxMeetingMeetingServicePath() string {
+	return "/itx/meetings"
+}
+
+// GetItxMeetingMeetingServicePath returns the URL path to the Meeting Service service get-itx-meeting HTTP endpoint.
+func GetItxMeetingMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v", meetingID)
+}
+
+// DeleteItxMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-itx-meeting HTTP endpoint.
+func DeleteItxMeetingMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v", meetingID)
+}
+
+// UpdateItxMeetingMeetingServicePath returns the URL path to the Meeting Service service update-itx-meeting HTTP endpoint.
+func UpdateItxMeetingMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v", meetingID)
+}
+
+// GetItxMeetingCountMeetingServicePath returns the URL path to the Meeting Service service get-itx-meeting-count HTTP endpoint.
+func GetItxMeetingCountMeetingServicePath() string {
+	return "/itx/meeting_count"
+}
+
+// CreateItxRegistrantMeetingServicePath returns the URL path to the Meeting Service service create-itx-registrant HTTP endpoint.
+func CreateItxRegistrantMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants", meetingID)
+}
+
+// GetItxRegistrantMeetingServicePath returns the URL path to the Meeting Service service get-itx-registrant HTTP endpoint.
+func GetItxRegistrantMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v", meetingID, registrantID)
+}
+
+// UpdateItxRegistrantMeetingServicePath returns the URL path to the Meeting Service service update-itx-registrant HTTP endpoint.
+func UpdateItxRegistrantMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v", meetingID, registrantID)
+}
+
+// DeleteItxRegistrantMeetingServicePath returns the URL path to the Meeting Service service delete-itx-registrant HTTP endpoint.
+func DeleteItxRegistrantMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v", meetingID, registrantID)
+}
+
+// GetItxJoinLinkMeetingServicePath returns the URL path to the Meeting Service service get-itx-join-link HTTP endpoint.
+func GetItxJoinLinkMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/join_link", meetingID)
+}
+
+// GetItxRegistrantIcsMeetingServicePath returns the URL path to the Meeting Service service get-itx-registrant-ics HTTP endpoint.
+func GetItxRegistrantIcsMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v/ics", meetingID, registrantID)
+}
+
+// ResendItxRegistrantInvitationMeetingServicePath returns the URL path to the Meeting Service service resend-itx-registrant-invitation HTTP endpoint.
+func ResendItxRegistrantInvitationMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v/resend", meetingID, registrantID)
+}
+
+// ResendItxMeetingInvitationsMeetingServicePath returns the URL path to the Meeting Service service resend-itx-meeting-invitations HTTP endpoint.
+func ResendItxMeetingInvitationsMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/resend", meetingID)
+}
+
+// RegisterItxCommitteeMembersMeetingServicePath returns the URL path to the Meeting Service service register-itx-committee-members HTTP endpoint.
+func RegisterItxCommitteeMembersMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/register_committee_members", meetingID)
+}
+
+// UpdateItxOccurrenceMeetingServicePath returns the URL path to the Meeting Service service update-itx-occurrence HTTP endpoint.
+func UpdateItxOccurrenceMeetingServicePath(meetingID string, occurrenceID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/occurrences/%v", meetingID, occurrenceID)
+}
+
+// DeleteItxOccurrenceMeetingServicePath returns the URL path to the Meeting Service service delete-itx-occurrence HTTP endpoint.
+func DeleteItxOccurrenceMeetingServicePath(meetingID string, occurrenceID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/occurrences/%v", meetingID, occurrenceID)
+}
+
+// CreateItxPastMeetingMeetingServicePath returns the URL path to the Meeting Service service create-itx-past-meeting HTTP endpoint.
+func CreateItxPastMeetingMeetingServicePath() string {
+	return "/itx/past_meetings"
+}
+
+// GetItxPastMeetingMeetingServicePath returns the URL path to the Meeting Service service get-itx-past-meeting HTTP endpoint.
+func GetItxPastMeetingMeetingServicePath(pastMeetingID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v", pastMeetingID)
+}
+
+// DeleteItxPastMeetingMeetingServicePath returns the URL path to the Meeting Service service delete-itx-past-meeting HTTP endpoint.
+func DeleteItxPastMeetingMeetingServicePath(pastMeetingID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v", pastMeetingID)
+}
+
+// UpdateItxPastMeetingMeetingServicePath returns the URL path to the Meeting Service service update-itx-past-meeting HTTP endpoint.
+func UpdateItxPastMeetingMeetingServicePath(pastMeetingID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v", pastMeetingID)
+}
+
+// GetItxPastMeetingSummaryMeetingServicePath returns the URL path to the Meeting Service service get-itx-past-meeting-summary HTTP endpoint.
+func GetItxPastMeetingSummaryMeetingServicePath(pastMeetingID string, summaryUID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/summaries/%v", pastMeetingID, summaryUID)
+}
+
+// UpdateItxPastMeetingSummaryMeetingServicePath returns the URL path to the Meeting Service service update-itx-past-meeting-summary HTTP endpoint.
+func UpdateItxPastMeetingSummaryMeetingServicePath(pastMeetingID string, summaryUID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/summaries/%v", pastMeetingID, summaryUID)
+}
+
+// CreateItxPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service create-itx-past-meeting-participant HTTP endpoint.
+func CreateItxPastMeetingParticipantMeetingServicePath(pastMeetingID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/participants", pastMeetingID)
+}
+
+// UpdateItxPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service update-itx-past-meeting-participant HTTP endpoint.
+func UpdateItxPastMeetingParticipantMeetingServicePath(pastMeetingID string, participantID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/participants/%v", pastMeetingID, participantID)
+}
+
+// DeleteItxPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service delete-itx-past-meeting-participant HTTP endpoint.
+func DeleteItxPastMeetingParticipantMeetingServicePath(pastMeetingID string, participantID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/participants/%v", pastMeetingID, participantID)
 }

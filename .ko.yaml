@@ -1,0 +1,12 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+---
+defaultBaseImage: cgr.dev/chainguard/static:latest
+
+builds:
+  - id: meeting-api
+    main: ./cmd/meeting-api
+    ldflags:
+      - -X main.Version={{ .Env.VERSION }}
+      - -X main.BuildTime={{ .Env.BUILD_TIME }}
+      - -X main.GitCommit={{ .Env.GIT_COMMIT }}

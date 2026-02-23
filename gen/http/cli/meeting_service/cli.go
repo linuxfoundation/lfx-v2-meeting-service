@@ -23,13 +23,13 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (get-meetings|create-meeting|get-meeting-base|get-meeting-settings|get-meeting-join-url|update-meeting-base|update-meeting-settings|delete-meeting|delete-meeting-occurrence|get-meeting-registrants|create-meeting-registrant|get-meeting-registrant|update-meeting-registrant|delete-meeting-registrant|resend-meeting-registrant-invitation|create-meeting-rsvp|get-meeting-rsvps|zoom-webhook|get-past-meetings|create-past-meeting|get-past-meeting|delete-past-meeting|get-past-meeting-participants|create-past-meeting-participant|get-past-meeting-participant|update-past-meeting-participant|delete-past-meeting-participant|get-past-meeting-summaries|get-past-meeting-summary|update-past-meeting-summary|create-meeting-attachment|get-meeting-attachment|get-meeting-attachment-metadata|delete-meeting-attachment|create-past-meeting-attachment|get-past-meeting-attachments|get-past-meeting-attachment|get-past-meeting-attachment-metadata|delete-past-meeting-attachment|readyz|livez)",
+		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant)",
 	}
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + " " + "meeting-service get-meetings --version \"1\" --include-cancelled-occurrences true --bearer-token \"eyJhbGci...\"" + "\n" +
+	return os.Args[0] + " " + "meeting-service readyz" + "\n" +
 		""
 }
 
@@ -41,308 +41,194 @@ func ParseEndpoint(
 	enc func(*http.Request) goahttp.Encoder,
 	dec func(*http.Response) goahttp.Decoder,
 	restore bool,
-	meetingServiceCreateMeetingAttachmentEncoderFn meetingservicec.MeetingServiceCreateMeetingAttachmentEncoderFunc,
-	meetingServiceCreatePastMeetingAttachmentEncoderFn meetingservicec.MeetingServiceCreatePastMeetingAttachmentEncoderFunc,
 ) (goa.Endpoint, any, error) {
 	var (
 		meetingServiceFlags = flag.NewFlagSet("meeting-service", flag.ContinueOnError)
 
-		meetingServiceGetMeetingsFlags                           = flag.NewFlagSet("get-meetings", flag.ExitOnError)
-		meetingServiceGetMeetingsVersionFlag                     = meetingServiceGetMeetingsFlags.String("version", "", "")
-		meetingServiceGetMeetingsIncludeCancelledOccurrencesFlag = meetingServiceGetMeetingsFlags.String("include-cancelled-occurrences", "", "")
-		meetingServiceGetMeetingsBearerTokenFlag                 = meetingServiceGetMeetingsFlags.String("bearer-token", "", "")
-
-		meetingServiceCreateMeetingFlags           = flag.NewFlagSet("create-meeting", flag.ExitOnError)
-		meetingServiceCreateMeetingBodyFlag        = meetingServiceCreateMeetingFlags.String("body", "REQUIRED", "")
-		meetingServiceCreateMeetingVersionFlag     = meetingServiceCreateMeetingFlags.String("version", "", "")
-		meetingServiceCreateMeetingBearerTokenFlag = meetingServiceCreateMeetingFlags.String("bearer-token", "", "")
-		meetingServiceCreateMeetingXSyncFlag       = meetingServiceCreateMeetingFlags.String("x-sync", "", "")
-
-		meetingServiceGetMeetingBaseFlags                           = flag.NewFlagSet("get-meeting-base", flag.ExitOnError)
-		meetingServiceGetMeetingBaseUIDFlag                         = meetingServiceGetMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceGetMeetingBaseVersionFlag                     = meetingServiceGetMeetingBaseFlags.String("version", "", "")
-		meetingServiceGetMeetingBaseIncludeCancelledOccurrencesFlag = meetingServiceGetMeetingBaseFlags.String("include-cancelled-occurrences", "", "")
-		meetingServiceGetMeetingBaseBearerTokenFlag                 = meetingServiceGetMeetingBaseFlags.String("bearer-token", "", "")
-
-		meetingServiceGetMeetingSettingsFlags           = flag.NewFlagSet("get-meeting-settings", flag.ExitOnError)
-		meetingServiceGetMeetingSettingsUIDFlag         = meetingServiceGetMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceGetMeetingSettingsVersionFlag     = meetingServiceGetMeetingSettingsFlags.String("version", "", "")
-		meetingServiceGetMeetingSettingsBearerTokenFlag = meetingServiceGetMeetingSettingsFlags.String("bearer-token", "", "")
-
-		meetingServiceGetMeetingJoinURLFlags           = flag.NewFlagSet("get-meeting-join-url", flag.ExitOnError)
-		meetingServiceGetMeetingJoinURLUIDFlag         = meetingServiceGetMeetingJoinURLFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceGetMeetingJoinURLVersionFlag     = meetingServiceGetMeetingJoinURLFlags.String("version", "", "")
-		meetingServiceGetMeetingJoinURLBearerTokenFlag = meetingServiceGetMeetingJoinURLFlags.String("bearer-token", "", "")
-
-		meetingServiceUpdateMeetingBaseFlags           = flag.NewFlagSet("update-meeting-base", flag.ExitOnError)
-		meetingServiceUpdateMeetingBaseBodyFlag        = meetingServiceUpdateMeetingBaseFlags.String("body", "REQUIRED", "")
-		meetingServiceUpdateMeetingBaseUIDFlag         = meetingServiceUpdateMeetingBaseFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceUpdateMeetingBaseVersionFlag     = meetingServiceUpdateMeetingBaseFlags.String("version", "", "")
-		meetingServiceUpdateMeetingBaseBearerTokenFlag = meetingServiceUpdateMeetingBaseFlags.String("bearer-token", "", "")
-		meetingServiceUpdateMeetingBaseXSyncFlag       = meetingServiceUpdateMeetingBaseFlags.String("x-sync", "", "")
-		meetingServiceUpdateMeetingBaseIfMatchFlag     = meetingServiceUpdateMeetingBaseFlags.String("if-match", "", "")
-
-		meetingServiceUpdateMeetingSettingsFlags           = flag.NewFlagSet("update-meeting-settings", flag.ExitOnError)
-		meetingServiceUpdateMeetingSettingsBodyFlag        = meetingServiceUpdateMeetingSettingsFlags.String("body", "REQUIRED", "")
-		meetingServiceUpdateMeetingSettingsUIDFlag         = meetingServiceUpdateMeetingSettingsFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceUpdateMeetingSettingsVersionFlag     = meetingServiceUpdateMeetingSettingsFlags.String("version", "", "")
-		meetingServiceUpdateMeetingSettingsBearerTokenFlag = meetingServiceUpdateMeetingSettingsFlags.String("bearer-token", "", "")
-		meetingServiceUpdateMeetingSettingsXSyncFlag       = meetingServiceUpdateMeetingSettingsFlags.String("x-sync", "", "")
-		meetingServiceUpdateMeetingSettingsIfMatchFlag     = meetingServiceUpdateMeetingSettingsFlags.String("if-match", "", "")
-
-		meetingServiceDeleteMeetingFlags           = flag.NewFlagSet("delete-meeting", flag.ExitOnError)
-		meetingServiceDeleteMeetingUIDFlag         = meetingServiceDeleteMeetingFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceDeleteMeetingVersionFlag     = meetingServiceDeleteMeetingFlags.String("version", "", "")
-		meetingServiceDeleteMeetingBearerTokenFlag = meetingServiceDeleteMeetingFlags.String("bearer-token", "", "")
-		meetingServiceDeleteMeetingXSyncFlag       = meetingServiceDeleteMeetingFlags.String("x-sync", "", "")
-		meetingServiceDeleteMeetingIfMatchFlag     = meetingServiceDeleteMeetingFlags.String("if-match", "", "")
-
-		meetingServiceDeleteMeetingOccurrenceFlags            = flag.NewFlagSet("delete-meeting-occurrence", flag.ExitOnError)
-		meetingServiceDeleteMeetingOccurrenceUIDFlag          = meetingServiceDeleteMeetingOccurrenceFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceDeleteMeetingOccurrenceOccurrenceIDFlag = meetingServiceDeleteMeetingOccurrenceFlags.String("occurrence-id", "REQUIRED", "The ID of the occurrence to cancel")
-		meetingServiceDeleteMeetingOccurrenceVersionFlag      = meetingServiceDeleteMeetingOccurrenceFlags.String("version", "", "")
-		meetingServiceDeleteMeetingOccurrenceBearerTokenFlag  = meetingServiceDeleteMeetingOccurrenceFlags.String("bearer-token", "", "")
-		meetingServiceDeleteMeetingOccurrenceXSyncFlag        = meetingServiceDeleteMeetingOccurrenceFlags.String("x-sync", "", "")
-		meetingServiceDeleteMeetingOccurrenceIfMatchFlag      = meetingServiceDeleteMeetingOccurrenceFlags.String("if-match", "", "")
-
-		meetingServiceGetMeetingRegistrantsFlags           = flag.NewFlagSet("get-meeting-registrants", flag.ExitOnError)
-		meetingServiceGetMeetingRegistrantsUIDFlag         = meetingServiceGetMeetingRegistrantsFlags.String("uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceGetMeetingRegistrantsVersionFlag     = meetingServiceGetMeetingRegistrantsFlags.String("version", "", "")
-		meetingServiceGetMeetingRegistrantsBearerTokenFlag = meetingServiceGetMeetingRegistrantsFlags.String("bearer-token", "", "")
-
-		meetingServiceCreateMeetingRegistrantFlags           = flag.NewFlagSet("create-meeting-registrant", flag.ExitOnError)
-		meetingServiceCreateMeetingRegistrantBodyFlag        = meetingServiceCreateMeetingRegistrantFlags.String("body", "REQUIRED", "")
-		meetingServiceCreateMeetingRegistrantMeetingUIDFlag  = meetingServiceCreateMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceCreateMeetingRegistrantVersionFlag     = meetingServiceCreateMeetingRegistrantFlags.String("version", "", "")
-		meetingServiceCreateMeetingRegistrantBearerTokenFlag = meetingServiceCreateMeetingRegistrantFlags.String("bearer-token", "", "")
-		meetingServiceCreateMeetingRegistrantXSyncFlag       = meetingServiceCreateMeetingRegistrantFlags.String("x-sync", "", "")
-
-		meetingServiceGetMeetingRegistrantFlags           = flag.NewFlagSet("get-meeting-registrant", flag.ExitOnError)
-		meetingServiceGetMeetingRegistrantMeetingUIDFlag  = meetingServiceGetMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceGetMeetingRegistrantUIDFlag         = meetingServiceGetMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
-		meetingServiceGetMeetingRegistrantVersionFlag     = meetingServiceGetMeetingRegistrantFlags.String("version", "", "")
-		meetingServiceGetMeetingRegistrantBearerTokenFlag = meetingServiceGetMeetingRegistrantFlags.String("bearer-token", "", "")
-
-		meetingServiceUpdateMeetingRegistrantFlags           = flag.NewFlagSet("update-meeting-registrant", flag.ExitOnError)
-		meetingServiceUpdateMeetingRegistrantBodyFlag        = meetingServiceUpdateMeetingRegistrantFlags.String("body", "REQUIRED", "")
-		meetingServiceUpdateMeetingRegistrantMeetingUIDFlag  = meetingServiceUpdateMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceUpdateMeetingRegistrantUIDFlag         = meetingServiceUpdateMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
-		meetingServiceUpdateMeetingRegistrantVersionFlag     = meetingServiceUpdateMeetingRegistrantFlags.String("version", "", "")
-		meetingServiceUpdateMeetingRegistrantBearerTokenFlag = meetingServiceUpdateMeetingRegistrantFlags.String("bearer-token", "", "")
-		meetingServiceUpdateMeetingRegistrantXSyncFlag       = meetingServiceUpdateMeetingRegistrantFlags.String("x-sync", "", "")
-		meetingServiceUpdateMeetingRegistrantIfMatchFlag     = meetingServiceUpdateMeetingRegistrantFlags.String("if-match", "", "")
-
-		meetingServiceDeleteMeetingRegistrantFlags           = flag.NewFlagSet("delete-meeting-registrant", flag.ExitOnError)
-		meetingServiceDeleteMeetingRegistrantMeetingUIDFlag  = meetingServiceDeleteMeetingRegistrantFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceDeleteMeetingRegistrantUIDFlag         = meetingServiceDeleteMeetingRegistrantFlags.String("uid", "REQUIRED", "The UID of the registrant")
-		meetingServiceDeleteMeetingRegistrantVersionFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("version", "", "")
-		meetingServiceDeleteMeetingRegistrantBearerTokenFlag = meetingServiceDeleteMeetingRegistrantFlags.String("bearer-token", "", "")
-		meetingServiceDeleteMeetingRegistrantXSyncFlag       = meetingServiceDeleteMeetingRegistrantFlags.String("x-sync", "", "")
-		meetingServiceDeleteMeetingRegistrantIfMatchFlag     = meetingServiceDeleteMeetingRegistrantFlags.String("if-match", "", "")
-
-		meetingServiceResendMeetingRegistrantInvitationFlags           = flag.NewFlagSet("resend-meeting-registrant-invitation", flag.ExitOnError)
-		meetingServiceResendMeetingRegistrantInvitationMeetingUIDFlag  = meetingServiceResendMeetingRegistrantInvitationFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting")
-		meetingServiceResendMeetingRegistrantInvitationUIDFlag         = meetingServiceResendMeetingRegistrantInvitationFlags.String("uid", "REQUIRED", "The UID of the registrant")
-		meetingServiceResendMeetingRegistrantInvitationVersionFlag     = meetingServiceResendMeetingRegistrantInvitationFlags.String("version", "", "")
-		meetingServiceResendMeetingRegistrantInvitationBearerTokenFlag = meetingServiceResendMeetingRegistrantInvitationFlags.String("bearer-token", "", "")
-
-		meetingServiceCreateMeetingRsvpFlags           = flag.NewFlagSet("create-meeting-rsvp", flag.ExitOnError)
-		meetingServiceCreateMeetingRsvpBodyFlag        = meetingServiceCreateMeetingRsvpFlags.String("body", "REQUIRED", "")
-		meetingServiceCreateMeetingRsvpMeetingUIDFlag  = meetingServiceCreateMeetingRsvpFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this RSVP is for")
-		meetingServiceCreateMeetingRsvpVersionFlag     = meetingServiceCreateMeetingRsvpFlags.String("version", "", "")
-		meetingServiceCreateMeetingRsvpBearerTokenFlag = meetingServiceCreateMeetingRsvpFlags.String("bearer-token", "", "")
-		meetingServiceCreateMeetingRsvpXSyncFlag       = meetingServiceCreateMeetingRsvpFlags.String("x-sync", "", "")
-
-		meetingServiceGetMeetingRsvpsFlags           = flag.NewFlagSet("get-meeting-rsvps", flag.ExitOnError)
-		meetingServiceGetMeetingRsvpsMeetingUIDFlag  = meetingServiceGetMeetingRsvpsFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this RSVP is for")
-		meetingServiceGetMeetingRsvpsVersionFlag     = meetingServiceGetMeetingRsvpsFlags.String("version", "", "")
-		meetingServiceGetMeetingRsvpsBearerTokenFlag = meetingServiceGetMeetingRsvpsFlags.String("bearer-token", "", "")
-
-		meetingServiceZoomWebhookFlags             = flag.NewFlagSet("zoom-webhook", flag.ExitOnError)
-		meetingServiceZoomWebhookBodyFlag          = meetingServiceZoomWebhookFlags.String("body", "REQUIRED", "")
-		meetingServiceZoomWebhookZoomSignatureFlag = meetingServiceZoomWebhookFlags.String("zoom-signature", "REQUIRED", "")
-		meetingServiceZoomWebhookZoomTimestampFlag = meetingServiceZoomWebhookFlags.String("zoom-timestamp", "REQUIRED", "")
-
-		meetingServiceGetPastMeetingsFlags           = flag.NewFlagSet("get-past-meetings", flag.ExitOnError)
-		meetingServiceGetPastMeetingsVersionFlag     = meetingServiceGetPastMeetingsFlags.String("version", "", "")
-		meetingServiceGetPastMeetingsBearerTokenFlag = meetingServiceGetPastMeetingsFlags.String("bearer-token", "", "")
-
-		meetingServiceCreatePastMeetingFlags           = flag.NewFlagSet("create-past-meeting", flag.ExitOnError)
-		meetingServiceCreatePastMeetingBodyFlag        = meetingServiceCreatePastMeetingFlags.String("body", "REQUIRED", "")
-		meetingServiceCreatePastMeetingVersionFlag     = meetingServiceCreatePastMeetingFlags.String("version", "", "")
-		meetingServiceCreatePastMeetingBearerTokenFlag = meetingServiceCreatePastMeetingFlags.String("bearer-token", "", "")
-		meetingServiceCreatePastMeetingXSyncFlag       = meetingServiceCreatePastMeetingFlags.String("x-sync", "", "")
-
-		meetingServiceGetPastMeetingFlags           = flag.NewFlagSet("get-past-meeting", flag.ExitOnError)
-		meetingServiceGetPastMeetingUIDFlag         = meetingServiceGetPastMeetingFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceGetPastMeetingVersionFlag     = meetingServiceGetPastMeetingFlags.String("version", "", "")
-		meetingServiceGetPastMeetingBearerTokenFlag = meetingServiceGetPastMeetingFlags.String("bearer-token", "", "")
-
-		meetingServiceDeletePastMeetingFlags           = flag.NewFlagSet("delete-past-meeting", flag.ExitOnError)
-		meetingServiceDeletePastMeetingUIDFlag         = meetingServiceDeletePastMeetingFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceDeletePastMeetingVersionFlag     = meetingServiceDeletePastMeetingFlags.String("version", "", "")
-		meetingServiceDeletePastMeetingBearerTokenFlag = meetingServiceDeletePastMeetingFlags.String("bearer-token", "", "")
-		meetingServiceDeletePastMeetingXSyncFlag       = meetingServiceDeletePastMeetingFlags.String("x-sync", "", "")
-		meetingServiceDeletePastMeetingIfMatchFlag     = meetingServiceDeletePastMeetingFlags.String("if-match", "", "")
-
-		meetingServiceGetPastMeetingParticipantsFlags           = flag.NewFlagSet("get-past-meeting-participants", flag.ExitOnError)
-		meetingServiceGetPastMeetingParticipantsUIDFlag         = meetingServiceGetPastMeetingParticipantsFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceGetPastMeetingParticipantsVersionFlag     = meetingServiceGetPastMeetingParticipantsFlags.String("version", "", "")
-		meetingServiceGetPastMeetingParticipantsBearerTokenFlag = meetingServiceGetPastMeetingParticipantsFlags.String("bearer-token", "", "")
-
-		meetingServiceCreatePastMeetingParticipantFlags           = flag.NewFlagSet("create-past-meeting-participant", flag.ExitOnError)
-		meetingServiceCreatePastMeetingParticipantBodyFlag        = meetingServiceCreatePastMeetingParticipantFlags.String("body", "REQUIRED", "")
-		meetingServiceCreatePastMeetingParticipantUIDFlag         = meetingServiceCreatePastMeetingParticipantFlags.String("uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceCreatePastMeetingParticipantVersionFlag     = meetingServiceCreatePastMeetingParticipantFlags.String("version", "", "")
-		meetingServiceCreatePastMeetingParticipantBearerTokenFlag = meetingServiceCreatePastMeetingParticipantFlags.String("bearer-token", "", "")
-		meetingServiceCreatePastMeetingParticipantXSyncFlag       = meetingServiceCreatePastMeetingParticipantFlags.String("x-sync", "", "")
-
-		meetingServiceGetPastMeetingParticipantFlags              = flag.NewFlagSet("get-past-meeting-participant", flag.ExitOnError)
-		meetingServiceGetPastMeetingParticipantPastMeetingUIDFlag = meetingServiceGetPastMeetingParticipantFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceGetPastMeetingParticipantUIDFlag            = meetingServiceGetPastMeetingParticipantFlags.String("uid", "REQUIRED", "The UID of the past meeting participant")
-		meetingServiceGetPastMeetingParticipantVersionFlag        = meetingServiceGetPastMeetingParticipantFlags.String("version", "", "")
-		meetingServiceGetPastMeetingParticipantBearerTokenFlag    = meetingServiceGetPastMeetingParticipantFlags.String("bearer-token", "", "")
-
-		meetingServiceUpdatePastMeetingParticipantFlags              = flag.NewFlagSet("update-past-meeting-participant", flag.ExitOnError)
-		meetingServiceUpdatePastMeetingParticipantBodyFlag           = meetingServiceUpdatePastMeetingParticipantFlags.String("body", "REQUIRED", "")
-		meetingServiceUpdatePastMeetingParticipantPastMeetingUIDFlag = meetingServiceUpdatePastMeetingParticipantFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceUpdatePastMeetingParticipantUIDFlag            = meetingServiceUpdatePastMeetingParticipantFlags.String("uid", "REQUIRED", "The UID of the past meeting participant")
-		meetingServiceUpdatePastMeetingParticipantVersionFlag        = meetingServiceUpdatePastMeetingParticipantFlags.String("version", "", "")
-		meetingServiceUpdatePastMeetingParticipantBearerTokenFlag    = meetingServiceUpdatePastMeetingParticipantFlags.String("bearer-token", "", "")
-		meetingServiceUpdatePastMeetingParticipantXSyncFlag          = meetingServiceUpdatePastMeetingParticipantFlags.String("x-sync", "", "")
-		meetingServiceUpdatePastMeetingParticipantIfMatchFlag        = meetingServiceUpdatePastMeetingParticipantFlags.String("if-match", "", "")
-
-		meetingServiceDeletePastMeetingParticipantFlags              = flag.NewFlagSet("delete-past-meeting-participant", flag.ExitOnError)
-		meetingServiceDeletePastMeetingParticipantPastMeetingUIDFlag = meetingServiceDeletePastMeetingParticipantFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceDeletePastMeetingParticipantUIDFlag            = meetingServiceDeletePastMeetingParticipantFlags.String("uid", "REQUIRED", "The UID of the past meeting participant")
-		meetingServiceDeletePastMeetingParticipantVersionFlag        = meetingServiceDeletePastMeetingParticipantFlags.String("version", "", "")
-		meetingServiceDeletePastMeetingParticipantBearerTokenFlag    = meetingServiceDeletePastMeetingParticipantFlags.String("bearer-token", "", "")
-		meetingServiceDeletePastMeetingParticipantXSyncFlag          = meetingServiceDeletePastMeetingParticipantFlags.String("x-sync", "", "")
-		meetingServiceDeletePastMeetingParticipantIfMatchFlag        = meetingServiceDeletePastMeetingParticipantFlags.String("if-match", "", "")
-
-		meetingServiceGetPastMeetingSummariesFlags           = flag.NewFlagSet("get-past-meeting-summaries", flag.ExitOnError)
-		meetingServiceGetPastMeetingSummariesUIDFlag         = meetingServiceGetPastMeetingSummariesFlags.String("uid", "REQUIRED", "The unique identifier of the resource")
-		meetingServiceGetPastMeetingSummariesVersionFlag     = meetingServiceGetPastMeetingSummariesFlags.String("version", "", "")
-		meetingServiceGetPastMeetingSummariesBearerTokenFlag = meetingServiceGetPastMeetingSummariesFlags.String("bearer-token", "", "")
-
-		meetingServiceGetPastMeetingSummaryFlags              = flag.NewFlagSet("get-past-meeting-summary", flag.ExitOnError)
-		meetingServiceGetPastMeetingSummaryPastMeetingUIDFlag = meetingServiceGetPastMeetingSummaryFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceGetPastMeetingSummarySummaryUIDFlag     = meetingServiceGetPastMeetingSummaryFlags.String("summary-uid", "REQUIRED", "The unique identifier of the summary")
-		meetingServiceGetPastMeetingSummaryVersionFlag        = meetingServiceGetPastMeetingSummaryFlags.String("version", "", "")
-		meetingServiceGetPastMeetingSummaryBearerTokenFlag    = meetingServiceGetPastMeetingSummaryFlags.String("bearer-token", "", "")
-
-		meetingServiceUpdatePastMeetingSummaryFlags              = flag.NewFlagSet("update-past-meeting-summary", flag.ExitOnError)
-		meetingServiceUpdatePastMeetingSummaryBodyFlag           = meetingServiceUpdatePastMeetingSummaryFlags.String("body", "REQUIRED", "")
-		meetingServiceUpdatePastMeetingSummaryPastMeetingUIDFlag = meetingServiceUpdatePastMeetingSummaryFlags.String("past-meeting-uid", "REQUIRED", "The unique identifier of the past meeting")
-		meetingServiceUpdatePastMeetingSummarySummaryUIDFlag     = meetingServiceUpdatePastMeetingSummaryFlags.String("summary-uid", "REQUIRED", "The unique identifier of the summary")
-		meetingServiceUpdatePastMeetingSummaryVersionFlag        = meetingServiceUpdatePastMeetingSummaryFlags.String("version", "", "")
-		meetingServiceUpdatePastMeetingSummaryBearerTokenFlag    = meetingServiceUpdatePastMeetingSummaryFlags.String("bearer-token", "", "")
-		meetingServiceUpdatePastMeetingSummaryXSyncFlag          = meetingServiceUpdatePastMeetingSummaryFlags.String("x-sync", "", "")
-		meetingServiceUpdatePastMeetingSummaryIfMatchFlag        = meetingServiceUpdatePastMeetingSummaryFlags.String("if-match", "", "")
-
-		meetingServiceCreateMeetingAttachmentFlags           = flag.NewFlagSet("create-meeting-attachment", flag.ExitOnError)
-		meetingServiceCreateMeetingAttachmentBodyFlag        = meetingServiceCreateMeetingAttachmentFlags.String("body", "REQUIRED", "")
-		meetingServiceCreateMeetingAttachmentMeetingUIDFlag  = meetingServiceCreateMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
-		meetingServiceCreateMeetingAttachmentVersionFlag     = meetingServiceCreateMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceCreateMeetingAttachmentBearerTokenFlag = meetingServiceCreateMeetingAttachmentFlags.String("bearer-token", "", "")
-		meetingServiceCreateMeetingAttachmentXSyncFlag       = meetingServiceCreateMeetingAttachmentFlags.String("x-sync", "", "")
-
-		meetingServiceGetMeetingAttachmentFlags           = flag.NewFlagSet("get-meeting-attachment", flag.ExitOnError)
-		meetingServiceGetMeetingAttachmentMeetingUIDFlag  = meetingServiceGetMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
-		meetingServiceGetMeetingAttachmentUIDFlag         = meetingServiceGetMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
-		meetingServiceGetMeetingAttachmentVersionFlag     = meetingServiceGetMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceGetMeetingAttachmentBearerTokenFlag = meetingServiceGetMeetingAttachmentFlags.String("bearer-token", "", "")
-
-		meetingServiceGetMeetingAttachmentMetadataFlags           = flag.NewFlagSet("get-meeting-attachment-metadata", flag.ExitOnError)
-		meetingServiceGetMeetingAttachmentMetadataMeetingUIDFlag  = meetingServiceGetMeetingAttachmentMetadataFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
-		meetingServiceGetMeetingAttachmentMetadataUIDFlag         = meetingServiceGetMeetingAttachmentMetadataFlags.String("uid", "REQUIRED", "The UID of the attachment")
-		meetingServiceGetMeetingAttachmentMetadataVersionFlag     = meetingServiceGetMeetingAttachmentMetadataFlags.String("version", "", "")
-		meetingServiceGetMeetingAttachmentMetadataBearerTokenFlag = meetingServiceGetMeetingAttachmentMetadataFlags.String("bearer-token", "", "")
-
-		meetingServiceDeleteMeetingAttachmentFlags           = flag.NewFlagSet("delete-meeting-attachment", flag.ExitOnError)
-		meetingServiceDeleteMeetingAttachmentMeetingUIDFlag  = meetingServiceDeleteMeetingAttachmentFlags.String("meeting-uid", "REQUIRED", "The UID of the meeting this attachment belongs to")
-		meetingServiceDeleteMeetingAttachmentUIDFlag         = meetingServiceDeleteMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
-		meetingServiceDeleteMeetingAttachmentVersionFlag     = meetingServiceDeleteMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceDeleteMeetingAttachmentBearerTokenFlag = meetingServiceDeleteMeetingAttachmentFlags.String("bearer-token", "", "")
-		meetingServiceDeleteMeetingAttachmentXSyncFlag       = meetingServiceDeleteMeetingAttachmentFlags.String("x-sync", "", "")
-
-		meetingServiceCreatePastMeetingAttachmentFlags              = flag.NewFlagSet("create-past-meeting-attachment", flag.ExitOnError)
-		meetingServiceCreatePastMeetingAttachmentBodyFlag           = meetingServiceCreatePastMeetingAttachmentFlags.String("body", "REQUIRED", "")
-		meetingServiceCreatePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceCreatePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
-		meetingServiceCreatePastMeetingAttachmentVersionFlag        = meetingServiceCreatePastMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceCreatePastMeetingAttachmentBearerTokenFlag    = meetingServiceCreatePastMeetingAttachmentFlags.String("bearer-token", "", "")
-		meetingServiceCreatePastMeetingAttachmentXSyncFlag          = meetingServiceCreatePastMeetingAttachmentFlags.String("x-sync", "", "")
-
-		meetingServiceGetPastMeetingAttachmentsFlags           = flag.NewFlagSet("get-past-meeting-attachments", flag.ExitOnError)
-		meetingServiceGetPastMeetingAttachmentsUIDFlag         = meetingServiceGetPastMeetingAttachmentsFlags.String("uid", "REQUIRED", "The unique identifier of the resource")
-		meetingServiceGetPastMeetingAttachmentsVersionFlag     = meetingServiceGetPastMeetingAttachmentsFlags.String("version", "", "")
-		meetingServiceGetPastMeetingAttachmentsBearerTokenFlag = meetingServiceGetPastMeetingAttachmentsFlags.String("bearer-token", "", "")
-
-		meetingServiceGetPastMeetingAttachmentFlags              = flag.NewFlagSet("get-past-meeting-attachment", flag.ExitOnError)
-		meetingServiceGetPastMeetingAttachmentPastMeetingUIDFlag = meetingServiceGetPastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
-		meetingServiceGetPastMeetingAttachmentUIDFlag            = meetingServiceGetPastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
-		meetingServiceGetPastMeetingAttachmentVersionFlag        = meetingServiceGetPastMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceGetPastMeetingAttachmentBearerTokenFlag    = meetingServiceGetPastMeetingAttachmentFlags.String("bearer-token", "", "")
-
-		meetingServiceGetPastMeetingAttachmentMetadataFlags              = flag.NewFlagSet("get-past-meeting-attachment-metadata", flag.ExitOnError)
-		meetingServiceGetPastMeetingAttachmentMetadataPastMeetingUIDFlag = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
-		meetingServiceGetPastMeetingAttachmentMetadataUIDFlag            = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("uid", "REQUIRED", "The UID of the attachment")
-		meetingServiceGetPastMeetingAttachmentMetadataVersionFlag        = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("version", "", "")
-		meetingServiceGetPastMeetingAttachmentMetadataBearerTokenFlag    = meetingServiceGetPastMeetingAttachmentMetadataFlags.String("bearer-token", "", "")
-
-		meetingServiceDeletePastMeetingAttachmentFlags              = flag.NewFlagSet("delete-past-meeting-attachment", flag.ExitOnError)
-		meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag = meetingServiceDeletePastMeetingAttachmentFlags.String("past-meeting-uid", "REQUIRED", "The UID of the past meeting this attachment belongs to")
-		meetingServiceDeletePastMeetingAttachmentUIDFlag            = meetingServiceDeletePastMeetingAttachmentFlags.String("uid", "REQUIRED", "The UID of the attachment")
-		meetingServiceDeletePastMeetingAttachmentVersionFlag        = meetingServiceDeletePastMeetingAttachmentFlags.String("version", "", "")
-		meetingServiceDeletePastMeetingAttachmentBearerTokenFlag    = meetingServiceDeletePastMeetingAttachmentFlags.String("bearer-token", "", "")
-		meetingServiceDeletePastMeetingAttachmentXSyncFlag          = meetingServiceDeletePastMeetingAttachmentFlags.String("x-sync", "", "")
-
 		meetingServiceReadyzFlags = flag.NewFlagSet("readyz", flag.ExitOnError)
 
 		meetingServiceLivezFlags = flag.NewFlagSet("livez", flag.ExitOnError)
+
+		meetingServiceCreateItxMeetingFlags           = flag.NewFlagSet("create-itx-meeting", flag.ExitOnError)
+		meetingServiceCreateItxMeetingBodyFlag        = meetingServiceCreateItxMeetingFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxMeetingVersionFlag     = meetingServiceCreateItxMeetingFlags.String("version", "", "")
+		meetingServiceCreateItxMeetingBearerTokenFlag = meetingServiceCreateItxMeetingFlags.String("bearer-token", "", "")
+		meetingServiceCreateItxMeetingXSyncFlag       = meetingServiceCreateItxMeetingFlags.String("x-sync", "", "")
+
+		meetingServiceGetItxMeetingFlags           = flag.NewFlagSet("get-itx-meeting", flag.ExitOnError)
+		meetingServiceGetItxMeetingMeetingIDFlag   = meetingServiceGetItxMeetingFlags.String("meeting-id", "REQUIRED", "The Zoom meeting ID")
+		meetingServiceGetItxMeetingVersionFlag     = meetingServiceGetItxMeetingFlags.String("version", "", "")
+		meetingServiceGetItxMeetingBearerTokenFlag = meetingServiceGetItxMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceDeleteItxMeetingFlags           = flag.NewFlagSet("delete-itx-meeting", flag.ExitOnError)
+		meetingServiceDeleteItxMeetingMeetingIDFlag   = meetingServiceDeleteItxMeetingFlags.String("meeting-id", "REQUIRED", "The Zoom meeting ID")
+		meetingServiceDeleteItxMeetingVersionFlag     = meetingServiceDeleteItxMeetingFlags.String("version", "", "")
+		meetingServiceDeleteItxMeetingBearerTokenFlag = meetingServiceDeleteItxMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxMeetingFlags           = flag.NewFlagSet("update-itx-meeting", flag.ExitOnError)
+		meetingServiceUpdateItxMeetingBodyFlag        = meetingServiceUpdateItxMeetingFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxMeetingMeetingIDFlag   = meetingServiceUpdateItxMeetingFlags.String("meeting-id", "REQUIRED", "The Zoom meeting ID")
+		meetingServiceUpdateItxMeetingVersionFlag     = meetingServiceUpdateItxMeetingFlags.String("version", "", "")
+		meetingServiceUpdateItxMeetingBearerTokenFlag = meetingServiceUpdateItxMeetingFlags.String("bearer-token", "", "")
+		meetingServiceUpdateItxMeetingXSyncFlag       = meetingServiceUpdateItxMeetingFlags.String("x-sync", "", "")
+
+		meetingServiceGetItxMeetingCountFlags           = flag.NewFlagSet("get-itx-meeting-count", flag.ExitOnError)
+		meetingServiceGetItxMeetingCountVersionFlag     = meetingServiceGetItxMeetingCountFlags.String("version", "", "")
+		meetingServiceGetItxMeetingCountProjectUIDFlag  = meetingServiceGetItxMeetingCountFlags.String("project-uid", "REQUIRED", "")
+		meetingServiceGetItxMeetingCountBearerTokenFlag = meetingServiceGetItxMeetingCountFlags.String("bearer-token", "", "")
+
+		meetingServiceCreateItxRegistrantFlags           = flag.NewFlagSet("create-itx-registrant", flag.ExitOnError)
+		meetingServiceCreateItxRegistrantBodyFlag        = meetingServiceCreateItxRegistrantFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxRegistrantMeetingIDFlag   = meetingServiceCreateItxRegistrantFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceCreateItxRegistrantVersionFlag     = meetingServiceCreateItxRegistrantFlags.String("version", "", "")
+		meetingServiceCreateItxRegistrantBearerTokenFlag = meetingServiceCreateItxRegistrantFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxRegistrantFlags            = flag.NewFlagSet("get-itx-registrant", flag.ExitOnError)
+		meetingServiceGetItxRegistrantMeetingIDFlag    = meetingServiceGetItxRegistrantFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceGetItxRegistrantRegistrantIDFlag = meetingServiceGetItxRegistrantFlags.String("registrant-id", "REQUIRED", "The ID of the registrant")
+		meetingServiceGetItxRegistrantVersionFlag      = meetingServiceGetItxRegistrantFlags.String("version", "", "")
+		meetingServiceGetItxRegistrantBearerTokenFlag  = meetingServiceGetItxRegistrantFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxRegistrantFlags            = flag.NewFlagSet("update-itx-registrant", flag.ExitOnError)
+		meetingServiceUpdateItxRegistrantBodyFlag         = meetingServiceUpdateItxRegistrantFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxRegistrantMeetingIDFlag    = meetingServiceUpdateItxRegistrantFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceUpdateItxRegistrantRegistrantIDFlag = meetingServiceUpdateItxRegistrantFlags.String("registrant-id", "REQUIRED", "The ID of the registrant")
+		meetingServiceUpdateItxRegistrantVersionFlag      = meetingServiceUpdateItxRegistrantFlags.String("version", "", "")
+		meetingServiceUpdateItxRegistrantBearerTokenFlag  = meetingServiceUpdateItxRegistrantFlags.String("bearer-token", "", "")
+
+		meetingServiceDeleteItxRegistrantFlags            = flag.NewFlagSet("delete-itx-registrant", flag.ExitOnError)
+		meetingServiceDeleteItxRegistrantMeetingIDFlag    = meetingServiceDeleteItxRegistrantFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceDeleteItxRegistrantRegistrantIDFlag = meetingServiceDeleteItxRegistrantFlags.String("registrant-id", "REQUIRED", "The ID of the registrant")
+		meetingServiceDeleteItxRegistrantVersionFlag      = meetingServiceDeleteItxRegistrantFlags.String("version", "", "")
+		meetingServiceDeleteItxRegistrantBearerTokenFlag  = meetingServiceDeleteItxRegistrantFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxJoinLinkFlags           = flag.NewFlagSet("get-itx-join-link", flag.ExitOnError)
+		meetingServiceGetItxJoinLinkMeetingIDFlag   = meetingServiceGetItxJoinLinkFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceGetItxJoinLinkVersionFlag     = meetingServiceGetItxJoinLinkFlags.String("version", "", "")
+		meetingServiceGetItxJoinLinkUseEmailFlag    = meetingServiceGetItxJoinLinkFlags.String("use-email", "", "")
+		meetingServiceGetItxJoinLinkUserIDFlag      = meetingServiceGetItxJoinLinkFlags.String("user-id", "", "")
+		meetingServiceGetItxJoinLinkNameFlag        = meetingServiceGetItxJoinLinkFlags.String("name", "", "")
+		meetingServiceGetItxJoinLinkEmailFlag       = meetingServiceGetItxJoinLinkFlags.String("email", "", "")
+		meetingServiceGetItxJoinLinkRegisterFlag    = meetingServiceGetItxJoinLinkFlags.String("register", "", "")
+		meetingServiceGetItxJoinLinkBearerTokenFlag = meetingServiceGetItxJoinLinkFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxRegistrantIcsFlags            = flag.NewFlagSet("get-itx-registrant-ics", flag.ExitOnError)
+		meetingServiceGetItxRegistrantIcsMeetingIDFlag    = meetingServiceGetItxRegistrantIcsFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceGetItxRegistrantIcsRegistrantIDFlag = meetingServiceGetItxRegistrantIcsFlags.String("registrant-id", "REQUIRED", "The ID of the registrant")
+		meetingServiceGetItxRegistrantIcsVersionFlag      = meetingServiceGetItxRegistrantIcsFlags.String("version", "", "")
+		meetingServiceGetItxRegistrantIcsBearerTokenFlag  = meetingServiceGetItxRegistrantIcsFlags.String("bearer-token", "", "")
+
+		meetingServiceResendItxRegistrantInvitationFlags            = flag.NewFlagSet("resend-itx-registrant-invitation", flag.ExitOnError)
+		meetingServiceResendItxRegistrantInvitationMeetingIDFlag    = meetingServiceResendItxRegistrantInvitationFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceResendItxRegistrantInvitationRegistrantIDFlag = meetingServiceResendItxRegistrantInvitationFlags.String("registrant-id", "REQUIRED", "The ID of the registrant")
+		meetingServiceResendItxRegistrantInvitationVersionFlag      = meetingServiceResendItxRegistrantInvitationFlags.String("version", "", "")
+		meetingServiceResendItxRegistrantInvitationBearerTokenFlag  = meetingServiceResendItxRegistrantInvitationFlags.String("bearer-token", "", "")
+
+		meetingServiceResendItxMeetingInvitationsFlags           = flag.NewFlagSet("resend-itx-meeting-invitations", flag.ExitOnError)
+		meetingServiceResendItxMeetingInvitationsBodyFlag        = meetingServiceResendItxMeetingInvitationsFlags.String("body", "REQUIRED", "")
+		meetingServiceResendItxMeetingInvitationsMeetingIDFlag   = meetingServiceResendItxMeetingInvitationsFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceResendItxMeetingInvitationsVersionFlag     = meetingServiceResendItxMeetingInvitationsFlags.String("version", "", "")
+		meetingServiceResendItxMeetingInvitationsBearerTokenFlag = meetingServiceResendItxMeetingInvitationsFlags.String("bearer-token", "", "")
+
+		meetingServiceRegisterItxCommitteeMembersFlags           = flag.NewFlagSet("register-itx-committee-members", flag.ExitOnError)
+		meetingServiceRegisterItxCommitteeMembersMeetingIDFlag   = meetingServiceRegisterItxCommitteeMembersFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceRegisterItxCommitteeMembersVersionFlag     = meetingServiceRegisterItxCommitteeMembersFlags.String("version", "", "")
+		meetingServiceRegisterItxCommitteeMembersBearerTokenFlag = meetingServiceRegisterItxCommitteeMembersFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxOccurrenceFlags            = flag.NewFlagSet("update-itx-occurrence", flag.ExitOnError)
+		meetingServiceUpdateItxOccurrenceBodyFlag         = meetingServiceUpdateItxOccurrenceFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxOccurrenceMeetingIDFlag    = meetingServiceUpdateItxOccurrenceFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceUpdateItxOccurrenceOccurrenceIDFlag = meetingServiceUpdateItxOccurrenceFlags.String("occurrence-id", "REQUIRED", "The ID of the occurrence (Unix timestamp)")
+		meetingServiceUpdateItxOccurrenceVersionFlag      = meetingServiceUpdateItxOccurrenceFlags.String("version", "", "")
+		meetingServiceUpdateItxOccurrenceBearerTokenFlag  = meetingServiceUpdateItxOccurrenceFlags.String("bearer-token", "", "")
+
+		meetingServiceDeleteItxOccurrenceFlags            = flag.NewFlagSet("delete-itx-occurrence", flag.ExitOnError)
+		meetingServiceDeleteItxOccurrenceMeetingIDFlag    = meetingServiceDeleteItxOccurrenceFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceDeleteItxOccurrenceOccurrenceIDFlag = meetingServiceDeleteItxOccurrenceFlags.String("occurrence-id", "REQUIRED", "The ID of the occurrence (Unix timestamp)")
+		meetingServiceDeleteItxOccurrenceVersionFlag      = meetingServiceDeleteItxOccurrenceFlags.String("version", "", "")
+		meetingServiceDeleteItxOccurrenceBearerTokenFlag  = meetingServiceDeleteItxOccurrenceFlags.String("bearer-token", "", "")
+
+		meetingServiceCreateItxPastMeetingFlags           = flag.NewFlagSet("create-itx-past-meeting", flag.ExitOnError)
+		meetingServiceCreateItxPastMeetingBodyFlag        = meetingServiceCreateItxPastMeetingFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxPastMeetingVersionFlag     = meetingServiceCreateItxPastMeetingFlags.String("version", "", "")
+		meetingServiceCreateItxPastMeetingBearerTokenFlag = meetingServiceCreateItxPastMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxPastMeetingFlags             = flag.NewFlagSet("get-itx-past-meeting", flag.ExitOnError)
+		meetingServiceGetItxPastMeetingPastMeetingIDFlag = meetingServiceGetItxPastMeetingFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id or meeting_id-occurrence_id)")
+		meetingServiceGetItxPastMeetingVersionFlag       = meetingServiceGetItxPastMeetingFlags.String("version", "", "")
+		meetingServiceGetItxPastMeetingBearerTokenFlag   = meetingServiceGetItxPastMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceDeleteItxPastMeetingFlags             = flag.NewFlagSet("delete-itx-past-meeting", flag.ExitOnError)
+		meetingServiceDeleteItxPastMeetingPastMeetingIDFlag = meetingServiceDeleteItxPastMeetingFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id or meeting_id-occurrence_id)")
+		meetingServiceDeleteItxPastMeetingVersionFlag       = meetingServiceDeleteItxPastMeetingFlags.String("version", "", "")
+		meetingServiceDeleteItxPastMeetingBearerTokenFlag   = meetingServiceDeleteItxPastMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxPastMeetingFlags             = flag.NewFlagSet("update-itx-past-meeting", flag.ExitOnError)
+		meetingServiceUpdateItxPastMeetingBodyFlag          = meetingServiceUpdateItxPastMeetingFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxPastMeetingPastMeetingIDFlag = meetingServiceUpdateItxPastMeetingFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id or meeting_id-occurrence_id)")
+		meetingServiceUpdateItxPastMeetingVersionFlag       = meetingServiceUpdateItxPastMeetingFlags.String("version", "", "")
+		meetingServiceUpdateItxPastMeetingBearerTokenFlag   = meetingServiceUpdateItxPastMeetingFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxPastMeetingSummaryFlags             = flag.NewFlagSet("get-itx-past-meeting-summary", flag.ExitOnError)
+		meetingServiceGetItxPastMeetingSummaryPastMeetingIDFlag = meetingServiceGetItxPastMeetingSummaryFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id-occurrence_id)")
+		meetingServiceGetItxPastMeetingSummarySummaryUIDFlag    = meetingServiceGetItxPastMeetingSummaryFlags.String("summary-uid", "REQUIRED", "Summary UID")
+		meetingServiceGetItxPastMeetingSummaryVersionFlag       = meetingServiceGetItxPastMeetingSummaryFlags.String("version", "", "")
+		meetingServiceGetItxPastMeetingSummaryBearerTokenFlag   = meetingServiceGetItxPastMeetingSummaryFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxPastMeetingSummaryFlags             = flag.NewFlagSet("update-itx-past-meeting-summary", flag.ExitOnError)
+		meetingServiceUpdateItxPastMeetingSummaryBodyFlag          = meetingServiceUpdateItxPastMeetingSummaryFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxPastMeetingSummaryPastMeetingIDFlag = meetingServiceUpdateItxPastMeetingSummaryFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id-occurrence_id)")
+		meetingServiceUpdateItxPastMeetingSummarySummaryUIDFlag    = meetingServiceUpdateItxPastMeetingSummaryFlags.String("summary-uid", "REQUIRED", "Summary UID")
+		meetingServiceUpdateItxPastMeetingSummaryVersionFlag       = meetingServiceUpdateItxPastMeetingSummaryFlags.String("version", "", "")
+		meetingServiceUpdateItxPastMeetingSummaryBearerTokenFlag   = meetingServiceUpdateItxPastMeetingSummaryFlags.String("bearer-token", "", "")
+
+		meetingServiceCreateItxPastMeetingParticipantFlags             = flag.NewFlagSet("create-itx-past-meeting-participant", flag.ExitOnError)
+		meetingServiceCreateItxPastMeetingParticipantBodyFlag          = meetingServiceCreateItxPastMeetingParticipantFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxPastMeetingParticipantPastMeetingIDFlag = meetingServiceCreateItxPastMeetingParticipantFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id-occurrence_id format)")
+		meetingServiceCreateItxPastMeetingParticipantVersionFlag       = meetingServiceCreateItxPastMeetingParticipantFlags.String("version", "", "")
+		meetingServiceCreateItxPastMeetingParticipantBearerTokenFlag   = meetingServiceCreateItxPastMeetingParticipantFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxPastMeetingParticipantFlags             = flag.NewFlagSet("update-itx-past-meeting-participant", flag.ExitOnError)
+		meetingServiceUpdateItxPastMeetingParticipantBodyFlag          = meetingServiceUpdateItxPastMeetingParticipantFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxPastMeetingParticipantPastMeetingIDFlag = meetingServiceUpdateItxPastMeetingParticipantFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id-occurrence_id format)")
+		meetingServiceUpdateItxPastMeetingParticipantParticipantIDFlag = meetingServiceUpdateItxPastMeetingParticipantFlags.String("participant-id", "REQUIRED", "Participant ID (invitee_id or attendee_id)")
+		meetingServiceUpdateItxPastMeetingParticipantVersionFlag       = meetingServiceUpdateItxPastMeetingParticipantFlags.String("version", "", "")
+		meetingServiceUpdateItxPastMeetingParticipantBearerTokenFlag   = meetingServiceUpdateItxPastMeetingParticipantFlags.String("bearer-token", "", "")
+
+		meetingServiceDeleteItxPastMeetingParticipantFlags             = flag.NewFlagSet("delete-itx-past-meeting-participant", flag.ExitOnError)
+		meetingServiceDeleteItxPastMeetingParticipantPastMeetingIDFlag = meetingServiceDeleteItxPastMeetingParticipantFlags.String("past-meeting-id", "REQUIRED", "Past meeting ID (meeting_id-occurrence_id format)")
+		meetingServiceDeleteItxPastMeetingParticipantParticipantIDFlag = meetingServiceDeleteItxPastMeetingParticipantFlags.String("participant-id", "REQUIRED", "Participant ID (invitee_id or attendee_id)")
+		meetingServiceDeleteItxPastMeetingParticipantVersionFlag       = meetingServiceDeleteItxPastMeetingParticipantFlags.String("version", "", "")
+		meetingServiceDeleteItxPastMeetingParticipantBearerTokenFlag   = meetingServiceDeleteItxPastMeetingParticipantFlags.String("bearer-token", "", "")
 	)
 	meetingServiceFlags.Usage = meetingServiceUsage
-	meetingServiceGetMeetingsFlags.Usage = meetingServiceGetMeetingsUsage
-	meetingServiceCreateMeetingFlags.Usage = meetingServiceCreateMeetingUsage
-	meetingServiceGetMeetingBaseFlags.Usage = meetingServiceGetMeetingBaseUsage
-	meetingServiceGetMeetingSettingsFlags.Usage = meetingServiceGetMeetingSettingsUsage
-	meetingServiceGetMeetingJoinURLFlags.Usage = meetingServiceGetMeetingJoinURLUsage
-	meetingServiceUpdateMeetingBaseFlags.Usage = meetingServiceUpdateMeetingBaseUsage
-	meetingServiceUpdateMeetingSettingsFlags.Usage = meetingServiceUpdateMeetingSettingsUsage
-	meetingServiceDeleteMeetingFlags.Usage = meetingServiceDeleteMeetingUsage
-	meetingServiceDeleteMeetingOccurrenceFlags.Usage = meetingServiceDeleteMeetingOccurrenceUsage
-	meetingServiceGetMeetingRegistrantsFlags.Usage = meetingServiceGetMeetingRegistrantsUsage
-	meetingServiceCreateMeetingRegistrantFlags.Usage = meetingServiceCreateMeetingRegistrantUsage
-	meetingServiceGetMeetingRegistrantFlags.Usage = meetingServiceGetMeetingRegistrantUsage
-	meetingServiceUpdateMeetingRegistrantFlags.Usage = meetingServiceUpdateMeetingRegistrantUsage
-	meetingServiceDeleteMeetingRegistrantFlags.Usage = meetingServiceDeleteMeetingRegistrantUsage
-	meetingServiceResendMeetingRegistrantInvitationFlags.Usage = meetingServiceResendMeetingRegistrantInvitationUsage
-	meetingServiceCreateMeetingRsvpFlags.Usage = meetingServiceCreateMeetingRsvpUsage
-	meetingServiceGetMeetingRsvpsFlags.Usage = meetingServiceGetMeetingRsvpsUsage
-	meetingServiceZoomWebhookFlags.Usage = meetingServiceZoomWebhookUsage
-	meetingServiceGetPastMeetingsFlags.Usage = meetingServiceGetPastMeetingsUsage
-	meetingServiceCreatePastMeetingFlags.Usage = meetingServiceCreatePastMeetingUsage
-	meetingServiceGetPastMeetingFlags.Usage = meetingServiceGetPastMeetingUsage
-	meetingServiceDeletePastMeetingFlags.Usage = meetingServiceDeletePastMeetingUsage
-	meetingServiceGetPastMeetingParticipantsFlags.Usage = meetingServiceGetPastMeetingParticipantsUsage
-	meetingServiceCreatePastMeetingParticipantFlags.Usage = meetingServiceCreatePastMeetingParticipantUsage
-	meetingServiceGetPastMeetingParticipantFlags.Usage = meetingServiceGetPastMeetingParticipantUsage
-	meetingServiceUpdatePastMeetingParticipantFlags.Usage = meetingServiceUpdatePastMeetingParticipantUsage
-	meetingServiceDeletePastMeetingParticipantFlags.Usage = meetingServiceDeletePastMeetingParticipantUsage
-	meetingServiceGetPastMeetingSummariesFlags.Usage = meetingServiceGetPastMeetingSummariesUsage
-	meetingServiceGetPastMeetingSummaryFlags.Usage = meetingServiceGetPastMeetingSummaryUsage
-	meetingServiceUpdatePastMeetingSummaryFlags.Usage = meetingServiceUpdatePastMeetingSummaryUsage
-	meetingServiceCreateMeetingAttachmentFlags.Usage = meetingServiceCreateMeetingAttachmentUsage
-	meetingServiceGetMeetingAttachmentFlags.Usage = meetingServiceGetMeetingAttachmentUsage
-	meetingServiceGetMeetingAttachmentMetadataFlags.Usage = meetingServiceGetMeetingAttachmentMetadataUsage
-	meetingServiceDeleteMeetingAttachmentFlags.Usage = meetingServiceDeleteMeetingAttachmentUsage
-	meetingServiceCreatePastMeetingAttachmentFlags.Usage = meetingServiceCreatePastMeetingAttachmentUsage
-	meetingServiceGetPastMeetingAttachmentsFlags.Usage = meetingServiceGetPastMeetingAttachmentsUsage
-	meetingServiceGetPastMeetingAttachmentFlags.Usage = meetingServiceGetPastMeetingAttachmentUsage
-	meetingServiceGetPastMeetingAttachmentMetadataFlags.Usage = meetingServiceGetPastMeetingAttachmentMetadataUsage
-	meetingServiceDeletePastMeetingAttachmentFlags.Usage = meetingServiceDeletePastMeetingAttachmentUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
 	meetingServiceLivezFlags.Usage = meetingServiceLivezUsage
+	meetingServiceCreateItxMeetingFlags.Usage = meetingServiceCreateItxMeetingUsage
+	meetingServiceGetItxMeetingFlags.Usage = meetingServiceGetItxMeetingUsage
+	meetingServiceDeleteItxMeetingFlags.Usage = meetingServiceDeleteItxMeetingUsage
+	meetingServiceUpdateItxMeetingFlags.Usage = meetingServiceUpdateItxMeetingUsage
+	meetingServiceGetItxMeetingCountFlags.Usage = meetingServiceGetItxMeetingCountUsage
+	meetingServiceCreateItxRegistrantFlags.Usage = meetingServiceCreateItxRegistrantUsage
+	meetingServiceGetItxRegistrantFlags.Usage = meetingServiceGetItxRegistrantUsage
+	meetingServiceUpdateItxRegistrantFlags.Usage = meetingServiceUpdateItxRegistrantUsage
+	meetingServiceDeleteItxRegistrantFlags.Usage = meetingServiceDeleteItxRegistrantUsage
+	meetingServiceGetItxJoinLinkFlags.Usage = meetingServiceGetItxJoinLinkUsage
+	meetingServiceGetItxRegistrantIcsFlags.Usage = meetingServiceGetItxRegistrantIcsUsage
+	meetingServiceResendItxRegistrantInvitationFlags.Usage = meetingServiceResendItxRegistrantInvitationUsage
+	meetingServiceResendItxMeetingInvitationsFlags.Usage = meetingServiceResendItxMeetingInvitationsUsage
+	meetingServiceRegisterItxCommitteeMembersFlags.Usage = meetingServiceRegisterItxCommitteeMembersUsage
+	meetingServiceUpdateItxOccurrenceFlags.Usage = meetingServiceUpdateItxOccurrenceUsage
+	meetingServiceDeleteItxOccurrenceFlags.Usage = meetingServiceDeleteItxOccurrenceUsage
+	meetingServiceCreateItxPastMeetingFlags.Usage = meetingServiceCreateItxPastMeetingUsage
+	meetingServiceGetItxPastMeetingFlags.Usage = meetingServiceGetItxPastMeetingUsage
+	meetingServiceDeleteItxPastMeetingFlags.Usage = meetingServiceDeleteItxPastMeetingUsage
+	meetingServiceUpdateItxPastMeetingFlags.Usage = meetingServiceUpdateItxPastMeetingUsage
+	meetingServiceGetItxPastMeetingSummaryFlags.Usage = meetingServiceGetItxPastMeetingSummaryUsage
+	meetingServiceUpdateItxPastMeetingSummaryFlags.Usage = meetingServiceUpdateItxPastMeetingSummaryUsage
+	meetingServiceCreateItxPastMeetingParticipantFlags.Usage = meetingServiceCreateItxPastMeetingParticipantUsage
+	meetingServiceUpdateItxPastMeetingParticipantFlags.Usage = meetingServiceUpdateItxPastMeetingParticipantUsage
+	meetingServiceDeleteItxPastMeetingParticipantFlags.Usage = meetingServiceDeleteItxPastMeetingParticipantUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -378,128 +264,86 @@ func ParseEndpoint(
 		switch svcn {
 		case "meeting-service":
 			switch epn {
-			case "get-meetings":
-				epf = meetingServiceGetMeetingsFlags
-
-			case "create-meeting":
-				epf = meetingServiceCreateMeetingFlags
-
-			case "get-meeting-base":
-				epf = meetingServiceGetMeetingBaseFlags
-
-			case "get-meeting-settings":
-				epf = meetingServiceGetMeetingSettingsFlags
-
-			case "get-meeting-join-url":
-				epf = meetingServiceGetMeetingJoinURLFlags
-
-			case "update-meeting-base":
-				epf = meetingServiceUpdateMeetingBaseFlags
-
-			case "update-meeting-settings":
-				epf = meetingServiceUpdateMeetingSettingsFlags
-
-			case "delete-meeting":
-				epf = meetingServiceDeleteMeetingFlags
-
-			case "delete-meeting-occurrence":
-				epf = meetingServiceDeleteMeetingOccurrenceFlags
-
-			case "get-meeting-registrants":
-				epf = meetingServiceGetMeetingRegistrantsFlags
-
-			case "create-meeting-registrant":
-				epf = meetingServiceCreateMeetingRegistrantFlags
-
-			case "get-meeting-registrant":
-				epf = meetingServiceGetMeetingRegistrantFlags
-
-			case "update-meeting-registrant":
-				epf = meetingServiceUpdateMeetingRegistrantFlags
-
-			case "delete-meeting-registrant":
-				epf = meetingServiceDeleteMeetingRegistrantFlags
-
-			case "resend-meeting-registrant-invitation":
-				epf = meetingServiceResendMeetingRegistrantInvitationFlags
-
-			case "create-meeting-rsvp":
-				epf = meetingServiceCreateMeetingRsvpFlags
-
-			case "get-meeting-rsvps":
-				epf = meetingServiceGetMeetingRsvpsFlags
-
-			case "zoom-webhook":
-				epf = meetingServiceZoomWebhookFlags
-
-			case "get-past-meetings":
-				epf = meetingServiceGetPastMeetingsFlags
-
-			case "create-past-meeting":
-				epf = meetingServiceCreatePastMeetingFlags
-
-			case "get-past-meeting":
-				epf = meetingServiceGetPastMeetingFlags
-
-			case "delete-past-meeting":
-				epf = meetingServiceDeletePastMeetingFlags
-
-			case "get-past-meeting-participants":
-				epf = meetingServiceGetPastMeetingParticipantsFlags
-
-			case "create-past-meeting-participant":
-				epf = meetingServiceCreatePastMeetingParticipantFlags
-
-			case "get-past-meeting-participant":
-				epf = meetingServiceGetPastMeetingParticipantFlags
-
-			case "update-past-meeting-participant":
-				epf = meetingServiceUpdatePastMeetingParticipantFlags
-
-			case "delete-past-meeting-participant":
-				epf = meetingServiceDeletePastMeetingParticipantFlags
-
-			case "get-past-meeting-summaries":
-				epf = meetingServiceGetPastMeetingSummariesFlags
-
-			case "get-past-meeting-summary":
-				epf = meetingServiceGetPastMeetingSummaryFlags
-
-			case "update-past-meeting-summary":
-				epf = meetingServiceUpdatePastMeetingSummaryFlags
-
-			case "create-meeting-attachment":
-				epf = meetingServiceCreateMeetingAttachmentFlags
-
-			case "get-meeting-attachment":
-				epf = meetingServiceGetMeetingAttachmentFlags
-
-			case "get-meeting-attachment-metadata":
-				epf = meetingServiceGetMeetingAttachmentMetadataFlags
-
-			case "delete-meeting-attachment":
-				epf = meetingServiceDeleteMeetingAttachmentFlags
-
-			case "create-past-meeting-attachment":
-				epf = meetingServiceCreatePastMeetingAttachmentFlags
-
-			case "get-past-meeting-attachments":
-				epf = meetingServiceGetPastMeetingAttachmentsFlags
-
-			case "get-past-meeting-attachment":
-				epf = meetingServiceGetPastMeetingAttachmentFlags
-
-			case "get-past-meeting-attachment-metadata":
-				epf = meetingServiceGetPastMeetingAttachmentMetadataFlags
-
-			case "delete-past-meeting-attachment":
-				epf = meetingServiceDeletePastMeetingAttachmentFlags
-
 			case "readyz":
 				epf = meetingServiceReadyzFlags
 
 			case "livez":
 				epf = meetingServiceLivezFlags
+
+			case "create-itx-meeting":
+				epf = meetingServiceCreateItxMeetingFlags
+
+			case "get-itx-meeting":
+				epf = meetingServiceGetItxMeetingFlags
+
+			case "delete-itx-meeting":
+				epf = meetingServiceDeleteItxMeetingFlags
+
+			case "update-itx-meeting":
+				epf = meetingServiceUpdateItxMeetingFlags
+
+			case "get-itx-meeting-count":
+				epf = meetingServiceGetItxMeetingCountFlags
+
+			case "create-itx-registrant":
+				epf = meetingServiceCreateItxRegistrantFlags
+
+			case "get-itx-registrant":
+				epf = meetingServiceGetItxRegistrantFlags
+
+			case "update-itx-registrant":
+				epf = meetingServiceUpdateItxRegistrantFlags
+
+			case "delete-itx-registrant":
+				epf = meetingServiceDeleteItxRegistrantFlags
+
+			case "get-itx-join-link":
+				epf = meetingServiceGetItxJoinLinkFlags
+
+			case "get-itx-registrant-ics":
+				epf = meetingServiceGetItxRegistrantIcsFlags
+
+			case "resend-itx-registrant-invitation":
+				epf = meetingServiceResendItxRegistrantInvitationFlags
+
+			case "resend-itx-meeting-invitations":
+				epf = meetingServiceResendItxMeetingInvitationsFlags
+
+			case "register-itx-committee-members":
+				epf = meetingServiceRegisterItxCommitteeMembersFlags
+
+			case "update-itx-occurrence":
+				epf = meetingServiceUpdateItxOccurrenceFlags
+
+			case "delete-itx-occurrence":
+				epf = meetingServiceDeleteItxOccurrenceFlags
+
+			case "create-itx-past-meeting":
+				epf = meetingServiceCreateItxPastMeetingFlags
+
+			case "get-itx-past-meeting":
+				epf = meetingServiceGetItxPastMeetingFlags
+
+			case "delete-itx-past-meeting":
+				epf = meetingServiceDeleteItxPastMeetingFlags
+
+			case "update-itx-past-meeting":
+				epf = meetingServiceUpdateItxPastMeetingFlags
+
+			case "get-itx-past-meeting-summary":
+				epf = meetingServiceGetItxPastMeetingSummaryFlags
+
+			case "update-itx-past-meeting-summary":
+				epf = meetingServiceUpdateItxPastMeetingSummaryFlags
+
+			case "create-itx-past-meeting-participant":
+				epf = meetingServiceCreateItxPastMeetingParticipantFlags
+
+			case "update-itx-past-meeting-participant":
+				epf = meetingServiceUpdateItxPastMeetingParticipantFlags
+
+			case "delete-itx-past-meeting-participant":
+				epf = meetingServiceDeleteItxPastMeetingParticipantFlags
 
 			}
 
@@ -526,127 +370,85 @@ func ParseEndpoint(
 		case "meeting-service":
 			c := meetingservicec.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
-			case "get-meetings":
-				endpoint = c.GetMeetings()
-				data, err = meetingservicec.BuildGetMeetingsPayload(*meetingServiceGetMeetingsVersionFlag, *meetingServiceGetMeetingsIncludeCancelledOccurrencesFlag, *meetingServiceGetMeetingsBearerTokenFlag)
-			case "create-meeting":
-				endpoint = c.CreateMeeting()
-				data, err = meetingservicec.BuildCreateMeetingPayload(*meetingServiceCreateMeetingBodyFlag, *meetingServiceCreateMeetingVersionFlag, *meetingServiceCreateMeetingBearerTokenFlag, *meetingServiceCreateMeetingXSyncFlag)
-			case "get-meeting-base":
-				endpoint = c.GetMeetingBase()
-				data, err = meetingservicec.BuildGetMeetingBasePayload(*meetingServiceGetMeetingBaseUIDFlag, *meetingServiceGetMeetingBaseVersionFlag, *meetingServiceGetMeetingBaseIncludeCancelledOccurrencesFlag, *meetingServiceGetMeetingBaseBearerTokenFlag)
-			case "get-meeting-settings":
-				endpoint = c.GetMeetingSettings()
-				data, err = meetingservicec.BuildGetMeetingSettingsPayload(*meetingServiceGetMeetingSettingsUIDFlag, *meetingServiceGetMeetingSettingsVersionFlag, *meetingServiceGetMeetingSettingsBearerTokenFlag)
-			case "get-meeting-join-url":
-				endpoint = c.GetMeetingJoinURL()
-				data, err = meetingservicec.BuildGetMeetingJoinURLPayload(*meetingServiceGetMeetingJoinURLUIDFlag, *meetingServiceGetMeetingJoinURLVersionFlag, *meetingServiceGetMeetingJoinURLBearerTokenFlag)
-			case "update-meeting-base":
-				endpoint = c.UpdateMeetingBase()
-				data, err = meetingservicec.BuildUpdateMeetingBasePayload(*meetingServiceUpdateMeetingBaseBodyFlag, *meetingServiceUpdateMeetingBaseUIDFlag, *meetingServiceUpdateMeetingBaseVersionFlag, *meetingServiceUpdateMeetingBaseBearerTokenFlag, *meetingServiceUpdateMeetingBaseXSyncFlag, *meetingServiceUpdateMeetingBaseIfMatchFlag)
-			case "update-meeting-settings":
-				endpoint = c.UpdateMeetingSettings()
-				data, err = meetingservicec.BuildUpdateMeetingSettingsPayload(*meetingServiceUpdateMeetingSettingsBodyFlag, *meetingServiceUpdateMeetingSettingsUIDFlag, *meetingServiceUpdateMeetingSettingsVersionFlag, *meetingServiceUpdateMeetingSettingsBearerTokenFlag, *meetingServiceUpdateMeetingSettingsXSyncFlag, *meetingServiceUpdateMeetingSettingsIfMatchFlag)
-			case "delete-meeting":
-				endpoint = c.DeleteMeeting()
-				data, err = meetingservicec.BuildDeleteMeetingPayload(*meetingServiceDeleteMeetingUIDFlag, *meetingServiceDeleteMeetingVersionFlag, *meetingServiceDeleteMeetingBearerTokenFlag, *meetingServiceDeleteMeetingXSyncFlag, *meetingServiceDeleteMeetingIfMatchFlag)
-			case "delete-meeting-occurrence":
-				endpoint = c.DeleteMeetingOccurrence()
-				data, err = meetingservicec.BuildDeleteMeetingOccurrencePayload(*meetingServiceDeleteMeetingOccurrenceUIDFlag, *meetingServiceDeleteMeetingOccurrenceOccurrenceIDFlag, *meetingServiceDeleteMeetingOccurrenceVersionFlag, *meetingServiceDeleteMeetingOccurrenceBearerTokenFlag, *meetingServiceDeleteMeetingOccurrenceXSyncFlag, *meetingServiceDeleteMeetingOccurrenceIfMatchFlag)
-			case "get-meeting-registrants":
-				endpoint = c.GetMeetingRegistrants()
-				data, err = meetingservicec.BuildGetMeetingRegistrantsPayload(*meetingServiceGetMeetingRegistrantsUIDFlag, *meetingServiceGetMeetingRegistrantsVersionFlag, *meetingServiceGetMeetingRegistrantsBearerTokenFlag)
-			case "create-meeting-registrant":
-				endpoint = c.CreateMeetingRegistrant()
-				data, err = meetingservicec.BuildCreateMeetingRegistrantPayload(*meetingServiceCreateMeetingRegistrantBodyFlag, *meetingServiceCreateMeetingRegistrantMeetingUIDFlag, *meetingServiceCreateMeetingRegistrantVersionFlag, *meetingServiceCreateMeetingRegistrantBearerTokenFlag, *meetingServiceCreateMeetingRegistrantXSyncFlag)
-			case "get-meeting-registrant":
-				endpoint = c.GetMeetingRegistrant()
-				data, err = meetingservicec.BuildGetMeetingRegistrantPayload(*meetingServiceGetMeetingRegistrantMeetingUIDFlag, *meetingServiceGetMeetingRegistrantUIDFlag, *meetingServiceGetMeetingRegistrantVersionFlag, *meetingServiceGetMeetingRegistrantBearerTokenFlag)
-			case "update-meeting-registrant":
-				endpoint = c.UpdateMeetingRegistrant()
-				data, err = meetingservicec.BuildUpdateMeetingRegistrantPayload(*meetingServiceUpdateMeetingRegistrantBodyFlag, *meetingServiceUpdateMeetingRegistrantMeetingUIDFlag, *meetingServiceUpdateMeetingRegistrantUIDFlag, *meetingServiceUpdateMeetingRegistrantVersionFlag, *meetingServiceUpdateMeetingRegistrantBearerTokenFlag, *meetingServiceUpdateMeetingRegistrantXSyncFlag, *meetingServiceUpdateMeetingRegistrantIfMatchFlag)
-			case "delete-meeting-registrant":
-				endpoint = c.DeleteMeetingRegistrant()
-				data, err = meetingservicec.BuildDeleteMeetingRegistrantPayload(*meetingServiceDeleteMeetingRegistrantMeetingUIDFlag, *meetingServiceDeleteMeetingRegistrantUIDFlag, *meetingServiceDeleteMeetingRegistrantVersionFlag, *meetingServiceDeleteMeetingRegistrantBearerTokenFlag, *meetingServiceDeleteMeetingRegistrantXSyncFlag, *meetingServiceDeleteMeetingRegistrantIfMatchFlag)
-			case "resend-meeting-registrant-invitation":
-				endpoint = c.ResendMeetingRegistrantInvitation()
-				data, err = meetingservicec.BuildResendMeetingRegistrantInvitationPayload(*meetingServiceResendMeetingRegistrantInvitationMeetingUIDFlag, *meetingServiceResendMeetingRegistrantInvitationUIDFlag, *meetingServiceResendMeetingRegistrantInvitationVersionFlag, *meetingServiceResendMeetingRegistrantInvitationBearerTokenFlag)
-			case "create-meeting-rsvp":
-				endpoint = c.CreateMeetingRsvp()
-				data, err = meetingservicec.BuildCreateMeetingRsvpPayload(*meetingServiceCreateMeetingRsvpBodyFlag, *meetingServiceCreateMeetingRsvpMeetingUIDFlag, *meetingServiceCreateMeetingRsvpVersionFlag, *meetingServiceCreateMeetingRsvpBearerTokenFlag, *meetingServiceCreateMeetingRsvpXSyncFlag)
-			case "get-meeting-rsvps":
-				endpoint = c.GetMeetingRsvps()
-				data, err = meetingservicec.BuildGetMeetingRsvpsPayload(*meetingServiceGetMeetingRsvpsMeetingUIDFlag, *meetingServiceGetMeetingRsvpsVersionFlag, *meetingServiceGetMeetingRsvpsBearerTokenFlag)
-			case "zoom-webhook":
-				endpoint = c.ZoomWebhook()
-				data, err = meetingservicec.BuildZoomWebhookPayload(*meetingServiceZoomWebhookBodyFlag, *meetingServiceZoomWebhookZoomSignatureFlag, *meetingServiceZoomWebhookZoomTimestampFlag)
-			case "get-past-meetings":
-				endpoint = c.GetPastMeetings()
-				data, err = meetingservicec.BuildGetPastMeetingsPayload(*meetingServiceGetPastMeetingsVersionFlag, *meetingServiceGetPastMeetingsBearerTokenFlag)
-			case "create-past-meeting":
-				endpoint = c.CreatePastMeeting()
-				data, err = meetingservicec.BuildCreatePastMeetingPayload(*meetingServiceCreatePastMeetingBodyFlag, *meetingServiceCreatePastMeetingVersionFlag, *meetingServiceCreatePastMeetingBearerTokenFlag, *meetingServiceCreatePastMeetingXSyncFlag)
-			case "get-past-meeting":
-				endpoint = c.GetPastMeeting()
-				data, err = meetingservicec.BuildGetPastMeetingPayload(*meetingServiceGetPastMeetingUIDFlag, *meetingServiceGetPastMeetingVersionFlag, *meetingServiceGetPastMeetingBearerTokenFlag)
-			case "delete-past-meeting":
-				endpoint = c.DeletePastMeeting()
-				data, err = meetingservicec.BuildDeletePastMeetingPayload(*meetingServiceDeletePastMeetingUIDFlag, *meetingServiceDeletePastMeetingVersionFlag, *meetingServiceDeletePastMeetingBearerTokenFlag, *meetingServiceDeletePastMeetingXSyncFlag, *meetingServiceDeletePastMeetingIfMatchFlag)
-			case "get-past-meeting-participants":
-				endpoint = c.GetPastMeetingParticipants()
-				data, err = meetingservicec.BuildGetPastMeetingParticipantsPayload(*meetingServiceGetPastMeetingParticipantsUIDFlag, *meetingServiceGetPastMeetingParticipantsVersionFlag, *meetingServiceGetPastMeetingParticipantsBearerTokenFlag)
-			case "create-past-meeting-participant":
-				endpoint = c.CreatePastMeetingParticipant()
-				data, err = meetingservicec.BuildCreatePastMeetingParticipantPayload(*meetingServiceCreatePastMeetingParticipantBodyFlag, *meetingServiceCreatePastMeetingParticipantUIDFlag, *meetingServiceCreatePastMeetingParticipantVersionFlag, *meetingServiceCreatePastMeetingParticipantBearerTokenFlag, *meetingServiceCreatePastMeetingParticipantXSyncFlag)
-			case "get-past-meeting-participant":
-				endpoint = c.GetPastMeetingParticipant()
-				data, err = meetingservicec.BuildGetPastMeetingParticipantPayload(*meetingServiceGetPastMeetingParticipantPastMeetingUIDFlag, *meetingServiceGetPastMeetingParticipantUIDFlag, *meetingServiceGetPastMeetingParticipantVersionFlag, *meetingServiceGetPastMeetingParticipantBearerTokenFlag)
-			case "update-past-meeting-participant":
-				endpoint = c.UpdatePastMeetingParticipant()
-				data, err = meetingservicec.BuildUpdatePastMeetingParticipantPayload(*meetingServiceUpdatePastMeetingParticipantBodyFlag, *meetingServiceUpdatePastMeetingParticipantPastMeetingUIDFlag, *meetingServiceUpdatePastMeetingParticipantUIDFlag, *meetingServiceUpdatePastMeetingParticipantVersionFlag, *meetingServiceUpdatePastMeetingParticipantBearerTokenFlag, *meetingServiceUpdatePastMeetingParticipantXSyncFlag, *meetingServiceUpdatePastMeetingParticipantIfMatchFlag)
-			case "delete-past-meeting-participant":
-				endpoint = c.DeletePastMeetingParticipant()
-				data, err = meetingservicec.BuildDeletePastMeetingParticipantPayload(*meetingServiceDeletePastMeetingParticipantPastMeetingUIDFlag, *meetingServiceDeletePastMeetingParticipantUIDFlag, *meetingServiceDeletePastMeetingParticipantVersionFlag, *meetingServiceDeletePastMeetingParticipantBearerTokenFlag, *meetingServiceDeletePastMeetingParticipantXSyncFlag, *meetingServiceDeletePastMeetingParticipantIfMatchFlag)
-			case "get-past-meeting-summaries":
-				endpoint = c.GetPastMeetingSummaries()
-				data, err = meetingservicec.BuildGetPastMeetingSummariesPayload(*meetingServiceGetPastMeetingSummariesUIDFlag, *meetingServiceGetPastMeetingSummariesVersionFlag, *meetingServiceGetPastMeetingSummariesBearerTokenFlag)
-			case "get-past-meeting-summary":
-				endpoint = c.GetPastMeetingSummary()
-				data, err = meetingservicec.BuildGetPastMeetingSummaryPayload(*meetingServiceGetPastMeetingSummaryPastMeetingUIDFlag, *meetingServiceGetPastMeetingSummarySummaryUIDFlag, *meetingServiceGetPastMeetingSummaryVersionFlag, *meetingServiceGetPastMeetingSummaryBearerTokenFlag)
-			case "update-past-meeting-summary":
-				endpoint = c.UpdatePastMeetingSummary()
-				data, err = meetingservicec.BuildUpdatePastMeetingSummaryPayload(*meetingServiceUpdatePastMeetingSummaryBodyFlag, *meetingServiceUpdatePastMeetingSummaryPastMeetingUIDFlag, *meetingServiceUpdatePastMeetingSummarySummaryUIDFlag, *meetingServiceUpdatePastMeetingSummaryVersionFlag, *meetingServiceUpdatePastMeetingSummaryBearerTokenFlag, *meetingServiceUpdatePastMeetingSummaryXSyncFlag, *meetingServiceUpdatePastMeetingSummaryIfMatchFlag)
-			case "create-meeting-attachment":
-				endpoint = c.CreateMeetingAttachment(meetingServiceCreateMeetingAttachmentEncoderFn)
-				data, err = meetingservicec.BuildCreateMeetingAttachmentPayload(*meetingServiceCreateMeetingAttachmentBodyFlag, *meetingServiceCreateMeetingAttachmentMeetingUIDFlag, *meetingServiceCreateMeetingAttachmentVersionFlag, *meetingServiceCreateMeetingAttachmentBearerTokenFlag, *meetingServiceCreateMeetingAttachmentXSyncFlag)
-			case "get-meeting-attachment":
-				endpoint = c.GetMeetingAttachment()
-				data, err = meetingservicec.BuildGetMeetingAttachmentPayload(*meetingServiceGetMeetingAttachmentMeetingUIDFlag, *meetingServiceGetMeetingAttachmentUIDFlag, *meetingServiceGetMeetingAttachmentVersionFlag, *meetingServiceGetMeetingAttachmentBearerTokenFlag)
-			case "get-meeting-attachment-metadata":
-				endpoint = c.GetMeetingAttachmentMetadata()
-				data, err = meetingservicec.BuildGetMeetingAttachmentMetadataPayload(*meetingServiceGetMeetingAttachmentMetadataMeetingUIDFlag, *meetingServiceGetMeetingAttachmentMetadataUIDFlag, *meetingServiceGetMeetingAttachmentMetadataVersionFlag, *meetingServiceGetMeetingAttachmentMetadataBearerTokenFlag)
-			case "delete-meeting-attachment":
-				endpoint = c.DeleteMeetingAttachment()
-				data, err = meetingservicec.BuildDeleteMeetingAttachmentPayload(*meetingServiceDeleteMeetingAttachmentMeetingUIDFlag, *meetingServiceDeleteMeetingAttachmentUIDFlag, *meetingServiceDeleteMeetingAttachmentVersionFlag, *meetingServiceDeleteMeetingAttachmentBearerTokenFlag, *meetingServiceDeleteMeetingAttachmentXSyncFlag)
-			case "create-past-meeting-attachment":
-				endpoint = c.CreatePastMeetingAttachment(meetingServiceCreatePastMeetingAttachmentEncoderFn)
-				data, err = meetingservicec.BuildCreatePastMeetingAttachmentPayload(*meetingServiceCreatePastMeetingAttachmentBodyFlag, *meetingServiceCreatePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceCreatePastMeetingAttachmentVersionFlag, *meetingServiceCreatePastMeetingAttachmentBearerTokenFlag, *meetingServiceCreatePastMeetingAttachmentXSyncFlag)
-			case "get-past-meeting-attachments":
-				endpoint = c.GetPastMeetingAttachments()
-				data, err = meetingservicec.BuildGetPastMeetingAttachmentsPayload(*meetingServiceGetPastMeetingAttachmentsUIDFlag, *meetingServiceGetPastMeetingAttachmentsVersionFlag, *meetingServiceGetPastMeetingAttachmentsBearerTokenFlag)
-			case "get-past-meeting-attachment":
-				endpoint = c.GetPastMeetingAttachment()
-				data, err = meetingservicec.BuildGetPastMeetingAttachmentPayload(*meetingServiceGetPastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceGetPastMeetingAttachmentUIDFlag, *meetingServiceGetPastMeetingAttachmentVersionFlag, *meetingServiceGetPastMeetingAttachmentBearerTokenFlag)
-			case "get-past-meeting-attachment-metadata":
-				endpoint = c.GetPastMeetingAttachmentMetadata()
-				data, err = meetingservicec.BuildGetPastMeetingAttachmentMetadataPayload(*meetingServiceGetPastMeetingAttachmentMetadataPastMeetingUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataUIDFlag, *meetingServiceGetPastMeetingAttachmentMetadataVersionFlag, *meetingServiceGetPastMeetingAttachmentMetadataBearerTokenFlag)
-			case "delete-past-meeting-attachment":
-				endpoint = c.DeletePastMeetingAttachment()
-				data, err = meetingservicec.BuildDeletePastMeetingAttachmentPayload(*meetingServiceDeletePastMeetingAttachmentPastMeetingUIDFlag, *meetingServiceDeletePastMeetingAttachmentUIDFlag, *meetingServiceDeletePastMeetingAttachmentVersionFlag, *meetingServiceDeletePastMeetingAttachmentBearerTokenFlag, *meetingServiceDeletePastMeetingAttachmentXSyncFlag)
 			case "readyz":
 				endpoint = c.Readyz()
 			case "livez":
 				endpoint = c.Livez()
+			case "create-itx-meeting":
+				endpoint = c.CreateItxMeeting()
+				data, err = meetingservicec.BuildCreateItxMeetingPayload(*meetingServiceCreateItxMeetingBodyFlag, *meetingServiceCreateItxMeetingVersionFlag, *meetingServiceCreateItxMeetingBearerTokenFlag, *meetingServiceCreateItxMeetingXSyncFlag)
+			case "get-itx-meeting":
+				endpoint = c.GetItxMeeting()
+				data, err = meetingservicec.BuildGetItxMeetingPayload(*meetingServiceGetItxMeetingMeetingIDFlag, *meetingServiceGetItxMeetingVersionFlag, *meetingServiceGetItxMeetingBearerTokenFlag)
+			case "delete-itx-meeting":
+				endpoint = c.DeleteItxMeeting()
+				data, err = meetingservicec.BuildDeleteItxMeetingPayload(*meetingServiceDeleteItxMeetingMeetingIDFlag, *meetingServiceDeleteItxMeetingVersionFlag, *meetingServiceDeleteItxMeetingBearerTokenFlag)
+			case "update-itx-meeting":
+				endpoint = c.UpdateItxMeeting()
+				data, err = meetingservicec.BuildUpdateItxMeetingPayload(*meetingServiceUpdateItxMeetingBodyFlag, *meetingServiceUpdateItxMeetingMeetingIDFlag, *meetingServiceUpdateItxMeetingVersionFlag, *meetingServiceUpdateItxMeetingBearerTokenFlag, *meetingServiceUpdateItxMeetingXSyncFlag)
+			case "get-itx-meeting-count":
+				endpoint = c.GetItxMeetingCount()
+				data, err = meetingservicec.BuildGetItxMeetingCountPayload(*meetingServiceGetItxMeetingCountVersionFlag, *meetingServiceGetItxMeetingCountProjectUIDFlag, *meetingServiceGetItxMeetingCountBearerTokenFlag)
+			case "create-itx-registrant":
+				endpoint = c.CreateItxRegistrant()
+				data, err = meetingservicec.BuildCreateItxRegistrantPayload(*meetingServiceCreateItxRegistrantBodyFlag, *meetingServiceCreateItxRegistrantMeetingIDFlag, *meetingServiceCreateItxRegistrantVersionFlag, *meetingServiceCreateItxRegistrantBearerTokenFlag)
+			case "get-itx-registrant":
+				endpoint = c.GetItxRegistrant()
+				data, err = meetingservicec.BuildGetItxRegistrantPayload(*meetingServiceGetItxRegistrantMeetingIDFlag, *meetingServiceGetItxRegistrantRegistrantIDFlag, *meetingServiceGetItxRegistrantVersionFlag, *meetingServiceGetItxRegistrantBearerTokenFlag)
+			case "update-itx-registrant":
+				endpoint = c.UpdateItxRegistrant()
+				data, err = meetingservicec.BuildUpdateItxRegistrantPayload(*meetingServiceUpdateItxRegistrantBodyFlag, *meetingServiceUpdateItxRegistrantMeetingIDFlag, *meetingServiceUpdateItxRegistrantRegistrantIDFlag, *meetingServiceUpdateItxRegistrantVersionFlag, *meetingServiceUpdateItxRegistrantBearerTokenFlag)
+			case "delete-itx-registrant":
+				endpoint = c.DeleteItxRegistrant()
+				data, err = meetingservicec.BuildDeleteItxRegistrantPayload(*meetingServiceDeleteItxRegistrantMeetingIDFlag, *meetingServiceDeleteItxRegistrantRegistrantIDFlag, *meetingServiceDeleteItxRegistrantVersionFlag, *meetingServiceDeleteItxRegistrantBearerTokenFlag)
+			case "get-itx-join-link":
+				endpoint = c.GetItxJoinLink()
+				data, err = meetingservicec.BuildGetItxJoinLinkPayload(*meetingServiceGetItxJoinLinkMeetingIDFlag, *meetingServiceGetItxJoinLinkVersionFlag, *meetingServiceGetItxJoinLinkUseEmailFlag, *meetingServiceGetItxJoinLinkUserIDFlag, *meetingServiceGetItxJoinLinkNameFlag, *meetingServiceGetItxJoinLinkEmailFlag, *meetingServiceGetItxJoinLinkRegisterFlag, *meetingServiceGetItxJoinLinkBearerTokenFlag)
+			case "get-itx-registrant-ics":
+				endpoint = c.GetItxRegistrantIcs()
+				data, err = meetingservicec.BuildGetItxRegistrantIcsPayload(*meetingServiceGetItxRegistrantIcsMeetingIDFlag, *meetingServiceGetItxRegistrantIcsRegistrantIDFlag, *meetingServiceGetItxRegistrantIcsVersionFlag, *meetingServiceGetItxRegistrantIcsBearerTokenFlag)
+			case "resend-itx-registrant-invitation":
+				endpoint = c.ResendItxRegistrantInvitation()
+				data, err = meetingservicec.BuildResendItxRegistrantInvitationPayload(*meetingServiceResendItxRegistrantInvitationMeetingIDFlag, *meetingServiceResendItxRegistrantInvitationRegistrantIDFlag, *meetingServiceResendItxRegistrantInvitationVersionFlag, *meetingServiceResendItxRegistrantInvitationBearerTokenFlag)
+			case "resend-itx-meeting-invitations":
+				endpoint = c.ResendItxMeetingInvitations()
+				data, err = meetingservicec.BuildResendItxMeetingInvitationsPayload(*meetingServiceResendItxMeetingInvitationsBodyFlag, *meetingServiceResendItxMeetingInvitationsMeetingIDFlag, *meetingServiceResendItxMeetingInvitationsVersionFlag, *meetingServiceResendItxMeetingInvitationsBearerTokenFlag)
+			case "register-itx-committee-members":
+				endpoint = c.RegisterItxCommitteeMembers()
+				data, err = meetingservicec.BuildRegisterItxCommitteeMembersPayload(*meetingServiceRegisterItxCommitteeMembersMeetingIDFlag, *meetingServiceRegisterItxCommitteeMembersVersionFlag, *meetingServiceRegisterItxCommitteeMembersBearerTokenFlag)
+			case "update-itx-occurrence":
+				endpoint = c.UpdateItxOccurrence()
+				data, err = meetingservicec.BuildUpdateItxOccurrencePayload(*meetingServiceUpdateItxOccurrenceBodyFlag, *meetingServiceUpdateItxOccurrenceMeetingIDFlag, *meetingServiceUpdateItxOccurrenceOccurrenceIDFlag, *meetingServiceUpdateItxOccurrenceVersionFlag, *meetingServiceUpdateItxOccurrenceBearerTokenFlag)
+			case "delete-itx-occurrence":
+				endpoint = c.DeleteItxOccurrence()
+				data, err = meetingservicec.BuildDeleteItxOccurrencePayload(*meetingServiceDeleteItxOccurrenceMeetingIDFlag, *meetingServiceDeleteItxOccurrenceOccurrenceIDFlag, *meetingServiceDeleteItxOccurrenceVersionFlag, *meetingServiceDeleteItxOccurrenceBearerTokenFlag)
+			case "create-itx-past-meeting":
+				endpoint = c.CreateItxPastMeeting()
+				data, err = meetingservicec.BuildCreateItxPastMeetingPayload(*meetingServiceCreateItxPastMeetingBodyFlag, *meetingServiceCreateItxPastMeetingVersionFlag, *meetingServiceCreateItxPastMeetingBearerTokenFlag)
+			case "get-itx-past-meeting":
+				endpoint = c.GetItxPastMeeting()
+				data, err = meetingservicec.BuildGetItxPastMeetingPayload(*meetingServiceGetItxPastMeetingPastMeetingIDFlag, *meetingServiceGetItxPastMeetingVersionFlag, *meetingServiceGetItxPastMeetingBearerTokenFlag)
+			case "delete-itx-past-meeting":
+				endpoint = c.DeleteItxPastMeeting()
+				data, err = meetingservicec.BuildDeleteItxPastMeetingPayload(*meetingServiceDeleteItxPastMeetingPastMeetingIDFlag, *meetingServiceDeleteItxPastMeetingVersionFlag, *meetingServiceDeleteItxPastMeetingBearerTokenFlag)
+			case "update-itx-past-meeting":
+				endpoint = c.UpdateItxPastMeeting()
+				data, err = meetingservicec.BuildUpdateItxPastMeetingPayload(*meetingServiceUpdateItxPastMeetingBodyFlag, *meetingServiceUpdateItxPastMeetingPastMeetingIDFlag, *meetingServiceUpdateItxPastMeetingVersionFlag, *meetingServiceUpdateItxPastMeetingBearerTokenFlag)
+			case "get-itx-past-meeting-summary":
+				endpoint = c.GetItxPastMeetingSummary()
+				data, err = meetingservicec.BuildGetItxPastMeetingSummaryPayload(*meetingServiceGetItxPastMeetingSummaryPastMeetingIDFlag, *meetingServiceGetItxPastMeetingSummarySummaryUIDFlag, *meetingServiceGetItxPastMeetingSummaryVersionFlag, *meetingServiceGetItxPastMeetingSummaryBearerTokenFlag)
+			case "update-itx-past-meeting-summary":
+				endpoint = c.UpdateItxPastMeetingSummary()
+				data, err = meetingservicec.BuildUpdateItxPastMeetingSummaryPayload(*meetingServiceUpdateItxPastMeetingSummaryBodyFlag, *meetingServiceUpdateItxPastMeetingSummaryPastMeetingIDFlag, *meetingServiceUpdateItxPastMeetingSummarySummaryUIDFlag, *meetingServiceUpdateItxPastMeetingSummaryVersionFlag, *meetingServiceUpdateItxPastMeetingSummaryBearerTokenFlag)
+			case "create-itx-past-meeting-participant":
+				endpoint = c.CreateItxPastMeetingParticipant()
+				data, err = meetingservicec.BuildCreateItxPastMeetingParticipantPayload(*meetingServiceCreateItxPastMeetingParticipantBodyFlag, *meetingServiceCreateItxPastMeetingParticipantPastMeetingIDFlag, *meetingServiceCreateItxPastMeetingParticipantVersionFlag, *meetingServiceCreateItxPastMeetingParticipantBearerTokenFlag)
+			case "update-itx-past-meeting-participant":
+				endpoint = c.UpdateItxPastMeetingParticipant()
+				data, err = meetingservicec.BuildUpdateItxPastMeetingParticipantPayload(*meetingServiceUpdateItxPastMeetingParticipantBodyFlag, *meetingServiceUpdateItxPastMeetingParticipantPastMeetingIDFlag, *meetingServiceUpdateItxPastMeetingParticipantParticipantIDFlag, *meetingServiceUpdateItxPastMeetingParticipantVersionFlag, *meetingServiceUpdateItxPastMeetingParticipantBearerTokenFlag)
+			case "delete-itx-past-meeting-participant":
+				endpoint = c.DeleteItxPastMeetingParticipant()
+				data, err = meetingservicec.BuildDeleteItxPastMeetingParticipantPayload(*meetingServiceDeleteItxPastMeetingParticipantPastMeetingIDFlag, *meetingServiceDeleteItxPastMeetingParticipantParticipantIDFlag, *meetingServiceDeleteItxPastMeetingParticipantVersionFlag, *meetingServiceDeleteItxPastMeetingParticipantBearerTokenFlag)
 			}
 		}
 	}
@@ -660,1024 +462,40 @@ func ParseEndpoint(
 // meetingServiceUsage displays the usage of the meeting-service command and
 // its subcommands.
 func meetingServiceUsage() {
-	fmt.Fprintln(os.Stderr, `The meeting service handles all meeting-related operations for LF projects.`)
+	fmt.Fprintln(os.Stderr, `The ITX Meeting Proxy service provides a lightweight proxy layer to the ITX Zoom API for LF projects.`)
 	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] meeting-service COMMAND [flags]\n\n", os.Args[0])
 	fmt.Fprintln(os.Stderr, "COMMAND:")
-	fmt.Fprintln(os.Stderr, `    get-meetings: Get all meetings.`)
-	fmt.Fprintln(os.Stderr, `    create-meeting: Create a new meeting for a project. An actual meeting in the specific platform will be created by
-			this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-base: Get a meeting by ID`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-settings: Get a single meeting's settings.`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-join-url: Get the join URL for a meeting. Requires the user to be either a participant or organizer of the meeting.`)
-	fmt.Fprintln(os.Stderr, `    update-meeting-base: Update an existing meeting base.`)
-	fmt.Fprintln(os.Stderr, `    update-meeting-settings: Update an existing meeting's settings.`)
-	fmt.Fprintln(os.Stderr, `    delete-meeting: Delete an existing meeting.`)
-	fmt.Fprintln(os.Stderr, `    delete-meeting-occurrence: Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-registrants: Get all registrants for a meeting`)
-	fmt.Fprintln(os.Stderr, `    create-meeting-registrant: Create a new registrant for a meeting`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-registrant: Get a specific registrant for a meeting by UID`)
-	fmt.Fprintln(os.Stderr, `    update-meeting-registrant: Update an existing registrant for a meeting`)
-	fmt.Fprintln(os.Stderr, `    delete-meeting-registrant: Delete a registrant from a meeting`)
-	fmt.Fprintln(os.Stderr, `    resend-meeting-registrant-invitation: Resend an invitation email to a meeting registrant`)
-	fmt.Fprintln(os.Stderr, `    create-meeting-rsvp: Create or update an RSVP response for a meeting. Username is automatically extracted from the JWT token. The most recent RSVP takes precedence.`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-rsvps: Get all RSVP responses for a meeting (organizers only)`)
-	fmt.Fprintln(os.Stderr, `    zoom-webhook: Handle Zoom webhook events for meeting lifecycle, participants, and recordings.`)
-	fmt.Fprintln(os.Stderr, `    get-past-meetings: Get all past meetings.`)
-	fmt.Fprintln(os.Stderr, `    create-past-meeting: Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting: Get a past meeting by ID`)
-	fmt.Fprintln(os.Stderr, `    delete-past-meeting: Delete an existing past meeting.`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting-participants: Get all participants for a past meeting`)
-	fmt.Fprintln(os.Stderr, `    create-past-meeting-participant: Create a new participant for a past meeting`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting-participant: Get a specific participant for a past meeting by UID`)
-	fmt.Fprintln(os.Stderr, `    update-past-meeting-participant: Update an existing participant for a past meeting`)
-	fmt.Fprintln(os.Stderr, `    delete-past-meeting-participant: Delete a participant from a past meeting`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting-summaries: Get all summaries for a past meeting`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting-summary: Get a specific summary for a past meeting`)
-	fmt.Fprintln(os.Stderr, `    update-past-meeting-summary: Update an existing past meeting summary`)
-	fmt.Fprintln(os.Stderr, `    create-meeting-attachment: Create a file or link attachment for a meeting`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-attachment: Download a file attachment for a meeting`)
-	fmt.Fprintln(os.Stderr, `    get-meeting-attachment-metadata: Get metadata for a meeting attachment without downloading the file`)
-	fmt.Fprintln(os.Stderr, `    delete-meeting-attachment: Delete a file attachment for a meeting`)
-	fmt.Fprintln(os.Stderr, `    create-past-meeting-attachment: Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting-attachments: Get all attachments for a past meeting`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting-attachment: Download a file attachment for a past meeting`)
-	fmt.Fprintln(os.Stderr, `    get-past-meeting-attachment-metadata: Get metadata for a past meeting attachment without downloading the file`)
-	fmt.Fprintln(os.Stderr, `    delete-past-meeting-attachment: Delete a past meeting attachment`)
 	fmt.Fprintln(os.Stderr, `    readyz: Check if the service is able to take inbound requests.`)
 	fmt.Fprintln(os.Stderr, `    livez: Check if the service is alive.`)
+	fmt.Fprintln(os.Stderr, `    create-itx-meeting: Create a Zoom meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-meeting: Get a Zoom meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-meeting: Delete a Zoom meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    update-itx-meeting: Update a Zoom meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-meeting-count: Get the count of Zoom meetings for a project through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    create-itx-registrant: Create a meeting registrant through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-registrant: Get a meeting registrant through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    update-itx-registrant: Update a meeting registrant through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-registrant: Delete a meeting registrant through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-join-link: Get join link for a meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-registrant-ics: Get ICS calendar file for a meeting registrant through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    resend-itx-registrant-invitation: Resend meeting invitation to a registrant through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    resend-itx-meeting-invitations: Resend meeting invitations to all registrants through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    register-itx-committee-members: Register committee members to a meeting asynchronously through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    update-itx-occurrence: Update a specific occurrence of a recurring meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-occurrence: Delete a specific occurrence of a recurring meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting: Create a past meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting: Get a past meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-past-meeting: Delete a past meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting: Update a past meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting-summary: Get a specific past meeting summary through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting-summary: Update a past meeting summary through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting-participant: Create a past meeting participant through ITX API proxy - routes to invitee and/or attendee endpoints based on flags`)
+	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting-participant: Update a past meeting participant through ITX API proxy - updates invitee and/or attendee records as needed`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-past-meeting-participant: Delete a past meeting participant through ITX API proxy - deletes invitee and/or attendee records as needed`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
 	fmt.Fprintf(os.Stderr, "    %s meeting-service COMMAND --help\n", os.Args[0])
 }
-func meetingServiceGetMeetingsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meetings", os.Args[0])
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -include-cancelled-occurrences BOOL")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get all meetings.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -include-cancelled-occurrences BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meetings --version \"1\" --include-cancelled-occurrences true --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceCreateMeetingUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-meeting", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create a new meeting for a project. An actual meeting in the specific platform will be created by
-			this endpoint. The meeting's occurrences and registrants are managed by this service rather than the third-party platform.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-meeting --body '{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         }\n      ],\n      \"description\": \"omd\",\n      \"duration\": 215,\n      \"early_join_time_minutes\": 53,\n      \"meeting_type\": \"Other\",\n      \"organizers\": [\n         \"Est voluptatem corporis molestiae qui et ratione.\",\n         \"Nemo est aut dolores quam officia.\",\n         \"Perspiciatis nihil.\",\n         \"Et vero.\"\n      ],\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2015-12-13T14:41:27Z\",\n         \"end_times\": 4738497067038440130,\n         \"monthly_day\": 11,\n         \"monthly_week\": 2,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 4042761758996785701,\n         \"type\": 3,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"show_meeting_attendees\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Tempore vel qui placeat repudiandae voluptas.\",\n      \"title\": \"Consequatur perspiciatis sed est laudantium quasi.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }' --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceGetMeetingBaseUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-base", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -include-cancelled-occurrences BOOL")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get a meeting by ID`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -include-cancelled-occurrences BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-base --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --include-cancelled-occurrences false --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceGetMeetingSettingsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-settings", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get a single meeting's settings.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-settings --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceGetMeetingJoinURLUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-join-url", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get the join URL for a meeting. Requires the user to be either a participant or organizer of the meeting.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-join-url --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceUpdateMeetingBaseUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-meeting-base", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Update an existing meeting base.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-meeting-base --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         }\n      ],\n      \"description\": \"pmx\",\n      \"duration\": 297,\n      \"early_join_time_minutes\": 22,\n      \"meeting_type\": \"None\",\n      \"platform\": \"Zoom\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"2015-12-13T14:41:27Z\",\n         \"end_times\": 4738497067038440130,\n         \"monthly_day\": 11,\n         \"monthly_week\": 2,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 4042761758996785701,\n         \"type\": 3,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"show_meeting_attendees\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Aliquam id est eligendi.\",\n      \"title\": \"Molestiae eum nesciunt nobis.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": true\n      }\n   }' --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceUpdateMeetingSettingsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-meeting-settings", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Update an existing meeting's settings.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-meeting-settings --body '{\n      \"organizers\": [\n         \"Ipsum commodi vel ullam quo porro.\",\n         \"Autem repellendus quia.\",\n         \"Natus totam aut vel ut rerum.\"\n      ]\n   }' --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceDeleteMeetingUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-meeting", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete an existing meeting.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-meeting --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceDeleteMeetingOccurrenceUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-meeting-occurrence", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -occurrence-id STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Cancel a specific occurrence of a meeting by setting its IsCancelled field to true.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -occurrence-id STRING: The ID of the occurrence to cancel`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-meeting-occurrence --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceGetMeetingRegistrantsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-registrants", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get all registrants for a meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-registrants --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceCreateMeetingRegistrantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-meeting-registrant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create a new registrant for a meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-meeting-registrant --body '{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Illum aperiam dolor.\",\n      \"username\": \"Id amet est laboriosam.\"\n   }' --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceGetMeetingRegistrantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-registrant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get a specific registrant for a meeting by UID`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the registrant`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-registrant --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceUpdateMeetingRegistrantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-meeting-registrant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Update an existing registrant for a meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the registrant`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-meeting-registrant --body '{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"occurrence_id\": \"1640995200\",\n      \"org_name\": \"Voluptates veritatis praesentium deserunt vel.\",\n      \"username\": \"Sed et nesciunt ipsam.\"\n   }' --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceDeleteMeetingRegistrantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-meeting-registrant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete a registrant from a meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the registrant`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-meeting-registrant --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceResendMeetingRegistrantInvitationUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service resend-meeting-registrant-invitation", os.Args[0])
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Resend an invitation email to a meeting registrant`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the registrant`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service resend-meeting-registrant-invitation --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceCreateMeetingRsvpUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-meeting-rsvp", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create or update an RSVP response for a meeting. Username is automatically extracted from the JWT token. The most recent RSVP takes precedence.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting this RSVP is for`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-meeting-rsvp --body '{\n      \"occurrence_id\": \"1640995200\",\n      \"registrant_id\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"response\": \"accepted\",\n      \"scope\": \"all\",\n      \"username\": \"jdoe\"\n   }' --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceGetMeetingRsvpsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-rsvps", os.Args[0])
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get all RSVP responses for a meeting (organizers only)`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting this RSVP is for`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-rsvps --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceZoomWebhookUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service zoom-webhook", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -zoom-signature STRING")
-	fmt.Fprint(os.Stderr, " -zoom-timestamp STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Handle Zoom webhook events for meeting lifecycle, participants, and recordings.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -zoom-signature STRING: `)
-	fmt.Fprintln(os.Stderr, `    -zoom-timestamp STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service zoom-webhook --body '{\n      \"event\": \"meeting.started\",\n      \"event_ts\": 1609459200000,\n      \"payload\": \"Natus sequi aut quidem rem.\"\n   }' --zoom-signature \"Natus quod quidem id.\" --zoom-timestamp \"Qui sit quidem veniam qui neque nisi.\"")
-}
-
-func meetingServiceGetPastMeetingsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meetings", os.Args[0])
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get all past meetings.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meetings --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceCreatePastMeetingUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-past-meeting", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create a new past meeting record. This allows manual addition of past meetings that didn't come from webhooks.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Qui est quod nihil voluptas.\",\n               \"Et ex sapiente libero.\",\n               \"Ut quae at.\",\n               \"Consectetur quod voluptatibus in necessitatibus rerum.\"\n            ],\n            \"uid\": \"Velit ratione et nam et.\"\n         }\n      ],\n      \"description\": \"gdu\",\n      \"duration\": 255,\n      \"early_join_time_minutes\": 14,\n      \"meeting_type\": \"Technical\",\n      \"meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"occurrence_id\": \"1640995200\",\n      \"platform\": \"Zoom\",\n      \"platform_meeting_id\": \"1234567890\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"public_link\": \"http://hand.net/sherman_kshlerin\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"2015-12-13T14:41:27Z\",\n         \"end_times\": 4738497067038440130,\n         \"monthly_day\": 11,\n         \"monthly_week\": 2,\n         \"monthly_week_day\": 4,\n         \"repeat_interval\": 4042761758996785701,\n         \"type\": 3,\n         \"weekly_days\": \"1,3,5\"\n      },\n      \"restricted\": true,\n      \"scheduled_end_time\": \"2021-01-01T11:00:00Z\",\n      \"scheduled_start_time\": \"2021-01-01T10:00:00Z\",\n      \"sessions\": [\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"end_time\": \"2021-01-01T11:00:00Z\",\n            \"start_time\": \"2021-01-01T10:00:00Z\",\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"show_meeting_attendees\": false,\n      \"timezone\": \"Nulla quia aliquam neque quasi ipsam.\",\n      \"title\": \"Quis qui quam explicabo molestiae.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false,\n      \"zoom_config\": {\n         \"ai_companion_enabled\": true,\n         \"ai_summary_require_approval\": false,\n         \"meeting_id\": \"1234567890\",\n         \"passcode\": \"147258\"\n      }\n   }' --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceGetPastMeetingUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get a past meeting by ID`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceDeletePastMeetingUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-past-meeting", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete an existing past meeting.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-past-meeting --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceGetPastMeetingParticipantsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting-participants", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get all participants for a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting-participants --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceCreatePastMeetingParticipantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-past-meeting-participant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create a new participant for a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-past-meeting-participant --body '{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"org_name\": \"Dignissimos incidunt.\",\n      \"past_meeting_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"username\": \"Dolores eligendi incidunt praesentium sed non.\"\n   }' --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceGetPastMeetingParticipantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting-participant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get a specific participant for a past meeting by UID`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the past meeting participant`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting-participant --past-meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceUpdatePastMeetingParticipantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-past-meeting-participant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Update an existing participant for a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the past meeting participant`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-past-meeting-participant --body '{\n      \"avatar_url\": \"https://example.com/avatar.jpg\",\n      \"email\": \"user@example.com\",\n      \"first_name\": \"John\",\n      \"host\": false,\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"linkedin_profile\": \"https://www.linkedin.com/in/username\",\n      \"org_name\": \"Minus qui necessitatibus laborum dolorum.\",\n      \"username\": \"Voluptatem qui velit doloremque alias.\"\n   }' --past-meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceDeletePastMeetingParticipantUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-past-meeting-participant", os.Args[0])
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete a participant from a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the past meeting participant`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-past-meeting-participant --past-meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceGetPastMeetingSummariesUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting-summaries", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get all summaries for a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The unique identifier of the resource`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting-summaries --uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceGetPastMeetingSummaryUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting-summary", os.Args[0])
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -summary-uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get a specific summary for a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -summary-uid STRING: The unique identifier of the summary`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting-summary --past-meeting-uid \"123e4567-e89b-12d3-a456-426614174000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceUpdatePastMeetingSummaryUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-past-meeting-summary", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -summary-uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprint(os.Stderr, " -if-match STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Update an existing past meeting summary`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The unique identifier of the past meeting`)
-	fmt.Fprintln(os.Stderr, `    -summary-uid STRING: The unique identifier of the summary`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-	fmt.Fprintln(os.Stderr, `    -if-match STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-past-meeting-summary --body '{\n      \"approved\": true,\n      \"edited_content\": \"Updated meeting summary with additional details and action items.\"\n   }' --past-meeting-uid \"123e4567-e89b-12d3-a456-426614174000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true --if-match \"123\"")
-}
-
-func meetingServiceCreateMeetingAttachmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-meeting-attachment", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create a file or link attachment for a meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-meeting-attachment --body '{\n      \"description\": \"Meeting agenda for Q1 2024\",\n      \"file\": \"RWl1cyBleCBhc3N1bWVuZGEu\",\n      \"file_content_type\": \"Eveniet distinctio.\",\n      \"file_name\": \"Consequatur ullam.\",\n      \"link\": \"https://example.com/meeting-notes\",\n      \"name\": \"Q1 Meeting Agenda\",\n      \"type\": \"file\"\n   }' --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceGetMeetingAttachmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-attachment", os.Args[0])
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Download a file attachment for a meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the attachment`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-attachment --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceGetMeetingAttachmentMetadataUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-meeting-attachment-metadata", os.Args[0])
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get metadata for a meeting attachment without downloading the file`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the attachment`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-meeting-attachment-metadata --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceDeleteMeetingAttachmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-meeting-attachment", os.Args[0])
-	fmt.Fprint(os.Stderr, " -meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete a file attachment for a meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -meeting-uid STRING: The UID of the meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the attachment`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-meeting-attachment --meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceCreatePastMeetingAttachmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-past-meeting-attachment", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create a file or link attachment for a past meeting. Can upload a new file, reference an existing one, or create a link.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-past-meeting-attachment --body '{\n      \"description\": \"Meeting recording for Q1 2024\",\n      \"file\": \"T2RpbyBjb3JydXB0aSBuaWhpbCBjb25zZXF1YXR1ciBuZW1vLg==\",\n      \"file_content_type\": \"Suscipit et.\",\n      \"file_name\": \"Laboriosam veritatis in.\",\n      \"link\": \"https://example.com/meeting-notes\",\n      \"name\": \"Q1 Meeting Recording\",\n      \"source_object_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"type\": \"file\"\n   }' --past-meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
-func meetingServiceGetPastMeetingAttachmentsUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting-attachments", os.Args[0])
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get all attachments for a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The unique identifier of the resource`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting-attachments --uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceGetPastMeetingAttachmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting-attachment", os.Args[0])
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Download a file attachment for a past meeting`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the attachment`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting-attachment --past-meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceGetPastMeetingAttachmentMetadataUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-past-meeting-attachment-metadata", os.Args[0])
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get metadata for a past meeting attachment without downloading the file`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the attachment`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-past-meeting-attachment-metadata --past-meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\"")
-}
-
-func meetingServiceDeletePastMeetingAttachmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-past-meeting-attachment", os.Args[0])
-	fmt.Fprint(os.Stderr, " -past-meeting-uid STRING")
-	fmt.Fprint(os.Stderr, " -uid STRING")
-	fmt.Fprint(os.Stderr, " -version STRING")
-	fmt.Fprint(os.Stderr, " -bearer-token STRING")
-	fmt.Fprint(os.Stderr, " -x-sync BOOL")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete a past meeting attachment`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -past-meeting-uid STRING: The UID of the past meeting this attachment belongs to`)
-	fmt.Fprintln(os.Stderr, `    -uid STRING: The UID of the attachment`)
-	fmt.Fprintln(os.Stderr, `    -version STRING: `)
-	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
-	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-past-meeting-attachment --past-meeting-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
-}
-
 func meetingServiceReadyzUsage() {
 	// Header with flags
 	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service readyz", os.Args[0])
@@ -1708,4 +526,608 @@ func meetingServiceLivezUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service livez")
+}
+
+func meetingServiceCreateItxMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprint(os.Stderr, " -x-sync BOOL")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Create a Zoom meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting --body '{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"dhj\",\n      \"duration\": 93,\n      \"early_join_time_minutes\": 44,\n      \"meeting_type\": \"Board\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1986-02-03T15:17:06Z\",\n         \"end_times\": 2021793513680499921,\n         \"monthly_day\": 5080625992694716341,\n         \"monthly_week\": 5911468135838275655,\n         \"monthly_week_day\": 1349980424387692222,\n         \"repeat_interval\": 6343173761327140206,\n         \"type\": 2,\n         \"weekly_days\": \"Consequuntur possimus cupiditate quasi aspernatur accusantium vero.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Cumque qui rem doloribus pariatur sed.\",\n      \"title\": \"Animi voluptatem eos id.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }' --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
+}
+
+func meetingServiceGetItxMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get a Zoom meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The Zoom meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceDeleteItxMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-itx-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Delete a Zoom meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The Zoom meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-meeting --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprint(os.Stderr, " -x-sync BOOL")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a Zoom meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The Zoom meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+	fmt.Fprintln(os.Stderr, `    -x-sync BOOL: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"jwc\",\n      \"duration\": 456,\n      \"early_join_time_minutes\": 12,\n      \"meeting_type\": \"Other\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1986-02-03T15:17:06Z\",\n         \"end_times\": 2021793513680499921,\n         \"monthly_day\": 5080625992694716341,\n         \"monthly_week\": 5911468135838275655,\n         \"monthly_week_day\": 1349980424387692222,\n         \"repeat_interval\": 6343173761327140206,\n         \"type\": 2,\n         \"weekly_days\": \"Consequuntur possimus cupiditate quasi aspernatur accusantium vero.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Qui id sed delectus quod sunt.\",\n      \"title\": \"Fugiat iure.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
+}
+
+func meetingServiceGetItxMeetingCountUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-meeting-count", os.Args[0])
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -project-uid STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get the count of Zoom meetings for a project through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -project-uid STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-count --version \"1\" --project-uid \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceCreateItxRegistrantUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-registrant", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Create a meeting registrant through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-registrant --body '{\n      \"attended_occurrence_count\": 7055716465626542352,\n      \"committee_uid\": \"Quidem quibusdam recusandae eos quidem qui.\",\n      \"created_at\": \"Accusamus blanditiis eius cumque eum.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Possimus unde quia inventore error eveniet.\",\n      \"last_invite_delivery_status\": \"Vel possimus et consequuntur quaerat ut aliquam.\",\n      \"last_invite_received_message_id\": \"Voluptatum tenetur.\",\n      \"last_invite_received_time\": \"Sed omnis maiores rerum.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"In minus et.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Delectus totam ullam quia iusto sed atque.\",\n      \"total_occurrence_count\": 8229808662094484385,\n      \"type\": \"committee\",\n      \"uid\": \"Sapiente amet provident.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxRegistrantUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-registrant", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -registrant-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get a meeting registrant through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -registrant-id STRING: The ID of the registrant`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-registrant --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxRegistrantUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-registrant", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -registrant-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a meeting registrant through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -registrant-id STRING: The ID of the registrant`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-registrant --body '{\n      \"attended_occurrence_count\": 9124820807387163851,\n      \"committee_uid\": \"Aut consequatur ducimus tenetur possimus tempora quis.\",\n      \"created_at\": \"Deserunt corporis nisi ad assumenda.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Ipsam tenetur et expedita.\",\n      \"last_invite_delivery_status\": \"Et dolorem iusto consequuntur labore.\",\n      \"last_invite_received_message_id\": \"Officiis nisi dolorem voluptates repellat odit dolorem.\",\n      \"last_invite_received_time\": \"Quisquam nihil qui ea provident natus ut.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Magni distinctio quia.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Delectus dolores dolorem.\",\n      \"total_occurrence_count\": 3655883918328795135,\n      \"type\": \"committee\",\n      \"uid\": \"Qui sint nobis totam.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceDeleteItxRegistrantUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-itx-registrant", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -registrant-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Delete a meeting registrant through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -registrant-id STRING: The ID of the registrant`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-registrant --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxJoinLinkUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-join-link", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -use-email BOOL")
+	fmt.Fprint(os.Stderr, " -user-id STRING")
+	fmt.Fprint(os.Stderr, " -name STRING")
+	fmt.Fprint(os.Stderr, " -email STRING")
+	fmt.Fprint(os.Stderr, " -register BOOL")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get join link for a meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -use-email BOOL: `)
+	fmt.Fprintln(os.Stderr, `    -user-id STRING: `)
+	fmt.Fprintln(os.Stderr, `    -name STRING: `)
+	fmt.Fprintln(os.Stderr, `    -email STRING: `)
+	fmt.Fprintln(os.Stderr, `    -register BOOL: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-join-link --meeting-id \"1234567890\" --version \"1\" --use-email true --user-id \"user123\" --name \"John Doe\" --email \"john.doe@example.com\" --register false --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxRegistrantIcsUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-registrant-ics", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -registrant-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get ICS calendar file for a meeting registrant through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -registrant-id STRING: The ID of the registrant`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-registrant-ics --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceResendItxRegistrantInvitationUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service resend-itx-registrant-invitation", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -registrant-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Resend meeting invitation to a registrant through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -registrant-id STRING: The ID of the registrant`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service resend-itx-registrant-invitation --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceResendItxMeetingInvitationsUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service resend-itx-meeting-invitations", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Resend meeting invitations to all registrants through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service resend-itx-meeting-invitations --body '{\n      \"exclude_registrant_ids\": [\n         \"reg123\",\n         \"reg456\"\n      ]\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceRegisterItxCommitteeMembersUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service register-itx-committee-members", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Register committee members to a meeting asynchronously through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service register-itx-committee-members --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxOccurrenceUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-occurrence", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a specific occurrence of a recurring meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -occurrence-id STRING: The ID of the occurrence (Unix timestamp)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-occurrence --body '{\n      \"agenda\": \"Qui nihil facilis iusto est voluptates repellendus.\",\n      \"duration\": 60,\n      \"recurrence\": {\n         \"end_date_time\": \"1986-02-03T15:17:06Z\",\n         \"end_times\": 2021793513680499921,\n         \"monthly_day\": 5080625992694716341,\n         \"monthly_week\": 5911468135838275655,\n         \"monthly_week_day\": 1349980424387692222,\n         \"repeat_interval\": 6343173761327140206,\n         \"type\": 2,\n         \"weekly_days\": \"Consequuntur possimus cupiditate quasi aspernatur accusantium vero.\"\n      },\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"topic\": \"Nobis repudiandae quia necessitatibus placeat minima.\"\n   }' --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceDeleteItxOccurrenceUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-itx-occurrence", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Delete a specific occurrence of a recurring meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -occurrence-id STRING: The ID of the occurrence (Unix timestamp)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-occurrence --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceCreateItxPastMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-past-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Create a past meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"8dd\",\n      \"duration\": 241,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"Marketing\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Consectetur debitis possimus qui est est consequatur.\",\n      \"title\": \"Error numquam dignissimos magnam vero accusamus.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\"\n   }' --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxPastMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-past-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get a past meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id or meeting_id-occurrence_id)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceDeleteItxPastMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-itx-past-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Delete a past meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id or meeting_id-occurrence_id)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-past-meeting --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxPastMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-past-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a past meeting through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id or meeting_id-occurrence_id)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"Aut nesciunt quaerat.\",\n      \"duration\": 60,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"webinar\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"a09eaa48-231b-43e5-93ba-91c2e0a0e5f1\",\n      \"recording_enabled\": true,\n      \"restricted\": true,\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"timezone\": \"UTC\",\n      \"title\": \"Laboriosam officia sint.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxPastMeetingSummaryUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-past-meeting-summary", os.Args[0])
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -summary-uid STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get a specific past meeting summary through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id-occurrence_id)`)
+	fmt.Fprintln(os.Stderr, `    -summary-uid STRING: Summary UID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-summary --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxPastMeetingSummaryUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-past-meeting-summary", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -summary-uid STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a past meeting summary through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id-occurrence_id)`)
+	fmt.Fprintln(os.Stderr, `    -summary-uid STRING: Summary UID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": false,\n      \"edited_content\": \"Facilis exercitationem rem unde dolorum sed aspernatur.\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceCreateItxPastMeetingParticipantUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-past-meeting-participant", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Create a past meeting participant through ITX API proxy - routes to invitee and/or attendee endpoints based on flags`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id-occurrence_id format)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-participant --body '{\n      \"avatar_url\": \"https://avatars.example.com/jdoe.jpg\",\n      \"committee_id\": \"383f5c1d-a87d-4de6-adc1-40a705cb2b43\",\n      \"committee_role\": \"Developer Seat\",\n      \"committee_voting_status\": \"Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"is_unknown\": true,\n      \"is_verified\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"003P000001cRZVVI9A\",\n      \"org_is_member\": false,\n      \"org_is_project_member\": true,\n      \"org_name\": \"Google\",\n      \"sessions\": [\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Et ab nobis libero nihil aliquam deleniti.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Quis est est molestias eligendi nulla porro.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Et ab nobis libero nihil aliquam deleniti.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Quis est est molestias eligendi nulla porro.\"\n         }\n      ],\n      \"username\": \"jdoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxPastMeetingParticipantUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-past-meeting-participant", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -participant-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a past meeting participant through ITX API proxy - updates invitee and/or attendee records as needed`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id-occurrence_id format)`)
+	fmt.Fprintln(os.Stderr, `    -participant-id STRING: Participant ID (invitee_id or attendee_id)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-participant --body '{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_attended\": false,\n      \"is_invited\": true,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceDeleteItxPastMeetingParticipantUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-itx-past-meeting-participant", os.Args[0])
+	fmt.Fprint(os.Stderr, " -past-meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -participant-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Delete a past meeting participant through ITX API proxy - deletes invitee and/or attendee records as needed`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -past-meeting-id STRING: Past meeting ID (meeting_id-occurrence_id format)`)
+	fmt.Fprintln(os.Stderr, `    -participant-id STRING: Participant ID (invitee_id or attendee_id)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-past-meeting-participant --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }

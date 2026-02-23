@@ -13,99 +13,66 @@ import (
 	"goa.design/goa/v3/security"
 )
 
-// The meeting service handles all meeting-related operations for LF projects.
+// The ITX Meeting Proxy service provides a lightweight proxy layer to the ITX
+// Zoom API for LF projects.
 type Service interface {
-	// Get all meetings.
-	GetMeetings(context.Context, *GetMeetingsPayload) (res *GetMeetingsResult, err error)
-	// Create a new meeting for a project. An actual meeting in the specific
-	// platform will be created by
-	// this endpoint. The meeting's occurrences and registrants are managed by this
-	// service rather than the third-party platform.
-	CreateMeeting(context.Context, *CreateMeetingPayload) (res *MeetingFull, err error)
-	// Get a meeting by ID
-	GetMeetingBase(context.Context, *GetMeetingBasePayload) (res *GetMeetingBaseResult, err error)
-	// Get a single meeting's settings.
-	GetMeetingSettings(context.Context, *GetMeetingSettingsPayload) (res *GetMeetingSettingsResult, err error)
-	// Get the join URL for a meeting. Requires the user to be either a participant
-	// or organizer of the meeting.
-	GetMeetingJoinURL(context.Context, *GetMeetingJoinURLPayload) (res *GetMeetingJoinURLResult, err error)
-	// Update an existing meeting base.
-	UpdateMeetingBase(context.Context, *UpdateMeetingBasePayload) (res *MeetingBase, err error)
-	// Update an existing meeting's settings.
-	UpdateMeetingSettings(context.Context, *UpdateMeetingSettingsPayload) (res *MeetingSettings, err error)
-	// Delete an existing meeting.
-	DeleteMeeting(context.Context, *DeleteMeetingPayload) (err error)
-	// Cancel a specific occurrence of a meeting by setting its IsCancelled field
-	// to true.
-	DeleteMeetingOccurrence(context.Context, *DeleteMeetingOccurrencePayload) (err error)
-	// Get all registrants for a meeting
-	GetMeetingRegistrants(context.Context, *GetMeetingRegistrantsPayload) (res *GetMeetingRegistrantsResult, err error)
-	// Create a new registrant for a meeting
-	CreateMeetingRegistrant(context.Context, *CreateMeetingRegistrantPayload) (res *Registrant, err error)
-	// Get a specific registrant for a meeting by UID
-	GetMeetingRegistrant(context.Context, *GetMeetingRegistrantPayload) (res *GetMeetingRegistrantResult, err error)
-	// Update an existing registrant for a meeting
-	UpdateMeetingRegistrant(context.Context, *UpdateMeetingRegistrantPayload) (res *Registrant, err error)
-	// Delete a registrant from a meeting
-	DeleteMeetingRegistrant(context.Context, *DeleteMeetingRegistrantPayload) (err error)
-	// Resend an invitation email to a meeting registrant
-	ResendMeetingRegistrantInvitation(context.Context, *ResendMeetingRegistrantInvitationPayload) (err error)
-	// Create or update an RSVP response for a meeting. Username is automatically
-	// extracted from the JWT token. The most recent RSVP takes precedence.
-	CreateMeetingRsvp(context.Context, *CreateMeetingRsvpPayload) (res *RSVPResponse, err error)
-	// Get all RSVP responses for a meeting (organizers only)
-	GetMeetingRsvps(context.Context, *GetMeetingRsvpsPayload) (res *RSVPListResult, err error)
-	// Handle Zoom webhook events for meeting lifecycle, participants, and
-	// recordings.
-	ZoomWebhook(context.Context, *ZoomWebhookPayload) (res *ZoomWebhookResponse, err error)
-	// Get all past meetings.
-	GetPastMeetings(context.Context, *GetPastMeetingsPayload) (res *GetPastMeetingsResult, err error)
-	// Create a new past meeting record. This allows manual addition of past
-	// meetings that didn't come from webhooks.
-	CreatePastMeeting(context.Context, *CreatePastMeetingPayload) (res *PastMeeting, err error)
-	// Get a past meeting by ID
-	GetPastMeeting(context.Context, *GetPastMeetingPayload) (res *GetPastMeetingResult, err error)
-	// Delete an existing past meeting.
-	DeletePastMeeting(context.Context, *DeletePastMeetingPayload) (err error)
-	// Get all participants for a past meeting
-	GetPastMeetingParticipants(context.Context, *GetPastMeetingParticipantsPayload) (res *GetPastMeetingParticipantsResult, err error)
-	// Create a new participant for a past meeting
-	CreatePastMeetingParticipant(context.Context, *CreatePastMeetingParticipantPayload) (res *PastMeetingParticipant, err error)
-	// Get a specific participant for a past meeting by UID
-	GetPastMeetingParticipant(context.Context, *GetPastMeetingParticipantPayload) (res *GetPastMeetingParticipantResult, err error)
-	// Update an existing participant for a past meeting
-	UpdatePastMeetingParticipant(context.Context, *UpdatePastMeetingParticipantPayload) (res *PastMeetingParticipant, err error)
-	// Delete a participant from a past meeting
-	DeletePastMeetingParticipant(context.Context, *DeletePastMeetingParticipantPayload) (err error)
-	// Get all summaries for a past meeting
-	GetPastMeetingSummaries(context.Context, *GetPastMeetingSummariesPayload) (res *GetPastMeetingSummariesResult, err error)
-	// Get a specific summary for a past meeting
-	GetPastMeetingSummary(context.Context, *GetPastMeetingSummaryPayload) (res *GetPastMeetingSummaryResult, err error)
-	// Update an existing past meeting summary
-	UpdatePastMeetingSummary(context.Context, *UpdatePastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
-	// Create a file or link attachment for a meeting
-	CreateMeetingAttachment(context.Context, *CreateMeetingAttachmentPayload) (res *MeetingAttachment, err error)
-	// Download a file attachment for a meeting
-	GetMeetingAttachment(context.Context, *GetMeetingAttachmentPayload) (res []byte, err error)
-	// Get metadata for a meeting attachment without downloading the file
-	GetMeetingAttachmentMetadata(context.Context, *GetMeetingAttachmentMetadataPayload) (res *MeetingAttachment, err error)
-	// Delete a file attachment for a meeting
-	DeleteMeetingAttachment(context.Context, *DeleteMeetingAttachmentPayload) (err error)
-	// Create a file or link attachment for a past meeting. Can upload a new file,
-	// reference an existing one, or create a link.
-	CreatePastMeetingAttachment(context.Context, *CreatePastMeetingAttachmentPayload) (res *PastMeetingAttachment, err error)
-	// Get all attachments for a past meeting
-	GetPastMeetingAttachments(context.Context, *GetPastMeetingAttachmentsPayload) (res *GetPastMeetingAttachmentsResult, err error)
-	// Download a file attachment for a past meeting
-	GetPastMeetingAttachment(context.Context, *GetPastMeetingAttachmentPayload) (res []byte, err error)
-	// Get metadata for a past meeting attachment without downloading the file
-	GetPastMeetingAttachmentMetadata(context.Context, *GetPastMeetingAttachmentMetadataPayload) (res *PastMeetingAttachment, err error)
-	// Delete a past meeting attachment
-	DeletePastMeetingAttachment(context.Context, *DeletePastMeetingAttachmentPayload) (err error)
 	// Check if the service is able to take inbound requests.
 	Readyz(context.Context) (res []byte, err error)
 	// Check if the service is alive.
 	Livez(context.Context) (res []byte, err error)
+	// Create a Zoom meeting through ITX API proxy
+	CreateItxMeeting(context.Context, *CreateItxMeetingPayload) (res *ITXZoomMeetingResponse, err error)
+	// Get a Zoom meeting through ITX API proxy
+	GetItxMeeting(context.Context, *GetItxMeetingPayload) (res *ITXZoomMeetingResponse, err error)
+	// Delete a Zoom meeting through ITX API proxy
+	DeleteItxMeeting(context.Context, *DeleteItxMeetingPayload) (err error)
+	// Update a Zoom meeting through ITX API proxy
+	UpdateItxMeeting(context.Context, *UpdateItxMeetingPayload) (err error)
+	// Get the count of Zoom meetings for a project through ITX API proxy
+	GetItxMeetingCount(context.Context, *GetItxMeetingCountPayload) (res *ITXMeetingCountResponse, err error)
+	// Create a meeting registrant through ITX API proxy
+	CreateItxRegistrant(context.Context, *CreateItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
+	// Get a meeting registrant through ITX API proxy
+	GetItxRegistrant(context.Context, *GetItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
+	// Update a meeting registrant through ITX API proxy
+	UpdateItxRegistrant(context.Context, *UpdateItxRegistrantPayload) (err error)
+	// Delete a meeting registrant through ITX API proxy
+	DeleteItxRegistrant(context.Context, *DeleteItxRegistrantPayload) (err error)
+	// Get join link for a meeting through ITX API proxy
+	GetItxJoinLink(context.Context, *GetItxJoinLinkPayload) (res *ITXZoomMeetingJoinLink, err error)
+	// Get ICS calendar file for a meeting registrant through ITX API proxy
+	GetItxRegistrantIcs(context.Context, *GetItxRegistrantIcsPayload) (res []byte, err error)
+	// Resend meeting invitation to a registrant through ITX API proxy
+	ResendItxRegistrantInvitation(context.Context, *ResendItxRegistrantInvitationPayload) (err error)
+	// Resend meeting invitations to all registrants through ITX API proxy
+	ResendItxMeetingInvitations(context.Context, *ResendItxMeetingInvitationsPayload) (err error)
+	// Register committee members to a meeting asynchronously through ITX API proxy
+	RegisterItxCommitteeMembers(context.Context, *RegisterItxCommitteeMembersPayload) (err error)
+	// Update a specific occurrence of a recurring meeting through ITX API proxy
+	UpdateItxOccurrence(context.Context, *UpdateItxOccurrencePayload) (err error)
+	// Delete a specific occurrence of a recurring meeting through ITX API proxy
+	DeleteItxOccurrence(context.Context, *DeleteItxOccurrencePayload) (err error)
+	// Create a past meeting through ITX API proxy
+	CreateItxPastMeeting(context.Context, *CreateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
+	// Get a past meeting through ITX API proxy
+	GetItxPastMeeting(context.Context, *GetItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
+	// Delete a past meeting through ITX API proxy
+	DeleteItxPastMeeting(context.Context, *DeleteItxPastMeetingPayload) (err error)
+	// Update a past meeting through ITX API proxy
+	UpdateItxPastMeeting(context.Context, *UpdateItxPastMeetingPayload) (err error)
+	// Get a specific past meeting summary through ITX API proxy
+	GetItxPastMeetingSummary(context.Context, *GetItxPastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
+	// Update a past meeting summary through ITX API proxy
+	UpdateItxPastMeetingSummary(context.Context, *UpdateItxPastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
+	// Create a past meeting participant through ITX API proxy - routes to invitee
+	// and/or attendee endpoints based on flags
+	CreateItxPastMeetingParticipant(context.Context, *CreateItxPastMeetingParticipantPayload) (res *ITXPastMeetingParticipant, err error)
+	// Update a past meeting participant through ITX API proxy - updates invitee
+	// and/or attendee records as needed
+	UpdateItxPastMeetingParticipant(context.Context, *UpdateItxPastMeetingParticipantPayload) (res *ITXPastMeetingParticipant, err error)
+	// Delete a past meeting participant through ITX API proxy - deletes invitee
+	// and/or attendee records as needed
+	DeleteItxPastMeetingParticipant(context.Context, *DeleteItxPastMeetingParticipantPayload) (err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -128,7 +95,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [41]string{"get-meetings", "create-meeting", "get-meeting-base", "get-meeting-settings", "get-meeting-join-url", "update-meeting-base", "update-meeting-settings", "delete-meeting", "delete-meeting-occurrence", "get-meeting-registrants", "create-meeting-registrant", "get-meeting-registrant", "update-meeting-registrant", "delete-meeting-registrant", "resend-meeting-registrant-invitation", "create-meeting-rsvp", "get-meeting-rsvps", "zoom-webhook", "get-past-meetings", "create-past-meeting", "get-past-meeting", "delete-past-meeting", "get-past-meeting-participants", "create-past-meeting-participant", "get-past-meeting-participant", "update-past-meeting-participant", "delete-past-meeting-participant", "get-past-meeting-summaries", "get-past-meeting-summary", "update-past-meeting-summary", "create-meeting-attachment", "get-meeting-attachment", "get-meeting-attachment-metadata", "delete-meeting-attachment", "create-past-meeting-attachment", "get-past-meeting-attachments", "get-past-meeting-attachment", "get-past-meeting-attachment-metadata", "delete-past-meeting-attachment", "readyz", "livez"}
+var MethodNames = [27]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -137,12 +104,11 @@ type BadRequestError struct {
 	Message string
 }
 
-// Committee data for association with meeting
+// A committee associated with a meeting
 type Committee struct {
-	// The UID of the committee
-	UID string
-	// The committee voting statuses required for committee members to be added to
-	// the meeting
+	// Committee UID
+	UID *string
+	// Allowed voting statuses for committee members
 	AllowedVotingStatuses []string
 }
 
@@ -153,44 +119,110 @@ type ConflictError struct {
 	Message string
 }
 
-// CreateMeetingAttachmentPayload is the payload type of the Meeting Service
-// service create-meeting-attachment method.
-type CreateMeetingAttachmentPayload struct {
+// CreateItxMeetingPayload is the payload type of the Meeting Service service
+// create-itx-meeting method.
+type CreateItxMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Version of the API
+	Version *string
 	// Determines if the operation should be synchronous (true) or asynchronous
 	// (false, default)
 	XSync *bool
-	// Version of the API
-	Version *string
-	// The UID of the meeting this attachment belongs to
-	MeetingUID string
-	// The type of attachment
-	Type string
-	// URL for link-type attachments (required if type is 'link')
-	Link *string
-	// Custom name for the attachment
-	Name string
-	// Optional description of the attachment
+	// The UID of the LF project
+	ProjectUID string
+	// The title of the meeting
+	Title string
+	// The start time of the meeting in RFC3339 format
+	StartTime string
+	// The duration of the meeting in minutes
+	Duration int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone string
+	// The visibility of the meeting's existence to other users
+	Visibility string
+	// The description of the meeting
 	Description *string
-	// Optional: The file data to upload (for type='file')
-	File []byte
-	// The filename extracted from multipart form data (populated by decoder)
-	FileName *string
-	// The content type extracted from multipart form data (populated by decoder)
-	FileContentType *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting
+	MeetingType *string
+	// The number of minutes that users are allowed to join the meeting early
+	EarlyJoinTimeMinutes *int
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// The visibility of artifacts to users
+	ArtifactVisibility *string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
 }
 
-// CreateMeetingPayload is the payload type of the Meeting Service service
-// create-meeting method.
-type CreateMeetingPayload struct {
+// CreateItxPastMeetingParticipantPayload is the payload type of the Meeting
+// Service service create-itx-past-meeting-participant method.
+type CreateItxPastMeetingParticipantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
 	// Version of the API
 	Version *string
+	// Past meeting ID (meeting_id-occurrence_id format)
+	PastMeetingID string
+	// Email address
+	Email *string
+	// First name
+	FirstName *string
+	// Last name
+	LastName *string
+	// LF SSO username
+	Username *string
+	// LF user ID (Salesforce ID)
+	LfUserID *string
+	// Organization name
+	OrgName *string
+	// Job title
+	JobTitle *string
+	// Whether org has LF membership
+	OrgIsMember *bool
+	// Whether org has project membership
+	OrgIsProjectMember *bool
+	// Associated committee UUID
+	CommitteeID *string
+	// Role within committee
+	CommitteeRole *string
+	// Voting status in committee
+	CommitteeVotingStatus *string
+	// URL to profile picture
+	AvatarURL *string
+	// Whether the participant was invited/registered - creates invitee record if
+	// true
+	IsInvited *bool
+	// Whether the participant attended - creates attendee record if true
+	IsAttended *bool
+	// Whether the attendee has been verified (attendee only)
+	IsVerified *bool
+	// Whether attendee is marked as unknown (attendee only)
+	IsUnknown *bool
+	// Array of session objects with join/leave times (attendee only)
+	Sessions []*ParticipantSession
+}
+
+// CreateItxPastMeetingPayload is the payload type of the Meeting Service
+// service create-itx-past-meeting method.
+type CreateItxPastMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Zoom meeting ID
+	MeetingID string
+	// Zoom occurrence ID (Unix timestamp)
+	OccurrenceID string
 	// The UID of the LF project
 	ProjectUID string
 	// The start time of the meeting in RFC3339 format
@@ -199,684 +231,488 @@ type CreateMeetingPayload struct {
 	Duration int
 	// The timezone of the meeting (e.g. 'America/New_York')
 	Timezone string
-	// The recurrence of the meeting
-	Recurrence *Recurrence
-	// The title of the meeting
-	Title string
 	// The description of the meeting
-	Description string
-	// The committees associated with the meeting
-	Committees []*Committee
-	// The platform name of where the meeting is hosted
-	Platform *string
-	// The number of minutes that users are allowed to join the meeting early
-	// without being kicked out
-	EarlyJoinTimeMinutes *int
-	// The type of meeting. This is usually dependent on the committee(s)
-	// associated with the meeting
-	MeetingType *string
-	// The visibility of the meeting's existence to other users
-	Visibility *string
-	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-	// only invited users or anyone?)
-	Restricted *bool
-	// The visibility of artifacts to users (e.g. public, only for registrants,
-	// only for hosts)
-	ArtifactVisibility *string
-	// Whether recording is enabled for the meeting
-	RecordingEnabled *bool
-	// Whether transcription is enabled for the meeting
-	TranscriptEnabled *bool
-	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled *bool
-	// Whether attendees/participants list is visible to other participants
-	ShowMeetingAttendees *bool
-	// The organizers of the meeting. This is a list of LFIDs of the meeting
-	// organizers.
-	Organizers []string
-	// For zoom platform meetings: the configuration for the meeting
-	ZoomConfig *ZoomConfigPost
-}
-
-// CreateMeetingRegistrantPayload is the payload type of the Meeting Service
-// service create-meeting-registrant method.
-type CreateMeetingRegistrantPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// Version of the API
-	Version *string
-	// The UID of the meeting
-	MeetingUID string
-	// User's email address
-	Email string
-	// User's first name
-	FirstName *string
-	// User's last name
-	LastName *string
-	// If user should have access as a meeting host
-	Host *bool
-	// User's job title
-	JobTitle *string
-	// User's organization
-	OrgName *string
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string
-	// User's avatar URL
-	AvatarURL *string
-	// User's LinkedIn profile URL
-	LinkedinProfile *string
-	// User's LF ID
-	Username *string
-}
-
-// CreateMeetingRsvpPayload is the payload type of the Meeting Service service
-// create-meeting-rsvp method.
-type CreateMeetingRsvpPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// Version of the API
-	Version *string
-	// The UID of the meeting this RSVP is for
-	MeetingUID string
-	// The ID of the registrant submitting this RSVP
-	RegistrantID *string
-	// The username of the registrant
-	Username *string
-	// The RSVP response
-	Response string
-	// The scope of the RSVP (single occurrence, all occurrences, or this and
-	// following)
-	Scope string
-	// The ID of the specific occurrence (required for 'single' and
-	// 'this_and_following' scopes)
-	OccurrenceID *string
-}
-
-// CreatePastMeetingAttachmentPayload is the payload type of the Meeting
-// Service service create-past-meeting-attachment method.
-type CreatePastMeetingAttachmentPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// Version of the API
-	Version *string
-	// The UID of the past meeting this attachment belongs to
-	PastMeetingUID string
-	// The type of attachment
-	Type string
-	// URL for link-type attachments (required if type is 'link')
-	Link *string
-	// Custom name for the attachment
-	Name string
-	// Optional description of the attachment
 	Description *string
-	// Optional: UID of an existing file in Object Store to reference (for
-	// type='file')
-	SourceObjectUID *string
-	// Optional: The file data to upload (for type='file', required if
-	// source_object_uid is not provided)
-	File []byte
-	// The filename extracted from multipart form data (populated by decoder)
-	FileName *string
-	// The content type extracted from multipart form data (populated by decoder)
-	FileContentType *string
-}
-
-// CreatePastMeetingParticipantPayload is the payload type of the Meeting
-// Service service create-past-meeting-participant method.
-type CreatePastMeetingParticipantPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	UID *string
-	// The unique identifier of the past meeting
-	PastMeetingUID string
-	// User's email address
-	Email string
-	// User's first name
-	FirstName *string
-	// User's last name
-	LastName *string
-	// If user should have access as a meeting host
-	Host *bool
-	// User's job title
-	JobTitle *string
-	// User's organization
-	OrgName *string
-	// User's avatar URL
-	AvatarURL *string
-	// User's LinkedIn profile URL
-	LinkedinProfile *string
-	// User's LF ID
-	Username *string
-	// Whether the participant was invited to this past meeting
-	IsInvited *bool
-	// Whether the participant attended this past meeting
-	IsAttended *bool
-}
-
-// CreatePastMeetingPayload is the payload type of the Meeting Service service
-// create-past-meeting method.
-type CreatePastMeetingPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// Version of the API
-	Version *string
-	// The UID of the original meeting
-	MeetingUID string
-	// The occurrence ID for recurring meetings
-	OccurrenceID *string
-	// The UID of the LF project
-	ProjectUID string
-	// The scheduled start time of the past meeting
-	ScheduledStartTime string
-	// The scheduled end time of the past meeting
-	ScheduledEndTime string
-	// The duration of the meeting in minutes
-	Duration int
-	// The timezone of the meeting (e.g. 'America/New_York')
-	Timezone string
-	// The recurrence of the meeting
-	Recurrence *Recurrence
-	// The title of the meeting
-	Title string
-	// The description of the meeting
-	Description string
-	// The committees associated with the meeting
-	Committees []*Committee
-	// The platform name of where the meeting is hosted
-	Platform string
-	// The ID of the meeting in the platform (e.g. Zoom meeting ID)
-	PlatformMeetingID *string
-	// The number of minutes that users are allowed to join the meeting early
-	// without being kicked out
-	EarlyJoinTimeMinutes *int
-	// The type of meeting. This is usually dependent on the committee(s)
-	// associated with the meeting
-	MeetingType *string
-	// The visibility of the meeting's existence to other users
-	Visibility *string
 	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
 	// only invited users or anyone?)
 	Restricted *bool
-	// The visibility of artifacts to users (e.g. public, only for registrants,
-	// only for hosts)
-	ArtifactVisibility *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting
+	MeetingType *string
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool
 	// Whether transcription is enabled for the meeting
 	TranscriptEnabled *bool
-	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled *bool
-	// Whether attendees/participants list is visible to other participants
-	ShowMeetingAttendees *bool
-	// For zoom platform meetings: the configuration for the meeting
-	ZoomConfig *ZoomConfigFull
-	// Sessions represent individual start/end periods if a meeting was stopped and
-	// restarted
-	Sessions []*Session
+	// The visibility of artifacts to users
+	ArtifactVisibility *string
+	// The visibility of the meeting's existence to other users
+	Visibility *string
+	// The title of the meeting
+	Title *string
 }
 
-// DeleteMeetingAttachmentPayload is the payload type of the Meeting Service
-// service delete-meeting-attachment method.
-type DeleteMeetingAttachmentPayload struct {
+// CreateItxRegistrantPayload is the payload type of the Meeting Service
+// service create-itx-registrant method.
+type CreateItxRegistrantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
 	// Version of the API
 	Version *string
-	// The UID of the meeting this attachment belongs to
-	MeetingUID string
-	// The UID of the attachment
-	UID string
+	// The ID of the meeting
+	MeetingID string
+	// Registrant UID (read-only)
+	UID *string
+	// Registrant type: direct or committee (read-only)
+	Type *string
+	// Committee UID (for committee registrants)
+	CommitteeUID *string
+	// Registrant email
+	Email *string
+	// LF username
+	Username *string
+	// First name (required with email)
+	FirstName *string
+	// Last name (required with email)
+	LastName *string
+	// Organization
+	Org *string
+	// Job title
+	JobTitle *string
+	// Profile picture URL
+	ProfilePicture *string
+	// Access to host key for the meeting
+	Host *bool
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string
+	// Creator user info (read-only)
+	CreatedBy *ITXUser
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUser
 }
 
-// DeleteMeetingOccurrencePayload is the payload type of the Meeting Service
-// service delete-meeting-occurrence method.
-type DeleteMeetingOccurrencePayload struct {
+// DeleteItxMeetingPayload is the payload type of the Meeting Service service
+// delete-itx-meeting method.
+type DeleteItxMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	UID string
-	// The ID of the occurrence to cancel
+	// The Zoom meeting ID
+	MeetingID string
+}
+
+// DeleteItxOccurrencePayload is the payload type of the Meeting Service
+// service delete-itx-occurrence method.
+type DeleteItxOccurrencePayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the occurrence (Unix timestamp)
 	OccurrenceID string
 }
 
-// DeleteMeetingPayload is the payload type of the Meeting Service service
-// delete-meeting method.
-type DeleteMeetingPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
-	// Version of the API
-	Version *string
-	// The UID of the meeting
-	UID *string
-}
-
-// DeleteMeetingRegistrantPayload is the payload type of the Meeting Service
-// service delete-meeting-registrant method.
-type DeleteMeetingRegistrantPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
-	// Version of the API
-	Version *string
-	// The UID of the meeting
-	MeetingUID *string
-	// The UID of the registrant
-	UID *string
-}
-
-// DeletePastMeetingAttachmentPayload is the payload type of the Meeting
-// Service service delete-past-meeting-attachment method.
-type DeletePastMeetingAttachmentPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// Version of the API
-	Version *string
-	// The UID of the past meeting this attachment belongs to
-	PastMeetingUID string
-	// The UID of the attachment
-	UID string
-}
-
-// DeletePastMeetingParticipantPayload is the payload type of the Meeting
-// Service service delete-past-meeting-participant method.
-type DeletePastMeetingParticipantPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	PastMeetingUID *string
-	// The UID of the past meeting participant
-	UID *string
-}
-
-// DeletePastMeetingPayload is the payload type of the Meeting Service service
-// delete-past-meeting method.
-type DeletePastMeetingPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	UID *string
-}
-
-// GetMeetingAttachmentMetadataPayload is the payload type of the Meeting
-// Service service get-meeting-attachment-metadata method.
-type GetMeetingAttachmentMetadataPayload struct {
+// DeleteItxPastMeetingParticipantPayload is the payload type of the Meeting
+// Service service delete-itx-past-meeting-participant method.
+type DeleteItxPastMeetingParticipantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting this attachment belongs to
-	MeetingUID string
-	// The UID of the attachment
-	UID string
+	// Past meeting ID (meeting_id-occurrence_id format)
+	PastMeetingID string
+	// Participant ID (invitee_id or attendee_id)
+	ParticipantID string
 }
 
-// GetMeetingAttachmentPayload is the payload type of the Meeting Service
-// service get-meeting-attachment method.
-type GetMeetingAttachmentPayload struct {
+// DeleteItxPastMeetingPayload is the payload type of the Meeting Service
+// service delete-itx-past-meeting method.
+type DeleteItxPastMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting this attachment belongs to
-	MeetingUID string
-	// The UID of the attachment
-	UID string
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
 }
 
-// GetMeetingBasePayload is the payload type of the Meeting Service service
-// get-meeting-base method.
-type GetMeetingBasePayload struct {
+// DeleteItxRegistrantPayload is the payload type of the Meeting Service
+// service delete-itx-registrant method.
+type DeleteItxRegistrantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	UID *string
-	// Include cancelled occurrences in the response
-	IncludeCancelledOccurrences bool
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
 }
 
-// GetMeetingBaseResult is the result type of the Meeting Service service
-// get-meeting-base method.
-type GetMeetingBaseResult struct {
-	Meeting *MeetingBase
-	// ETag header value
-	Etag *string
+type ForbiddenError struct {
+	// HTTP status code
+	Code string
+	// Error message
+	Message string
 }
 
-// GetMeetingJoinURLPayload is the payload type of the Meeting Service service
-// get-meeting-join-url method.
-type GetMeetingJoinURLPayload struct {
+// GetItxJoinLinkPayload is the payload type of the Meeting Service service
+// get-itx-join-link method.
+type GetItxJoinLinkPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	UID *string
+	// The ID of the meeting
+	MeetingID string
+	// Use email for identification instead of user_id
+	UseEmail *bool
+	// LF user ID
+	UserID *string
+	// User's full name
+	Name *string
+	// User's email address
+	Email *string
+	// Register user as guest if not already registered
+	Register *bool
 }
 
-// GetMeetingJoinURLResult is the result type of the Meeting Service service
-// get-meeting-join-url method.
-type GetMeetingJoinURLResult struct {
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	JoinURL string
-}
-
-// GetMeetingRegistrantPayload is the payload type of the Meeting Service
-// service get-meeting-registrant method.
-type GetMeetingRegistrantPayload struct {
+// GetItxMeetingCountPayload is the payload type of the Meeting Service service
+// get-itx-meeting-count method.
+type GetItxMeetingCountPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	MeetingUID *string
-	// The UID of the registrant
-	UID *string
+	// The UID of the LF project
+	ProjectUID string
 }
 
-// GetMeetingRegistrantResult is the result type of the Meeting Service service
-// get-meeting-registrant method.
-type GetMeetingRegistrantResult struct {
-	Registrant *Registrant
-	// ETag header value
-	Etag *string
-}
-
-// GetMeetingRegistrantsPayload is the payload type of the Meeting Service
-// service get-meeting-registrants method.
-type GetMeetingRegistrantsPayload struct {
+// GetItxMeetingPayload is the payload type of the Meeting Service service
+// get-itx-meeting method.
+type GetItxMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	UID *string
+	// The Zoom meeting ID
+	MeetingID string
 }
 
-// GetMeetingRegistrantsResult is the result type of the Meeting Service
-// service get-meeting-registrants method.
-type GetMeetingRegistrantsResult struct {
-	// Meeting registrants
-	Registrants []*Registrant
-	// Cache control header
-	CacheControl *string
-}
-
-// GetMeetingRsvpsPayload is the payload type of the Meeting Service service
-// get-meeting-rsvps method.
-type GetMeetingRsvpsPayload struct {
+// GetItxPastMeetingPayload is the payload type of the Meeting Service service
+// get-itx-past-meeting method.
+type GetItxPastMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting this RSVP is for
-	MeetingUID string
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
 }
 
-// GetMeetingSettingsPayload is the payload type of the Meeting Service service
-// get-meeting-settings method.
-type GetMeetingSettingsPayload struct {
+// GetItxPastMeetingSummaryPayload is the payload type of the Meeting Service
+// service get-itx-past-meeting-summary method.
+type GetItxPastMeetingSummaryPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	UID *string
-}
-
-// GetMeetingSettingsResult is the result type of the Meeting Service service
-// get-meeting-settings method.
-type GetMeetingSettingsResult struct {
-	MeetingSettings *MeetingSettings
-	// ETag header value
-	Etag *string
-}
-
-// GetMeetingsPayload is the payload type of the Meeting Service service
-// get-meetings method.
-type GetMeetingsPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// Include cancelled occurrences in the response
-	IncludeCancelledOccurrences bool
-}
-
-// GetMeetingsResult is the result type of the Meeting Service service
-// get-meetings method.
-type GetMeetingsResult struct {
-	// Resources found
-	Meetings []*MeetingFull
-	// Cache control header
-	CacheControl *string
-}
-
-// GetPastMeetingAttachmentMetadataPayload is the payload type of the Meeting
-// Service service get-past-meeting-attachment-metadata method.
-type GetPastMeetingAttachmentMetadataPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The UID of the past meeting this attachment belongs to
-	PastMeetingUID string
-	// The UID of the attachment
-	UID string
-}
-
-// GetPastMeetingAttachmentPayload is the payload type of the Meeting Service
-// service get-past-meeting-attachment method.
-type GetPastMeetingAttachmentPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The UID of the past meeting this attachment belongs to
-	PastMeetingUID string
-	// The UID of the attachment
-	UID string
-}
-
-// GetPastMeetingAttachmentsPayload is the payload type of the Meeting Service
-// service get-past-meeting-attachments method.
-type GetPastMeetingAttachmentsPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the resource
-	UID *string
-}
-
-// GetPastMeetingAttachmentsResult is the result type of the Meeting Service
-// service get-past-meeting-attachments method.
-type GetPastMeetingAttachmentsResult struct {
-	// Past meeting attachments
-	Attachments []*PastMeetingAttachment
-	// Cache control header
-	CacheControl *string
-}
-
-// GetPastMeetingParticipantPayload is the payload type of the Meeting Service
-// service get-past-meeting-participant method.
-type GetPastMeetingParticipantPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	PastMeetingUID *string
-	// The UID of the past meeting participant
-	UID *string
-}
-
-// GetPastMeetingParticipantResult is the result type of the Meeting Service
-// service get-past-meeting-participant method.
-type GetPastMeetingParticipantResult struct {
-	Participant *PastMeetingParticipant
-	// ETag header value
-	Etag *string
-}
-
-// GetPastMeetingParticipantsPayload is the payload type of the Meeting Service
-// service get-past-meeting-participants method.
-type GetPastMeetingParticipantsPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	UID *string
-}
-
-// GetPastMeetingParticipantsResult is the result type of the Meeting Service
-// service get-past-meeting-participants method.
-type GetPastMeetingParticipantsResult struct {
-	// Past meeting participants
-	Participants []*PastMeetingParticipant
-	// Cache control header
-	CacheControl *string
-}
-
-// GetPastMeetingPayload is the payload type of the Meeting Service service
-// get-past-meeting method.
-type GetPastMeetingPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	UID *string
-}
-
-// GetPastMeetingResult is the result type of the Meeting Service service
-// get-past-meeting method.
-type GetPastMeetingResult struct {
-	PastMeeting *PastMeeting
-	// ETag header value
-	Etag *string
-}
-
-// GetPastMeetingSummariesPayload is the payload type of the Meeting Service
-// service get-past-meeting-summaries method.
-type GetPastMeetingSummariesPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the resource
-	UID *string
-}
-
-// GetPastMeetingSummariesResult is the result type of the Meeting Service
-// service get-past-meeting-summaries method.
-type GetPastMeetingSummariesResult struct {
-	// Past meeting summaries
-	Summaries []*PastMeetingSummary
-	// Cache control header
-	CacheControl *string
-}
-
-// GetPastMeetingSummaryPayload is the payload type of the Meeting Service
-// service get-past-meeting-summary method.
-type GetPastMeetingSummaryPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	PastMeetingUID string
-	// The unique identifier of the summary
+	// Past meeting ID (meeting_id-occurrence_id)
+	PastMeetingID string
+	// Summary UID
 	SummaryUID string
 }
 
-// GetPastMeetingSummaryResult is the result type of the Meeting Service
-// service get-past-meeting-summary method.
-type GetPastMeetingSummaryResult struct {
-	Summary *PastMeetingSummary
-	// ETag header value
-	Etag *string
-}
-
-// GetPastMeetingsPayload is the payload type of the Meeting Service service
-// get-past-meetings method.
-type GetPastMeetingsPayload struct {
+// GetItxRegistrantIcsPayload is the payload type of the Meeting Service
+// service get-itx-registrant-ics method.
+type GetItxRegistrantIcsPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
 }
 
-// GetPastMeetingsResult is the result type of the Meeting Service service
-// get-past-meetings method.
-type GetPastMeetingsResult struct {
-	// Past meetings found
-	PastMeetings []*PastMeeting
-	// Cache control header
-	CacheControl *string
+// GetItxRegistrantPayload is the payload type of the Meeting Service service
+// get-itx-registrant method.
+type GetItxRegistrantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
+}
+
+// ITXMeetingCountResponse is the result type of the Meeting Service service
+// get-itx-meeting-count method.
+type ITXMeetingCountResponse struct {
+	// Number of meetings for the project
+	MeetingCount int
+}
+
+// Meeting occurrence from ITX
+type ITXOccurrence struct {
+	// Unix timestamp
+	OccurrenceID *string
+	// RFC3339 start time
+	StartTime *string
+	// Duration in minutes
+	Duration *int
+	// available or cancel
+	Status *string
+	// Number of registrants for this occurrence
+	RegistrantCount *int
+}
+
+// ITXPastMeetingParticipant is the result type of the Meeting Service service
+// create-itx-past-meeting-participant method.
+type ITXPastMeetingParticipant struct {
+	// Participant identifier (invitee_id or attendee_id or both)
+	ID *string
+	// Invitee record UUID (if is_invited=true)
+	InviteeID *string
+	// Attendee record UUID (if is_attended=true)
+	AttendeeID *string
+	// Past meeting ID (meeting_id-occurrence_id)
+	PastMeetingID *string
+	// Meeting ID
+	MeetingID *string
+	// Primary email address
+	Email *string
+	// First name
+	FirstName *string
+	// Last name
+	LastName *string
+	// LF SSO username
+	Username *string
+	// LF user ID (Salesforce ID)
+	LfUserID *string
+	// Organization name
+	OrgName *string
+	// Job title
+	JobTitle *string
+	// Whether org has LF membership
+	OrgIsMember *bool
+	// Whether org has project membership
+	OrgIsProjectMember *bool
+	// Associated committee UUID
+	CommitteeID *string
+	// Role within committee
+	CommitteeRole *string
+	// Whether participant is a committee member
+	IsCommitteeMember *bool
+	// Voting status in committee
+	CommitteeVotingStatus *string
+	// URL to profile picture
+	AvatarURL *string
+	// Whether the participant was invited/registered to this past meeting
+	IsInvited *bool
+	// Whether the participant attended this past meeting
+	IsAttended *bool
+	// Whether the attendee has been verified (attendees only)
+	IsVerified *bool
+	// Whether attendee is marked as unknown (attendees only)
+	IsUnknown *bool
+	// Array of session objects with join/leave times (attendees only)
+	Sessions []*ParticipantSession
+	// Average attendance percentage (attendees only, calculated)
+	AverageAttendance *int
+	// Creation timestamp (RFC3339)
+	CreatedAt *string
+	// Creator user info
+	CreatedBy *ITXUser
+	// Last modified timestamp (RFC3339)
+	ModifiedAt *string
+	// Last modifier user info
+	ModifiedBy *ITXUser
+}
+
+// ITXPastZoomMeeting is the result type of the Meeting Service service
+// create-itx-past-meeting method.
+type ITXPastZoomMeeting struct {
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	ID *string
+	// Zoom meeting ID
+	MeetingID *string
+	// Zoom occurrence ID (Unix timestamp)
+	OccurrenceID *string
+	// LF project UID
+	ProjectUID *string
+	// Meeting title
+	Title *string
+	// Meeting description/agenda
+	Description *string
+	// Meeting start time (RFC3339)
+	StartTime *string
+	// Meeting duration in minutes
+	Duration *int
+	// Meeting timezone
+	Timezone *string
+	// Meeting visibility
+	Visibility *string
+	// Whether meeting was restricted to invited users only
+	Restricted *bool
+	// Type of meeting
+	MeetingType *string
+	// Committees associated with the past meeting
+	Committees []*Committee
+	// Whether recording was enabled
+	RecordingEnabled *bool
+	// Who has access to meeting artifacts
+	ArtifactVisibility *string
+	// Whether transcription was enabled
+	TranscriptEnabled *bool
+	// Whether past meeting was manually created
+	IsManuallyCreated *bool
+}
+
+// User information from ITX
+type ITXUser struct {
+	// Username
+	Username *string
+	// Full name
+	Name *string
+	// Email address
+	Email *string
+	// Profile picture URL
+	ProfilePicture *string
+}
+
+// ITXZoomMeetingJoinLink is the result type of the Meeting Service service
+// get-itx-join-link method.
+type ITXZoomMeetingJoinLink struct {
+	// Zoom meeting join URL
+	Link string
+}
+
+// ITXZoomMeetingRegistrant is the result type of the Meeting Service service
+// create-itx-registrant method.
+type ITXZoomMeetingRegistrant struct {
+	// Registrant UID (read-only)
+	UID *string
+	// Registrant type: direct or committee (read-only)
+	Type *string
+	// Committee UID (for committee registrants)
+	CommitteeUID *string
+	// Registrant email
+	Email *string
+	// LF username
+	Username *string
+	// First name (required with email)
+	FirstName *string
+	// Last name (required with email)
+	LastName *string
+	// Organization
+	Org *string
+	// Job title
+	JobTitle *string
+	// Profile picture URL
+	ProfilePicture *string
+	// Access to host key for the meeting
+	Host *bool
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string
+	// Creator user info (read-only)
+	CreatedBy *ITXUser
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUser
+}
+
+// ITXZoomMeetingResponse is the result type of the Meeting Service service
+// create-itx-meeting method.
+type ITXZoomMeetingResponse struct {
+	// The UID of the LF project
+	ProjectUID *string
+	// The title of the meeting
+	Title *string
+	// The start time of the meeting in RFC3339 format
+	StartTime *string
+	// The duration of the meeting in minutes
+	Duration *int
+	// The timezone of the meeting (e.g. 'America/New_York')
+	Timezone *string
+	// The visibility of the meeting's existence to other users
+	Visibility *string
+	// The description of the meeting
+	Description *string
+	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
+	// only invited users or anyone?)
+	Restricted *bool
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting
+	MeetingType *string
+	// The number of minutes that users are allowed to join the meeting early
+	EarlyJoinTimeMinutes *int
+	// Whether recording is enabled for the meeting
+	RecordingEnabled *bool
+	// Whether transcription is enabled for the meeting
+	TranscriptEnabled *bool
+	// Whether automatic youtube uploading is enabled for the meeting
+	YoutubeUploadEnabled *bool
+	// The visibility of artifacts to users
+	ArtifactVisibility *string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
+	// Zoom meeting ID from ITX
+	ID *string
+	// 6-digit host key
+	HostKey *string
+	// Zoom meeting passcode
+	Passcode *string
+	// UUID password for join page
+	Password *string
+	// Public meeting join URL
+	PublicLink *string
+	// Creation timestamp (RFC3339)
+	CreatedAt *string
+	// Last modification timestamp (RFC3339)
+	ModifiedAt *string
+	// Meeting occurrences (for recurring)
+	Occurrences []*ITXOccurrence
+	// Number of registrants
+	RegistrantCount *int
 }
 
 type InternalServerError struct {
@@ -886,200 +722,6 @@ type InternalServerError struct {
 	Message string
 }
 
-// MeetingAttachment is the result type of the Meeting Service service
-// create-meeting-attachment method.
-type MeetingAttachment struct {
-	// The UID of the attachment
-	UID string
-	// The UID of the meeting this attachment belongs to
-	MeetingUID string
-	// The type of attachment
-	Type string
-	// URL for link-type attachments (required if type is 'link')
-	Link *string
-	// Custom name for the attachment
-	Name string
-	// The name of the uploaded file (only for type='file')
-	FileName *string
-	// The size of the file in bytes (only for type='file')
-	FileSize *int64
-	// The MIME type of the file (only for type='file')
-	ContentType *string
-	// The username of the user who uploaded the file or link
-	UploadedBy string
-	// RFC3339 timestamp when the file was uploaded
-	UploadedAt *string
-	// Optional description of the attachment
-	Description *string
-}
-
-// MeetingBase is the result type of the Meeting Service service
-// update-meeting-base method.
-type MeetingBase struct {
-	// The UID of the meeting
-	UID *string
-	// The UID of the LF project
-	ProjectUID *string
-	// The start time of the meeting in RFC3339 format
-	StartTime *string
-	// The duration of the meeting in minutes
-	Duration *int
-	// The timezone of the meeting (e.g. 'America/New_York')
-	Timezone *string
-	// The recurrence of the meeting
-	Recurrence *Recurrence
-	// The final end time for the meeting series. For recurring meetings, this is
-	// the end time of the last occurrence. For non-recurring meetings, this is the
-	// end time of the single meeting (start time + duration). Null if the meeting
-	// has no end date (infinite recurrence).
-	SeriesEndDate *string
-	// The title of the meeting
-	Title *string
-	// The description of the meeting
-	Description *string
-	// The committees associated with the meeting
-	Committees []*Committee
-	// The platform name of where the meeting is hosted
-	Platform *string
-	// The number of minutes that users are allowed to join the meeting early
-	// without being kicked out
-	EarlyJoinTimeMinutes *int
-	// The type of meeting. This is usually dependent on the committee(s)
-	// associated with the meeting
-	MeetingType *string
-	// The visibility of the meeting's existence to other users
-	Visibility *string
-	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-	// only invited users or anyone?)
-	Restricted *bool
-	// The visibility of artifacts to users (e.g. public, only for registrants,
-	// only for hosts)
-	ArtifactVisibility *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string
-	// Unique, non-guessable, password for the meeting - is needed to join a
-	// meeting and is included in invites
-	Password *string
-	// The number of registrants that have an email delivery error with their
-	// invite. The delivery errors are counted as the last invite that was sent to
-	// the registrant, so if a registrant previously had a delivery error but not
-	// in their most recent invite received, then it does not count towards this
-	// field value.
-	EmailDeliveryErrorCount *int
-	// Whether recording is enabled for the meeting
-	RecordingEnabled *bool
-	// Whether transcription is enabled for the meeting
-	TranscriptEnabled *bool
-	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled *bool
-	// For zoom platform meetings: the configuration for the meeting
-	ZoomConfig *ZoomConfigFull
-	// Whether attendees/participants list is visible to other participants
-	ShowMeetingAttendees *bool
-	// The number of registrants for the meeting
-	RegistrantCount *int
-	// Array of meeting occurrences (read-only from platform API)
-	Occurrences []*Occurrence
-	// The date and time the resource was created
-	CreatedAt *string
-	// The date and time the resource was last updated
-	UpdatedAt *string
-}
-
-// MeetingFull is the result type of the Meeting Service service create-meeting
-// method.
-type MeetingFull struct {
-	// The UID of the meeting
-	UID *string
-	// The UID of the LF project
-	ProjectUID *string
-	// The start time of the meeting in RFC3339 format
-	StartTime *string
-	// The duration of the meeting in minutes
-	Duration *int
-	// The timezone of the meeting (e.g. 'America/New_York')
-	Timezone *string
-	// The recurrence of the meeting
-	Recurrence *Recurrence
-	// The final end time for the meeting series. For recurring meetings, this is
-	// the end time of the last occurrence. For non-recurring meetings, this is the
-	// end time of the single meeting (start time + duration). Null if the meeting
-	// has no end date (infinite recurrence).
-	SeriesEndDate *string
-	// The title of the meeting
-	Title *string
-	// The description of the meeting
-	Description *string
-	// The committees associated with the meeting
-	Committees []*Committee
-	// The platform name of where the meeting is hosted
-	Platform *string
-	// The number of minutes that users are allowed to join the meeting early
-	// without being kicked out
-	EarlyJoinTimeMinutes *int
-	// The type of meeting. This is usually dependent on the committee(s)
-	// associated with the meeting
-	MeetingType *string
-	// The visibility of the meeting's existence to other users
-	Visibility *string
-	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-	// only invited users or anyone?)
-	Restricted *bool
-	// The visibility of artifacts to users (e.g. public, only for registrants,
-	// only for hosts)
-	ArtifactVisibility *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string
-	// Unique, non-guessable, password for the meeting - is needed to join a
-	// meeting and is included in invites
-	Password *string
-	// The number of registrants that have an email delivery error with their
-	// invite. The delivery errors are counted as the last invite that was sent to
-	// the registrant, so if a registrant previously had a delivery error but not
-	// in their most recent invite received, then it does not count towards this
-	// field value.
-	EmailDeliveryErrorCount *int
-	// Whether recording is enabled for the meeting
-	RecordingEnabled *bool
-	// Whether transcription is enabled for the meeting
-	TranscriptEnabled *bool
-	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled *bool
-	// For zoom platform meetings: the configuration for the meeting
-	ZoomConfig *ZoomConfigFull
-	// Whether attendees/participants list is visible to other participants
-	ShowMeetingAttendees *bool
-	// The number of registrants for the meeting
-	RegistrantCount *int
-	// Array of meeting occurrences (read-only from platform API)
-	Occurrences []*Occurrence
-	// The date and time the resource was created
-	CreatedAt *string
-	// The date and time the resource was last updated
-	UpdatedAt *string
-	// The organizers of the meeting. This is a list of LFIDs of the meeting
-	// organizers.
-	Organizers []string
-}
-
-// MeetingSettings is the result type of the Meeting Service service
-// update-meeting-settings method.
-type MeetingSettings struct {
-	// The UID of the meeting
-	UID *string
-	// The organizers of the meeting. This is a list of LFIDs of the meeting
-	// organizers.
-	Organizers []string
-	// The date and time the resource was created
-	CreatedAt *string
-	// The date and time the resource was last updated
-	UpdatedAt *string
-}
-
 type NotFoundError struct {
 	// HTTP status code
 	Code string
@@ -1087,198 +729,28 @@ type NotFoundError struct {
 	Message string
 }
 
-// Meeting occurrence object - read-only data from platform API
-type Occurrence struct {
-	// ID of the occurrence, also the start time in unix time
-	OccurrenceID *string
-	// GMT start time of occurrence
-	StartTime *string
-	// Meeting title for this occurrence
-	Title *string
-	// Meeting description for this occurrence
-	Description *string
-	// Occurrence duration in minutes
-	Duration *int
-	// The recurrence pattern for this occurrence onwards if there is one
-	Recurrence *Recurrence
-	// Number of registrants for this meeting occurrence
-	RegistrantCount *int
-	// Number of registrants who declined the invite for this occurrence
-	ResponseCountNo *int
-	// Number of registrants who accepted the invite for this occurrence
-	ResponseCountYes *int
-	// Number of registrants who responded maybe to the invite for this occurrence
-	ResponseCountMaybe *int
-	// Whether the occurrence is cancelled
-	IsCancelled *bool
-}
-
 // A single join/leave session of a participant in a meeting
 type ParticipantSession struct {
-	// Session UID from the meeting platform (e.g., Zoom)
-	UID string
-	// ISO 8601 timestamp when participant joined the session
-	JoinTime string
-	// ISO 8601 timestamp when participant left the session (null if still in
-	// meeting)
+	// Zoom participant UUID
+	ParticipantUUID *string
+	// When the participant joined (RFC3339)
+	JoinTime *string
+	// When the participant left (RFC3339)
 	LeaveTime *string
-	// Reason provided by the meeting platform for leaving
+	// Reason for leaving
 	LeaveReason *string
 }
 
-// PastMeeting is the result type of the Meeting Service service
-// create-past-meeting method.
-type PastMeeting struct {
-	// The unique identifier of the past meeting
-	UID *string
-	// The UID of the original meeting
-	MeetingUID *string
-	// The occurrence ID for recurring meetings
-	OccurrenceID *string
-	// The UID of the LF project
-	ProjectUID *string
-	// The scheduled start time of the past meeting
-	ScheduledStartTime *string
-	// The scheduled end time of the past meeting
-	ScheduledEndTime *string
-	// The duration of the meeting in minutes
-	Duration *int
-	// The timezone of the meeting (e.g. 'America/New_York')
-	Timezone *string
-	// The recurrence of the meeting
-	Recurrence *Recurrence
-	// The title of the meeting
-	Title *string
-	// The description of the meeting
-	Description *string
-	// The committees associated with the meeting
-	Committees []*Committee
-	// The platform name of where the meeting is hosted
-	Platform *string
-	// The ID of the meeting in the platform (e.g. Zoom meeting ID)
-	PlatformMeetingID *string
-	// The number of minutes that users are allowed to join the meeting early
-	// without being kicked out
-	EarlyJoinTimeMinutes *int
-	// The type of meeting. This is usually dependent on the committee(s)
-	// associated with the meeting
-	MeetingType *string
-	// The visibility of the meeting's existence to other users
-	Visibility *string
-	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
-	// only invited users or anyone?)
-	Restricted *bool
-	// The visibility of artifacts to users (e.g. public, only for registrants,
-	// only for hosts)
-	ArtifactVisibility *string
-	// The public join URL for participants to join the meeting via the LFX
-	// platform (e.g.
-	// 'https://zoom-lfx.platform.linuxfoundation.org/meeting/12343245463')
-	PublicLink *string
-	// Whether recording is enabled for the meeting
-	RecordingEnabled *bool
-	// Whether transcription is enabled for the meeting
-	TranscriptEnabled *bool
-	// Whether automatic youtube uploading is enabled for the meeting
-	YoutubeUploadEnabled *bool
-	// Whether attendees/participants list is visible to other participants
-	ShowMeetingAttendees *bool
-	// For zoom platform meetings: the configuration for the meeting
-	ZoomConfig *ZoomConfigFull
-	// Sessions represent individual start/end periods if a meeting was stopped and
-	// restarted
-	Sessions []*Session
-	// The date and time the resource was created
-	CreatedAt *string
-	// The date and time the resource was last updated
-	UpdatedAt *string
-}
-
-// PastMeetingAttachment is the result type of the Meeting Service service
-// create-past-meeting-attachment method.
-type PastMeetingAttachment struct {
-	// The UID of the attachment
-	UID string
-	// The UID of the past meeting this attachment belongs to
-	PastMeetingUID string
-	// The type of attachment
-	Type string
-	// URL for link-type attachments (required if type is 'link')
-	Link *string
-	// Custom name for the attachment
-	Name string
-	// The name of the file (only for type='file')
-	FileName *string
-	// The size of the file in bytes (only for type='file')
-	FileSize *int64
-	// The MIME type of the file (only for type='file')
-	ContentType *string
-	// The username of the user who uploaded the file or link
-	UploadedBy string
-	// RFC3339 timestamp when the file was uploaded
-	UploadedAt *string
-	// Optional description of the attachment
-	Description *string
-	// The UID of the file in the shared Object Store (only for type='file')
-	SourceObjectUID *string
-}
-
-// PastMeetingParticipant is the result type of the Meeting Service service
-// create-past-meeting-participant method.
-type PastMeetingParticipant struct {
-	// The UID of the past meeting participant
-	UID string
-	// The unique identifier of the past meeting
-	PastMeetingUID string
-	// The UID of the meeting
-	MeetingUID string
-	// User's email address
-	Email string
-	// User's first name
-	FirstName *string
-	// User's last name
-	LastName *string
-	// If user should have access as a meeting host
-	Host *bool
-	// User's job title
-	JobTitle *string
-	// User's organization
-	OrgName *string
-	// Whether the registrant is in an organization that has a membership with the
-	// LF. If unknown, don't pass this field; the API will find the value by default
-	OrgIsMember *bool
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool
-	// User's avatar URL
-	AvatarURL *string
-	// User's LinkedIn profile URL
-	LinkedinProfile *string
-	// User's LF ID
-	Username *string
-	// Whether the participant was invited to this past meeting
-	IsInvited *bool
-	// Whether the participant attended this past meeting
-	IsAttended *bool
-	// List of join/leave sessions for this participant
-	Sessions []*ParticipantSession
-	// The date and time the resource was created
-	CreatedAt *string
-	// The date and time the resource was last updated
-	UpdatedAt *string
-}
-
 // PastMeetingSummary is the result type of the Meeting Service service
-// update-past-meeting-summary method.
+// get-itx-past-meeting-summary method.
 type PastMeetingSummary struct {
-	// The unique identifier of the resource
+	// The unique identifier of the summary
 	UID string
-	// The unique identifier of the past meeting
-	PastMeetingUID string
-	// The UID of the original meeting
-	MeetingUID string
-	// The platform name of where the meeting is hosted
+	// The past meeting identifier (meeting_id-occurrence_id)
+	PastMeetingID string
+	// The meeting identifier
+	MeetingID string
+	// Meeting platform
 	Platform string
 	// Password for accessing the summary (if required)
 	Password *string
@@ -1292,170 +764,75 @@ type PastMeetingSummary struct {
 	Approved bool
 	// Whether summary email has been sent
 	EmailSent bool
-	// The date and time the resource was created
+	// Creation timestamp (RFC3339)
 	CreatedAt string
-	// The date and time the resource was last updated
+	// Update timestamp (RFC3339)
 	UpdatedAt string
 }
 
 // Zoom-specific configuration for a past meeting summary
 type PastMeetingSummaryZoomConfig struct {
-	// The ID of the created meeting in Zoom
+	// Zoom meeting ID
 	MeetingID *string
 	// Zoom meeting UUID
 	MeetingUUID *string
 }
 
-// RSVPListResult is the result type of the Meeting Service service
-// get-meeting-rsvps method.
-type RSVPListResult struct {
-	// List of RSVP responses
-	Rsvps []*RSVPResponse
-}
-
-// RSVPResponse is the result type of the Meeting Service service
-// create-meeting-rsvp method.
-type RSVPResponse struct {
-	// The unique identifier for this RSVP
-	ID string
-	// The UID of the meeting this RSVP is for
-	MeetingUID string
-	// The ID of the registrant submitting this RSVP
-	RegistrantID string
-	// The username of the registrant
-	Username string
-	// The email of the registrant
-	Email string
-	// The RSVP response
-	Response string
-	// The scope of the RSVP (single occurrence, all occurrences, or this and
-	// following)
-	Scope string
-	// The ID of the specific occurrence (required for 'single' and
-	// 'this_and_following' scopes)
-	OccurrenceID *string
-	// The date and time the resource was created
-	CreatedAt *string
-	// The date and time the resource was last updated
-	UpdatedAt *string
-}
-
-// Meeting recurrence object
+// Meeting recurrence settings
 type Recurrence struct {
-	// The recurrence type
-	Type int
-	// Define the interval at which the meeting should recur.
-	// For instance, if you would like to schedule a meeting that recurs every two
-	// months,
-	// you must set the value of this field as '2' and the value of the 'type'
-	// parameter as '3'.
-	// For a daily meeting, the maximum interval you can set is '90' days.
-	// For a weekly meeting the maximum interval that you can set is of '12' weeks.
-	// For a monthly meeting, there is a maximum of '3' months.
-	RepeatInterval int
-	// This field is required if you're scheduling a recurring meeting of type '2'
-	// to state which day(s)
-	// of the week the meeting should repeat. The value for this field could be a
-	// number between '1' to '7' in string format.
-	// For instance, if the meeting should recur on Sunday, provide '1' as the
-	// value of this field.
-	// If you would like the meeting to occur on multiple days of a week, you
-	// should provide comma separated values for this field.
-	// For instance, if the meeting should recur on Sundays and Tuesdays provide
-	// '1,3' as the value of this field.
-	// 1 - Sunday
-	// 2 - Monday
-	// 3 - Tuesday
-	// 4 - Wednesday
-	// 5 - Thursday
-	// 6 - Friday
-	// 7 - Saturday
+	// Recurrence type: 1=Daily, 2=Weekly, 3=Monthly
+	Type *int
+	// Repeat interval
+	RepeatInterval *int
+	// Days of week for weekly recurrence
 	WeeklyDays *string
-	// Use this field only if you're scheduling a recurring meeting of type '3' to
-	// state which day in a month, the meeting should recur. The value range is
-	// from 1 to 31. For instance, if you would like the meeting to recur on 23rd
-	// of each month, provide '23' as the value of this field and '1' as the value
-	// of the 'repeat_interval' field. Instead, if you would like the meeting to
-	// recur every three months, on 23rd of the month, change the value of the
-	// 'repeat_interval' field to '3'.
+	// Day of month for monthly recurrence
 	MonthlyDay *int
-	// Use this field only if you're scheduling a recurring meeting of type '3' to
-	// state the week of the month when the meeting should recur. If you use this
-	// field, you must also use the 'monthly_week_day' field to state the day of
-	// the week when the meeting should recur. '-1' - Last week of the month. 1 -
-	// First week of the month. 2 - Second week of the month. 3 - Third week of the
-	// month. 4 - Fourth week of the month.
+	// Week of month for monthly recurrence
 	MonthlyWeek *int
-	// Use this field only if you're scheduling a recurring meeting of type '3' to
-	// state a specific day in a week when the monthly meeting should recur. To use
-	// this field, you must also use the 'monthly_week' field. 1 - Sunday 2 -
-	// Monday 3 - Tuesday 4 - Wednesday 5 - Thursday 6 - Friday 7 - Saturday
+	// Day of week for monthly recurrence
 	MonthlyWeekDay *int
-	// Select how many times the meeting should recur before it is canceled. Cannot
-	// be used with 'end_date_time'.
+	// Number of occurrences
 	EndTimes *int
-	// Select the final date on which the meeting will recur before it is canceled.
-	// Cannot be used with 'end_times'. should be in GMT. should be in
-	// 'yyyy-MM-ddTHH:mm:ssZ' format.
+	// End date/time in RFC3339
 	EndDateTime *string
 }
 
-// Registrant is the result type of the Meeting Service service
-// create-meeting-registrant method.
-type Registrant struct {
-	// The UID of the registrant
-	UID string
-	// The UID of the meeting
-	MeetingUID string
-	// User's email address
-	Email string
-	// User's first name
-	FirstName *string
-	// User's last name
-	LastName *string
-	// If user should have access as a meeting host
-	Host *bool
-	// Type of registrant
-	Type string
-	// The UID of the committee if registrant is a committee member
-	CommitteeUID *string
-	// User's job title
-	JobTitle *string
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string
-	// User's organization
-	OrgName *string
-	// Whether the registrant is in an organization that has a membership with the
-	// LF. If unknown, don't pass this field; the API will find the value by default
-	OrgIsMember *bool
-	// Whether the registrant is in an organization that has a membership with the
-	// project (of the meeting). If unknown, don't pass this field; the API will
-	// find the value by default
-	OrgIsProjectMember *bool
-	// User's avatar URL
-	AvatarURL *string
-	// User's LinkedIn profile URL
-	LinkedinProfile *string
-	// User's LF ID
-	Username *string
-	// The date and time the resource was created
-	CreatedAt *string
-	// The date and time the resource was last updated
-	UpdatedAt *string
-}
-
-// ResendMeetingRegistrantInvitationPayload is the payload type of the Meeting
-// Service service resend-meeting-registrant-invitation method.
-type ResendMeetingRegistrantInvitationPayload struct {
+// RegisterItxCommitteeMembersPayload is the payload type of the Meeting
+// Service service register-itx-committee-members method.
+type RegisterItxCommitteeMembersPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	MeetingUID *string
-	// The UID of the registrant
-	UID *string
+	// The ID of the meeting
+	MeetingID string
+}
+
+// ResendItxMeetingInvitationsPayload is the payload type of the Meeting
+// Service service resend-itx-meeting-invitations method.
+type ResendItxMeetingInvitationsPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// Registrant IDs to exclude from resend
+	ExcludeRegistrantIds []string
+}
+
+// ResendItxRegistrantInvitationPayload is the payload type of the Meeting
+// Service service resend-itx-registrant-invitation method.
+type ResendItxRegistrantInvitationPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
 }
 
 type ServiceUnavailableError struct {
@@ -1463,16 +840,6 @@ type ServiceUnavailableError struct {
 	Code string
 	// Error message
 	Message string
-}
-
-// A single start/end session of a meeting on the platform
-type Session struct {
-	// The unique identifier of the session
-	UID string
-	// The start time of the session
-	StartTime string
-	// The end time of the session (may be null if session is ongoing)
-	EndTime *string
 }
 
 // AI-generated summary content for a past meeting
@@ -1498,233 +865,230 @@ type UnauthorizedError struct {
 	Message string
 }
 
-// UpdateMeetingBasePayload is the payload type of the Meeting Service service
-// update-meeting-base method.
-type UpdateMeetingBasePayload struct {
+// UpdateItxMeetingPayload is the payload type of the Meeting Service service
+// update-itx-meeting method.
+type UpdateItxMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
+	// Version of the API
+	Version *string
 	// Determines if the operation should be synchronous (true) or asynchronous
 	// (false, default)
 	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
-	// Version of the API
-	Version *string
-	// The UID of the meeting
-	UID string
+	// The Zoom meeting ID
+	MeetingID string
 	// The UID of the LF project
 	ProjectUID string
+	// The title of the meeting
+	Title string
 	// The start time of the meeting in RFC3339 format
 	StartTime string
 	// The duration of the meeting in minutes
 	Duration int
 	// The timezone of the meeting (e.g. 'America/New_York')
 	Timezone string
-	// The recurrence of the meeting
-	Recurrence *Recurrence
-	// The title of the meeting
-	Title string
-	// The description of the meeting
-	Description string
-	// The committees associated with the meeting
-	Committees []*Committee
-	// The platform name of where the meeting is hosted
-	Platform *string
-	// The number of minutes that users are allowed to join the meeting early
-	// without being kicked out
-	EarlyJoinTimeMinutes *int
-	// The type of meeting. This is usually dependent on the committee(s)
-	// associated with the meeting
-	MeetingType *string
 	// The visibility of the meeting's existence to other users
-	Visibility *string
+	Visibility string
+	// The description of the meeting
+	Description *string
 	// The restrictedness of joining the meeting (i.e. is the meeting restricted to
 	// only invited users or anyone?)
 	Restricted *bool
-	// The visibility of artifacts to users (e.g. public, only for registrants,
-	// only for hosts)
-	ArtifactVisibility *string
+	// The committees associated with the meeting
+	Committees []*Committee
+	// The type of meeting
+	MeetingType *string
+	// The number of minutes that users are allowed to join the meeting early
+	EarlyJoinTimeMinutes *int
 	// Whether recording is enabled for the meeting
 	RecordingEnabled *bool
 	// Whether transcription is enabled for the meeting
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
-	// Whether attendees/participants list is visible to other participants
-	ShowMeetingAttendees *bool
-	// For zoom platform meetings: the configuration for the meeting
-	ZoomConfig *ZoomConfigPost
+	// The visibility of artifacts to users
+	ArtifactVisibility *string
+	// The recurrence of the meeting
+	Recurrence *Recurrence
 }
 
-// UpdateMeetingRegistrantPayload is the payload type of the Meeting Service
-// service update-meeting-registrant method.
-type UpdateMeetingRegistrantPayload struct {
+// UpdateItxOccurrencePayload is the payload type of the Meeting Service
+// service update-itx-occurrence method.
+type UpdateItxOccurrencePayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	MeetingUID string
-	// The UID of the registrant
-	UID *string
-	// User's email address
-	Email string
-	// User's first name
-	FirstName *string
-	// User's last name
-	LastName *string
-	// If user should have access as a meeting host
-	Host *bool
-	// User's job title
-	JobTitle *string
-	// User's organization
-	OrgName *string
-	// The ID of the specific occurrence the user should be invited to. If blank,
-	// user is invited to all occurrences
-	OccurrenceID *string
-	// User's avatar URL
-	AvatarURL *string
-	// User's LinkedIn profile URL
-	LinkedinProfile *string
-	// User's LF ID
-	Username *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the occurrence (Unix timestamp)
+	OccurrenceID string
+	// Meeting start time in RFC3339 format
+	StartTime *string
+	// Meeting duration in minutes
+	Duration *int
+	// Meeting topic/title
+	Topic *string
+	// Meeting agenda/description
+	Agenda *string
+	// Recurrence settings
+	Recurrence *Recurrence
 }
 
-// UpdateMeetingSettingsPayload is the payload type of the Meeting Service
-// service update-meeting-settings method.
-type UpdateMeetingSettingsPayload struct {
+// UpdateItxPastMeetingParticipantPayload is the payload type of the Meeting
+// Service service update-itx-past-meeting-participant method.
+type UpdateItxPastMeetingParticipantPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
 	// Version of the API
 	Version *string
-	// The UID of the meeting
-	UID *string
-	// The organizers of the meeting. This is a list of LFIDs of the meeting
-	// organizers.
-	Organizers []string
-}
-
-// UpdatePastMeetingParticipantPayload is the payload type of the Meeting
-// Service service update-past-meeting-participant method.
-type UpdatePastMeetingParticipantPayload struct {
-	// JWT token issued by Heimdall
-	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
-	// If-Match header value for conditional requests
-	IfMatch *string
-	// Version of the API
-	Version *string
-	// The unique identifier of the past meeting
-	PastMeetingUID string
-	// The UID of the past meeting participant
-	UID *string
-	// User's email address
-	Email string
-	// User's first name
-	FirstName *string
-	// User's last name
-	LastName *string
-	// If user should have access as a meeting host
-	Host *bool
-	// User's job title
-	JobTitle *string
-	// User's organization
-	OrgName *string
-	// User's avatar URL
-	AvatarURL *string
-	// User's LinkedIn profile URL
-	LinkedinProfile *string
-	// User's LF ID
-	Username *string
-	// Whether the participant was invited to this past meeting
+	// Past meeting ID (meeting_id-occurrence_id format)
+	PastMeetingID string
+	// Participant ID (invitee_id or attendee_id)
+	ParticipantID string
+	// Optional invitee ID to use directly (avoids ID mapping lookup)
+	InviteeID *string
+	// Optional attendee ID to use directly (avoids ID mapping lookup)
+	AttendeeID *string
+	// Whether the participant is invited (if false, invitee record will be deleted)
 	IsInvited *bool
-	// Whether the participant attended this past meeting
+	// Whether the participant attended (if false, attendee record will be deleted)
 	IsAttended *bool
+	// Email address (used for creation)
+	Email *string
+	// LF SSO username (used for creation)
+	Username *string
+	// LF user ID (used for creation)
+	LfUserID *string
+	// First name (required for invitee updates)
+	FirstName *string
+	// Last name (required for invitee updates)
+	LastName *string
+	// Organization name
+	OrgName *string
+	// Job title
+	JobTitle *string
+	// Role within committee
+	CommitteeRole *string
+	// Voting status in committee
+	CommitteeVotingStatus *string
+	// Whether the attendee has been verified (attendee only)
+	IsVerified *bool
 }
 
-// UpdatePastMeetingSummaryPayload is the payload type of the Meeting Service
-// service update-past-meeting-summary method.
-type UpdatePastMeetingSummaryPayload struct {
+// UpdateItxPastMeetingPayload is the payload type of the Meeting Service
+// service update-itx-past-meeting method.
+type UpdateItxPastMeetingPayload struct {
 	// JWT token issued by Heimdall
 	BearerToken *string
-	// Determines if the operation should be synchronous (true) or asynchronous
-	// (false, default)
-	XSync *bool
 	// Version of the API
 	Version *string
-	// If-Match header value for conditional requests
-	IfMatch *string
-	// The unique identifier of the past meeting
-	PastMeetingUID string
-	// The unique identifier of the summary
+	// Past meeting ID (meeting_id or meeting_id-occurrence_id)
+	PastMeetingID string
+	// Project UID (v2)
+	ProjectUID *string
+	// Zoom meeting ID
+	MeetingID *string
+	// Zoom occurrence ID
+	OccurrenceID *string
+	// Meeting start time in RFC3339 format
+	StartTime *string
+	// Meeting duration in minutes
+	Duration *int
+	// Meeting timezone
+	Timezone *string
+	// Meeting title/topic
+	Title *string
+	// Meeting description/agenda
+	Description *string
+	// Whether the meeting is restricted
+	Restricted *bool
+	// Type of meeting (e.g., regular, webinar)
+	MeetingType *string
+	// Meeting visibility
+	Visibility *string
+	// Whether recording is enabled
+	RecordingEnabled *bool
+	// Whether transcript is enabled
+	TranscriptEnabled *bool
+	// Visibility of meeting artifacts (recordings, transcripts)
+	ArtifactVisibility *string
+	// Committees associated with the meeting
+	Committees []*Committee
+}
+
+// UpdateItxPastMeetingSummaryPayload is the payload type of the Meeting
+// Service service update-itx-past-meeting-summary method.
+type UpdateItxPastMeetingSummaryPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting ID (meeting_id-occurrence_id)
+	PastMeetingID string
+	// Summary UID
 	SummaryUID string
 	// User-edited summary content
 	EditedContent *string
-	// Whether the summary has been approved
+	// Approval status
 	Approved *bool
 }
 
-// Meeting attributes specific to Zoom platform that contain both writable and
-// read-only attributes
-type ZoomConfigFull struct {
-	// The ID of the created meeting in Zoom
-	MeetingID *string
-	// The zoom-defined passcode for the meeting. Required if joining via dial-in,
-	// or by clicking 'join meeting' in the zoom client & putting in the meeting id
-	// and passcode.
-	Passcode *string
-	// For zoom platform meetings: whether Zoom AI companion is enabled
-	AiCompanionEnabled *bool
-	// For zoom platform meetings: whether AI summary approval is required
-	AiSummaryRequireApproval *bool
-}
-
-// Meeting attributes specific to Zoom platform that are writable
-type ZoomConfigPost struct {
-	// For zoom platform meetings: whether Zoom AI companion is enabled
-	AiCompanionEnabled *bool
-	// For zoom platform meetings: whether AI summary approval is required
-	AiSummaryRequireApproval *bool
-}
-
-// ZoomWebhookPayload is the payload type of the Meeting Service service
-// zoom-webhook method.
-type ZoomWebhookPayload struct {
-	// The type of event
-	Event string
-	// Event timestamp in milliseconds
-	EventTs int64
-	// Contains meeting, participant, or recording data depending on event type
-	Payload any
-	// HMAC-SHA256 signature of the request body
-	ZoomSignature string
-	// Timestamp when the webhook was sent
-	ZoomTimestamp string
-}
-
-// ZoomWebhookResponse is the result type of the Meeting Service service
-// zoom-webhook method.
-type ZoomWebhookResponse struct {
-	// Processing status
-	Status *string
-	// Optional message
-	Message *string
-	// The plain token received in the validation request
-	PlainToken *string
-	// The HMAC SHA-256 hash of the plain token
-	EncryptedToken *string
+// UpdateItxRegistrantPayload is the payload type of the Meeting Service
+// service update-itx-registrant method.
+type UpdateItxRegistrantPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant
+	RegistrantID string
+	// Registrant UID (read-only)
+	UID *string
+	// Registrant type: direct or committee (read-only)
+	Type *string
+	// Committee UID (for committee registrants)
+	CommitteeUID *string
+	// Registrant email
+	Email *string
+	// LF username
+	Username *string
+	// First name (required with email)
+	FirstName *string
+	// Last name (required with email)
+	LastName *string
+	// Organization
+	Org *string
+	// Job title
+	JobTitle *string
+	// Profile picture URL
+	ProfilePicture *string
+	// Access to host key for the meeting
+	Host *bool
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string
+	// Creator user info (read-only)
+	CreatedBy *ITXUser
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUser
 }
 
 // Error returns an error description.
@@ -1759,6 +1123,23 @@ func (e *ConflictError) ErrorName() string {
 // GoaErrorName returns "ConflictError".
 func (e *ConflictError) GoaErrorName() string {
 	return "Conflict"
+}
+
+// Error returns an error description.
+func (e *ForbiddenError) Error() string {
+	return ""
+}
+
+// ErrorName returns "ForbiddenError".
+//
+// Deprecated: Use GoaErrorName - https://github.com/goadesign/goa/issues/3105
+func (e *ForbiddenError) ErrorName() string {
+	return e.GoaErrorName()
+}
+
+// GoaErrorName returns "ForbiddenError".
+func (e *ForbiddenError) GoaErrorName() string {
+	return "Forbidden"
 }
 
 // Error returns an error description.

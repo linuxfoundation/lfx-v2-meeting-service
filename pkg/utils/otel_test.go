@@ -5,6 +5,7 @@ package utils
 
 import (
 	"context"
+
 	"os"
 	"testing"
 )
@@ -25,7 +26,7 @@ func TestOTelConfigFromEnv_Defaults(t *testing.T) {
 		"OTEL_LOGS_EXPORTER",
 	}
 	for _, env := range envVars {
-		os.Unsetenv(env)
+		_ = os.Unsetenv(env)
 	}
 
 	cfg := OTelConfigFromEnv()
@@ -63,26 +64,26 @@ func TestOTelConfigFromEnv_Defaults(t *testing.T) {
 // reads and parses all supported OTEL_* environment variables.
 func TestOTelConfigFromEnv_CustomValues(t *testing.T) {
 	// Set all environment variables
-	os.Setenv("OTEL_SERVICE_NAME", "test-service")
-	os.Setenv("OTEL_SERVICE_VERSION", "1.2.3")
-	os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
-	os.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4318")
-	os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", "true")
-	os.Setenv("OTEL_TRACES_EXPORTER", "otlp")
-	os.Setenv("OTEL_TRACES_SAMPLE_RATIO", "0.5")
-	os.Setenv("OTEL_METRICS_EXPORTER", "otlp")
-	os.Setenv("OTEL_LOGS_EXPORTER", "otlp")
+	_ = os.Setenv("OTEL_SERVICE_NAME", "test-service")
+	_ = os.Setenv("OTEL_SERVICE_VERSION", "1.2.3")
+	_ = os.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http")
+	_ = os.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4318")
+	_ = os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", "true")
+	_ = os.Setenv("OTEL_TRACES_EXPORTER", "otlp")
+	_ = os.Setenv("OTEL_TRACES_SAMPLE_RATIO", "0.5")
+	_ = os.Setenv("OTEL_METRICS_EXPORTER", "otlp")
+	_ = os.Setenv("OTEL_LOGS_EXPORTER", "otlp")
 
 	defer func() {
-		os.Unsetenv("OTEL_SERVICE_NAME")
-		os.Unsetenv("OTEL_SERVICE_VERSION")
-		os.Unsetenv("OTEL_EXPORTER_OTLP_PROTOCOL")
-		os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-		os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
-		os.Unsetenv("OTEL_TRACES_EXPORTER")
-		os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
-		os.Unsetenv("OTEL_METRICS_EXPORTER")
-		os.Unsetenv("OTEL_LOGS_EXPORTER")
+		_ = os.Unsetenv("OTEL_SERVICE_NAME")
+		_ = os.Unsetenv("OTEL_SERVICE_VERSION")
+		_ = os.Unsetenv("OTEL_EXPORTER_OTLP_PROTOCOL")
+		_ = os.Unsetenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+		_ = os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
+		_ = os.Unsetenv("OTEL_TRACES_EXPORTER")
+		_ = os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
+		_ = os.Unsetenv("OTEL_METRICS_EXPORTER")
+		_ = os.Unsetenv("OTEL_LOGS_EXPORTER")
 	}()
 
 	cfg := OTelConfigFromEnv()
@@ -138,11 +139,11 @@ func TestOTelConfigFromEnv_TracesSampleRatio(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear and set the env var
-			os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
+			_ = os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
 			if tt.envValue != "" {
-				os.Setenv("OTEL_TRACES_SAMPLE_RATIO", tt.envValue)
+				_ = os.Setenv("OTEL_TRACES_SAMPLE_RATIO", tt.envValue)
 			}
-			defer os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO")
+			defer func() { _ = os.Unsetenv("OTEL_TRACES_SAMPLE_RATIO") }()
 
 			cfg := OTelConfigFromEnv()
 
@@ -172,11 +173,11 @@ func TestOTelConfigFromEnv_InsecureFlag(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
+			_ = os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
 			if tt.envValue != "" {
-				os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", tt.envValue)
+				_ = os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", tt.envValue)
 			}
-			defer os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE")
+			defer func() { _ = os.Unsetenv("OTEL_EXPORTER_OTLP_INSECURE") }()
 
 			cfg := OTelConfigFromEnv()
 
@@ -368,7 +369,7 @@ func TestSetupOTelSDK(t *testing.T) {
 		"OTEL_LOGS_EXPORTER",
 	}
 	for _, env := range envVars {
-		os.Unsetenv(env)
+		_ = os.Unsetenv(env)
 	}
 
 	ctx := context.Background()
@@ -434,4 +435,98 @@ func TestOTelConfig_MinimalConfig(t *testing.T) {
 	if err != nil {
 		t.Errorf("shutdown returned unexpected error: %v", err)
 	}
+}
+
+// TestEndpointURL verifies that endpointURL prepends the correct scheme
+// when missing and preserves existing schemes.
+func TestEndpointURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		raw      string
+		insecure bool
+		want     string
+	}{
+		{
+			name:     "IP:port insecure",
+			raw:      "127.0.0.1:4317",
+			insecure: true,
+			want:     "http://127.0.0.1:4317",
+		},
+		{
+			name:     "IP:port secure",
+			raw:      "127.0.0.1:4317",
+			insecure: false,
+			want:     "https://127.0.0.1:4317",
+		},
+		{
+			name:     "localhost:port insecure",
+			raw:      "localhost:4317",
+			insecure: true,
+			want:     "http://localhost:4317",
+		},
+		{
+			name:     "hostname without port",
+			raw:      "collector",
+			insecure: true,
+			want:     "http://collector",
+		},
+		{
+			name:     "http URL preserved",
+			raw:      "http://collector.example.com:4318",
+			insecure: false,
+			want:     "http://collector.example.com:4318",
+		},
+		{
+			name:     "https URL preserved",
+			raw:      "https://collector.example.com:4318",
+			insecure: true,
+			want:     "https://collector.example.com:4318",
+		},
+		{
+			name:     "https URL with path preserved",
+			raw:      "https://collector.example.com:4318/v1/traces",
+			insecure: false,
+			want:     "https://collector.example.com:4318/v1/traces",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := endpointURL(tt.raw, tt.insecure)
+			if got != tt.want {
+				t.Errorf("endpointURL(%q, %t) = %q, want %q", tt.raw, tt.insecure, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSetupOTelSDKWithConfig_IPEndpoint verifies that SetupOTelSDKWithConfig
+// normalizes a bare IP:port endpoint to include a scheme, preventing the
+// "first path segment in URL cannot contain colon" error from the SDK.
+func TestSetupOTelSDKWithConfig_IPEndpoint(t *testing.T) {
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "127.0.0.1:4317")
+
+	cfg := OTelConfig{
+		ServiceName:       "test-service",
+		ServiceVersion:    "1.0.0",
+		Protocol:          OTelProtocolGRPC,
+		Endpoint:          "127.0.0.1:4317",
+		Insecure:          true,
+		TracesExporter:    OTelExporterOTLP,
+		TracesSampleRatio: 1.0,
+		MetricsExporter:   OTelExporterNone,
+		LogsExporter:      OTelExporterNone,
+	}
+
+	ctx := context.Background()
+	shutdown, err := SetupOTelSDKWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if shutdown == nil {
+		t.Fatal("expected non-nil shutdown function")
+	}
+
+	_ = shutdown(ctx)
 }
