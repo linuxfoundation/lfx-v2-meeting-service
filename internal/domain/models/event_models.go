@@ -79,8 +79,21 @@ type InviteResponseEventData struct {
 
 // PastMeetingEventData represents a past meeting event for indexing and access control
 type PastMeetingEventData struct {
-	// Similar to MeetingEventData but for completed meetings
-	// Will be populated in past meeting handlers phase
+	ID               string       `json:"id"`                // UUID
+	MeetingID        string       `json:"meeting_id"`        // Original meeting ID
+	ProjectUID       string       `json:"project_uid"`
+	Title            string       `json:"title"`
+	Description      string       `json:"description"`
+	StartTime        time.Time    `json:"start_time"`
+	EndTime          time.Time    `json:"end_time"`
+	Duration         int          `json:"duration"` // Actual duration in minutes
+	Timezone         string       `json:"timezone"`
+	ParticipantCount int          `json:"participant_count"`
+	Committees       []Committee  `json:"committees"`
+	HostKey          string       `json:"host_key"`
+	CreatedAt        time.Time    `json:"created_at"`
+	ModifiedAt       time.Time    `json:"modified_at"`
+	Tags             []string     `json:"tags,omitempty"`
 }
 
 // PastMeetingParticipantEventData represents a participant (invitee/attendee) event
