@@ -108,12 +108,10 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 		return handlePastMeetingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-invitees."):
-		handlers.logger.Debug("past meeting invitee event - not yet implemented", "key", key)
-		return false // ACK for now - will implement in phase 5
+		return handlePastMeetingInviteeUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-attendees."):
-		handlers.logger.Debug("past meeting attendee event - not yet implemented", "key", key)
-		return false // ACK for now - will implement in phase 5
+		return handlePastMeetingAttendeeUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-recordings."):
 		handlers.logger.Debug("past meeting recording event - not yet implemented", "key", key)

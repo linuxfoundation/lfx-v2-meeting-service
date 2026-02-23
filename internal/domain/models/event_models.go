@@ -98,7 +98,34 @@ type PastMeetingEventData struct {
 
 // PastMeetingParticipantEventData represents a participant (invitee/attendee) event
 type PastMeetingParticipantEventData struct {
-	// Will be populated in past meeting handlers phase
+	UID                    string               `json:"uid"`
+	MeetingAndOccurrenceID string               `json:"meeting_and_occurrence_id"`
+	MeetingID              string               `json:"meeting_id"`
+	ProjectUID             string               `json:"project_uid"`
+	Email                  string               `json:"email"`
+	FirstName              string               `json:"first_name"`
+	LastName               string               `json:"last_name"`
+	Host                   bool                 `json:"host"`
+	JobTitle               string               `json:"job_title,omitempty"`
+	OrgName                string               `json:"org_name,omitempty"`
+	OrgIsMember            bool                 `json:"org_is_member"`
+	OrgIsProjectMember     bool                 `json:"org_is_project_member"`
+	AvatarURL              string               `json:"avatar_url,omitempty"`
+	Username               string               `json:"username,omitempty"`
+	IsInvited              bool                 `json:"is_invited"`
+	IsAttended             bool                 `json:"is_attended"`
+	Sessions               []ParticipantSession `json:"sessions,omitempty"`
+	CreatedAt              time.Time            `json:"created_at"`
+	ModifiedAt             time.Time            `json:"modified_at"`
+	Tags                   []string             `json:"tags,omitempty"`
+}
+
+// ParticipantSession represents a join/leave session for attendees
+type ParticipantSession struct {
+	UID         string     `json:"uid"`
+	JoinTime    *time.Time `json:"join_time,omitempty"`
+	LeaveTime   *time.Time `json:"leave_time,omitempty"`
+	LeaveReason string     `json:"leave_reason,omitempty"`
 }
 
 // RecordingEventData represents a recording artifact event

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -444,6 +445,515 @@ func generatePastMeetingTags(pm *PastMeetingDBRaw, projectUID string) []string {
 	}
 	if pm.Timezone != "" {
 		tags = append(tags, "timezone:"+pm.Timezone)
+	}
+	return tags
+}
+
+// =============================================================================
+// Past Meeting Invitee Event Handler
+// =============================================================================
+
+// handlePastMeetingInviteeUpdate processes updates to past meeting invitees
+func handlePastMeetingInviteeUpdate(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	userLookup domain.V1UserLookup,
+	idMapper domain.IDMapper,
+	v1ObjectsKV jetstream.KeyValue,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	funcLogger := logger.With("key", key, "handler", "past_meeting_invitee")
+	funcLogger.DebugContext(ctx, "processing past meeting invitee update")
+
+	// Check if this is a soft delete
+	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
+		return handlePastMeetingInviteeDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+	}
+
+	// Convert v1Data to participant event data
+	participantData, err := convertMapToInviteeParticipantData(ctx, v1Data, userLookup, idMapper, v1ObjectsKV, funcLogger)
+	if err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to invitee participant")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Validate required fields
+	if participantData.UID == "" || participantData.MeetingAndOccurrenceID == "" {
+		funcLogger.ErrorContext(ctx, "missing required fields in invitee participant data")
+		return false // Permanent error, ACK and skip
+	}
+	funcLogger = funcLogger.With("participant_uid", participantData.UID)
+
+	// Determine action (created vs updated)
+	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", participantData.UID)
+	indexerAction := indexerConstants.ActionCreated
+	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+		indexerAction = indexerConstants.ActionUpdated
+	}
+
+	// Publish to indexer and FGA-sync
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee participant event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Store mapping
+	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store invitee participant mapping")
+	}
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting invitee")
+	return false // Success, ACK
+}
+
+// handlePastMeetingInviteeDelete processes invitee deletions
+func handlePastMeetingInviteeDelete(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	inviteeID := extractIDFromKey(key, "itx-zoom-past-meetings-invitees.")
+	funcLogger := logger.With("invitee_id", inviteeID, "handler", "past_meeting_invitee_delete")
+	funcLogger.InfoContext(ctx, "processing past meeting invitee deletion")
+
+	// Create minimal event data for deletion
+	eventData := &models.PastMeetingParticipantEventData{UID: inviteeID}
+
+	// Publish delete event
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee delete event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Remove mapping
+	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", inviteeID)
+	_ = mappingsKV.Delete(ctx, mappingKey)
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting invitee deletion")
+	return false // Success, ACK
+}
+
+// =============================================================================
+// Past Meeting Attendee Event Handler
+// =============================================================================
+
+// handlePastMeetingAttendeeUpdate processes updates to past meeting attendees
+func handlePastMeetingAttendeeUpdate(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	userLookup domain.V1UserLookup,
+	idMapper domain.IDMapper,
+	v1ObjectsKV jetstream.KeyValue,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	funcLogger := logger.With("key", key, "handler", "past_meeting_attendee")
+	funcLogger.DebugContext(ctx, "processing past meeting attendee update")
+
+	// Check if this is a soft delete
+	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
+		return handlePastMeetingAttendeeDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+	}
+
+	// Convert v1Data to participant event data
+	participantData, err := convertMapToAttendeeParticipantData(ctx, v1Data, userLookup, idMapper, v1ObjectsKV, funcLogger)
+	if err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to attendee participant")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Validate required fields
+	if participantData.UID == "" || participantData.MeetingAndOccurrenceID == "" {
+		funcLogger.ErrorContext(ctx, "missing required fields in attendee participant data")
+		return false // Permanent error, ACK and skip
+	}
+	funcLogger = funcLogger.With("participant_uid", participantData.UID)
+
+	// Determine action (created vs updated)
+	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", participantData.UID)
+	indexerAction := indexerConstants.ActionCreated
+	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+		indexerAction = indexerConstants.ActionUpdated
+	}
+
+	// Publish to indexer and FGA-sync
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee participant event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Store mapping
+	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store attendee participant mapping")
+	}
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting attendee")
+	return false // Success, ACK
+}
+
+// handlePastMeetingAttendeeDelete processes attendee deletions
+func handlePastMeetingAttendeeDelete(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+	publisher domain.EventPublisher,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) bool {
+	attendeeID := extractIDFromKey(key, "itx-zoom-past-meetings-attendees.")
+	funcLogger := logger.With("attendee_id", attendeeID, "handler", "past_meeting_attendee_delete")
+	funcLogger.InfoContext(ctx, "processing past meeting attendee deletion")
+
+	// Create minimal event data for deletion
+	eventData := &models.PastMeetingParticipantEventData{UID: attendeeID}
+
+	// Publish delete event
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee delete event")
+		if isTransientError(err) {
+			return true // NAK for retry
+		}
+		return false // Permanent error, ACK and skip
+	}
+
+	// Remove mapping
+	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", attendeeID)
+	_ = mappingsKV.Delete(ctx, mappingKey)
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting attendee deletion")
+	return false // Success, ACK
+}
+
+// =============================================================================
+// Participant Conversion Functions
+// =============================================================================
+
+type InviteeDBRaw struct {
+	ID                     string  `json:"id"`
+	InviteeID              string  `json:"invitee_id"`
+	FirstName              string  `json:"first_name"`
+	LastName               string  `json:"last_name"`
+	Email                  string  `json:"email"`
+	ProfilePicture         string  `json:"profile_picture"`
+	LFSSO                  string  `json:"lf_sso"`
+	LFUserID               string  `json:"lf_user_id,omitempty"`
+	Org                    string  `json:"org"`
+	OrgIsMember            *bool   `json:"org_is_member,omitempty"`
+	OrgIsProjectMember     *bool   `json:"org_is_project_member,omitempty"`
+	JobTitle               string  `json:"job_title"`
+	RegistrantID           string  `json:"registrant_id"`
+	ProjectID              string  `json:"proj_id,omitempty"`
+	MeetingAndOccurrenceID string  `json:"meeting_and_occurrence_id,omitempty"`
+	MeetingID              string  `json:"meeting_id,omitempty"`
+	OccurrenceID           string  `json:"occurrence_id"`
+	CreatedAt              string  `json:"created_at"`
+	ModifiedAt             string  `json:"modified_at"`
+}
+
+type AttendeeDBRaw struct {
+	ID                     string                     `json:"id"`
+	ProjectID              string                     `json:"proj_id"`
+	RegistrantID           string                     `json:"registrant_id"`
+	Email                  string                     `json:"email"`
+	Name                   string                     `json:"name"`
+	LFSSO                  string                     `json:"lf_sso"`
+	LFUserID               string                     `json:"lf_user_id"`
+	Org                    string                     `json:"org"`
+	OrgIsMember            *bool                      `json:"org_is_member,omitempty"`
+	OrgIsProjectMember     *bool                      `json:"org_is_project_member,omitempty"`
+	JobTitle               string                     `json:"job_title"`
+	ProfilePicture         string                     `json:"profile_picture"`
+	MeetingID              string                     `json:"meeting_id"`
+	OccurrenceID           string                     `json:"occurrence_id"`
+	MeetingAndOccurrenceID string                     `json:"meeting_and_occurrence_id"`
+	Sessions               []AttendeeSessionDBRaw     `json:"sessions"`
+	CreatedAt              string                     `json:"created_at"`
+	ModifiedAt             string                     `json:"modified_at"`
+}
+
+type AttendeeSessionDBRaw struct {
+	ParticipantUUID string `json:"participant_uuid"`
+	JoinTime        string `json:"join_time"`
+	LeaveTime       string `json:"leave_time"`
+	LeaveReason     string `json:"leave_reason"`
+}
+
+func convertMapToInviteeParticipantData(
+	ctx context.Context,
+	v1Data map[string]interface{},
+	userLookup domain.V1UserLookup,
+	idMapper domain.IDMapper,
+	v1ObjectsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) (*models.PastMeetingParticipantEventData, error) {
+	// Convert map to JSON bytes, then to InviteeDBRaw
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+
+	var rawInvitee InviteeDBRaw
+	if err := json.Unmarshal(jsonBytes, &rawInvitee); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal invitee data: %w", err)
+	}
+
+	// Validate required fields
+	if rawInvitee.ID == "" || rawInvitee.MeetingAndOccurrenceID == "" {
+		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	}
+
+	// Use ProjectID from invitee record directly if available
+	projectSFID := rawInvitee.ProjectID
+	if projectSFID == "" {
+		return nil, fmt.Errorf("invitee missing project ID")
+	}
+
+	// Map project ID
+	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	}
+
+	// Determine if host (lookup registrant if available)
+	isHost := false
+	if rawInvitee.RegistrantID != "" {
+		registrantKey := fmt.Sprintf("itx-zoom-meetings-registrants-v2.%s", rawInvitee.RegistrantID)
+		if registrantEntry, err := v1ObjectsKV.Get(ctx, registrantKey); err == nil {
+			var registrantData map[string]interface{}
+			if err := json.Unmarshal(registrantEntry.Value(), &registrantData); err == nil {
+				isHost = getBool(registrantData["host"])
+			}
+		}
+	}
+
+	// Username is lf_sso field
+	username := rawInvitee.LFSSO
+
+	// Use existing first/last name from invitee record
+	firstName := rawInvitee.FirstName
+	lastName := rawInvitee.LastName
+
+	// Username resolution via V1UserLookup if lf_user_id exists and we need enrichment
+	if rawInvitee.LFUserID != "" && (firstName == "" || lastName == "") {
+		v1User, err := userLookup.LookupUser(ctx, rawInvitee.LFUserID)
+		if err != nil {
+			logger.With(errKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawInvitee.LFUserID)
+		} else if v1User != nil {
+			if firstName == "" && v1User.FirstName != "" {
+				firstName = v1User.FirstName
+			}
+			if lastName == "" && v1User.LastName != "" {
+				lastName = v1User.LastName
+			}
+		}
+	}
+
+	// Parse times
+	createdAt, _ := parseTime(rawInvitee.CreatedAt)
+	modifiedAt, _ := parseTime(rawInvitee.ModifiedAt)
+
+	// Get org membership flags
+	orgIsMember := false
+	if rawInvitee.OrgIsMember != nil {
+		orgIsMember = *rawInvitee.OrgIsMember
+	}
+	orgIsProjectMember := false
+	if rawInvitee.OrgIsProjectMember != nil {
+		orgIsProjectMember = *rawInvitee.OrgIsProjectMember
+	}
+
+	return &models.PastMeetingParticipantEventData{
+		UID:                    rawInvitee.ID,
+		MeetingAndOccurrenceID: rawInvitee.MeetingAndOccurrenceID,
+		MeetingID:              rawInvitee.MeetingID,
+		ProjectUID:             projectUID,
+		Email:                  rawInvitee.Email,
+		FirstName:              firstName,
+		LastName:               lastName,
+		Host:                   isHost,
+		JobTitle:               rawInvitee.JobTitle,
+		OrgName:                rawInvitee.Org,
+		OrgIsMember:            orgIsMember,
+		OrgIsProjectMember:     orgIsProjectMember,
+		AvatarURL:              rawInvitee.ProfilePicture,
+		Username:               username,
+		IsInvited:              true,
+		IsAttended:             false,
+		Sessions:               nil, // Invitees don't have sessions
+		CreatedAt:              createdAt,
+		ModifiedAt:             modifiedAt,
+		Tags:                   generateParticipantTags(rawInvitee.ID, rawInvitee.MeetingAndOccurrenceID, projectUID, username, rawInvitee.Email, true, false),
+	}, nil
+}
+
+func convertMapToAttendeeParticipantData(
+	ctx context.Context,
+	v1Data map[string]interface{},
+	userLookup domain.V1UserLookup,
+	idMapper domain.IDMapper,
+	v1ObjectsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) (*models.PastMeetingParticipantEventData, error) {
+	// Convert map to JSON bytes, then to AttendeeDBRaw
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+
+	var rawAttendee AttendeeDBRaw
+	if err := json.Unmarshal(jsonBytes, &rawAttendee); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal attendee data: %w", err)
+	}
+
+	// Validate required fields
+	if rawAttendee.ID == "" || rawAttendee.MeetingAndOccurrenceID == "" {
+		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	}
+
+	// Use ProjectID from attendee record directly
+	projectSFID := rawAttendee.ProjectID
+	if projectSFID == "" {
+		return nil, fmt.Errorf("attendee missing project ID")
+	}
+
+	// Map project ID
+	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	}
+
+	// Check if this user was also invited (registrant_id present)
+	isInvited := rawAttendee.RegistrantID != ""
+
+	// Parse name
+	firstName, lastName := parseName(rawAttendee.Name)
+
+	// Username is lf_sso field
+	username := rawAttendee.LFSSO
+
+	// Username resolution via V1UserLookup if lf_user_id exists and we need enrichment
+	if rawAttendee.LFUserID != "" && (firstName == "" || lastName == "") {
+		v1User, err := userLookup.LookupUser(ctx, rawAttendee.LFUserID)
+		if err != nil {
+			logger.With(errKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawAttendee.LFUserID)
+		} else if v1User != nil {
+			if firstName == "" && v1User.FirstName != "" {
+				firstName = v1User.FirstName
+			}
+			if lastName == "" && v1User.LastName != "" {
+				lastName = v1User.LastName
+			}
+		}
+	}
+
+	// Convert sessions
+	var sessions []models.ParticipantSession
+	for _, rawSession := range rawAttendee.Sessions {
+		joinTime, _ := parseTime(rawSession.JoinTime)
+		leaveTime, _ := parseTime(rawSession.LeaveTime)
+		sessions = append(sessions, models.ParticipantSession{
+			UID:         rawSession.ParticipantUUID,
+			JoinTime:    &joinTime,
+			LeaveTime:   &leaveTime,
+			LeaveReason: rawSession.LeaveReason,
+		})
+	}
+
+	// Parse times
+	createdAt, _ := parseTime(rawAttendee.CreatedAt)
+	modifiedAt, _ := parseTime(rawAttendee.ModifiedAt)
+
+	// Get org membership flags
+	orgIsMember := false
+	if rawAttendee.OrgIsMember != nil {
+		orgIsMember = *rawAttendee.OrgIsMember
+	}
+	orgIsProjectMember := false
+	if rawAttendee.OrgIsProjectMember != nil {
+		orgIsProjectMember = *rawAttendee.OrgIsProjectMember
+	}
+
+	return &models.PastMeetingParticipantEventData{
+		UID:                    rawAttendee.ID,
+		MeetingAndOccurrenceID: rawAttendee.MeetingAndOccurrenceID,
+		MeetingID:              rawAttendee.MeetingID,
+		ProjectUID:             projectUID,
+		Email:                  rawAttendee.Email,
+		FirstName:              firstName,
+		LastName:               lastName,
+		Host:                   false, // Attendee records don't have host info
+		JobTitle:               rawAttendee.JobTitle,
+		OrgName:                rawAttendee.Org,
+		OrgIsMember:            orgIsMember,
+		OrgIsProjectMember:     orgIsProjectMember,
+		AvatarURL:              rawAttendee.ProfilePicture,
+		Username:               username,
+		IsInvited:              isInvited,
+		IsAttended:             true,
+		Sessions:               sessions,
+		CreatedAt:              createdAt,
+		ModifiedAt:             modifiedAt,
+		Tags:                   generateParticipantTags(rawAttendee.ID, rawAttendee.MeetingAndOccurrenceID, projectUID, username, rawAttendee.Email, isInvited, true),
+	}, nil
+}
+
+// parseName splits a full name into first and last name
+func parseName(fullName string) (firstName, lastName string) {
+	if fullName == "" {
+		return "", ""
+	}
+
+	parts := strings.Fields(fullName)
+	if len(parts) == 0 {
+		return "", ""
+	}
+	if len(parts) == 1 {
+		return parts[0], ""
+	}
+	// First part is first name, everything else is last name
+	return parts[0], strings.Join(parts[1:], " ")
+}
+
+func generateParticipantTags(id, pastMeetingID, projectUID, username, email string, isInvited, isAttended bool) []string {
+	tags := []string{
+		"participant_id:" + id,
+		"past_meeting_id:" + pastMeetingID,
+		"project_uid:" + projectUID,
+	}
+	if username != "" {
+		tags = append(tags, "username:"+username)
+	}
+	if email != "" {
+		tags = append(tags, "email:"+email)
+	}
+	if isInvited {
+		tags = append(tags, "is_invited:true")
+	}
+	if isAttended {
+		tags = append(tags, "is_attended:true")
 	}
 	return tags
 }
