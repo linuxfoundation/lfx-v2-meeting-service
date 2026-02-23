@@ -327,6 +327,20 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/itx/past_meetings/{past_meeting_id}`   | PUT    | Update past meeting  |
 | `/itx/past_meetings/{past_meeting_id}`   | DELETE | Delete past meeting  |
 
+## 📡 Event Processing
+
+The service includes a comprehensive event processing system for v1→v2 data synchronization. It watches NATS JetStream KV buckets for meeting-related data changes and publishes events to both indexer and FGA-sync services.
+
+**Features:**
+
+- 10 meeting-related event types (meetings, registrants, RSVPs, past meetings, participants, recordings, summaries)
+- RRULE occurrence calculation for recurring meetings
+- v1 user enrichment and Auth0 mapping
+- Dual publishing architecture (indexer + FGA-sync)
+- Parent-child dependency handling with retry logic
+
+For complete details, see **[Event Processing Documentation](docs/event-processing.md)**.
+
 ## 🔧 Configuration
 
 The service can be configured via environment variables:
