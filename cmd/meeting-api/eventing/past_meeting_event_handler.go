@@ -65,8 +65,11 @@ func handlePastMeetingUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	// Generate tags for past meeting
+	tags := generatePastMeetingTags(pastMeetingData)
+
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingEvent(ctx, string(indexerAction), pastMeetingData); err != nil {
+	if err := publisher.PublishPastMeetingEvent(ctx, string(indexerAction), pastMeetingData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish past meeting event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -99,8 +102,11 @@ func handlePastMeetingDelete(
 	// Create minimal event data for deletion
 	eventData := &models.PastMeetingEventData{ID: pastMeetingID}
 
+	// Generate tags (minimal for deletion)
+	tags := generatePastMeetingTags(eventData)
+
 	// Publish delete event
-	if err := publisher.PublishPastMeetingEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+	if err := publisher.PublishPastMeetingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish past meeting delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -172,7 +178,6 @@ func convertMapToPastMeetingData(
 		HostKey:          rawPastMeeting.HostID,
 		CreatedAt:        createdAt,
 		ModifiedAt:       modifiedAt,
-		Tags:             generatePastMeetingTags(&rawPastMeeting, projectUID),
 	}, nil
 }
 
@@ -274,22 +279,6 @@ func handlePastMeetingMappingDelete(
 // =============================================================================
 
 // Data models for v1 past meeting raw data
-
-type PastMeetingDBRaw struct {
-	UUID              string      `json:"uuid"`
-	MeetingID         string      `json:"meeting_id"`
-	ProjectID         string      `json:"proj_id"`
-	Topic             string      `json:"topic"`
-	Agenda            string      `json:"agenda"`
-	StartTime         string      `json:"start_time"`
-	EndTime           string      `json:"end_time"`
-	Duration          interface{} `json:"duration"`
-	Timezone          string      `json:"timezone"`
-	ParticipantsCount interface{} `json:"participants_count"`
-	HostID            string      `json:"host_id"`
-	CreatedAt         string      `json:"created_at"`
-	ModifiedAt        string      `json:"modified_at"`
-}
 
 func getCommitteesForPastMeeting(
 	ctx context.Context,
@@ -436,15 +425,15 @@ func retriggerPastMeetingIndexing(
 	return handlePastMeetingUpdate(ctx, pastMeetingKey, pastMeetingData, publisher, userLookup, idMapper, v1ObjectsKV, mappingsKV, logger)
 }
 
-func generatePastMeetingTags(pm *PastMeetingDBRaw, projectUID string) []string {
+func generatePastMeetingTags(pastMeeting *models.PastMeetingEventData) []string {
 	tags := []string{
-		"past_meeting_id:" + pm.UUID,
-		"meeting_id:" + pm.MeetingID,
-		"project_uid:" + projectUID,
-		"title:" + pm.Topic,
+		"past_meeting_id:" + pastMeeting.ID,
+		"meeting_id:" + pastMeeting.MeetingID,
+		"project_uid:" + pastMeeting.ProjectUID,
+		"title:" + pastMeeting.Title,
 	}
-	if pm.Timezone != "" {
-		tags = append(tags, "timezone:"+pm.Timezone)
+	if pastMeeting.Timezone != "" {
+		tags = append(tags, "timezone:"+pastMeeting.Timezone)
 	}
 	return tags
 }
@@ -497,8 +486,11 @@ func handlePastMeetingInviteeUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	// Generate tags
+	tags := generateParticipantTags(participantData)
+
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee participant event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -531,8 +523,11 @@ func handlePastMeetingInviteeDelete(
 	// Create minimal event data for deletion
 	eventData := &models.PastMeetingParticipantEventData{UID: inviteeID}
 
+	// Generate tags (minimal for deletion)
+	tags := generateParticipantTags(eventData)
+
 	// Publish delete event
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -596,8 +591,11 @@ func handlePastMeetingAttendeeUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	// Generate tags
+	tags := generateParticipantTags(participantData)
+
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee participant event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -630,8 +628,11 @@ func handlePastMeetingAttendeeDelete(
 	// Create minimal event data for deletion
 	eventData := &models.PastMeetingParticipantEventData{UID: attendeeID}
 
+	// Generate tags (minimal for deletion)
+	tags := generateParticipantTags(eventData)
+
 	// Publish delete event
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -650,56 +651,6 @@ func handlePastMeetingAttendeeDelete(
 // =============================================================================
 // Participant Conversion Functions
 // =============================================================================
-
-type InviteeDBRaw struct {
-	ID                     string `json:"id"`
-	InviteeID              string `json:"invitee_id"`
-	FirstName              string `json:"first_name"`
-	LastName               string `json:"last_name"`
-	Email                  string `json:"email"`
-	ProfilePicture         string `json:"profile_picture"`
-	LFSSO                  string `json:"lf_sso"`
-	LFUserID               string `json:"lf_user_id,omitempty"`
-	Org                    string `json:"org"`
-	OrgIsMember            *bool  `json:"org_is_member,omitempty"`
-	OrgIsProjectMember     *bool  `json:"org_is_project_member,omitempty"`
-	JobTitle               string `json:"job_title"`
-	RegistrantID           string `json:"registrant_id"`
-	ProjectID              string `json:"proj_id,omitempty"`
-	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id,omitempty"`
-	MeetingID              string `json:"meeting_id,omitempty"`
-	OccurrenceID           string `json:"occurrence_id"`
-	CreatedAt              string `json:"created_at"`
-	ModifiedAt             string `json:"modified_at"`
-}
-
-type AttendeeDBRaw struct {
-	ID                     string                 `json:"id"`
-	ProjectID              string                 `json:"proj_id"`
-	RegistrantID           string                 `json:"registrant_id"`
-	Email                  string                 `json:"email"`
-	Name                   string                 `json:"name"`
-	LFSSO                  string                 `json:"lf_sso"`
-	LFUserID               string                 `json:"lf_user_id"`
-	Org                    string                 `json:"org"`
-	OrgIsMember            *bool                  `json:"org_is_member,omitempty"`
-	OrgIsProjectMember     *bool                  `json:"org_is_project_member,omitempty"`
-	JobTitle               string                 `json:"job_title"`
-	ProfilePicture         string                 `json:"profile_picture"`
-	MeetingID              string                 `json:"meeting_id"`
-	OccurrenceID           string                 `json:"occurrence_id"`
-	MeetingAndOccurrenceID string                 `json:"meeting_and_occurrence_id"`
-	Sessions               []AttendeeSessionDBRaw `json:"sessions"`
-	CreatedAt              string                 `json:"created_at"`
-	ModifiedAt             string                 `json:"modified_at"`
-}
-
-type AttendeeSessionDBRaw struct {
-	ParticipantUUID string `json:"participant_uuid"`
-	JoinTime        string `json:"join_time"`
-	LeaveTime       string `json:"leave_time"`
-	LeaveReason     string `json:"leave_reason"`
-}
 
 func convertMapToInviteeParticipantData(
 	ctx context.Context,
@@ -805,7 +756,6 @@ func convertMapToInviteeParticipantData(
 		Sessions:               nil, // Invitees don't have sessions
 		CreatedAt:              createdAt,
 		ModifiedAt:             modifiedAt,
-		Tags:                   generateParticipantTags(rawInvitee.ID, rawInvitee.MeetingAndOccurrenceID, projectUID, username, rawInvitee.Email, true, false),
 	}, nil
 }
 
@@ -916,7 +866,6 @@ func convertMapToAttendeeParticipantData(
 		Sessions:               sessions,
 		CreatedAt:              createdAt,
 		ModifiedAt:             modifiedAt,
-		Tags:                   generateParticipantTags(rawAttendee.ID, rawAttendee.MeetingAndOccurrenceID, projectUID, username, rawAttendee.Email, isInvited, true),
 	}, nil
 }
 
@@ -937,22 +886,22 @@ func parseName(fullName string) (firstName, lastName string) {
 	return parts[0], strings.Join(parts[1:], " ")
 }
 
-func generateParticipantTags(id, pastMeetingID, projectUID, username, email string, isInvited, isAttended bool) []string {
+func generateParticipantTags(participant *models.PastMeetingParticipantEventData) []string {
 	tags := []string{
-		"participant_id:" + id,
-		"past_meeting_id:" + pastMeetingID,
-		"project_uid:" + projectUID,
+		"past_meeting_participant_uid:" + participant.UID,
+		"meeting_and_occurrence_id:" + participant.MeetingAndOccurrenceID,
+		"project_uid:" + participant.ProjectUID,
 	}
-	if username != "" {
-		tags = append(tags, "username:"+username)
+	if participant.Username != "" {
+		tags = append(tags, "username:"+participant.Username)
 	}
-	if email != "" {
-		tags = append(tags, "email:"+email)
+	if participant.Email != "" {
+		tags = append(tags, "email:"+participant.Email)
 	}
-	if isInvited {
+	if participant.IsInvited {
 		tags = append(tags, "is_invited:true")
 	}
-	if isAttended {
+	if participant.IsAttended {
 		tags = append(tags, "is_attended:true")
 	}
 	return tags
@@ -1006,8 +955,11 @@ func handlePastMeetingRecordingUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	// Generate recording tags
+	recordingTags := generateRecordingTags(recordingData.ID, recordingData.MeetingAndOccurrenceID, recordingData.PlatformMeetingID, recordingData.Sessions)
+
 	// Publish recording event to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData); err != nil {
+	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData, recordingTags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -1017,7 +969,8 @@ func handlePastMeetingRecordingUpdate(
 
 	// If transcript is enabled, publish separate transcript event
 	if transcriptData != nil {
-		if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData); err != nil {
+		transcriptTags := generateTranscriptTags(transcriptData.ID, transcriptData.MeetingAndOccurrenceID)
+		if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData, transcriptTags); err != nil {
 			funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish transcript event")
 			if isTransientError(err) {
 				return true // NAK for retry
@@ -1051,8 +1004,11 @@ func handlePastMeetingRecordingDelete(
 	// Create minimal event data for deletion
 	eventData := &models.RecordingEventData{ID: recordingID}
 
+	// Generate tags (minimal for deletion)
+	recordingTags := generateRecordingTags(recordingID, "", "", nil)
+
 	// Publish recording delete event
-	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, recordingTags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -1062,7 +1018,8 @@ func handlePastMeetingRecordingDelete(
 
 	// Also publish transcript delete event
 	transcriptData := &models.TranscriptEventData{ID: recordingID}
-	if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerConstants.ActionDeleted), transcriptData); err != nil {
+	transcriptTags := generateTranscriptTags(recordingID, "")
+	if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerConstants.ActionDeleted), transcriptData, transcriptTags); err != nil {
 		funcLogger.With(errKey, err).WarnContext(ctx, "failed to publish transcript delete event")
 	}
 
@@ -1122,8 +1079,11 @@ func handlePastMeetingSummaryUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	// Generate tags
+	tags := generateSummaryTags(summaryData)
+
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData); err != nil {
+	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -1156,8 +1116,11 @@ func handlePastMeetingSummaryDelete(
 	// Create minimal event data for deletion
 	eventData := &models.SummaryEventData{ID: summaryID}
 
+	// Generate tags (minimal for deletion)
+	tags := generateSummaryTags(eventData)
+
 	// Publish delete event
-	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerConstants.ActionDeleted), eventData); err != nil {
+	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -1176,50 +1139,6 @@ func handlePastMeetingSummaryDelete(
 // =============================================================================
 // Recording Conversion Functions
 // =============================================================================
-
-type RecordingDBRaw struct {
-	ID                     string                  `json:"id"`
-	MeetingAndOccurrenceID string                  `json:"meeting_and_occurrence_id"`
-	ProjectID              string                  `json:"proj_id"`
-	HostEmail              string                  `json:"host_email"`
-	HostID                 string                  `json:"host_id"`
-	MeetingID              string                  `json:"meeting_id"`
-	OccurrenceID           string                  `json:"occurrence_id,omitempty"`
-	PlatformMeetingID      string                  `json:"platform_meeting_id"`
-	RecordingAccess        string                  `json:"recording_access,omitempty"`
-	Topic                  string                  `json:"topic"` // v1 field name
-	TranscriptAccess       string                  `json:"transcript_access,omitempty"`
-	TranscriptEnabled      bool                    `json:"transcript_enabled"`
-	Visibility             string                  `json:"visibility,omitempty"`
-	RecordingCount         int                     `json:"recording_count"`
-	RecordingFiles         []RecordingFileDBRaw    `json:"recording_files"`
-	Sessions               []RecordingSessionDBRaw `json:"sessions"`
-	StartTime              string                  `json:"start_time"`
-	TotalSize              int64                   `json:"total_size"`
-	CreatedAt              string                  `json:"created_at"`
-	ModifiedAt             string                  `json:"modified_at"`
-}
-
-type RecordingFileDBRaw struct {
-	DownloadURL    string `json:"download_url,omitempty"`
-	FileExtension  string `json:"file_extension"`
-	FileSize       int64  `json:"file_size"`
-	FileType       string `json:"file_type"`
-	ID             string `json:"id"`
-	MeetingID      string `json:"meeting_id"`
-	PlayURL        string `json:"play_url,omitempty"`
-	RecordingStart string `json:"recording_start"`
-	RecordingEnd   string `json:"recording_end"`
-	RecordingType  string `json:"recording_type"`
-	Status         string `json:"status"`
-}
-
-type RecordingSessionDBRaw struct {
-	UUID      string `json:"uuid"`
-	ShareURL  string `json:"share_url,omitempty"`
-	TotalSize int64  `json:"total_size"`
-	StartTime string `json:"start_time"`
-}
 
 func convertMapToRecordingData(
 	ctx context.Context,
@@ -1334,7 +1253,6 @@ func convertMapToRecordingData(
 		TotalSize:              rawRecording.TotalSize,
 		CreatedAt:              createdAt,
 		UpdatedAt:              updatedAt,
-		Tags:                   generateRecordingTags(rawRecording.ID, rawRecording.MeetingAndOccurrenceID, rawRecording.PlatformMeetingID, sessions),
 	}
 
 	// Create transcript event data if transcript is enabled
@@ -1346,7 +1264,6 @@ func convertMapToRecordingData(
 			ProjectUID:             projectUID,
 			TranscriptAccess:       transcriptAccess,
 			Platform:               "Zoom",
-			Tags:                   generateTranscriptTags(rawRecording.ID, rawRecording.MeetingAndOccurrenceID),
 		}
 	}
 
@@ -1379,35 +1296,6 @@ func generateTranscriptTags(id, meetingAndOccurrenceID string) []string {
 // =============================================================================
 // Summary Conversion Functions
 // =============================================================================
-
-type SummaryDBRaw struct {
-	ID                     string               `json:"id"`
-	MeetingAndOccurrenceID string               `json:"meeting_and_occurrence_id"`
-	ProjectID              string               `json:"proj_id,omitempty"`
-	MeetingID              string               `json:"meeting_id"`
-	OccurrenceID           string               `json:"occurrence_id,omitempty"`
-	ZoomMeetingUUID        string               `json:"zoom_meeting_uuid"`
-	ZoomMeetingHostID      string               `json:"zoom_meeting_host_id"`
-	ZoomMeetingHostEmail   string               `json:"zoom_meeting_host_email"`
-	ZoomMeetingTopic       string               `json:"zoom_meeting_topic"`
-	SummaryOverview        string               `json:"summary_overview"`
-	SummaryTitle           string               `json:"summary_title"`
-	SummaryDetails         []SummaryDetailDBRaw `json:"summary_details"`
-	NextSteps              []string             `json:"next_steps"`
-	EditedSummaryOverview  string               `json:"edited_summary_overview,omitempty"`
-	EditedSummaryDetails   []SummaryDetailDBRaw `json:"edited_summary_details,omitempty"`
-	EditedNextSteps        []string             `json:"edited_next_steps,omitempty"`
-	RequiresApproval       bool                 `json:"requires_approval"`
-	Approved               bool                 `json:"approved"`
-	EmailSent              bool                 `json:"email_sent"`
-	CreatedAt              string               `json:"created_at"`
-	ModifiedAt             string               `json:"modified_at"`
-}
-
-type SummaryDetailDBRaw struct {
-	Label   string `json:"label"`
-	Summary string `json:"summary"`
-}
 
 func convertMapToSummaryData(
 	ctx context.Context,
@@ -1479,7 +1367,6 @@ func convertMapToSummaryData(
 		EmailSent: rawSummary.EmailSent,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
-		Tags:      generateSummaryTags(rawSummary.ID, rawSummary.MeetingAndOccurrenceID, rawSummary.MeetingID, rawSummary.SummaryTitle),
 	}, nil
 }
 
@@ -1526,16 +1413,16 @@ func buildSummaryMarkdown(overview string, details []SummaryDetailDBRaw, nextSte
 	return strings.TrimSpace(sb.String())
 }
 
-func generateSummaryTags(id, meetingAndOccurrenceID, meetingID, title string) []string {
+func generateSummaryTags(summary *models.SummaryEventData) []string {
 	tags := []string{
-		id,
-		"past_meeting_summary_id:" + id,
-		"meeting_and_occurrence_id:" + meetingAndOccurrenceID,
-		"meeting_id:" + meetingID,
+		summary.ID,
+		"past_meeting_summary_id:" + summary.ID,
+		"meeting_and_occurrence_id:" + summary.MeetingAndOccurrenceID,
+		"meeting_id:" + summary.MeetingID,
 		"platform:Zoom",
 	}
-	if title != "" {
-		tags = append(tags, "title:"+title)
+	if summary.ZoomMeetingTopic != "" {
+		tags = append(tags, "title:"+summary.ZoomMeetingTopic)
 	}
 	return tags
 }
