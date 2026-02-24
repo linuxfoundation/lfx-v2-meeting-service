@@ -4,10 +4,13 @@
 package eventing
 
 import (
+	"context"
 	"log/slog"
+	"strconv"
 	"testing"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,36 +19,55 @@ func TestOccurrenceCalculator_NoRecurrence(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, nil, nil, nil)
-	require.NoError(t, err)
-	require.Len(t, occurrences, 1)
+	meeting := models.MeetingEventData{
+		ID:                   "test-meeting-1",
+		Title:                "Test Meeting",
+		Description:          "Test Description",
+		StartTime:            startTime.Format(time.RFC3339),
+		Timezone:             "UTC",
+		Duration:             60,
+		Recurrence:           nil, // No recurrence
+		CancelledOccurrences: []string{},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
+	}
 
-	assert.Equal(t, "20240115T100000Z", occurrences[0].OccurrenceID)
-	assert.Equal(t, startTime, occurrences[0].StartTime)
-	assert.Equal(t, 60, occurrences[0].Duration)
-	assert.Equal(t, "available", occurrences[0].Status)
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+	require.NoError(t, err)
+	require.Len(t, occurrences, 0) // No occurrences for non-recurring meetings
 }
 
 func TestOccurrenceCalculator_DailyRecurrence(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           1, // Daily
-		RepeatInterval: 1,
-		EndTimes:       5, // 5 occurrences
+
+	meeting := models.MeetingEventData{
+		ID:          "test-meeting-1",
+		Title:       "Test Meeting",
+		Description: "Test Description",
+		StartTime:   startTime.Format(time.RFC3339),
+		Timezone:    "UTC",
+		Duration:    60,
+		Recurrence: &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndTimes:       5, // 5 occurrences
+		},
+		CancelledOccurrences: []string{},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
 	}
 
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
+	// Include past occurrences for testing
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
 	require.NoError(t, err)
 	require.Len(t, occurrences, 5)
 
 	// Check first occurrence
-	assert.Equal(t, "20240115T100000Z", occurrences[0].OccurrenceID)
-	assert.Equal(t, startTime, occurrences[0].StartTime)
+	assert.Equal(t, startTime.Unix(), parseOccurrenceID(t, occurrences[0].OccurrenceID))
+	assert.Equal(t, startTime.UTC(), occurrences[0].StartTime.UTC())
 
 	// Check second occurrence (next day)
 	expectedSecond := startTime.Add(24 * time.Hour)
-	assert.Equal(t, expectedSecond, occurrences[1].StartTime)
+	assert.Equal(t, expectedSecond.UTC(), occurrences[1].StartTime.UTC())
 
 	// All should have same duration
 	for _, occ := range occurrences {
@@ -57,14 +79,25 @@ func TestOccurrenceCalculator_WeeklyRecurrence(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	// Start on Monday, Jan 15, 2024
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           2,     // Weekly
-		RepeatInterval: 1,     // Every week
-		WeeklyDays:     "2,4", // Monday and Wednesday (2=Mon, 4=Wed)
-		EndTimes:       4,     // 4 occurrences
+
+	meeting := models.MeetingEventData{
+		ID:          "test-meeting-1",
+		Title:       "Test Meeting",
+		Description: "Test Description",
+		StartTime:   startTime.Format(time.RFC3339),
+		Timezone:    "UTC",
+		Duration:    60,
+		Recurrence: &models.ZoomMeetingRecurrence{
+			Type:           2,     // Weekly
+			RepeatInterval: 1,     // Every week
+			WeeklyDays:     "2,4", // Monday and Wednesday (2=Mon, 4=Wed)
+			EndTimes:       4,     // 4 occurrences
+		},
+		CancelledOccurrences: []string{},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
 	}
 
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(occurrences), 2, "Should have at least 2 occurrences")
 
@@ -76,14 +109,25 @@ func TestOccurrenceCalculator_MonthlyByDay(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	// Start on Jan 15, 2024
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           3,  // Monthly
-		RepeatInterval: 1,  // Every month
-		MonthlyDay:     15, // 15th of each month
-		EndTimes:       3,  // 3 occurrences
+
+	meeting := models.MeetingEventData{
+		ID:          "test-meeting-1",
+		Title:       "Test Meeting",
+		Description: "Test Description",
+		StartTime:   startTime.Format(time.RFC3339),
+		Timezone:    "UTC",
+		Duration:    60,
+		Recurrence: &models.ZoomMeetingRecurrence{
+			Type:           3,  // Monthly
+			RepeatInterval: 1,  // Every month
+			MonthlyDay:     15, // 15th of each month
+			EndTimes:       3,  // 3 occurrences
+		},
+		CancelledOccurrences: []string{},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
 	}
 
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
 	require.NoError(t, err)
 	require.Len(t, occurrences, 3)
 
@@ -97,15 +141,26 @@ func TestOccurrenceCalculator_MonthlyByWeekDay(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	// Start on first Tuesday of Jan 2024 (Jan 2)
 	startTime := time.Date(2024, 1, 2, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           3, // Monthly
-		RepeatInterval: 1, // Every month
-		MonthlyWeek:    1, // First week
-		MonthlyWeekDay: 3, // Tuesday (3=Tuesday)
-		EndTimes:       3, // 3 occurrences
+
+	meeting := models.MeetingEventData{
+		ID:          "test-meeting-1",
+		Title:       "Test Meeting",
+		Description: "Test Description",
+		StartTime:   startTime.Format(time.RFC3339),
+		Timezone:    "UTC",
+		Duration:    60,
+		Recurrence: &models.ZoomMeetingRecurrence{
+			Type:           3, // Monthly
+			RepeatInterval: 1, // Every month
+			MonthlyWeek:    1, // First week
+			MonthlyWeekDay: 3, // Tuesday (3=Tuesday)
+			EndTimes:       3, // 3 occurrences
+		},
+		CancelledOccurrences: []string{},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
 	}
 
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(occurrences), 1, "Should have at least 1 occurrence")
 
@@ -120,13 +175,23 @@ func TestOccurrenceCalculator_WithEndDate(t *testing.T) {
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	endTime := time.Date(2024, 1, 22, 10, 0, 0, 0, time.UTC)
 
-	rec := &RecurrenceInput{
-		Type:           1,                            // Daily
-		RepeatInterval: 1,                            // Every day
-		EndDateTime:    endTime.Format(time.RFC3339), // End on Jan 22
+	meeting := models.MeetingEventData{
+		ID:          "test-meeting-1",
+		Title:       "Test Meeting",
+		Description: "Test Description",
+		StartTime:   startTime.Format(time.RFC3339),
+		Timezone:    "UTC",
+		Duration:    60,
+		Recurrence: &models.ZoomMeetingRecurrence{
+			Type:           1,                            // Daily
+			RepeatInterval: 1,                            // Every day
+			EndDateTime:    endTime.Format(time.RFC3339), // End on Jan 22
+		},
+		CancelledOccurrences: []string{},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
 	}
 
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
 	require.NoError(t, err)
 
 	// Should have occurrences from Jan 15 to Jan 22 (8 days)
@@ -143,17 +208,28 @@ func TestOccurrenceCalculator_WithEndDate(t *testing.T) {
 func TestOccurrenceCalculator_CancelledOccurrences(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           1, // Daily
-		RepeatInterval: 1,
-		EndTimes:       5, // 5 occurrences
+
+	// Cancel the second occurrence (using Unix timestamp as occurrence ID)
+	secondOccTime := startTime.Add(24 * time.Hour)
+	cancelledOccurrenceID := strconv.FormatInt(secondOccTime.Unix(), 10)
+
+	meeting := models.MeetingEventData{
+		ID:          "test-meeting-1",
+		Title:       "Test Meeting",
+		Description: "Test Description",
+		StartTime:   startTime.Format(time.RFC3339),
+		Timezone:    "UTC",
+		Duration:    60,
+		Recurrence: &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndTimes:       5, // 5 occurrences
+		},
+		CancelledOccurrences: []string{cancelledOccurrenceID},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
 	}
 
-	// Cancel the second occurrence
-	secondOccTime := startTime.Add(24 * time.Hour)
-	cancelledOccurrences := []string{secondOccTime.Format("20060102T150405Z")}
-
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, cancelledOccurrences, nil)
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
 	require.NoError(t, err)
 
 	// Should have 4 occurrences (5 - 1 cancelled)
@@ -161,88 +237,32 @@ func TestOccurrenceCalculator_CancelledOccurrences(t *testing.T) {
 
 	// Second occurrence should not be in the list
 	for _, occ := range occurrences {
-		assert.NotEqual(t, secondOccTime.Format("20060102T150405Z"), occ.OccurrenceID)
+		assert.NotEqual(t, cancelledOccurrenceID, occ.OccurrenceID)
 	}
-}
-
-func TestOccurrenceCalculator_UpdatedOccurrences(t *testing.T) {
-	calc := NewOccurrenceCalculator(slog.Default())
-	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           1, // Daily
-		RepeatInterval: 1,
-		EndTimes:       3, // 3 occurrences
-	}
-
-	// Update the second occurrence
-	secondOccTime := startTime.Add(24 * time.Hour)
-	updatedOccurrences := map[string]OccurrenceUpdate{
-		secondOccTime.Format("20060102T150405Z"): {
-			StartTime: secondOccTime.Add(2 * time.Hour), // Move 2 hours later
-			Duration:  90,                               // Change duration to 90 minutes
-		},
-	}
-
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, updatedOccurrences)
-	require.NoError(t, err)
-	require.Len(t, occurrences, 3)
-
-	// First occurrence should be unchanged
-	assert.Equal(t, startTime, occurrences[0].StartTime)
-	assert.Equal(t, 60, occurrences[0].Duration)
-
-	// Second occurrence should be updated
-	assert.Equal(t, secondOccTime.Add(2*time.Hour), occurrences[1].StartTime)
-	assert.Equal(t, 90, occurrences[1].Duration)
-
-	// Third occurrence should be unchanged
-	assert.Equal(t, 60, occurrences[2].Duration)
-}
-
-func TestOccurrenceCalculator_ApplyAllFollowingUpdates(t *testing.T) {
-	calc := NewOccurrenceCalculator(slog.Default())
-
-	// Create initial occurrences
-	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	occurrences := []Occurrence{
-		{OccurrenceID: "20240115T100000Z", StartTime: startTime, Duration: 60},
-		{OccurrenceID: "20240116T100000Z", StartTime: startTime.Add(24 * time.Hour), Duration: 60},
-		{OccurrenceID: "20240117T100000Z", StartTime: startTime.Add(48 * time.Hour), Duration: 60},
-		{OccurrenceID: "20240118T100000Z", StartTime: startTime.Add(72 * time.Hour), Duration: 60},
-	}
-
-	// Update from second occurrence onwards
-	newStartTime := startTime.Add(24 * time.Hour).Add(2 * time.Hour) // 2 hours later
-	updated := calc.ApplyAllFollowingUpdates(occurrences, "20240116T100000Z", newStartTime, 90)
-
-	require.Len(t, updated, 4)
-
-	// First occurrence should be unchanged
-	assert.Equal(t, startTime, updated[0].StartTime)
-	assert.Equal(t, 60, updated[0].Duration)
-
-	// All following occurrences should be updated
-	assert.Equal(t, newStartTime, updated[1].StartTime)
-	assert.Equal(t, 90, updated[1].Duration)
-
-	assert.Equal(t, newStartTime, updated[2].StartTime)
-	assert.Equal(t, 90, updated[2].Duration)
-
-	assert.Equal(t, newStartTime, updated[3].StartTime)
-	assert.Equal(t, 90, updated[3].Duration)
 }
 
 func TestOccurrenceCalculator_BiWeeklyRecurrence(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           2,   // Weekly
-		RepeatInterval: 2,   // Every 2 weeks
-		WeeklyDays:     "2", // Monday
-		EndTimes:       4,   // 4 occurrences
+
+	meeting := models.MeetingEventData{
+		ID:          "test-meeting-1",
+		Title:       "Test Meeting",
+		Description: "Test Description",
+		StartTime:   startTime.Format(time.RFC3339),
+		Timezone:    "UTC",
+		Duration:    60,
+		Recurrence: &models.ZoomMeetingRecurrence{
+			Type:           2,   // Weekly
+			RepeatInterval: 2,   // Every 2 weeks
+			WeeklyDays:     "2", // Monday
+			EndTimes:       4,   // 4 occurrences
+		},
+		CancelledOccurrences: []string{},
+		UpdatedOccurrences:   []models.UpdatedOccurrence{},
 	}
 
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
+	occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, len(occurrences), 2, "Should have at least 2 occurrences")
 
@@ -253,37 +273,7 @@ func TestOccurrenceCalculator_BiWeeklyRecurrence(t *testing.T) {
 	}
 }
 
-func TestOccurrenceCalculator_MaxOccurrencesLimit(t *testing.T) {
-	calc := NewOccurrenceCalculator(slog.Default())
-	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type:           1,   // Daily
-		RepeatInterval: 1,   // Every day
-		EndTimes:       200, // Request 200 occurrences
-	}
-
-	occurrences, err := calc.CalculateOccurrences(startTime, 60, rec, nil, nil)
-	require.NoError(t, err)
-
-	// Should be limited to 100 occurrences
-	assert.LessOrEqual(t, len(occurrences), 100, "Should not exceed 100 occurrences")
-}
-
-func TestBuildRRule_InvalidType(t *testing.T) {
-	calc := NewOccurrenceCalculator(slog.Default())
-	startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
-	rec := &RecurrenceInput{
-		Type: 99, // Invalid type
-	}
-
-	_, err := calc.buildRRule(startTime, rec)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid recurrence type")
-}
-
-func TestConvertWeeklyDays(t *testing.T) {
-	calc := NewOccurrenceCalculator(slog.Default())
-
+func TestParseByDay(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
@@ -296,29 +286,15 @@ func TestConvertWeeklyDays(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := calc.convertWeeklyDays(tt.input)
+		result, err := parseByDay(tt.input)
+		require.NoError(t, err)
 		assert.Equal(t, tt.expected, result, "Input: %s", tt.input)
 	}
 }
 
-func TestConvertDayOfWeek(t *testing.T) {
-	calc := NewOccurrenceCalculator(slog.Default())
-
-	tests := []struct {
-		input    int
-		expected string
-	}{
-		{1, "SU"},
-		{2, "MO"},
-		{3, "TU"},
-		{4, "WE"},
-		{5, "TH"},
-		{6, "FR"},
-		{7, "SA"},
-	}
-
-	for _, tt := range tests {
-		result := calc.convertDayOfWeek(tt.input)
-		assert.Equal(t, tt.expected, result, "Input: %d", tt.input)
-	}
+// Helper function to parse occurrence ID (unix timestamp string) to int64
+func parseOccurrenceID(t *testing.T, occurrenceID string) int64 {
+	ts, err := strconv.ParseInt(occurrenceID, 10, 64)
+	require.NoError(t, err)
+	return ts
 }

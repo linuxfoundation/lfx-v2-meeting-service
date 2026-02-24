@@ -38,56 +38,56 @@ func NewNATSPublisher(nc *nats.Conn, logger *slog.Logger) (*NATSPublisher, error
 }
 
 // PublishMeetingEvent publishes a meeting event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, meeting *models.MeetingEventData) error {
+func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, meeting *models.MeetingEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing meeting event", "action", action, "meeting_id", "TBD")
 	// TODO: Implement when MeetingEventData is populated
 	return fmt.Errorf("not yet implemented")
 }
 
 // PublishRegistrantEvent publishes a registrant event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData) error {
+func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing registrant event", "action", action)
 	// TODO: Implement when RegistrantEventData is populated
 	return fmt.Errorf("not yet implemented")
 }
 
 // PublishInviteResponseEvent publishes an invite response (RSVP) event to indexer service
-func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action string, response *models.InviteResponseEventData) error {
+func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action string, response *models.InviteResponseEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing invite response event", "action", action)
 	// TODO: Implement when InviteResponseEventData is populated
 	return fmt.Errorf("not yet implemented")
 }
 
 // PublishPastMeetingEvent publishes a past meeting event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action string, meeting *models.PastMeetingEventData) error {
+func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action string, meeting *models.PastMeetingEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing past meeting event", "action", action)
 	// TODO: Implement when PastMeetingEventData is populated
 	return fmt.Errorf("not yet implemented")
 }
 
 // PublishPastMeetingParticipantEvent publishes a participant event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, action string, participant *models.PastMeetingParticipantEventData) error {
+func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, action string, participant *models.PastMeetingParticipantEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing past meeting participant event", "action", action)
 	// TODO: Implement when PastMeetingParticipantEventData is populated
 	return fmt.Errorf("not yet implemented")
 }
 
 // PublishPastMeetingRecordingEvent publishes a recording event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData) error {
+func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing past meeting recording event", "action", action)
 	// TODO: Implement when RecordingEventData is populated
 	return fmt.Errorf("not yet implemented")
 }
 
 // PublishPastMeetingTranscriptEvent publishes a transcript event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, action string, transcript *models.TranscriptEventData) error {
+func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, action string, transcript *models.TranscriptEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing past meeting transcript event", "action", action)
 	// TODO: Implement when TranscriptEventData is populated
 	return fmt.Errorf("not yet implemented")
 }
 
 // PublishPastMeetingSummaryEvent publishes a summary event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData) error {
+func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData, tags []string) error {
 	p.logger.InfoContext(ctx, "publishing past meeting summary event", "action", action)
 	// TODO: Implement when SummaryEventData is populated
 	return fmt.Errorf("not yet implemented")

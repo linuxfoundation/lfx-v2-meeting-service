@@ -4,18 +4,26 @@
 package eventing
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/teambition/rrule-go"
 )
 
-// NOTE: This occurrence calculation logic is duplicated from the itx-service-zoom repository.
-// Ideally, this should be imported as a shared package from itx-service-zoom, but that package
-// is currently private. In the future, the occurrence calculation logic should be made public
-// and exported from itx-service-zoom so it can be reused across services without duplication.
-// See: github.com/linuxfoundation/itx-service-zoom (private)
+const (
+	occurrenceStatusAvailable = "available"
+	occurrenceStatusCancel    = "cancel"
+	meetingEndBuffer          = 40 * time.Minute
+)
+
+var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
+var typeName = []string{"Daily", "Weekly", "Monthly"}
 
 // OccurrenceCalculator calculates meeting occurrences based on RRULE recurrence patterns
 type OccurrenceCalculator struct {
@@ -29,261 +37,455 @@ func NewOccurrenceCalculator(logger *slog.Logger) *OccurrenceCalculator {
 	}
 }
 
-// Occurrence represents a single meeting occurrence
-type Occurrence struct {
-	OccurrenceID string
-	StartTime    time.Time
-	Duration     int
-	Status       string
-}
-
-// RecurrenceInput contains the recurrence configuration
-type RecurrenceInput struct {
-	Type           int    // 1=Daily, 2=Weekly, 3=Monthly
-	RepeatInterval int    // How often to repeat
-	WeeklyDays     string // Days of week for weekly recurrence (e.g., "1,3,5" for Mon,Wed,Fri)
-	MonthlyDay     int    // Day of month for monthly recurrence
-	MonthlyWeek    int    // Week of month (-1=last, 1=first, 2=second, etc.)
-	MonthlyWeekDay int    // Day of week for monthly week recurrence (1=Sun, 2=Mon, etc.)
-	EndTimes       int    // Number of occurrences (0 = until end date)
-	EndDateTime    string // End date/time for recurrence
-}
-
-// OccurrenceUpdate represents an update to a specific occurrence
-type OccurrenceUpdate struct {
-	StartTime time.Time
-	Duration  int
-}
-
-// CalculateOccurrences generates meeting occurrences based on RRULE pattern
-// Returns up to 100 occurrences to prevent excessive data
+// CalculateOccurrences generates occurrence objects for a meeting, which can optionally include past or cancelled occurrences
 func (c *OccurrenceCalculator) CalculateOccurrences(
-	startTime time.Time,
-	duration int,
-	recurrence *RecurrenceInput,
-	cancelledOccurrences []string,
-	updatedOccurrences map[string]OccurrenceUpdate,
-) ([]Occurrence, error) {
-	if recurrence == nil {
-		// Single meeting, no recurrence
-		return []Occurrence{
-			{
-				OccurrenceID: startTime.Format("20060102T150405Z"),
-				StartTime:    startTime,
-				Duration:     duration,
-				Status:       "available",
-			},
-		}, nil
+	ctx context.Context,
+	meeting models.MeetingEventData,
+	pastOccurrences bool,
+	includeCancelled bool,
+	numOccurrencesToReturn int,
+) (result []models.Occurrence, err error) {
+	timerNow := time.Now()
+	// Occurrences only exist for recurring meetings
+	if meeting.Recurrence == nil {
+		return result, nil
 	}
 
-	// Build RRULE from recurrence input
-	rruleStr, err := c.buildRRule(startTime, recurrence)
+	meetingStartTime, err := time.Parse(time.RFC3339, meeting.StartTime)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build rrule: %w", err)
+		return nil, fmt.Errorf("failed to parse meeting start_time %s: %w", meeting.StartTime, err)
 	}
 
-	c.logger.Debug("generated rrule", "rrule", rruleStr)
+	location := time.UTC
+	if meeting.Timezone != "" {
+		meetingStartTime, err = timeInLocation(meetingStartTime, meeting.Timezone)
+		if err != nil {
+			return nil, err
+		}
 
-	// Parse RRULE
-	rule, err := rrule.StrToRRule(rruleStr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse rrule: %w", err)
+		location = meetingStartTime.Location()
 	}
 
-	// Generate occurrences (limit to 100)
-	dtStart := startTime
-	count := 100
-	if recurrence.EndTimes > 0 && recurrence.EndTimes < 100 {
-		count = recurrence.EndTimes
+	// Get all occurrences patterns to calculate occurrences
+	occurrencesPattern := []models.Occurrence{}
+	// First add the base meeting recurrence
+	// Store start times as Unix string
+	occurrencesPattern = append(occurrencesPattern, models.Occurrence{
+		OccurrenceID: strconv.FormatInt(meetingStartTime.Unix(), 10),
+		StartTime:    meetingStartTime, // base meeting start time
+		Duration:     meeting.Duration,
+		Recurrence:   meeting.Recurrence,
+	})
+	// Then add all recurrences for occurrences with a recurrence pattern, and include
+	// start time to determine when the recurrence patterns start/end.
+	occurrenceStartTimeUnix := occurrencesPattern[0].OccurrenceID
+	occurrenceStartTimeFmt := occurrencesPattern[0].StartTime
+	for _, updatedOcc := range meeting.UpdatedOccurrences {
+		if updatedOcc.Recurrence != nil {
+			// Update start time to occurrence start time.
+			// For use in case an occurrence doesn't have a new start time.
+			if updatedOcc.NewOccurrenceID != "" {
+				occurrenceStartTimeUnix = updatedOcc.NewOccurrenceID
+				// Convert occurrence start time to timeRFC3339 format to make the time easier to read in the logs
+				occurrenceStartTimeUnixInt, err := strconv.ParseInt(occurrenceStartTimeUnix, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert occurrence start time %s to int: %w", occurrenceStartTimeUnix, err)
+				}
+				occurrenceStartTimeFmt = time.Unix(occurrenceStartTimeUnixInt, 0)
+			}
+			occurrencesPattern = append(occurrencesPattern, models.Occurrence{
+				OccurrenceID: occurrenceStartTimeUnix,
+				StartTime:    occurrenceStartTimeFmt,
+				Recurrence:   updatedOcc.Recurrence,
+				Duration:     updatedOcc.Duration,
+				Title:        updatedOcc.Title,
+				Description:  updatedOcc.Description,
+			})
+		}
 	}
+	slices.SortFunc(occurrencesPattern, func(a, b models.Occurrence) int {
+		aUnix, _ := strconv.ParseInt(a.OccurrenceID, 10, 64)
+		bUnix, _ := strconv.ParseInt(b.OccurrenceID, 10, 64)
+		if aUnix < bUnix {
+			return -1
+		} else if aUnix > bUnix {
+			return 1
+		}
+		return 0
+	})
+	c.logger.With("meeting_id", meeting.ID, "recurrences", occurrencesPattern).DebugContext(ctx, "list of recurrence patterns")
 
-	occurrenceTimes := rule.Between(dtStart, dtStart.AddDate(10, 0, 0), true) // Max 10 years ahead
-	if len(occurrenceTimes) > count {
-		occurrenceTimes = occurrenceTimes[:count]
-	}
+	var allFollowing bool
+	var currentStartTime = meetingStartTime
+	var currentDuration int
+	var previousOccurrence models.Occurrence
+	var previousOldOccurrenceID string
 
-	// Convert to Occurrence objects
-	occurrences := make([]Occurrence, 0, len(occurrenceTimes))
-	cancelledMap := make(map[string]bool)
-	for _, cancelled := range cancelledOccurrences {
-		cancelledMap[cancelled] = true
-	}
+	// Loop through all recurrence patterns to generate the occurrences
+	// from each start time to the next recurrence pattern start time.
+	for occurrencePatternIdx, occurrencePattern := range occurrencesPattern {
+		c.logger.With("meeting_id", meeting.ID, "recurrence", occurrencePattern, "idx", occurrencePatternIdx).DebugContext(ctx, "current recurrence")
+		// Determine next recurrence start time to know how long recurrence pattern lasts
+		var nextRecurrenceTimeUnix int64
+		if occurrencePatternIdx < len(occurrencesPattern)-1 && occurrencesPattern[occurrencePatternIdx+1].OccurrenceID != "" {
+			nextRecurrenceTimeUnix, err = strconv.ParseInt(occurrencesPattern[occurrencePatternIdx+1].OccurrenceID, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert next recurrence start time %s to int: %w", occurrencesPattern[occurrencePatternIdx+1].OccurrenceID, err)
+			}
+		}
+		c.logger.With("meeting_id", meeting.ID, "current_recurrence", occurrencePattern, "next_recurrence_start_time_unix", nextRecurrenceTimeUnix, "next_recurrence_start_time", time.Unix(nextRecurrenceTimeUnix, 0).Format(time.RFC3339)).DebugContext(ctx, "next recurrence start time")
 
-	for _, occTime := range occurrenceTimes {
-		occurrenceID := occTime.Format("20060102T150405Z")
+		// Skip the recurrence pattern if past occurrences are not included
+		// and the next recurrence start time is before the current time, which means
+		// this whole recurrence pattern must also be in the past and thus can be skipped.
 
-		// Skip cancelled occurrences
-		if cancelledMap[occurrenceID] {
+		if nextRecurrenceTimeUnix != 0 && !pastOccurrences && nextRecurrenceTimeUnix < time.Now().Unix() {
 			continue
 		}
 
-		// Apply updates if present
-		occStartTime := occTime
-		occDuration := duration
-		if update, exists := updatedOccurrences[occurrenceID]; exists {
-			if !update.StartTime.IsZero() {
-				occStartTime = update.StartTime
-			}
-			if update.Duration > 0 {
-				occDuration = update.Duration
-			}
-		}
-
-		occurrences = append(occurrences, Occurrence{
-			OccurrenceID: occurrenceID,
-			StartTime:    occStartTime,
-			Duration:     occDuration,
-			Status:       "available",
-		})
-	}
-
-	c.logger.Debug("calculated occurrences",
-		"total", len(occurrences),
-		"cancelled", len(cancelledOccurrences),
-		"updated", len(updatedOccurrences),
-	)
-
-	return occurrences, nil
-}
-
-// buildRRule constructs an RRULE string from recurrence input
-func (c *OccurrenceCalculator) buildRRule(startTime time.Time, rec *RecurrenceInput) (string, error) {
-	dtStart := startTime.Format("20060102T150405Z")
-	rrule := fmt.Sprintf("DTSTART:%s\nRRULE:", dtStart)
-
-	// Frequency
-	var freq string
-	switch rec.Type {
-	case 1:
-		freq = "DAILY"
-	case 2:
-		freq = "WEEKLY"
-	case 3:
-		freq = "MONTHLY"
-	default:
-		return "", fmt.Errorf("invalid recurrence type: %d", rec.Type)
-	}
-	rrule += "FREQ=" + freq
-
-	// Interval
-	if rec.RepeatInterval > 1 {
-		rrule += fmt.Sprintf(";INTERVAL=%d", rec.RepeatInterval)
-	}
-
-	// Weekly days
-	if rec.Type == 2 && rec.WeeklyDays != "" {
-		days := c.convertWeeklyDays(rec.WeeklyDays)
-		if days != "" {
-			rrule += ";BYDAY=" + days
-		}
-	}
-
-	// Monthly configuration
-	if rec.Type == 3 {
-		if rec.MonthlyWeek != 0 && rec.MonthlyWeekDay > 0 {
-			// Monthly by week and day (e.g., "2nd Tuesday")
-			weekPrefix := fmt.Sprintf("%d", rec.MonthlyWeek)
-			dayOfWeek := c.convertDayOfWeek(rec.MonthlyWeekDay)
-			rrule += fmt.Sprintf(";BYDAY=%s%s", weekPrefix, dayOfWeek)
-		} else if rec.MonthlyDay > 0 {
-			// Monthly by day of month
-			rrule += fmt.Sprintf(";BYMONTHDAY=%d", rec.MonthlyDay)
-		}
-	}
-
-	// End condition
-	if rec.EndTimes > 0 {
-		rrule += fmt.Sprintf(";COUNT=%d", rec.EndTimes)
-	} else if rec.EndDateTime != "" {
-		// Parse end date/time
-		endTime, err := time.Parse(time.RFC3339, rec.EndDateTime)
+		// Convert unix string start time into time.Time object
+		unixStartTime, err := strconv.ParseInt(occurrencePattern.OccurrenceID, 10, 64)
 		if err != nil {
-			// Try alternative formats
-			endTime, err = time.Parse("2006-01-02T15:04:05Z", rec.EndDateTime)
-			if err != nil {
-				endTime, err = time.Parse("2006-01-02 15:04:05", rec.EndDateTime)
-				if err != nil {
-					return "", fmt.Errorf("failed to parse end date/time: %w", err)
+			return nil, fmt.Errorf("failed to convert recurrence start time %s to int: %w", occurrencePattern.OccurrenceID, err)
+		}
+		recStartTime := time.Unix(unixStartTime, 0)
+		recStartTime, err = timeInLocation(recStartTime, meeting.Timezone)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get occurrences based on reccurrence pattern and start time
+		occurrences, err := c.getRRuleOccurrences(recStartTime, meeting.Timezone, occurrencePattern.Recurrence, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get recurrence rule: %w", err)
+		}
+		occurrencesInLog := occurrences
+		// only show the first 100 occurrences to avoid spamming the logs
+		if len(occurrencesInLog) > 100 {
+			occurrencesInLog = occurrencesInLog[:100]
+		}
+		c.logger.With("meeting_id", meeting.ID, "start_time", recStartTime, "recurrence_rrule", occurrencePattern.Recurrence, "occurrences", occurrencesInLog).DebugContext(ctx, "rrule calculated occurrences")
+
+		currentStartTime = recStartTime
+		currentDuration = occurrencePattern.Duration
+
+		// We need to check below fields to ensure they are not empty
+		currentTitle := occurrencePattern.Title
+		currentDescription := occurrencePattern.Description
+		if occurrencePattern.Title == "" {
+			currentTitle = meeting.Title
+		}
+		if occurrencePattern.Description == "" {
+			currentDescription = meeting.Description
+		}
+		for _, o := range occurrences {
+			// Skip this recurrence pattern if the occurrence time
+			// is after the next recurrence start time.
+			if nextRecurrenceTimeUnix != 0 && nextRecurrenceTimeUnix < o.Unix() {
+				c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "skip recurrence pattern")
+				break
+			}
+			occurrenceID := strconv.FormatInt(o.Unix(), 10)
+			if occurrenceID == previousOccurrence.OccurrenceID {
+				// Skip if occurrence is the same as the previous one.
+				// This can happen if an occurrence has a recurrence pattern
+				// that is the same as the meeting itself, so the occurrence shows
+				// up in two recurrence patterns that we iterate through.
+				continue
+			}
+			c.logger.With("meeting_id", meeting.ID, "occurrence_id", occurrenceID, "occurrence_start_time", o).DebugContext(ctx, "current occurrence (as calculated by RRULE, before adjustments)")
+
+			// Need to check single updated occurrence first then all following updated occurrence
+			// so that the latter gets applied to the following occurrences
+			var isUpdated bool
+			var updateOccAllFollowing models.UpdatedOccurrence
+			var updateOccSingle models.UpdatedOccurrence
+			for _, updatedOcc := range meeting.UpdatedOccurrences {
+				if (updatedOcc.OldOccurrenceID == occurrenceID || updatedOcc.NewOccurrenceID == occurrenceID) && updatedOcc.AllFollowing {
+					c.logger.With("meeting_id", meeting.ID, "occurrence", updatedOcc).DebugContext(ctx, "is an all following updated occurrence")
+					isUpdated = true
+					updateOccAllFollowing = updatedOcc
+					allFollowing = true
+
+					// Update the current duration and start time variables because an updated occurrence
+					// with all the following enabled means the following occurrences need to use
+					// the new start time and duration - so we must keep track of those values
+					currentDuration = updatedOcc.Duration
+					currentTitle = updatedOcc.Title
+					currentDescription = updatedOcc.Description
+					unixStartTime, err := strconv.ParseInt(updatedOcc.NewOccurrenceID, 10, 64)
+					if err != nil {
+						return nil, fmt.Errorf("failed to convert updated occurrence start time %s to int: %w", updatedOcc.NewOccurrenceID, err)
+					}
+					currentStartTime = time.Unix(unixStartTime, 0).In(location)
+					c.logger.With("meeting_id", meeting.ID, "current_start_time", currentStartTime, "occurrence", updatedOcc).DebugContext(ctx, "current start time changed")
+				}
+				// We need to check if the updated occurrence record's old or new occurrence ID matches the currently iterated
+				// occurrence ID. But also it's possible that there was an all_following=true updated occurrence record that
+				// effectively moved the [occurrenceID] and therefore in that case we also need to check if the updated occurrence
+				// record's old or new occurrence matches the new occurrence ID of the all_following=true updated occurrence record.
+				isUpdatedSingle := (updatedOcc.OldOccurrenceID == occurrenceID || updatedOcc.NewOccurrenceID == occurrenceID) && !updatedOcc.AllFollowing
+				isUpdatedSingle = isUpdatedSingle || ((updatedOcc.OldOccurrenceID == updateOccAllFollowing.NewOccurrenceID || updatedOcc.NewOccurrenceID == updateOccAllFollowing.NewOccurrenceID) && allFollowing)
+				if isUpdatedSingle {
+					c.logger.With("meeting_id", meeting.ID, "occurrence", updatedOcc).DebugContext(ctx, "is a single updated occurrence")
+					isUpdated = true
+					updateOccSingle = updatedOcc
 				}
 			}
-		}
-		rrule += ";UNTIL=" + endTime.Format("20060102T150405Z")
-	}
 
-	return rrule, nil
-}
+			if updateOccAllFollowing != (models.UpdatedOccurrence{}) || updateOccSingle != (models.UpdatedOccurrence{}) {
+				var updatedOcc models.UpdatedOccurrence
+				if updateOccSingle != (models.UpdatedOccurrence{}) {
+					c.logger.With("meeting_id", meeting.ID, "occurrence", updateOccSingle).DebugContext(ctx, "single updated occurrence")
+					updatedOcc = updateOccSingle
+				} else {
+					c.logger.With("meeting_id", meeting.ID, "occurrence", updateOccAllFollowing).DebugContext(ctx, "all following updated occurrence")
+					updatedOcc = updateOccAllFollowing
+				}
 
-// convertWeeklyDays converts comma-separated day numbers to RRULE BYDAY format
-// Input: "1,3,5" (1=Sunday in Zoom API)
-// Output: "SU,TU,TH"
-func (c *OccurrenceCalculator) convertWeeklyDays(weeklyDays string) string {
-	dayMap := map[string]string{
-		"1": "SU", // Sunday
-		"2": "MO", // Monday
-		"3": "TU", // Tuesday
-		"4": "WE", // Wednesday
-		"5": "TH", // Thursday
-		"6": "FR", // Friday
-		"7": "SA", // Saturday
-	}
+				// Skip past occurrences if no past occurrences are expected
+				unixStartTime, err := strconv.ParseInt(updatedOcc.NewOccurrenceID, 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert updated occurrence start time %s to int: %w", updatedOcc.NewOccurrenceID, err)
+				}
 
-	days := ""
-	for i, day := range weeklyDays {
-		if i > 0 && day != ',' {
-			days += ","
-		}
-		if day != ',' {
-			if rruleDay, ok := dayMap[string(day)]; ok {
-				days += rruleDay
+				// If updated occurrence does not have a duration, use meeting duration
+				if updatedOcc.Duration == 0 {
+					updatedOcc.Duration = meeting.Duration
+				}
+
+				if !pastOccurrences && isOccurrencePast(time.Unix(unixStartTime, 0), updatedOcc.Duration) {
+					c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "skipping updated occurrence because it is a past occurrence")
+					continue
+				}
+
+				// Skip updated occurrence if previous occurrence was an updated occurrence with the same old occurrenceID (we don't want to duplicate occurrence).
+				// This can happen if an occurrence was updated both singularly and with all the following with a recurrence.
+				if updatedOcc.OldOccurrenceID == previousOldOccurrenceID {
+					continue
+				}
+
+				occurrenceObj := models.Occurrence{
+					OccurrenceID: updatedOcc.NewOccurrenceID, // stored in unix time as a string
+					Title:        updatedOcc.Title,
+					Description:  updatedOcc.Description,
+					StartTime:    time.Unix(unixStartTime, 0).In(location), // stored time as a formatted string
+					Duration:     updatedOcc.Duration,
+					IsCancelled:  false,
+				}
+				if updateOccAllFollowing != (models.UpdatedOccurrence{}) {
+					occurrenceObj.Recurrence = updateOccAllFollowing.Recurrence
+				}
+				if occurrenceObj.Title == "" {
+					occurrenceObj.Title = meeting.Title
+				}
+				if occurrenceObj.Description == "" {
+					occurrenceObj.Description = meeting.Description
+				}
+
+				// Cancelled occurrences should have a status of "cancel" instead of "available".
+				// This logic is for updated occurrences, so we must also
+				// check within the cancelled occurrences for the new occurrence ID.
+				if slices.Contains(meeting.CancelledOccurrences, occurrenceID) || slices.Contains(meeting.CancelledOccurrences, updatedOcc.NewOccurrenceID) {
+					if !includeCancelled {
+						continue
+					}
+					occurrenceObj.IsCancelled = true
+				}
+
+				previousOccurrence = occurrenceObj // set new previous occurrence
+				previousOldOccurrenceID = updatedOcc.OldOccurrenceID
+				c.logger.With("meeting_id", meeting.ID, "occurrence", occurrenceObj).DebugContext(ctx, "adding updated occurrence")
+				result = append(result, occurrenceObj)
+				// Return list of occurrences once the specific number of occurrences to return has been reached
+				if len(result) == numOccurrencesToReturn {
+					c.logger.With("meeting_id", meeting.ID, "time_elapsed_microseconds", time.Since(timerNow).Microseconds(), "num_occurrences", len(result)).DebugContext(ctx, "calculated meeting occurrences list")
+					return result, nil
+				}
+			}
+
+			// If occurrence is an updated occurrence then it was already included
+			if isUpdated {
+				c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "occurrence already added")
+				continue
+			}
+
+			actualStartTime := o.UTC().Format(time.RFC3339)
+			if allFollowing && !currentStartTime.IsZero() {
+				actualStartTime = time.Date(o.Year(), o.Month(), o.Day(), currentStartTime.Hour(), currentStartTime.Minute(), currentStartTime.Second(), 0, location).UTC().Format(time.RFC3339)
+			}
+			c.logger.With("meeting_id", meeting.ID, "adjusted_start_time", actualStartTime, "orig_start_time", o.Format(time.RFC3339), "is_adjusted", allFollowing && !currentStartTime.IsZero()).DebugContext(ctx, "occurrence after adjusting start time")
+			// Use meeting duration unless this occurrence is part of an updated occurrence recurrence with a set duration
+			actualDuration := meeting.Duration
+			if allFollowing && currentDuration != 0 {
+				actualDuration = currentDuration
+			}
+
+			// Skip past occurrences if no past occurrences are expected
+			if !pastOccurrences && isOccurrencePast(o, actualDuration) {
+				c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "skipping past occurrence")
+				continue
+			}
+
+			// We need to check below fields again here to ensure they are not empty
+			if currentTitle == "" {
+				currentTitle = meeting.Title
+			}
+			if currentDescription == "" {
+				currentDescription = meeting.Description
+			}
+
+			actualStartTimeObj, _ := time.Parse(time.RFC3339, actualStartTime)
+			occurrenceObj := models.Occurrence{
+				OccurrenceID: strconv.FormatInt(actualStartTimeObj.Unix(), 10),
+				StartTime:    actualStartTimeObj,
+				Duration:     actualDuration,
+				IsCancelled:  false,
+				Title:        currentTitle,
+				Description:  currentDescription,
+			}
+			// Cancelled occurrences should have a status of "cancel" instead of "available",
+			if slices.Contains(meeting.CancelledOccurrences, occurrenceID) {
+				if !includeCancelled {
+					continue
+				}
+				occurrenceObj.IsCancelled = true
+			}
+			previousOccurrence = occurrenceObj // set new previous occurrence
+			c.logger.With("meeting_id", meeting.ID, "occurrence", occurrenceObj).DebugContext(ctx, "adding occurrence to list of occurrences")
+			result = append(result, occurrenceObj)
+			// Return list of occurrences once the specific number of occurrences to return has been reached
+			if len(result) == numOccurrencesToReturn {
+				c.logger.With("meeting_id", meeting.ID, "elapsed_time", time.Since(timerNow).String(), "num_occurrences", len(result)).DebugContext(ctx, "calculated meeting occurrences list")
+				return result, nil
 			}
 		}
 	}
-	return days
+	c.logger.With("meeting_id", meeting.ID, "elapsed_time", time.Since(timerNow).String(), "num_occurrences", len(result)).DebugContext(ctx, "calculated meeting occurrences list")
+
+	return result, nil
 }
 
-// convertDayOfWeek converts Zoom day number to RRULE day abbreviation
-// 1=Sunday, 2=Monday, etc.
-func (c *OccurrenceCalculator) convertDayOfWeek(day int) string {
-	dayMap := map[int]string{
-		1: "SU",
-		2: "MO",
-		3: "TU",
-		4: "WE",
-		5: "TH",
-		6: "FR",
-		7: "SA",
-	}
-	return dayMap[day]
+func isOccurrencePast(startTime time.Time, duration int) bool {
+	return startTime.Add(time.Duration(duration) * time.Minute).Add(meetingEndBuffer).Before(time.Now())
 }
 
-// ApplyAllFollowingUpdates applies updates to all occurrences from a given occurrence onwards
-// This is used when a user updates "this and all following" occurrences
-func (c *OccurrenceCalculator) ApplyAllFollowingUpdates(
-	occurrences []Occurrence,
-	fromOccurrenceID string,
-	startTime time.Time,
-	duration int,
-) []Occurrence {
-	foundStart := false
-	updated := make([]Occurrence, 0, len(occurrences))
-
-	for _, occ := range occurrences {
-		if !foundStart && occ.OccurrenceID == fromOccurrenceID {
-			foundStart = true
-		}
-
-		if foundStart {
-			// Apply updates to this and all following
-			if !startTime.IsZero() {
-				occ.StartTime = startTime
-			}
-			if duration > 0 {
-				occ.Duration = duration
-			}
-		}
-
-		updated = append(updated, occ)
+// timeInLocation returns error if name is invalid or empty.
+// Otherwise, it returns the time for the given location. Example:
+// if name == "Asia/Shanghai", returned time is in "Asia/Shanghai".
+func timeInLocation(t time.Time, name string) (time.Time, error) {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		return time.Time{}, err
 	}
 
-	return updated
+	return t.In(loc), err
+}
+
+// getRRuleOccurrences given a start time, optional timezone, and recurrence pattern, calculates and returns
+// the list of occurrence times
+func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone string, recurrence *models.ZoomMeetingRecurrence, endTime *time.Time) ([]time.Time, error) {
+	rruleString, err := c.getRRule(recurrence, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	if timezone != "" {
+		startTime, err = timeInLocation(startTime, timezone)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	set := rrule.Set{}
+	r, err := rrule.StrToRRule(rruleString)
+	if err != nil {
+		return nil, err
+	}
+	r.DTStart(startTime)
+	set.RRule(r)
+
+	return set.All(), nil
+}
+
+// getRRule returns the recurrence rule for a meeting recurrence as a string
+func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrence, endTime *time.Time) (string, error) {
+	var rrule strings.Builder
+
+	if reccurrence.Type < 1 || reccurrence.Type > 3 {
+		return "", fmt.Errorf("invalid recurrence type: %d", reccurrence.Type)
+	}
+
+	rrule.WriteString(fmt.Sprintf("FREQ=%s;", strings.ToUpper(typeName[reccurrence.Type-1])))
+	rrule.WriteString("WKST=SU;")
+
+	if reccurrence.RepeatInterval != 0 {
+		rrule.WriteString(fmt.Sprintf("INTERVAL=%d;", reccurrence.RepeatInterval))
+	}
+
+	if reccurrence.WeeklyDays != "" {
+		s, err := parseByDay(reccurrence.WeeklyDays)
+		if err != nil {
+			return "", err
+		}
+		rrule.WriteString(fmt.Sprintf("BYDAY=%s;", s))
+	} else if reccurrence.MonthlyWeek != 0 && reccurrence.MonthlyWeekDay != 0 {
+		rrule.WriteString(fmt.Sprintf("BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1]))
+	}
+
+	if reccurrence.MonthlyDay != 0 {
+		switch reccurrence.MonthlyDay {
+		case 29:
+			rrule.WriteString("BYMONTHDAY=28,29;BYSETPOS=-1;") // fall back to the 28th on months with 28 days if recurrence set to every 29th
+		case 30:
+			rrule.WriteString("BYMONTHDAY=28,29,30;BYSETPOS=-1;")
+		case 31:
+			rrule.WriteString("BYMONTHDAY=28,29,30,31;BYSETPOS=-1;")
+		default:
+			rrule.WriteString(fmt.Sprintf("BYMONTHDAY=%d;", reccurrence.MonthlyDay))
+		}
+	}
+
+	if endTime != nil {
+		rrule.WriteString(fmt.Sprintf("UNTIL=%s;", endTime.Format("20060102T150405Z")))
+	} else {
+		if reccurrence.EndDateTime != "" {
+			reccurrence.EndTimes = 0
+			t, err := time.Parse(time.RFC3339, reccurrence.EndDateTime)
+			if err != nil {
+				return "", fmt.Errorf("failed to parse recurrence end_date_time %s: %w", reccurrence.EndDateTime, err)
+			}
+			rrule.WriteString(fmt.Sprintf("UNTIL=%s;", t.Format("20060102T150405Z")))
+		}
+
+		if reccurrence.EndTimes != 0 {
+			rrule.WriteString(fmt.Sprintf("COUNT=%d;", reccurrence.EndTimes))
+		}
+	}
+
+	return strings.TrimSuffix(rrule.String(), ";"), nil
+}
+
+// parseByDay takes a list of weekdays as a string and returns the list of
+// abbreviations as a string where 1 is Sunday and 7 is Saturday
+// (e.g. "2,3,6" -> "MO,TU,FR")
+func parseByDay(days string) (string, error) {
+	stringSlice := strings.Split(days, ",")
+	var weekdays strings.Builder
+	for i, item := range stringSlice {
+		weekdayNum, err := strconv.Atoi(item)
+		if err != nil {
+			return "", err
+		}
+		// A weekday can only be 1-7. Skip numbers that are not in this range.
+		if weekdayNum < 1 || weekdayNum > 7 {
+			continue
+		}
+		// Except for the first weekday, there should be a comma before each subsequent weekday
+		if i > 0 {
+			weekdays.WriteString(",")
+		}
+		weekdays.WriteString(weekdaysABBRV[weekdayNum-1])
+	}
+	return weekdays.String(), nil
 }

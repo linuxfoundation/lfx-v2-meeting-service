@@ -90,34 +90,34 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) bool {
 	switch {
 	case strings.HasPrefix(key, "itx-zoom-meetings-v2."):
-		return handleMeetingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handleMeetingUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-mappings-v2."):
-		return handleMeetingMappingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handleMeetingMappingUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-registrants-v2."):
-		return handleRegistrantUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handleRegistrantUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-invite-responses-v2."):
-		return handleInviteResponseUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handleInviteResponseUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-mappings."):
-		return handlePastMeetingMappingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handlePastMeetingMappingUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings."):
-		return handlePastMeetingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handlePastMeetingUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-invitees."):
-		return handlePastMeetingInviteeUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handlePastMeetingInviteeUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-attendees."):
-		return handlePastMeetingAttendeeUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handlePastMeetingAttendeeUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-recordings."):
-		return handlePastMeetingRecordingUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handlePastMeetingRecordingUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-summaries."):
-		return handlePastMeetingSummaryUpdate(ctx, key, data, handlers.publisher, handlers.userLookup, handlers.idMapper, handlers.v1ObjectsKV, handlers.v1MappingsKV, handlers.logger)
+		return handlers.handlePastMeetingSummaryUpdate(ctx, key, data)
 
 	default:
 		// Not a meeting-related event, skip

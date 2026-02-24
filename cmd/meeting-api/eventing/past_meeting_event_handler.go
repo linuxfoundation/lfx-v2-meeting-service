@@ -22,27 +22,21 @@ import (
 
 // handlePastMeetingUpdate processes updates to past meeting records
 // Returns true to retry (NAK), false to acknowledge (ACK)
-func handlePastMeetingUpdate(
+func (h *EventHandlers) handlePastMeetingUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
-	funcLogger := logger.With("key", key, "handler", "past_meeting")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting")
 	funcLogger.DebugContext(ctx, "processing past meeting update")
 
 	// Check if this is a soft delete
 	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return handlePastMeetingDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+		return h.handlePastMeetingDelete(ctx, key, v1Data)
 	}
 
 	// Convert v1Data to past meeting event data
-	pastMeetingData, err := convertMapToPastMeetingData(ctx, v1Data, idMapper, v1ObjectsKV, mappingsKV, funcLogger)
+	pastMeetingData, err := convertMapToPastMeetingData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, h.v1MappingsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to past meeting")
 		if isTransientError(err) {
@@ -61,7 +55,7 @@ func handlePastMeetingUpdate(
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
@@ -69,7 +63,7 @@ func handlePastMeetingUpdate(
 	tags := generatePastMeetingTags(pastMeetingData)
 
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingEvent(ctx, string(indexerAction), pastMeetingData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingEvent(ctx, string(indexerAction), pastMeetingData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish past meeting event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -78,7 +72,7 @@ func handlePastMeetingUpdate(
 	}
 
 	// Store mapping
-	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 	}
 
@@ -87,16 +81,13 @@ func handlePastMeetingUpdate(
 }
 
 // handlePastMeetingDelete processes past meeting deletions
-func handlePastMeetingDelete(
+func (h *EventHandlers) handlePastMeetingDelete(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
 	pastMeetingID := extractIDFromKey(key, "itx-zoom-past-meetings.")
-	funcLogger := logger.With("past_meeting_id", pastMeetingID, "handler", "past_meeting_delete")
+	funcLogger := h.logger.With("past_meeting_id", pastMeetingID, "handler", "past_meeting_delete")
 	funcLogger.InfoContext(ctx, "processing past meeting deletion")
 
 	// Create minimal event data for deletion
@@ -106,7 +97,7 @@ func handlePastMeetingDelete(
 	tags := generatePastMeetingTags(eventData)
 
 	// Publish delete event
-	if err := publisher.PublishPastMeetingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish past meeting delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -116,7 +107,7 @@ func handlePastMeetingDelete(
 
 	// Remove mapping
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingID)
-	_ = mappingsKV.Delete(ctx, mappingKey)
+	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting deletion")
 	return false // Success, ACK
@@ -186,23 +177,17 @@ func convertMapToPastMeetingData(
 // =============================================================================
 
 // handlePastMeetingMappingUpdate processes updates to past meeting-committee mappings
-func handlePastMeetingMappingUpdate(
+func (h *EventHandlers) handlePastMeetingMappingUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
-	funcLogger := logger.With("key", key, "handler", "past_meeting_mapping")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_mapping")
 	funcLogger.InfoContext(ctx, "processing past meeting mapping update")
 
 	// Check if this is a soft delete
 	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return handlePastMeetingMappingDelete(ctx, key, v1Data, publisher, userLookup, idMapper, v1ObjectsKV, mappingsKV, funcLogger)
+		return h.handlePastMeetingMappingDelete(ctx, key, v1Data)
 	}
 
 	// Extract past meeting ID and mapping data
@@ -216,7 +201,7 @@ func handlePastMeetingMappingUpdate(
 	}
 
 	// Update committee mappings in KV bucket
-	if err := updatePastMeetingCommitteeMappings(ctx, pastMeetingUUID, mappingID, committeeID, v1Data, mappingsKV, funcLogger); err != nil {
+	if err := updatePastMeetingCommitteeMappings(ctx, pastMeetingUUID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to update past meeting committee mappings")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -225,7 +210,7 @@ func handlePastMeetingMappingUpdate(
 	}
 
 	// Re-trigger past meeting indexing
-	shouldRetry := retriggerPastMeetingIndexing(ctx, pastMeetingUUID, publisher, userLookup, idMapper, v1ObjectsKV, mappingsKV, funcLogger)
+	shouldRetry := h.retriggerPastMeetingIndexing(ctx, pastMeetingUUID)
 	if shouldRetry {
 		return true // NAK for retry
 	}
@@ -235,37 +220,31 @@ func handlePastMeetingMappingUpdate(
 }
 
 // handlePastMeetingMappingDelete processes past meeting-committee mapping deletions
-func handlePastMeetingMappingDelete(
+func (h *EventHandlers) handlePastMeetingMappingDelete(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
 	pastMeetingUUID := getString(v1Data["past_meeting_uuid"])
 	mappingID := getString(v1Data["id"])
 
 	if pastMeetingUUID == "" || mappingID == "" {
-		logger.WarnContext(ctx, "missing required fields in past meeting mapping deletion")
+		h.logger.WarnContext(ctx, "missing required fields in past meeting mapping deletion")
 		return false // ACK - permanent error
 	}
 
-	funcLogger := logger.With("past_meeting_uuid", pastMeetingUUID, "mapping_id", mappingID, "handler", "past_meeting_mapping_delete")
+	funcLogger := h.logger.With("past_meeting_uuid", pastMeetingUUID, "mapping_id", mappingID, "handler", "past_meeting_mapping_delete")
 	funcLogger.InfoContext(ctx, "processing past meeting mapping deletion")
 
 	// Remove the mapping
-	if err := removePastMeetingCommitteeMapping(ctx, pastMeetingUUID, mappingID, mappingsKV, funcLogger); err != nil {
+	if err := removePastMeetingCommitteeMapping(ctx, pastMeetingUUID, mappingID, h.v1MappingsKV, funcLogger); err != nil {
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
 	}
 
 	// Re-trigger past meeting indexing
-	shouldRetry := retriggerPastMeetingIndexing(ctx, pastMeetingUUID, publisher, userLookup, idMapper, v1ObjectsKV, mappingsKV, funcLogger)
+	shouldRetry := h.retriggerPastMeetingIndexing(ctx, pastMeetingUUID)
 	if shouldRetry {
 		return true // NAK for retry
 	}
@@ -398,31 +377,25 @@ func removePastMeetingCommitteeMapping(
 	return err
 }
 
-func retriggerPastMeetingIndexing(
+func (h *EventHandlers) retriggerPastMeetingIndexing(
 	ctx context.Context,
 	pastMeetingUUID string,
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
 	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", pastMeetingUUID)
-	pastMeetingEntry, err := v1ObjectsKV.Get(ctx, pastMeetingKey)
+	pastMeetingEntry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
 	if err != nil {
-		logger.With(errKey, err).WarnContext(ctx, "past meeting not found during retrigger")
+		h.logger.With(errKey, err).WarnContext(ctx, "past meeting not found during retrigger")
 		return false // Past meeting might be deleted, ACK
 	}
 
 	var pastMeetingData map[string]interface{}
 	if err := json.Unmarshal(pastMeetingEntry.Value(), &pastMeetingData); err != nil {
-		logger.With(errKey, err).ErrorContext(ctx, "failed to unmarshal past meeting data")
+		h.logger.With(errKey, err).ErrorContext(ctx, "failed to unmarshal past meeting data")
 		return false // ACK - permanent error
 	}
 
 	// Re-process the past meeting
-	return handlePastMeetingUpdate(ctx, pastMeetingKey, pastMeetingData, publisher, userLookup, idMapper, v1ObjectsKV, mappingsKV, logger)
+	return h.handlePastMeetingUpdate(ctx, pastMeetingKey, pastMeetingData)
 }
 
 func generatePastMeetingTags(pastMeeting *models.PastMeetingEventData) []string {
@@ -443,27 +416,21 @@ func generatePastMeetingTags(pastMeeting *models.PastMeetingEventData) []string 
 // =============================================================================
 
 // handlePastMeetingInviteeUpdate processes updates to past meeting invitees
-func handlePastMeetingInviteeUpdate(
+func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
-	funcLogger := logger.With("key", key, "handler", "past_meeting_invitee")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_invitee")
 	funcLogger.DebugContext(ctx, "processing past meeting invitee update")
 
 	// Check if this is a soft delete
 	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return handlePastMeetingInviteeDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+		return h.handlePastMeetingInviteeDelete(ctx, key, v1Data)
 	}
 
 	// Convert v1Data to participant event data
-	participantData, err := convertMapToInviteeParticipantData(ctx, v1Data, userLookup, idMapper, v1ObjectsKV, funcLogger)
+	participantData, err := convertMapToInviteeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to invitee participant")
 		if isTransientError(err) {
@@ -482,7 +449,7 @@ func handlePastMeetingInviteeUpdate(
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", participantData.UID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
@@ -490,7 +457,7 @@ func handlePastMeetingInviteeUpdate(
 	tags := generateParticipantTags(participantData)
 
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee participant event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -499,7 +466,7 @@ func handlePastMeetingInviteeUpdate(
 	}
 
 	// Store mapping
-	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store invitee participant mapping")
 	}
 
@@ -508,16 +475,13 @@ func handlePastMeetingInviteeUpdate(
 }
 
 // handlePastMeetingInviteeDelete processes invitee deletions
-func handlePastMeetingInviteeDelete(
+func (h *EventHandlers) handlePastMeetingInviteeDelete(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
 	inviteeID := extractIDFromKey(key, "itx-zoom-past-meetings-invitees.")
-	funcLogger := logger.With("invitee_id", inviteeID, "handler", "past_meeting_invitee_delete")
+	funcLogger := h.logger.With("invitee_id", inviteeID, "handler", "past_meeting_invitee_delete")
 	funcLogger.InfoContext(ctx, "processing past meeting invitee deletion")
 
 	// Create minimal event data for deletion
@@ -527,7 +491,7 @@ func handlePastMeetingInviteeDelete(
 	tags := generateParticipantTags(eventData)
 
 	// Publish delete event
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -537,7 +501,7 @@ func handlePastMeetingInviteeDelete(
 
 	// Remove mapping
 	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", inviteeID)
-	_ = mappingsKV.Delete(ctx, mappingKey)
+	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting invitee deletion")
 	return false // Success, ACK
@@ -548,27 +512,21 @@ func handlePastMeetingInviteeDelete(
 // =============================================================================
 
 // handlePastMeetingAttendeeUpdate processes updates to past meeting attendees
-func handlePastMeetingAttendeeUpdate(
+func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
-	funcLogger := logger.With("key", key, "handler", "past_meeting_attendee")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attendee")
 	funcLogger.DebugContext(ctx, "processing past meeting attendee update")
 
 	// Check if this is a soft delete
 	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return handlePastMeetingAttendeeDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+		return h.handlePastMeetingAttendeeDelete(ctx, key, v1Data)
 	}
 
 	// Convert v1Data to participant event data
-	participantData, err := convertMapToAttendeeParticipantData(ctx, v1Data, userLookup, idMapper, v1ObjectsKV, funcLogger)
+	participantData, err := convertMapToAttendeeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to attendee participant")
 		if isTransientError(err) {
@@ -587,7 +545,7 @@ func handlePastMeetingAttendeeUpdate(
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", participantData.UID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
@@ -595,7 +553,7 @@ func handlePastMeetingAttendeeUpdate(
 	tags := generateParticipantTags(participantData)
 
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee participant event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -604,7 +562,7 @@ func handlePastMeetingAttendeeUpdate(
 	}
 
 	// Store mapping
-	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store attendee participant mapping")
 	}
 
@@ -613,16 +571,13 @@ func handlePastMeetingAttendeeUpdate(
 }
 
 // handlePastMeetingAttendeeDelete processes attendee deletions
-func handlePastMeetingAttendeeDelete(
+func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
 	attendeeID := extractIDFromKey(key, "itx-zoom-past-meetings-attendees.")
-	funcLogger := logger.With("attendee_id", attendeeID, "handler", "past_meeting_attendee_delete")
+	funcLogger := h.logger.With("attendee_id", attendeeID, "handler", "past_meeting_attendee_delete")
 	funcLogger.InfoContext(ctx, "processing past meeting attendee deletion")
 
 	// Create minimal event data for deletion
@@ -632,7 +587,7 @@ func handlePastMeetingAttendeeDelete(
 	tags := generateParticipantTags(eventData)
 
 	// Publish delete event
-	if err := publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -642,7 +597,7 @@ func handlePastMeetingAttendeeDelete(
 
 	// Remove mapping
 	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", attendeeID)
-	_ = mappingsKV.Delete(ctx, mappingKey)
+	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting attendee deletion")
 	return false // Success, ACK
@@ -912,27 +867,21 @@ func generateParticipantTags(participant *models.PastMeetingParticipantEventData
 // =============================================================================
 
 // handlePastMeetingRecordingUpdate processes updates to past meeting recordings
-func handlePastMeetingRecordingUpdate(
+func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
-	funcLogger := logger.With("key", key, "handler", "past_meeting_recording")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_recording")
 	funcLogger.DebugContext(ctx, "processing past meeting recording update")
 
 	// Check if this is a soft delete
 	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return handlePastMeetingRecordingDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+		return h.handlePastMeetingRecordingDelete(ctx, key, v1Data)
 	}
 
 	// Convert v1Data to recording event data
-	recordingData, transcriptData, err := convertMapToRecordingData(ctx, v1Data, idMapper, funcLogger)
+	recordingData, transcriptData, err := convertMapToRecordingData(ctx, v1Data, h.idMapper, funcLogger)
 	if err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to recording")
 		if isTransientError(err) {
@@ -951,7 +900,7 @@ func handlePastMeetingRecordingUpdate(
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_recordings.%s", recordingData.ID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
@@ -959,7 +908,7 @@ func handlePastMeetingRecordingUpdate(
 	recordingTags := generateRecordingTags(recordingData.ID, recordingData.MeetingAndOccurrenceID, recordingData.PlatformMeetingID, recordingData.Sessions)
 
 	// Publish recording event to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData, recordingTags); err != nil {
+	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData, recordingTags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -970,7 +919,7 @@ func handlePastMeetingRecordingUpdate(
 	// If transcript is enabled, publish separate transcript event
 	if transcriptData != nil {
 		transcriptTags := generateTranscriptTags(transcriptData.ID, transcriptData.MeetingAndOccurrenceID)
-		if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData, transcriptTags); err != nil {
+		if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData, transcriptTags); err != nil {
 			funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish transcript event")
 			if isTransientError(err) {
 				return true // NAK for retry
@@ -980,7 +929,7 @@ func handlePastMeetingRecordingUpdate(
 	}
 
 	// Store mapping
-	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store recording mapping")
 	}
 
@@ -989,16 +938,13 @@ func handlePastMeetingRecordingUpdate(
 }
 
 // handlePastMeetingRecordingDelete processes recording deletions
-func handlePastMeetingRecordingDelete(
+func (h *EventHandlers) handlePastMeetingRecordingDelete(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
 	recordingID := extractIDFromKey(key, "itx-zoom-past-meetings-recordings.")
-	funcLogger := logger.With("recording_id", recordingID, "handler", "past_meeting_recording_delete")
+	funcLogger := h.logger.With("recording_id", recordingID, "handler", "past_meeting_recording_delete")
 	funcLogger.InfoContext(ctx, "processing past meeting recording deletion")
 
 	// Create minimal event data for deletion
@@ -1008,7 +954,7 @@ func handlePastMeetingRecordingDelete(
 	recordingTags := generateRecordingTags(recordingID, "", "", nil)
 
 	// Publish recording delete event
-	if err := publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, recordingTags); err != nil {
+	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, recordingTags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -1019,13 +965,13 @@ func handlePastMeetingRecordingDelete(
 	// Also publish transcript delete event
 	transcriptData := &models.TranscriptEventData{ID: recordingID}
 	transcriptTags := generateTranscriptTags(recordingID, "")
-	if err := publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerConstants.ActionDeleted), transcriptData, transcriptTags); err != nil {
+	if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerConstants.ActionDeleted), transcriptData, transcriptTags); err != nil {
 		funcLogger.With(errKey, err).WarnContext(ctx, "failed to publish transcript delete event")
 	}
 
 	// Remove mapping
 	mappingKey := fmt.Sprintf("v1_past_meeting_recordings.%s", recordingID)
-	_ = mappingsKV.Delete(ctx, mappingKey)
+	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting recording deletion")
 	return false // Success, ACK
@@ -1036,27 +982,21 @@ func handlePastMeetingRecordingDelete(
 // =============================================================================
 
 // handlePastMeetingSummaryUpdate processes updates to past meeting summaries
-func handlePastMeetingSummaryUpdate(
+func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
-	funcLogger := logger.With("key", key, "handler", "past_meeting_summary")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_summary")
 	funcLogger.DebugContext(ctx, "processing past meeting summary update")
 
 	// Check if this is a soft delete
 	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return handlePastMeetingSummaryDelete(ctx, key, v1Data, publisher, mappingsKV, funcLogger)
+		return h.handlePastMeetingSummaryDelete(ctx, key, v1Data)
 	}
 
 	// Convert v1Data to summary event data
-	summaryData, err := convertMapToSummaryData(ctx, v1Data, idMapper, funcLogger)
+	summaryData, err := convertMapToSummaryData(ctx, v1Data, h.idMapper, funcLogger)
 	if err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to summary")
 		if isTransientError(err) {
@@ -1075,7 +1015,7 @@ func handlePastMeetingSummaryUpdate(
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_summaries.%s", summaryData.ID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := mappingsKV.Get(ctx, mappingKey); err == nil {
+	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
@@ -1083,7 +1023,7 @@ func handlePastMeetingSummaryUpdate(
 	tags := generateSummaryTags(summaryData)
 
 	// Publish to indexer and FGA-sync
-	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -1092,7 +1032,7 @@ func handlePastMeetingSummaryUpdate(
 	}
 
 	// Store mapping
-	if _, err := mappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store summary mapping")
 	}
 
@@ -1101,16 +1041,13 @@ func handlePastMeetingSummaryUpdate(
 }
 
 // handlePastMeetingSummaryDelete processes summary deletions
-func handlePastMeetingSummaryDelete(
+func (h *EventHandlers) handlePastMeetingSummaryDelete(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-	publisher domain.EventPublisher,
-	mappingsKV jetstream.KeyValue,
-	logger *slog.Logger,
 ) bool {
 	summaryID := extractIDFromKey(key, "itx-zoom-past-meetings-summaries.")
-	funcLogger := logger.With("summary_id", summaryID, "handler", "past_meeting_summary_delete")
+	funcLogger := h.logger.With("summary_id", summaryID, "handler", "past_meeting_summary_delete")
 	funcLogger.InfoContext(ctx, "processing past meeting summary deletion")
 
 	// Create minimal event data for deletion
@@ -1120,7 +1057,7 @@ func handlePastMeetingSummaryDelete(
 	tags := generateSummaryTags(eventData)
 
 	// Publish delete event
-	if err := publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
+	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
 		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
@@ -1130,7 +1067,7 @@ func handlePastMeetingSummaryDelete(
 
 	// Remove mapping
 	mappingKey := fmt.Sprintf("v1_past_meeting_summaries.%s", summaryID)
-	_ = mappingsKV.Delete(ctx, mappingKey)
+	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting summary deletion")
 	return false // Success, ACK
