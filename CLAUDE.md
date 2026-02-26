@@ -20,6 +20,7 @@ The service follows a clean architecture pattern with:
 - **ITX Registrant Operations**: Complete registrant management via ITX API
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX API
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
+- **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (see [Event Processing Documentation](docs/event-processing.md))
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications
@@ -50,6 +51,15 @@ The service follows a clean architecture pattern with:
 - ITX HTTP client (`proxy/`) with OAuth2 authentication
 - JWT authentication (`auth/`)
 - Optional NATS-based ID mapping (`idmapper/`)
+- Event publishing infrastructure (`eventing/`) for indexer and FGA-sync
+
+**Event Processing Layer** (`cmd/meeting-api/eventing/`)
+
+- Event processor lifecycle management
+- KV handler routing by key prefix
+- 10 specialized event handlers (meetings, registrants, RSVPs, past meetings, participants, recordings, summaries)
+- RRULE occurrence calculation
+- v1 user lookup and enrichment
 
 **Middleware** (`internal/middleware/`)
 
@@ -151,6 +161,29 @@ The service supports optional ID mapping between v1 and v2 systems:
 - `LOG_LEVEL`: Log level (debug, info, warn, error) - default: `info`
 - `LOG_ADD_SOURCE`: Add source location to logs - default: `true`
 
+### Event Processing Configuration (Optional)
+
+The service includes event processing for v1→v2 data synchronization. See [Event Processing Documentation](docs/event-processing.md) for details.
+
+- `EVENT_PROCESSING_ENABLED`: Enable event processing (default: `true`)
+- `EVENT_CONSUMER_NAME`: JetStream consumer name (default: `meeting-service-kv-consumer`)
+- `EVENT_STREAM_NAME`: KV bucket stream name (default: `KV_v1-objects`)
+- `EVENT_FILTER_SUBJECT`: Subject filter (default: `$KV.v1-objects.>`)
+- `EVENT_MAX_DELIVER`: Max delivery attempts (default: `3`)
+- `EVENT_ACK_WAIT`: Ack timeout (default: `30s`)
+- `EVENT_MAX_ACK_PENDING`: Max pending acks (default: `1000`)
+
+**Event Types Processed:**
+
+- Active meetings with RRULE occurrence calculation
+- Meeting-committee mappings
+- Registrants with user enrichment
+- Invite responses (RSVPs)
+- Past meetings
+- Past meeting participants (invitees and attendees)
+- Recordings and transcripts
+- AI-generated summaries
+
 ## ITX API Integration
 
 The service acts as a proxy to the ITX Zoom API service. All meeting and registrant operations are forwarded to ITX.
@@ -205,6 +238,7 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 - ITX proxy functionality (meetings, registrants, and past meetings)
 - JWT authentication via Heimdall
 - Optional ID mapping via NATS
+- Event processing system for v1→v2 data sync (see [Event Processing Documentation](docs/event-processing.md))
 - Goa-based API design and code generation
 - Middleware (logging, authorization, request ID)
 - OpenTelemetry tracing support
