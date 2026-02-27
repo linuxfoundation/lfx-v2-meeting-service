@@ -145,3 +145,63 @@ func UpdateItxPastMeetingParticipantMeetingServicePath(pastMeetingID string, par
 func DeleteItxPastMeetingParticipantMeetingServicePath(pastMeetingID string, participantID string) string {
 	return fmt.Sprintf("/itx/past_meetings/%v/participants/%v", pastMeetingID, participantID)
 }
+
+// CreateItxMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service create-itx-meeting-attachment HTTP endpoint.
+func CreateItxMeetingAttachmentMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/attachments", meetingID)
+}
+
+// GetItxMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service get-itx-meeting-attachment HTTP endpoint.
+func GetItxMeetingAttachmentMeetingServicePath(meetingID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/attachments/%v", meetingID, attachmentID)
+}
+
+// UpdateItxMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service update-itx-meeting-attachment HTTP endpoint.
+func UpdateItxMeetingAttachmentMeetingServicePath(meetingID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/attachments/%v", meetingID, attachmentID)
+}
+
+// DeleteItxMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service delete-itx-meeting-attachment HTTP endpoint.
+func DeleteItxMeetingAttachmentMeetingServicePath(meetingID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/attachments/%v", meetingID, attachmentID)
+}
+
+// CreateItxMeetingAttachmentPresignMeetingServicePath returns the URL path to the Meeting Service service create-itx-meeting-attachment-presign HTTP endpoint.
+func CreateItxMeetingAttachmentPresignMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/attachments/presign", meetingID)
+}
+
+// GetItxMeetingAttachmentDownloadMeetingServicePath returns the URL path to the Meeting Service service get-itx-meeting-attachment-download HTTP endpoint.
+func GetItxMeetingAttachmentDownloadMeetingServicePath(meetingID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/attachments/%v/download", meetingID, attachmentID)
+}
+
+// CreateItxPastMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service create-itx-past-meeting-attachment HTTP endpoint.
+func CreateItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/attachments", meetingAndOccurrenceID)
+}
+
+// GetItxPastMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service get-itx-past-meeting-attachment HTTP endpoint.
+func GetItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/attachments/%v", meetingAndOccurrenceID, attachmentID)
+}
+
+// UpdateItxPastMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service update-itx-past-meeting-attachment HTTP endpoint.
+func UpdateItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/attachments/%v", meetingAndOccurrenceID, attachmentID)
+}
+
+// DeleteItxPastMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service delete-itx-past-meeting-attachment HTTP endpoint.
+func DeleteItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/attachments/%v", meetingAndOccurrenceID, attachmentID)
+}
+
+// CreateItxPastMeetingAttachmentPresignMeetingServicePath returns the URL path to the Meeting Service service create-itx-past-meeting-attachment-presign HTTP endpoint.
+func CreateItxPastMeetingAttachmentPresignMeetingServicePath(meetingAndOccurrenceID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/attachments/presign", meetingAndOccurrenceID)
+}
+
+// GetItxPastMeetingAttachmentDownloadMeetingServicePath returns the URL path to the Meeting Service service get-itx-past-meeting-attachment-download HTTP endpoint.
+func GetItxPastMeetingAttachmentDownloadMeetingServicePath(meetingAndOccurrenceID string, attachmentID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/attachments/%v/download", meetingAndOccurrenceID, attachmentID)
+}

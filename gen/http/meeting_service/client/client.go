@@ -123,6 +123,54 @@ type Client struct {
 	// requests to the delete-itx-past-meeting-participant endpoint.
 	DeleteItxPastMeetingParticipantDoer goahttp.Doer
 
+	// CreateItxMeetingAttachment Doer is the HTTP client used to make requests to
+	// the create-itx-meeting-attachment endpoint.
+	CreateItxMeetingAttachmentDoer goahttp.Doer
+
+	// GetItxMeetingAttachment Doer is the HTTP client used to make requests to the
+	// get-itx-meeting-attachment endpoint.
+	GetItxMeetingAttachmentDoer goahttp.Doer
+
+	// UpdateItxMeetingAttachment Doer is the HTTP client used to make requests to
+	// the update-itx-meeting-attachment endpoint.
+	UpdateItxMeetingAttachmentDoer goahttp.Doer
+
+	// DeleteItxMeetingAttachment Doer is the HTTP client used to make requests to
+	// the delete-itx-meeting-attachment endpoint.
+	DeleteItxMeetingAttachmentDoer goahttp.Doer
+
+	// CreateItxMeetingAttachmentPresign Doer is the HTTP client used to make
+	// requests to the create-itx-meeting-attachment-presign endpoint.
+	CreateItxMeetingAttachmentPresignDoer goahttp.Doer
+
+	// GetItxMeetingAttachmentDownload Doer is the HTTP client used to make
+	// requests to the get-itx-meeting-attachment-download endpoint.
+	GetItxMeetingAttachmentDownloadDoer goahttp.Doer
+
+	// CreateItxPastMeetingAttachment Doer is the HTTP client used to make requests
+	// to the create-itx-past-meeting-attachment endpoint.
+	CreateItxPastMeetingAttachmentDoer goahttp.Doer
+
+	// GetItxPastMeetingAttachment Doer is the HTTP client used to make requests to
+	// the get-itx-past-meeting-attachment endpoint.
+	GetItxPastMeetingAttachmentDoer goahttp.Doer
+
+	// UpdateItxPastMeetingAttachment Doer is the HTTP client used to make requests
+	// to the update-itx-past-meeting-attachment endpoint.
+	UpdateItxPastMeetingAttachmentDoer goahttp.Doer
+
+	// DeleteItxPastMeetingAttachment Doer is the HTTP client used to make requests
+	// to the delete-itx-past-meeting-attachment endpoint.
+	DeleteItxPastMeetingAttachmentDoer goahttp.Doer
+
+	// CreateItxPastMeetingAttachmentPresign Doer is the HTTP client used to make
+	// requests to the create-itx-past-meeting-attachment-presign endpoint.
+	CreateItxPastMeetingAttachmentPresignDoer goahttp.Doer
+
+	// GetItxPastMeetingAttachmentDownload Doer is the HTTP client used to make
+	// requests to the get-itx-past-meeting-attachment-download endpoint.
+	GetItxPastMeetingAttachmentDownloadDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -144,38 +192,50 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		ReadyzDoer:                          doer,
-		LivezDoer:                           doer,
-		CreateItxMeetingDoer:                doer,
-		GetItxMeetingDoer:                   doer,
-		DeleteItxMeetingDoer:                doer,
-		UpdateItxMeetingDoer:                doer,
-		GetItxMeetingCountDoer:              doer,
-		CreateItxRegistrantDoer:             doer,
-		GetItxRegistrantDoer:                doer,
-		UpdateItxRegistrantDoer:             doer,
-		DeleteItxRegistrantDoer:             doer,
-		GetItxJoinLinkDoer:                  doer,
-		GetItxRegistrantIcsDoer:             doer,
-		ResendItxRegistrantInvitationDoer:   doer,
-		ResendItxMeetingInvitationsDoer:     doer,
-		RegisterItxCommitteeMembersDoer:     doer,
-		UpdateItxOccurrenceDoer:             doer,
-		DeleteItxOccurrenceDoer:             doer,
-		CreateItxPastMeetingDoer:            doer,
-		GetItxPastMeetingDoer:               doer,
-		DeleteItxPastMeetingDoer:            doer,
-		UpdateItxPastMeetingDoer:            doer,
-		GetItxPastMeetingSummaryDoer:        doer,
-		UpdateItxPastMeetingSummaryDoer:     doer,
-		CreateItxPastMeetingParticipantDoer: doer,
-		UpdateItxPastMeetingParticipantDoer: doer,
-		DeleteItxPastMeetingParticipantDoer: doer,
-		RestoreResponseBody:                 restoreBody,
-		scheme:                              scheme,
-		host:                                host,
-		decoder:                             dec,
-		encoder:                             enc,
+		ReadyzDoer:                                doer,
+		LivezDoer:                                 doer,
+		CreateItxMeetingDoer:                      doer,
+		GetItxMeetingDoer:                         doer,
+		DeleteItxMeetingDoer:                      doer,
+		UpdateItxMeetingDoer:                      doer,
+		GetItxMeetingCountDoer:                    doer,
+		CreateItxRegistrantDoer:                   doer,
+		GetItxRegistrantDoer:                      doer,
+		UpdateItxRegistrantDoer:                   doer,
+		DeleteItxRegistrantDoer:                   doer,
+		GetItxJoinLinkDoer:                        doer,
+		GetItxRegistrantIcsDoer:                   doer,
+		ResendItxRegistrantInvitationDoer:         doer,
+		ResendItxMeetingInvitationsDoer:           doer,
+		RegisterItxCommitteeMembersDoer:           doer,
+		UpdateItxOccurrenceDoer:                   doer,
+		DeleteItxOccurrenceDoer:                   doer,
+		CreateItxPastMeetingDoer:                  doer,
+		GetItxPastMeetingDoer:                     doer,
+		DeleteItxPastMeetingDoer:                  doer,
+		UpdateItxPastMeetingDoer:                  doer,
+		GetItxPastMeetingSummaryDoer:              doer,
+		UpdateItxPastMeetingSummaryDoer:           doer,
+		CreateItxPastMeetingParticipantDoer:       doer,
+		UpdateItxPastMeetingParticipantDoer:       doer,
+		DeleteItxPastMeetingParticipantDoer:       doer,
+		CreateItxMeetingAttachmentDoer:            doer,
+		GetItxMeetingAttachmentDoer:               doer,
+		UpdateItxMeetingAttachmentDoer:            doer,
+		DeleteItxMeetingAttachmentDoer:            doer,
+		CreateItxMeetingAttachmentPresignDoer:     doer,
+		GetItxMeetingAttachmentDownloadDoer:       doer,
+		CreateItxPastMeetingAttachmentDoer:        doer,
+		GetItxPastMeetingAttachmentDoer:           doer,
+		UpdateItxPastMeetingAttachmentDoer:        doer,
+		DeleteItxPastMeetingAttachmentDoer:        doer,
+		CreateItxPastMeetingAttachmentPresignDoer: doer,
+		GetItxPastMeetingAttachmentDownloadDoer:   doer,
+		RestoreResponseBody:                       restoreBody,
+		scheme:                                    scheme,
+		host:                                      host,
+		decoder:                                   dec,
+		encoder:                                   enc,
 	}
 }
 
@@ -812,6 +872,297 @@ func (c *Client) DeleteItxPastMeetingParticipant() goa.Endpoint {
 		resp, err := c.DeleteItxPastMeetingParticipantDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-past-meeting-participant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateItxMeetingAttachment returns an endpoint that makes HTTP requests to
+// the Meeting Service service create-itx-meeting-attachment server.
+func (c *Client) CreateItxMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateItxMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeCreateItxMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateItxMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateItxMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-itx-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxMeetingAttachment returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-itx-meeting-attachment server.
+func (c *Client) GetItxMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeGetItxMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateItxMeetingAttachment returns an endpoint that makes HTTP requests to
+// the Meeting Service service update-itx-meeting-attachment server.
+func (c *Client) UpdateItxMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateItxMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeUpdateItxMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateItxMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateItxMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteItxMeetingAttachment returns an endpoint that makes HTTP requests to
+// the Meeting Service service delete-itx-meeting-attachment server.
+func (c *Client) DeleteItxMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteItxMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeDeleteItxMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteItxMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteItxMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateItxMeetingAttachmentPresign returns an endpoint that makes HTTP
+// requests to the Meeting Service service
+// create-itx-meeting-attachment-presign server.
+func (c *Client) CreateItxMeetingAttachmentPresign() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateItxMeetingAttachmentPresignRequest(c.encoder)
+		decodeResponse = DecodeCreateItxMeetingAttachmentPresignResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateItxMeetingAttachmentPresignRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateItxMeetingAttachmentPresignDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxMeetingAttachmentDownload returns an endpoint that makes HTTP requests
+// to the Meeting Service service get-itx-meeting-attachment-download server.
+func (c *Client) GetItxMeetingAttachmentDownload() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxMeetingAttachmentDownloadRequest(c.encoder)
+		decodeResponse = DecodeGetItxMeetingAttachmentDownloadResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxMeetingAttachmentDownloadRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxMeetingAttachmentDownloadDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-meeting-attachment-download", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateItxPastMeetingAttachment returns an endpoint that makes HTTP requests
+// to the Meeting Service service create-itx-past-meeting-attachment server.
+func (c *Client) CreateItxPastMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateItxPastMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeCreateItxPastMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateItxPastMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateItxPastMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-itx-past-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxPastMeetingAttachment returns an endpoint that makes HTTP requests to
+// the Meeting Service service get-itx-past-meeting-attachment server.
+func (c *Client) GetItxPastMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxPastMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeGetItxPastMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxPastMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxPastMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-past-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateItxPastMeetingAttachment returns an endpoint that makes HTTP requests
+// to the Meeting Service service update-itx-past-meeting-attachment server.
+func (c *Client) UpdateItxPastMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateItxPastMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeUpdateItxPastMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildUpdateItxPastMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateItxPastMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-past-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// DeleteItxPastMeetingAttachment returns an endpoint that makes HTTP requests
+// to the Meeting Service service delete-itx-past-meeting-attachment server.
+func (c *Client) DeleteItxPastMeetingAttachment() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDeleteItxPastMeetingAttachmentRequest(c.encoder)
+		decodeResponse = DecodeDeleteItxPastMeetingAttachmentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildDeleteItxPastMeetingAttachmentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DeleteItxPastMeetingAttachmentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// CreateItxPastMeetingAttachmentPresign returns an endpoint that makes HTTP
+// requests to the Meeting Service service
+// create-itx-past-meeting-attachment-presign server.
+func (c *Client) CreateItxPastMeetingAttachmentPresign() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeCreateItxPastMeetingAttachmentPresignRequest(c.encoder)
+		decodeResponse = DecodeCreateItxPastMeetingAttachmentPresignResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildCreateItxPastMeetingAttachmentPresignRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.CreateItxPastMeetingAttachmentPresignDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxPastMeetingAttachmentDownload returns an endpoint that makes HTTP
+// requests to the Meeting Service service
+// get-itx-past-meeting-attachment-download server.
+func (c *Client) GetItxPastMeetingAttachmentDownload() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxPastMeetingAttachmentDownloadRequest(c.encoder)
+		decodeResponse = DecodeGetItxPastMeetingAttachmentDownloadResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxPastMeetingAttachmentDownloadRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxPastMeetingAttachmentDownloadDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
 		}
 		return decodeResponse(resp)
 	}

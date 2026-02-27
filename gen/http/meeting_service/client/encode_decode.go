@@ -4669,6 +4669,2209 @@ func DecodeDeleteItxPastMeetingParticipantResponse(decoder func(*http.Response) 
 	}
 }
 
+// BuildCreateItxMeetingAttachmentRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "create-itx-meeting-attachment" endpoint
+func (c *Client) BuildCreateItxMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID string
+	)
+	{
+		p, ok := v.(*meetingservice.CreateItxMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "create-itx-meeting-attachment", "*meetingservice.CreateItxMeetingAttachmentPayload", v)
+		}
+		meetingID = p.MeetingID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateItxMeetingAttachmentMeetingServicePath(meetingID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-itx-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeCreateItxMeetingAttachmentRequest returns an encoder for requests sent
+// to the Meeting Service create-itx-meeting-attachment server.
+func EncodeCreateItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.CreateItxMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "create-itx-meeting-attachment", "*meetingservice.CreateItxMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewCreateItxMeetingAttachmentRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-itx-meeting-attachment", err)
+		}
+		return nil
+	}
+}
+
+// DecodeCreateItxMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service create-itx-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeCreateItxMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeCreateItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body CreateItxMeetingAttachmentResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			res := NewCreateItxMeetingAttachmentITXMeetingAttachmentCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CreateItxMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body CreateItxMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CreateItxMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body CreateItxMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body CreateItxMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body CreateItxMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetItxMeetingAttachmentRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "get-itx-meeting-attachment" endpoint
+func (c *Client) BuildGetItxMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		attachmentID string
+	)
+	{
+		p, ok := v.(*meetingservice.GetItxMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-itx-meeting-attachment", "*meetingservice.GetItxMeetingAttachmentPayload", v)
+		}
+		meetingID = p.MeetingID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetItxMeetingAttachmentMeetingServicePath(meetingID, attachmentID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-itx-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetItxMeetingAttachmentRequest returns an encoder for requests sent to
+// the Meeting Service get-itx-meeting-attachment server.
+func EncodeGetItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetItxMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-itx-meeting-attachment", "*meetingservice.GetItxMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetItxMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service get-itx-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeGetItxMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeGetItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetItxMeetingAttachmentResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			err = ValidateGetItxMeetingAttachmentResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			res := NewGetItxMeetingAttachmentITXMeetingAttachmentOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetItxMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			err = ValidateGetItxMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			return nil, NewGetItxMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body GetItxMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			err = ValidateGetItxMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			return nil, NewGetItxMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetItxMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			err = ValidateGetItxMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			return nil, NewGetItxMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetItxMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			err = ValidateGetItxMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			return nil, NewGetItxMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetItxMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			err = ValidateGetItxMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			return nil, NewGetItxMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body GetItxMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			err = ValidateGetItxMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
+			return nil, NewGetItxMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildUpdateItxMeetingAttachmentRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "update-itx-meeting-attachment" endpoint
+func (c *Client) BuildUpdateItxMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		attachmentID string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdateItxMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-itx-meeting-attachment", "*meetingservice.UpdateItxMeetingAttachmentPayload", v)
+		}
+		meetingID = p.MeetingID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateItxMeetingAttachmentMeetingServicePath(meetingID, attachmentID)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-itx-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdateItxMeetingAttachmentRequest returns an encoder for requests sent
+// to the Meeting Service update-itx-meeting-attachment server.
+func EncodeUpdateItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdateItxMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-itx-meeting-attachment", "*meetingservice.UpdateItxMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewUpdateItxMeetingAttachmentRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-itx-meeting-attachment", err)
+		}
+		return nil
+	}
+}
+
+// DecodeUpdateItxMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service update-itx-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeUpdateItxMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeUpdateItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdateItxMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body UpdateItxMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdateItxMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body UpdateItxMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body UpdateItxMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body UpdateItxMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildDeleteItxMeetingAttachmentRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "delete-itx-meeting-attachment" endpoint
+func (c *Client) BuildDeleteItxMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		attachmentID string
+	)
+	{
+		p, ok := v.(*meetingservice.DeleteItxMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-meeting-attachment", "*meetingservice.DeleteItxMeetingAttachmentPayload", v)
+		}
+		meetingID = p.MeetingID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeleteItxMeetingAttachmentMeetingServicePath(meetingID, attachmentID)}
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-itx-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDeleteItxMeetingAttachmentRequest returns an encoder for requests sent
+// to the Meeting Service delete-itx-meeting-attachment server.
+func EncodeDeleteItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.DeleteItxMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-meeting-attachment", "*meetingservice.DeleteItxMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDeleteItxMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service delete-itx-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeDeleteItxMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeDeleteItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body DeleteItxMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body DeleteItxMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DeleteItxMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body DeleteItxMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body DeleteItxMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body DeleteItxMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildCreateItxMeetingAttachmentPresignRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "create-itx-meeting-attachment-presign" endpoint
+func (c *Client) BuildCreateItxMeetingAttachmentPresignRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID string
+	)
+	{
+		p, ok := v.(*meetingservice.CreateItxMeetingAttachmentPresignPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "create-itx-meeting-attachment-presign", "*meetingservice.CreateItxMeetingAttachmentPresignPayload", v)
+		}
+		meetingID = p.MeetingID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateItxMeetingAttachmentPresignMeetingServicePath(meetingID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-itx-meeting-attachment-presign", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeCreateItxMeetingAttachmentPresignRequest returns an encoder for
+// requests sent to the Meeting Service create-itx-meeting-attachment-presign
+// server.
+func EncodeCreateItxMeetingAttachmentPresignRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.CreateItxMeetingAttachmentPresignPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "create-itx-meeting-attachment-presign", "*meetingservice.CreateItxMeetingAttachmentPresignPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewCreateItxMeetingAttachmentPresignRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+		}
+		return nil
+	}
+}
+
+// DecodeCreateItxMeetingAttachmentPresignResponse returns a decoder for
+// responses returned by the Meeting Service
+// create-itx-meeting-attachment-presign endpoint. restoreBody controls whether
+// the response body should be restored after having been read.
+// DecodeCreateItxMeetingAttachmentPresignResponse may return the following
+// errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeCreateItxMeetingAttachmentPresignResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body CreateItxMeetingAttachmentPresignResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentPresignResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			res := NewCreateItxMeetingAttachmentPresignITXMeetingAttachmentPresignResponseCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CreateItxMeetingAttachmentPresignBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentPresignBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentPresignBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body CreateItxMeetingAttachmentPresignForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentPresignForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentPresignForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CreateItxMeetingAttachmentPresignInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentPresignInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentPresignInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body CreateItxMeetingAttachmentPresignNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentPresignNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentPresignNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body CreateItxMeetingAttachmentPresignServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentPresignServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentPresignServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body CreateItxMeetingAttachmentPresignUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxMeetingAttachmentPresignUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxMeetingAttachmentPresignUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-meeting-attachment-presign", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetItxMeetingAttachmentDownloadRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "get-itx-meeting-attachment-download" endpoint
+func (c *Client) BuildGetItxMeetingAttachmentDownloadRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		attachmentID string
+	)
+	{
+		p, ok := v.(*meetingservice.GetItxMeetingAttachmentDownloadPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-itx-meeting-attachment-download", "*meetingservice.GetItxMeetingAttachmentDownloadPayload", v)
+		}
+		meetingID = p.MeetingID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetItxMeetingAttachmentDownloadMeetingServicePath(meetingID, attachmentID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-itx-meeting-attachment-download", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetItxMeetingAttachmentDownloadRequest returns an encoder for requests
+// sent to the Meeting Service get-itx-meeting-attachment-download server.
+func EncodeGetItxMeetingAttachmentDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetItxMeetingAttachmentDownloadPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-itx-meeting-attachment-download", "*meetingservice.GetItxMeetingAttachmentDownloadPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetItxMeetingAttachmentDownloadResponse returns a decoder for
+// responses returned by the Meeting Service
+// get-itx-meeting-attachment-download endpoint. restoreBody controls whether
+// the response body should be restored after having been read.
+// DecodeGetItxMeetingAttachmentDownloadResponse may return the following
+// errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeGetItxMeetingAttachmentDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetItxMeetingAttachmentDownloadResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxMeetingAttachmentDownloadResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			res := NewGetItxMeetingAttachmentDownloadITXAttachmentDownloadResponseOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetItxMeetingAttachmentDownloadBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxMeetingAttachmentDownloadBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxMeetingAttachmentDownloadBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body GetItxMeetingAttachmentDownloadForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxMeetingAttachmentDownloadForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxMeetingAttachmentDownloadForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetItxMeetingAttachmentDownloadInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxMeetingAttachmentDownloadInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxMeetingAttachmentDownloadInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetItxMeetingAttachmentDownloadNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxMeetingAttachmentDownloadNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxMeetingAttachmentDownloadNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetItxMeetingAttachmentDownloadServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxMeetingAttachmentDownloadServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxMeetingAttachmentDownloadServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body GetItxMeetingAttachmentDownloadUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxMeetingAttachmentDownloadUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxMeetingAttachmentDownloadUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-meeting-attachment-download", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildCreateItxPastMeetingAttachmentRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "create-itx-past-meeting-attachment" endpoint
+func (c *Client) BuildCreateItxPastMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingAndOccurrenceID string
+	)
+	{
+		p, ok := v.(*meetingservice.CreateItxPastMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "create-itx-past-meeting-attachment", "*meetingservice.CreateItxPastMeetingAttachmentPayload", v)
+		}
+		meetingAndOccurrenceID = p.MeetingAndOccurrenceID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-itx-past-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeCreateItxPastMeetingAttachmentRequest returns an encoder for requests
+// sent to the Meeting Service create-itx-past-meeting-attachment server.
+func EncodeCreateItxPastMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.CreateItxPastMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "create-itx-past-meeting-attachment", "*meetingservice.CreateItxPastMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewCreateItxPastMeetingAttachmentRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+		}
+		return nil
+	}
+}
+
+// DecodeCreateItxPastMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service create-itx-past-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeCreateItxPastMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeCreateItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body CreateItxPastMeetingAttachmentResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			res := NewCreateItxPastMeetingAttachmentITXPastMeetingAttachmentCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CreateItxPastMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body CreateItxPastMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CreateItxPastMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body CreateItxPastMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body CreateItxPastMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body CreateItxPastMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-past-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetItxPastMeetingAttachmentRequest instantiates a HTTP request object
+// with method and path set to call the "Meeting Service" service
+// "get-itx-past-meeting-attachment" endpoint
+func (c *Client) BuildGetItxPastMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingAndOccurrenceID string
+		attachmentID           string
+	)
+	{
+		p, ok := v.(*meetingservice.GetItxPastMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-itx-past-meeting-attachment", "*meetingservice.GetItxPastMeetingAttachmentPayload", v)
+		}
+		meetingAndOccurrenceID = p.MeetingAndOccurrenceID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID, attachmentID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-itx-past-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetItxPastMeetingAttachmentRequest returns an encoder for requests
+// sent to the Meeting Service get-itx-past-meeting-attachment server.
+func EncodeGetItxPastMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetItxPastMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-itx-past-meeting-attachment", "*meetingservice.GetItxPastMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetItxPastMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service get-itx-past-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeGetItxPastMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeGetItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetItxPastMeetingAttachmentResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			res := NewGetItxPastMeetingAttachmentITXPastMeetingAttachmentOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetItxPastMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body GetItxPastMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetItxPastMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetItxPastMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetItxPastMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body GetItxPastMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-past-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildUpdateItxPastMeetingAttachmentRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "update-itx-past-meeting-attachment" endpoint
+func (c *Client) BuildUpdateItxPastMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingAndOccurrenceID string
+		attachmentID           string
+	)
+	{
+		p, ok := v.(*meetingservice.UpdateItxPastMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "update-itx-past-meeting-attachment", "*meetingservice.UpdateItxPastMeetingAttachmentPayload", v)
+		}
+		meetingAndOccurrenceID = p.MeetingAndOccurrenceID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID, attachmentID)}
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "update-itx-past-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdateItxPastMeetingAttachmentRequest returns an encoder for requests
+// sent to the Meeting Service update-itx-past-meeting-attachment server.
+func EncodeUpdateItxPastMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.UpdateItxPastMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "update-itx-past-meeting-attachment", "*meetingservice.UpdateItxPastMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewUpdateItxPastMeetingAttachmentRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+		}
+		return nil
+	}
+}
+
+// DecodeUpdateItxPastMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service update-itx-past-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeUpdateItxPastMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeUpdateItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdateItxPastMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxPastMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxPastMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body UpdateItxPastMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxPastMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxPastMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdateItxPastMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxPastMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxPastMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body UpdateItxPastMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxPastMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxPastMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body UpdateItxPastMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxPastMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxPastMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body UpdateItxPastMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			err = ValidateUpdateItxPastMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
+			return nil, NewUpdateItxPastMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-past-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildDeleteItxPastMeetingAttachmentRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "delete-itx-past-meeting-attachment" endpoint
+func (c *Client) BuildDeleteItxPastMeetingAttachmentRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingAndOccurrenceID string
+		attachmentID           string
+	)
+	{
+		p, ok := v.(*meetingservice.DeleteItxPastMeetingAttachmentPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-past-meeting-attachment", "*meetingservice.DeleteItxPastMeetingAttachmentPayload", v)
+		}
+		meetingAndOccurrenceID = p.MeetingAndOccurrenceID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeleteItxPastMeetingAttachmentMeetingServicePath(meetingAndOccurrenceID, attachmentID)}
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-itx-past-meeting-attachment", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeDeleteItxPastMeetingAttachmentRequest returns an encoder for requests
+// sent to the Meeting Service delete-itx-past-meeting-attachment server.
+func EncodeDeleteItxPastMeetingAttachmentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.DeleteItxPastMeetingAttachmentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-past-meeting-attachment", "*meetingservice.DeleteItxPastMeetingAttachmentPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeDeleteItxPastMeetingAttachmentResponse returns a decoder for responses
+// returned by the Meeting Service delete-itx-past-meeting-attachment endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeDeleteItxPastMeetingAttachmentResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeDeleteItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body DeleteItxPastMeetingAttachmentBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxPastMeetingAttachmentBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxPastMeetingAttachmentBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body DeleteItxPastMeetingAttachmentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxPastMeetingAttachmentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxPastMeetingAttachmentForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body DeleteItxPastMeetingAttachmentInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxPastMeetingAttachmentInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxPastMeetingAttachmentInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body DeleteItxPastMeetingAttachmentNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxPastMeetingAttachmentNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxPastMeetingAttachmentNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body DeleteItxPastMeetingAttachmentServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxPastMeetingAttachmentServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxPastMeetingAttachmentServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body DeleteItxPastMeetingAttachmentUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			err = ValidateDeleteItxPastMeetingAttachmentUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
+			return nil, NewDeleteItxPastMeetingAttachmentUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-past-meeting-attachment", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildCreateItxPastMeetingAttachmentPresignRequest instantiates a HTTP
+// request object with method and path set to call the "Meeting Service"
+// service "create-itx-past-meeting-attachment-presign" endpoint
+func (c *Client) BuildCreateItxPastMeetingAttachmentPresignRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingAndOccurrenceID string
+	)
+	{
+		p, ok := v.(*meetingservice.CreateItxPastMeetingAttachmentPresignPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "create-itx-past-meeting-attachment-presign", "*meetingservice.CreateItxPastMeetingAttachmentPresignPayload", v)
+		}
+		meetingAndOccurrenceID = p.MeetingAndOccurrenceID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateItxPastMeetingAttachmentPresignMeetingServicePath(meetingAndOccurrenceID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "create-itx-past-meeting-attachment-presign", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeCreateItxPastMeetingAttachmentPresignRequest returns an encoder for
+// requests sent to the Meeting Service
+// create-itx-past-meeting-attachment-presign server.
+func EncodeCreateItxPastMeetingAttachmentPresignRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.CreateItxPastMeetingAttachmentPresignPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "create-itx-past-meeting-attachment-presign", "*meetingservice.CreateItxPastMeetingAttachmentPresignPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewCreateItxPastMeetingAttachmentPresignRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+		}
+		return nil
+	}
+}
+
+// DecodeCreateItxPastMeetingAttachmentPresignResponse returns a decoder for
+// responses returned by the Meeting Service
+// create-itx-past-meeting-attachment-presign endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeCreateItxPastMeetingAttachmentPresignResponse may return the following
+// errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeCreateItxPastMeetingAttachmentPresignResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body CreateItxPastMeetingAttachmentPresignResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentPresignResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			res := NewCreateItxPastMeetingAttachmentPresignITXPastMeetingAttachmentPresignResponseCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CreateItxPastMeetingAttachmentPresignBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentPresignBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentPresignBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body CreateItxPastMeetingAttachmentPresignForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentPresignForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentPresignForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentPresignInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body CreateItxPastMeetingAttachmentPresignNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentPresignNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentPresignNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body CreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentPresignServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body CreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			err = ValidateCreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
+			return nil, NewCreateItxPastMeetingAttachmentPresignUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-past-meeting-attachment-presign", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetItxPastMeetingAttachmentDownloadRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "get-itx-past-meeting-attachment-download" endpoint
+func (c *Client) BuildGetItxPastMeetingAttachmentDownloadRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingAndOccurrenceID string
+		attachmentID           string
+	)
+	{
+		p, ok := v.(*meetingservice.GetItxPastMeetingAttachmentDownloadPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-itx-past-meeting-attachment-download", "*meetingservice.GetItxPastMeetingAttachmentDownloadPayload", v)
+		}
+		meetingAndOccurrenceID = p.MeetingAndOccurrenceID
+		attachmentID = p.AttachmentID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetItxPastMeetingAttachmentDownloadMeetingServicePath(meetingAndOccurrenceID, attachmentID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-itx-past-meeting-attachment-download", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetItxPastMeetingAttachmentDownloadRequest returns an encoder for
+// requests sent to the Meeting Service
+// get-itx-past-meeting-attachment-download server.
+func EncodeGetItxPastMeetingAttachmentDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetItxPastMeetingAttachmentDownloadPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-itx-past-meeting-attachment-download", "*meetingservice.GetItxPastMeetingAttachmentDownloadPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetItxPastMeetingAttachmentDownloadResponse returns a decoder for
+// responses returned by the Meeting Service
+// get-itx-past-meeting-attachment-download endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeGetItxPastMeetingAttachmentDownloadResponse may return the following
+// errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeGetItxPastMeetingAttachmentDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetItxPastMeetingAttachmentDownloadResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentDownloadResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			res := NewGetItxPastMeetingAttachmentDownloadITXAttachmentDownloadResponseOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetItxPastMeetingAttachmentDownloadBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentDownloadBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentDownloadBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body GetItxPastMeetingAttachmentDownloadForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentDownloadForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentDownloadForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentDownloadInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetItxPastMeetingAttachmentDownloadNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentDownloadNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentDownloadNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentDownloadServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			err = ValidateGetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
+			return nil, NewGetItxPastMeetingAttachmentDownloadUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-past-meeting-attachment-download", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // marshalMeetingserviceCommitteeToCommitteeRequestBody builds a value of type
 // *CommitteeRequestBody from a value of type *meetingservice.Committee.
 func marshalMeetingserviceCommitteeToCommitteeRequestBody(v *meetingservice.Committee) *CommitteeRequestBody {

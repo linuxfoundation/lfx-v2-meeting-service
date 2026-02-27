@@ -25,6 +25,8 @@ type MeetingsAPI struct {
 	itxPastMeetingService            *itxservice.PastMeetingService
 	itxPastMeetingSummaryService     *itxservice.PastMeetingSummaryService
 	itxPastMeetingParticipantService *itxservice.PastMeetingParticipantService
+	itxMeetingAttachmentService      *itxservice.MeetingAttachmentService
+	itxPastMeetingAttachmentService  *itxservice.PastMeetingAttachmentService
 }
 
 // NewMeetingsAPI creates a new MeetingsAPI.
@@ -35,6 +37,8 @@ func NewMeetingsAPI(
 	itxPastMeetingService *itxservice.PastMeetingService,
 	itxPastMeetingSummaryService *itxservice.PastMeetingSummaryService,
 	itxPastMeetingParticipantService *itxservice.PastMeetingParticipantService,
+	itxMeetingAttachmentService *itxservice.MeetingAttachmentService,
+	itxPastMeetingAttachmentService *itxservice.PastMeetingAttachmentService,
 ) *MeetingsAPI {
 	return &MeetingsAPI{
 		authService:                      authService,
@@ -43,6 +47,8 @@ func NewMeetingsAPI(
 		itxPastMeetingService:            itxPastMeetingService,
 		itxPastMeetingSummaryService:     itxPastMeetingSummaryService,
 		itxPastMeetingParticipantService: itxPastMeetingParticipantService,
+		itxMeetingAttachmentService:      itxMeetingAttachmentService,
+		itxPastMeetingAttachmentService:  itxPastMeetingAttachmentService,
 	}
 }
 
