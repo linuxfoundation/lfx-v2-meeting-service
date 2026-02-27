@@ -8,9 +8,9 @@ import (
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
+	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
-	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 )
 
 // CreateItxPastMeetingAttachment creates a past meeting attachment via ITX proxy
@@ -62,7 +62,7 @@ func (s *MeetingsAPI) UpdateItxPastMeetingAttachment(ctx context.Context, p *mee
 	req := service.ConvertGoaToITXUpdatePastMeetingAttachment(p, username)
 
 	// Call ITX service
-	_, err = s.itxPastMeetingAttachmentService.UpdatePastMeetingAttachment(ctx, p.MeetingAndOccurrenceID, p.AttachmentID, req)
+	err = s.itxPastMeetingAttachmentService.UpdatePastMeetingAttachment(ctx, p.MeetingAndOccurrenceID, p.AttachmentID, req)
 	if err != nil {
 		return handleError(err)
 	}

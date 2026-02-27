@@ -33,7 +33,7 @@ func (s *MeetingAttachmentService) GetMeetingAttachment(ctx context.Context, mee
 }
 
 // UpdateMeetingAttachment updates a meeting attachment via ITX proxy
-func (s *MeetingAttachmentService) UpdateMeetingAttachment(ctx context.Context, meetingID, attachmentID string, req *itx.UpdateMeetingAttachmentRequest) (*itx.MeetingAttachment, error) {
+func (s *MeetingAttachmentService) UpdateMeetingAttachment(ctx context.Context, meetingID, attachmentID string, req *itx.UpdateMeetingAttachmentRequest) error {
 	return s.attachmentClient.UpdateMeetingAttachment(ctx, meetingID, attachmentID, req)
 }
 

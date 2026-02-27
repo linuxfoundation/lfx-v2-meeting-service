@@ -110,7 +110,7 @@ For external URL references (Google Docs, SharePoint, etc.):
 ```json
 {
   "type": "link",
-  "category": "meeting_notes",
+  "category": "Notes",
   "name": "Q4 Planning Notes",
   "description": "Notes from Q4 planning meeting",
   "link": "https://docs.google.com/document/d/abc123"
@@ -134,7 +134,7 @@ For file uploads using presigned URL flow:
 ```json
 {
   "type": "file",
-  "category": "meeting_notes",
+  "category": "Notes",
   "name": "Meeting Notes"
 }
 ```
@@ -158,7 +158,7 @@ For file uploads using presigned URL flow:
 ```json
 {
   "type": "link",
-  "category": "meeting_notes",
+  "category": "Notes",
   "name": "Updated Meeting Notes",
   "description": "Updated description",
   "link": "https://docs.google.com/document/d/xyz789"
@@ -180,7 +180,7 @@ All fields are optional - only include fields you want to update.
   "file_size": 52428800,
   "file_type": "video/mp4",
   "description": "Q4 Planning Meeting Recording",
-  "category": "recording"
+  "category": "Other"
 }
 ```
 
@@ -203,7 +203,7 @@ All fields are optional - only include fields you want to update.
   "uid": "ea1e8536-a985-4cf5-b981-a170927a1d11",
   "meeting_and_occurrence_id": "96365872728-1630560600000",
   "type": "file",
-  "category": "meeting_notes",
+  "category": "Notes",
   "name": "Meeting Notes",
   "description": "Notes from planning session",
   "file_uploaded": true,
@@ -233,7 +233,7 @@ All fields are optional - only include fields you want to update.
   "id": "ea1e8536-a985-4cf5-b981-a170927a1d11",
   "meeting_and_occurrence_id": "96365872728-1630560600000",
   "type": "file",
-  "category": "meeting_notes",
+  "category": "Notes",
   "name": "Meeting Notes",
   "description": "Notes from planning session",
   "file_uploaded": true,
@@ -287,7 +287,7 @@ All fields are optional - only include fields you want to update.
   "meeting_and_occurrence_id": "96365872728-1630560600000",
   "file_url": "https://storage.example.com/presigned-url?token=...",
   "type": "file",
-  "category": "recording",
+  "category": "Other",
   "name": "Recording.mp4",
   "file_name": "Recording.mp4",
   "file_size": 52428800,
@@ -309,7 +309,7 @@ All fields are optional - only include fields you want to update.
   "meeting_and_occurrence_id": "96365872728-1630560600000",
   "file_url": "https://storage.example.com/presigned-url?token=...",
   "type": "file",
-  "category": "recording",
+  "category": "Other",
   "name": "Recording.mp4",
   "file_name": "Recording.mp4",
   "file_size": 52428800,
@@ -356,17 +356,14 @@ All other fields are identical between proxy and ITX APIs.
 
 ## Attachment Categories
 
-Common attachment categories include:
+The following attachment categories are supported:
 
 | Category | Description |
 |----------|-------------|
-| `meeting_notes` | Meeting notes and minutes |
-| `recording` | Meeting recordings |
-| `transcript` | Meeting transcripts |
-| `presentation` | Slide decks and presentations |
-| `document` | General documents |
-| `spreadsheet` | Spreadsheets and data files |
-| `other` | Other types of attachments |
+| `Meeting Minutes` | Official meeting minutes and notes |
+| `Notes` | General notes or documentation |
+| `Presentation` | Slide decks and presentations |
+| `Other` | Any other type of attachment |
 
 ---
 
@@ -390,7 +387,7 @@ For file attachments, use this three-step process:
      "name": "recording.mp4",
      "file_size": 52428800,
      "file_type": "video/mp4",
-     "category": "recording"
+     "category": "Other"
    }
 
    Response: { "file_url": "https://s3.amazonaws.com/...", "uid": "..." }
@@ -408,7 +405,7 @@ For file attachments, use this three-step process:
    POST /itx/past_meetings/{meeting_and_occurrence_id}/attachments
    {
      "type": "file",
-     "category": "recording",
+     "category": "Other",
      "name": "Meeting Recording"
    }
    ```

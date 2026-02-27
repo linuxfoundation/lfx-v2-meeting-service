@@ -33,7 +33,7 @@ func (s *PastMeetingAttachmentService) GetPastMeetingAttachment(ctx context.Cont
 }
 
 // UpdatePastMeetingAttachment updates a past meeting attachment via ITX proxy
-func (s *PastMeetingAttachmentService) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string, req *itx.UpdatePastMeetingAttachmentRequest) (*itx.PastMeetingAttachment, error) {
+func (s *PastMeetingAttachmentService) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string, req *itx.UpdatePastMeetingAttachmentRequest) error {
 	return s.attachmentClient.UpdatePastMeetingAttachment(ctx, meetingAndOccurrenceID, attachmentID, req)
 }
 

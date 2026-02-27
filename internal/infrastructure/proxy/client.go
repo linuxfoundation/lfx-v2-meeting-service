@@ -1691,11 +1691,11 @@ func (c *Client) GetMeetingAttachment(ctx context.Context, meetingID, attachment
 }
 
 // UpdateMeetingAttachment updates a meeting attachment
-func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachmentID string, req *itx.UpdateMeetingAttachmentRequest) (*itx.MeetingAttachment, error) {
+func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachmentID string, req *itx.UpdateMeetingAttachmentRequest) error {
 	// Create request body
 	jsonBody, err := json.Marshal(req)
 	if err != nil {
-		return nil, domain.NewInternalError("failed to marshal request", err)
+		return domain.NewInternalError("failed to marshal request", err)
 	}
 
 	// Create HTTP request
@@ -1709,7 +1709,7 @@ func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachm
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
-		return nil, domain.NewInternalError("failed to create request", err)
+		return domain.NewInternalError("failed to create request", err)
 	}
 
 	// Set headers
@@ -1721,7 +1721,7 @@ func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachm
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		slog.DebugContext(ctx, "ITX UpdateMeetingAttachment request failed", logging.ErrKey, err)
-		return nil, domain.NewUnavailableError("ITX service request failed", err)
+		return domain.NewUnavailableError("ITX service request failed", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
@@ -1730,7 +1730,7 @@ func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachm
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, domain.NewInternalError("failed to read response", err)
+		return domain.NewInternalError("failed to read response", err)
 	}
 
 	slog.DebugContext(ctx, "ITX UpdateMeetingAttachment response",
@@ -1739,11 +1739,11 @@ func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachm
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return c.mapHTTPError(resp.StatusCode, respBody)
 	}
 
 	// ITX returns 204 No Content on successful update
-	return nil, nil
+	return nil
 }
 
 // DeleteMeetingAttachment deletes a meeting attachment
@@ -1906,11 +1906,11 @@ func (c *Client) GetPastMeetingAttachment(ctx context.Context, meetingAndOccurre
 }
 
 // UpdatePastMeetingAttachment updates a past meeting attachment
-func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string, req *itx.UpdatePastMeetingAttachmentRequest) (*itx.PastMeetingAttachment, error) {
+func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string, req *itx.UpdatePastMeetingAttachmentRequest) error {
 	// Create request body
 	jsonBody, err := json.Marshal(req)
 	if err != nil {
-		return nil, domain.NewInternalError("failed to marshal request", err)
+		return domain.NewInternalError("failed to marshal request", err)
 	}
 
 	// Create HTTP request
@@ -1924,7 +1924,7 @@ func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
-		return nil, domain.NewInternalError("failed to create request", err)
+		return domain.NewInternalError("failed to create request", err)
 	}
 
 	// Set headers
@@ -1936,7 +1936,7 @@ func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		slog.DebugContext(ctx, "ITX UpdatePastMeetingAttachment request failed", logging.ErrKey, err)
-		return nil, domain.NewUnavailableError("ITX service request failed", err)
+		return domain.NewUnavailableError("ITX service request failed", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
@@ -1945,7 +1945,7 @@ func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, domain.NewInternalError("failed to read response", err)
+		return domain.NewInternalError("failed to read response", err)
 	}
 
 	slog.DebugContext(ctx, "ITX UpdatePastMeetingAttachment response",
@@ -1954,11 +1954,11 @@ func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return c.mapHTTPError(resp.StatusCode, respBody)
 	}
 
 	// ITX returns 204 No Content on successful update
-	return nil, nil
+	return nil
 }
 
 // DeletePastMeetingAttachment deletes a past meeting attachment

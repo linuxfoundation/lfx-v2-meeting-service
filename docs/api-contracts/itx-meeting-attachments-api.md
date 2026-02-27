@@ -356,16 +356,14 @@ All other fields are identical between proxy and ITX APIs.
 
 ## Attachment Categories
 
-Common attachment categories include:
+The following attachment categories are supported:
 
 | Category | Description |
 |----------|-------------|
-| `meeting_agenda` | Meeting agenda documents |
-| `meeting_notes` | Meeting notes and minutes |
-| `presentation` | Slide decks and presentations |
-| `document` | General documents |
-| `spreadsheet` | Spreadsheets and data files |
-| `other` | Other types of attachments |
+| `Meeting Minutes` | Official meeting minutes and notes |
+| `Notes` | General notes or documentation |
+| `Presentation` | Slide decks and presentations |
+| `Other` | Any other type of attachment |
 
 ---
 

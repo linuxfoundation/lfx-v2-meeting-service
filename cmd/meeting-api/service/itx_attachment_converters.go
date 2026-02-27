@@ -81,52 +81,26 @@ func ConvertGoaToITXCreateMeetingAttachmentPresign(payload *meetingservice.Creat
 // ConvertITXMeetingAttachmentToGoa converts ITX response to Goa type
 func ConvertITXMeetingAttachmentToGoa(resp *itx.MeetingAttachment) *meetingservice.ITXMeetingAttachment {
 	result := &meetingservice.ITXMeetingAttachment{
-		UID:          resp.ID,
-		MeetingID:    resp.MeetingID,
-		Type:         resp.Type,
-		Category:     resp.Category,
-		Name:         resp.Name,
-		FileUploaded: &resp.FileUploaded,
-	}
-
-	if resp.Link != "" {
-		result.Link = &resp.Link
-	}
-
-	if resp.Description != "" {
-		result.Description = &resp.Description
-	}
-
-	if resp.FileName != "" {
-		result.FileName = &resp.FileName
-	}
-
-	if resp.FileSize > 0 {
-		result.FileSize = &resp.FileSize
-	}
-
-	if resp.FileURL != "" {
-		result.FileURL = &resp.FileURL
-	}
-
-	if resp.FileUploadStatus != "" {
-		result.FileUploadStatus = &resp.FileUploadStatus
-	}
-
-	if resp.FileContentType != "" {
-		result.FileContentType = &resp.FileContentType
-	}
-
-	if resp.CreatedAt != "" {
-		result.CreatedAt = &resp.CreatedAt
+		UID:              resp.ID,
+		MeetingID:        resp.MeetingID,
+		Type:             resp.Type,
+		Category:         resp.Category,
+		Name:             resp.Name,
+		FileUploaded:     ptrIfTrue(resp.FileUploaded),
+		Link:             ptrIfNotEmpty(resp.Link),
+		Description:      ptrIfNotEmpty(resp.Description),
+		FileName:         ptrIfNotEmpty(resp.FileName),
+		FileSize:         ptrIfNotZeroInt64(resp.FileSize),
+		FileURL:          ptrIfNotEmpty(resp.FileURL),
+		FileUploadStatus: ptrIfNotEmpty(resp.FileUploadStatus),
+		FileContentType:  ptrIfNotEmpty(resp.FileContentType),
+		CreatedAt:        ptrIfNotEmpty(resp.CreatedAt),
+		UpdatedAt:        ptrIfNotEmpty(resp.UpdatedAt),
+		FileUploadedAt:   ptrIfNotEmpty(resp.FileUploadedAt),
 	}
 
 	if resp.CreatedBy != nil {
 		result.CreatedBy = convertITXUserToGoa(resp.CreatedBy)
-	}
-
-	if resp.UpdatedAt != "" {
-		result.UpdatedAt = &resp.UpdatedAt
 	}
 
 	if resp.UpdatedBy != nil {
@@ -137,63 +111,29 @@ func ConvertITXMeetingAttachmentToGoa(resp *itx.MeetingAttachment) *meetingservi
 		result.FileUploadedBy = convertITXUserToGoa(resp.FileUploadedBy)
 	}
 
-	if resp.FileUploadedAt != "" {
-		result.FileUploadedAt = &resp.FileUploadedAt
-	}
-
 	return result
 }
 
 // ConvertITXMeetingAttachmentPresignToGoa converts ITX presign response to Goa type
 func ConvertITXMeetingAttachmentPresignToGoa(resp *itx.MeetingAttachmentPresignResponse) *meetingservice.ITXMeetingAttachmentPresignResponse {
 	result := &meetingservice.ITXMeetingAttachmentPresignResponse{
-		UID:       resp.ID,
-		MeetingID: resp.MeetingID,
-		FileURL:   resp.FileURL, // Required field
-	}
-
-	if resp.Type != "" {
-		result.Type = &resp.Type
-	}
-
-	if resp.Category != "" {
-		result.Category = &resp.Category
-	}
-
-	if resp.Name != "" {
-		result.Name = &resp.Name
-	}
-
-	if resp.Description != "" {
-		result.Description = &resp.Description
-	}
-
-	if resp.FileName != "" {
-		result.FileName = &resp.FileName
-	}
-
-	if resp.FileSize > 0 {
-		result.FileSize = &resp.FileSize
-	}
-
-	if resp.FileUploadStatus != "" {
-		result.FileUploadStatus = &resp.FileUploadStatus
-	}
-
-	if resp.FileContentType != "" {
-		result.FileContentType = &resp.FileContentType
-	}
-
-	if resp.CreatedAt != "" {
-		result.CreatedAt = &resp.CreatedAt
+		UID:              resp.ID,
+		MeetingID:        resp.MeetingID,
+		FileURL:          resp.FileURL, // Required field
+		Type:             ptrIfNotEmpty(resp.Type),
+		Category:         ptrIfNotEmpty(resp.Category),
+		Name:             ptrIfNotEmpty(resp.Name),
+		Description:      ptrIfNotEmpty(resp.Description),
+		FileName:         ptrIfNotEmpty(resp.FileName),
+		FileSize:         ptrIfNotZeroInt64(resp.FileSize),
+		FileUploadStatus: ptrIfNotEmpty(resp.FileUploadStatus),
+		FileContentType:  ptrIfNotEmpty(resp.FileContentType),
+		CreatedAt:        ptrIfNotEmpty(resp.CreatedAt),
+		UpdatedAt:        ptrIfNotEmpty(resp.UpdatedAt),
 	}
 
 	if resp.CreatedBy != nil {
 		result.CreatedBy = convertITXUserToGoa(resp.CreatedBy)
-	}
-
-	if resp.UpdatedAt != "" {
-		result.UpdatedAt = &resp.UpdatedAt
 	}
 
 	if resp.UpdatedBy != nil {
@@ -282,47 +222,21 @@ func ConvertITXPastMeetingAttachmentToGoa(resp *itx.PastMeetingAttachment) *meet
 		Type:                   resp.Type,
 		Category:               resp.Category,
 		Name:                   resp.Name,
-		FileUploaded:           &resp.FileUploaded,
-	}
-
-	if resp.Link != "" {
-		result.Link = &resp.Link
-	}
-
-	if resp.Description != "" {
-		result.Description = &resp.Description
-	}
-
-	if resp.FileName != "" {
-		result.FileName = &resp.FileName
-	}
-
-	if resp.FileSize > 0 {
-		result.FileSize = &resp.FileSize
-	}
-
-	if resp.FileURL != "" {
-		result.FileURL = &resp.FileURL
-	}
-
-	if resp.FileUploadStatus != "" {
-		result.FileUploadStatus = &resp.FileUploadStatus
-	}
-
-	if resp.FileContentType != "" {
-		result.FileContentType = &resp.FileContentType
-	}
-
-	if resp.CreatedAt != "" {
-		result.CreatedAt = &resp.CreatedAt
+		FileUploaded:           ptrIfTrue(resp.FileUploaded),
+		Link:                   ptrIfNotEmpty(resp.Link),
+		Description:            ptrIfNotEmpty(resp.Description),
+		FileName:               ptrIfNotEmpty(resp.FileName),
+		FileSize:               ptrIfNotZeroInt64(resp.FileSize),
+		FileURL:                ptrIfNotEmpty(resp.FileURL),
+		FileUploadStatus:       ptrIfNotEmpty(resp.FileUploadStatus),
+		FileContentType:        ptrIfNotEmpty(resp.FileContentType),
+		CreatedAt:              ptrIfNotEmpty(resp.CreatedAt),
+		UpdatedAt:              ptrIfNotEmpty(resp.UpdatedAt),
+		FileUploadedAt:         ptrIfNotEmpty(resp.FileUploadedAt),
 	}
 
 	if resp.CreatedBy != nil {
 		result.CreatedBy = convertITXUserToGoa(resp.CreatedBy)
-	}
-
-	if resp.UpdatedAt != "" {
-		result.UpdatedAt = &resp.UpdatedAt
 	}
 
 	if resp.UpdatedBy != nil {
@@ -331,10 +245,6 @@ func ConvertITXPastMeetingAttachmentToGoa(resp *itx.PastMeetingAttachment) *meet
 
 	if resp.FileUploadedBy != nil {
 		result.FileUploadedBy = convertITXUserToGoa(resp.FileUploadedBy)
-	}
-
-	if resp.FileUploadedAt != "" {
-		result.FileUploadedAt = &resp.FileUploadedAt
 	}
 
 	return result
@@ -346,54 +256,21 @@ func ConvertITXPastMeetingAttachmentPresignToGoa(resp *itx.PastMeetingAttachment
 		UID:                    resp.ID,
 		MeetingAndOccurrenceID: resp.MeetingAndOccurrenceID,
 		FileURL:                resp.FileURL, // Required field
-	}
-
-	if resp.MeetingID != "" {
-		result.MeetingID = &resp.MeetingID
-	}
-
-	if resp.Type != "" {
-		result.Type = &resp.Type
-	}
-
-	if resp.Category != "" {
-		result.Category = &resp.Category
-	}
-
-	if resp.Name != "" {
-		result.Name = &resp.Name
-	}
-
-	if resp.Description != "" {
-		result.Description = &resp.Description
-	}
-
-	if resp.FileName != "" {
-		result.FileName = &resp.FileName
-	}
-
-	if resp.FileSize > 0 {
-		result.FileSize = &resp.FileSize
-	}
-
-	if resp.FileUploadStatus != "" {
-		result.FileUploadStatus = &resp.FileUploadStatus
-	}
-
-	if resp.FileContentType != "" {
-		result.FileContentType = &resp.FileContentType
-	}
-
-	if resp.CreatedAt != "" {
-		result.CreatedAt = &resp.CreatedAt
+		MeetingID:              ptrIfNotEmpty(resp.MeetingID),
+		Type:                   ptrIfNotEmpty(resp.Type),
+		Category:               ptrIfNotEmpty(resp.Category),
+		Name:                   ptrIfNotEmpty(resp.Name),
+		Description:            ptrIfNotEmpty(resp.Description),
+		FileName:               ptrIfNotEmpty(resp.FileName),
+		FileSize:               ptrIfNotZeroInt64(resp.FileSize),
+		FileUploadStatus:       ptrIfNotEmpty(resp.FileUploadStatus),
+		FileContentType:        ptrIfNotEmpty(resp.FileContentType),
+		CreatedAt:              ptrIfNotEmpty(resp.CreatedAt),
+		UpdatedAt:              ptrIfNotEmpty(resp.UpdatedAt),
 	}
 
 	if resp.CreatedBy != nil {
 		result.CreatedBy = convertITXUserToGoa(resp.CreatedBy)
-	}
-
-	if resp.UpdatedAt != "" {
-		result.UpdatedAt = &resp.UpdatedAt
 	}
 
 	if resp.UpdatedBy != nil {
@@ -437,4 +314,12 @@ func convertITXUserToGoa(user *itx.CreatedUpdatedBy) *meetingservice.ITXUser {
 	}
 
 	return result
+}
+
+// ptrIfNotZeroInt64 returns a pointer to the int64 value if it's not zero, otherwise nil
+func ptrIfNotZeroInt64(i int64) *int64 {
+	if i == 0 {
+		return nil
+	}
+	return &i
 }
