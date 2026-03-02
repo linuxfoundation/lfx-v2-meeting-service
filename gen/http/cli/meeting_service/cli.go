@@ -23,7 +23,7 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant)",
+		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant)",
 	}
 }
 
@@ -148,6 +148,12 @@ func ParseEndpoint(
 		meetingServiceDeleteItxOccurrenceVersionFlag      = meetingServiceDeleteItxOccurrenceFlags.String("version", "", "")
 		meetingServiceDeleteItxOccurrenceBearerTokenFlag  = meetingServiceDeleteItxOccurrenceFlags.String("bearer-token", "", "")
 
+		meetingServiceSubmitItxMeetingResponseFlags           = flag.NewFlagSet("submit-itx-meeting-response", flag.ExitOnError)
+		meetingServiceSubmitItxMeetingResponseBodyFlag        = meetingServiceSubmitItxMeetingResponseFlags.String("body", "REQUIRED", "")
+		meetingServiceSubmitItxMeetingResponseMeetingIDFlag   = meetingServiceSubmitItxMeetingResponseFlags.String("meeting-id", "REQUIRED", "The Zoom meeting ID")
+		meetingServiceSubmitItxMeetingResponseVersionFlag     = meetingServiceSubmitItxMeetingResponseFlags.String("version", "", "")
+		meetingServiceSubmitItxMeetingResponseBearerTokenFlag = meetingServiceSubmitItxMeetingResponseFlags.String("bearer-token", "", "")
+
 		meetingServiceCreateItxPastMeetingFlags           = flag.NewFlagSet("create-itx-past-meeting", flag.ExitOnError)
 		meetingServiceCreateItxPastMeetingBodyFlag        = meetingServiceCreateItxPastMeetingFlags.String("body", "REQUIRED", "")
 		meetingServiceCreateItxPastMeetingVersionFlag     = meetingServiceCreateItxPastMeetingFlags.String("version", "", "")
@@ -220,6 +226,7 @@ func ParseEndpoint(
 	meetingServiceRegisterItxCommitteeMembersFlags.Usage = meetingServiceRegisterItxCommitteeMembersUsage
 	meetingServiceUpdateItxOccurrenceFlags.Usage = meetingServiceUpdateItxOccurrenceUsage
 	meetingServiceDeleteItxOccurrenceFlags.Usage = meetingServiceDeleteItxOccurrenceUsage
+	meetingServiceSubmitItxMeetingResponseFlags.Usage = meetingServiceSubmitItxMeetingResponseUsage
 	meetingServiceCreateItxPastMeetingFlags.Usage = meetingServiceCreateItxPastMeetingUsage
 	meetingServiceGetItxPastMeetingFlags.Usage = meetingServiceGetItxPastMeetingUsage
 	meetingServiceDeleteItxPastMeetingFlags.Usage = meetingServiceDeleteItxPastMeetingUsage
@@ -317,6 +324,9 @@ func ParseEndpoint(
 
 			case "delete-itx-occurrence":
 				epf = meetingServiceDeleteItxOccurrenceFlags
+
+			case "submit-itx-meeting-response":
+				epf = meetingServiceSubmitItxMeetingResponseFlags
 
 			case "create-itx-past-meeting":
 				epf = meetingServiceCreateItxPastMeetingFlags
@@ -422,6 +432,9 @@ func ParseEndpoint(
 			case "delete-itx-occurrence":
 				endpoint = c.DeleteItxOccurrence()
 				data, err = meetingservicec.BuildDeleteItxOccurrencePayload(*meetingServiceDeleteItxOccurrenceMeetingIDFlag, *meetingServiceDeleteItxOccurrenceOccurrenceIDFlag, *meetingServiceDeleteItxOccurrenceVersionFlag, *meetingServiceDeleteItxOccurrenceBearerTokenFlag)
+			case "submit-itx-meeting-response":
+				endpoint = c.SubmitItxMeetingResponse()
+				data, err = meetingservicec.BuildSubmitItxMeetingResponsePayload(*meetingServiceSubmitItxMeetingResponseBodyFlag, *meetingServiceSubmitItxMeetingResponseMeetingIDFlag, *meetingServiceSubmitItxMeetingResponseVersionFlag, *meetingServiceSubmitItxMeetingResponseBearerTokenFlag)
 			case "create-itx-past-meeting":
 				endpoint = c.CreateItxPastMeeting()
 				data, err = meetingservicec.BuildCreateItxPastMeetingPayload(*meetingServiceCreateItxPastMeetingBodyFlag, *meetingServiceCreateItxPastMeetingVersionFlag, *meetingServiceCreateItxPastMeetingBearerTokenFlag)
@@ -483,6 +496,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    register-itx-committee-members: Register committee members to a meeting asynchronously through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-occurrence: Update a specific occurrence of a recurring meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-occurrence: Delete a specific occurrence of a recurring meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    submit-itx-meeting-response: Submit a meeting response (invite response) for a meeting or occurrence through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting: Create a past meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting: Get a past meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-past-meeting: Delete a past meeting through ITX API proxy`)
@@ -916,6 +930,30 @@ func meetingServiceDeleteItxOccurrenceUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-occurrence --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceSubmitItxMeetingResponseUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service submit-itx-meeting-response", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Submit a meeting response (invite response) for a meeting or occurrence through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The Zoom meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service submit-itx-meeting-response --body '{\n      \"occurrence_id\": \"1772906400000\",\n      \"registrant_id\": \"ea1e8536-a985-4cf5-b981-a170927a1d11\",\n      \"response\": \"accepted\",\n      \"scope\": \"single\"\n   }' --meeting-id \"98574728662\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxPastMeetingUsage() {

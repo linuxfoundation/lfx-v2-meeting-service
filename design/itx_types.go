@@ -558,3 +558,46 @@ var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
 	})
 	Attribute("modified_by", ITXUser, "Last modifier user info")
 })
+
+// ITXMeetingResponseResult represents the result of submitting a meeting response
+var ITXMeetingResponseResult = Type("ITXMeetingResponseResult", func() {
+	Description("Result of submitting a meeting response through ITX API proxy")
+	Attribute("id", String, "Unique identifier for this response record", func() {
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+		Format(FormatUUID)
+	})
+	Attribute("meeting_id", String, "The meeting ID this response belongs to", func() {
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+	})
+	Attribute("registrant_id", String, "The registrant ID that submitted the response", func() {
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+		Format(FormatUUID)
+	})
+	Attribute("username", String, "Username of the registrant", func() {
+		Example("jdoe")
+	})
+	Attribute("email", String, "Email of the registrant", func() {
+		Example("john.doe@example.com")
+		Format(FormatEmail)
+	})
+	Attribute("response", String, "The response value", func() {
+		Enum("accepted", "declined", "maybe")
+		Example("accepted")
+	})
+	Attribute("scope", String, "Which occurrences the response applies to", func() {
+		Enum("single", "all", "this_and_following")
+		Example("all")
+	})
+	Attribute("occurrence_id", String, "The specific occurrence ID (for single/this_and_following scope)", func() {
+		Example("1640995200")
+	})
+	Attribute("created_at", String, "Creation timestamp (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-01-01T00:00:00Z")
+	})
+	Attribute("updated_at", String, "Last update timestamp (RFC3339)", func() {
+		Format(FormatDateTime)
+		Example("2021-01-01T00:00:00Z")
+	})
+	Required("id", "meeting_id", "registrant_id", "response", "scope")
+})

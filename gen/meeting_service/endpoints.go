@@ -34,6 +34,7 @@ type Endpoints struct {
 	RegisterItxCommitteeMembers     goa.Endpoint
 	UpdateItxOccurrence             goa.Endpoint
 	DeleteItxOccurrence             goa.Endpoint
+	SubmitItxMeetingResponse        goa.Endpoint
 	CreateItxPastMeeting            goa.Endpoint
 	GetItxPastMeeting               goa.Endpoint
 	DeleteItxPastMeeting            goa.Endpoint
@@ -69,6 +70,7 @@ func NewEndpoints(s Service) *Endpoints {
 		RegisterItxCommitteeMembers:     NewRegisterItxCommitteeMembersEndpoint(s, a.JWTAuth),
 		UpdateItxOccurrence:             NewUpdateItxOccurrenceEndpoint(s, a.JWTAuth),
 		DeleteItxOccurrence:             NewDeleteItxOccurrenceEndpoint(s, a.JWTAuth),
+		SubmitItxMeetingResponse:        NewSubmitItxMeetingResponseEndpoint(s, a.JWTAuth),
 		CreateItxPastMeeting:            NewCreateItxPastMeetingEndpoint(s, a.JWTAuth),
 		GetItxPastMeeting:               NewGetItxPastMeetingEndpoint(s, a.JWTAuth),
 		DeleteItxPastMeeting:            NewDeleteItxPastMeetingEndpoint(s, a.JWTAuth),
@@ -102,6 +104,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterItxCommitteeMembers = m(e.RegisterItxCommitteeMembers)
 	e.UpdateItxOccurrence = m(e.UpdateItxOccurrence)
 	e.DeleteItxOccurrence = m(e.DeleteItxOccurrence)
+	e.SubmitItxMeetingResponse = m(e.SubmitItxMeetingResponse)
 	e.CreateItxPastMeeting = m(e.CreateItxPastMeeting)
 	e.GetItxPastMeeting = m(e.GetItxPastMeeting)
 	e.DeleteItxPastMeeting = m(e.DeleteItxPastMeeting)
@@ -497,6 +500,29 @@ func NewDeleteItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 			return nil, err
 		}
 		return nil, s.DeleteItxOccurrence(ctx, p)
+	}
+}
+
+// NewSubmitItxMeetingResponseEndpoint returns an endpoint function that calls
+// the method "submit-itx-meeting-response" of service "Meeting Service".
+func NewSubmitItxMeetingResponseEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*SubmitItxMeetingResponsePayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.SubmitItxMeetingResponse(ctx, p)
 	}
 }
 

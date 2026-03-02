@@ -717,6 +717,58 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("submit-itx-meeting-response", func() {
+		Description("Submit a meeting response (invite response) for a meeting or occurrence through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The Zoom meeting ID", func() {
+				Example("98574728662")
+			})
+			Attribute("occurrence_id", String, "The occurrence ID for recurring meetings (concatenated with meeting_id as meeting_id-occurrence_id when calling ITX)", func() {
+				Example("1772906400000")
+			})
+			Attribute("response", String, "The meeting response value", func() {
+				Enum("accepted", "declined", "maybe")
+				Example("accepted")
+			})
+			Attribute("scope", String, "Which occurrences the response applies to", func() {
+				Enum("single", "all", "this_and_following")
+				Example("single")
+			})
+			Attribute("registrant_id", String, "ID of the registrant submitting the response", func() {
+				Example("ea1e8536-a985-4cf5-b981-a170927a1d11")
+				Format(FormatUUID)
+			})
+			Required("meeting_id", "response", "scope", "registrant_id")
+		})
+
+		Result(ITXMeetingResponseResult)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting or registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/responses")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("create-itx-past-meeting", func() {
 		Description("Create a past meeting through ITX API proxy")
 

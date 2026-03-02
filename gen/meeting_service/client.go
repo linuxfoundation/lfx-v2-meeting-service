@@ -33,6 +33,7 @@ type Client struct {
 	RegisterItxCommitteeMembersEndpoint     goa.Endpoint
 	UpdateItxOccurrenceEndpoint             goa.Endpoint
 	DeleteItxOccurrenceEndpoint             goa.Endpoint
+	SubmitItxMeetingResponseEndpoint        goa.Endpoint
 	CreateItxPastMeetingEndpoint            goa.Endpoint
 	GetItxPastMeetingEndpoint               goa.Endpoint
 	DeleteItxPastMeetingEndpoint            goa.Endpoint
@@ -45,7 +46,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant goa.Endpoint) *Client {
 	return &Client{
 		ReadyzEndpoint:                          readyz,
 		LivezEndpoint:                           livez,
@@ -65,6 +66,7 @@ func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting,
 		RegisterItxCommitteeMembersEndpoint:     registerItxCommitteeMembers,
 		UpdateItxOccurrenceEndpoint:             updateItxOccurrence,
 		DeleteItxOccurrenceEndpoint:             deleteItxOccurrence,
+		SubmitItxMeetingResponseEndpoint:        submitItxMeetingResponse,
 		CreateItxPastMeetingEndpoint:            createItxPastMeeting,
 		GetItxPastMeetingEndpoint:               getItxPastMeeting,
 		DeleteItxPastMeetingEndpoint:            deleteItxPastMeeting,
@@ -368,6 +370,25 @@ func (c *Client) UpdateItxOccurrence(ctx context.Context, p *UpdateItxOccurrence
 func (c *Client) DeleteItxOccurrence(ctx context.Context, p *DeleteItxOccurrencePayload) (err error) {
 	_, err = c.DeleteItxOccurrenceEndpoint(ctx, p)
 	return
+}
+
+// SubmitItxMeetingResponse calls the "submit-itx-meeting-response" endpoint of
+// the "Meeting Service" service.
+// SubmitItxMeetingResponse may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting or registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) SubmitItxMeetingResponse(ctx context.Context, p *SubmitItxMeetingResponsePayload) (res *ITXMeetingResponseResult, err error) {
+	var ires any
+	ires, err = c.SubmitItxMeetingResponseEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXMeetingResponseResult), nil
 }
 
 // CreateItxPastMeeting calls the "create-itx-past-meeting" endpoint of the
