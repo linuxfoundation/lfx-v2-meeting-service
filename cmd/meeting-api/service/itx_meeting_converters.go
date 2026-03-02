@@ -235,7 +235,7 @@ func ConvertSubmitITXMeetingResponsePayloadToITX(p *meetingservice.SubmitItxMeet
 func ConvertITXMeetingResponseResultToGoa(r *itx.MeetingResponseResult) *meetingservice.ITXMeetingResponseResult {
 	return &meetingservice.ITXMeetingResponseResult{
 		ID:        r.ID,
-		MeetingID: r.MeetingID,
+		MeetingID: r.MeetingUID,
 		RegistrantID: r.RegistrantID,
 		Username:     ptrIfNotEmpty(r.Username),
 		Email:        ptrIfNotEmpty(r.Email),

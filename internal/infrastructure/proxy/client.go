@@ -806,7 +806,7 @@ func (c *Client) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrence
 	}
 
 	// Create HTTP request
-	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/responses", c.config.BaseURL, meetingAndOccurrenceID)
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/responses", c.config.BaseURL, url.PathEscape(meetingAndOccurrenceID))
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, domain.NewInternalError("failed to create request", err)
