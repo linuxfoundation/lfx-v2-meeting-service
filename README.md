@@ -77,6 +77,8 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **ITX Registrant Operations**: Manage meeting registrants via ITX
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
+- **ITX Meeting Attachment Operations**: Full CRUD operations for meeting attachments with presigned URL support
+- **ITX Past Meeting Attachment Operations**: Full CRUD operations for past meeting attachments with presigned URL support
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications
@@ -326,6 +328,28 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/itx/past_meetings/{past_meeting_id}`   | GET    | Get past meeting     |
 | `/itx/past_meetings/{past_meeting_id}`   | PUT    | Update past meeting  |
 | `/itx/past_meetings/{past_meeting_id}`   | DELETE | Delete past meeting  |
+
+#### ITX Meeting Attachment Operations
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/itx/meetings/{meeting_id}/attachments` | POST | Create meeting attachment |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | GET | Get attachment metadata |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | PUT | Update attachment |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | DELETE | Delete attachment |
+| `/itx/meetings/{meeting_id}/attachments/presign` | POST | Generate presigned upload URL |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}/download` | GET | Get download URL |
+
+#### ITX Past Meeting Attachment Operations
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments` | POST | Create past meeting attachment |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}` | GET | Get attachment metadata |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}` | PUT | Update attachment |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}` | DELETE | Delete attachment |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/presign` | POST | Generate presigned upload URL |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}/download` | GET | Get download URL |
 
 ## 🔧 Configuration
 
