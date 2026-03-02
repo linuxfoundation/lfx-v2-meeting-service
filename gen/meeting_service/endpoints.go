@@ -16,34 +16,46 @@ import (
 
 // Endpoints wraps the "Meeting Service" service endpoints.
 type Endpoints struct {
-	Readyz                          goa.Endpoint
-	Livez                           goa.Endpoint
-	CreateItxMeeting                goa.Endpoint
-	GetItxMeeting                   goa.Endpoint
-	DeleteItxMeeting                goa.Endpoint
-	UpdateItxMeeting                goa.Endpoint
-	GetItxMeetingCount              goa.Endpoint
-	CreateItxRegistrant             goa.Endpoint
-	GetItxRegistrant                goa.Endpoint
-	UpdateItxRegistrant             goa.Endpoint
-	DeleteItxRegistrant             goa.Endpoint
-	GetItxJoinLink                  goa.Endpoint
-	GetItxRegistrantIcs             goa.Endpoint
-	ResendItxRegistrantInvitation   goa.Endpoint
-	ResendItxMeetingInvitations     goa.Endpoint
-	RegisterItxCommitteeMembers     goa.Endpoint
-	UpdateItxOccurrence             goa.Endpoint
-	DeleteItxOccurrence             goa.Endpoint
-	SubmitItxMeetingResponse        goa.Endpoint
-	CreateItxPastMeeting            goa.Endpoint
-	GetItxPastMeeting               goa.Endpoint
-	DeleteItxPastMeeting            goa.Endpoint
-	UpdateItxPastMeeting            goa.Endpoint
-	GetItxPastMeetingSummary        goa.Endpoint
-	UpdateItxPastMeetingSummary     goa.Endpoint
-	CreateItxPastMeetingParticipant goa.Endpoint
-	UpdateItxPastMeetingParticipant goa.Endpoint
-	DeleteItxPastMeetingParticipant goa.Endpoint
+	Readyz                                goa.Endpoint
+	Livez                                 goa.Endpoint
+	CreateItxMeeting                      goa.Endpoint
+	GetItxMeeting                         goa.Endpoint
+	DeleteItxMeeting                      goa.Endpoint
+	UpdateItxMeeting                      goa.Endpoint
+	GetItxMeetingCount                    goa.Endpoint
+	CreateItxRegistrant                   goa.Endpoint
+	GetItxRegistrant                      goa.Endpoint
+	UpdateItxRegistrant                   goa.Endpoint
+	DeleteItxRegistrant                   goa.Endpoint
+	GetItxJoinLink                        goa.Endpoint
+	GetItxRegistrantIcs                   goa.Endpoint
+	ResendItxRegistrantInvitation         goa.Endpoint
+	ResendItxMeetingInvitations           goa.Endpoint
+	RegisterItxCommitteeMembers           goa.Endpoint
+	UpdateItxOccurrence                   goa.Endpoint
+	DeleteItxOccurrence                   goa.Endpoint
+	SubmitItxMeetingResponse              goa.Endpoint
+	CreateItxPastMeeting                  goa.Endpoint
+	GetItxPastMeeting                     goa.Endpoint
+	DeleteItxPastMeeting                  goa.Endpoint
+	UpdateItxPastMeeting                  goa.Endpoint
+	GetItxPastMeetingSummary              goa.Endpoint
+	UpdateItxPastMeetingSummary           goa.Endpoint
+	CreateItxPastMeetingParticipant       goa.Endpoint
+	UpdateItxPastMeetingParticipant       goa.Endpoint
+	DeleteItxPastMeetingParticipant       goa.Endpoint
+	CreateItxMeetingAttachment            goa.Endpoint
+	GetItxMeetingAttachment               goa.Endpoint
+	UpdateItxMeetingAttachment            goa.Endpoint
+	DeleteItxMeetingAttachment            goa.Endpoint
+	CreateItxMeetingAttachmentPresign     goa.Endpoint
+	GetItxMeetingAttachmentDownload       goa.Endpoint
+	CreateItxPastMeetingAttachment        goa.Endpoint
+	GetItxPastMeetingAttachment           goa.Endpoint
+	UpdateItxPastMeetingAttachment        goa.Endpoint
+	DeleteItxPastMeetingAttachment        goa.Endpoint
+	CreateItxPastMeetingAttachmentPresign goa.Endpoint
+	GetItxPastMeetingAttachmentDownload   goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -52,34 +64,46 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		Readyz:                          NewReadyzEndpoint(s),
-		Livez:                           NewLivezEndpoint(s),
-		CreateItxMeeting:                NewCreateItxMeetingEndpoint(s, a.JWTAuth),
-		GetItxMeeting:                   NewGetItxMeetingEndpoint(s, a.JWTAuth),
-		DeleteItxMeeting:                NewDeleteItxMeetingEndpoint(s, a.JWTAuth),
-		UpdateItxMeeting:                NewUpdateItxMeetingEndpoint(s, a.JWTAuth),
-		GetItxMeetingCount:              NewGetItxMeetingCountEndpoint(s, a.JWTAuth),
-		CreateItxRegistrant:             NewCreateItxRegistrantEndpoint(s, a.JWTAuth),
-		GetItxRegistrant:                NewGetItxRegistrantEndpoint(s, a.JWTAuth),
-		UpdateItxRegistrant:             NewUpdateItxRegistrantEndpoint(s, a.JWTAuth),
-		DeleteItxRegistrant:             NewDeleteItxRegistrantEndpoint(s, a.JWTAuth),
-		GetItxJoinLink:                  NewGetItxJoinLinkEndpoint(s, a.JWTAuth),
-		GetItxRegistrantIcs:             NewGetItxRegistrantIcsEndpoint(s, a.JWTAuth),
-		ResendItxRegistrantInvitation:   NewResendItxRegistrantInvitationEndpoint(s, a.JWTAuth),
-		ResendItxMeetingInvitations:     NewResendItxMeetingInvitationsEndpoint(s, a.JWTAuth),
-		RegisterItxCommitteeMembers:     NewRegisterItxCommitteeMembersEndpoint(s, a.JWTAuth),
-		UpdateItxOccurrence:             NewUpdateItxOccurrenceEndpoint(s, a.JWTAuth),
-		DeleteItxOccurrence:             NewDeleteItxOccurrenceEndpoint(s, a.JWTAuth),
-		SubmitItxMeetingResponse:        NewSubmitItxMeetingResponseEndpoint(s, a.JWTAuth),
-		CreateItxPastMeeting:            NewCreateItxPastMeetingEndpoint(s, a.JWTAuth),
-		GetItxPastMeeting:               NewGetItxPastMeetingEndpoint(s, a.JWTAuth),
-		DeleteItxPastMeeting:            NewDeleteItxPastMeetingEndpoint(s, a.JWTAuth),
-		UpdateItxPastMeeting:            NewUpdateItxPastMeetingEndpoint(s, a.JWTAuth),
-		GetItxPastMeetingSummary:        NewGetItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
-		UpdateItxPastMeetingSummary:     NewUpdateItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
-		CreateItxPastMeetingParticipant: NewCreateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
-		UpdateItxPastMeetingParticipant: NewUpdateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
-		DeleteItxPastMeetingParticipant: NewDeleteItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
+		Readyz:                                NewReadyzEndpoint(s),
+		Livez:                                 NewLivezEndpoint(s),
+		CreateItxMeeting:                      NewCreateItxMeetingEndpoint(s, a.JWTAuth),
+		GetItxMeeting:                         NewGetItxMeetingEndpoint(s, a.JWTAuth),
+		DeleteItxMeeting:                      NewDeleteItxMeetingEndpoint(s, a.JWTAuth),
+		UpdateItxMeeting:                      NewUpdateItxMeetingEndpoint(s, a.JWTAuth),
+		GetItxMeetingCount:                    NewGetItxMeetingCountEndpoint(s, a.JWTAuth),
+		CreateItxRegistrant:                   NewCreateItxRegistrantEndpoint(s, a.JWTAuth),
+		GetItxRegistrant:                      NewGetItxRegistrantEndpoint(s, a.JWTAuth),
+		UpdateItxRegistrant:                   NewUpdateItxRegistrantEndpoint(s, a.JWTAuth),
+		DeleteItxRegistrant:                   NewDeleteItxRegistrantEndpoint(s, a.JWTAuth),
+		GetItxJoinLink:                        NewGetItxJoinLinkEndpoint(s, a.JWTAuth),
+		GetItxRegistrantIcs:                   NewGetItxRegistrantIcsEndpoint(s, a.JWTAuth),
+		ResendItxRegistrantInvitation:         NewResendItxRegistrantInvitationEndpoint(s, a.JWTAuth),
+		ResendItxMeetingInvitations:           NewResendItxMeetingInvitationsEndpoint(s, a.JWTAuth),
+		RegisterItxCommitteeMembers:           NewRegisterItxCommitteeMembersEndpoint(s, a.JWTAuth),
+		UpdateItxOccurrence:                   NewUpdateItxOccurrenceEndpoint(s, a.JWTAuth),
+		DeleteItxOccurrence:                   NewDeleteItxOccurrenceEndpoint(s, a.JWTAuth),
+		SubmitItxMeetingResponse:              NewSubmitItxMeetingResponseEndpoint(s, a.JWTAuth),
+		CreateItxPastMeeting:                  NewCreateItxPastMeetingEndpoint(s, a.JWTAuth),
+		GetItxPastMeeting:                     NewGetItxPastMeetingEndpoint(s, a.JWTAuth),
+		DeleteItxPastMeeting:                  NewDeleteItxPastMeetingEndpoint(s, a.JWTAuth),
+		UpdateItxPastMeeting:                  NewUpdateItxPastMeetingEndpoint(s, a.JWTAuth),
+		GetItxPastMeetingSummary:              NewGetItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
+		UpdateItxPastMeetingSummary:           NewUpdateItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
+		CreateItxPastMeetingParticipant:       NewCreateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
+		UpdateItxPastMeetingParticipant:       NewUpdateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
+		DeleteItxPastMeetingParticipant:       NewDeleteItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
+		CreateItxMeetingAttachment:            NewCreateItxMeetingAttachmentEndpoint(s, a.JWTAuth),
+		GetItxMeetingAttachment:               NewGetItxMeetingAttachmentEndpoint(s, a.JWTAuth),
+		UpdateItxMeetingAttachment:            NewUpdateItxMeetingAttachmentEndpoint(s, a.JWTAuth),
+		DeleteItxMeetingAttachment:            NewDeleteItxMeetingAttachmentEndpoint(s, a.JWTAuth),
+		CreateItxMeetingAttachmentPresign:     NewCreateItxMeetingAttachmentPresignEndpoint(s, a.JWTAuth),
+		GetItxMeetingAttachmentDownload:       NewGetItxMeetingAttachmentDownloadEndpoint(s, a.JWTAuth),
+		CreateItxPastMeetingAttachment:        NewCreateItxPastMeetingAttachmentEndpoint(s, a.JWTAuth),
+		GetItxPastMeetingAttachment:           NewGetItxPastMeetingAttachmentEndpoint(s, a.JWTAuth),
+		UpdateItxPastMeetingAttachment:        NewUpdateItxPastMeetingAttachmentEndpoint(s, a.JWTAuth),
+		DeleteItxPastMeetingAttachment:        NewDeleteItxPastMeetingAttachmentEndpoint(s, a.JWTAuth),
+		CreateItxPastMeetingAttachmentPresign: NewCreateItxPastMeetingAttachmentPresignEndpoint(s, a.JWTAuth),
+		GetItxPastMeetingAttachmentDownload:   NewGetItxPastMeetingAttachmentDownloadEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -114,6 +138,18 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CreateItxPastMeetingParticipant = m(e.CreateItxPastMeetingParticipant)
 	e.UpdateItxPastMeetingParticipant = m(e.UpdateItxPastMeetingParticipant)
 	e.DeleteItxPastMeetingParticipant = m(e.DeleteItxPastMeetingParticipant)
+	e.CreateItxMeetingAttachment = m(e.CreateItxMeetingAttachment)
+	e.GetItxMeetingAttachment = m(e.GetItxMeetingAttachment)
+	e.UpdateItxMeetingAttachment = m(e.UpdateItxMeetingAttachment)
+	e.DeleteItxMeetingAttachment = m(e.DeleteItxMeetingAttachment)
+	e.CreateItxMeetingAttachmentPresign = m(e.CreateItxMeetingAttachmentPresign)
+	e.GetItxMeetingAttachmentDownload = m(e.GetItxMeetingAttachmentDownload)
+	e.CreateItxPastMeetingAttachment = m(e.CreateItxPastMeetingAttachment)
+	e.GetItxPastMeetingAttachment = m(e.GetItxPastMeetingAttachment)
+	e.UpdateItxPastMeetingAttachment = m(e.UpdateItxPastMeetingAttachment)
+	e.DeleteItxPastMeetingAttachment = m(e.DeleteItxPastMeetingAttachment)
+	e.CreateItxPastMeetingAttachmentPresign = m(e.CreateItxPastMeetingAttachmentPresign)
+	e.GetItxPastMeetingAttachmentDownload = m(e.GetItxPastMeetingAttachmentDownload)
 }
 
 // NewReadyzEndpoint returns an endpoint function that calls the method
@@ -734,5 +770,292 @@ func NewDeleteItxPastMeetingParticipantEndpoint(s Service, authJWTFn security.Au
 			return nil, err
 		}
 		return nil, s.DeleteItxPastMeetingParticipant(ctx, p)
+	}
+}
+
+// NewCreateItxMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "create-itx-meeting-attachment" of service "Meeting
+// Service".
+func NewCreateItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreateItxMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreateItxMeetingAttachment(ctx, p)
+	}
+}
+
+// NewGetItxMeetingAttachmentEndpoint returns an endpoint function that calls
+// the method "get-itx-meeting-attachment" of service "Meeting Service".
+func NewGetItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxMeetingAttachment(ctx, p)
+	}
+}
+
+// NewUpdateItxMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "update-itx-meeting-attachment" of service "Meeting
+// Service".
+func NewUpdateItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdateItxMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.UpdateItxMeetingAttachment(ctx, p)
+	}
+}
+
+// NewDeleteItxMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "delete-itx-meeting-attachment" of service "Meeting
+// Service".
+func NewDeleteItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeleteItxMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeleteItxMeetingAttachment(ctx, p)
+	}
+}
+
+// NewCreateItxMeetingAttachmentPresignEndpoint returns an endpoint function
+// that calls the method "create-itx-meeting-attachment-presign" of service
+// "Meeting Service".
+func NewCreateItxMeetingAttachmentPresignEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreateItxMeetingAttachmentPresignPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreateItxMeetingAttachmentPresign(ctx, p)
+	}
+}
+
+// NewGetItxMeetingAttachmentDownloadEndpoint returns an endpoint function that
+// calls the method "get-itx-meeting-attachment-download" of service "Meeting
+// Service".
+func NewGetItxMeetingAttachmentDownloadEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxMeetingAttachmentDownloadPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxMeetingAttachmentDownload(ctx, p)
+	}
+}
+
+// NewCreateItxPastMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "create-itx-past-meeting-attachment" of service "Meeting
+// Service".
+func NewCreateItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreateItxPastMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreateItxPastMeetingAttachment(ctx, p)
+	}
+}
+
+// NewGetItxPastMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "get-itx-past-meeting-attachment" of service "Meeting
+// Service".
+func NewGetItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxPastMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxPastMeetingAttachment(ctx, p)
+	}
+}
+
+// NewUpdateItxPastMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "update-itx-past-meeting-attachment" of service "Meeting
+// Service".
+func NewUpdateItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*UpdateItxPastMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.UpdateItxPastMeetingAttachment(ctx, p)
+	}
+}
+
+// NewDeleteItxPastMeetingAttachmentEndpoint returns an endpoint function that
+// calls the method "delete-itx-past-meeting-attachment" of service "Meeting
+// Service".
+func NewDeleteItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*DeleteItxPastMeetingAttachmentPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.DeleteItxPastMeetingAttachment(ctx, p)
+	}
+}
+
+// NewCreateItxPastMeetingAttachmentPresignEndpoint returns an endpoint
+// function that calls the method "create-itx-past-meeting-attachment-presign"
+// of service "Meeting Service".
+func NewCreateItxPastMeetingAttachmentPresignEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*CreateItxPastMeetingAttachmentPresignPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.CreateItxPastMeetingAttachmentPresign(ctx, p)
+	}
+}
+
+// NewGetItxPastMeetingAttachmentDownloadEndpoint returns an endpoint function
+// that calls the method "get-itx-past-meeting-attachment-download" of service
+// "Meeting Service".
+func NewGetItxPastMeetingAttachmentDownloadEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxPastMeetingAttachmentDownloadPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = *p.BearerToken
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxPastMeetingAttachmentDownload(ctx, p)
 	}
 }

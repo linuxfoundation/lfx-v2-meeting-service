@@ -559,6 +559,10 @@ var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
 	Attribute("modified_by", ITXUser, "Last modifier user info")
 })
 
+// ============================================================================
+// Meeting Response Types
+// ============================================================================
+
 // ITXMeetingResponseResult represents the result of submitting a meeting response
 var ITXMeetingResponseResult = Type("ITXMeetingResponseResult", func() {
 	Description("Result of submitting a meeting response through ITX API proxy")
@@ -600,4 +604,157 @@ var ITXMeetingResponseResult = Type("ITXMeetingResponseResult", func() {
 		Example("2021-01-01T00:00:00Z")
 	})
 	Required("id", "meeting_id", "registrant_id", "response", "scope")
+})
+
+// ============================================================================
+// Attachment Types
+// ============================================================================
+
+// ITXMeetingAttachment represents a meeting attachment
+var ITXMeetingAttachment = Type("ITXMeetingAttachment", func() {
+	Description("Meeting attachment from ITX service")
+	Attribute("uid", String, "Attachment ID", func() {
+		Format(FormatUUID)
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+	})
+	Attribute("meeting_id", String, "Meeting ID")
+	Attribute("type", String, "Attachment type", func() {
+		Enum("file", "link")
+		Example("file")
+	})
+	Attribute("category", String, "Attachment category", func() {
+		Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+		Example("Presentation")
+	})
+	Attribute("link", String, "External link URL (for link-type attachments)")
+	Attribute("name", String, "Attachment name or file name")
+	Attribute("description", String, "Optional description of the attachment")
+	Attribute("file_name", String, "File name (for file-type attachments)")
+	Attribute("file_size", Int64, "File size in bytes (for file-type attachments)")
+	Attribute("file_url", String, "S3 key path (for file-type attachments)")
+	Attribute("file_uploaded", Boolean, "Whether the file has been uploaded to S3")
+	Attribute("file_upload_status", String, "Upload status", func() {
+		Enum("ongoing", "completed", "failed")
+		Example("completed")
+	})
+	Attribute("file_content_type", String, "MIME type of the file")
+	Attribute("created_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("created_by", ITXUser, "User who created the attachment")
+	Attribute("updated_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("updated_by", ITXUser, "User who last updated the attachment")
+	Attribute("file_uploaded_by", ITXUser, "User who uploaded the file")
+	Attribute("file_uploaded_at", String, "ISO 8601 timestamp when file was uploaded", func() {
+		Format(FormatDateTime)
+	})
+	Required("uid", "meeting_id", "type", "category", "name")
+})
+
+// ITXPastMeetingAttachment represents a past meeting attachment
+var ITXPastMeetingAttachment = Type("ITXPastMeetingAttachment", func() {
+	Description("Past meeting attachment from ITX service")
+	Attribute("uid", String, "Attachment ID", func() {
+		Format(FormatUUID)
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+	})
+	Attribute("meeting_and_occurrence_id", String, "Past meeting and occurrence ID")
+	Attribute("meeting_id", String, "Meeting ID")
+	Attribute("type", String, "Attachment type", func() {
+		Enum("file", "link")
+		Example("file")
+	})
+	Attribute("category", String, "Attachment category", func() {
+		Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+		Example("Presentation")
+	})
+	Attribute("link", String, "External link URL (for link-type attachments)")
+	Attribute("name", String, "Attachment name or file name")
+	Attribute("description", String, "Optional description of the attachment")
+	Attribute("file_name", String, "File name (for file-type attachments)")
+	Attribute("file_size", Int64, "File size in bytes (for file-type attachments)")
+	Attribute("file_url", String, "S3 key path (for file-type attachments)")
+	Attribute("file_uploaded", Boolean, "Whether the file has been uploaded to S3")
+	Attribute("file_upload_status", String, "Upload status", func() {
+		Enum("ongoing", "completed", "failed")
+		Example("completed")
+	})
+	Attribute("file_content_type", String, "MIME type of the file")
+	Attribute("created_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("created_by", ITXUser, "User who created the attachment")
+	Attribute("updated_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("updated_by", ITXUser, "User who last updated the attachment")
+	Attribute("file_uploaded_by", ITXUser, "User who uploaded the file")
+	Attribute("file_uploaded_at", String, "ISO 8601 timestamp when file was uploaded", func() {
+		Format(FormatDateTime)
+	})
+	Required("uid", "meeting_and_occurrence_id", "meeting_id", "type", "category", "name")
+})
+
+// ITXMeetingAttachmentPresignResponse represents the presigned URL response for meeting attachments
+var ITXMeetingAttachmentPresignResponse = Type("ITXMeetingAttachmentPresignResponse", func() {
+	Description("Presigned URL response for meeting attachment upload")
+	Attribute("uid", String, "Attachment ID", func() {
+		Format(FormatUUID)
+	})
+	Attribute("meeting_id", String, "Meeting ID")
+	Attribute("type", String, "Attachment type (always 'file' for presign)")
+	Attribute("category", String, "Attachment category")
+	Attribute("name", String, "File name")
+	Attribute("description", String, "Description")
+	Attribute("file_name", String, "File name")
+	Attribute("file_size", Int64, "File size in bytes")
+	Attribute("file_url", String, "Presigned S3 PUT URL (valid for 60 minutes)")
+	Attribute("file_upload_status", String, "Upload status (should be 'ongoing')")
+	Attribute("file_content_type", String, "MIME type")
+	Attribute("created_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("created_by", ITXUser, "User who created the attachment")
+	Attribute("updated_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("updated_by", ITXUser, "User who last updated the attachment")
+	Required("uid", "meeting_id", "file_url")
+})
+
+// ITXPastMeetingAttachmentPresignResponse represents the presigned URL response for past meeting attachments
+var ITXPastMeetingAttachmentPresignResponse = Type("ITXPastMeetingAttachmentPresignResponse", func() {
+	Description("Presigned URL response for past meeting attachment upload")
+	Attribute("uid", String, "Attachment ID", func() {
+		Format(FormatUUID)
+	})
+	Attribute("meeting_and_occurrence_id", String, "Meeting ID and occurrence timestamp")
+	Attribute("meeting_id", String, "Meeting ID")
+	Attribute("type", String, "Attachment type (always 'file' for presign)")
+	Attribute("category", String, "Attachment category")
+	Attribute("name", String, "File name")
+	Attribute("description", String, "Description")
+	Attribute("file_name", String, "File name")
+	Attribute("file_size", Int64, "File size in bytes")
+	Attribute("file_url", String, "Presigned S3 PUT URL (valid for 60 minutes)")
+	Attribute("file_upload_status", String, "Upload status (should be 'ongoing')")
+	Attribute("file_content_type", String, "MIME type")
+	Attribute("created_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("created_by", ITXUser, "User who created the attachment")
+	Attribute("updated_at", String, "ISO 8601 timestamp", func() {
+		Format(FormatDateTime)
+	})
+	Attribute("updated_by", ITXUser, "User who last updated the attachment")
+	Required("uid", "meeting_and_occurrence_id", "file_url")
+})
+
+// ITXAttachmentDownloadResponse represents the presigned download URL response
+var ITXAttachmentDownloadResponse = Type("ITXAttachmentDownloadResponse", func() {
+	Description("Presigned URL response for attachment download")
+	Attribute("download_url", String, "Presigned S3 URL for file download (valid for 60 minutes)")
+	Required("download_url")
 })

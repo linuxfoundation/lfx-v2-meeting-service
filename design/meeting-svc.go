@@ -1274,6 +1274,526 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// ============================================================================
+	// ITX Meeting Attachment Methods
+	// ============================================================================
+
+	Method("create-itx-meeting-attachment", func() {
+		Description("Create a meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "Meeting ID", func() {
+				Example("1234567890")
+			})
+			Attribute("type", String, "Attachment type", func() {
+				Enum("file", "link")
+			})
+			Attribute("category", String, "Attachment category", func() {
+				Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+			})
+			Attribute("link", String, "External link URL (required if type is 'link')")
+			Attribute("name", String, "Attachment name", func() {
+				MinLength(1)
+			})
+			Attribute("description", String, "Optional description")
+			Required("meeting_id", "type", "category", "name")
+		})
+
+		Result(ITXMeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/attachments")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-meeting-attachment", func() {
+		Description("Get a meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "Meeting ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Required("meeting_id", "attachment_id")
+		})
+
+		Result(ITXMeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/attachments/{attachment_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-meeting-attachment", func() {
+		Description("Update a meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "Meeting ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Attribute("type", String, "Attachment type", func() {
+				Enum("file", "link")
+			})
+			Attribute("category", String, "Attachment category", func() {
+				Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+			})
+			Attribute("link", String, "External link URL (required if type is 'link')")
+			Attribute("name", String, "Attachment name")
+			Attribute("description", String, "Optional description")
+			Required("meeting_id", "attachment_id", "type", "category", "name")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/meetings/{meeting_id}/attachments/{attachment_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-meeting-attachment", func() {
+		Description("Delete a meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "Meeting ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Required("meeting_id", "attachment_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}/attachments/{attachment_id}")
+			Param("version:v")
+			Param("meeting_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("create-itx-meeting-attachment-presign", func() {
+		Description("Generate presigned URL for meeting attachment upload through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "Meeting ID")
+			Attribute("name", String, "File name")
+			Attribute("description", String, "Optional description")
+			Attribute("category", String, "Attachment category", func() {
+				Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+			})
+			Attribute("file_size", Int64, "File size in bytes")
+			Attribute("file_type", String, "MIME type")
+			Required("meeting_id", "name", "file_size", "file_type")
+		})
+
+		Result(ITXMeetingAttachmentPresignResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/attachments/presign")
+			Param("version:v")
+			Param("meeting_id")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-meeting-attachment-download", func() {
+		Description("Generate presigned URL for meeting attachment download through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "Meeting ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Required("meeting_id", "attachment_id")
+		})
+
+		Result(ITXAttachmentDownloadResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/attachments/{attachment_id}/download")
+			Param("version:v")
+			Param("meeting_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	// ============================================================================
+	// ITX Past Meeting Attachment Methods
+	// ============================================================================
+
+	Method("create-itx-past-meeting-attachment", func() {
+		Description("Create a past meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_and_occurrence_id", String, "Past meeting and occurrence ID")
+			Attribute("type", String, "Attachment type", func() {
+				Enum("file", "link")
+			})
+			Attribute("category", String, "Attachment category", func() {
+				Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+			})
+			Attribute("link", String, "External link URL (required if type is 'link')")
+			Attribute("name", String, "Attachment name", func() {
+				MinLength(1)
+			})
+			Attribute("description", String, "Optional description")
+			Required("meeting_and_occurrence_id", "type", "category", "name")
+		})
+
+		Result(ITXPastMeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/past_meetings/{meeting_and_occurrence_id}/attachments")
+			Param("version:v")
+			Param("meeting_and_occurrence_id")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-past-meeting-attachment", func() {
+		Description("Get a past meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_and_occurrence_id", String, "Past meeting and occurrence ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Required("meeting_and_occurrence_id", "attachment_id")
+		})
+
+		Result(ITXPastMeetingAttachment)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}")
+			Param("version:v")
+			Param("meeting_and_occurrence_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("update-itx-past-meeting-attachment", func() {
+		Description("Update a past meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_and_occurrence_id", String, "Past meeting and occurrence ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Attribute("type", String, "Attachment type", func() {
+				Enum("file", "link")
+			})
+			Attribute("category", String, "Attachment category", func() {
+				Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+			})
+			Attribute("link", String, "External link URL (required if type is 'link')")
+			Attribute("name", String, "Attachment name")
+			Attribute("description", String, "Optional description")
+			Required("meeting_and_occurrence_id", "attachment_id", "type", "category", "name")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			PUT("/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}")
+			Param("version:v")
+			Param("meeting_and_occurrence_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("delete-itx-past-meeting-attachment", func() {
+		Description("Delete a past meeting attachment through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_and_occurrence_id", String, "Past meeting and occurrence ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Required("meeting_and_occurrence_id", "attachment_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}")
+			Param("version:v")
+			Param("meeting_and_occurrence_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("create-itx-past-meeting-attachment-presign", func() {
+		Description("Generate presigned URL for past meeting attachment upload through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_and_occurrence_id", String, "Past meeting and occurrence ID")
+			Attribute("name", String, "File name")
+			Attribute("description", String, "Optional description")
+			Attribute("category", String, "Attachment category", func() {
+				Enum("Meeting Minutes", "Notes", "Presentation", "Other")
+			})
+			Attribute("file_size", Int64, "File size in bytes")
+			Attribute("file_type", String, "MIME type")
+			Required("meeting_and_occurrence_id", "name", "file_size", "file_type")
+		})
+
+		Result(ITXPastMeetingAttachmentPresignResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Past meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/past_meetings/{meeting_and_occurrence_id}/attachments/presign")
+			Param("version:v")
+			Param("meeting_and_occurrence_id")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
+	Method("get-itx-past-meeting-attachment-download", func() {
+		Description("Generate presigned URL for past meeting attachment download through ITX API proxy")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_and_occurrence_id", String, "Past meeting and occurrence ID")
+			Attribute("attachment_id", String, "Attachment ID", func() {
+				Format(FormatUUID)
+			})
+			Required("meeting_and_occurrence_id", "attachment_id")
+		})
+
+		Result(ITXAttachmentDownloadResponse)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Attachment not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}/download")
+			Param("version:v")
+			Param("meeting_and_occurrence_id")
+			Param("attachment_id")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Serve the file gen/http/openapi3.json for requests sent to /openapi.json.
 	Files("/_meetings/openapi.json", "gen/http/openapi.json", func() {
 		Meta("swagger:generate", "false")

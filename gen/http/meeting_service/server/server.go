@@ -19,39 +19,51 @@ import (
 
 // Server lists the Meeting Service service endpoint HTTP handlers.
 type Server struct {
-	Mounts                          []*MountPoint
-	Readyz                          http.Handler
-	Livez                           http.Handler
-	CreateItxMeeting                http.Handler
-	GetItxMeeting                   http.Handler
-	DeleteItxMeeting                http.Handler
-	UpdateItxMeeting                http.Handler
-	GetItxMeetingCount              http.Handler
-	CreateItxRegistrant             http.Handler
-	GetItxRegistrant                http.Handler
-	UpdateItxRegistrant             http.Handler
-	DeleteItxRegistrant             http.Handler
-	GetItxJoinLink                  http.Handler
-	GetItxRegistrantIcs             http.Handler
-	ResendItxRegistrantInvitation   http.Handler
-	ResendItxMeetingInvitations     http.Handler
-	RegisterItxCommitteeMembers     http.Handler
-	UpdateItxOccurrence             http.Handler
-	DeleteItxOccurrence             http.Handler
-	SubmitItxMeetingResponse        http.Handler
-	CreateItxPastMeeting            http.Handler
-	GetItxPastMeeting               http.Handler
-	DeleteItxPastMeeting            http.Handler
-	UpdateItxPastMeeting            http.Handler
-	GetItxPastMeetingSummary        http.Handler
-	UpdateItxPastMeetingSummary     http.Handler
-	CreateItxPastMeetingParticipant http.Handler
-	UpdateItxPastMeetingParticipant http.Handler
-	DeleteItxPastMeetingParticipant http.Handler
-	GenHTTPOpenapiJSON              http.Handler
-	GenHTTPOpenapiYaml              http.Handler
-	GenHTTPOpenapi3JSON             http.Handler
-	GenHTTPOpenapi3Yaml             http.Handler
+	Mounts                                []*MountPoint
+	Readyz                                http.Handler
+	Livez                                 http.Handler
+	CreateItxMeeting                      http.Handler
+	GetItxMeeting                         http.Handler
+	DeleteItxMeeting                      http.Handler
+	UpdateItxMeeting                      http.Handler
+	GetItxMeetingCount                    http.Handler
+	CreateItxRegistrant                   http.Handler
+	GetItxRegistrant                      http.Handler
+	UpdateItxRegistrant                   http.Handler
+	DeleteItxRegistrant                   http.Handler
+	GetItxJoinLink                        http.Handler
+	GetItxRegistrantIcs                   http.Handler
+	ResendItxRegistrantInvitation         http.Handler
+	ResendItxMeetingInvitations           http.Handler
+	RegisterItxCommitteeMembers           http.Handler
+	UpdateItxOccurrence                   http.Handler
+	DeleteItxOccurrence                   http.Handler
+	SubmitItxMeetingResponse              http.Handler
+	CreateItxPastMeeting                  http.Handler
+	GetItxPastMeeting                     http.Handler
+	DeleteItxPastMeeting                  http.Handler
+	UpdateItxPastMeeting                  http.Handler
+	GetItxPastMeetingSummary              http.Handler
+	UpdateItxPastMeetingSummary           http.Handler
+	CreateItxPastMeetingParticipant       http.Handler
+	UpdateItxPastMeetingParticipant       http.Handler
+	DeleteItxPastMeetingParticipant       http.Handler
+	CreateItxMeetingAttachment            http.Handler
+	GetItxMeetingAttachment               http.Handler
+	UpdateItxMeetingAttachment            http.Handler
+	DeleteItxMeetingAttachment            http.Handler
+	CreateItxMeetingAttachmentPresign     http.Handler
+	GetItxMeetingAttachmentDownload       http.Handler
+	CreateItxPastMeetingAttachment        http.Handler
+	GetItxPastMeetingAttachment           http.Handler
+	UpdateItxPastMeetingAttachment        http.Handler
+	DeleteItxPastMeetingAttachment        http.Handler
+	CreateItxPastMeetingAttachmentPresign http.Handler
+	GetItxPastMeetingAttachmentDownload   http.Handler
+	GenHTTPOpenapiJSON                    http.Handler
+	GenHTTPOpenapiYaml                    http.Handler
+	GenHTTPOpenapi3JSON                   http.Handler
+	GenHTTPOpenapi3Yaml                   http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -129,43 +141,67 @@ func New(
 			{"CreateItxPastMeetingParticipant", "POST", "/itx/past_meetings/{past_meeting_id}/participants"},
 			{"UpdateItxPastMeetingParticipant", "PUT", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}"},
 			{"DeleteItxPastMeetingParticipant", "DELETE", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}"},
+			{"CreateItxMeetingAttachment", "POST", "/itx/meetings/{meeting_id}/attachments"},
+			{"GetItxMeetingAttachment", "GET", "/itx/meetings/{meeting_id}/attachments/{attachment_id}"},
+			{"UpdateItxMeetingAttachment", "PUT", "/itx/meetings/{meeting_id}/attachments/{attachment_id}"},
+			{"DeleteItxMeetingAttachment", "DELETE", "/itx/meetings/{meeting_id}/attachments/{attachment_id}"},
+			{"CreateItxMeetingAttachmentPresign", "POST", "/itx/meetings/{meeting_id}/attachments/presign"},
+			{"GetItxMeetingAttachmentDownload", "GET", "/itx/meetings/{meeting_id}/attachments/{attachment_id}/download"},
+			{"CreateItxPastMeetingAttachment", "POST", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments"},
+			{"GetItxPastMeetingAttachment", "GET", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}"},
+			{"UpdateItxPastMeetingAttachment", "PUT", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}"},
+			{"DeleteItxPastMeetingAttachment", "DELETE", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}"},
+			{"CreateItxPastMeetingAttachmentPresign", "POST", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/presign"},
+			{"GetItxPastMeetingAttachmentDownload", "GET", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}/download"},
 			{"Serve gen/http/openapi.json", "GET", "/_meetings/openapi.json"},
 			{"Serve gen/http/openapi.yaml", "GET", "/_meetings/openapi.yaml"},
 			{"Serve gen/http/openapi3.json", "GET", "/_meetings/openapi3.json"},
 			{"Serve gen/http/openapi3.yaml", "GET", "/_meetings/openapi3.yaml"},
 		},
-		Readyz:                          NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
-		Livez:                           NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
-		CreateItxMeeting:                NewCreateItxMeetingHandler(e.CreateItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxMeeting:                   NewGetItxMeetingHandler(e.GetItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxMeeting:                NewDeleteItxMeetingHandler(e.DeleteItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxMeeting:                NewUpdateItxMeetingHandler(e.UpdateItxMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxMeetingCount:              NewGetItxMeetingCountHandler(e.GetItxMeetingCount, mux, decoder, encoder, errhandler, formatter),
-		CreateItxRegistrant:             NewCreateItxRegistrantHandler(e.CreateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		GetItxRegistrant:                NewGetItxRegistrantHandler(e.GetItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxRegistrant:             NewUpdateItxRegistrantHandler(e.UpdateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxRegistrant:             NewDeleteItxRegistrantHandler(e.DeleteItxRegistrant, mux, decoder, encoder, errhandler, formatter),
-		GetItxJoinLink:                  NewGetItxJoinLinkHandler(e.GetItxJoinLink, mux, decoder, encoder, errhandler, formatter),
-		GetItxRegistrantIcs:             NewGetItxRegistrantIcsHandler(e.GetItxRegistrantIcs, mux, decoder, encoder, errhandler, formatter),
-		ResendItxRegistrantInvitation:   NewResendItxRegistrantInvitationHandler(e.ResendItxRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
-		ResendItxMeetingInvitations:     NewResendItxMeetingInvitationsHandler(e.ResendItxMeetingInvitations, mux, decoder, encoder, errhandler, formatter),
-		RegisterItxCommitteeMembers:     NewRegisterItxCommitteeMembersHandler(e.RegisterItxCommitteeMembers, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxOccurrence:             NewUpdateItxOccurrenceHandler(e.UpdateItxOccurrence, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxOccurrence:             NewDeleteItxOccurrenceHandler(e.DeleteItxOccurrence, mux, decoder, encoder, errhandler, formatter),
-		SubmitItxMeetingResponse:        NewSubmitItxMeetingResponseHandler(e.SubmitItxMeetingResponse, mux, decoder, encoder, errhandler, formatter),
-		CreateItxPastMeeting:            NewCreateItxPastMeetingHandler(e.CreateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxPastMeeting:               NewGetItxPastMeetingHandler(e.GetItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxPastMeeting:            NewDeleteItxPastMeetingHandler(e.DeleteItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxPastMeeting:            NewUpdateItxPastMeetingHandler(e.UpdateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
-		GetItxPastMeetingSummary:        NewGetItxPastMeetingSummaryHandler(e.GetItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxPastMeetingSummary:     NewUpdateItxPastMeetingSummaryHandler(e.UpdateItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
-		CreateItxPastMeetingParticipant: NewCreateItxPastMeetingParticipantHandler(e.CreateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
-		UpdateItxPastMeetingParticipant: NewUpdateItxPastMeetingParticipantHandler(e.UpdateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
-		DeleteItxPastMeetingParticipant: NewDeleteItxPastMeetingParticipantHandler(e.DeleteItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
-		GenHTTPOpenapiJSON:              http.FileServer(fileSystemGenHTTPOpenapiJSON),
-		GenHTTPOpenapiYaml:              http.FileServer(fileSystemGenHTTPOpenapiYaml),
-		GenHTTPOpenapi3JSON:             http.FileServer(fileSystemGenHTTPOpenapi3JSON),
-		GenHTTPOpenapi3Yaml:             http.FileServer(fileSystemGenHTTPOpenapi3Yaml),
+		Readyz:                                NewReadyzHandler(e.Readyz, mux, decoder, encoder, errhandler, formatter),
+		Livez:                                 NewLivezHandler(e.Livez, mux, decoder, encoder, errhandler, formatter),
+		CreateItxMeeting:                      NewCreateItxMeetingHandler(e.CreateItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxMeeting:                         NewGetItxMeetingHandler(e.GetItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxMeeting:                      NewDeleteItxMeetingHandler(e.DeleteItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxMeeting:                      NewUpdateItxMeetingHandler(e.UpdateItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxMeetingCount:                    NewGetItxMeetingCountHandler(e.GetItxMeetingCount, mux, decoder, encoder, errhandler, formatter),
+		CreateItxRegistrant:                   NewCreateItxRegistrantHandler(e.CreateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		GetItxRegistrant:                      NewGetItxRegistrantHandler(e.GetItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxRegistrant:                   NewUpdateItxRegistrantHandler(e.UpdateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxRegistrant:                   NewDeleteItxRegistrantHandler(e.DeleteItxRegistrant, mux, decoder, encoder, errhandler, formatter),
+		GetItxJoinLink:                        NewGetItxJoinLinkHandler(e.GetItxJoinLink, mux, decoder, encoder, errhandler, formatter),
+		GetItxRegistrantIcs:                   NewGetItxRegistrantIcsHandler(e.GetItxRegistrantIcs, mux, decoder, encoder, errhandler, formatter),
+		ResendItxRegistrantInvitation:         NewResendItxRegistrantInvitationHandler(e.ResendItxRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
+		ResendItxMeetingInvitations:           NewResendItxMeetingInvitationsHandler(e.ResendItxMeetingInvitations, mux, decoder, encoder, errhandler, formatter),
+		RegisterItxCommitteeMembers:           NewRegisterItxCommitteeMembersHandler(e.RegisterItxCommitteeMembers, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxOccurrence:                   NewUpdateItxOccurrenceHandler(e.UpdateItxOccurrence, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxOccurrence:                   NewDeleteItxOccurrenceHandler(e.DeleteItxOccurrence, mux, decoder, encoder, errhandler, formatter),
+		SubmitItxMeetingResponse:              NewSubmitItxMeetingResponseHandler(e.SubmitItxMeetingResponse, mux, decoder, encoder, errhandler, formatter),
+		CreateItxPastMeeting:                  NewCreateItxPastMeetingHandler(e.CreateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxPastMeeting:                     NewGetItxPastMeetingHandler(e.GetItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxPastMeeting:                  NewDeleteItxPastMeetingHandler(e.DeleteItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxPastMeeting:                  NewUpdateItxPastMeetingHandler(e.UpdateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
+		GetItxPastMeetingSummary:              NewGetItxPastMeetingSummaryHandler(e.GetItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxPastMeetingSummary:           NewUpdateItxPastMeetingSummaryHandler(e.UpdateItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
+		CreateItxPastMeetingParticipant:       NewCreateItxPastMeetingParticipantHandler(e.CreateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxPastMeetingParticipant:       NewUpdateItxPastMeetingParticipantHandler(e.UpdateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxPastMeetingParticipant:       NewDeleteItxPastMeetingParticipantHandler(e.DeleteItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
+		CreateItxMeetingAttachment:            NewCreateItxMeetingAttachmentHandler(e.CreateItxMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		GetItxMeetingAttachment:               NewGetItxMeetingAttachmentHandler(e.GetItxMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxMeetingAttachment:            NewUpdateItxMeetingAttachmentHandler(e.UpdateItxMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxMeetingAttachment:            NewDeleteItxMeetingAttachmentHandler(e.DeleteItxMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		CreateItxMeetingAttachmentPresign:     NewCreateItxMeetingAttachmentPresignHandler(e.CreateItxMeetingAttachmentPresign, mux, decoder, encoder, errhandler, formatter),
+		GetItxMeetingAttachmentDownload:       NewGetItxMeetingAttachmentDownloadHandler(e.GetItxMeetingAttachmentDownload, mux, decoder, encoder, errhandler, formatter),
+		CreateItxPastMeetingAttachment:        NewCreateItxPastMeetingAttachmentHandler(e.CreateItxPastMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		GetItxPastMeetingAttachment:           NewGetItxPastMeetingAttachmentHandler(e.GetItxPastMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		UpdateItxPastMeetingAttachment:        NewUpdateItxPastMeetingAttachmentHandler(e.UpdateItxPastMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		DeleteItxPastMeetingAttachment:        NewDeleteItxPastMeetingAttachmentHandler(e.DeleteItxPastMeetingAttachment, mux, decoder, encoder, errhandler, formatter),
+		CreateItxPastMeetingAttachmentPresign: NewCreateItxPastMeetingAttachmentPresignHandler(e.CreateItxPastMeetingAttachmentPresign, mux, decoder, encoder, errhandler, formatter),
+		GetItxPastMeetingAttachmentDownload:   NewGetItxPastMeetingAttachmentDownloadHandler(e.GetItxPastMeetingAttachmentDownload, mux, decoder, encoder, errhandler, formatter),
+		GenHTTPOpenapiJSON:                    http.FileServer(fileSystemGenHTTPOpenapiJSON),
+		GenHTTPOpenapiYaml:                    http.FileServer(fileSystemGenHTTPOpenapiYaml),
+		GenHTTPOpenapi3JSON:                   http.FileServer(fileSystemGenHTTPOpenapi3JSON),
+		GenHTTPOpenapi3Yaml:                   http.FileServer(fileSystemGenHTTPOpenapi3Yaml),
 	}
 }
 
@@ -202,6 +238,18 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.CreateItxPastMeetingParticipant = m(s.CreateItxPastMeetingParticipant)
 	s.UpdateItxPastMeetingParticipant = m(s.UpdateItxPastMeetingParticipant)
 	s.DeleteItxPastMeetingParticipant = m(s.DeleteItxPastMeetingParticipant)
+	s.CreateItxMeetingAttachment = m(s.CreateItxMeetingAttachment)
+	s.GetItxMeetingAttachment = m(s.GetItxMeetingAttachment)
+	s.UpdateItxMeetingAttachment = m(s.UpdateItxMeetingAttachment)
+	s.DeleteItxMeetingAttachment = m(s.DeleteItxMeetingAttachment)
+	s.CreateItxMeetingAttachmentPresign = m(s.CreateItxMeetingAttachmentPresign)
+	s.GetItxMeetingAttachmentDownload = m(s.GetItxMeetingAttachmentDownload)
+	s.CreateItxPastMeetingAttachment = m(s.CreateItxPastMeetingAttachment)
+	s.GetItxPastMeetingAttachment = m(s.GetItxPastMeetingAttachment)
+	s.UpdateItxPastMeetingAttachment = m(s.UpdateItxPastMeetingAttachment)
+	s.DeleteItxPastMeetingAttachment = m(s.DeleteItxPastMeetingAttachment)
+	s.CreateItxPastMeetingAttachmentPresign = m(s.CreateItxPastMeetingAttachmentPresign)
+	s.GetItxPastMeetingAttachmentDownload = m(s.GetItxPastMeetingAttachmentDownload)
 }
 
 // MethodNames returns the methods served.
@@ -237,6 +285,18 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountCreateItxPastMeetingParticipantHandler(mux, h.CreateItxPastMeetingParticipant)
 	MountUpdateItxPastMeetingParticipantHandler(mux, h.UpdateItxPastMeetingParticipant)
 	MountDeleteItxPastMeetingParticipantHandler(mux, h.DeleteItxPastMeetingParticipant)
+	MountCreateItxMeetingAttachmentHandler(mux, h.CreateItxMeetingAttachment)
+	MountGetItxMeetingAttachmentHandler(mux, h.GetItxMeetingAttachment)
+	MountUpdateItxMeetingAttachmentHandler(mux, h.UpdateItxMeetingAttachment)
+	MountDeleteItxMeetingAttachmentHandler(mux, h.DeleteItxMeetingAttachment)
+	MountCreateItxMeetingAttachmentPresignHandler(mux, h.CreateItxMeetingAttachmentPresign)
+	MountGetItxMeetingAttachmentDownloadHandler(mux, h.GetItxMeetingAttachmentDownload)
+	MountCreateItxPastMeetingAttachmentHandler(mux, h.CreateItxPastMeetingAttachment)
+	MountGetItxPastMeetingAttachmentHandler(mux, h.GetItxPastMeetingAttachment)
+	MountUpdateItxPastMeetingAttachmentHandler(mux, h.UpdateItxPastMeetingAttachment)
+	MountDeleteItxPastMeetingAttachmentHandler(mux, h.DeleteItxPastMeetingAttachment)
+	MountCreateItxPastMeetingAttachmentPresignHandler(mux, h.CreateItxPastMeetingAttachmentPresign)
+	MountGetItxPastMeetingAttachmentDownloadHandler(mux, h.GetItxPastMeetingAttachmentDownload)
 	MountGenHTTPOpenapiJSON(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapiJSON))
 	MountGenHTTPOpenapiYaml(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapiYaml))
 	MountGenHTTPOpenapi3JSON(mux, http.StripPrefix("/_meetings", h.GenHTTPOpenapi3JSON))
@@ -1719,6 +1779,657 @@ func NewDeleteItxPastMeetingParticipantHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "delete-itx-past-meeting-participant")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountCreateItxMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "create-itx-meeting-attachment" endpoint.
+func MountCreateItxMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/itx/meetings/{meeting_id}/attachments", f)
+}
+
+// NewCreateItxMeetingAttachmentHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "create-itx-meeting-attachment" endpoint.
+func NewCreateItxMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreateItxMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeCreateItxMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeCreateItxMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "create-itx-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountGetItxMeetingAttachmentHandler configures the mux to serve the "Meeting
+// Service" service "get-itx-meeting-attachment" endpoint.
+func MountGetItxMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/itx/meetings/{meeting_id}/attachments/{attachment_id}", f)
+}
+
+// NewGetItxMeetingAttachmentHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "get-itx-meeting-attachment" endpoint.
+func NewGetItxMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetItxMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeGetItxMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeGetItxMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-itx-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountUpdateItxMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "update-itx-meeting-attachment" endpoint.
+func MountUpdateItxMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("PUT", "/itx/meetings/{meeting_id}/attachments/{attachment_id}", f)
+}
+
+// NewUpdateItxMeetingAttachmentHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "update-itx-meeting-attachment" endpoint.
+func NewUpdateItxMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeUpdateItxMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeUpdateItxMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeUpdateItxMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "update-itx-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountDeleteItxMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "delete-itx-meeting-attachment" endpoint.
+func MountDeleteItxMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("DELETE", "/itx/meetings/{meeting_id}/attachments/{attachment_id}", f)
+}
+
+// NewDeleteItxMeetingAttachmentHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "delete-itx-meeting-attachment" endpoint.
+func NewDeleteItxMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeDeleteItxMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeDeleteItxMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeDeleteItxMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "delete-itx-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountCreateItxMeetingAttachmentPresignHandler configures the mux to serve
+// the "Meeting Service" service "create-itx-meeting-attachment-presign"
+// endpoint.
+func MountCreateItxMeetingAttachmentPresignHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/itx/meetings/{meeting_id}/attachments/presign", f)
+}
+
+// NewCreateItxMeetingAttachmentPresignHandler creates a HTTP handler which
+// loads the HTTP request and calls the "Meeting Service" service
+// "create-itx-meeting-attachment-presign" endpoint.
+func NewCreateItxMeetingAttachmentPresignHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreateItxMeetingAttachmentPresignRequest(mux, decoder)
+		encodeResponse = EncodeCreateItxMeetingAttachmentPresignResponse(encoder)
+		encodeError    = EncodeCreateItxMeetingAttachmentPresignError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "create-itx-meeting-attachment-presign")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountGetItxMeetingAttachmentDownloadHandler configures the mux to serve the
+// "Meeting Service" service "get-itx-meeting-attachment-download" endpoint.
+func MountGetItxMeetingAttachmentDownloadHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/itx/meetings/{meeting_id}/attachments/{attachment_id}/download", f)
+}
+
+// NewGetItxMeetingAttachmentDownloadHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "get-itx-meeting-attachment-download" endpoint.
+func NewGetItxMeetingAttachmentDownloadHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetItxMeetingAttachmentDownloadRequest(mux, decoder)
+		encodeResponse = EncodeGetItxMeetingAttachmentDownloadResponse(encoder)
+		encodeError    = EncodeGetItxMeetingAttachmentDownloadError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-itx-meeting-attachment-download")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountCreateItxPastMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "create-itx-past-meeting-attachment" endpoint.
+func MountCreateItxPastMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments", f)
+}
+
+// NewCreateItxPastMeetingAttachmentHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "create-itx-past-meeting-attachment" endpoint.
+func NewCreateItxPastMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreateItxPastMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeCreateItxPastMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeCreateItxPastMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "create-itx-past-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountGetItxPastMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "get-itx-past-meeting-attachment" endpoint.
+func MountGetItxPastMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}", f)
+}
+
+// NewGetItxPastMeetingAttachmentHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "get-itx-past-meeting-attachment" endpoint.
+func NewGetItxPastMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetItxPastMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeGetItxPastMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeGetItxPastMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-itx-past-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountUpdateItxPastMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "update-itx-past-meeting-attachment" endpoint.
+func MountUpdateItxPastMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("PUT", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}", f)
+}
+
+// NewUpdateItxPastMeetingAttachmentHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "update-itx-past-meeting-attachment" endpoint.
+func NewUpdateItxPastMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeUpdateItxPastMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeUpdateItxPastMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeUpdateItxPastMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "update-itx-past-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountDeleteItxPastMeetingAttachmentHandler configures the mux to serve the
+// "Meeting Service" service "delete-itx-past-meeting-attachment" endpoint.
+func MountDeleteItxPastMeetingAttachmentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("DELETE", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}", f)
+}
+
+// NewDeleteItxPastMeetingAttachmentHandler creates a HTTP handler which loads
+// the HTTP request and calls the "Meeting Service" service
+// "delete-itx-past-meeting-attachment" endpoint.
+func NewDeleteItxPastMeetingAttachmentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeDeleteItxPastMeetingAttachmentRequest(mux, decoder)
+		encodeResponse = EncodeDeleteItxPastMeetingAttachmentResponse(encoder)
+		encodeError    = EncodeDeleteItxPastMeetingAttachmentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "delete-itx-past-meeting-attachment")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountCreateItxPastMeetingAttachmentPresignHandler configures the mux to
+// serve the "Meeting Service" service
+// "create-itx-past-meeting-attachment-presign" endpoint.
+func MountCreateItxPastMeetingAttachmentPresignHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/presign", f)
+}
+
+// NewCreateItxPastMeetingAttachmentPresignHandler creates a HTTP handler which
+// loads the HTTP request and calls the "Meeting Service" service
+// "create-itx-past-meeting-attachment-presign" endpoint.
+func NewCreateItxPastMeetingAttachmentPresignHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreateItxPastMeetingAttachmentPresignRequest(mux, decoder)
+		encodeResponse = EncodeCreateItxPastMeetingAttachmentPresignResponse(encoder)
+		encodeError    = EncodeCreateItxPastMeetingAttachmentPresignError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "create-itx-past-meeting-attachment-presign")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountGetItxPastMeetingAttachmentDownloadHandler configures the mux to serve
+// the "Meeting Service" service "get-itx-past-meeting-attachment-download"
+// endpoint.
+func MountGetItxPastMeetingAttachmentDownloadHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}/download", f)
+}
+
+// NewGetItxPastMeetingAttachmentDownloadHandler creates a HTTP handler which
+// loads the HTTP request and calls the "Meeting Service" service
+// "get-itx-past-meeting-attachment-download" endpoint.
+func NewGetItxPastMeetingAttachmentDownloadHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetItxPastMeetingAttachmentDownloadRequest(mux, decoder)
+		encodeResponse = EncodeGetItxPastMeetingAttachmentDownloadResponse(encoder)
+		encodeError    = EncodeGetItxPastMeetingAttachmentDownloadError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-itx-past-meeting-attachment-download")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

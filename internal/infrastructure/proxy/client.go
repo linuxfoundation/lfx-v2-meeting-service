@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/auth0/go-auth0/authentication"
 	"github.com/auth0/go-auth0/authentication/oauth"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"golang.org/x/oauth2"
 )
@@ -1384,6 +1386,666 @@ func (c *Client) DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID s
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// ============================================================================
+// Attachment Operations
+// ============================================================================
+
+// CreateMeetingAttachmentPresignURL generates a presigned URL for meeting attachment upload
+func (c *Client) CreateMeetingAttachmentPresignURL(ctx context.Context, meetingID string, req *itx.CreateAttachmentPresignRequest) (*itx.MeetingAttachmentPresignResponse, error) {
+	// Create request body
+	jsonBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/attachments/presign", c.config.BaseURL, meetingID)
+	slog.DebugContext(ctx, "ITX CreateMeetingAttachmentPresignURL request",
+		"method", http.MethodPost,
+		"url", url,
+		"meetingID", meetingID,
+		"request", string(jsonBody))
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX CreateMeetingAttachmentPresignURL request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX CreateMeetingAttachmentPresignURL response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.MeetingAttachmentPresignResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// GetMeetingAttachmentDownloadURL generates a presigned URL for meeting attachment download
+func (c *Client) GetMeetingAttachmentDownloadURL(ctx context.Context, meetingID, attachmentID string) (*itx.AttachmentDownloadResponse, error) {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/attachments/%s/download", c.config.BaseURL, meetingID, attachmentID)
+	slog.DebugContext(ctx, "ITX GetMeetingAttachmentDownloadURL request",
+		"method", http.MethodGet,
+		"url", url,
+		"meetingID", meetingID,
+		"attachmentID", attachmentID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX GetMeetingAttachmentDownloadURL request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX GetMeetingAttachmentDownloadURL response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.AttachmentDownloadResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// CreatePastMeetingAttachmentPresignURL generates a presigned URL for past meeting attachment upload
+func (c *Client) CreatePastMeetingAttachmentPresignURL(ctx context.Context, meetingAndOccurrenceID string, req *itx.CreateAttachmentPresignRequest) (*itx.PastMeetingAttachmentPresignResponse, error) {
+	// Create request body
+	jsonBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attachments/presign", c.config.BaseURL, meetingAndOccurrenceID)
+	slog.DebugContext(ctx, "ITX CreatePastMeetingAttachmentPresignURL request",
+		"method", http.MethodPost,
+		"url", url,
+		"meetingAndOccurrenceID", meetingAndOccurrenceID,
+		"request", string(jsonBody))
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX CreatePastMeetingAttachmentPresignURL request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX CreatePastMeetingAttachmentPresignURL response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.PastMeetingAttachmentPresignResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// GetPastMeetingAttachmentDownloadURL generates a presigned URL for past meeting attachment download
+func (c *Client) GetPastMeetingAttachmentDownloadURL(ctx context.Context, meetingAndOccurrenceID, attachmentID string) (*itx.AttachmentDownloadResponse, error) {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attachments/%s/download", c.config.BaseURL, meetingAndOccurrenceID, attachmentID)
+	slog.DebugContext(ctx, "ITX GetPastMeetingAttachmentDownloadURL request",
+		"method", http.MethodGet,
+		"url", url,
+		"meetingAndOccurrenceID", meetingAndOccurrenceID,
+		"attachmentID", attachmentID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX GetPastMeetingAttachmentDownloadURL request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX GetPastMeetingAttachmentDownloadURL response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.AttachmentDownloadResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// CreateMeetingAttachment creates a new meeting attachment
+func (c *Client) CreateMeetingAttachment(ctx context.Context, meetingID string, req *itx.CreateMeetingAttachmentRequest) (*itx.MeetingAttachment, error) {
+	// Create request body
+	jsonBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/attachments", c.config.BaseURL, meetingID)
+	slog.DebugContext(ctx, "ITX CreateMeetingAttachment request",
+		"method", http.MethodPost,
+		"url", url,
+		"meetingID", meetingID,
+		"request", string(jsonBody))
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX CreateMeetingAttachment request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX CreateMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.MeetingAttachment
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// GetMeetingAttachment retrieves a meeting attachment by ID
+func (c *Client) GetMeetingAttachment(ctx context.Context, meetingID, attachmentID string) (*itx.MeetingAttachment, error) {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/attachments/%s", c.config.BaseURL, meetingID, attachmentID)
+	slog.DebugContext(ctx, "ITX GetMeetingAttachment request",
+		"method", http.MethodGet,
+		"url", url,
+		"meetingID", meetingID,
+		"attachmentID", attachmentID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX GetMeetingAttachment request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX GetMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.MeetingAttachment
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// UpdateMeetingAttachment updates a meeting attachment
+func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachmentID string, req *itx.UpdateMeetingAttachmentRequest) error {
+	// Create request body
+	jsonBody, err := json.Marshal(req)
+	if err != nil {
+		return domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/attachments/%s", c.config.BaseURL, meetingID, attachmentID)
+	slog.DebugContext(ctx, "ITX UpdateMeetingAttachment request",
+		"method", http.MethodPut,
+		"url", url,
+		"meetingID", meetingID,
+		"attachmentID", attachmentID,
+		"request", string(jsonBody))
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX UpdateMeetingAttachment request failed", logging.ErrKey, err)
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX UpdateMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// ITX returns 204 No Content on successful update
+	return nil
+}
+
+// DeleteMeetingAttachment deletes a meeting attachment
+func (c *Client) DeleteMeetingAttachment(ctx context.Context, meetingID, attachmentID string) error {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/attachments/%s", c.config.BaseURL, meetingID, attachmentID)
+	slog.DebugContext(ctx, "ITX DeleteMeetingAttachment request",
+		"method", http.MethodDelete,
+		"url", url,
+		"meetingID", meetingID,
+		"attachmentID", attachmentID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX DeleteMeetingAttachment request failed", logging.ErrKey, err)
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX DeleteMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// CreatePastMeetingAttachment creates a new past meeting attachment
+func (c *Client) CreatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID string, req *itx.CreatePastMeetingAttachmentRequest) (*itx.PastMeetingAttachment, error) {
+	// Create request body
+	jsonBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attachments", c.config.BaseURL, meetingAndOccurrenceID)
+	slog.DebugContext(ctx, "ITX CreatePastMeetingAttachment request",
+		"method", http.MethodPost,
+		"url", url,
+		"meetingAndOccurrenceID", meetingAndOccurrenceID,
+		"request", string(jsonBody))
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX CreatePastMeetingAttachment request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX CreatePastMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.PastMeetingAttachment
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// GetPastMeetingAttachment retrieves a past meeting attachment by ID
+func (c *Client) GetPastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string) (*itx.PastMeetingAttachment, error) {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attachments/%s", c.config.BaseURL, meetingAndOccurrenceID, attachmentID)
+	slog.DebugContext(ctx, "ITX GetPastMeetingAttachment request",
+		"method", http.MethodGet,
+		"url", url,
+		"meetingAndOccurrenceID", meetingAndOccurrenceID,
+		"attachmentID", attachmentID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX GetPastMeetingAttachment request failed", logging.ErrKey, err)
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX GetPastMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Parse response
+	var result itx.PastMeetingAttachment
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse ITX response", err)
+	}
+
+	return &result, nil
+}
+
+// UpdatePastMeetingAttachment updates a past meeting attachment
+func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string, req *itx.UpdatePastMeetingAttachmentRequest) error {
+	// Create request body
+	jsonBody, err := json.Marshal(req)
+	if err != nil {
+		return domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attachments/%s", c.config.BaseURL, meetingAndOccurrenceID, attachmentID)
+	slog.DebugContext(ctx, "ITX UpdatePastMeetingAttachment request",
+		"method", http.MethodPut,
+		"url", url,
+		"meetingAndOccurrenceID", meetingAndOccurrenceID,
+		"attachmentID", attachmentID,
+		"request", string(jsonBody))
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX UpdatePastMeetingAttachment request failed", logging.ErrKey, err)
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX UpdatePastMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// ITX returns 204 No Content on successful update
+	return nil
+}
+
+// DeletePastMeetingAttachment deletes a past meeting attachment
+func (c *Client) DeletePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string) error {
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/attachments/%s", c.config.BaseURL, meetingAndOccurrenceID, attachmentID)
+	slog.DebugContext(ctx, "ITX DeletePastMeetingAttachment request",
+		"method", http.MethodDelete,
+		"url", url,
+		"meetingAndOccurrenceID", meetingAndOccurrenceID,
+		"attachmentID", attachmentID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		slog.DebugContext(ctx, "ITX DeletePastMeetingAttachment request failed", logging.ErrKey, err)
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+
+	slog.DebugContext(ctx, "ITX DeletePastMeetingAttachment response",
+		"statusCode", resp.StatusCode,
+		"response", string(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
