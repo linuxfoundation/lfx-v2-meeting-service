@@ -36,6 +36,7 @@ The ITX Meeting Proxy Service is a lightweight stateless proxy that forwards mee
 │  ┌────────────────────────────────────────────┐         │
 │  │         API Layer (Goa-generated)          │         │
 │  │         /itx/meetings/*                    │         │
+│  │         /itx/meetings/*/responses          │         │
 │  │         /itx/meeting_count                 │         │
 │  └────────────────┬───────────────────────────┘         │
 │                   │                                      │
@@ -374,7 +375,7 @@ app:
 | **Business Logic** | Minimal (format conversion) |
 | **Field Mapping** | Required (uid/id, title/topic, etc.) |
 | **Infrastructure** | HTTP proxy client + OAuth2 |
-| **Features** | Basic CRUD for meetings and registrants |
+| **Features** | CRUD for meetings, registrants, past meetings, and RSVP responses |
 | **State** | Stateless |
 | **Implementation** | ~1500 LOC |
 | **Dependencies** | ITX service, Heimdall (JWT), optional NATS (ID mapping) |

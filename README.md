@@ -303,6 +303,7 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/itx/meetings/{meeting_id}` | PUT | Update meeting |
 | `/itx/meetings/{meeting_id}` | DELETE | Delete meeting |
 | `/itx/meetings/{meeting_id}/join_link` | GET | Get join link for user |
+| `/itx/meetings/{meeting_id}/responses` | POST | Submit meeting RSVP (accepted/declined/maybe) |
 | `/itx/meetings/{meeting_id}/occurrences/{occurrence_id}` | PATCH | Update occurrence |
 | `/itx/meetings/{meeting_id}/occurrences/{occurrence_id}` | DELETE | Delete occurrence |
 | `/itx/meeting_count` | GET | Get meeting count |
