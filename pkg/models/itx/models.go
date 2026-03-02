@@ -446,15 +446,15 @@ type CreateAttendeeRequest struct {
 
 // MeetingResponseRequest represents the request to submit a meeting response
 type MeetingResponseRequest struct {
-	Response     string `json:"response"`                // "accepted", "declined", or "maybe"
-	Scope        string `json:"scope"`                   // "single", "all", or "this_and_following"
+	Response     string `json:"response"`      // "accepted", "declined", or "maybe"
+	Scope        string `json:"scope"`         // "single", "all", or "this_and_following"
 	RegistrantID string `json:"registrant_id"` // UUID of the registrant
 }
 
 // MeetingResponseResult represents the result returned by ITX after submitting a meeting response
 type MeetingResponseResult struct {
 	ID           string `json:"id"`                      // Unique identifier for this response record
-	MeetingUID   string `json:"meeting_uid"`             // The meeting UID this response belongs to
+	MeetingID    string `json:"meeting_id"`              // The meeting UID this response belongs to
 	RegistrantID string `json:"registrant_id"`           // The registrant ID that submitted the response
 	Username     string `json:"username,omitempty"`      // Username of the registrant
 	Email        string `json:"email,omitempty"`         // Email of the registrant
