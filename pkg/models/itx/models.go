@@ -454,7 +454,7 @@ type MeetingResponseRequest struct {
 // MeetingResponseResult represents the result returned by ITX after submitting a meeting response
 type MeetingResponseResult struct {
 	ID           string `json:"id"`                      // Unique identifier for this response record
-	MeetingID    string `json:"meeting_id"`              // The meeting UID this response belongs to
+	MeetingID    string `json:"meeting_id"`              // The meeting ID this response belongs to
 	RegistrantID string `json:"registrant_id"`           // The registrant ID that submitted the response
 	Username     string `json:"username,omitempty"`      // Username of the registrant
 	Email        string `json:"email,omitempty"`         // Email of the registrant

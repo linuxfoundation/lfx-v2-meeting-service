@@ -571,7 +571,7 @@ var ITXMeetingResponseResult = Type("ITXMeetingResponseResult", func() {
 		Format(FormatUUID)
 	})
 	Attribute("meeting_id", String, "The meeting ID this response belongs to", func() {
-		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+		Example("1234567890")
 	})
 	Attribute("registrant_id", String, "The registrant ID that submitted the response", func() {
 		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
