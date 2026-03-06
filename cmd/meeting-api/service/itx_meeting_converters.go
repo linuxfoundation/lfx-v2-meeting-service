@@ -221,3 +221,28 @@ func ptrIfNotZero(i int) *int {
 	}
 	return &i
 }
+
+// ConvertSubmitITXMeetingResponsePayloadToITX converts Goa payload to ITX meeting response request
+func ConvertSubmitITXMeetingResponsePayloadToITX(p *meetingservice.SubmitItxMeetingResponsePayload) *itx.MeetingResponseRequest {
+	return &itx.MeetingResponseRequest{
+		Response:     p.Response,
+		Scope:        p.Scope,
+		RegistrantID: p.RegistrantID,
+	}
+}
+
+// ConvertITXMeetingResponseResultToGoa converts an ITX meeting response result to a Goa response
+func ConvertITXMeetingResponseResultToGoa(r *itx.MeetingResponseResult) *meetingservice.ITXMeetingResponseResult {
+	return &meetingservice.ITXMeetingResponseResult{
+		ID:           r.ID,
+		MeetingID:    r.MeetingID,
+		RegistrantID: r.RegistrantID,
+		Username:     ptrIfNotEmpty(r.Username),
+		Email:        ptrIfNotEmpty(r.Email),
+		Response:     r.Response,
+		Scope:        r.Scope,
+		OccurrenceID: ptrIfNotEmpty(r.OccurrenceID),
+		CreatedAt:    ptrIfNotEmpty(r.CreatedAt),
+		UpdatedAt:    ptrIfNotEmpty(r.UpdatedAt),
+	}
+}

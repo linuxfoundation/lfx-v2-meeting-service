@@ -444,6 +444,27 @@ type CreateAttendeeRequest struct {
 	Sessions              []AttendeeSession `json:"sessions,omitempty"`                // Array of session objects with join/leave times
 }
 
+// MeetingResponseRequest represents the request to submit a meeting response
+type MeetingResponseRequest struct {
+	Response     string `json:"response"`      // "accepted", "declined", or "maybe"
+	Scope        string `json:"scope"`         // "single", "all", or "this_and_following"
+	RegistrantID string `json:"registrant_id"` // UUID of the registrant
+}
+
+// MeetingResponseResult represents the result returned by ITX after submitting a meeting response
+type MeetingResponseResult struct {
+	ID           string `json:"id"`                      // Unique identifier for this response record
+	MeetingID    string `json:"meeting_id"`              // The meeting ID this response belongs to
+	RegistrantID string `json:"registrant_id"`           // The registrant ID that submitted the response
+	Username     string `json:"username,omitempty"`      // Username of the registrant
+	Email        string `json:"email,omitempty"`         // Email of the registrant
+	Response     string `json:"response_value"`          // "accepted", "declined", or "maybe" (ITX field: response_value)
+	Scope        string `json:"scope"`                   // "single", "all", or "this_and_following"
+	OccurrenceID string `json:"occurrence_id,omitempty"` // Specific occurrence ID
+	CreatedAt    string `json:"created_at,omitempty"`    // Creation timestamp (RFC3339)
+	UpdatedAt    string `json:"updated_at,omitempty"`    // Last update timestamp (RFC3339)
+}
+
 // UpdateAttendeeRequest represents the request to update an attendee
 type UpdateAttendeeRequest struct {
 	Org                   string `json:"org,omitempty"`                     // Organization name

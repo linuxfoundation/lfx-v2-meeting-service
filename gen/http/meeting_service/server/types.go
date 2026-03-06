@@ -210,6 +210,20 @@ type UpdateItxOccurrenceRequestBody struct {
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
 }
 
+// SubmitItxMeetingResponseRequestBody is the type of the "Meeting Service"
+// service "submit-itx-meeting-response" endpoint HTTP request body.
+type SubmitItxMeetingResponseRequestBody struct {
+	// The occurrence ID for recurring meetings (concatenated with meeting_id as
+	// meeting_id-occurrence_id when calling ITX)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// The meeting response value
+	Response *string `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
+	// Which occurrences the response applies to
+	Scope *string `form:"scope,omitempty" json:"scope,omitempty" xml:"scope,omitempty"`
+	// ID of the registrant submitting the response
+	RegistrantID *string `form:"registrant_id,omitempty" json:"registrant_id,omitempty" xml:"registrant_id,omitempty"`
+}
+
 // CreateItxPastMeetingRequestBody is the type of the "Meeting Service" service
 // "create-itx-past-meeting" endpoint HTTP request body.
 type CreateItxPastMeetingRequestBody struct {
@@ -683,6 +697,31 @@ type GetItxRegistrantResponseBody struct {
 type GetItxJoinLinkResponseBody struct {
 	// Zoom meeting join URL
 	Link string `form:"link" json:"link" xml:"link"`
+}
+
+// SubmitItxMeetingResponseResponseBody is the type of the "Meeting Service"
+// service "submit-itx-meeting-response" endpoint HTTP response body.
+type SubmitItxMeetingResponseResponseBody struct {
+	// Unique identifier for this response record
+	ID string `form:"id" json:"id" xml:"id"`
+	// The meeting ID this response belongs to
+	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
+	// The registrant ID that submitted the response
+	RegistrantID string `form:"registrant_id" json:"registrant_id" xml:"registrant_id"`
+	// Username of the registrant
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Email of the registrant
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// The response value
+	Response string `form:"response" json:"response" xml:"response"`
+	// Which occurrences the response applies to
+	Scope string `form:"scope" json:"scope" xml:"scope"`
+	// The specific occurrence ID (for single/this_and_following scope)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Creation timestamp (RFC3339)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Last update timestamp (RFC3339)
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
 // CreateItxPastMeetingResponseBody is the type of the "Meeting Service"
@@ -2200,6 +2239,66 @@ type DeleteItxOccurrenceServiceUnavailableResponseBody struct {
 // Service" service "delete-itx-occurrence" endpoint HTTP response body for the
 // "Unauthorized" error.
 type DeleteItxOccurrenceUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseBadRequestResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "BadRequest" error.
+type SubmitItxMeetingResponseBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseForbiddenResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "Forbidden" error.
+type SubmitItxMeetingResponseForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "submit-itx-meeting-response" endpoint HTTP
+// response body for the "InternalServerError" error.
+type SubmitItxMeetingResponseInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseNotFoundResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "NotFound" error.
+type SubmitItxMeetingResponseNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "submit-itx-meeting-response" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type SubmitItxMeetingResponseServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "Unauthorized" error.
+type SubmitItxMeetingResponseUnauthorizedResponseBody struct {
 	// HTTP status code
 	Code string `form:"code" json:"code" xml:"code"`
 	// Error message
@@ -3818,6 +3917,25 @@ func NewGetItxJoinLinkResponseBody(res *meetingservice.ITXZoomMeetingJoinLink) *
 	return body
 }
 
+// NewSubmitItxMeetingResponseResponseBody builds the HTTP response body from
+// the result of the "submit-itx-meeting-response" endpoint of the "Meeting
+// Service" service.
+func NewSubmitItxMeetingResponseResponseBody(res *meetingservice.ITXMeetingResponseResult) *SubmitItxMeetingResponseResponseBody {
+	body := &SubmitItxMeetingResponseResponseBody{
+		ID:           res.ID,
+		MeetingID:    res.MeetingID,
+		RegistrantID: res.RegistrantID,
+		Username:     res.Username,
+		Email:        res.Email,
+		Response:     res.Response,
+		Scope:        res.Scope,
+		OccurrenceID: res.OccurrenceID,
+		CreatedAt:    res.CreatedAt,
+		UpdatedAt:    res.UpdatedAt,
+	}
+	return body
+}
+
 // NewCreateItxPastMeetingResponseBody builds the HTTP response body from the
 // result of the "create-itx-past-meeting" endpoint of the "Meeting Service"
 // service.
@@ -5335,6 +5453,72 @@ func NewDeleteItxOccurrenceServiceUnavailableResponseBody(res *meetingservice.Se
 // Service" service.
 func NewDeleteItxOccurrenceUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *DeleteItxOccurrenceUnauthorizedResponseBody {
 	body := &DeleteItxOccurrenceUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseBadRequestResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseBadRequestResponseBody(res *meetingservice.BadRequestError) *SubmitItxMeetingResponseBadRequestResponseBody {
+	body := &SubmitItxMeetingResponseBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseForbiddenResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseForbiddenResponseBody(res *meetingservice.ForbiddenError) *SubmitItxMeetingResponseForbiddenResponseBody {
+	body := &SubmitItxMeetingResponseForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "submit-itx-meeting-response" endpoint
+// of the "Meeting Service" service.
+func NewSubmitItxMeetingResponseInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *SubmitItxMeetingResponseInternalServerErrorResponseBody {
+	body := &SubmitItxMeetingResponseInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseNotFoundResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseNotFoundResponseBody(res *meetingservice.NotFoundError) *SubmitItxMeetingResponseNotFoundResponseBody {
+	body := &SubmitItxMeetingResponseNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "submit-itx-meeting-response" endpoint
+// of the "Meeting Service" service.
+func NewSubmitItxMeetingResponseServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *SubmitItxMeetingResponseServiceUnavailableResponseBody {
+	body := &SubmitItxMeetingResponseServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseUnauthorizedResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *SubmitItxMeetingResponseUnauthorizedResponseBody {
+	body := &SubmitItxMeetingResponseUnauthorizedResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}
@@ -7079,6 +7263,22 @@ func NewDeleteItxOccurrencePayload(meetingID string, occurrenceID string, versio
 	return v
 }
 
+// NewSubmitItxMeetingResponsePayload builds a Meeting Service service
+// submit-itx-meeting-response endpoint payload.
+func NewSubmitItxMeetingResponsePayload(body *SubmitItxMeetingResponseRequestBody, meetingID string, version *string, bearerToken *string) *meetingservice.SubmitItxMeetingResponsePayload {
+	v := &meetingservice.SubmitItxMeetingResponsePayload{
+		OccurrenceID: body.OccurrenceID,
+		Response:     *body.Response,
+		Scope:        *body.Scope,
+		RegistrantID: *body.RegistrantID,
+	}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
 // NewCreateItxPastMeetingPayload builds a Meeting Service service
 // create-itx-past-meeting endpoint payload.
 func NewCreateItxPastMeetingPayload(body *CreateItxPastMeetingRequestBody, version *string, bearerToken *string) *meetingservice.CreateItxPastMeetingPayload {
@@ -7674,6 +7874,34 @@ func ValidateUpdateItxOccurrenceRequestBody(body *UpdateItxOccurrenceRequestBody
 		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
+	}
+	return
+}
+
+// ValidateSubmitItxMeetingResponseRequestBody runs the validations defined on
+// Submit-Itx-Meeting-ResponseRequestBody
+func ValidateSubmitItxMeetingResponseRequestBody(body *SubmitItxMeetingResponseRequestBody) (err error) {
+	if body.Response == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response", "body"))
+	}
+	if body.Scope == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("scope", "body"))
+	}
+	if body.RegistrantID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("registrant_id", "body"))
+	}
+	if body.Response != nil {
+		if !(*body.Response == "accepted" || *body.Response == "declined" || *body.Response == "maybe") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.response", *body.Response, []any{"accepted", "declined", "maybe"}))
+		}
+	}
+	if body.Scope != nil {
+		if !(*body.Scope == "single" || *body.Scope == "all" || *body.Scope == "this_and_following") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.scope", *body.Scope, []any{"single", "all", "this_and_following"}))
+		}
+	}
+	if body.RegistrantID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.registrant_id", *body.RegistrantID, goa.FormatUUID))
 	}
 	return
 }
