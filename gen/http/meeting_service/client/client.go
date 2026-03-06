@@ -87,6 +87,10 @@ type Client struct {
 	// delete-itx-occurrence endpoint.
 	DeleteItxOccurrenceDoer goahttp.Doer
 
+	// SubmitItxMeetingResponse Doer is the HTTP client used to make requests to
+	// the submit-itx-meeting-response endpoint.
+	SubmitItxMeetingResponseDoer goahttp.Doer
+
 	// CreateItxPastMeeting Doer is the HTTP client used to make requests to the
 	// create-itx-past-meeting endpoint.
 	CreateItxPastMeetingDoer goahttp.Doer
@@ -210,6 +214,7 @@ func NewClient(
 		RegisterItxCommitteeMembersDoer:           doer,
 		UpdateItxOccurrenceDoer:                   doer,
 		DeleteItxOccurrenceDoer:                   doer,
+		SubmitItxMeetingResponseDoer:              doer,
 		CreateItxPastMeetingDoer:                  doer,
 		GetItxPastMeetingDoer:                     doer,
 		DeleteItxPastMeetingDoer:                  doer,
@@ -656,6 +661,30 @@ func (c *Client) DeleteItxOccurrence() goa.Endpoint {
 		resp, err := c.DeleteItxOccurrenceDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-occurrence", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// SubmitItxMeetingResponse returns an endpoint that makes HTTP requests to the
+// Meeting Service service submit-itx-meeting-response server.
+func (c *Client) SubmitItxMeetingResponse() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeSubmitItxMeetingResponseRequest(c.encoder)
+		decodeResponse = DecodeSubmitItxMeetingResponseResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildSubmitItxMeetingResponseRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.SubmitItxMeetingResponseDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "submit-itx-meeting-response", err)
 		}
 		return decodeResponse(resp)
 	}

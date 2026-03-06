@@ -101,6 +101,11 @@ func DeleteItxOccurrenceMeetingServicePath(meetingID string, occurrenceID string
 	return fmt.Sprintf("/itx/meetings/%v/occurrences/%v", meetingID, occurrenceID)
 }
 
+// SubmitItxMeetingResponseMeetingServicePath returns the URL path to the Meeting Service service submit-itx-meeting-response HTTP endpoint.
+func SubmitItxMeetingResponseMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/responses", meetingID)
+}
+
 // CreateItxPastMeetingMeetingServicePath returns the URL path to the Meeting Service service create-itx-past-meeting HTTP endpoint.
 func CreateItxPastMeetingMeetingServicePath() string {
 	return "/itx/past_meetings"

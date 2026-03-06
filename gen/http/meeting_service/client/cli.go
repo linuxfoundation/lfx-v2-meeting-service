@@ -988,6 +988,62 @@ func BuildDeleteItxOccurrencePayload(meetingServiceDeleteItxOccurrenceMeetingID 
 	return v, nil
 }
 
+// BuildSubmitItxMeetingResponsePayload builds the payload for the Meeting
+// Service submit-itx-meeting-response endpoint from CLI flags.
+func BuildSubmitItxMeetingResponsePayload(meetingServiceSubmitItxMeetingResponseBody string, meetingServiceSubmitItxMeetingResponseMeetingID string, meetingServiceSubmitItxMeetingResponseVersion string, meetingServiceSubmitItxMeetingResponseBearerToken string) (*meetingservice.SubmitItxMeetingResponsePayload, error) {
+	var err error
+	var body SubmitItxMeetingResponseRequestBody
+	{
+		err = json.Unmarshal([]byte(meetingServiceSubmitItxMeetingResponseBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"occurrence_id\": \"1772906400000\",\n      \"registrant_id\": \"ea1e8536-a985-4cf5-b981-a170927a1d11\",\n      \"response\": \"accepted\",\n      \"scope\": \"single\"\n   }'")
+		}
+		if !(body.Response == "accepted" || body.Response == "declined" || body.Response == "maybe") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.response", body.Response, []any{"accepted", "declined", "maybe"}))
+		}
+		if !(body.Scope == "single" || body.Scope == "all" || body.Scope == "this_and_following") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.scope", body.Scope, []any{"single", "all", "this_and_following"}))
+		}
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.registrant_id", body.RegistrantID, goa.FormatUUID))
+		if err != nil {
+			return nil, err
+		}
+	}
+	var meetingID string
+	{
+		meetingID = meetingServiceSubmitItxMeetingResponseMeetingID
+	}
+	var version *string
+	{
+		if meetingServiceSubmitItxMeetingResponseVersion != "" {
+			version = &meetingServiceSubmitItxMeetingResponseVersion
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceSubmitItxMeetingResponseBearerToken != "" {
+			bearerToken = &meetingServiceSubmitItxMeetingResponseBearerToken
+		}
+	}
+	v := &meetingservice.SubmitItxMeetingResponsePayload{
+		OccurrenceID: body.OccurrenceID,
+		Response:     body.Response,
+		Scope:        body.Scope,
+		RegistrantID: body.RegistrantID,
+	}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildCreateItxPastMeetingPayload builds the payload for the Meeting Service
 // create-itx-past-meeting endpoint from CLI flags.
 func BuildCreateItxPastMeetingPayload(meetingServiceCreateItxPastMeetingBody string, meetingServiceCreateItxPastMeetingVersion string, meetingServiceCreateItxPastMeetingBearerToken string) (*meetingservice.CreateItxPastMeetingPayload, error) {
