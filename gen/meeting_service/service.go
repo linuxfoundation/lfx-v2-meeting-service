@@ -52,6 +52,9 @@ type Service interface {
 	UpdateItxOccurrence(context.Context, *UpdateItxOccurrencePayload) (err error)
 	// Delete a specific occurrence of a recurring meeting through ITX API proxy
 	DeleteItxOccurrence(context.Context, *DeleteItxOccurrencePayload) (err error)
+	// Submit a meeting response (invite response) for a meeting or occurrence
+	// through ITX API proxy
+	SubmitItxMeetingResponse(context.Context, *SubmitItxMeetingResponsePayload) (res *ITXMeetingResponseResult, err error)
 	// Create a past meeting through ITX API proxy
 	CreateItxPastMeeting(context.Context, *CreateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
 	// Get a past meeting through ITX API proxy
@@ -121,7 +124,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [39]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
+var MethodNames = [40]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -748,6 +751,31 @@ type ITXMeetingCountResponse struct {
 	MeetingCount int
 }
 
+// ITXMeetingResponseResult is the result type of the Meeting Service service
+// submit-itx-meeting-response method.
+type ITXMeetingResponseResult struct {
+	// Unique identifier for this response record
+	ID string
+	// The meeting ID this response belongs to
+	MeetingID string
+	// The registrant ID that submitted the response
+	RegistrantID string
+	// Username of the registrant
+	Username *string
+	// Email of the registrant
+	Email *string
+	// The response value
+	Response string
+	// Which occurrences the response applies to
+	Scope string
+	// The specific occurrence ID (for single/this_and_following scope)
+	OccurrenceID *string
+	// Creation timestamp (RFC3339)
+	CreatedAt *string
+	// Last update timestamp (RFC3339)
+	UpdatedAt *string
+}
+
 // Meeting occurrence from ITX
 type ITXOccurrence struct {
 	// Unix timestamp
@@ -1195,6 +1223,26 @@ type ServiceUnavailableError struct {
 	Code string
 	// Error message
 	Message string
+}
+
+// SubmitItxMeetingResponsePayload is the payload type of the Meeting Service
+// service submit-itx-meeting-response method.
+type SubmitItxMeetingResponsePayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The Zoom meeting ID
+	MeetingID string
+	// The occurrence ID for recurring meetings (concatenated with meeting_id as
+	// meeting_id-occurrence_id when calling ITX)
+	OccurrenceID *string
+	// The meeting response value
+	Response string
+	// Which occurrences the response applies to
+	Scope string
+	// ID of the registrant submitting the response
+	RegistrantID string
 }
 
 // AI-generated summary content for a past meeting
