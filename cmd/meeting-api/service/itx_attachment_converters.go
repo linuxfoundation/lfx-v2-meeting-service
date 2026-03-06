@@ -16,7 +16,6 @@ import (
 func ConvertGoaToITXCreateMeetingAttachment(payload *meetingservice.CreateItxMeetingAttachmentPayload, username string) *itx.CreateMeetingAttachmentRequest {
 	req := &itx.CreateMeetingAttachmentRequest{
 		Type:     payload.Type,
-		Source:   "api",
 		Category: payload.Category,
 		Name:     payload.Name,
 		CreatedBy: &itx.CreatedUpdatedBy{
@@ -153,7 +152,6 @@ func ConvertITXMeetingAttachmentPresignToGoa(resp *itx.MeetingAttachmentPresignR
 func ConvertGoaToITXCreatePastMeetingAttachment(payload *meetingservice.CreateItxPastMeetingAttachmentPayload, username string) *itx.CreatePastMeetingAttachmentRequest {
 	req := &itx.CreatePastMeetingAttachmentRequest{
 		Type:     payload.Type,
-		Source:   "api",
 		Category: payload.Category,
 		Name:     payload.Name,
 		CreatedBy: &itx.CreatedUpdatedBy{

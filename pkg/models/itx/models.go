@@ -566,7 +566,6 @@ type MeetingAttachment struct {
 // CreateMeetingAttachmentRequest represents the request to create a meeting attachment
 type CreateMeetingAttachmentRequest struct {
 	Type        string            `json:"type"`                  // Required: "file" or "link"
-	Source      string            `json:"source,omitempty"`      // "api" or "description"
 	Category    string            `json:"category"`              // Required: "Meeting Minutes", "Notes", "Presentation", "Other"
 	Link        string            `json:"link,omitempty"`        // Required if type is "link"
 	Name        string            `json:"name"`                  // Required: Attachment name
@@ -612,7 +611,6 @@ type PastMeetingAttachment struct {
 // CreatePastMeetingAttachmentRequest represents the request to create a past meeting attachment
 type CreatePastMeetingAttachmentRequest struct {
 	Type        string            `json:"type"`                  // Required: "file" or "link"
-	Source      string            `json:"source,omitempty"`      // "api", "scheduled_meeting_api", or "scheduled_meeting_description"
 	Category    string            `json:"category"`              // Required: "Meeting Minutes", "Notes", "Presentation", "Other"
 	Link        string            `json:"link,omitempty"`        // Required if type is "link"
 	Name        string            `json:"name"`                  // Required: Attachment name
