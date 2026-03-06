@@ -1855,6 +1855,97 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
+    /itx/meetings/{meeting_id}/responses:
+        post:
+            tags:
+                - Meeting Service
+            summary: submit-itx-meeting-response Meeting Service
+            description: Submit a meeting response (invite response) for a meeting or occurrence through ITX API proxy
+            operationId: Meeting Service#submit-itx-meeting-response
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: meeting_id
+                  in: path
+                  description: The Zoom meeting ID
+                  required: true
+                  type: string
+                - name: Authorization
+                  in: header
+                  description: JWT token issued by Heimdall
+                  required: false
+                  type: string
+                - name: Submit-Itx-Meeting-ResponseRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/MeetingServiceSubmitItxMeetingResponseRequestBody'
+                    required:
+                        - response
+                        - scope
+                        - registrant_id
+            responses:
+                "201":
+                    description: Created response.
+                    schema:
+                        $ref: '#/definitions/ITXMeetingResponseResult'
+                        required:
+                            - id
+                            - meeting_id
+                            - registrant_id
+                            - response
+                            - scope
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/BadRequestError'
+                        required:
+                            - code
+                            - message
+                "401":
+                    description: Unauthorized response.
+                    schema:
+                        $ref: '#/definitions/UnauthorizedError'
+                        required:
+                            - code
+                            - message
+                "403":
+                    description: Forbidden response.
+                    schema:
+                        $ref: '#/definitions/ForbiddenError'
+                        required:
+                            - code
+                            - message
+                "404":
+                    description: Not Found response.
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: Service Unavailable response.
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
     /itx/past_meetings:
         post:
             tags:
@@ -3457,6 +3548,80 @@ definitions:
             meeting_count: 42
         required:
             - meeting_count
+    ITXMeetingResponseResult:
+        title: ITXMeetingResponseResult
+        type: object
+        properties:
+            created_at:
+                type: string
+                description: Creation timestamp (RFC3339)
+                example: "2021-01-01T00:00:00Z"
+                format: date-time
+            email:
+                type: string
+                description: Email of the registrant
+                example: john.doe@example.com
+                format: email
+            id:
+                type: string
+                description: Unique identifier for this response record
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
+            meeting_id:
+                type: string
+                description: The meeting ID this response belongs to
+                example: "1234567890"
+            occurrence_id:
+                type: string
+                description: The specific occurrence ID (for single/this_and_following scope)
+                example: "1640995200"
+            registrant_id:
+                type: string
+                description: The registrant ID that submitted the response
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
+            response:
+                type: string
+                description: The response value
+                example: accepted
+                enum:
+                    - accepted
+                    - declined
+                    - maybe
+            scope:
+                type: string
+                description: Which occurrences the response applies to
+                example: all
+                enum:
+                    - single
+                    - all
+                    - this_and_following
+            updated_at:
+                type: string
+                description: Last update timestamp (RFC3339)
+                example: "2021-01-01T00:00:00Z"
+                format: date-time
+            username:
+                type: string
+                description: Username of the registrant
+                example: jdoe
+        example:
+            created_at: "2021-01-01T00:00:00Z"
+            email: john.doe@example.com
+            id: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            meeting_id: "1234567890"
+            occurrence_id: "1640995200"
+            registrant_id: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+            response: accepted
+            scope: all
+            updated_at: "2021-01-01T00:00:00Z"
+            username: jdoe
+        required:
+            - id
+            - meeting_id
+            - registrant_id
+            - response
+            - scope
     ITXOccurrence:
         title: ITXOccurrence
         type: object
@@ -5196,6 +5361,44 @@ definitions:
             exclude_registrant_ids:
                 - reg123
                 - reg456
+    MeetingServiceSubmitItxMeetingResponseRequestBody:
+        title: MeetingServiceSubmitItxMeetingResponseRequestBody
+        type: object
+        properties:
+            occurrence_id:
+                type: string
+                description: The occurrence ID for recurring meetings (concatenated with meeting_id as meeting_id-occurrence_id when calling ITX)
+                example: "1772906400000"
+            registrant_id:
+                type: string
+                description: ID of the registrant submitting the response
+                example: ea1e8536-a985-4cf5-b981-a170927a1d11
+                format: uuid
+            response:
+                type: string
+                description: The meeting response value
+                example: accepted
+                enum:
+                    - accepted
+                    - declined
+                    - maybe
+            scope:
+                type: string
+                description: Which occurrences the response applies to
+                example: single
+                enum:
+                    - single
+                    - all
+                    - this_and_following
+        example:
+            occurrence_id: "1772906400000"
+            registrant_id: ea1e8536-a985-4cf5-b981-a170927a1d11
+            response: accepted
+            scope: single
+        required:
+            - response
+            - scope
+            - registrant_id
     MeetingServiceUpdateItxMeetingAttachmentRequestBody:
         title: MeetingServiceUpdateItxMeetingAttachmentRequestBody
         type: object

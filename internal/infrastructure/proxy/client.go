@@ -797,6 +797,54 @@ func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID s
 	return nil
 }
 
+// SubmitMeetingResponse submits a meeting response (invite response) for a meeting or occurrence via ITX proxy
+func (c *Client) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
+	// Marshal request body
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal request", err)
+	}
+
+	// Create HTTP request
+	url := fmt.Sprintf("%s/v2/zoom/meetings/%s/responses", c.config.BaseURL, url.PathEscape(meetingAndOccurrenceID))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+
+	// Set headers (Authorization automatically added by OAuth2 transport)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	// Execute request
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+
+	// Handle non-2xx status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	// Unmarshal response
+	var result itx.MeetingResponseResult
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to unmarshal response", err)
+	}
+	return &result, nil
+}
+
 // CreatePastMeeting creates a past meeting record via ITX proxy
 func (c *Client) CreatePastMeeting(ctx context.Context, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
 	// Marshal request

@@ -147,6 +147,12 @@ func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurr
 	return s.meetingClient.DeleteOccurrence(ctx, meetingID, occurrenceID)
 }
 
+// SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy
+func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
+	// Call ITX proxy
+	return s.meetingClient.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
+}
+
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{

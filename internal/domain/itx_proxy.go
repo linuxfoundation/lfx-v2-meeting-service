@@ -21,6 +21,7 @@ type ITXMeetingClient interface {
 	RegisterCommitteeMembers(ctx context.Context, meetingID string) error
 	UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error
 	DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error
+	SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error)
 }
 
 // ITXRegistrantClient defines the interface for ITX registrant operations

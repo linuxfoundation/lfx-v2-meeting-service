@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -169,4 +170,23 @@ func (s *MeetingsAPI) DeleteItxOccurrence(ctx context.Context, p *meetingsvc.Del
 	}
 
 	return nil
+}
+
+// SubmitItxMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy
+func (s *MeetingsAPI) SubmitItxMeetingResponse(ctx context.Context, p *meetingsvc.SubmitItxMeetingResponsePayload) (*meetingsvc.ITXMeetingResponseResult, error) {
+	// Build the ITX path param: meeting_id or meeting_id-occurrence_id
+	meetingAndOccurrenceID := p.MeetingID
+	if p.OccurrenceID != nil && *p.OccurrenceID != "" {
+		meetingAndOccurrenceID = fmt.Sprintf("%s-%s", p.MeetingID, *p.OccurrenceID)
+	}
+
+	req := service.ConvertSubmitITXMeetingResponsePayloadToITX(p)
+
+	result, err := s.itxMeetingService.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
+	if err != nil {
+		return nil, handleError(err)
+	}
+	result.MeetingID = p.MeetingID
+
+	return service.ConvertITXMeetingResponseResultToGoa(result), nil
 }
