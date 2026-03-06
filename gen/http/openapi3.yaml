@@ -769,6 +769,7 @@ paths:
                                 link: Velit et sint rem non sunt aut.
                                 meeting_id: Rerum quia sunt voluptatem consequatur quam molestiae.
                                 name: Eum laboriosam molestiae laudantium.
+                                source: api
                                 type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "1982-08-16T03:43:47Z"
@@ -998,6 +999,7 @@ paths:
                                 link: Quam architecto aut.
                                 meeting_id: Pariatur perferendis deleniti alias dolorem est.
                                 name: Ut enim eos accusamus expedita.
+                                source: api
                                 type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "1984-08-18T11:24:49Z"
@@ -3090,6 +3092,7 @@ paths:
                                 meeting_and_occurrence_id: Distinctio assumenda quaerat dolores ex.
                                 meeting_id: Dolor voluptatem nobis sint quia.
                                 name: Ut eaque quia qui.
+                                source: api
                                 type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "1999-10-24T03:09:53Z"
@@ -3320,6 +3323,7 @@ paths:
                                 meeting_and_occurrence_id: Sequi ratione nisi quae quibusdam non laudantium.
                                 meeting_id: Rerum iusto.
                                 name: Vel debitis maiores occaecati.
+                                source: api
                                 type: file
                                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 updated_at: "2012-12-16T18:44:01Z"
@@ -5514,6 +5518,13 @@ components:
                     type: string
                     description: Attachment name or file name
                     example: Illum voluptate quia velit labore.
+                source:
+                    type: string
+                    description: Attachment source origin
+                    example: api
+                    enum:
+                        - api
+                        - description
                 type:
                     type: string
                     description: Attachment type
@@ -5558,6 +5569,7 @@ components:
                 link: Omnis ut pariatur voluptatum fuga at.
                 meeting_id: Sunt exercitationem quis accusantium placeat suscipit.
                 name: Quod qui sit accusantium voluptas mollitia asperiores.
+                source: api
                 type: file
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "1970-05-21T05:28:01Z"
@@ -5862,6 +5874,14 @@ components:
                     type: string
                     description: Attachment name or file name
                     example: Voluptas praesentium et adipisci excepturi.
+                source:
+                    type: string
+                    description: Attachment source origin
+                    example: api
+                    enum:
+                        - api
+                        - scheduled_meeting_api
+                        - scheduled_meeting_description
                 type:
                     type: string
                     description: Attachment type
@@ -5907,6 +5927,7 @@ components:
                 meeting_and_occurrence_id: Dolorum recusandae.
                 meeting_id: Minus sed quae fugiat.
                 name: Id repellendus deleniti error facilis.
+                source: api
                 type: file
                 uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 updated_at: "2008-01-04T07:19:55Z"

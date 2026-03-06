@@ -16,6 +16,7 @@ import (
 func ConvertGoaToITXCreateMeetingAttachment(payload *meetingservice.CreateItxMeetingAttachmentPayload, username string) *itx.CreateMeetingAttachmentRequest {
 	req := &itx.CreateMeetingAttachmentRequest{
 		Type:     payload.Type,
+		Source:   "api",
 		Category: payload.Category,
 		Name:     payload.Name,
 		CreatedBy: &itx.CreatedUpdatedBy{
@@ -84,6 +85,7 @@ func ConvertITXMeetingAttachmentToGoa(resp *itx.MeetingAttachment) *meetingservi
 		UID:              resp.ID,
 		MeetingID:        resp.MeetingID,
 		Type:             resp.Type,
+		Source:           ptrIfNotEmpty(resp.Source),
 		Category:         resp.Category,
 		Name:             resp.Name,
 		FileUploaded:     ptrIfTrue(resp.FileUploaded),
@@ -151,6 +153,7 @@ func ConvertITXMeetingAttachmentPresignToGoa(resp *itx.MeetingAttachmentPresignR
 func ConvertGoaToITXCreatePastMeetingAttachment(payload *meetingservice.CreateItxPastMeetingAttachmentPayload, username string) *itx.CreatePastMeetingAttachmentRequest {
 	req := &itx.CreatePastMeetingAttachmentRequest{
 		Type:     payload.Type,
+		Source:   "api",
 		Category: payload.Category,
 		Name:     payload.Name,
 		CreatedBy: &itx.CreatedUpdatedBy{
@@ -220,6 +223,7 @@ func ConvertITXPastMeetingAttachmentToGoa(resp *itx.PastMeetingAttachment) *meet
 		MeetingAndOccurrenceID: resp.MeetingAndOccurrenceID,
 		MeetingID:              resp.MeetingID,
 		Type:                   resp.Type,
+		Source:                 ptrIfNotEmpty(resp.Source),
 		Category:               resp.Category,
 		Name:                   resp.Name,
 		FileUploaded:           ptrIfTrue(resp.FileUploaded),

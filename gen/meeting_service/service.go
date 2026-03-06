@@ -675,6 +675,8 @@ type ITXMeetingAttachment struct {
 	MeetingID string
 	// Attachment type
 	Type string
+	// Attachment source origin
+	Source *string
 	// Attachment category
 	Category string
 	// External link URL (for link-type attachments)
@@ -801,6 +803,8 @@ type ITXPastMeetingAttachment struct {
 	MeetingID string
 	// Attachment type
 	Type string
+	// Attachment source origin
+	Source *string
 	// Attachment category
 	Category string
 	// External link URL (for link-type attachments)
