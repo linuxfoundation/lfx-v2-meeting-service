@@ -12,6 +12,10 @@ image:
 
 replicaCount: 3
 
+podAnnotations: {}
+
+podLabels: {}
+
 resources:
   # limits define the maximum resources the container can use
   limits:
