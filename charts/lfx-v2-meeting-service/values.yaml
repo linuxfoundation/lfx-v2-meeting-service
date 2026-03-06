@@ -12,6 +12,11 @@ image:
 
 replicaCount: 3
 
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  # maxUnavailable: 1
+
 resources:
   # limits define the maximum resources the container can use
   limits:
