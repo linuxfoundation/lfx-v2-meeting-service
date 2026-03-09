@@ -997,6 +997,8 @@ type CreateItxMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -1040,6 +1042,8 @@ type GetItxMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -1130,6 +1134,8 @@ type CreateItxPastMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -1175,6 +1181,8 @@ type GetItxPastMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -6342,6 +6350,7 @@ func NewCreateItxMeetingAttachmentITXMeetingAttachmentCreated(body *CreateItxMee
 		UID:              *body.UID,
 		MeetingID:        *body.MeetingID,
 		Type:             *body.Type,
+		Source:           body.Source,
 		Category:         *body.Category,
 		Link:             body.Link,
 		Name:             *body.Name,
@@ -6443,6 +6452,7 @@ func NewGetItxMeetingAttachmentITXMeetingAttachmentOK(body *GetItxMeetingAttachm
 		UID:              *body.UID,
 		MeetingID:        *body.MeetingID,
 		Type:             *body.Type,
+		Source:           body.Source,
 		Category:         *body.Category,
 		Link:             body.Link,
 		Name:             *body.Name,
@@ -6853,6 +6863,7 @@ func NewCreateItxPastMeetingAttachmentITXPastMeetingAttachmentCreated(body *Crea
 		MeetingAndOccurrenceID: *body.MeetingAndOccurrenceID,
 		MeetingID:              *body.MeetingID,
 		Type:                   *body.Type,
+		Source:                 body.Source,
 		Category:               *body.Category,
 		Link:                   body.Link,
 		Name:                   *body.Name,
@@ -6956,6 +6967,7 @@ func NewGetItxPastMeetingAttachmentITXPastMeetingAttachmentOK(body *GetItxPastMe
 		MeetingAndOccurrenceID: *body.MeetingAndOccurrenceID,
 		MeetingID:              *body.MeetingID,
 		Type:                   *body.Type,
+		Source:                 body.Source,
 		Category:               *body.Category,
 		Link:                   body.Link,
 		Name:                   *body.Name,
@@ -7917,6 +7929,11 @@ func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttach
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
 		}
 	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "description"}))
+		}
+	}
 	if body.Category != nil {
 		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
@@ -7978,6 +7995,11 @@ func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentRe
 	if body.Type != nil {
 		if !(*body.Type == "file" || *body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "description"}))
 		}
 	}
 	if body.Category != nil {
@@ -8089,6 +8111,11 @@ func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeeti
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
 		}
 	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "scheduled_meeting_api" || *body.Source == "scheduled_meeting_description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "scheduled_meeting_api", "scheduled_meeting_description"}))
+		}
+	}
 	if body.Category != nil {
 		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
@@ -8153,6 +8180,11 @@ func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAtta
 	if body.Type != nil {
 		if !(*body.Type == "file" || *body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "scheduled_meeting_api" || *body.Source == "scheduled_meeting_description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "scheduled_meeting_api", "scheduled_meeting_description"}))
 		}
 	}
 	if body.Category != nil {

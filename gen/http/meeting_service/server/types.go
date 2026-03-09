@@ -997,6 +997,8 @@ type CreateItxMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -1040,6 +1042,8 @@ type GetItxMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -1130,6 +1134,8 @@ type CreateItxPastMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -1175,6 +1181,8 @@ type GetItxPastMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -4166,6 +4174,7 @@ func NewCreateItxMeetingAttachmentResponseBody(res *meetingservice.ITXMeetingAtt
 		UID:              res.UID,
 		MeetingID:        res.MeetingID,
 		Type:             res.Type,
+		Source:           res.Source,
 		Category:         res.Category,
 		Link:             res.Link,
 		Name:             res.Name,
@@ -4200,6 +4209,7 @@ func NewGetItxMeetingAttachmentResponseBody(res *meetingservice.ITXMeetingAttach
 		UID:              res.UID,
 		MeetingID:        res.MeetingID,
 		Type:             res.Type,
+		Source:           res.Source,
 		Category:         res.Category,
 		Link:             res.Link,
 		Name:             res.Name,
@@ -4273,6 +4283,7 @@ func NewCreateItxPastMeetingAttachmentResponseBody(res *meetingservice.ITXPastMe
 		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
 		MeetingID:              res.MeetingID,
 		Type:                   res.Type,
+		Source:                 res.Source,
 		Category:               res.Category,
 		Link:                   res.Link,
 		Name:                   res.Name,
@@ -4308,6 +4319,7 @@ func NewGetItxPastMeetingAttachmentResponseBody(res *meetingservice.ITXPastMeeti
 		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
 		MeetingID:              res.MeetingID,
 		Type:                   res.Type,
+		Source:                 res.Source,
 		Category:               res.Category,
 		Link:                   res.Link,
 		Name:                   res.Name,

@@ -544,6 +544,7 @@ type MeetingAttachment struct {
 	ID               string            `json:"id"`                           // Attachment ID (UUID)
 	MeetingID        string            `json:"meeting_id"`                   // Meeting ID
 	Type             string            `json:"type"`                         // "file" or "link"
+	Source           string            `json:"source,omitempty"`             // "api" or "description"
 	Category         string            `json:"category"`                     // "Meeting Minutes", "Notes", "Presentation", "Other"
 	Link             string            `json:"link,omitempty"`               // External link URL (only for link-type attachments)
 	Name             string            `json:"name"`                         // Attachment name or file name
@@ -588,6 +589,7 @@ type PastMeetingAttachment struct {
 	MeetingAndOccurrenceID string            `json:"meeting_and_occurrence_id"`    // Past meeting and occurrence ID
 	MeetingID              string            `json:"meeting_id"`                   // Meeting ID
 	Type                   string            `json:"type"`                         // "file" or "link"
+	Source                 string            `json:"source,omitempty"`             // "api", "scheduled_meeting_api", or "scheduled_meeting_description"
 	Category               string            `json:"category"`                     // "Meeting Minutes", "Notes", "Presentation", "Other"
 	Link                   string            `json:"link,omitempty"`               // External link URL (only for link-type attachments)
 	Name                   string            `json:"name"`                         // Attachment name or file name
