@@ -3386,6 +3386,13 @@ definitions:
                 type: string
                 description: Attachment name or file name
                 example: Placeat quod voluptatem doloremque fuga qui nihil.
+            source:
+                type: string
+                description: Attachment source origin
+                example: api
+                enum:
+                    - api
+                    - description
             type:
                 type: string
                 description: Attachment type
@@ -3429,6 +3436,7 @@ definitions:
             link: Eum excepturi eligendi reiciendis.
             meeting_id: Non voluptatum inventore quia laboriosam impedit.
             name: Ut enim.
+            source: api
             type: file
             uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             updated_at: "2015-10-09T11:49:17Z"
@@ -3735,6 +3743,14 @@ definitions:
                 type: string
                 description: Attachment name or file name
                 example: Eius quia est expedita neque totam eos.
+            source:
+                type: string
+                description: Attachment source origin
+                example: api
+                enum:
+                    - api
+                    - scheduled_meeting_api
+                    - scheduled_meeting_description
             type:
                 type: string
                 description: Attachment type
@@ -3779,6 +3795,7 @@ definitions:
             meeting_and_occurrence_id: Vel consequatur.
             meeting_id: Quas distinctio.
             name: Non placeat.
+            source: api
             type: file
             uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             updated_at: "1988-09-06T05:05:36Z"
