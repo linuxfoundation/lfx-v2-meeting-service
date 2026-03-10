@@ -27,6 +27,10 @@ func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.ID
 
 // CreateMeeting creates a meeting via ITX proxy
 func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateITXMeetingRequest) (*itx.ZoomMeetingResponse, error) {
+	if err := validateMeetingRequest(req); err != nil {
+		return nil, err
+	}
+
 	// Map v2 UIDs to v1 SFIDs before sending to ITX
 	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
 		return nil, err
@@ -67,6 +71,10 @@ func (s *MeetingService) GetMeeting(ctx context.Context, meetingID string) (*itx
 
 // UpdateMeeting updates a meeting via ITX proxy
 func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, req *models.CreateITXMeetingRequest) error {
+	if err := validateMeetingRequest(req); err != nil {
+		return err
+	}
+
 	// Map v2 UIDs to v1 SFIDs before sending to ITX
 	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
 		return err
@@ -151,6 +159,15 @@ func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurr
 func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
 	// Call ITX proxy
 	return s.meetingClient.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
+}
+
+// validateMeetingRequest validates a meeting create/update request before sending to ITX
+func validateMeetingRequest(req *models.CreateITXMeetingRequest) error {
+	anyFeatureEnabled := req.RecordingEnabled || req.TranscriptEnabled || req.AISummaryEnabled
+	if anyFeatureEnabled && req.ArtifactVisibility == "" {
+		return domain.NewValidationError("artifact_visibility is required when recording, transcript, or ai_summary is enabled")
+	}
+	return nil
 }
 
 // transformToITXRequest transforms domain request to ITX request format
