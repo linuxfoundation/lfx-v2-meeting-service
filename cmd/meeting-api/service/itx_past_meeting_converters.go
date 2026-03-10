@@ -66,7 +66,7 @@ func ConvertUpdatePastMeetingPayload(payload *meetingservice.UpdateItxPastMeetin
 			}
 			req.Committees = append(req.Committees, itx.Committee{
 				ID:      *c.UID,
-				Filters: toCommitteeFilters(c.AllowedVotingStatuses),
+				Filters: utils.CastSlice[itx.CommitteeFilter](c.AllowedVotingStatuses),
 			})
 		}
 	}
@@ -120,7 +120,7 @@ func ConvertCreatePastMeetingPayload(payload *meetingservice.CreateItxPastMeetin
 			}
 			req.Committees = append(req.Committees, itx.Committee{
 				ID:      *c.UID,
-				Filters: toCommitteeFilters(c.AllowedVotingStatuses),
+				Filters: utils.CastSlice[itx.CommitteeFilter](c.AllowedVotingStatuses),
 			})
 		}
 	}
@@ -164,7 +164,7 @@ func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXP
 			uid := c.ID
 			goaResp.Committees[i] = &meetingservice.Committee{
 				UID:                   &uid,
-				AllowedVotingStatuses: fromCommitteeFilters(c.Filters),
+				AllowedVotingStatuses: utils.CastSlice[string](c.Filters),
 			}
 		}
 	}

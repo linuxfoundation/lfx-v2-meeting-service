@@ -37,7 +37,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 			if c != nil {
 				req.Committees[i] = models.Committee{
 					UID:                   utils.StringValue(c.UID),
-					AllowedVotingStatuses: toCommitteeFilters(c.AllowedVotingStatuses),
+					AllowedVotingStatuses: utils.CastSlice[itx.CommitteeFilter](c.AllowedVotingStatuses),
 				}
 			}
 		}
@@ -78,7 +78,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		TranscriptEnabled:    &resp.TranscriptEnabled,
 		YoutubeUploadEnabled: utils.BoolPtrOmitFalse(resp.YoutubeUploadEnabled),
 		AiSummaryEnabled:     &resp.ZoomAIEnabled,
-		ArtifactVisibility:   utils.StringPtrOmitEmpty(string(firstNonEmpty(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess))),
+		ArtifactVisibility:   utils.StringPtrOmitEmpty(string(utils.Coalesce(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess))),
 
 		// Read-only response fields
 		ID:              &resp.ID,
@@ -98,7 +98,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 			id := resp.Committees[i].ID
 			goaResp.Committees[i] = &meetingservice.Committee{
 				UID:                   &id,
-				AllowedVotingStatuses: fromCommitteeFilters(resp.Committees[i].Filters),
+				AllowedVotingStatuses: utils.CastSlice[string](resp.Committees[i].Filters),
 			}
 		}
 	}
@@ -202,37 +202,6 @@ func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePa
 	return req
 }
 
-// Helper functions for pointer conversion
-func toCommitteeFilters(ss []string) []itx.CommitteeFilter {
-	if ss == nil {
-		return nil
-	}
-	out := make([]itx.CommitteeFilter, len(ss))
-	for i, s := range ss {
-		out[i] = itx.CommitteeFilter(s)
-	}
-	return out
-}
-
-func fromCommitteeFilters(fs []itx.CommitteeFilter) []string {
-	if fs == nil {
-		return nil
-	}
-	out := make([]string, len(fs))
-	for i, f := range fs {
-		out[i] = string(f)
-	}
-	return out
-}
-
-func firstNonEmpty[T ~string](vals ...T) T {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
-}
 
 // ConvertSubmitITXMeetingResponsePayloadToITX converts Goa payload to ITX meeting response request
 func ConvertSubmitITXMeetingResponsePayloadToITX(p *meetingservice.SubmitItxMeetingResponsePayload) *itx.MeetingResponseRequest {
