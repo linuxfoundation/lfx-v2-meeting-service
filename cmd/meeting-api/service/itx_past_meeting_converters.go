@@ -6,6 +6,7 @@ package service
 import (
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // ConvertUpdatePastMeetingPayload converts Goa payload to ITX update past meeting request
@@ -131,27 +132,27 @@ func ConvertCreatePastMeetingPayload(payload *meetingservice.CreateItxPastMeetin
 func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXPastZoomMeeting {
 	goaResp := &meetingservice.ITXPastZoomMeeting{
 		// Identifiers
-		ID:           ptrIfNotEmpty(resp.PastMeetingID),
-		MeetingID:    ptrIfNotEmpty(resp.MeetingID),
-		OccurrenceID: ptrIfNotEmpty(resp.OccurrenceID),
+		ID:           utils.StringPtrOmitEmpty(resp.PastMeetingID),
+		MeetingID:    utils.StringPtrOmitEmpty(resp.MeetingID),
+		OccurrenceID: utils.StringPtrOmitEmpty(resp.OccurrenceID),
 
 		// Project association
-		ProjectUID: ptrIfNotEmpty(resp.ProjectID),
+		ProjectUID: utils.StringPtrOmitEmpty(resp.ProjectID),
 
 		// Meeting details
-		Title:       ptrIfNotEmpty(resp.Topic),
-		Description: ptrIfNotEmpty(resp.Agenda),
-		StartTime:   ptrIfNotEmpty(resp.StartTime),
-		Timezone:    ptrIfNotEmpty(resp.Timezone),
+		Title:       utils.StringPtrOmitEmpty(resp.Topic),
+		Description: utils.StringPtrOmitEmpty(resp.Agenda),
+		StartTime:   utils.StringPtrOmitEmpty(resp.StartTime),
+		Timezone:    utils.StringPtrOmitEmpty(resp.Timezone),
 		Duration:    &resp.Duration,
-		Visibility:  ptrIfNotEmpty(string(resp.Visibility)),
+		Visibility:  utils.StringPtrOmitEmpty(string(resp.Visibility)),
 		Restricted:  &resp.Restricted,
-		MeetingType: ptrIfNotEmpty(string(resp.MeetingType)),
+		MeetingType: utils.StringPtrOmitEmpty(string(resp.MeetingType)),
 
 		// Recording/Transcript settings
 		RecordingEnabled:   &resp.RecordingEnabled,
 		TranscriptEnabled:  &resp.TranscriptEnabled,
-		ArtifactVisibility: ptrIfNotEmpty(string(resp.RecordingAccess)),
+		ArtifactVisibility: utils.StringPtrOmitEmpty(string(resp.RecordingAccess)),
 
 		IsManuallyCreated: &resp.IsManuallyCreated,
 	}

@@ -18,6 +18,14 @@ func StringValue(s *string) string {
 	return ""
 }
 
+// StringPtrOmitEmpty returns a pointer to s if s is non-empty, otherwise nil.
+func StringPtrOmitEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 // BoolPtr converts a bool to a pointer to a bool.
 func BoolPtr(b bool) *bool {
 	return &b
@@ -31,6 +39,14 @@ func BoolValue(b *bool) bool {
 	return false
 }
 
+// BoolPtrOmitFalse returns a pointer to b if b is true, otherwise nil.
+func BoolPtrOmitFalse(b bool) *bool {
+	if !b {
+		return nil
+	}
+	return &b
+}
+
 // IntPtr converts an int to a pointer to an int.
 func IntPtr(i int) *int {
 	return &i
@@ -42,6 +58,22 @@ func IntValue(i *int) int {
 		return *i
 	}
 	return 0
+}
+
+// IntPtrOmitZero returns a pointer to i if i is non-zero, otherwise nil.
+func IntPtrOmitZero(i int) *int {
+	if i == 0 {
+		return nil
+	}
+	return &i
+}
+
+// Int64PtrOmitZero returns a pointer to i if i is non-zero, otherwise nil.
+func Int64PtrOmitZero(i int64) *int64 {
+	if i == 0 {
+		return nil
+	}
+	return &i
 }
 
 // TimePtr converts a time.Time to a pointer to a time.Time.

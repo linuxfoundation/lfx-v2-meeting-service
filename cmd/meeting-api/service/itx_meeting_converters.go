@@ -70,15 +70,15 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		Duration:             &resp.Duration,
 		Timezone:             &resp.Timezone,
 		Visibility:           (*string)(&resp.Visibility),
-		Description:          ptrIfNotEmpty(resp.Agenda),
-		Restricted:           ptrIfTrue(resp.Restricted),
-		MeetingType:          ptrIfNotEmpty(string(resp.MeetingType)),
-		EarlyJoinTimeMinutes: ptrIfNotZero(resp.EarlyJoinTime),
+		Description:          utils.StringPtrOmitEmpty(resp.Agenda),
+		Restricted:           utils.BoolPtrOmitFalse(resp.Restricted),
+		MeetingType:          utils.StringPtrOmitEmpty(string(resp.MeetingType)),
+		EarlyJoinTimeMinutes: utils.IntPtrOmitZero(resp.EarlyJoinTime),
 		RecordingEnabled:     &resp.RecordingEnabled,
 		TranscriptEnabled:    &resp.TranscriptEnabled,
-		YoutubeUploadEnabled: ptrIfTrue(resp.YoutubeUploadEnabled),
+		YoutubeUploadEnabled: utils.BoolPtrOmitFalse(resp.YoutubeUploadEnabled),
 		AiSummaryEnabled:     &resp.ZoomAIEnabled,
-		ArtifactVisibility:   ptrIfNotEmpty(string(firstNonEmpty(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess))),
+		ArtifactVisibility:   utils.StringPtrOmitEmpty(string(firstNonEmpty(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess))),
 
 		// Read-only response fields
 		ID:              &resp.ID,
@@ -88,7 +88,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		PublicLink:      &resp.PublicLink,
 		CreatedAt:       &resp.CreatedAt,
 		ModifiedAt:      &resp.ModifiedAt,
-		RegistrantCount: ptrIfNotZero(resp.RegistrantCount),
+		RegistrantCount: utils.IntPtrOmitZero(resp.RegistrantCount),
 	}
 
 	// Convert committees
@@ -106,14 +106,14 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 	// Convert recurrence if present
 	if resp.Recurrence != nil {
 		goaResp.Recurrence = &meetingservice.Recurrence{
-			Type:           ptrIfNotZero(int(resp.Recurrence.Type)),
-			RepeatInterval: ptrIfNotZero(resp.Recurrence.RepeatInterval),
-			WeeklyDays:     ptrIfNotEmpty(resp.Recurrence.WeeklyDays),
-			MonthlyDay:     ptrIfNotZero(resp.Recurrence.MonthlyDay),
-			MonthlyWeek:    ptrIfNotZero(resp.Recurrence.MonthlyWeek),
-			MonthlyWeekDay: ptrIfNotZero(resp.Recurrence.MonthlyWeekDay),
-			EndTimes:       ptrIfNotZero(resp.Recurrence.EndTimes),
-			EndDateTime:    ptrIfNotEmpty(resp.Recurrence.EndDateTime),
+			Type:           utils.IntPtrOmitZero(int(resp.Recurrence.Type)),
+			RepeatInterval: utils.IntPtrOmitZero(resp.Recurrence.RepeatInterval),
+			WeeklyDays:     utils.StringPtrOmitEmpty(resp.Recurrence.WeeklyDays),
+			MonthlyDay:     utils.IntPtrOmitZero(resp.Recurrence.MonthlyDay),
+			MonthlyWeek:    utils.IntPtrOmitZero(resp.Recurrence.MonthlyWeek),
+			MonthlyWeekDay: utils.IntPtrOmitZero(resp.Recurrence.MonthlyWeekDay),
+			EndTimes:       utils.IntPtrOmitZero(resp.Recurrence.EndTimes),
+			EndDateTime:    utils.StringPtrOmitEmpty(resp.Recurrence.EndDateTime),
 		}
 	}
 
@@ -130,7 +130,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 				StartTime:       &startTime,
 				Duration:        &duration,
 				Status:          &status,
-				RegistrantCount: ptrIfNotZero(resp.Occurrences[i].RegistrantCount),
+				RegistrantCount: utils.IntPtrOmitZero(resp.Occurrences[i].RegistrantCount),
 			}
 		}
 	}
@@ -234,27 +234,6 @@ func firstNonEmpty[T ~string](vals ...T) T {
 	return ""
 }
 
-func ptrIfNotEmpty(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func ptrIfTrue(b bool) *bool {
-	if !b {
-		return nil
-	}
-	return &b
-}
-
-func ptrIfNotZero(i int) *int {
-	if i == 0 {
-		return nil
-	}
-	return &i
-}
-
 // ConvertSubmitITXMeetingResponsePayloadToITX converts Goa payload to ITX meeting response request
 func ConvertSubmitITXMeetingResponsePayloadToITX(p *meetingservice.SubmitItxMeetingResponsePayload) *itx.MeetingResponseRequest {
 	return &itx.MeetingResponseRequest{
@@ -270,12 +249,12 @@ func ConvertITXMeetingResponseResultToGoa(r *itx.MeetingResponseResult) *meeting
 		ID:           r.ID,
 		MeetingID:    r.MeetingID,
 		RegistrantID: r.RegistrantID,
-		Username:     ptrIfNotEmpty(r.Username),
-		Email:        ptrIfNotEmpty(r.Email),
+		Username:     utils.StringPtrOmitEmpty(r.Username),
+		Email:        utils.StringPtrOmitEmpty(r.Email),
 		Response:     r.Response,
 		Scope:        r.Scope,
-		OccurrenceID: ptrIfNotEmpty(r.OccurrenceID),
-		CreatedAt:    ptrIfNotEmpty(r.CreatedAt),
-		UpdatedAt:    ptrIfNotEmpty(r.UpdatedAt),
+		OccurrenceID: utils.StringPtrOmitEmpty(r.OccurrenceID),
+		CreatedAt:    utils.StringPtrOmitEmpty(r.CreatedAt),
+		UpdatedAt:    utils.StringPtrOmitEmpty(r.UpdatedAt),
 	}
 }

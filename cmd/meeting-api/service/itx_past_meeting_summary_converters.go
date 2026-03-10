@@ -9,6 +9,7 @@ import (
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // ConvertUpdatePastMeetingSummaryPayload converts V2 Goa payload to ITX update request
@@ -43,18 +44,18 @@ func ConvertPastMeetingSummaryToGoa(resp *itx.PastMeetingSummaryResponse) *meeti
 	summaryData := &meetingservice.SummaryData{
 		StartTime:     resp.SummaryStartTime,
 		EndTime:       resp.SummaryEndTime,
-		Title:         ptrIfNotEmpty(resp.SummaryTitle),
-		Content:       ptrIfNotEmpty(content),
-		DocURL:        ptrIfNotEmpty(""), // ITX doesn't provide doc_url
-		EditedContent: ptrIfNotEmpty(editedContent),
+		Title:         utils.StringPtrOmitEmpty(resp.SummaryTitle),
+		Content:       utils.StringPtrOmitEmpty(content),
+		DocURL:        utils.StringPtrOmitEmpty(""), // ITX doesn't provide doc_url
+		EditedContent: utils.StringPtrOmitEmpty(editedContent),
 	}
 
 	// Build Zoom config if available
 	var zoomConfig *meetingservice.PastMeetingSummaryZoomConfig
 	if resp.MeetingID != "" || resp.ZoomMeetingUUID != "" {
 		zoomConfig = &meetingservice.PastMeetingSummaryZoomConfig{
-			MeetingID:   ptrIfNotEmpty(resp.MeetingID),
-			MeetingUUID: ptrIfNotEmpty(resp.ZoomMeetingUUID),
+			MeetingID:   utils.StringPtrOmitEmpty(resp.MeetingID),
+			MeetingUUID: utils.StringPtrOmitEmpty(resp.ZoomMeetingUUID),
 		}
 	}
 
@@ -64,7 +65,7 @@ func ConvertPastMeetingSummaryToGoa(resp *itx.PastMeetingSummaryResponse) *meeti
 		PastMeetingID:    resp.MeetingAndOccurrenceID,
 		MeetingID:        resp.MeetingID,
 		Platform:         "Zoom",
-		Password:         ptrIfNotEmpty(""),
+		Password:         utils.StringPtrOmitEmpty(""),
 		ZoomConfig:       zoomConfig,
 		SummaryData:      summaryData,
 		RequiresApproval: resp.RequiresApproval,
@@ -219,7 +220,3 @@ func parseContentIntoITXParts(content string) (overview string, details []itx.Zo
 	return overview, details, nextSteps
 }
 
-// Helper function to convert bool to pointer
-func ptrBool(b bool) *bool {
-	return &b
-}
