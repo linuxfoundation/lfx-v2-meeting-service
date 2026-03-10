@@ -74,10 +74,10 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		Restricted:           ptrIfTrue(resp.Restricted),
 		MeetingType:          ptrIfNotEmpty(resp.MeetingType),
 		EarlyJoinTimeMinutes: ptrIfNotZero(resp.EarlyJoinTime),
-		RecordingEnabled:     ptrIfTrue(resp.RecordingEnabled),
-		TranscriptEnabled:    ptrIfTrue(resp.TranscriptEnabled),
+		RecordingEnabled:     &resp.RecordingEnabled,
+		TranscriptEnabled:    &resp.TranscriptEnabled,
 		YoutubeUploadEnabled: ptrIfTrue(resp.YoutubeUploadEnabled),
-		AiSummaryEnabled:     ptrIfTrue(resp.ZoomAIEnabled),
+		AiSummaryEnabled:     &resp.ZoomAIEnabled,
 		ArtifactVisibility:   ptrIfNotEmpty(resp.RecordingAccess),
 
 		// Read-only response fields
