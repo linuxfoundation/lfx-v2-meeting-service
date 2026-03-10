@@ -21,7 +21,7 @@ type CreateZoomMeetingRequest struct {
 	Restricted bool   `json:"restricted,omitempty"`
 
 	// Committee integration
-	Committee        string      `json:"committee,omitempty"`
+	Committee        string      `json:"committee,omitempty"` // deprecated
 	Committees       []Committee `json:"committees,omitempty"`
 	CommitteeFilters []string    `json:"committee_filters,omitempty"`
 
@@ -34,10 +34,10 @@ type CreateZoomMeetingRequest struct {
 	TranscriptEnabled    bool   `json:"transcript_enabled"`          // Required by ITX API
 	RecordingAccess      string `json:"recording_access,omitempty"`  // meeting_hosts, meeting_participants, public
 	TranscriptAccess     string `json:"transcript_access,omitempty"` // meeting_hosts, meeting_participants, public
-	YoutubeUploadEnabled bool   `json:"youtube_upload_enabled,omitempty"`
+	YoutubeUploadEnabled bool   `json:"youtube_upload_enabled"`
 
 	// AI features
-	ZoomAIEnabled            bool   `json:"zoom_ai_enabled,omitempty"`
+	ZoomAIEnabled            bool   `json:"zoom_ai_enabled"`
 	RequireAISummaryApproval bool   `json:"require_ai_summary_approval,omitempty"`
 	AISummaryAccess          string `json:"ai_summary_access,omitempty"` // meeting_hosts, meeting_participants, public
 
