@@ -202,7 +202,6 @@ func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePa
 	return req
 }
 
-
 // ConvertSubmitITXMeetingResponsePayloadToITX converts Goa payload to ITX meeting response request
 func ConvertSubmitITXMeetingResponsePayloadToITX(p *meetingservice.SubmitItxMeetingResponsePayload) *itx.MeetingResponseRequest {
 	return &itx.MeetingResponseRequest{

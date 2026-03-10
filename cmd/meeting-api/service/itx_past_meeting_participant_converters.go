@@ -301,4 +301,3 @@ func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meet
 
 	return goaResp
 }
-

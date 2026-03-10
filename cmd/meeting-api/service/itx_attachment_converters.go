@@ -318,4 +318,3 @@ func convertITXUserToGoa(user *itx.CreatedUpdatedBy) *meetingservice.ITXUser {
 
 	return result
 }
-

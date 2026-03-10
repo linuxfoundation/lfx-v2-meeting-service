@@ -219,4 +219,3 @@ func parseContentIntoITXParts(content string) (overview string, details []itx.Zo
 
 	return overview, details, nextSteps
 }
-

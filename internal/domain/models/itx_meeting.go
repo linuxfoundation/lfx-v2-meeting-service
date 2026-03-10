@@ -7,7 +7,7 @@ import itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 
 // Committee represents a committee associated with a meeting
 type Committee struct {
-	UID                   string   `json:"uid"`
+	UID                   string                `json:"uid"`
 	AllowedVotingStatuses []itx.CommitteeFilter `json:"allowed_voting_statuses,omitempty"`
 }
 
