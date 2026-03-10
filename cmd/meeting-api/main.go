@@ -62,7 +62,6 @@ func run() int {
 		}
 	}()
 
-	// Set up JWT validator needed by the [MeetingsService.JWTAuth] security handler.
 	jwtAuth, err := setupJWTAuth()
 	if err != nil {
 		slog.With(logging.ErrKey, err).Error("error setting up JWT authentication")
@@ -75,9 +74,6 @@ func run() int {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	gracefulCloseWG := sync.WaitGroup{}
-
-	// Initialize services
-	authService := service.NewAuthService(jwtAuth)
 
 	// Initialize ID mapper for v1/v2 ID conversions
 	var idMapper domain.IDMapper
@@ -124,6 +120,7 @@ func run() int {
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper)
 	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxProxyClient)
 	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxProxyClient)
+	authService := service.NewAuthService(jwtAuth)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
 
 	svc := NewMeetingsAPI(
