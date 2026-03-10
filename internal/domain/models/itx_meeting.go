@@ -3,10 +3,12 @@
 
 package models
 
+import itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+
 // Committee represents a committee associated with a meeting
 type Committee struct {
 	UID                   string   `json:"uid"`
-	AllowedVotingStatuses []string `json:"allowed_voting_statuses,omitempty"`
+	AllowedVotingStatuses []itx.CommitteeFilter `json:"allowed_voting_statuses,omitempty"`
 }
 
 type UpdatePastMeetingParticipant struct {
@@ -26,23 +28,23 @@ type CreateITXMeetingRequest struct {
 	StartTime            string // RFC3339 format
 	Duration             int
 	Timezone             string
-	Visibility           string
+	Visibility           itx.MeetingVisibility
 	Description          string
 	Restricted           bool
 	Committees           []Committee
-	MeetingType          string
+	MeetingType          itx.MeetingType
 	EarlyJoinTimeMinutes int
 	RecordingEnabled     bool
 	TranscriptEnabled    bool
 	YoutubeUploadEnabled bool
 	AISummaryEnabled     bool
-	ArtifactVisibility   string
+	ArtifactVisibility   itx.ArtifactAccess
 	Recurrence           *ITXRecurrence
 }
 
 // ITXRecurrence represents recurrence for ITX requests (with string EndDateTime)
 type ITXRecurrence struct {
-	Type           int // 1=Daily, 2=Weekly, 3=Monthly
+	Type           itx.RecurrenceType
 	RepeatInterval int
 	WeeklyDays     string
 	MonthlyDay     int

@@ -50,7 +50,7 @@ func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.
 	goaResp := &meetingservice.ITXZoomMeetingRegistrant{
 		// Read-only fields
 		UID:  ptrIfNotEmpty(resp.ID),
-		Type: ptrIfNotEmpty(resp.Type),
+		Type: ptrIfNotEmpty(string(resp.Type)),
 
 		// Identity fields - map committee_id (ITX) to committee_uid (proxy)
 		CommitteeUID: ptrIfNotEmpty(resp.CommitteeID),
