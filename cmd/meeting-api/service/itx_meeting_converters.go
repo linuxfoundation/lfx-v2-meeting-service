@@ -78,7 +78,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		TranscriptEnabled:    &resp.TranscriptEnabled,
 		YoutubeUploadEnabled: ptrIfTrue(resp.YoutubeUploadEnabled),
 		AiSummaryEnabled:     &resp.ZoomAIEnabled,
-		ArtifactVisibility:   ptrIfNotEmpty(resp.RecordingAccess),
+		ArtifactVisibility:   ptrIfNotEmpty(firstNonEmpty(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess)),
 
 		// Read-only response fields
 		ID:              &resp.ID,
@@ -203,6 +203,15 @@ func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePa
 }
 
 // Helper functions for pointer conversion
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 func ptrIfNotEmpty(s string) *string {
 	if s == "" {
 		return nil

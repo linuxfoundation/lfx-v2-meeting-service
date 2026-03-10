@@ -62,6 +62,7 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		AiSummaryEnabled:     p.AiSummaryEnabled,
 		ArtifactVisibility:   p.ArtifactVisibility,
 		Recurrence:           p.Recurrence,
 	})
