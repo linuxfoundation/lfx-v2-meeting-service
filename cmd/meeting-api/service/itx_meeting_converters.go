@@ -26,6 +26,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		RecordingEnabled:     utils.BoolValue(p.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(p.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(p.YoutubeUploadEnabled),
+		AISummaryEnabled:     utils.BoolValue(p.AiSummaryEnabled),
 		ArtifactVisibility:   utils.StringValue(p.ArtifactVisibility),
 	}
 
@@ -73,10 +74,11 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		Restricted:           ptrIfTrue(resp.Restricted),
 		MeetingType:          ptrIfNotEmpty(resp.MeetingType),
 		EarlyJoinTimeMinutes: ptrIfNotZero(resp.EarlyJoinTime),
-		RecordingEnabled:     ptrIfTrue(resp.RecordingEnabled),
-		TranscriptEnabled:    ptrIfTrue(resp.TranscriptEnabled),
+		RecordingEnabled:     &resp.RecordingEnabled,
+		TranscriptEnabled:    &resp.TranscriptEnabled,
 		YoutubeUploadEnabled: ptrIfTrue(resp.YoutubeUploadEnabled),
-		ArtifactVisibility:   ptrIfNotEmpty(resp.RecordingAccess),
+		AiSummaryEnabled:     &resp.ZoomAIEnabled,
+		ArtifactVisibility:   ptrIfNotEmpty(firstNonEmpty(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess)),
 
 		// Read-only response fields
 		ID:              &resp.ID,
@@ -201,6 +203,15 @@ func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePa
 }
 
 // Helper functions for pointer conversion
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 func ptrIfNotEmpty(s string) *string {
 	if s == "" {
 		return nil
