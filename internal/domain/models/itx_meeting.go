@@ -35,6 +35,7 @@ type CreateITXMeetingRequest struct {
 	RecordingEnabled     bool
 	TranscriptEnabled    bool
 	YoutubeUploadEnabled bool
+	AISummaryEnabled     bool
 	ArtifactVisibility   string
 	Recurrence           *ITXRecurrence
 }

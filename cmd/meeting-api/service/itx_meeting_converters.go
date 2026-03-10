@@ -26,6 +26,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		RecordingEnabled:     utils.BoolValue(p.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(p.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(p.YoutubeUploadEnabled),
+		AISummaryEnabled:     utils.BoolValue(p.AiSummaryEnabled),
 		ArtifactVisibility:   utils.StringValue(p.ArtifactVisibility),
 	}
 
@@ -76,6 +77,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		RecordingEnabled:     ptrIfTrue(resp.RecordingEnabled),
 		TranscriptEnabled:    ptrIfTrue(resp.TranscriptEnabled),
 		YoutubeUploadEnabled: ptrIfTrue(resp.YoutubeUploadEnabled),
+		AiSummaryEnabled:     ptrIfTrue(resp.ZoomAIEnabled),
 		ArtifactVisibility:   ptrIfNotEmpty(resp.RecordingAccess),
 
 		// Read-only response fields

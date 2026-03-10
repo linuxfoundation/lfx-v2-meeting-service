@@ -170,13 +170,20 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		RecordingEnabled:     req.RecordingEnabled,
 		TranscriptEnabled:    req.TranscriptEnabled,
 		YoutubeUploadEnabled: req.YoutubeUploadEnabled,
+		ZoomAIEnabled:        req.AISummaryEnabled,
 	}
 
-	// Map artifact visibility to access controls
+	// Map artifact visibility to access controls only when the respective feature is enabled
 	if req.ArtifactVisibility != "" {
-		itxReq.RecordingAccess = req.ArtifactVisibility
-		itxReq.TranscriptAccess = req.ArtifactVisibility
-		itxReq.AISummaryAccess = req.ArtifactVisibility
+		if req.RecordingEnabled {
+			itxReq.RecordingAccess = req.ArtifactVisibility
+		}
+		if req.TranscriptEnabled {
+			itxReq.TranscriptAccess = req.ArtifactVisibility
+		}
+		if req.AISummaryEnabled {
+			itxReq.AISummaryAccess = req.ArtifactVisibility
+		}
 	}
 
 	// Map committees

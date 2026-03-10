@@ -46,6 +46,8 @@ type CreateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -84,6 +86,8 @@ type UpdateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -507,6 +511,8 @@ type CreateItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -563,6 +569,8 @@ type GetItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -3748,6 +3756,7 @@ func NewCreateItxMeetingRequestBody(p *meetingservice.CreateItxMeetingPayload) *
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		AiSummaryEnabled:     p.AiSummaryEnabled,
 		ArtifactVisibility:   p.ArtifactVisibility,
 	}
 	if p.Committees != nil {
@@ -3783,6 +3792,7 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		AiSummaryEnabled:     p.AiSummaryEnabled,
 		ArtifactVisibility:   p.ArtifactVisibility,
 	}
 	if p.Committees != nil {
@@ -4162,6 +4172,7 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 		ID:                   body.ID,
 		HostKey:              body.HostKey,
@@ -4282,6 +4293,7 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 		ID:                   body.ID,
 		HostKey:              body.HostKey,
