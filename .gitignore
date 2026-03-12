@@ -96,6 +96,7 @@ docker-compose.override.yml
 docker-compose.local.yml
 values.local.yaml
 *.pid
+*private.key*
 
 # NATS related
 nats-server.log

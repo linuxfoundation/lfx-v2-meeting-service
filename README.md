@@ -42,6 +42,7 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
    ```
 
    Required environment variables:
+
    ```bash
    ITX_ENABLED=true
    ITX_BASE_URL=https://api.dev.itx.linuxfoundation.org
@@ -249,19 +250,40 @@ make test-coverage
 
 ### Helm Chart
 
-The service includes a Helm chart for Kubernetes deployment:
+The service includes a Helm chart for Kubernetes deployment.
+
+#### Prerequisites: Kubernetes Secret
+
+Before installing the chart, create the `meeting-secrets` secret in the `lfx` namespace. The `auth0_client_id` and `auth0_client_private_key` values are in 1Password under the **LFX V2** vault, in the note **LFX Platform Chart Values Secrets - Local Development**.
+
+```bash
+kubectl create secret generic meeting-secrets -n lfx \
+  --from-literal=auth0_client_id="<client-id-from-1password>" \
+  --from-file=auth0_client_private_key=./path/to/private.key
+```
+
+#### Installing the Chart
+
+The `values.yaml` file contains default local development values. If you don't need to override anything, install directly:
 
 ```bash
 # Install with default values
 make helm-install
 
-# Install with custom values
+# Or using Helm directly
+helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service --namespace lfx
+```
+
+If you need to override values (e.g., different ITX environment, custom credentials), create a `values.local.yaml` file alongside `values.yaml` (it is gitignored) and install with:
+
+```bash
+# Install with local values override
+make helm-install-local
+
+# Or using Helm directly
 helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --namespace lfx \
-  --values custom-values.yaml
-
-# View templates
-make helm-templates
+  --values ./charts/lfx-v2-meeting-service/values.local.yaml
 ```
 
 ### Docker
@@ -292,12 +314,14 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 ### Available Endpoints
 
 #### Health Checks
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/livez` | GET | Liveness check |
 | `/readyz` | GET | Readiness check |
 
 #### ITX Meeting Operations
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/itx/meetings` | POST | Create meeting via ITX |
