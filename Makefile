@@ -188,13 +188,13 @@ docker-build:
 # Install Helm chart
 helm-install:
 	@echo "==> Installing Helm chart..."
-	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE)
+	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --create-namespace
 	@echo "==> Helm chart installed: $(HELM_RELEASE_NAME)"
 
 # Install Helm chart with local values override (values.local.yaml is gitignored)
 helm-install-local:
 	@echo "==> Installing Helm chart with local values override..."
-	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) -f $(HELM_LOCAL_VALUES_FILE)
+	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --create-namespace -f $(HELM_LOCAL_VALUES_FILE)
 	@echo "==> Helm chart installed: $(HELM_RELEASE_NAME)"
 
 # Print templates for Helm chart

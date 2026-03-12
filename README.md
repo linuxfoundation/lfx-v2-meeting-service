@@ -252,6 +252,14 @@ make test-coverage
 
 The service includes a Helm chart for Kubernetes deployment.
 
+#### Prerequisites: Docker Image
+
+The Helm chart pulls from the local Docker image `linuxfoundation/lfx-v2-meeting-service`. Run the following whenever you need to update the build:
+
+```bash
+make docker-build
+```
+
 #### Prerequisites: Kubernetes Secret
 
 Before installing the chart, create the `meeting-secrets` secret in the `lfx` namespace. The `auth0_client_id` and `auth0_client_private_key` values are in 1Password under the **LFX V2** vault, in the note **LFX Platform Chart Values Secrets - Local Development**.
@@ -271,7 +279,9 @@ The `values.yaml` file contains default local development values. If you don't n
 make helm-install
 
 # Or using Helm directly
-helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service --namespace lfx
+helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
+  --namespace lfx \
+  --create-namespace
 ```
 
 If you need to override values (e.g., different ITX environment, custom credentials), create a `values.local.yaml` file alongside `values.yaml` (it is gitignored) and install with:
@@ -283,6 +293,7 @@ make helm-install-local
 # Or using Helm directly
 helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --namespace lfx \
+  --create-namespace \
   --values ./charts/lfx-v2-meeting-service/values.local.yaml
 ```
 
