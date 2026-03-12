@@ -126,6 +126,7 @@ app:
     # If ID_MAPPING_DISABLED=true, this is not used
     NATS_URL:
       value: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
+
     # OTEL_SERVICE_NAME is the service name for OpenTelemetry resource identification
     # (default: "lfx-v2-meeting-service")
     # OTEL_SERVICE_NAME:
