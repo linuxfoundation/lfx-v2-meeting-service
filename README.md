@@ -252,14 +252,6 @@ make test-coverage
 
 The service includes a Helm chart for Kubernetes deployment.
 
-#### Prerequisites: Docker Image
-
-The Helm chart pulls from the local Docker image `linuxfoundation/lfx-v2-meeting-service`. Run the following whenever you need to update the build:
-
-```bash
-make docker-build
-```
-
 #### Prerequisites: Kubernetes Secret
 
 Before installing the chart, create the `meeting-secrets` secret in the `lfx` namespace. The `auth0_client_id` and `auth0_client_private_key` values are in 1Password under the **LFX V2** vault, in the note **LFX Platform Chart Values Secrets - Local Development**.
@@ -272,7 +264,7 @@ kubectl create secret generic meeting-secrets -n lfx \
 
 #### Installing the Chart
 
-The `values.yaml` file contains default local development values. If you don't need to override anything, install directly:
+By default, `values.yaml` pulls the service image from `ghcr.io`. This is the standard path when you are not making changes to the service code:
 
 ```bash
 # Install with default values
@@ -284,10 +276,22 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --create-namespace
 ```
 
-If you need to override values (e.g., different ITX environment, custom credentials), create a `values.local.yaml` file alongside `values.yaml` (it is gitignored) and install with:
+#### Developing Locally with Code Changes
+
+If you are making changes to the service code, you need to build the image locally and install the chart using a local values override that points to the local image. First, copy the example local values file (it is gitignored):
 
 ```bash
-# Install with local values override
+cp charts/lfx-v2-meeting-service/values.local.yaml.example \
+   charts/lfx-v2-meeting-service/values.local.yaml
+```
+
+Then, whenever you want to apply your changes:
+
+```bash
+# Build the local image
+make docker-build
+
+# Install/upgrade the chart using the local image
 make helm-install-local
 
 # Or using Helm directly
