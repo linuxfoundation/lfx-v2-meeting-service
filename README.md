@@ -262,12 +262,11 @@ kubectl create secret generic meeting-secrets -n lfx \
   --from-file=auth0_client_private_key=./path/to/private.key
 ```
 
-#### Installing the Chart
+#### Option 1: Install from GHCR (no local code changes)
 
-By default, `values.yaml` pulls the service image from `ghcr.io`. This is the standard path when you are not making changes to the service code:
+Use this if you just want to run the service without modifying its code. The image is pulled directly from the container registry:
 
 ```bash
-# Install with default values
 make helm-install
 
 # Or using Helm directly
@@ -276,19 +275,19 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --create-namespace
 ```
 
-#### Developing Locally with Code Changes
+#### Option 2: Install from a Local Build (active development)
 
-If you are making changes to the service code, you need to build the image locally and install the chart using a local values override that points to the local image. First, copy the example local values file (it is gitignored):
+Use this if you are making changes to the service code. First, copy the example local values file (it is gitignored):
 
 ```bash
 cp charts/lfx-v2-meeting-service/values.local.example.yaml \
    charts/lfx-v2-meeting-service/values.local.yaml
 ```
 
-Then, whenever you want to apply your changes:
+Then, whenever you make a code change and want to apply it:
 
 ```bash
-# Build the local image
+# Rebuild the local image
 make docker-build
 
 # Install/upgrade the chart using the local image
