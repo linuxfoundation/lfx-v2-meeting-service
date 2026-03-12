@@ -82,9 +82,17 @@ The service follows a clean architecture pattern with:
 ### Docker & Deployment
 
 - `make docker-build` - Build Docker image
-- `make helm-install` - Install Helm chart to lfx namespace
+- `make helm-install` - Install Helm chart to lfx namespace (uses `values.yaml`, pulls from ghcr)
+- `make helm-install-local` - Install Helm chart using `values.local.yaml` override (uses local Docker image)
 - `make helm-templates` - Print Helm templates
+- `make helm-templates-local` - Print Helm templates with local values override
 - `make helm-uninstall` - Uninstall Helm chart
+
+### Helm Image Workflows
+
+- **Default**: `values.yaml` pulls the service image from `ghcr.io`. Use `make helm-install` when not making changes to service code.
+- **Local development**: When making code changes, build the image with `make docker-build` and install with `make helm-install-local`. This uses `values.local.yaml` which points to the local Docker image (`linuxfoundation/lfx-v2-meeting-service`, `pullPolicy: Never`).
+- Before using `make helm-install-local` for the first time, copy the example: `cp charts/lfx-v2-meeting-service/values.local.yaml.example charts/lfx-v2-meeting-service/values.local.yaml`. This file is gitignored.
 
 ## Development Guidelines
 
