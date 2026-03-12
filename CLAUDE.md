@@ -92,7 +92,7 @@ The service follows a clean architecture pattern with:
 
 - **Default**: `values.yaml` pulls the service image from `ghcr.io`. Use `make helm-install` when not making changes to service code.
 - **Local development**: When making code changes, build the image with `make docker-build` and install with `make helm-install-local`. This uses `values.local.yaml` which points to the local Docker image (`linuxfoundation/lfx-v2-meeting-service`, `pullPolicy: Never`).
-- Before using `make helm-install-local` for the first time, copy the example: `cp charts/lfx-v2-meeting-service/values.local.yaml.example charts/lfx-v2-meeting-service/values.local.yaml`. This file is gitignored.
+- Before using `make helm-install-local` for the first time, copy the example: `cp charts/lfx-v2-meeting-service/values.local.example.yaml charts/lfx-v2-meeting-service/values.local.yaml`. This file is gitignored.
 
 ## Development Guidelines
 

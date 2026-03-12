@@ -281,7 +281,7 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
 If you are making changes to the service code, you need to build the image locally and install the chart using a local values override that points to the local image. First, copy the example local values file (it is gitignored):
 
 ```bash
-cp charts/lfx-v2-meeting-service/values.local.yaml.example \
+cp charts/lfx-v2-meeting-service/values.local.example.yaml \
    charts/lfx-v2-meeting-service/values.local.yaml
 ```
 
