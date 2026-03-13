@@ -12,55 +12,38 @@ import (
 
 // CreateItxPastMeeting creates a past meeting via ITX proxy
 func (s *MeetingsAPI) CreateItxPastMeeting(ctx context.Context, p *meetingsvc.CreateItxPastMeetingPayload) (*meetingsvc.ITXPastZoomMeeting, error) {
-	// Convert Goa payload to ITX request
 	req := service.ConvertCreatePastMeetingPayload(p)
-
-	// Call ITX service
 	resp, err := s.itxPastMeetingService.CreatePastMeeting(ctx, req)
 	if err != nil {
 		return nil, handleError(err)
 	}
-
-	// Convert ITX response to Goa response
-	goaResp := service.ConvertPastMeetingToGoa(resp)
-	return goaResp, nil
+	return service.ConvertPastMeetingToGoa(resp), nil
 }
 
 // GetItxPastMeeting retrieves a past meeting via ITX proxy
 func (s *MeetingsAPI) GetItxPastMeeting(ctx context.Context, p *meetingsvc.GetItxPastMeetingPayload) (*meetingsvc.ITXPastZoomMeeting, error) {
-	// Call ITX service
 	resp, err := s.itxPastMeetingService.GetPastMeeting(ctx, p.PastMeetingID)
 	if err != nil {
 		return nil, handleError(err)
 	}
-
-	// Convert ITX response to Goa response
-	goaResp := service.ConvertPastMeetingToGoa(resp)
-	return goaResp, nil
+	return service.ConvertPastMeetingToGoa(resp), nil
 }
 
 // UpdateItxPastMeeting updates a past meeting via ITX proxy
 func (s *MeetingsAPI) UpdateItxPastMeeting(ctx context.Context, p *meetingsvc.UpdateItxPastMeetingPayload) error {
-	// Convert Goa payload to ITX request
 	req := service.ConvertUpdatePastMeetingPayload(p)
-
-	// Call ITX service
-	// ITX returns 204 No Content on success
 	_, err := s.itxPastMeetingService.UpdatePastMeeting(ctx, p.PastMeetingID, req)
 	if err != nil {
 		return handleError(err)
 	}
-
 	return nil
 }
 
 // DeleteItxPastMeeting deletes a past meeting via ITX proxy
 func (s *MeetingsAPI) DeleteItxPastMeeting(ctx context.Context, p *meetingsvc.DeleteItxPastMeetingPayload) error {
-	// Call ITX service
 	err := s.itxPastMeetingService.DeletePastMeeting(ctx, p.PastMeetingID)
 	if err != nil {
 		return handleError(err)
 	}
-
 	return nil
 }
