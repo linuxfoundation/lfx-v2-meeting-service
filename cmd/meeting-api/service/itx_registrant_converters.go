@@ -49,55 +49,55 @@ func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistran
 func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.ITXZoomMeetingRegistrant {
 	goaResp := &meetingservice.ITXZoomMeetingRegistrant{
 		// Read-only fields
-		UID:  ptrIfNotEmpty(resp.ID),
-		Type: ptrIfNotEmpty(resp.Type),
+		UID:  utils.StringPtrOmitEmpty(resp.ID),
+		Type: utils.StringPtrOmitEmpty(string(resp.Type)),
 
 		// Identity fields - map committee_id (ITX) to committee_uid (proxy)
-		CommitteeUID: ptrIfNotEmpty(resp.CommitteeID),
-		Email:        ptrIfNotEmpty(resp.Email),
-		Username:     ptrIfNotEmpty(resp.Username),
+		CommitteeUID: utils.StringPtrOmitEmpty(resp.CommitteeID),
+		Email:        utils.StringPtrOmitEmpty(resp.Email),
+		Username:     utils.StringPtrOmitEmpty(resp.Username),
 
 		// Personal info
-		FirstName:      ptrIfNotEmpty(resp.FirstName),
-		LastName:       ptrIfNotEmpty(resp.LastName),
-		Org:            ptrIfNotEmpty(resp.Org),
-		JobTitle:       ptrIfNotEmpty(resp.JobTitle),
-		ProfilePicture: ptrIfNotEmpty(resp.ProfilePicture),
+		FirstName:      utils.StringPtrOmitEmpty(resp.FirstName),
+		LastName:       utils.StringPtrOmitEmpty(resp.LastName),
+		Org:            utils.StringPtrOmitEmpty(resp.Org),
+		JobTitle:       utils.StringPtrOmitEmpty(resp.JobTitle),
+		ProfilePicture: utils.StringPtrOmitEmpty(resp.ProfilePicture),
 
 		// Meeting settings
-		Host:       ptrIfTrue(resp.Host),
-		Occurrence: ptrIfNotEmpty(resp.Occurrence),
+		Host:       utils.BoolPtrOmitFalse(resp.Host),
+		Occurrence: utils.StringPtrOmitEmpty(resp.Occurrence),
 
 		// Tracking fields
-		AttendedOccurrenceCount:       ptrIfNotZero(resp.AttendedOccurrenceCount),
-		TotalOccurrenceCount:          ptrIfNotZero(resp.TotalOccurrenceCount),
-		LastInviteReceivedTime:        ptrIfNotEmpty(resp.LastInviteReceivedTime),
-		LastInviteReceivedMessageID:   ptrIfNotEmpty(resp.LastInviteReceivedMessageID),
-		LastInviteDeliveryStatus:      ptrIfNotEmpty(resp.LastInviteDeliveryStatus),
-		LastInviteDeliveryDescription: ptrIfNotEmpty(resp.LastInviteDeliveryDescription),
+		AttendedOccurrenceCount:       utils.IntPtrOmitZero(resp.AttendedOccurrenceCount),
+		TotalOccurrenceCount:          utils.IntPtrOmitZero(resp.TotalOccurrenceCount),
+		LastInviteReceivedTime:        utils.StringPtrOmitEmpty(resp.LastInviteReceivedTime),
+		LastInviteReceivedMessageID:   utils.StringPtrOmitEmpty(resp.LastInviteReceivedMessageID),
+		LastInviteDeliveryStatus:      utils.StringPtrOmitEmpty(resp.LastInviteDeliveryStatus),
+		LastInviteDeliveryDescription: utils.StringPtrOmitEmpty(resp.LastInviteDeliveryDescription),
 
 		// Audit fields
-		CreatedAt:  ptrIfNotEmpty(resp.CreatedAt),
-		ModifiedAt: ptrIfNotEmpty(resp.ModifiedAt),
+		CreatedAt:  utils.StringPtrOmitEmpty(resp.CreatedAt),
+		ModifiedAt: utils.StringPtrOmitEmpty(resp.ModifiedAt),
 	}
 
 	// Convert created_by user if present
 	if resp.CreatedBy != nil {
 		goaResp.CreatedBy = &meetingservice.ITXUser{
-			Username:       ptrIfNotEmpty(resp.CreatedBy.Username),
-			Name:           ptrIfNotEmpty(resp.CreatedBy.Name),
-			Email:          ptrIfNotEmpty(resp.CreatedBy.Email),
-			ProfilePicture: ptrIfNotEmpty(resp.CreatedBy.ProfilePicture),
+			Username:       utils.StringPtrOmitEmpty(resp.CreatedBy.Username),
+			Name:           utils.StringPtrOmitEmpty(resp.CreatedBy.Name),
+			Email:          utils.StringPtrOmitEmpty(resp.CreatedBy.Email),
+			ProfilePicture: utils.StringPtrOmitEmpty(resp.CreatedBy.ProfilePicture),
 		}
 	}
 
 	// Convert updated_by user if present
 	if resp.UpdatedBy != nil {
 		goaResp.UpdatedBy = &meetingservice.ITXUser{
-			Username:       ptrIfNotEmpty(resp.UpdatedBy.Username),
-			Name:           ptrIfNotEmpty(resp.UpdatedBy.Name),
-			Email:          ptrIfNotEmpty(resp.UpdatedBy.Email),
-			ProfilePicture: ptrIfNotEmpty(resp.UpdatedBy.ProfilePicture),
+			Username:       utils.StringPtrOmitEmpty(resp.UpdatedBy.Username),
+			Name:           utils.StringPtrOmitEmpty(resp.UpdatedBy.Name),
+			Email:          utils.StringPtrOmitEmpty(resp.UpdatedBy.Email),
+			ProfilePicture: utils.StringPtrOmitEmpty(resp.UpdatedBy.ProfilePicture),
 		}
 	}
 

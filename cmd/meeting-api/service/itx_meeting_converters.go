@@ -18,16 +18,16 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		StartTime:            p.StartTime,
 		Duration:             p.Duration,
 		Timezone:             p.Timezone,
-		Visibility:           p.Visibility,
+		Visibility:           itx.MeetingVisibility(p.Visibility),
 		Description:          utils.StringValue(p.Description),
 		Restricted:           utils.BoolValue(p.Restricted),
-		MeetingType:          utils.StringValue(p.MeetingType),
+		MeetingType:          itx.MeetingType(utils.StringValue(p.MeetingType)),
 		EarlyJoinTimeMinutes: utils.IntValue(p.EarlyJoinTimeMinutes),
 		RecordingEnabled:     utils.BoolValue(p.RecordingEnabled),
 		TranscriptEnabled:    utils.BoolValue(p.TranscriptEnabled),
 		YoutubeUploadEnabled: utils.BoolValue(p.YoutubeUploadEnabled),
 		AISummaryEnabled:     utils.BoolValue(p.AiSummaryEnabled),
-		ArtifactVisibility:   utils.StringValue(p.ArtifactVisibility),
+		ArtifactVisibility:   itx.ArtifactAccess(utils.StringValue(p.ArtifactVisibility)),
 	}
 
 	// Convert committees
@@ -37,7 +37,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 			if c != nil {
 				req.Committees[i] = models.Committee{
 					UID:                   utils.StringValue(c.UID),
-					AllowedVotingStatuses: c.AllowedVotingStatuses,
+					AllowedVotingStatuses: utils.CastSlice[itx.CommitteeFilter](c.AllowedVotingStatuses),
 				}
 			}
 		}
@@ -46,7 +46,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 	// Convert recurrence if present
 	if p.Recurrence != nil {
 		req.Recurrence = &models.ITXRecurrence{
-			Type:           utils.IntValue(p.Recurrence.Type),
+			Type:           itx.RecurrenceType(utils.IntValue(p.Recurrence.Type)),
 			RepeatInterval: utils.IntValue(p.Recurrence.RepeatInterval),
 			WeeklyDays:     utils.StringValue(p.Recurrence.WeeklyDays),
 			MonthlyDay:     utils.IntValue(p.Recurrence.MonthlyDay),
@@ -69,16 +69,16 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		StartTime:            &resp.StartTime,
 		Duration:             &resp.Duration,
 		Timezone:             &resp.Timezone,
-		Visibility:           &resp.Visibility,
-		Description:          ptrIfNotEmpty(resp.Agenda),
-		Restricted:           ptrIfTrue(resp.Restricted),
-		MeetingType:          ptrIfNotEmpty(resp.MeetingType),
-		EarlyJoinTimeMinutes: ptrIfNotZero(resp.EarlyJoinTime),
+		Visibility:           (*string)(&resp.Visibility),
+		Description:          utils.StringPtrOmitEmpty(resp.Agenda),
+		Restricted:           utils.BoolPtrOmitFalse(resp.Restricted),
+		MeetingType:          utils.StringPtrOmitEmpty(string(resp.MeetingType)),
+		EarlyJoinTimeMinutes: utils.IntPtrOmitZero(resp.EarlyJoinTime),
 		RecordingEnabled:     &resp.RecordingEnabled,
 		TranscriptEnabled:    &resp.TranscriptEnabled,
-		YoutubeUploadEnabled: ptrIfTrue(resp.YoutubeUploadEnabled),
+		YoutubeUploadEnabled: utils.BoolPtrOmitFalse(resp.YoutubeUploadEnabled),
 		AiSummaryEnabled:     &resp.ZoomAIEnabled,
-		ArtifactVisibility:   ptrIfNotEmpty(firstNonEmpty(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess)),
+		ArtifactVisibility:   utils.StringPtrOmitEmpty(string(utils.Coalesce(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess))),
 
 		// Read-only response fields
 		ID:              &resp.ID,
@@ -88,7 +88,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		PublicLink:      &resp.PublicLink,
 		CreatedAt:       &resp.CreatedAt,
 		ModifiedAt:      &resp.ModifiedAt,
-		RegistrantCount: ptrIfNotZero(resp.RegistrantCount),
+		RegistrantCount: utils.IntPtrOmitZero(resp.RegistrantCount),
 	}
 
 	// Convert committees
@@ -98,7 +98,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 			id := resp.Committees[i].ID
 			goaResp.Committees[i] = &meetingservice.Committee{
 				UID:                   &id,
-				AllowedVotingStatuses: resp.Committees[i].Filters,
+				AllowedVotingStatuses: utils.CastSlice[string](resp.Committees[i].Filters),
 			}
 		}
 	}
@@ -106,14 +106,14 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 	// Convert recurrence if present
 	if resp.Recurrence != nil {
 		goaResp.Recurrence = &meetingservice.Recurrence{
-			Type:           ptrIfNotZero(resp.Recurrence.Type),
-			RepeatInterval: ptrIfNotZero(resp.Recurrence.RepeatInterval),
-			WeeklyDays:     ptrIfNotEmpty(resp.Recurrence.WeeklyDays),
-			MonthlyDay:     ptrIfNotZero(resp.Recurrence.MonthlyDay),
-			MonthlyWeek:    ptrIfNotZero(resp.Recurrence.MonthlyWeek),
-			MonthlyWeekDay: ptrIfNotZero(resp.Recurrence.MonthlyWeekDay),
-			EndTimes:       ptrIfNotZero(resp.Recurrence.EndTimes),
-			EndDateTime:    ptrIfNotEmpty(resp.Recurrence.EndDateTime),
+			Type:           utils.IntPtrOmitZero(int(resp.Recurrence.Type)),
+			RepeatInterval: utils.IntPtrOmitZero(resp.Recurrence.RepeatInterval),
+			WeeklyDays:     utils.StringPtrOmitEmpty(resp.Recurrence.WeeklyDays),
+			MonthlyDay:     utils.IntPtrOmitZero(resp.Recurrence.MonthlyDay),
+			MonthlyWeek:    utils.IntPtrOmitZero(resp.Recurrence.MonthlyWeek),
+			MonthlyWeekDay: utils.IntPtrOmitZero(resp.Recurrence.MonthlyWeekDay),
+			EndTimes:       utils.IntPtrOmitZero(resp.Recurrence.EndTimes),
+			EndDateTime:    utils.StringPtrOmitEmpty(resp.Recurrence.EndDateTime),
 		}
 	}
 
@@ -124,13 +124,13 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 			occurrenceID := resp.Occurrences[i].OccurrenceID
 			startTime := resp.Occurrences[i].StartTime
 			duration := resp.Occurrences[i].Duration
-			status := resp.Occurrences[i].Status
+			status := string(resp.Occurrences[i].Status)
 			goaResp.Occurrences[i] = &meetingservice.ITXOccurrence{
 				OccurrenceID:    &occurrenceID,
 				StartTime:       &startTime,
 				Duration:        &duration,
 				Status:          &status,
-				RegistrantCount: ptrIfNotZero(resp.Occurrences[i].RegistrantCount),
+				RegistrantCount: utils.IntPtrOmitZero(resp.Occurrences[i].RegistrantCount),
 			}
 		}
 	}
@@ -188,7 +188,7 @@ func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePa
 	}
 	if p.Recurrence != nil {
 		req.Recurrence = &itx.Recurrence{
-			Type:           utils.IntValue(p.Recurrence.Type),
+			Type:           itx.RecurrenceType(utils.IntValue(p.Recurrence.Type)),
 			RepeatInterval: utils.IntValue(p.Recurrence.RepeatInterval),
 			WeeklyDays:     utils.StringValue(p.Recurrence.WeeklyDays),
 			MonthlyDay:     utils.IntValue(p.Recurrence.MonthlyDay),
@@ -200,37 +200,6 @@ func ConvertUpdateOccurrencePayloadToITX(p *meetingservice.UpdateItxOccurrencePa
 	}
 
 	return req
-}
-
-// Helper functions for pointer conversion
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
-}
-
-func ptrIfNotEmpty(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func ptrIfTrue(b bool) *bool {
-	if !b {
-		return nil
-	}
-	return &b
-}
-
-func ptrIfNotZero(i int) *int {
-	if i == 0 {
-		return nil
-	}
-	return &i
 }
 
 // ConvertSubmitITXMeetingResponsePayloadToITX converts Goa payload to ITX meeting response request
@@ -248,12 +217,12 @@ func ConvertITXMeetingResponseResultToGoa(r *itx.MeetingResponseResult) *meeting
 		ID:           r.ID,
 		MeetingID:    r.MeetingID,
 		RegistrantID: r.RegistrantID,
-		Username:     ptrIfNotEmpty(r.Username),
-		Email:        ptrIfNotEmpty(r.Email),
+		Username:     utils.StringPtrOmitEmpty(r.Username),
+		Email:        utils.StringPtrOmitEmpty(r.Email),
 		Response:     r.Response,
 		Scope:        r.Scope,
-		OccurrenceID: ptrIfNotEmpty(r.OccurrenceID),
-		CreatedAt:    ptrIfNotEmpty(r.CreatedAt),
-		UpdatedAt:    ptrIfNotEmpty(r.UpdatedAt),
+		OccurrenceID: utils.StringPtrOmitEmpty(r.OccurrenceID),
+		CreatedAt:    utils.StringPtrOmitEmpty(r.CreatedAt),
+		UpdatedAt:    utils.StringPtrOmitEmpty(r.UpdatedAt),
 	}
 }
