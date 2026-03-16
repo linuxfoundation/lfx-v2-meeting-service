@@ -42,6 +42,7 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
    ```
 
    Required environment variables:
+
    ```bash
    ITX_ENABLED=true
    ITX_BASE_URL=https://api.dev.itx.linuxfoundation.org
@@ -249,19 +250,54 @@ make test-coverage
 
 ### Helm Chart
 
-The service includes a Helm chart for Kubernetes deployment:
+The service includes a Helm chart for Kubernetes deployment.
+
+#### Prerequisites: Kubernetes Secret
+
+Before installing the chart, create the `meeting-secrets` secret in the `lfx` namespace. The `auth0_client_id` and `auth0_client_private_key` values are in 1Password under the **LFX V2** vault, in the note **LFX Platform Chart Values Secrets - Local Development**.
 
 ```bash
-# Install with default values
+kubectl create secret generic meeting-secrets -n lfx \
+  --from-literal=auth0_client_id="<client-id-from-1password>" \
+  --from-file=auth0_client_private_key=./path/to/private.key
+```
+
+#### Option 1: Install from GHCR (no local code changes)
+
+Use this if you just want to run the service without modifying its code. The image is pulled directly from the container registry:
+
+```bash
 make helm-install
 
-# Install with custom values
+# Or using Helm directly
 helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --namespace lfx \
-  --values custom-values.yaml
+  --create-namespace
+```
 
-# View templates
-make helm-templates
+#### Option 2: Install from a Local Build (active development)
+
+Use this if you are making changes to the service code. First, copy the example local values file (it is gitignored):
+
+```bash
+cp charts/lfx-v2-meeting-service/values.local.example.yaml \
+   charts/lfx-v2-meeting-service/values.local.yaml
+```
+
+Then, whenever you make a code change and want to apply it:
+
+```bash
+# Rebuild the local image
+make docker-build
+
+# Install/upgrade the chart using the local image
+make helm-install-local
+
+# Or using Helm directly
+helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
+  --namespace lfx \
+  --create-namespace \
+  --values ./charts/lfx-v2-meeting-service/values.local.yaml
 ```
 
 ### Docker
@@ -292,12 +328,14 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 ### Available Endpoints
 
 #### Health Checks
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/livez` | GET | Liveness check |
 | `/readyz` | GET | Readiness check |
 
 #### ITX Meeting Operations
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/itx/meetings` | POST | Create meeting via ITX |
