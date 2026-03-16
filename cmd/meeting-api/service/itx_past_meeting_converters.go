@@ -6,6 +6,7 @@ package service
 import (
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // ConvertUpdatePastMeetingPayload converts Goa payload to ITX update past meeting request
@@ -41,10 +42,10 @@ func ConvertUpdatePastMeetingPayload(payload *meetingservice.UpdateItxPastMeetin
 		req.Restricted = *payload.Restricted
 	}
 	if payload.MeetingType != nil {
-		req.MeetingType = *payload.MeetingType
+		req.MeetingType = itx.MeetingType(*payload.MeetingType)
 	}
 	if payload.Visibility != nil {
-		req.Visibility = *payload.Visibility
+		req.Visibility = itx.MeetingVisibility(*payload.Visibility)
 	}
 	if payload.RecordingEnabled != nil {
 		req.RecordingEnabled = *payload.RecordingEnabled
@@ -53,8 +54,8 @@ func ConvertUpdatePastMeetingPayload(payload *meetingservice.UpdateItxPastMeetin
 		req.TranscriptEnabled = *payload.TranscriptEnabled
 	}
 	if payload.ArtifactVisibility != nil {
-		req.RecordingAccess = *payload.ArtifactVisibility
-		req.TranscriptAccess = *payload.ArtifactVisibility
+		req.RecordingAccess = itx.ArtifactAccess(*payload.ArtifactVisibility)
+		req.TranscriptAccess = itx.ArtifactAccess(*payload.ArtifactVisibility)
 	}
 
 	if payload.Committees != nil {
@@ -65,7 +66,7 @@ func ConvertUpdatePastMeetingPayload(payload *meetingservice.UpdateItxPastMeetin
 			}
 			req.Committees = append(req.Committees, itx.Committee{
 				ID:      *c.UID,
-				Filters: c.AllowedVotingStatuses,
+				Filters: utils.CastSlice[itx.CommitteeFilter](c.AllowedVotingStatuses),
 			})
 		}
 	}
@@ -95,10 +96,10 @@ func ConvertCreatePastMeetingPayload(payload *meetingservice.CreateItxPastMeetin
 		req.Restricted = *payload.Restricted
 	}
 	if payload.MeetingType != nil {
-		req.MeetingType = *payload.MeetingType
+		req.MeetingType = itx.MeetingType(*payload.MeetingType)
 	}
 	if payload.Visibility != nil {
-		req.Visibility = *payload.Visibility
+		req.Visibility = itx.MeetingVisibility(*payload.Visibility)
 	}
 	if payload.RecordingEnabled != nil {
 		req.RecordingEnabled = *payload.RecordingEnabled
@@ -107,8 +108,8 @@ func ConvertCreatePastMeetingPayload(payload *meetingservice.CreateItxPastMeetin
 		req.TranscriptEnabled = *payload.TranscriptEnabled
 	}
 	if payload.ArtifactVisibility != nil {
-		req.RecordingAccess = *payload.ArtifactVisibility
-		req.TranscriptAccess = *payload.ArtifactVisibility
+		req.RecordingAccess = itx.ArtifactAccess(*payload.ArtifactVisibility)
+		req.TranscriptAccess = itx.ArtifactAccess(*payload.ArtifactVisibility)
 	}
 
 	if payload.Committees != nil {
@@ -119,7 +120,7 @@ func ConvertCreatePastMeetingPayload(payload *meetingservice.CreateItxPastMeetin
 			}
 			req.Committees = append(req.Committees, itx.Committee{
 				ID:      *c.UID,
-				Filters: c.AllowedVotingStatuses,
+				Filters: utils.CastSlice[itx.CommitteeFilter](c.AllowedVotingStatuses),
 			})
 		}
 	}
@@ -131,27 +132,27 @@ func ConvertCreatePastMeetingPayload(payload *meetingservice.CreateItxPastMeetin
 func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXPastZoomMeeting {
 	goaResp := &meetingservice.ITXPastZoomMeeting{
 		// Identifiers
-		ID:           ptrIfNotEmpty(resp.PastMeetingID),
-		MeetingID:    ptrIfNotEmpty(resp.MeetingID),
-		OccurrenceID: ptrIfNotEmpty(resp.OccurrenceID),
+		ID:           utils.StringPtrOmitEmpty(resp.PastMeetingID),
+		MeetingID:    utils.StringPtrOmitEmpty(resp.MeetingID),
+		OccurrenceID: utils.StringPtrOmitEmpty(resp.OccurrenceID),
 
 		// Project association
-		ProjectUID: ptrIfNotEmpty(resp.ProjectID),
+		ProjectUID: utils.StringPtrOmitEmpty(resp.ProjectID),
 
 		// Meeting details
-		Title:       ptrIfNotEmpty(resp.Topic),
-		Description: ptrIfNotEmpty(resp.Agenda),
-		StartTime:   ptrIfNotEmpty(resp.StartTime),
-		Timezone:    ptrIfNotEmpty(resp.Timezone),
+		Title:       utils.StringPtrOmitEmpty(resp.Topic),
+		Description: utils.StringPtrOmitEmpty(resp.Agenda),
+		StartTime:   utils.StringPtrOmitEmpty(resp.StartTime),
+		Timezone:    utils.StringPtrOmitEmpty(resp.Timezone),
 		Duration:    &resp.Duration,
-		Visibility:  ptrIfNotEmpty(resp.Visibility),
+		Visibility:  utils.StringPtrOmitEmpty(string(resp.Visibility)),
 		Restricted:  &resp.Restricted,
-		MeetingType: ptrIfNotEmpty(resp.MeetingType),
+		MeetingType: utils.StringPtrOmitEmpty(string(resp.MeetingType)),
 
 		// Recording/Transcript settings
 		RecordingEnabled:   &resp.RecordingEnabled,
 		TranscriptEnabled:  &resp.TranscriptEnabled,
-		ArtifactVisibility: ptrIfNotEmpty(resp.RecordingAccess),
+		ArtifactVisibility: utils.StringPtrOmitEmpty(string(resp.RecordingAccess)),
 
 		IsManuallyCreated: &resp.IsManuallyCreated,
 	}
@@ -163,7 +164,7 @@ func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXP
 			uid := c.ID
 			goaResp.Committees[i] = &meetingservice.Committee{
 				UID:                   &uid,
-				AllowedVotingStatuses: c.Filters,
+				AllowedVotingStatuses: utils.CastSlice[string](c.Filters),
 			}
 		}
 	}

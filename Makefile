@@ -18,7 +18,7 @@ DOCKER_TAG=latest
 HELM_CHART_PATH=./charts/lfx-v2-meeting-service
 HELM_RELEASE_NAME=lfx-v2-meeting-service
 HELM_NAMESPACE=lfx
-HELM_VALUES_FILE=./charts/lfx-v2-meeting-service/values.local.yaml
+HELM_LOCAL_VALUES_FILE=./charts/lfx-v2-meeting-service/values.local.yaml
 
 # Build variables
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
@@ -53,11 +53,11 @@ help:
 	@echo "  check          - Run fmt and lint without modifying files"
 	@echo "  verify         - Verify API generation is up to date"
 	@echo "  docker-build   - Build Docker image"
-	@echo "  helm-install   - Install Helm chart"
-	@echo "  helm-install-local - Install Helm chart with local values file"
-	@echo "  helm-templates   - Print templates for Helm chart"
-	@echo "  helm-templates-local - Print templates for Helm chart with local values file"
-	@echo "  helm-uninstall - Uninstall Helm chart"
+	@echo "  helm-install         - Install Helm chart"
+	@echo "  helm-install-local   - Install Helm chart with local values override (values.local.yaml)"
+	@echo "  helm-templates       - Print templates for Helm chart"
+	@echo "  helm-templates-local - Print templates with local values override (values.local.yaml)"
+	@echo "  helm-uninstall       - Uninstall Helm chart"
 
 # Install dependencies
 deps:
@@ -188,13 +188,13 @@ docker-build:
 # Install Helm chart
 helm-install:
 	@echo "==> Installing Helm chart..."
-	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE)
+	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --create-namespace
 	@echo "==> Helm chart installed: $(HELM_RELEASE_NAME)"
 
-# Install Helm chart with local values file
+# Install Helm chart with local values override (values.local.yaml is gitignored)
 helm-install-local:
-	@echo "==> Installing Helm chart with local values file..."
-	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --values $(HELM_VALUES_FILE)
+	@echo "==> Installing Helm chart with local values override..."
+	helm upgrade --force --install $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --create-namespace -f $(HELM_LOCAL_VALUES_FILE)
 	@echo "==> Helm chart installed: $(HELM_RELEASE_NAME)"
 
 # Print templates for Helm chart
@@ -203,10 +203,10 @@ helm-templates:
 	helm template $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE)
 	@echo "==> Templates printed for Helm chart: $(HELM_RELEASE_NAME)"
 
-# Print templates for Helm chart with local values file
+# Print templates for Helm chart with local values override (values.local.yaml is gitignored)
 helm-templates-local:
-	@echo "==> Printing templates for Helm chart with local values file..."
-	helm template $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) --values $(HELM_VALUES_FILE)
+	@echo "==> Printing templates for Helm chart with local values override..."
+	helm template $(HELM_RELEASE_NAME) $(HELM_CHART_PATH) --namespace $(HELM_NAMESPACE) -f $(HELM_LOCAL_VALUES_FILE)
 	@echo "==> Templates printed for Helm chart: $(HELM_RELEASE_NAME)"
 
 # Uninstall Helm chart

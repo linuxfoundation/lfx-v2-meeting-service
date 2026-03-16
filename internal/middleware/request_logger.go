@@ -18,11 +18,8 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now().UTC()
-
-			// Skip logging for health check endpoints to reduce noise
 			isHealthCheck := r.URL.Path == "/livez" || r.URL.Path == "/readyz"
 
-			// Add request URL attributes to the context so that they can be used in all request handler logs
 			ctx := r.Context()
 			ctx = logging.AppendCtx(ctx, slog.String("method", r.Method))
 			ctx = logging.AppendCtx(ctx, slog.String("path", r.URL.Path))
@@ -35,24 +32,16 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 				ctx = logging.AppendCtx(ctx, slog.String("req_header_etag", r.Header.Get(constants.EtagHeader)))
 			}
 
-			// Create a new request with the updated context
 			r = r.WithContext(ctx)
-
-			// Create a response writer wrapper to capture status code
 			ww := &responseWriter{ResponseWriter: w}
 
-			// Only log non-health check requests
 			if !isHealthCheck {
 				slog.InfoContext(ctx, "HTTP request")
 			}
 
-			// Call the next handler
 			next.ServeHTTP(ww, r)
 
-			// Calculate duration
 			duration := time.Since(start)
-
-			// Only log response for non-health check requests
 			if !isHealthCheck {
 				slog.InfoContext(ctx, "HTTP response", "status", ww.statusCode, "duration", duration.String())
 			}

@@ -13,22 +13,14 @@ import (
 
 // CreateItxPastMeetingParticipant creates a past meeting participant via ITX proxy
 func (s *MeetingsAPI) CreateItxPastMeetingParticipant(ctx context.Context, p *meetingsvc.CreateItxPastMeetingParticipantPayload) (*meetingsvc.ITXPastMeetingParticipant, error) {
-	// Convert Goa payload to ITX requests
 	inviteeReq, attendeeReq := service.ConvertCreateParticipantPayload(p)
-
-	// Determine flags
 	isInvited := p.IsInvited != nil && *p.IsInvited
 	isAttended := p.IsAttended != nil && *p.IsAttended
-
-	// Call service
 	resp, err := s.itxPastMeetingParticipantService.CreateParticipant(ctx, p.PastMeetingID, isInvited, isAttended, inviteeReq, attendeeReq)
 	if err != nil {
 		return nil, handleError(err)
 	}
-
-	// Convert to Goa response
-	goaResp := service.ConvertParticipantResponseToGoa(resp)
-	return goaResp, nil
+	return service.ConvertParticipantResponseToGoa(resp), nil
 }
 
 func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *meetingsvc.UpdateItxPastMeetingParticipantPayload) (*meetingsvc.ITXPastMeetingParticipant, error) {
@@ -54,13 +46,11 @@ func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *me
 		return nil, handleError(err)
 	}
 
-	goaResp := service.ConvertParticipantResponseToGoa(resp)
-	return goaResp, nil
+	return service.ConvertParticipantResponseToGoa(resp), nil
 }
 
 // DeleteItxPastMeetingParticipant deletes a past meeting participant via ITX proxy
 func (s *MeetingsAPI) DeleteItxPastMeetingParticipant(ctx context.Context, p *meetingsvc.DeleteItxPastMeetingParticipantPayload) error {
-	// Call service
 	err := s.itxPastMeetingParticipantService.DeleteParticipant(ctx, p.PastMeetingID, p.ParticipantID)
 	if err != nil {
 		return handleError(err)

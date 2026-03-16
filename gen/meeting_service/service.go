@@ -229,6 +229,8 @@ type CreateItxMeetingPayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
@@ -1078,6 +1080,8 @@ type ITXZoomMeetingResponse struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
@@ -1336,6 +1340,8 @@ type UpdateItxMeetingPayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting

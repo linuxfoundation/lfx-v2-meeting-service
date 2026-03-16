@@ -6,6 +6,7 @@ package service
 import (
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // ============================================================================
@@ -84,20 +85,20 @@ func ConvertITXMeetingAttachmentToGoa(resp *itx.MeetingAttachment) *meetingservi
 		UID:              resp.ID,
 		MeetingID:        resp.MeetingID,
 		Type:             resp.Type,
-		Source:           ptrIfNotEmpty(resp.Source),
+		Source:           utils.StringPtrOmitEmpty(resp.Source),
 		Category:         resp.Category,
 		Name:             resp.Name,
-		FileUploaded:     ptrIfTrue(resp.FileUploaded),
-		Link:             ptrIfNotEmpty(resp.Link),
-		Description:      ptrIfNotEmpty(resp.Description),
-		FileName:         ptrIfNotEmpty(resp.FileName),
-		FileSize:         ptrIfNotZeroInt64(resp.FileSize),
-		FileURL:          ptrIfNotEmpty(resp.FileURL),
-		FileUploadStatus: ptrIfNotEmpty(resp.FileUploadStatus),
-		FileContentType:  ptrIfNotEmpty(resp.FileContentType),
-		CreatedAt:        ptrIfNotEmpty(resp.CreatedAt),
-		UpdatedAt:        ptrIfNotEmpty(resp.UpdatedAt),
-		FileUploadedAt:   ptrIfNotEmpty(resp.FileUploadedAt),
+		FileUploaded:     utils.BoolPtrOmitFalse(resp.FileUploaded),
+		Link:             utils.StringPtrOmitEmpty(resp.Link),
+		Description:      utils.StringPtrOmitEmpty(resp.Description),
+		FileName:         utils.StringPtrOmitEmpty(resp.FileName),
+		FileSize:         utils.Int64PtrOmitZero(resp.FileSize),
+		FileURL:          utils.StringPtrOmitEmpty(resp.FileURL),
+		FileUploadStatus: utils.StringPtrOmitEmpty(resp.FileUploadStatus),
+		FileContentType:  utils.StringPtrOmitEmpty(resp.FileContentType),
+		CreatedAt:        utils.StringPtrOmitEmpty(resp.CreatedAt),
+		UpdatedAt:        utils.StringPtrOmitEmpty(resp.UpdatedAt),
+		FileUploadedAt:   utils.StringPtrOmitEmpty(resp.FileUploadedAt),
 	}
 
 	if resp.CreatedBy != nil {
@@ -121,16 +122,16 @@ func ConvertITXMeetingAttachmentPresignToGoa(resp *itx.MeetingAttachmentPresignR
 		UID:              resp.ID,
 		MeetingID:        resp.MeetingID,
 		FileURL:          resp.FileURL, // Required field
-		Type:             ptrIfNotEmpty(resp.Type),
-		Category:         ptrIfNotEmpty(resp.Category),
-		Name:             ptrIfNotEmpty(resp.Name),
-		Description:      ptrIfNotEmpty(resp.Description),
-		FileName:         ptrIfNotEmpty(resp.FileName),
-		FileSize:         ptrIfNotZeroInt64(resp.FileSize),
-		FileUploadStatus: ptrIfNotEmpty(resp.FileUploadStatus),
-		FileContentType:  ptrIfNotEmpty(resp.FileContentType),
-		CreatedAt:        ptrIfNotEmpty(resp.CreatedAt),
-		UpdatedAt:        ptrIfNotEmpty(resp.UpdatedAt),
+		Type:             utils.StringPtrOmitEmpty(resp.Type),
+		Category:         utils.StringPtrOmitEmpty(resp.Category),
+		Name:             utils.StringPtrOmitEmpty(resp.Name),
+		Description:      utils.StringPtrOmitEmpty(resp.Description),
+		FileName:         utils.StringPtrOmitEmpty(resp.FileName),
+		FileSize:         utils.Int64PtrOmitZero(resp.FileSize),
+		FileUploadStatus: utils.StringPtrOmitEmpty(resp.FileUploadStatus),
+		FileContentType:  utils.StringPtrOmitEmpty(resp.FileContentType),
+		CreatedAt:        utils.StringPtrOmitEmpty(resp.CreatedAt),
+		UpdatedAt:        utils.StringPtrOmitEmpty(resp.UpdatedAt),
 	}
 
 	if resp.CreatedBy != nil {
@@ -221,20 +222,20 @@ func ConvertITXPastMeetingAttachmentToGoa(resp *itx.PastMeetingAttachment) *meet
 		MeetingAndOccurrenceID: resp.MeetingAndOccurrenceID,
 		MeetingID:              resp.MeetingID,
 		Type:                   resp.Type,
-		Source:                 ptrIfNotEmpty(resp.Source),
+		Source:                 utils.StringPtrOmitEmpty(resp.Source),
 		Category:               resp.Category,
 		Name:                   resp.Name,
-		FileUploaded:           ptrIfTrue(resp.FileUploaded),
-		Link:                   ptrIfNotEmpty(resp.Link),
-		Description:            ptrIfNotEmpty(resp.Description),
-		FileName:               ptrIfNotEmpty(resp.FileName),
-		FileSize:               ptrIfNotZeroInt64(resp.FileSize),
-		FileURL:                ptrIfNotEmpty(resp.FileURL),
-		FileUploadStatus:       ptrIfNotEmpty(resp.FileUploadStatus),
-		FileContentType:        ptrIfNotEmpty(resp.FileContentType),
-		CreatedAt:              ptrIfNotEmpty(resp.CreatedAt),
-		UpdatedAt:              ptrIfNotEmpty(resp.UpdatedAt),
-		FileUploadedAt:         ptrIfNotEmpty(resp.FileUploadedAt),
+		FileUploaded:           utils.BoolPtrOmitFalse(resp.FileUploaded),
+		Link:                   utils.StringPtrOmitEmpty(resp.Link),
+		Description:            utils.StringPtrOmitEmpty(resp.Description),
+		FileName:               utils.StringPtrOmitEmpty(resp.FileName),
+		FileSize:               utils.Int64PtrOmitZero(resp.FileSize),
+		FileURL:                utils.StringPtrOmitEmpty(resp.FileURL),
+		FileUploadStatus:       utils.StringPtrOmitEmpty(resp.FileUploadStatus),
+		FileContentType:        utils.StringPtrOmitEmpty(resp.FileContentType),
+		CreatedAt:              utils.StringPtrOmitEmpty(resp.CreatedAt),
+		UpdatedAt:              utils.StringPtrOmitEmpty(resp.UpdatedAt),
+		FileUploadedAt:         utils.StringPtrOmitEmpty(resp.FileUploadedAt),
 	}
 
 	if resp.CreatedBy != nil {
@@ -258,17 +259,17 @@ func ConvertITXPastMeetingAttachmentPresignToGoa(resp *itx.PastMeetingAttachment
 		UID:                    resp.ID,
 		MeetingAndOccurrenceID: resp.MeetingAndOccurrenceID,
 		FileURL:                resp.FileURL, // Required field
-		MeetingID:              ptrIfNotEmpty(resp.MeetingID),
-		Type:                   ptrIfNotEmpty(resp.Type),
-		Category:               ptrIfNotEmpty(resp.Category),
-		Name:                   ptrIfNotEmpty(resp.Name),
-		Description:            ptrIfNotEmpty(resp.Description),
-		FileName:               ptrIfNotEmpty(resp.FileName),
-		FileSize:               ptrIfNotZeroInt64(resp.FileSize),
-		FileUploadStatus:       ptrIfNotEmpty(resp.FileUploadStatus),
-		FileContentType:        ptrIfNotEmpty(resp.FileContentType),
-		CreatedAt:              ptrIfNotEmpty(resp.CreatedAt),
-		UpdatedAt:              ptrIfNotEmpty(resp.UpdatedAt),
+		MeetingID:              utils.StringPtrOmitEmpty(resp.MeetingID),
+		Type:                   utils.StringPtrOmitEmpty(resp.Type),
+		Category:               utils.StringPtrOmitEmpty(resp.Category),
+		Name:                   utils.StringPtrOmitEmpty(resp.Name),
+		Description:            utils.StringPtrOmitEmpty(resp.Description),
+		FileName:               utils.StringPtrOmitEmpty(resp.FileName),
+		FileSize:               utils.Int64PtrOmitZero(resp.FileSize),
+		FileUploadStatus:       utils.StringPtrOmitEmpty(resp.FileUploadStatus),
+		FileContentType:        utils.StringPtrOmitEmpty(resp.FileContentType),
+		CreatedAt:              utils.StringPtrOmitEmpty(resp.CreatedAt),
+		UpdatedAt:              utils.StringPtrOmitEmpty(resp.UpdatedAt),
 	}
 
 	if resp.CreatedBy != nil {
@@ -316,12 +317,4 @@ func convertITXUserToGoa(user *itx.CreatedUpdatedBy) *meetingservice.ITXUser {
 	}
 
 	return result
-}
-
-// ptrIfNotZeroInt64 returns a pointer to the int64 value if it's not zero, otherwise nil
-func ptrIfNotZeroInt64(i int64) *int64 {
-	if i == 0 {
-		return nil
-	}
-	return &i
 }

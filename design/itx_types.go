@@ -82,6 +82,10 @@ func ArtifactVisibilityAttribute() {
 	})
 }
 
+func AISummaryEnabledAttribute() {
+	Attribute("ai_summary_enabled", Boolean, "Whether Zoom AI Companion summary is enabled for the meeting")
+}
+
 func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
 }
@@ -140,6 +144,7 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 	RecordingEnabledAttribute()
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
+	AISummaryEnabledAttribute()
 	ArtifactVisibilityAttribute()
 	RecurrenceAttribute()
 

@@ -27,15 +27,16 @@ func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.ID
 
 // CreateMeeting creates a meeting via ITX proxy
 func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateITXMeetingRequest) (*itx.ZoomMeetingResponse, error) {
+	if err := validateMeetingRequest(req); err != nil {
+		return nil, err
+	}
+
 	// Map v2 UIDs to v1 SFIDs before sending to ITX
 	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
 		return nil, err
 	}
 
-	// Transform to ITX format
 	itxReq := s.transformToITXRequest(req)
-
-	// Call ITX proxy
 	resp, err := s.meetingClient.CreateZoomMeeting(ctx, itxReq)
 	if err != nil {
 		return nil, err
@@ -51,7 +52,6 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 
 // GetMeeting retrieves a meeting via ITX proxy
 func (s *MeetingService) GetMeeting(ctx context.Context, meetingID string) (*itx.ZoomMeetingResponse, error) {
-	// Call ITX proxy
 	resp, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
 	if err != nil {
 		return nil, err
@@ -67,15 +67,16 @@ func (s *MeetingService) GetMeeting(ctx context.Context, meetingID string) (*itx
 
 // UpdateMeeting updates a meeting via ITX proxy
 func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, req *models.CreateITXMeetingRequest) error {
+	if err := validateMeetingRequest(req); err != nil {
+		return err
+	}
+
 	// Map v2 UIDs to v1 SFIDs before sending to ITX
 	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
 		return err
 	}
 
-	// Transform to ITX format
 	itxReq := s.transformToITXRequest(req)
-
-	// Call ITX proxy
 	err := s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
 	if err != nil {
 		return err
@@ -86,7 +87,6 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 
 // DeleteMeeting deletes a meeting via ITX proxy
 func (s *MeetingService) DeleteMeeting(ctx context.Context, meetingID string) error {
-	// Call ITX proxy
 	err := s.meetingClient.DeleteZoomMeeting(ctx, meetingID)
 	if err != nil {
 		return err
@@ -103,7 +103,6 @@ func (s *MeetingService) GetMeetingCount(ctx context.Context, projectID string) 
 		return nil, err
 	}
 
-	// Call ITX proxy with v1 SFID
 	resp, err := s.meetingClient.GetMeetingCount(ctx, v1SFID)
 	if err != nil {
 		return nil, err
@@ -114,43 +113,41 @@ func (s *MeetingService) GetMeetingCount(ctx context.Context, projectID string) 
 
 // GetMeetingJoinLink retrieves a join link for a meeting via ITX proxy
 func (s *MeetingService) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkRequest) (*itx.ZoomMeetingJoinLink, error) {
-	// Call ITX proxy
-	resp, err := s.meetingClient.GetMeetingJoinLink(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return s.meetingClient.GetMeetingJoinLink(ctx, req)
 }
 
 // ResendMeetingInvitations resends meeting invitations to all registrants via ITX proxy
 func (s *MeetingService) ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error {
-	// Call ITX proxy
 	return s.meetingClient.ResendMeetingInvitations(ctx, meetingID, req)
 }
 
 // RegisterCommitteeMembers registers committee members to a meeting asynchronously via ITX proxy
 func (s *MeetingService) RegisterCommitteeMembers(ctx context.Context, meetingID string) error {
-	// Call ITX proxy
 	return s.meetingClient.RegisterCommitteeMembers(ctx, meetingID)
 }
 
 // UpdateOccurrence updates a specific occurrence of a recurring meeting via ITX proxy
 func (s *MeetingService) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
-	// Call ITX proxy
 	return s.meetingClient.UpdateOccurrence(ctx, meetingID, occurrenceID, req)
 }
 
 // DeleteOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
 func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error {
-	// Call ITX proxy
 	return s.meetingClient.DeleteOccurrence(ctx, meetingID, occurrenceID)
 }
 
 // SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy
 func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
-	// Call ITX proxy
 	return s.meetingClient.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
+}
+
+// validateMeetingRequest validates a meeting create/update request before sending to ITX
+func validateMeetingRequest(req *models.CreateITXMeetingRequest) error {
+	anyFeatureEnabled := req.RecordingEnabled || req.TranscriptEnabled || req.AISummaryEnabled
+	if anyFeatureEnabled && req.ArtifactVisibility == "" {
+		return domain.NewValidationError("artifact_visibility is required when recording, transcript, or ai_summary is enabled")
+	}
+	return nil
 }
 
 // transformToITXRequest transforms domain request to ITX request format
@@ -170,13 +167,20 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		RecordingEnabled:     req.RecordingEnabled,
 		TranscriptEnabled:    req.TranscriptEnabled,
 		YoutubeUploadEnabled: req.YoutubeUploadEnabled,
+		ZoomAIEnabled:        req.AISummaryEnabled,
 	}
 
-	// Map artifact visibility to access controls
+	// Map artifact visibility to access controls only when the respective feature is enabled
 	if req.ArtifactVisibility != "" {
-		itxReq.RecordingAccess = req.ArtifactVisibility
-		itxReq.TranscriptAccess = req.ArtifactVisibility
-		itxReq.AISummaryAccess = req.ArtifactVisibility
+		if req.RecordingEnabled {
+			itxReq.RecordingAccess = req.ArtifactVisibility
+		}
+		if req.TranscriptEnabled {
+			itxReq.TranscriptAccess = req.ArtifactVisibility
+		}
+		if req.AISummaryEnabled {
+			itxReq.AISummaryAccess = req.ArtifactVisibility
+		}
 	}
 
 	// Map committees
