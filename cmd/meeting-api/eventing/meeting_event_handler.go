@@ -14,10 +14,11 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/nats-io/nats.go/jetstream"
 )
-
-const errKey = "error"
 
 // =============================================================================
 // Meeting Event Handler
@@ -29,7 +30,6 @@ func generateMeetingTags(meeting *models.MeetingEventData) []string {
 		"meeting_id:" + meeting.ID,
 		"project_uid:" + meeting.ProjectUID,
 		"title:" + meeting.Title,
-		"meeting_type:" + meeting.MeetingType,
 	}
 	if meeting.Visibility != "" {
 		tags = append(tags, "visibility:"+meeting.Visibility)
@@ -83,7 +83,7 @@ func convertMapToMeetingData(
 	// Skip if created by this service (prevent sync loops)
 	if shouldSkipSync(rawMeeting.UpdatedBy.UserID) {
 		logger.InfoContext(ctx, "skipping sync - created by this service", "last_modified_by", rawMeeting.UpdatedBy.UserID)
-		return nil, fmt.Errorf("skipping sync to prevent loop")
+		return nil, nil
 	}
 
 	// Validate required fields
@@ -116,7 +116,7 @@ func convertMapToMeetingData(
 		100,   // numOccurrencesToReturn
 	)
 	if err != nil {
-		logger.With(errKey, err).WarnContext(ctx, "failed to calculate occurrences")
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to calculate occurrences")
 	}
 	meeting.Occurrences = make([]models.ZoomMeetingOccurrence, len(occurrences))
 	for i, occurrence := range occurrences {
@@ -156,11 +156,14 @@ func (h *EventHandlers) handleMeetingUpdate(
 	// Convert v1Data to meeting event data
 	meetingData, err := convertMapToMeetingData(ctx, v1Data, h.idMapper, h.v1MappingsKV, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to meeting")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to meeting")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
 		return false // Permanent error, ACK and skip
+	}
+	if meetingData == nil {
+		return false // Intentionally skipped (e.g., loop prevention), ACK
 	}
 
 	// Validate required fields
@@ -180,7 +183,7 @@ func (h *EventHandlers) handleMeetingUpdate(
 	// Publish to indexer and FGA-sync
 	tags := generateMeetingTags(meetingData)
 	if err := h.publisher.PublishMeetingEvent(ctx, string(indexerAction), meetingData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish meeting event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -189,7 +192,7 @@ func (h *EventHandlers) handleMeetingUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store meeting mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed meeting")
@@ -212,7 +215,7 @@ func (h *EventHandlers) handleMeetingDelete(
 	// Publish delete event
 	tags := generateMeetingTags(eventData)
 	if err := h.publisher.PublishMeetingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish meeting delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -257,7 +260,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 
 	// Update committee mappings in KV bucket
 	if err := updateCommitteeMappings(ctx, meetingID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to update committee mappings")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update committee mappings")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -382,7 +385,7 @@ func convertMapToRegistrantData(
 	if rawRegistrant.CommitteeID != "" {
 		committeeUID, err = idMapper.MapCommitteeV1ToV2(ctx, rawRegistrant.CommitteeID)
 		if err != nil {
-			logger.With(errKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", rawRegistrant.CommitteeID)
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", rawRegistrant.CommitteeID)
 			// Don't fail - just omit committee
 		}
 	}
@@ -392,7 +395,7 @@ func convertMapToRegistrantData(
 	if username == "" && rawRegistrant.UserID != "" {
 		v1User, err := userLookup.LookupUser(ctx, rawRegistrant.UserID)
 		if err != nil {
-			logger.With(errKey, err).WarnContext(ctx, "failed to lookup v1 user", "user_id", rawRegistrant.UserID)
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "user_id", rawRegistrant.UserID)
 		} else if v1User != nil {
 			username = v1User.Username
 			// Enrich with other user data if available
@@ -471,7 +474,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// Convert v1Data to registrant event data
 	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to registrant")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to registrant")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -495,7 +498,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// Publish to indexer and FGA-sync
 	tags := generateRegistrantTags(registrantData)
 	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerAction), registrantData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish registrant event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish registrant event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -504,7 +507,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store registrant mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed registrant")
@@ -527,7 +530,7 @@ func (h *EventHandlers) handleRegistrantDelete(
 	// Publish delete event
 	tags := generateRegistrantTags(eventData)
 	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish registrant delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish registrant delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -659,7 +662,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	// Convert v1Data to invite response event data
 	responseData, err := convertMapToInviteResponseData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to invite response")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invite response")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -683,7 +686,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	// Publish to indexer
 	tags := generateInviteResponseTags(responseData)
 	if err := h.publisher.PublishInviteResponseEvent(ctx, string(indexerAction), responseData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invite response event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invite response event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -692,7 +695,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store invite response mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invite response mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed invite response")
@@ -715,7 +718,7 @@ func (h *EventHandlers) handleInviteResponseDelete(
 	// Publish delete event
 	tags := generateInviteResponseTags(eventData)
 	if err := h.publisher.PublishInviteResponseEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invite response delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invite response delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -755,7 +758,7 @@ func getCommitteesForMeeting(
 
 	var mappings map[string]map[string]interface{}
 	if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
-		logger.With(errKey, err).WarnContext(ctx, "failed to unmarshal committee mappings")
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to unmarshal committee mappings")
 		return nil
 	}
 
@@ -765,14 +768,14 @@ func getCommitteesForMeeting(
 		if committeeID != "" {
 			committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, committeeID)
 			if err != nil {
-				logger.With(errKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
+				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
 				continue
 			}
 
 			filters := getStringSliceFromMap(mapping, "committee_filters")
 			committees = append(committees, models.Committee{
 				UID:                   committeeUID,
-				AllowedVotingStatuses: filters,
+				AllowedVotingStatuses: utils.CastSlice[itx.CommitteeFilter](filters),
 			})
 		}
 	}
@@ -797,7 +800,7 @@ func updateCommitteeMappings(
 		mappings = make(map[string]map[string]interface{})
 	} else {
 		if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
-			logger.With(errKey, err).ErrorContext(ctx, "failed to unmarshal existing mappings")
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal existing mappings")
 			mappings = make(map[string]map[string]interface{})
 		}
 	}
@@ -865,13 +868,13 @@ func (h *EventHandlers) retriggerMeetingIndexing(
 	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
 	meetingEntry, err := h.v1ObjectsKV.Get(ctx, meetingKey)
 	if err != nil {
-		h.logger.With(errKey, err).WarnContext(ctx, "meeting not found during retrigger")
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "meeting not found during retrigger")
 		return false // Meeting might be deleted, ACK
 	}
 
 	var meetingData map[string]interface{}
 	if err := json.Unmarshal(meetingEntry.Value(), &meetingData); err != nil {
-		h.logger.With(errKey, err).ErrorContext(ctx, "failed to unmarshal meeting data")
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal meeting data")
 		return false // ACK - permanent error
 	}
 

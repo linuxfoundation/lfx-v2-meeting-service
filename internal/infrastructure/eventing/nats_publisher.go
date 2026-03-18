@@ -23,6 +23,8 @@ const (
 	ActionCreated MessageAction = "created"
 	ActionUpdated MessageAction = "updated"
 	ActionDeleted MessageAction = "deleted"
+
+	authorizationHeaderValue = "Bearer lfx-v2-meeting-service"
 )
 
 // IndexerMessage is the structure for indexer messages
@@ -89,7 +91,7 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 
 	// Publish to indexer
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,
@@ -146,7 +148,7 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 
 	// Publish to indexer
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,
@@ -189,7 +191,7 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 
 	// RSVPs only go to indexer, not access control
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,
@@ -210,7 +212,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 
 	// Publish to indexer
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,
@@ -254,7 +256,7 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 
 	// Publish to indexer
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,
@@ -298,7 +300,7 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 
 	// Publish recording to indexer
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,
@@ -367,7 +369,7 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 
 	// Publish to indexer
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,
@@ -418,7 +420,7 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 
 	// Publish to indexer
 	headers := make(map[string]string)
-	headers["authorization"] = "Bearer lfx-v2-meeting-service"
+	headers["authorization"] = authorizationHeaderValue
 	indexerMsg := IndexerMessage{
 		Action:  MessageAction(action),
 		Headers: headers,

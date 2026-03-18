@@ -64,7 +64,7 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 		return false // ACK - can't get metadata
 	}
 
-	operation := getOperation(metadata)
+	operation := getOperation(msg)
 	handlers.logger.Info("processing KV event",
 		"key", key,
 		"operation", operation,
@@ -135,11 +135,17 @@ func handleKVDelete(ctx context.Context, key string, handlers *EventHandlers) bo
 	return false
 }
 
-// getOperation determines the operation type from metadata
-func getOperation(metadata *jetstream.MsgMetadata) jetstream.KeyValueOp {
-	// The operation is encoded in the metadata
-	// For KV buckets, we check the headers
-	return jetstream.KeyValuePut // Default to PUT
+// getOperation determines the operation type from the KV-Operation message header.
+// PUT is the default when the header is absent.
+func getOperation(msg jetstream.Msg) jetstream.KeyValueOp {
+	switch msg.Headers().Get("KV-Operation") {
+	case "DEL":
+		return jetstream.KeyValueDelete
+	case "PURGE":
+		return jetstream.KeyValuePurge
+	default:
+		return jetstream.KeyValuePut
+	}
 }
 
 // decodeData attempts to decode message data as JSON or MessagePack

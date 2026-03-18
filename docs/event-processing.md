@@ -10,7 +10,7 @@ This document describes the architecture, configuration, data transformation pat
 
 ### System Components
 
-```
+```text
 ┌─────────────────┐
 │  v1 DynamoDB    │
 │  (Source)       │
@@ -267,7 +267,7 @@ Project and committee IDs are mapped from v1 SFIDs to v2 UUIDs:
 
 ```go
 // Map project SFID to UUID
-projectUID, err := idMapper.MapSFIDToUUID(ctx, v1ProjectSFID)
+projectUID, err := idMapper.MapProjectV1ToV2(ctx, v1ProjectSFID)
 if err != nil {
     // NAK for retry if mapper unavailable
     return true
@@ -275,7 +275,7 @@ if err != nil {
 
 // Map committee SFIDs
 for _, committeeSFID := range v1CommitteeSFIDs {
-    committeeUID, err := idMapper.MapSFIDToUUID(ctx, committeeSFID)
+    committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, committeeSFID)
     if err != nil {
         logger.Warn("failed to map committee SFID", "sfid", committeeSFID)
         continue // Skip unmappable committees
@@ -286,7 +286,7 @@ for _, committeeSFID := range v1CommitteeSFIDs {
 
 Mappings are stored in the `v1-mappings` KV bucket for future reference:
 
-```
+```text
 Key: itx-zoom-meetings-v2.{v1_meeting_id}
 Value: {
     "v1_id": "abc123",
@@ -506,7 +506,7 @@ export EVENT_PROCESSING_ENABLED=true
 ```
 
 **Startup logs:**
-```
+```text
 INFO initializing event processor
 INFO event processor started consumer=meeting-service-kv-consumer
 ```
@@ -521,7 +521,7 @@ kill -TERM <pid>
 ```
 
 **Shutdown logs:**
-```
+```text
 INFO shutting down event processor
 INFO event processor stopped successfully timeout=30s pending_messages=0
 ```
@@ -712,7 +712,7 @@ The system handles backpressure through:
 
 ### Data Flow
 
-```
+```text
 v1-sync-helper → NATS KV → Meeting Service → Indexer Service
                                            → FGA-Sync Service
                                            → v1-mappings KV

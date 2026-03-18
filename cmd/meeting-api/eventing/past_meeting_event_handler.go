@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -13,6 +14,9 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
@@ -38,7 +42,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	// Convert v1Data to past meeting event data
 	pastMeetingData, err := convertMapToPastMeetingData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, h.v1MappingsKV, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to past meeting")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to past meeting")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -64,7 +68,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingEvent(ctx, string(indexerAction), pastMeetingData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish past meeting event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish past meeting event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -73,7 +77,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store past meeting mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting")
@@ -98,7 +102,7 @@ func (h *EventHandlers) handlePastMeetingDelete(
 
 	// Publish delete event
 	if err := h.publisher.PublishPastMeetingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish past meeting delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish past meeting delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -202,7 +206,7 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 
 	// Update committee mappings in KV bucket
 	if err := updatePastMeetingCommitteeMappings(ctx, pastMeetingUUID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to update past meeting committee mappings")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update past meeting committee mappings")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -269,12 +273,15 @@ func getCommitteesForPastMeeting(
 	key := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load past meeting committee mappings", "key", key)
+		}
 		return nil
 	}
 
 	var mappings map[string]map[string]interface{}
 	if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
-		logger.With(errKey, err).WarnContext(ctx, "failed to unmarshal past meeting committee mappings")
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to unmarshal past meeting committee mappings")
 		return nil
 	}
 
@@ -284,14 +291,14 @@ func getCommitteesForPastMeeting(
 		if committeeID != "" {
 			committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, committeeID)
 			if err != nil {
-				logger.With(errKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
+				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
 				continue
 			}
 
 			filters := getStringSliceFromMap(mapping, "committee_filters")
 			committees = append(committees, models.Committee{
 				UID:                   committeeUID,
-				AllowedVotingStatuses: filters,
+				AllowedVotingStatuses: utils.CastSlice[itx.CommitteeFilter](filters),
 			})
 		}
 	}
@@ -313,10 +320,13 @@ func updatePastMeetingCommitteeMappings(
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			return fmt.Errorf("failed to load past meeting mappings: %w", err)
+		}
 		mappings = make(map[string]map[string]interface{})
 	} else {
 		if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
-			logger.With(errKey, err).ErrorContext(ctx, "failed to unmarshal existing past meeting mappings")
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal existing past meeting mappings")
 			mappings = make(map[string]map[string]interface{})
 		}
 	}
@@ -351,7 +361,10 @@ func removePastMeetingCommitteeMapping(
 	mappingsKey := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
-		return nil // No mappings found
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return nil // No mappings found
+		}
+		return fmt.Errorf("failed to load past meeting mappings: %w", err)
 	}
 
 	var mappings map[string]map[string]interface{}
@@ -384,13 +397,13 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", pastMeetingUUID)
 	pastMeetingEntry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
 	if err != nil {
-		h.logger.With(errKey, err).WarnContext(ctx, "past meeting not found during retrigger")
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting not found during retrigger")
 		return false // Past meeting might be deleted, ACK
 	}
 
 	var pastMeetingData map[string]interface{}
 	if err := json.Unmarshal(pastMeetingEntry.Value(), &pastMeetingData); err != nil {
-		h.logger.With(errKey, err).ErrorContext(ctx, "failed to unmarshal past meeting data")
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal past meeting data")
 		return false // ACK - permanent error
 	}
 
@@ -432,7 +445,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	// Convert v1Data to participant event data
 	participantData, err := convertMapToInviteeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to invitee participant")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invitee participant")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -458,7 +471,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee participant event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invitee participant event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -467,7 +480,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store invitee participant mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invitee participant mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting invitee")
@@ -492,7 +505,7 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(
 
 	// Publish delete event
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish invitee delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invitee delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -528,7 +541,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	// Convert v1Data to participant event data
 	participantData, err := convertMapToAttendeeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to attendee participant")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to attendee participant")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -554,7 +567,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee participant event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish attendee participant event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -563,7 +576,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store attendee participant mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store attendee participant mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting attendee")
@@ -588,7 +601,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 
 	// Publish delete event
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish attendee delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish attendee delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -666,7 +679,7 @@ func convertMapToInviteeParticipantData(
 	if rawInvitee.LFUserID != "" && (firstName == "" || lastName == "") {
 		v1User, err := userLookup.LookupUser(ctx, rawInvitee.LFUserID)
 		if err != nil {
-			logger.With(errKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawInvitee.LFUserID)
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawInvitee.LFUserID)
 		} else if v1User != nil {
 			if firstName == "" && v1User.FirstName != "" {
 				firstName = v1User.FirstName
@@ -763,7 +776,7 @@ func convertMapToAttendeeParticipantData(
 	if rawAttendee.LFUserID != "" && (firstName == "" || lastName == "") {
 		v1User, err := userLookup.LookupUser(ctx, rawAttendee.LFUserID)
 		if err != nil {
-			logger.With(errKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawAttendee.LFUserID)
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawAttendee.LFUserID)
 		} else if v1User != nil {
 			if firstName == "" && v1User.FirstName != "" {
 				firstName = v1User.FirstName
@@ -883,7 +896,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	// Convert v1Data to recording event data
 	recordingData, transcriptData, err := convertMapToRecordingData(ctx, v1Data, h.idMapper, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to recording")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to recording")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -909,7 +922,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 
 	// Publish recording event to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData, recordingTags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish recording event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -920,7 +933,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	if transcriptData != nil {
 		transcriptTags := generateTranscriptTags(transcriptData.ID, transcriptData.MeetingAndOccurrenceID)
 		if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData, transcriptTags); err != nil {
-			funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish transcript event")
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish transcript event")
 			if isTransientError(err) {
 				return true // NAK for retry
 			}
@@ -930,7 +943,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store recording mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store recording mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting recording")
@@ -955,7 +968,7 @@ func (h *EventHandlers) handlePastMeetingRecordingDelete(
 
 	// Publish recording delete event
 	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, recordingTags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish recording delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish recording delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -966,7 +979,7 @@ func (h *EventHandlers) handlePastMeetingRecordingDelete(
 	transcriptData := &models.TranscriptEventData{ID: recordingID}
 	transcriptTags := generateTranscriptTags(recordingID, "")
 	if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerConstants.ActionDeleted), transcriptData, transcriptTags); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to publish transcript delete event")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish transcript delete event")
 	}
 
 	// Remove mapping
@@ -998,7 +1011,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	// Convert v1Data to summary event data
 	summaryData, err := convertMapToSummaryData(ctx, v1Data, h.idMapper, funcLogger)
 	if err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to convert v1Data to summary")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to summary")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -1024,7 +1037,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish summary event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}
@@ -1033,7 +1046,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
-		funcLogger.With(errKey, err).WarnContext(ctx, "failed to store summary mapping")
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store summary mapping")
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting summary")
@@ -1058,7 +1071,7 @@ func (h *EventHandlers) handlePastMeetingSummaryDelete(
 
 	// Publish delete event
 	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(errKey, err).ErrorContext(ctx, "failed to publish summary delete event")
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish summary delete event")
 		if isTransientError(err) {
 			return true // NAK for retry
 		}

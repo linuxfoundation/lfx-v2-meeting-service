@@ -109,6 +109,15 @@ func (ep *EventProcessor) Start(ctx context.Context) error {
 
 	// Consume messages
 	consumeCtx, err := ep.consumer.Consume(func(msg jetstream.Msg) {
+		defer func() {
+			if r := recover(); r != nil {
+				ep.logger.Error("panic in event handler, NAKing message", "subject", msg.Subject(), "panic", r)
+				if err := msg.Nak(); err != nil {
+					ep.logger.With(logging.ErrKey, err).Error("failed to NAK message after panic")
+				}
+			}
+		}()
+
 		// Process message in KV handler
 		shouldRetry := kvHandler(ctx, msg, ep.handlers)
 

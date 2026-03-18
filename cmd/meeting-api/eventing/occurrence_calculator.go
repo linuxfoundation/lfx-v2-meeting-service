@@ -449,8 +449,10 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 	if endTime != nil {
 		rrule.WriteString(fmt.Sprintf("UNTIL=%s;", endTime.Format("20060102T150405Z")))
 	} else {
+		// Use a local copy to avoid mutating the caller's recurrence object
+		endTimes := reccurrence.EndTimes
 		if reccurrence.EndDateTime != "" {
-			reccurrence.EndTimes = 0
+			endTimes = 0
 			t, err := time.Parse(time.RFC3339, reccurrence.EndDateTime)
 			if err != nil {
 				return "", fmt.Errorf("failed to parse recurrence end_date_time %s: %w", reccurrence.EndDateTime, err)
@@ -458,8 +460,12 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 			rrule.WriteString(fmt.Sprintf("UNTIL=%s;", t.Format("20060102T150405Z")))
 		}
 
-		if reccurrence.EndTimes != 0 {
-			rrule.WriteString(fmt.Sprintf("COUNT=%d;", reccurrence.EndTimes))
+		if endTimes != 0 {
+			rrule.WriteString(fmt.Sprintf("COUNT=%d;", endTimes))
+		} else if reccurrence.EndDateTime == "" {
+			// No terminal condition — add a safety cap to prevent set.All() from
+			// generating an unbounded sequence and exhausting memory.
+			rrule.WriteString("COUNT=1000;")
 		}
 	}
 
