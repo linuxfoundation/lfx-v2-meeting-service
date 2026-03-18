@@ -152,7 +152,7 @@ func run() int {
 			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default())
 			if err != nil {
 				slog.With(logging.ErrKey, err).Error("failed to create event processor")
-				os.Exit(1)
+				return 1
 			}
 			eventProcessor = ep
 

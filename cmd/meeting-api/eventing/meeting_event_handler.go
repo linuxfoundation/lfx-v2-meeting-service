@@ -965,13 +965,6 @@ func getString(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
 
-func getIntFromMap(m map[string]interface{}, key string) int {
-	if val, ok := m[key]; ok {
-		return getInt(val)
-	}
-	return 0
-}
-
 func getStringFromMap(m map[string]interface{}, key string) string {
 	if val, ok := m[key]; ok {
 		return getString(val)
