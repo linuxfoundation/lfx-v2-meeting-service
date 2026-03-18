@@ -10,7 +10,26 @@ image:
   # pullPolicy is the image pull policy
   pullPolicy: IfNotPresent
 
-replicaCount: 3
+replicaCount: 1
+
+# podAnnotations are additional annotations applied to the pod template.
+# Example:
+#   prometheus.io/scrape: "true"
+#   prometheus.io/port: "8080"
+podAnnotations: {}
+
+# podLabels are additional labels applied to the pod template.
+# Example:
+#   team: platform
+#   environment: production
+podLabels: {}
+
+# podDisruptionBudget configures a PodDisruptionBudget for the deployment.
+# Only one of minAvailable or maxUnavailable may be set (not both).
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  # maxUnavailable: 1
 
 resources:
   # limits define the maximum resources the container can use
@@ -84,16 +103,22 @@ app:
       value: ''
     # LFX_ENVIRONMENT is optional (dev, staging, prod) - defaults to prod if not set
     LFX_ENVIRONMENT:
-      value: prod
+      value: dev
     # ITX_BASE_URL is the base URL for the ITX service (required)
     ITX_BASE_URL:
       value: https://api.dev.itx.linuxfoundation.org
     # ITX_CLIENT_ID is the OAuth2 client ID for ITX service authentication
     ITX_CLIENT_ID:
-      value: null
+      valueFrom:
+        secretKeyRef:
+          name: meeting-secrets
+          key: auth0_client_id
     # ITX_CLIENT_PRIVATE_KEY is the RSA private key in PEM format for ITX OAuth2 M2M authentication
     ITX_CLIENT_PRIVATE_KEY:
-      value: null
+      valueFrom:
+        secretKeyRef:
+          name: meeting-secrets
+          key: auth0_client_private_key
     # ITX_AUTH0_DOMAIN is the Auth0 domain for ITX OAuth2 authentication
     ITX_AUTH0_DOMAIN:
       value: linuxfoundation-dev.auth0.com

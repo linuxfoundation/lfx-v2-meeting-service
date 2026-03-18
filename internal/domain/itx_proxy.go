@@ -21,6 +21,7 @@ type ITXMeetingClient interface {
 	RegisterCommitteeMembers(ctx context.Context, meetingID string) error
 	UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error
 	DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error
+	SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error)
 }
 
 // ITXRegistrantClient defines the interface for ITX registrant operations
@@ -67,11 +68,33 @@ type ITXPastMeetingParticipantClient interface {
 	ITXAttendeeClient
 }
 
-// ITXProxyClient combines meeting, registrant, past meeting, past meeting summary, and participant operations
+// ITXMeetingAttachmentClient defines the interface for ITX meeting attachment operations
+type ITXMeetingAttachmentClient interface {
+	CreateMeetingAttachment(ctx context.Context, meetingID string, req *itx.CreateMeetingAttachmentRequest) (*itx.MeetingAttachment, error)
+	GetMeetingAttachment(ctx context.Context, meetingID, attachmentID string) (*itx.MeetingAttachment, error)
+	UpdateMeetingAttachment(ctx context.Context, meetingID, attachmentID string, req *itx.UpdateMeetingAttachmentRequest) error
+	DeleteMeetingAttachment(ctx context.Context, meetingID, attachmentID string) error
+	CreateMeetingAttachmentPresignURL(ctx context.Context, meetingID string, req *itx.CreateAttachmentPresignRequest) (*itx.MeetingAttachmentPresignResponse, error)
+	GetMeetingAttachmentDownloadURL(ctx context.Context, meetingID, attachmentID string) (*itx.AttachmentDownloadResponse, error)
+}
+
+// ITXPastMeetingAttachmentClient defines the interface for ITX past meeting attachment operations
+type ITXPastMeetingAttachmentClient interface {
+	CreatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID string, req *itx.CreatePastMeetingAttachmentRequest) (*itx.PastMeetingAttachment, error)
+	GetPastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string) (*itx.PastMeetingAttachment, error)
+	UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string, req *itx.UpdatePastMeetingAttachmentRequest) error
+	DeletePastMeetingAttachment(ctx context.Context, meetingAndOccurrenceID, attachmentID string) error
+	CreatePastMeetingAttachmentPresignURL(ctx context.Context, meetingAndOccurrenceID string, req *itx.CreateAttachmentPresignRequest) (*itx.PastMeetingAttachmentPresignResponse, error)
+	GetPastMeetingAttachmentDownloadURL(ctx context.Context, meetingAndOccurrenceID, attachmentID string) (*itx.AttachmentDownloadResponse, error)
+}
+
+// ITXProxyClient combines meeting, registrant, past meeting, past meeting summary, participant, and attachment operations
 type ITXProxyClient interface {
 	ITXMeetingClient
 	ITXRegistrantClient
 	ITXPastMeetingClient
 	ITXPastMeetingSummaryClient
 	ITXPastMeetingParticipantClient
+	ITXMeetingAttachmentClient
+	ITXPastMeetingAttachmentClient
 }

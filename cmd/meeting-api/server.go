@@ -27,9 +27,7 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 
 	mux := goahttp.NewMuxer()
 
-	// Use default encoders and decoders (ITX proxy only needs JSON)
 	requestDecoder := goahttp.RequestDecoder
-	// Use custom response encoder to handle raw bytes for ICS endpoint
 	responseEncoder := createResponseEncoder()
 
 	koDataPath := os.Getenv("KO_DATA_PATH")
@@ -52,21 +50,16 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 		koDataDir,
 	)
 
-	// Mount the handler on the mux
 	genhttp.Mount(mux, genHttpServer)
 
 	var handler http.Handler = mux
 
-	// Add HTTP middleware
-	// Note: Order matters - RequestIDMiddleware should come first in the chain,
-	// so it should be the last middleware added to the handler since it is executed in reverse order.
+	// Middleware is executed in reverse order; RequestIDMiddleware runs first.
 	handler = middleware.RequestLoggerMiddleware()(handler)
 	handler = middleware.RequestIDMiddleware()(handler)
 	handler = middleware.AuthorizationMiddleware()(handler)
-	// Wrap the handler with OpenTelemetry instrumentation
 	handler = otelhttp.NewHandler(handler, "meeting-api")
 
-	// Set up http listener in a goroutine using provided command line parameters.
 	var addr string
 	if flags.Bind == "*" {
 		addr = ":" + flags.Port

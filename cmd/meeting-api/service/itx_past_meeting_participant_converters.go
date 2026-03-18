@@ -10,6 +10,7 @@ import (
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // ConvertCreateParticipantPayload converts Goa create participant payload to ITX invitee and attendee requests
@@ -127,10 +128,10 @@ func ConvertCreateParticipantPayload(payload *meetingservice.CreateItxPastMeetin
 			attendeeReq.Sessions = make([]itx.AttendeeSession, len(payload.Sessions))
 			for i, s := range payload.Sessions {
 				attendeeReq.Sessions[i] = itx.AttendeeSession{
-					ParticipantUUID: ptrToString(s.ParticipantUUID),
-					JoinTime:        ptrToString(s.JoinTime),
-					LeaveTime:       ptrToString(s.LeaveTime),
-					LeaveReason:     ptrToString(s.LeaveReason),
+					ParticipantUUID: utils.StringValue(s.ParticipantUUID),
+					JoinTime:        utils.StringValue(s.JoinTime),
+					LeaveTime:       utils.StringValue(s.LeaveTime),
+					LeaveReason:     utils.StringValue(s.LeaveReason),
 				}
 			}
 		}
@@ -217,47 +218,47 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meetingservice.ITXPastMeetingParticipant {
 	goaResp := &meetingservice.ITXPastMeetingParticipant{
 		// IDs
-		InviteeID:     ptrIfNotEmpty(resp.InviteeID),
-		AttendeeID:    ptrIfNotEmpty(resp.AttendeeID),
-		PastMeetingID: ptrIfNotEmpty(resp.PastMeetingID),
-		MeetingID:     ptrIfNotEmpty(resp.MeetingID),
+		InviteeID:     utils.StringPtrOmitEmpty(resp.InviteeID),
+		AttendeeID:    utils.StringPtrOmitEmpty(resp.AttendeeID),
+		PastMeetingID: utils.StringPtrOmitEmpty(resp.PastMeetingID),
+		MeetingID:     utils.StringPtrOmitEmpty(resp.MeetingID),
 
 		// Flags
-		IsInvited:  ptrBool(resp.IsInvited),
-		IsAttended: ptrBool(resp.IsAttended),
+		IsInvited:  utils.BoolPtr(resp.IsInvited),
+		IsAttended: utils.BoolPtr(resp.IsAttended),
 
 		// User data
-		FirstName:          ptrIfNotEmpty(resp.FirstName),
-		LastName:           ptrIfNotEmpty(resp.LastName),
-		Email:              ptrIfNotEmpty(resp.Email),
-		Username:           ptrIfNotEmpty(resp.Username),
-		LfUserID:           ptrIfNotEmpty(resp.LFUserID),
-		OrgName:            ptrIfNotEmpty(resp.OrgName),
-		JobTitle:           ptrIfNotEmpty(resp.JobTitle),
-		AvatarURL:          ptrIfNotEmpty(resp.AvatarURL),
-		OrgIsMember:        ptrBool(resp.OrgIsMember),
-		OrgIsProjectMember: ptrBool(resp.OrgIsProjectMember),
+		FirstName:          utils.StringPtrOmitEmpty(resp.FirstName),
+		LastName:           utils.StringPtrOmitEmpty(resp.LastName),
+		Email:              utils.StringPtrOmitEmpty(resp.Email),
+		Username:           utils.StringPtrOmitEmpty(resp.Username),
+		LfUserID:           utils.StringPtrOmitEmpty(resp.LFUserID),
+		OrgName:            utils.StringPtrOmitEmpty(resp.OrgName),
+		JobTitle:           utils.StringPtrOmitEmpty(resp.JobTitle),
+		AvatarURL:          utils.StringPtrOmitEmpty(resp.AvatarURL),
+		OrgIsMember:        utils.BoolPtr(resp.OrgIsMember),
+		OrgIsProjectMember: utils.BoolPtr(resp.OrgIsProjectMember),
 
 		// Committee data
-		CommitteeID:           ptrIfNotEmpty(resp.CommitteeID),
-		CommitteeRole:         ptrIfNotEmpty(resp.CommitteeRole),
-		IsCommitteeMember:     ptrBool(resp.IsCommitteeMember),
-		CommitteeVotingStatus: ptrIfNotEmpty(resp.CommitteeVotingStatus),
+		CommitteeID:           utils.StringPtrOmitEmpty(resp.CommitteeID),
+		CommitteeRole:         utils.StringPtrOmitEmpty(resp.CommitteeRole),
+		IsCommitteeMember:     utils.BoolPtr(resp.IsCommitteeMember),
+		CommitteeVotingStatus: utils.StringPtrOmitEmpty(resp.CommitteeVotingStatus),
 
 		// Attendee-specific fields
-		IsVerified: ptrBool(resp.IsVerified),
-		IsUnknown:  ptrBool(resp.IsUnknown),
+		IsVerified: utils.BoolPtr(resp.IsVerified),
+		IsUnknown:  utils.BoolPtr(resp.IsUnknown),
 
 		// Audit fields
-		CreatedAt:  ptrIfNotEmpty(resp.CreatedAt),
-		ModifiedAt: ptrIfNotEmpty(resp.ModifiedAt),
+		CreatedAt:  utils.StringPtrOmitEmpty(resp.CreatedAt),
+		ModifiedAt: utils.StringPtrOmitEmpty(resp.ModifiedAt),
 	}
 
 	// Add ID (use invitee_id if present, otherwise attendee_id)
 	if resp.InviteeID != "" {
-		goaResp.ID = ptrIfNotEmpty(resp.InviteeID)
+		goaResp.ID = utils.StringPtrOmitEmpty(resp.InviteeID)
 	} else if resp.AttendeeID != "" {
-		goaResp.ID = ptrIfNotEmpty(resp.AttendeeID)
+		goaResp.ID = utils.StringPtrOmitEmpty(resp.AttendeeID)
 	}
 
 	// Convert average attendance
@@ -270,10 +271,10 @@ func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meet
 		goaResp.Sessions = make([]*meetingservice.ParticipantSession, len(resp.Sessions))
 		for i, s := range resp.Sessions {
 			goaResp.Sessions[i] = &meetingservice.ParticipantSession{
-				ParticipantUUID: ptrIfNotEmpty(s.ParticipantUUID),
-				JoinTime:        ptrIfNotEmpty(s.JoinTime),
-				LeaveTime:       ptrIfNotEmpty(s.LeaveTime),
-				LeaveReason:     ptrIfNotEmpty(s.LeaveReason),
+				ParticipantUUID: utils.StringPtrOmitEmpty(s.ParticipantUUID),
+				JoinTime:        utils.StringPtrOmitEmpty(s.JoinTime),
+				LeaveTime:       utils.StringPtrOmitEmpty(s.LeaveTime),
+				LeaveReason:     utils.StringPtrOmitEmpty(s.LeaveReason),
 			}
 		}
 	}
@@ -281,30 +282,22 @@ func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meet
 	// Convert created_by
 	if resp.CreatedBy != nil {
 		goaResp.CreatedBy = &meetingservice.ITXUser{
-			Username:       ptrIfNotEmpty(resp.CreatedBy.Username),
-			Name:           ptrIfNotEmpty(resp.CreatedBy.Name),
-			Email:          ptrIfNotEmpty(resp.CreatedBy.Email),
-			ProfilePicture: ptrIfNotEmpty(resp.CreatedBy.ProfilePicture),
+			Username:       utils.StringPtrOmitEmpty(resp.CreatedBy.Username),
+			Name:           utils.StringPtrOmitEmpty(resp.CreatedBy.Name),
+			Email:          utils.StringPtrOmitEmpty(resp.CreatedBy.Email),
+			ProfilePicture: utils.StringPtrOmitEmpty(resp.CreatedBy.ProfilePicture),
 		}
 	}
 
 	// Convert modified_by
 	if resp.ModifiedBy != nil {
 		goaResp.ModifiedBy = &meetingservice.ITXUser{
-			Username:       ptrIfNotEmpty(resp.ModifiedBy.Username),
-			Name:           ptrIfNotEmpty(resp.ModifiedBy.Name),
-			Email:          ptrIfNotEmpty(resp.ModifiedBy.Email),
-			ProfilePicture: ptrIfNotEmpty(resp.ModifiedBy.ProfilePicture),
+			Username:       utils.StringPtrOmitEmpty(resp.ModifiedBy.Username),
+			Name:           utils.StringPtrOmitEmpty(resp.ModifiedBy.Name),
+			Email:          utils.StringPtrOmitEmpty(resp.ModifiedBy.Email),
+			ProfilePicture: utils.StringPtrOmitEmpty(resp.ModifiedBy.ProfilePicture),
 		}
 	}
 
 	return goaResp
-}
-
-// Helper function to convert pointer to string value
-func ptrToString(ptr *string) string {
-	if ptr == nil {
-		return ""
-	}
-	return *ptr
 }

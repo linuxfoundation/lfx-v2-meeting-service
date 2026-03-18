@@ -15,65 +15,91 @@ import (
 
 // Client is the "Meeting Service" service client.
 type Client struct {
-	ReadyzEndpoint                          goa.Endpoint
-	LivezEndpoint                           goa.Endpoint
-	CreateItxMeetingEndpoint                goa.Endpoint
-	GetItxMeetingEndpoint                   goa.Endpoint
-	DeleteItxMeetingEndpoint                goa.Endpoint
-	UpdateItxMeetingEndpoint                goa.Endpoint
-	GetItxMeetingCountEndpoint              goa.Endpoint
-	CreateItxRegistrantEndpoint             goa.Endpoint
-	GetItxRegistrantEndpoint                goa.Endpoint
-	UpdateItxRegistrantEndpoint             goa.Endpoint
-	DeleteItxRegistrantEndpoint             goa.Endpoint
-	GetItxJoinLinkEndpoint                  goa.Endpoint
-	GetItxRegistrantIcsEndpoint             goa.Endpoint
-	ResendItxRegistrantInvitationEndpoint   goa.Endpoint
-	ResendItxMeetingInvitationsEndpoint     goa.Endpoint
-	RegisterItxCommitteeMembersEndpoint     goa.Endpoint
-	UpdateItxOccurrenceEndpoint             goa.Endpoint
-	DeleteItxOccurrenceEndpoint             goa.Endpoint
-	CreateItxPastMeetingEndpoint            goa.Endpoint
-	GetItxPastMeetingEndpoint               goa.Endpoint
-	DeleteItxPastMeetingEndpoint            goa.Endpoint
-	UpdateItxPastMeetingEndpoint            goa.Endpoint
-	GetItxPastMeetingSummaryEndpoint        goa.Endpoint
-	UpdateItxPastMeetingSummaryEndpoint     goa.Endpoint
-	CreateItxPastMeetingParticipantEndpoint goa.Endpoint
-	UpdateItxPastMeetingParticipantEndpoint goa.Endpoint
-	DeleteItxPastMeetingParticipantEndpoint goa.Endpoint
+	ReadyzEndpoint                                goa.Endpoint
+	LivezEndpoint                                 goa.Endpoint
+	CreateItxMeetingEndpoint                      goa.Endpoint
+	GetItxMeetingEndpoint                         goa.Endpoint
+	DeleteItxMeetingEndpoint                      goa.Endpoint
+	UpdateItxMeetingEndpoint                      goa.Endpoint
+	GetItxMeetingCountEndpoint                    goa.Endpoint
+	CreateItxRegistrantEndpoint                   goa.Endpoint
+	GetItxRegistrantEndpoint                      goa.Endpoint
+	UpdateItxRegistrantEndpoint                   goa.Endpoint
+	DeleteItxRegistrantEndpoint                   goa.Endpoint
+	GetItxJoinLinkEndpoint                        goa.Endpoint
+	GetItxRegistrantIcsEndpoint                   goa.Endpoint
+	ResendItxRegistrantInvitationEndpoint         goa.Endpoint
+	ResendItxMeetingInvitationsEndpoint           goa.Endpoint
+	RegisterItxCommitteeMembersEndpoint           goa.Endpoint
+	UpdateItxOccurrenceEndpoint                   goa.Endpoint
+	DeleteItxOccurrenceEndpoint                   goa.Endpoint
+	SubmitItxMeetingResponseEndpoint              goa.Endpoint
+	CreateItxPastMeetingEndpoint                  goa.Endpoint
+	GetItxPastMeetingEndpoint                     goa.Endpoint
+	DeleteItxPastMeetingEndpoint                  goa.Endpoint
+	UpdateItxPastMeetingEndpoint                  goa.Endpoint
+	GetItxPastMeetingSummaryEndpoint              goa.Endpoint
+	UpdateItxPastMeetingSummaryEndpoint           goa.Endpoint
+	CreateItxPastMeetingParticipantEndpoint       goa.Endpoint
+	UpdateItxPastMeetingParticipantEndpoint       goa.Endpoint
+	DeleteItxPastMeetingParticipantEndpoint       goa.Endpoint
+	CreateItxMeetingAttachmentEndpoint            goa.Endpoint
+	GetItxMeetingAttachmentEndpoint               goa.Endpoint
+	UpdateItxMeetingAttachmentEndpoint            goa.Endpoint
+	DeleteItxMeetingAttachmentEndpoint            goa.Endpoint
+	CreateItxMeetingAttachmentPresignEndpoint     goa.Endpoint
+	GetItxMeetingAttachmentDownloadEndpoint       goa.Endpoint
+	CreateItxPastMeetingAttachmentEndpoint        goa.Endpoint
+	GetItxPastMeetingAttachmentEndpoint           goa.Endpoint
+	UpdateItxPastMeetingAttachmentEndpoint        goa.Endpoint
+	DeleteItxPastMeetingAttachmentEndpoint        goa.Endpoint
+	CreateItxPastMeetingAttachmentPresignEndpoint goa.Endpoint
+	GetItxPastMeetingAttachmentDownloadEndpoint   goa.Endpoint
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
 	return &Client{
-		ReadyzEndpoint:                          readyz,
-		LivezEndpoint:                           livez,
-		CreateItxMeetingEndpoint:                createItxMeeting,
-		GetItxMeetingEndpoint:                   getItxMeeting,
-		DeleteItxMeetingEndpoint:                deleteItxMeeting,
-		UpdateItxMeetingEndpoint:                updateItxMeeting,
-		GetItxMeetingCountEndpoint:              getItxMeetingCount,
-		CreateItxRegistrantEndpoint:             createItxRegistrant,
-		GetItxRegistrantEndpoint:                getItxRegistrant,
-		UpdateItxRegistrantEndpoint:             updateItxRegistrant,
-		DeleteItxRegistrantEndpoint:             deleteItxRegistrant,
-		GetItxJoinLinkEndpoint:                  getItxJoinLink,
-		GetItxRegistrantIcsEndpoint:             getItxRegistrantIcs,
-		ResendItxRegistrantInvitationEndpoint:   resendItxRegistrantInvitation,
-		ResendItxMeetingInvitationsEndpoint:     resendItxMeetingInvitations,
-		RegisterItxCommitteeMembersEndpoint:     registerItxCommitteeMembers,
-		UpdateItxOccurrenceEndpoint:             updateItxOccurrence,
-		DeleteItxOccurrenceEndpoint:             deleteItxOccurrence,
-		CreateItxPastMeetingEndpoint:            createItxPastMeeting,
-		GetItxPastMeetingEndpoint:               getItxPastMeeting,
-		DeleteItxPastMeetingEndpoint:            deleteItxPastMeeting,
-		UpdateItxPastMeetingEndpoint:            updateItxPastMeeting,
-		GetItxPastMeetingSummaryEndpoint:        getItxPastMeetingSummary,
-		UpdateItxPastMeetingSummaryEndpoint:     updateItxPastMeetingSummary,
-		CreateItxPastMeetingParticipantEndpoint: createItxPastMeetingParticipant,
-		UpdateItxPastMeetingParticipantEndpoint: updateItxPastMeetingParticipant,
-		DeleteItxPastMeetingParticipantEndpoint: deleteItxPastMeetingParticipant,
+		ReadyzEndpoint:                                readyz,
+		LivezEndpoint:                                 livez,
+		CreateItxMeetingEndpoint:                      createItxMeeting,
+		GetItxMeetingEndpoint:                         getItxMeeting,
+		DeleteItxMeetingEndpoint:                      deleteItxMeeting,
+		UpdateItxMeetingEndpoint:                      updateItxMeeting,
+		GetItxMeetingCountEndpoint:                    getItxMeetingCount,
+		CreateItxRegistrantEndpoint:                   createItxRegistrant,
+		GetItxRegistrantEndpoint:                      getItxRegistrant,
+		UpdateItxRegistrantEndpoint:                   updateItxRegistrant,
+		DeleteItxRegistrantEndpoint:                   deleteItxRegistrant,
+		GetItxJoinLinkEndpoint:                        getItxJoinLink,
+		GetItxRegistrantIcsEndpoint:                   getItxRegistrantIcs,
+		ResendItxRegistrantInvitationEndpoint:         resendItxRegistrantInvitation,
+		ResendItxMeetingInvitationsEndpoint:           resendItxMeetingInvitations,
+		RegisterItxCommitteeMembersEndpoint:           registerItxCommitteeMembers,
+		UpdateItxOccurrenceEndpoint:                   updateItxOccurrence,
+		DeleteItxOccurrenceEndpoint:                   deleteItxOccurrence,
+		SubmitItxMeetingResponseEndpoint:              submitItxMeetingResponse,
+		CreateItxPastMeetingEndpoint:                  createItxPastMeeting,
+		GetItxPastMeetingEndpoint:                     getItxPastMeeting,
+		DeleteItxPastMeetingEndpoint:                  deleteItxPastMeeting,
+		UpdateItxPastMeetingEndpoint:                  updateItxPastMeeting,
+		GetItxPastMeetingSummaryEndpoint:              getItxPastMeetingSummary,
+		UpdateItxPastMeetingSummaryEndpoint:           updateItxPastMeetingSummary,
+		CreateItxPastMeetingParticipantEndpoint:       createItxPastMeetingParticipant,
+		UpdateItxPastMeetingParticipantEndpoint:       updateItxPastMeetingParticipant,
+		DeleteItxPastMeetingParticipantEndpoint:       deleteItxPastMeetingParticipant,
+		CreateItxMeetingAttachmentEndpoint:            createItxMeetingAttachment,
+		GetItxMeetingAttachmentEndpoint:               getItxMeetingAttachment,
+		UpdateItxMeetingAttachmentEndpoint:            updateItxMeetingAttachment,
+		DeleteItxMeetingAttachmentEndpoint:            deleteItxMeetingAttachment,
+		CreateItxMeetingAttachmentPresignEndpoint:     createItxMeetingAttachmentPresign,
+		GetItxMeetingAttachmentDownloadEndpoint:       getItxMeetingAttachmentDownload,
+		CreateItxPastMeetingAttachmentEndpoint:        createItxPastMeetingAttachment,
+		GetItxPastMeetingAttachmentEndpoint:           getItxPastMeetingAttachment,
+		UpdateItxPastMeetingAttachmentEndpoint:        updateItxPastMeetingAttachment,
+		DeleteItxPastMeetingAttachmentEndpoint:        deleteItxPastMeetingAttachment,
+		CreateItxPastMeetingAttachmentPresignEndpoint: createItxPastMeetingAttachmentPresign,
+		GetItxPastMeetingAttachmentDownloadEndpoint:   getItxPastMeetingAttachmentDownload,
 	}
 }
 
@@ -370,6 +396,25 @@ func (c *Client) DeleteItxOccurrence(ctx context.Context, p *DeleteItxOccurrence
 	return
 }
 
+// SubmitItxMeetingResponse calls the "submit-itx-meeting-response" endpoint of
+// the "Meeting Service" service.
+// SubmitItxMeetingResponse may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting or registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) SubmitItxMeetingResponse(ctx context.Context, p *SubmitItxMeetingResponsePayload) (res *ITXMeetingResponseResult, err error) {
+	var ires any
+	ires, err = c.SubmitItxMeetingResponseEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXMeetingResponseResult), nil
+}
+
 // CreateItxPastMeeting calls the "create-itx-past-meeting" endpoint of the
 // "Meeting Service" service.
 // CreateItxPastMeeting may return the following errors:
@@ -531,4 +576,223 @@ func (c *Client) UpdateItxPastMeetingParticipant(ctx context.Context, p *UpdateI
 func (c *Client) DeleteItxPastMeetingParticipant(ctx context.Context, p *DeleteItxPastMeetingParticipantPayload) (err error) {
 	_, err = c.DeleteItxPastMeetingParticipantEndpoint(ctx, p)
 	return
+}
+
+// CreateItxMeetingAttachment calls the "create-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+// CreateItxMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateItxMeetingAttachment(ctx context.Context, p *CreateItxMeetingAttachmentPayload) (res *ITXMeetingAttachment, err error) {
+	var ires any
+	ires, err = c.CreateItxMeetingAttachmentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXMeetingAttachment), nil
+}
+
+// GetItxMeetingAttachment calls the "get-itx-meeting-attachment" endpoint of
+// the "Meeting Service" service.
+// GetItxMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxMeetingAttachment(ctx context.Context, p *GetItxMeetingAttachmentPayload) (res *ITXMeetingAttachment, err error) {
+	var ires any
+	ires, err = c.GetItxMeetingAttachmentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXMeetingAttachment), nil
+}
+
+// UpdateItxMeetingAttachment calls the "update-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+// UpdateItxMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateItxMeetingAttachment(ctx context.Context, p *UpdateItxMeetingAttachmentPayload) (err error) {
+	_, err = c.UpdateItxMeetingAttachmentEndpoint(ctx, p)
+	return
+}
+
+// DeleteItxMeetingAttachment calls the "delete-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+// DeleteItxMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteItxMeetingAttachment(ctx context.Context, p *DeleteItxMeetingAttachmentPayload) (err error) {
+	_, err = c.DeleteItxMeetingAttachmentEndpoint(ctx, p)
+	return
+}
+
+// CreateItxMeetingAttachmentPresign calls the
+// "create-itx-meeting-attachment-presign" endpoint of the "Meeting Service"
+// service.
+// CreateItxMeetingAttachmentPresign may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateItxMeetingAttachmentPresign(ctx context.Context, p *CreateItxMeetingAttachmentPresignPayload) (res *ITXMeetingAttachmentPresignResponse, err error) {
+	var ires any
+	ires, err = c.CreateItxMeetingAttachmentPresignEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXMeetingAttachmentPresignResponse), nil
+}
+
+// GetItxMeetingAttachmentDownload calls the
+// "get-itx-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+// GetItxMeetingAttachmentDownload may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxMeetingAttachmentDownload(ctx context.Context, p *GetItxMeetingAttachmentDownloadPayload) (res *ITXAttachmentDownloadResponse, err error) {
+	var ires any
+	ires, err = c.GetItxMeetingAttachmentDownloadEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXAttachmentDownloadResponse), nil
+}
+
+// CreateItxPastMeetingAttachment calls the
+// "create-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+// CreateItxPastMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Past meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateItxPastMeetingAttachment(ctx context.Context, p *CreateItxPastMeetingAttachmentPayload) (res *ITXPastMeetingAttachment, err error) {
+	var ires any
+	ires, err = c.CreateItxPastMeetingAttachmentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXPastMeetingAttachment), nil
+}
+
+// GetItxPastMeetingAttachment calls the "get-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+// GetItxPastMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxPastMeetingAttachment(ctx context.Context, p *GetItxPastMeetingAttachmentPayload) (res *ITXPastMeetingAttachment, err error) {
+	var ires any
+	ires, err = c.GetItxPastMeetingAttachmentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXPastMeetingAttachment), nil
+}
+
+// UpdateItxPastMeetingAttachment calls the
+// "update-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+// UpdateItxPastMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) UpdateItxPastMeetingAttachment(ctx context.Context, p *UpdateItxPastMeetingAttachmentPayload) (err error) {
+	_, err = c.UpdateItxPastMeetingAttachmentEndpoint(ctx, p)
+	return
+}
+
+// DeleteItxPastMeetingAttachment calls the
+// "delete-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+// DeleteItxPastMeetingAttachment may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) DeleteItxPastMeetingAttachment(ctx context.Context, p *DeleteItxPastMeetingAttachmentPayload) (err error) {
+	_, err = c.DeleteItxPastMeetingAttachmentEndpoint(ctx, p)
+	return
+}
+
+// CreateItxPastMeetingAttachmentPresign calls the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+// CreateItxPastMeetingAttachmentPresign may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Past meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) CreateItxPastMeetingAttachmentPresign(ctx context.Context, p *CreateItxPastMeetingAttachmentPresignPayload) (res *ITXPastMeetingAttachmentPresignResponse, err error) {
+	var ires any
+	ires, err = c.CreateItxPastMeetingAttachmentPresignEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXPastMeetingAttachmentPresignResponse), nil
+}
+
+// GetItxPastMeetingAttachmentDownload calls the
+// "get-itx-past-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+// GetItxPastMeetingAttachmentDownload may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Attachment not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxPastMeetingAttachmentDownload(ctx context.Context, p *GetItxPastMeetingAttachmentDownloadPayload) (res *ITXAttachmentDownloadResponse, err error) {
+	var ires any
+	ires, err = c.GetItxPastMeetingAttachmentDownloadEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ITXAttachmentDownloadResponse), nil
 }

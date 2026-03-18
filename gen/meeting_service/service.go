@@ -52,6 +52,9 @@ type Service interface {
 	UpdateItxOccurrence(context.Context, *UpdateItxOccurrencePayload) (err error)
 	// Delete a specific occurrence of a recurring meeting through ITX API proxy
 	DeleteItxOccurrence(context.Context, *DeleteItxOccurrencePayload) (err error)
+	// Submit a meeting response (invite response) for a meeting or occurrence
+	// through ITX API proxy
+	SubmitItxMeetingResponse(context.Context, *SubmitItxMeetingResponsePayload) (res *ITXMeetingResponseResult, err error)
 	// Create a past meeting through ITX API proxy
 	CreateItxPastMeeting(context.Context, *CreateItxPastMeetingPayload) (res *ITXPastZoomMeeting, err error)
 	// Get a past meeting through ITX API proxy
@@ -73,6 +76,32 @@ type Service interface {
 	// Delete a past meeting participant through ITX API proxy - deletes invitee
 	// and/or attendee records as needed
 	DeleteItxPastMeetingParticipant(context.Context, *DeleteItxPastMeetingParticipantPayload) (err error)
+	// Create a meeting attachment through ITX API proxy
+	CreateItxMeetingAttachment(context.Context, *CreateItxMeetingAttachmentPayload) (res *ITXMeetingAttachment, err error)
+	// Get a meeting attachment through ITX API proxy
+	GetItxMeetingAttachment(context.Context, *GetItxMeetingAttachmentPayload) (res *ITXMeetingAttachment, err error)
+	// Update a meeting attachment through ITX API proxy
+	UpdateItxMeetingAttachment(context.Context, *UpdateItxMeetingAttachmentPayload) (err error)
+	// Delete a meeting attachment through ITX API proxy
+	DeleteItxMeetingAttachment(context.Context, *DeleteItxMeetingAttachmentPayload) (err error)
+	// Generate presigned URL for meeting attachment upload through ITX API proxy
+	CreateItxMeetingAttachmentPresign(context.Context, *CreateItxMeetingAttachmentPresignPayload) (res *ITXMeetingAttachmentPresignResponse, err error)
+	// Generate presigned URL for meeting attachment download through ITX API proxy
+	GetItxMeetingAttachmentDownload(context.Context, *GetItxMeetingAttachmentDownloadPayload) (res *ITXAttachmentDownloadResponse, err error)
+	// Create a past meeting attachment through ITX API proxy
+	CreateItxPastMeetingAttachment(context.Context, *CreateItxPastMeetingAttachmentPayload) (res *ITXPastMeetingAttachment, err error)
+	// Get a past meeting attachment through ITX API proxy
+	GetItxPastMeetingAttachment(context.Context, *GetItxPastMeetingAttachmentPayload) (res *ITXPastMeetingAttachment, err error)
+	// Update a past meeting attachment through ITX API proxy
+	UpdateItxPastMeetingAttachment(context.Context, *UpdateItxPastMeetingAttachmentPayload) (err error)
+	// Delete a past meeting attachment through ITX API proxy
+	DeleteItxPastMeetingAttachment(context.Context, *DeleteItxPastMeetingAttachmentPayload) (err error)
+	// Generate presigned URL for past meeting attachment upload through ITX API
+	// proxy
+	CreateItxPastMeetingAttachmentPresign(context.Context, *CreateItxPastMeetingAttachmentPresignPayload) (res *ITXPastMeetingAttachmentPresignResponse, err error)
+	// Generate presigned URL for past meeting attachment download through ITX API
+	// proxy
+	GetItxPastMeetingAttachmentDownload(context.Context, *GetItxPastMeetingAttachmentDownloadPayload) (res *ITXAttachmentDownloadResponse, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -95,7 +124,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [27]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant"}
+var MethodNames = [40]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
 
 type BadRequestError struct {
 	// HTTP status code
@@ -117,6 +146,48 @@ type ConflictError struct {
 	Code string
 	// Error message
 	Message string
+}
+
+// CreateItxMeetingAttachmentPayload is the payload type of the Meeting Service
+// service create-itx-meeting-attachment method.
+type CreateItxMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Meeting ID
+	MeetingID string
+	// Attachment type
+	Type string
+	// Attachment category
+	Category string
+	// External link URL (required if type is 'link')
+	Link *string
+	// Attachment name
+	Name string
+	// Optional description
+	Description *string
+}
+
+// CreateItxMeetingAttachmentPresignPayload is the payload type of the Meeting
+// Service service create-itx-meeting-attachment-presign method.
+type CreateItxMeetingAttachmentPresignPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Meeting ID
+	MeetingID string
+	// File name
+	Name string
+	// Optional description
+	Description *string
+	// Attachment category
+	Category *string
+	// File size in bytes
+	FileSize int64
+	// MIME type
+	FileType string
 }
 
 // CreateItxMeetingPayload is the payload type of the Meeting Service service
@@ -158,10 +229,54 @@ type CreateItxMeetingPayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+}
+
+// CreateItxPastMeetingAttachmentPayload is the payload type of the Meeting
+// Service service create-itx-past-meeting-attachment method.
+type CreateItxPastMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string
+	// Attachment type
+	Type string
+	// Attachment category
+	Category string
+	// External link URL (required if type is 'link')
+	Link *string
+	// Attachment name
+	Name string
+	// Optional description
+	Description *string
+}
+
+// CreateItxPastMeetingAttachmentPresignPayload is the payload type of the
+// Meeting Service service create-itx-past-meeting-attachment-presign method.
+type CreateItxPastMeetingAttachmentPresignPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string
+	// File name
+	Name string
+	// Optional description
+	Description *string
+	// Attachment category
+	Category *string
+	// File size in bytes
+	FileSize int64
+	// MIME type
+	FileType string
 }
 
 // CreateItxPastMeetingParticipantPayload is the payload type of the Meeting
@@ -307,6 +422,19 @@ type CreateItxRegistrantPayload struct {
 	UpdatedBy *ITXUser
 }
 
+// DeleteItxMeetingAttachmentPayload is the payload type of the Meeting Service
+// service delete-itx-meeting-attachment method.
+type DeleteItxMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Meeting ID
+	MeetingID string
+	// Attachment ID
+	AttachmentID string
+}
+
 // DeleteItxMeetingPayload is the payload type of the Meeting Service service
 // delete-itx-meeting method.
 type DeleteItxMeetingPayload struct {
@@ -329,6 +457,19 @@ type DeleteItxOccurrencePayload struct {
 	MeetingID string
 	// The ID of the occurrence (Unix timestamp)
 	OccurrenceID string
+}
+
+// DeleteItxPastMeetingAttachmentPayload is the payload type of the Meeting
+// Service service delete-itx-past-meeting-attachment method.
+type DeleteItxPastMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string
+	// Attachment ID
+	AttachmentID string
 }
 
 // DeleteItxPastMeetingParticipantPayload is the payload type of the Meeting
@@ -396,6 +537,32 @@ type GetItxJoinLinkPayload struct {
 	Register *bool
 }
 
+// GetItxMeetingAttachmentDownloadPayload is the payload type of the Meeting
+// Service service get-itx-meeting-attachment-download method.
+type GetItxMeetingAttachmentDownloadPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Meeting ID
+	MeetingID string
+	// Attachment ID
+	AttachmentID string
+}
+
+// GetItxMeetingAttachmentPayload is the payload type of the Meeting Service
+// service get-itx-meeting-attachment method.
+type GetItxMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Meeting ID
+	MeetingID string
+	// Attachment ID
+	AttachmentID string
+}
+
 // GetItxMeetingCountPayload is the payload type of the Meeting Service service
 // get-itx-meeting-count method.
 type GetItxMeetingCountPayload struct {
@@ -416,6 +583,32 @@ type GetItxMeetingPayload struct {
 	Version *string
 	// The Zoom meeting ID
 	MeetingID string
+}
+
+// GetItxPastMeetingAttachmentDownloadPayload is the payload type of the
+// Meeting Service service get-itx-past-meeting-attachment-download method.
+type GetItxPastMeetingAttachmentDownloadPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string
+	// Attachment ID
+	AttachmentID string
+}
+
+// GetItxPastMeetingAttachmentPayload is the payload type of the Meeting
+// Service service get-itx-past-meeting-attachment method.
+type GetItxPastMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string
+	// Attachment ID
+	AttachmentID string
 }
 
 // GetItxPastMeetingPayload is the payload type of the Meeting Service service
@@ -468,11 +661,123 @@ type GetItxRegistrantPayload struct {
 	RegistrantID string
 }
 
+// ITXAttachmentDownloadResponse is the result type of the Meeting Service
+// service get-itx-meeting-attachment-download method.
+type ITXAttachmentDownloadResponse struct {
+	// Presigned S3 URL for file download (valid for 60 minutes)
+	DownloadURL string
+}
+
+// ITXMeetingAttachment is the result type of the Meeting Service service
+// create-itx-meeting-attachment method.
+type ITXMeetingAttachment struct {
+	// Attachment ID
+	UID string
+	// Meeting ID
+	MeetingID string
+	// Attachment type
+	Type string
+	// Attachment source origin
+	Source *string
+	// Attachment category
+	Category string
+	// External link URL (for link-type attachments)
+	Link *string
+	// Attachment name or file name
+	Name string
+	// Optional description of the attachment
+	Description *string
+	// File name (for file-type attachments)
+	FileName *string
+	// File size in bytes (for file-type attachments)
+	FileSize *int64
+	// S3 key path (for file-type attachments)
+	FileURL *string
+	// Whether the file has been uploaded to S3
+	FileUploaded *bool
+	// Upload status
+	FileUploadStatus *string
+	// MIME type of the file
+	FileContentType *string
+	// ISO 8601 timestamp
+	CreatedAt *string
+	// User who created the attachment
+	CreatedBy *ITXUser
+	// ISO 8601 timestamp
+	UpdatedAt *string
+	// User who last updated the attachment
+	UpdatedBy *ITXUser
+	// User who uploaded the file
+	FileUploadedBy *ITXUser
+	// ISO 8601 timestamp when file was uploaded
+	FileUploadedAt *string
+}
+
+// ITXMeetingAttachmentPresignResponse is the result type of the Meeting
+// Service service create-itx-meeting-attachment-presign method.
+type ITXMeetingAttachmentPresignResponse struct {
+	// Attachment ID
+	UID string
+	// Meeting ID
+	MeetingID string
+	// Attachment type (always 'file' for presign)
+	Type *string
+	// Attachment category
+	Category *string
+	// File name
+	Name *string
+	// Description
+	Description *string
+	// File name
+	FileName *string
+	// File size in bytes
+	FileSize *int64
+	// Presigned S3 PUT URL (valid for 60 minutes)
+	FileURL string
+	// Upload status (should be 'ongoing')
+	FileUploadStatus *string
+	// MIME type
+	FileContentType *string
+	// ISO 8601 timestamp
+	CreatedAt *string
+	// User who created the attachment
+	CreatedBy *ITXUser
+	// ISO 8601 timestamp
+	UpdatedAt *string
+	// User who last updated the attachment
+	UpdatedBy *ITXUser
+}
+
 // ITXMeetingCountResponse is the result type of the Meeting Service service
 // get-itx-meeting-count method.
 type ITXMeetingCountResponse struct {
 	// Number of meetings for the project
 	MeetingCount int
+}
+
+// ITXMeetingResponseResult is the result type of the Meeting Service service
+// submit-itx-meeting-response method.
+type ITXMeetingResponseResult struct {
+	// Unique identifier for this response record
+	ID string
+	// The meeting ID this response belongs to
+	MeetingID string
+	// The registrant ID that submitted the response
+	RegistrantID string
+	// Username of the registrant
+	Username *string
+	// Email of the registrant
+	Email *string
+	// The response value
+	Response string
+	// Which occurrences the response applies to
+	Scope string
+	// The specific occurrence ID (for single/this_and_following scope)
+	OccurrenceID *string
+	// Creation timestamp (RFC3339)
+	CreatedAt *string
+	// Last update timestamp (RFC3339)
+	UpdatedAt *string
 }
 
 // Meeting occurrence from ITX
@@ -487,6 +792,90 @@ type ITXOccurrence struct {
 	Status *string
 	// Number of registrants for this occurrence
 	RegistrantCount *int
+}
+
+// ITXPastMeetingAttachment is the result type of the Meeting Service service
+// create-itx-past-meeting-attachment method.
+type ITXPastMeetingAttachment struct {
+	// Attachment ID
+	UID string
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string
+	// Meeting ID
+	MeetingID string
+	// Attachment type
+	Type string
+	// Attachment source origin
+	Source *string
+	// Attachment category
+	Category string
+	// External link URL (for link-type attachments)
+	Link *string
+	// Attachment name or file name
+	Name string
+	// Optional description of the attachment
+	Description *string
+	// File name (for file-type attachments)
+	FileName *string
+	// File size in bytes (for file-type attachments)
+	FileSize *int64
+	// S3 key path (for file-type attachments)
+	FileURL *string
+	// Whether the file has been uploaded to S3
+	FileUploaded *bool
+	// Upload status
+	FileUploadStatus *string
+	// MIME type of the file
+	FileContentType *string
+	// ISO 8601 timestamp
+	CreatedAt *string
+	// User who created the attachment
+	CreatedBy *ITXUser
+	// ISO 8601 timestamp
+	UpdatedAt *string
+	// User who last updated the attachment
+	UpdatedBy *ITXUser
+	// User who uploaded the file
+	FileUploadedBy *ITXUser
+	// ISO 8601 timestamp when file was uploaded
+	FileUploadedAt *string
+}
+
+// ITXPastMeetingAttachmentPresignResponse is the result type of the Meeting
+// Service service create-itx-past-meeting-attachment-presign method.
+type ITXPastMeetingAttachmentPresignResponse struct {
+	// Attachment ID
+	UID string
+	// Meeting ID and occurrence timestamp
+	MeetingAndOccurrenceID string
+	// Meeting ID
+	MeetingID *string
+	// Attachment type (always 'file' for presign)
+	Type *string
+	// Attachment category
+	Category *string
+	// File name
+	Name *string
+	// Description
+	Description *string
+	// File name
+	FileName *string
+	// File size in bytes
+	FileSize *int64
+	// Presigned S3 PUT URL (valid for 60 minutes)
+	FileURL string
+	// Upload status (should be 'ongoing')
+	FileUploadStatus *string
+	// MIME type
+	FileContentType *string
+	// ISO 8601 timestamp
+	CreatedAt *string
+	// User who created the attachment
+	CreatedBy *ITXUser
+	// ISO 8601 timestamp
+	UpdatedAt *string
+	// User who last updated the attachment
+	UpdatedBy *ITXUser
 }
 
 // ITXPastMeetingParticipant is the result type of the Meeting Service service
@@ -691,6 +1080,8 @@ type ITXZoomMeetingResponse struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
@@ -842,6 +1233,26 @@ type ServiceUnavailableError struct {
 	Message string
 }
 
+// SubmitItxMeetingResponsePayload is the payload type of the Meeting Service
+// service submit-itx-meeting-response method.
+type SubmitItxMeetingResponsePayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The Zoom meeting ID
+	MeetingID string
+	// The occurrence ID for recurring meetings (concatenated with meeting_id as
+	// meeting_id-occurrence_id when calling ITX)
+	OccurrenceID *string
+	// The meeting response value
+	Response string
+	// Which occurrences the response applies to
+	Scope string
+	// ID of the registrant submitting the response
+	RegistrantID string
+}
+
 // AI-generated summary content for a past meeting
 type SummaryData struct {
 	// Summary start time
@@ -863,6 +1274,29 @@ type UnauthorizedError struct {
 	Code string
 	// Error message
 	Message string
+}
+
+// UpdateItxMeetingAttachmentPayload is the payload type of the Meeting Service
+// service update-itx-meeting-attachment method.
+type UpdateItxMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Meeting ID
+	MeetingID string
+	// Attachment ID
+	AttachmentID string
+	// Attachment type
+	Type string
+	// Attachment category
+	Category string
+	// External link URL (required if type is 'link')
+	Link *string
+	// Attachment name
+	Name string
+	// Optional description
+	Description *string
 }
 
 // UpdateItxMeetingPayload is the payload type of the Meeting Service service
@@ -906,6 +1340,8 @@ type UpdateItxMeetingPayload struct {
 	TranscriptEnabled *bool
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
@@ -933,6 +1369,29 @@ type UpdateItxOccurrencePayload struct {
 	Agenda *string
 	// Recurrence settings
 	Recurrence *Recurrence
+}
+
+// UpdateItxPastMeetingAttachmentPayload is the payload type of the Meeting
+// Service service update-itx-past-meeting-attachment method.
+type UpdateItxPastMeetingAttachmentPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string
+	// Attachment ID
+	AttachmentID string
+	// Attachment type
+	Type string
+	// Attachment category
+	Category string
+	// External link URL (required if type is 'link')
+	Link *string
+	// Attachment name
+	Name string
+	// Optional description
+	Description *string
 }
 
 // UpdateItxPastMeetingParticipantPayload is the payload type of the Meeting

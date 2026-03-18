@@ -36,6 +36,8 @@ The ITX Meeting Proxy Service is a lightweight stateless proxy that forwards mee
 │  ┌────────────────────────────────────────────┐         │
 │  │         API Layer (Goa-generated)          │         │
 │  │         /itx/meetings/*                    │         │
+│  │         /itx/meetings/*/responses          │         │
+│  │         /itx/past_meetings/*               │         │
 │  │         /itx/meeting_count                 │         │
 │  └────────────────┬───────────────────────────┘         │
 │                   │                                      │
@@ -44,6 +46,8 @@ The ITX Meeting Proxy Service is a lightweight stateless proxy that forwards mee
 │  │         Service Layer                      │         │
 │  │         - MeetingService                   │         │
 │  │         - RegistrantService                │         │
+│  │         - MeetingAttachmentService         │         │
+│  │         - PastMeetingAttachmentService     │         │
 │  │         - AuthService                      │         │
 │  └────────────────┬───────────────────────────┘         │
 │                   │                                      │
@@ -83,16 +87,19 @@ The ITX Meeting Proxy Service is a lightweight stateless proxy that forwards mee
 
 ```
 cmd/meeting-api/
-├── api.go                       # Main API struct and handlers
-├── api_itx_meetings.go          # ITX meeting endpoint handlers
-├── api_itx_registrants.go       # ITX registrant endpoint handlers
-├── config.go                    # Environment configuration
-├── infrastructure.go            # JWT auth setup
-├── main.go                      # Application entry point
-├── server.go                    # HTTP server setup
+├── api.go                                # Main API struct and handlers
+├── api_itx_meetings.go                   # ITX meeting endpoint handlers
+├── api_itx_registrants.go                # ITX registrant endpoint handlers
+├── api_itx_meeting_attachments.go        # ITX meeting attachment endpoint handlers
+├── api_itx_past_meeting_attachments.go   # ITX past meeting attachment endpoint handlers
+├── config.go                             # Environment configuration
+├── infrastructure.go                     # JWT auth setup
+├── main.go                               # Application entry point
+├── server.go                             # HTTP server setup
 └── service/
-    ├── itx_meeting_converters.go     # Meeting format converters
-    └── itx_registrant_converters.go  # Registrant format converters
+    ├── itx_meeting_converters.go         # Meeting format converters
+    ├── itx_registrant_converters.go      # Registrant format converters
+    └── itx_attachment_converters.go      # Attachment format converters
 
 internal/
 ├── domain/
@@ -102,10 +109,12 @@ internal/
 │   └── models/
 │       └── itx_meeting.go       # ITX domain models
 ├── service/
-│   ├── auth_service.go          # JWT authentication service
+│   ├── auth_service.go                    # JWT authentication service
 │   └── itx/
-│       ├── meeting_service.go      # ITX meeting service
-│       └── registrant_service.go   # ITX registrant service
+│       ├── meeting_service.go             # ITX meeting service
+│       ├── registrant_service.go          # ITX registrant service
+│       ├── meeting_attachment_service.go  # ITX meeting attachment service
+│       └── past_meeting_attachment_service.go  # ITX past meeting attachment service
 └── infrastructure/
     ├── auth/
     │   └── jwt.go               # JWT validation
@@ -374,9 +383,9 @@ app:
 | **Business Logic** | Minimal (format conversion) |
 | **Field Mapping** | Required (uid/id, title/topic, etc.) |
 | **Infrastructure** | HTTP proxy client + OAuth2 |
-| **Features** | Basic CRUD for meetings and registrants |
+| **Features** | Full CRUD for meetings, registrants, past meetings, attachments, and RSVP responses |
 | **State** | Stateless |
-| **Implementation** | ~1500 LOC |
+| **Implementation** | ~2500 LOC |
 | **Dependencies** | ITX service, Heimdall (JWT), optional NATS (ID mapping) |
 
 The service provides:

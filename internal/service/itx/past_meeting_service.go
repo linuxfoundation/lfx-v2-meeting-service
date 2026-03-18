@@ -46,7 +46,6 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 		}
 	}
 
-	// Call ITX proxy
 	resp, err := s.pastMeetingClient.CreatePastMeeting(ctx, req)
 	if err != nil {
 		return nil, err
@@ -77,7 +76,6 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 
 // GetPastMeeting retrieves a past meeting via ITX proxy
 func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID string) (*itx.PastMeetingResponse, error) {
-	// Call ITX proxy
 	resp, err := s.pastMeetingClient.GetPastMeeting(ctx, pastMeetingID)
 	if err != nil {
 		return nil, err
@@ -128,19 +126,14 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeetingI
 		}
 	}
 
-	// Call ITX proxy
-	// ITX returns 204 No Content on success, so resp will be nil
 	_, err := s.pastMeetingClient.UpdatePastMeeting(ctx, pastMeetingID, req)
 	if err != nil {
 		return nil, err
 	}
-
-	// Success - return nil (ITX returns 204 No Content)
 	return nil, nil
 }
 
 // DeletePastMeeting deletes a past meeting via ITX proxy
 func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, pastMeetingID string) error {
-	// Call ITX proxy
 	return s.pastMeetingClient.DeletePastMeeting(ctx, pastMeetingID)
 }

@@ -46,6 +46,8 @@ type CreateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -84,6 +86,8 @@ type UpdateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -208,6 +212,20 @@ type UpdateItxOccurrenceRequestBody struct {
 	Agenda *string `form:"agenda,omitempty" json:"agenda,omitempty" xml:"agenda,omitempty"`
 	// Recurrence settings
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+}
+
+// SubmitItxMeetingResponseRequestBody is the type of the "Meeting Service"
+// service "submit-itx-meeting-response" endpoint HTTP request body.
+type SubmitItxMeetingResponseRequestBody struct {
+	// The occurrence ID for recurring meetings (concatenated with meeting_id as
+	// meeting_id-occurrence_id when calling ITX)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// The meeting response value
+	Response *string `form:"response,omitempty" json:"response,omitempty" xml:"response,omitempty"`
+	// Which occurrences the response applies to
+	Scope *string `form:"scope,omitempty" json:"scope,omitempty" xml:"scope,omitempty"`
+	// ID of the registrant submitting the response
+	RegistrantID *string `form:"registrant_id,omitempty" json:"registrant_id,omitempty" xml:"registrant_id,omitempty"`
 }
 
 // CreateItxPastMeetingRequestBody is the type of the "Meeting Service" service
@@ -367,6 +385,100 @@ type UpdateItxPastMeetingParticipantRequestBody struct {
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
 }
 
+// CreateItxMeetingAttachmentRequestBody is the type of the "Meeting Service"
+// service "create-itx-meeting-attachment" endpoint HTTP request body.
+type CreateItxMeetingAttachmentRequestBody struct {
+	// Attachment type
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// External link URL (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Optional description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+}
+
+// UpdateItxMeetingAttachmentRequestBody is the type of the "Meeting Service"
+// service "update-itx-meeting-attachment" endpoint HTTP request body.
+type UpdateItxMeetingAttachmentRequestBody struct {
+	// Attachment type
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// External link URL (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Optional description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+}
+
+// CreateItxMeetingAttachmentPresignRequestBody is the type of the "Meeting
+// Service" service "create-itx-meeting-attachment-presign" endpoint HTTP
+// request body.
+type CreateItxMeetingAttachmentPresignRequestBody struct {
+	// File name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Optional description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// File size in bytes
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// MIME type
+	FileType *string `form:"file_type,omitempty" json:"file_type,omitempty" xml:"file_type,omitempty"`
+}
+
+// CreateItxPastMeetingAttachmentRequestBody is the type of the "Meeting
+// Service" service "create-itx-past-meeting-attachment" endpoint HTTP request
+// body.
+type CreateItxPastMeetingAttachmentRequestBody struct {
+	// Attachment type
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// External link URL (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Optional description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+}
+
+// UpdateItxPastMeetingAttachmentRequestBody is the type of the "Meeting
+// Service" service "update-itx-past-meeting-attachment" endpoint HTTP request
+// body.
+type UpdateItxPastMeetingAttachmentRequestBody struct {
+	// Attachment type
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// External link URL (required if type is 'link')
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Optional description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+}
+
+// CreateItxPastMeetingAttachmentPresignRequestBody is the type of the "Meeting
+// Service" service "create-itx-past-meeting-attachment-presign" endpoint HTTP
+// request body.
+type CreateItxPastMeetingAttachmentPresignRequestBody struct {
+	// File name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Optional description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// File size in bytes
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// MIME type
+	FileType *string `form:"file_type,omitempty" json:"file_type,omitempty" xml:"file_type,omitempty"`
+}
+
 // CreateItxMeetingResponseBody is the type of the "Meeting Service" service
 // "create-itx-meeting" endpoint HTTP response body.
 type CreateItxMeetingResponseBody struct {
@@ -399,6 +511,8 @@ type CreateItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -455,6 +569,8 @@ type GetItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -589,6 +705,31 @@ type GetItxRegistrantResponseBody struct {
 type GetItxJoinLinkResponseBody struct {
 	// Zoom meeting join URL
 	Link string `form:"link" json:"link" xml:"link"`
+}
+
+// SubmitItxMeetingResponseResponseBody is the type of the "Meeting Service"
+// service "submit-itx-meeting-response" endpoint HTTP response body.
+type SubmitItxMeetingResponseResponseBody struct {
+	// Unique identifier for this response record
+	ID string `form:"id" json:"id" xml:"id"`
+	// The meeting ID this response belongs to
+	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
+	// The registrant ID that submitted the response
+	RegistrantID string `form:"registrant_id" json:"registrant_id" xml:"registrant_id"`
+	// Username of the registrant
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Email of the registrant
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// The response value
+	Response string `form:"response" json:"response" xml:"response"`
+	// Which occurrences the response applies to
+	Scope string `form:"scope" json:"scope" xml:"scope"`
+	// The specific occurrence ID (for single/this_and_following scope)
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Creation timestamp (RFC3339)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Last update timestamp (RFC3339)
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
 // CreateItxPastMeetingResponseBody is the type of the "Meeting Service"
@@ -853,6 +994,281 @@ type UpdateItxPastMeetingParticipantResponseBody struct {
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last modifier user info
 	ModifiedBy *ITXUserResponseBody `form:"modified_by,omitempty" json:"modified_by,omitempty" xml:"modified_by,omitempty"`
+}
+
+// CreateItxMeetingAttachmentResponseBody is the type of the "Meeting Service"
+// service "create-itx-meeting-attachment" endpoint HTTP response body.
+type CreateItxMeetingAttachmentResponseBody struct {
+	// Attachment ID
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// Meeting ID
+	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
+	// Attachment type
+	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
+	// Attachment category
+	Category string `form:"category" json:"category" xml:"category"`
+	// External link URL (for link-type attachments)
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name or file name
+	Name string `form:"name" json:"name" xml:"name"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// File name (for file-type attachments)
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// File size in bytes (for file-type attachments)
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// S3 key path (for file-type attachments)
+	FileURL *string `form:"file_url,omitempty" json:"file_url,omitempty" xml:"file_url,omitempty"`
+	// Whether the file has been uploaded to S3
+	FileUploaded *bool `form:"file_uploaded,omitempty" json:"file_uploaded,omitempty" xml:"file_uploaded,omitempty"`
+	// Upload status
+	FileUploadStatus *string `form:"file_upload_status,omitempty" json:"file_upload_status,omitempty" xml:"file_upload_status,omitempty"`
+	// MIME type of the file
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
+	// ISO 8601 timestamp
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// User who created the attachment
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// ISO 8601 timestamp
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// User who last updated the attachment
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	// User who uploaded the file
+	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	// ISO 8601 timestamp when file was uploaded
+	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
+}
+
+// GetItxMeetingAttachmentResponseBody is the type of the "Meeting Service"
+// service "get-itx-meeting-attachment" endpoint HTTP response body.
+type GetItxMeetingAttachmentResponseBody struct {
+	// Attachment ID
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// Meeting ID
+	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
+	// Attachment type
+	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
+	// Attachment category
+	Category string `form:"category" json:"category" xml:"category"`
+	// External link URL (for link-type attachments)
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name or file name
+	Name string `form:"name" json:"name" xml:"name"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// File name (for file-type attachments)
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// File size in bytes (for file-type attachments)
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// S3 key path (for file-type attachments)
+	FileURL *string `form:"file_url,omitempty" json:"file_url,omitempty" xml:"file_url,omitempty"`
+	// Whether the file has been uploaded to S3
+	FileUploaded *bool `form:"file_uploaded,omitempty" json:"file_uploaded,omitempty" xml:"file_uploaded,omitempty"`
+	// Upload status
+	FileUploadStatus *string `form:"file_upload_status,omitempty" json:"file_upload_status,omitempty" xml:"file_upload_status,omitempty"`
+	// MIME type of the file
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
+	// ISO 8601 timestamp
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// User who created the attachment
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// ISO 8601 timestamp
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// User who last updated the attachment
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	// User who uploaded the file
+	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	// ISO 8601 timestamp when file was uploaded
+	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
+}
+
+// CreateItxMeetingAttachmentPresignResponseBody is the type of the "Meeting
+// Service" service "create-itx-meeting-attachment-presign" endpoint HTTP
+// response body.
+type CreateItxMeetingAttachmentPresignResponseBody struct {
+	// Attachment ID
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// Meeting ID
+	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
+	// Attachment type (always 'file' for presign)
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// File name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// File name
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// File size in bytes
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// Presigned S3 PUT URL (valid for 60 minutes)
+	FileURL string `form:"file_url" json:"file_url" xml:"file_url"`
+	// Upload status (should be 'ongoing')
+	FileUploadStatus *string `form:"file_upload_status,omitempty" json:"file_upload_status,omitempty" xml:"file_upload_status,omitempty"`
+	// MIME type
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
+	// ISO 8601 timestamp
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// User who created the attachment
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// ISO 8601 timestamp
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// User who last updated the attachment
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
+// GetItxMeetingAttachmentDownloadResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachment-download" endpoint HTTP
+// response body.
+type GetItxMeetingAttachmentDownloadResponseBody struct {
+	// Presigned S3 URL for file download (valid for 60 minutes)
+	DownloadURL string `form:"download_url" json:"download_url" xml:"download_url"`
+}
+
+// CreateItxPastMeetingAttachmentResponseBody is the type of the "Meeting
+// Service" service "create-itx-past-meeting-attachment" endpoint HTTP response
+// body.
+type CreateItxPastMeetingAttachmentResponseBody struct {
+	// Attachment ID
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string `form:"meeting_and_occurrence_id" json:"meeting_and_occurrence_id" xml:"meeting_and_occurrence_id"`
+	// Meeting ID
+	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
+	// Attachment type
+	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
+	// Attachment category
+	Category string `form:"category" json:"category" xml:"category"`
+	// External link URL (for link-type attachments)
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name or file name
+	Name string `form:"name" json:"name" xml:"name"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// File name (for file-type attachments)
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// File size in bytes (for file-type attachments)
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// S3 key path (for file-type attachments)
+	FileURL *string `form:"file_url,omitempty" json:"file_url,omitempty" xml:"file_url,omitempty"`
+	// Whether the file has been uploaded to S3
+	FileUploaded *bool `form:"file_uploaded,omitempty" json:"file_uploaded,omitempty" xml:"file_uploaded,omitempty"`
+	// Upload status
+	FileUploadStatus *string `form:"file_upload_status,omitempty" json:"file_upload_status,omitempty" xml:"file_upload_status,omitempty"`
+	// MIME type of the file
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
+	// ISO 8601 timestamp
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// User who created the attachment
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// ISO 8601 timestamp
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// User who last updated the attachment
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	// User who uploaded the file
+	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	// ISO 8601 timestamp when file was uploaded
+	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
+}
+
+// GetItxPastMeetingAttachmentResponseBody is the type of the "Meeting Service"
+// service "get-itx-past-meeting-attachment" endpoint HTTP response body.
+type GetItxPastMeetingAttachmentResponseBody struct {
+	// Attachment ID
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// Past meeting and occurrence ID
+	MeetingAndOccurrenceID string `form:"meeting_and_occurrence_id" json:"meeting_and_occurrence_id" xml:"meeting_and_occurrence_id"`
+	// Meeting ID
+	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
+	// Attachment type
+	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
+	// Attachment category
+	Category string `form:"category" json:"category" xml:"category"`
+	// External link URL (for link-type attachments)
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name or file name
+	Name string `form:"name" json:"name" xml:"name"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// File name (for file-type attachments)
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// File size in bytes (for file-type attachments)
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// S3 key path (for file-type attachments)
+	FileURL *string `form:"file_url,omitempty" json:"file_url,omitempty" xml:"file_url,omitempty"`
+	// Whether the file has been uploaded to S3
+	FileUploaded *bool `form:"file_uploaded,omitempty" json:"file_uploaded,omitempty" xml:"file_uploaded,omitempty"`
+	// Upload status
+	FileUploadStatus *string `form:"file_upload_status,omitempty" json:"file_upload_status,omitempty" xml:"file_upload_status,omitempty"`
+	// MIME type of the file
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
+	// ISO 8601 timestamp
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// User who created the attachment
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// ISO 8601 timestamp
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// User who last updated the attachment
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	// User who uploaded the file
+	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	// ISO 8601 timestamp when file was uploaded
+	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
+}
+
+// CreateItxPastMeetingAttachmentPresignResponseBody is the type of the
+// "Meeting Service" service "create-itx-past-meeting-attachment-presign"
+// endpoint HTTP response body.
+type CreateItxPastMeetingAttachmentPresignResponseBody struct {
+	// Attachment ID
+	UID string `form:"uid" json:"uid" xml:"uid"`
+	// Meeting ID and occurrence timestamp
+	MeetingAndOccurrenceID string `form:"meeting_and_occurrence_id" json:"meeting_and_occurrence_id" xml:"meeting_and_occurrence_id"`
+	// Meeting ID
+	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Attachment type (always 'file' for presign)
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// File name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// File name
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// File size in bytes
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// Presigned S3 PUT URL (valid for 60 minutes)
+	FileURL string `form:"file_url" json:"file_url" xml:"file_url"`
+	// Upload status (should be 'ongoing')
+	FileUploadStatus *string `form:"file_upload_status,omitempty" json:"file_upload_status,omitempty" xml:"file_upload_status,omitempty"`
+	// MIME type
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
+	// ISO 8601 timestamp
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// User who created the attachment
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// ISO 8601 timestamp
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// User who last updated the attachment
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
+// GetItxPastMeetingAttachmentDownloadResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-attachment-download" endpoint HTTP
+// response body.
+type GetItxPastMeetingAttachmentDownloadResponseBody struct {
+	// Presigned S3 URL for file download (valid for 60 minutes)
+	DownloadURL string `form:"download_url" json:"download_url" xml:"download_url"`
 }
 
 // ReadyzServiceUnavailableResponseBody is the type of the "Meeting Service"
@@ -1845,6 +2261,66 @@ type DeleteItxOccurrenceUnauthorizedResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// SubmitItxMeetingResponseBadRequestResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "BadRequest" error.
+type SubmitItxMeetingResponseBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseForbiddenResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "Forbidden" error.
+type SubmitItxMeetingResponseForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "submit-itx-meeting-response" endpoint HTTP
+// response body for the "InternalServerError" error.
+type SubmitItxMeetingResponseInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseNotFoundResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "NotFound" error.
+type SubmitItxMeetingResponseNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "submit-itx-meeting-response" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type SubmitItxMeetingResponseServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SubmitItxMeetingResponseUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "submit-itx-meeting-response" endpoint HTTP response body
+// for the "Unauthorized" error.
+type SubmitItxMeetingResponseUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // CreateItxPastMeetingBadRequestResponseBody is the type of the "Meeting
 // Service" service "create-itx-past-meeting" endpoint HTTP response body for
 // the "BadRequest" error.
@@ -2395,6 +2871,730 @@ type DeleteItxPastMeetingParticipantUnauthorizedResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// CreateItxMeetingAttachmentBadRequestResponseBody is the type of the "Meeting
+// Service" service "create-itx-meeting-attachment" endpoint HTTP response body
+// for the "BadRequest" error.
+type CreateItxMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentForbiddenResponseBody is the type of the "Meeting
+// Service" service "create-itx-meeting-attachment" endpoint HTTP response body
+// for the "Forbidden" error.
+type CreateItxMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "create-itx-meeting-attachment" endpoint HTTP
+// response body for the "InternalServerError" error.
+type CreateItxMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "create-itx-meeting-attachment" endpoint HTTP response body
+// for the "NotFound" error.
+type CreateItxMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "create-itx-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type CreateItxMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "create-itx-meeting-attachment" endpoint HTTP
+// response body for the "Unauthorized" error.
+type CreateItxMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachment" endpoint HTTP response body
+// for the "BadRequest" error.
+type GetItxMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentForbiddenResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachment" endpoint HTTP response body
+// for the "Forbidden" error.
+type GetItxMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachment" endpoint HTTP
+// response body for the "InternalServerError" error.
+type GetItxMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachment" endpoint HTTP response body
+// for the "NotFound" error.
+type GetItxMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetItxMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachment" endpoint HTTP response body
+// for the "Unauthorized" error.
+type GetItxMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingAttachmentBadRequestResponseBody is the type of the "Meeting
+// Service" service "update-itx-meeting-attachment" endpoint HTTP response body
+// for the "BadRequest" error.
+type UpdateItxMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingAttachmentForbiddenResponseBody is the type of the "Meeting
+// Service" service "update-itx-meeting-attachment" endpoint HTTP response body
+// for the "Forbidden" error.
+type UpdateItxMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingAttachmentInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "update-itx-meeting-attachment" endpoint HTTP
+// response body for the "InternalServerError" error.
+type UpdateItxMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "update-itx-meeting-attachment" endpoint HTTP response body
+// for the "NotFound" error.
+type UpdateItxMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "update-itx-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type UpdateItxMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxMeetingAttachmentUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "update-itx-meeting-attachment" endpoint HTTP
+// response body for the "Unauthorized" error.
+type UpdateItxMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingAttachmentBadRequestResponseBody is the type of the "Meeting
+// Service" service "delete-itx-meeting-attachment" endpoint HTTP response body
+// for the "BadRequest" error.
+type DeleteItxMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingAttachmentForbiddenResponseBody is the type of the "Meeting
+// Service" service "delete-itx-meeting-attachment" endpoint HTTP response body
+// for the "Forbidden" error.
+type DeleteItxMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingAttachmentInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "delete-itx-meeting-attachment" endpoint HTTP
+// response body for the "InternalServerError" error.
+type DeleteItxMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "delete-itx-meeting-attachment" endpoint HTTP response body
+// for the "NotFound" error.
+type DeleteItxMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "delete-itx-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type DeleteItxMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxMeetingAttachmentUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "delete-itx-meeting-attachment" endpoint HTTP
+// response body for the "Unauthorized" error.
+type DeleteItxMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentPresignBadRequestResponseBody is the type of the
+// "Meeting Service" service "create-itx-meeting-attachment-presign" endpoint
+// HTTP response body for the "BadRequest" error.
+type CreateItxMeetingAttachmentPresignBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentPresignForbiddenResponseBody is the type of the
+// "Meeting Service" service "create-itx-meeting-attachment-presign" endpoint
+// HTTP response body for the "Forbidden" error.
+type CreateItxMeetingAttachmentPresignForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentPresignInternalServerErrorResponseBody is the type
+// of the "Meeting Service" service "create-itx-meeting-attachment-presign"
+// endpoint HTTP response body for the "InternalServerError" error.
+type CreateItxMeetingAttachmentPresignInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentPresignNotFoundResponseBody is the type of the
+// "Meeting Service" service "create-itx-meeting-attachment-presign" endpoint
+// HTTP response body for the "NotFound" error.
+type CreateItxMeetingAttachmentPresignNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentPresignServiceUnavailableResponseBody is the type
+// of the "Meeting Service" service "create-itx-meeting-attachment-presign"
+// endpoint HTTP response body for the "ServiceUnavailable" error.
+type CreateItxMeetingAttachmentPresignServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxMeetingAttachmentPresignUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "create-itx-meeting-attachment-presign" endpoint
+// HTTP response body for the "Unauthorized" error.
+type CreateItxMeetingAttachmentPresignUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentDownloadBadRequestResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachment-download" endpoint
+// HTTP response body for the "BadRequest" error.
+type GetItxMeetingAttachmentDownloadBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentDownloadForbiddenResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachment-download" endpoint
+// HTTP response body for the "Forbidden" error.
+type GetItxMeetingAttachmentDownloadForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentDownloadInternalServerErrorResponseBody is the type
+// of the "Meeting Service" service "get-itx-meeting-attachment-download"
+// endpoint HTTP response body for the "InternalServerError" error.
+type GetItxMeetingAttachmentDownloadInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentDownloadNotFoundResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachment-download" endpoint
+// HTTP response body for the "NotFound" error.
+type GetItxMeetingAttachmentDownloadNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentDownloadServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "get-itx-meeting-attachment-download" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type GetItxMeetingAttachmentDownloadServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxMeetingAttachmentDownloadUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachment-download" endpoint
+// HTTP response body for the "Unauthorized" error.
+type GetItxMeetingAttachmentDownloadUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentBadRequestResponseBody is the type of the
+// "Meeting Service" service "create-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "BadRequest" error.
+type CreateItxPastMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentForbiddenResponseBody is the type of the
+// "Meeting Service" service "create-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "Forbidden" error.
+type CreateItxPastMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "create-itx-past-meeting-attachment" endpoint
+// HTTP response body for the "InternalServerError" error.
+type CreateItxPastMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentNotFoundResponseBody is the type of the
+// "Meeting Service" service "create-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "NotFound" error.
+type CreateItxPastMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "create-itx-past-meeting-attachment" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type CreateItxPastMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "create-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "Unauthorized" error.
+type CreateItxPastMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentBadRequestResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "BadRequest" error.
+type GetItxPastMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentForbiddenResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-attachment" endpoint HTTP response
+// body for the "Forbidden" error.
+type GetItxPastMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "get-itx-past-meeting-attachment" endpoint
+// HTTP response body for the "InternalServerError" error.
+type GetItxPastMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-attachment" endpoint HTTP response
+// body for the "NotFound" error.
+type GetItxPastMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetItxPastMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "Unauthorized" error.
+type GetItxPastMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxPastMeetingAttachmentBadRequestResponseBody is the type of the
+// "Meeting Service" service "update-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "BadRequest" error.
+type UpdateItxPastMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxPastMeetingAttachmentForbiddenResponseBody is the type of the
+// "Meeting Service" service "update-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "Forbidden" error.
+type UpdateItxPastMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxPastMeetingAttachmentInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "update-itx-past-meeting-attachment" endpoint
+// HTTP response body for the "InternalServerError" error.
+type UpdateItxPastMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxPastMeetingAttachmentNotFoundResponseBody is the type of the
+// "Meeting Service" service "update-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "NotFound" error.
+type UpdateItxPastMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxPastMeetingAttachmentServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "update-itx-past-meeting-attachment" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type UpdateItxPastMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// UpdateItxPastMeetingAttachmentUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "update-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "Unauthorized" error.
+type UpdateItxPastMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxPastMeetingAttachmentBadRequestResponseBody is the type of the
+// "Meeting Service" service "delete-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "BadRequest" error.
+type DeleteItxPastMeetingAttachmentBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxPastMeetingAttachmentForbiddenResponseBody is the type of the
+// "Meeting Service" service "delete-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "Forbidden" error.
+type DeleteItxPastMeetingAttachmentForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxPastMeetingAttachmentInternalServerErrorResponseBody is the type of
+// the "Meeting Service" service "delete-itx-past-meeting-attachment" endpoint
+// HTTP response body for the "InternalServerError" error.
+type DeleteItxPastMeetingAttachmentInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxPastMeetingAttachmentNotFoundResponseBody is the type of the
+// "Meeting Service" service "delete-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "NotFound" error.
+type DeleteItxPastMeetingAttachmentNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxPastMeetingAttachmentServiceUnavailableResponseBody is the type of
+// the "Meeting Service" service "delete-itx-past-meeting-attachment" endpoint
+// HTTP response body for the "ServiceUnavailable" error.
+type DeleteItxPastMeetingAttachmentServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// DeleteItxPastMeetingAttachmentUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "delete-itx-past-meeting-attachment" endpoint HTTP
+// response body for the "Unauthorized" error.
+type DeleteItxPastMeetingAttachmentUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentPresignBadRequestResponseBody is the type of
+// the "Meeting Service" service "create-itx-past-meeting-attachment-presign"
+// endpoint HTTP response body for the "BadRequest" error.
+type CreateItxPastMeetingAttachmentPresignBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentPresignForbiddenResponseBody is the type of
+// the "Meeting Service" service "create-itx-past-meeting-attachment-presign"
+// endpoint HTTP response body for the "Forbidden" error.
+type CreateItxPastMeetingAttachmentPresignForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody is the
+// type of the "Meeting Service" service
+// "create-itx-past-meeting-attachment-presign" endpoint HTTP response body for
+// the "InternalServerError" error.
+type CreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentPresignNotFoundResponseBody is the type of the
+// "Meeting Service" service "create-itx-past-meeting-attachment-presign"
+// endpoint HTTP response body for the "NotFound" error.
+type CreateItxPastMeetingAttachmentPresignNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody is the
+// type of the "Meeting Service" service
+// "create-itx-past-meeting-attachment-presign" endpoint HTTP response body for
+// the "ServiceUnavailable" error.
+type CreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// CreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody is the type of
+// the "Meeting Service" service "create-itx-past-meeting-attachment-presign"
+// endpoint HTTP response body for the "Unauthorized" error.
+type CreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentDownloadBadRequestResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-attachment-download"
+// endpoint HTTP response body for the "BadRequest" error.
+type GetItxPastMeetingAttachmentDownloadBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentDownloadForbiddenResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-attachment-download"
+// endpoint HTTP response body for the "Forbidden" error.
+type GetItxPastMeetingAttachmentDownloadForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody is the
+// type of the "Meeting Service" service
+// "get-itx-past-meeting-attachment-download" endpoint HTTP response body for
+// the "InternalServerError" error.
+type GetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentDownloadNotFoundResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-attachment-download"
+// endpoint HTTP response body for the "NotFound" error.
+type GetItxPastMeetingAttachmentDownloadNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody is the
+// type of the "Meeting Service" service
+// "get-itx-past-meeting-attachment-download" endpoint HTTP response body for
+// the "ServiceUnavailable" error.
+type GetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody is the type of
+// the "Meeting Service" service "get-itx-past-meeting-attachment-download"
+// endpoint HTTP response body for the "Unauthorized" error.
+type GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // CommitteeResponseBody is used to define fields on response body types.
 type CommitteeResponseBody struct {
 	// Committee UID
@@ -2556,6 +3756,7 @@ func NewCreateItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse)
 		RecordingEnabled:     res.RecordingEnabled,
 		TranscriptEnabled:    res.TranscriptEnabled,
 		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
+		AiSummaryEnabled:     res.AiSummaryEnabled,
 		ArtifactVisibility:   res.ArtifactVisibility,
 		ID:                   res.ID,
 		HostKey:              res.HostKey,
@@ -2609,6 +3810,7 @@ func NewGetItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *G
 		RecordingEnabled:     res.RecordingEnabled,
 		TranscriptEnabled:    res.TranscriptEnabled,
 		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
+		AiSummaryEnabled:     res.AiSummaryEnabled,
 		ArtifactVisibility:   res.ArtifactVisibility,
 		ID:                   res.ID,
 		HostKey:              res.HostKey,
@@ -2729,6 +3931,25 @@ func NewGetItxRegistrantResponseBody(res *meetingservice.ITXZoomMeetingRegistran
 func NewGetItxJoinLinkResponseBody(res *meetingservice.ITXZoomMeetingJoinLink) *GetItxJoinLinkResponseBody {
 	body := &GetItxJoinLinkResponseBody{
 		Link: res.Link,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseResponseBody builds the HTTP response body from
+// the result of the "submit-itx-meeting-response" endpoint of the "Meeting
+// Service" service.
+func NewSubmitItxMeetingResponseResponseBody(res *meetingservice.ITXMeetingResponseResult) *SubmitItxMeetingResponseResponseBody {
+	body := &SubmitItxMeetingResponseResponseBody{
+		ID:           res.ID,
+		MeetingID:    res.MeetingID,
+		RegistrantID: res.RegistrantID,
+		Username:     res.Username,
+		Email:        res.Email,
+		Response:     res.Response,
+		Scope:        res.Scope,
+		OccurrenceID: res.OccurrenceID,
+		CreatedAt:    res.CreatedAt,
+		UpdatedAt:    res.UpdatedAt,
 	}
 	return body
 }
@@ -2951,6 +4172,226 @@ func NewUpdateItxPastMeetingParticipantResponseBody(res *meetingservice.ITXPastM
 	}
 	if res.ModifiedBy != nil {
 		body.ModifiedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.ModifiedBy)
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentResponseBody builds the HTTP response body from
+// the result of the "create-itx-meeting-attachment" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxMeetingAttachmentResponseBody(res *meetingservice.ITXMeetingAttachment) *CreateItxMeetingAttachmentResponseBody {
+	body := &CreateItxMeetingAttachmentResponseBody{
+		UID:              res.UID,
+		MeetingID:        res.MeetingID,
+		Type:             res.Type,
+		Source:           res.Source,
+		Category:         res.Category,
+		Link:             res.Link,
+		Name:             res.Name,
+		Description:      res.Description,
+		FileName:         res.FileName,
+		FileSize:         res.FileSize,
+		FileURL:          res.FileURL,
+		FileUploaded:     res.FileUploaded,
+		FileUploadStatus: res.FileUploadStatus,
+		FileContentType:  res.FileContentType,
+		CreatedAt:        res.CreatedAt,
+		UpdatedAt:        res.UpdatedAt,
+		FileUploadedAt:   res.FileUploadedAt,
+	}
+	if res.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.CreatedBy)
+	}
+	if res.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.UpdatedBy)
+	}
+	if res.FileUploadedBy != nil {
+		body.FileUploadedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.FileUploadedBy)
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentResponseBody builds the HTTP response body from
+// the result of the "get-itx-meeting-attachment" endpoint of the "Meeting
+// Service" service.
+func NewGetItxMeetingAttachmentResponseBody(res *meetingservice.ITXMeetingAttachment) *GetItxMeetingAttachmentResponseBody {
+	body := &GetItxMeetingAttachmentResponseBody{
+		UID:              res.UID,
+		MeetingID:        res.MeetingID,
+		Type:             res.Type,
+		Source:           res.Source,
+		Category:         res.Category,
+		Link:             res.Link,
+		Name:             res.Name,
+		Description:      res.Description,
+		FileName:         res.FileName,
+		FileSize:         res.FileSize,
+		FileURL:          res.FileURL,
+		FileUploaded:     res.FileUploaded,
+		FileUploadStatus: res.FileUploadStatus,
+		FileContentType:  res.FileContentType,
+		CreatedAt:        res.CreatedAt,
+		UpdatedAt:        res.UpdatedAt,
+		FileUploadedAt:   res.FileUploadedAt,
+	}
+	if res.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.CreatedBy)
+	}
+	if res.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.UpdatedBy)
+	}
+	if res.FileUploadedBy != nil {
+		body.FileUploadedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.FileUploadedBy)
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentPresignResponseBody builds the HTTP response
+// body from the result of the "create-itx-meeting-attachment-presign" endpoint
+// of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentPresignResponseBody(res *meetingservice.ITXMeetingAttachmentPresignResponse) *CreateItxMeetingAttachmentPresignResponseBody {
+	body := &CreateItxMeetingAttachmentPresignResponseBody{
+		UID:              res.UID,
+		MeetingID:        res.MeetingID,
+		Type:             res.Type,
+		Category:         res.Category,
+		Name:             res.Name,
+		Description:      res.Description,
+		FileName:         res.FileName,
+		FileSize:         res.FileSize,
+		FileURL:          res.FileURL,
+		FileUploadStatus: res.FileUploadStatus,
+		FileContentType:  res.FileContentType,
+		CreatedAt:        res.CreatedAt,
+		UpdatedAt:        res.UpdatedAt,
+	}
+	if res.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.CreatedBy)
+	}
+	if res.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.UpdatedBy)
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentDownloadResponseBody builds the HTTP response body
+// from the result of the "get-itx-meeting-attachment-download" endpoint of the
+// "Meeting Service" service.
+func NewGetItxMeetingAttachmentDownloadResponseBody(res *meetingservice.ITXAttachmentDownloadResponse) *GetItxMeetingAttachmentDownloadResponseBody {
+	body := &GetItxMeetingAttachmentDownloadResponseBody{
+		DownloadURL: res.DownloadURL,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentResponseBody builds the HTTP response body
+// from the result of the "create-itx-past-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewCreateItxPastMeetingAttachmentResponseBody(res *meetingservice.ITXPastMeetingAttachment) *CreateItxPastMeetingAttachmentResponseBody {
+	body := &CreateItxPastMeetingAttachmentResponseBody{
+		UID:                    res.UID,
+		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
+		MeetingID:              res.MeetingID,
+		Type:                   res.Type,
+		Source:                 res.Source,
+		Category:               res.Category,
+		Link:                   res.Link,
+		Name:                   res.Name,
+		Description:            res.Description,
+		FileName:               res.FileName,
+		FileSize:               res.FileSize,
+		FileURL:                res.FileURL,
+		FileUploaded:           res.FileUploaded,
+		FileUploadStatus:       res.FileUploadStatus,
+		FileContentType:        res.FileContentType,
+		CreatedAt:              res.CreatedAt,
+		UpdatedAt:              res.UpdatedAt,
+		FileUploadedAt:         res.FileUploadedAt,
+	}
+	if res.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.CreatedBy)
+	}
+	if res.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.UpdatedBy)
+	}
+	if res.FileUploadedBy != nil {
+		body.FileUploadedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.FileUploadedBy)
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentResponseBody builds the HTTP response body
+// from the result of the "get-itx-past-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentResponseBody(res *meetingservice.ITXPastMeetingAttachment) *GetItxPastMeetingAttachmentResponseBody {
+	body := &GetItxPastMeetingAttachmentResponseBody{
+		UID:                    res.UID,
+		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
+		MeetingID:              res.MeetingID,
+		Type:                   res.Type,
+		Source:                 res.Source,
+		Category:               res.Category,
+		Link:                   res.Link,
+		Name:                   res.Name,
+		Description:            res.Description,
+		FileName:               res.FileName,
+		FileSize:               res.FileSize,
+		FileURL:                res.FileURL,
+		FileUploaded:           res.FileUploaded,
+		FileUploadStatus:       res.FileUploadStatus,
+		FileContentType:        res.FileContentType,
+		CreatedAt:              res.CreatedAt,
+		UpdatedAt:              res.UpdatedAt,
+		FileUploadedAt:         res.FileUploadedAt,
+	}
+	if res.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.CreatedBy)
+	}
+	if res.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.UpdatedBy)
+	}
+	if res.FileUploadedBy != nil {
+		body.FileUploadedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.FileUploadedBy)
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentPresignResponseBody builds the HTTP
+// response body from the result of the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxPastMeetingAttachmentPresignResponseBody(res *meetingservice.ITXPastMeetingAttachmentPresignResponse) *CreateItxPastMeetingAttachmentPresignResponseBody {
+	body := &CreateItxPastMeetingAttachmentPresignResponseBody{
+		UID:                    res.UID,
+		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
+		MeetingID:              res.MeetingID,
+		Type:                   res.Type,
+		Category:               res.Category,
+		Name:                   res.Name,
+		Description:            res.Description,
+		FileName:               res.FileName,
+		FileSize:               res.FileSize,
+		FileURL:                res.FileURL,
+		FileUploadStatus:       res.FileUploadStatus,
+		FileContentType:        res.FileContentType,
+		CreatedAt:              res.CreatedAt,
+		UpdatedAt:              res.UpdatedAt,
+	}
+	if res.CreatedBy != nil {
+		body.CreatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.CreatedBy)
+	}
+	if res.UpdatedBy != nil {
+		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserResponseBody(res.UpdatedBy)
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentDownloadResponseBody builds the HTTP response
+// body from the result of the "get-itx-past-meeting-attachment-download"
+// endpoint of the "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentDownloadResponseBody(res *meetingservice.ITXAttachmentDownloadResponse) *GetItxPastMeetingAttachmentDownloadResponseBody {
+	body := &GetItxPastMeetingAttachmentDownloadResponseBody{
+		DownloadURL: res.DownloadURL,
 	}
 	return body
 }
@@ -4040,6 +5481,72 @@ func NewDeleteItxOccurrenceUnauthorizedResponseBody(res *meetingservice.Unauthor
 	return body
 }
 
+// NewSubmitItxMeetingResponseBadRequestResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseBadRequestResponseBody(res *meetingservice.BadRequestError) *SubmitItxMeetingResponseBadRequestResponseBody {
+	body := &SubmitItxMeetingResponseBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseForbiddenResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseForbiddenResponseBody(res *meetingservice.ForbiddenError) *SubmitItxMeetingResponseForbiddenResponseBody {
+	body := &SubmitItxMeetingResponseForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "submit-itx-meeting-response" endpoint
+// of the "Meeting Service" service.
+func NewSubmitItxMeetingResponseInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *SubmitItxMeetingResponseInternalServerErrorResponseBody {
+	body := &SubmitItxMeetingResponseInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseNotFoundResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseNotFoundResponseBody(res *meetingservice.NotFoundError) *SubmitItxMeetingResponseNotFoundResponseBody {
+	body := &SubmitItxMeetingResponseNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "submit-itx-meeting-response" endpoint
+// of the "Meeting Service" service.
+func NewSubmitItxMeetingResponseServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *SubmitItxMeetingResponseServiceUnavailableResponseBody {
+	body := &SubmitItxMeetingResponseServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSubmitItxMeetingResponseUnauthorizedResponseBody builds the HTTP response
+// body from the result of the "submit-itx-meeting-response" endpoint of the
+// "Meeting Service" service.
+func NewSubmitItxMeetingResponseUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *SubmitItxMeetingResponseUnauthorizedResponseBody {
+	body := &SubmitItxMeetingResponseUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewCreateItxPastMeetingBadRequestResponseBody builds the HTTP response body
 // from the result of the "create-itx-past-meeting" endpoint of the "Meeting
 // Service" service.
@@ -4651,6 +6158,820 @@ func NewDeleteItxPastMeetingParticipantUnauthorizedResponseBody(res *meetingserv
 	return body
 }
 
+// NewCreateItxMeetingAttachmentBadRequestResponseBody builds the HTTP response
+// body from the result of the "create-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewCreateItxMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *CreateItxMeetingAttachmentBadRequestResponseBody {
+	body := &CreateItxMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentForbiddenResponseBody builds the HTTP response
+// body from the result of the "create-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewCreateItxMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *CreateItxMeetingAttachmentForbiddenResponseBody {
+	body := &CreateItxMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "create-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *CreateItxMeetingAttachmentInternalServerErrorResponseBody {
+	body := &CreateItxMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentNotFoundResponseBody builds the HTTP response
+// body from the result of the "create-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewCreateItxMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *CreateItxMeetingAttachmentNotFoundResponseBody {
+	body := &CreateItxMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "create-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *CreateItxMeetingAttachmentServiceUnavailableResponseBody {
+	body := &CreateItxMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "create-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *CreateItxMeetingAttachmentUnauthorizedResponseBody {
+	body := &CreateItxMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentBadRequestResponseBody builds the HTTP response
+// body from the result of the "get-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewGetItxMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *GetItxMeetingAttachmentBadRequestResponseBody {
+	body := &GetItxMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentForbiddenResponseBody builds the HTTP response
+// body from the result of the "get-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewGetItxMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *GetItxMeetingAttachmentForbiddenResponseBody {
+	body := &GetItxMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-itx-meeting-attachment" endpoint
+// of the "Meeting Service" service.
+func NewGetItxMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetItxMeetingAttachmentInternalServerErrorResponseBody {
+	body := &GetItxMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentNotFoundResponseBody builds the HTTP response body
+// from the result of the "get-itx-meeting-attachment" endpoint of the "Meeting
+// Service" service.
+func NewGetItxMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *GetItxMeetingAttachmentNotFoundResponseBody {
+	body := &GetItxMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "get-itx-meeting-attachment" endpoint
+// of the "Meeting Service" service.
+func NewGetItxMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetItxMeetingAttachmentServiceUnavailableResponseBody {
+	body := &GetItxMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentUnauthorizedResponseBody builds the HTTP response
+// body from the result of the "get-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewGetItxMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetItxMeetingAttachmentUnauthorizedResponseBody {
+	body := &GetItxMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingAttachmentBadRequestResponseBody builds the HTTP response
+// body from the result of the "update-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewUpdateItxMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdateItxMeetingAttachmentBadRequestResponseBody {
+	body := &UpdateItxMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingAttachmentForbiddenResponseBody builds the HTTP response
+// body from the result of the "update-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewUpdateItxMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *UpdateItxMeetingAttachmentForbiddenResponseBody {
+	body := &UpdateItxMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingAttachmentInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "update-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewUpdateItxMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdateItxMeetingAttachmentInternalServerErrorResponseBody {
+	body := &UpdateItxMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingAttachmentNotFoundResponseBody builds the HTTP response
+// body from the result of the "update-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewUpdateItxMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdateItxMeetingAttachmentNotFoundResponseBody {
+	body := &UpdateItxMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingAttachmentServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "update-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewUpdateItxMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdateItxMeetingAttachmentServiceUnavailableResponseBody {
+	body := &UpdateItxMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxMeetingAttachmentUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "update-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewUpdateItxMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *UpdateItxMeetingAttachmentUnauthorizedResponseBody {
+	body := &UpdateItxMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingAttachmentBadRequestResponseBody builds the HTTP response
+// body from the result of the "delete-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewDeleteItxMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *DeleteItxMeetingAttachmentBadRequestResponseBody {
+	body := &DeleteItxMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingAttachmentForbiddenResponseBody builds the HTTP response
+// body from the result of the "delete-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewDeleteItxMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *DeleteItxMeetingAttachmentForbiddenResponseBody {
+	body := &DeleteItxMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingAttachmentInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "delete-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeleteItxMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *DeleteItxMeetingAttachmentInternalServerErrorResponseBody {
+	body := &DeleteItxMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingAttachmentNotFoundResponseBody builds the HTTP response
+// body from the result of the "delete-itx-meeting-attachment" endpoint of the
+// "Meeting Service" service.
+func NewDeleteItxMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *DeleteItxMeetingAttachmentNotFoundResponseBody {
+	body := &DeleteItxMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingAttachmentServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "delete-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeleteItxMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *DeleteItxMeetingAttachmentServiceUnavailableResponseBody {
+	body := &DeleteItxMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxMeetingAttachmentUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "delete-itx-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeleteItxMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *DeleteItxMeetingAttachmentUnauthorizedResponseBody {
+	body := &DeleteItxMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentPresignBadRequestResponseBody builds the HTTP
+// response body from the result of the "create-itx-meeting-attachment-presign"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentPresignBadRequestResponseBody(res *meetingservice.BadRequestError) *CreateItxMeetingAttachmentPresignBadRequestResponseBody {
+	body := &CreateItxMeetingAttachmentPresignBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentPresignForbiddenResponseBody builds the HTTP
+// response body from the result of the "create-itx-meeting-attachment-presign"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentPresignForbiddenResponseBody(res *meetingservice.ForbiddenError) *CreateItxMeetingAttachmentPresignForbiddenResponseBody {
+	body := &CreateItxMeetingAttachmentPresignForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentPresignInternalServerErrorResponseBody builds
+// the HTTP response body from the result of the
+// "create-itx-meeting-attachment-presign" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxMeetingAttachmentPresignInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *CreateItxMeetingAttachmentPresignInternalServerErrorResponseBody {
+	body := &CreateItxMeetingAttachmentPresignInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentPresignNotFoundResponseBody builds the HTTP
+// response body from the result of the "create-itx-meeting-attachment-presign"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentPresignNotFoundResponseBody(res *meetingservice.NotFoundError) *CreateItxMeetingAttachmentPresignNotFoundResponseBody {
+	body := &CreateItxMeetingAttachmentPresignNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentPresignServiceUnavailableResponseBody builds
+// the HTTP response body from the result of the
+// "create-itx-meeting-attachment-presign" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxMeetingAttachmentPresignServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *CreateItxMeetingAttachmentPresignServiceUnavailableResponseBody {
+	body := &CreateItxMeetingAttachmentPresignServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxMeetingAttachmentPresignUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "create-itx-meeting-attachment-presign"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxMeetingAttachmentPresignUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *CreateItxMeetingAttachmentPresignUnauthorizedResponseBody {
+	body := &CreateItxMeetingAttachmentPresignUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentDownloadBadRequestResponseBody builds the HTTP
+// response body from the result of the "get-itx-meeting-attachment-download"
+// endpoint of the "Meeting Service" service.
+func NewGetItxMeetingAttachmentDownloadBadRequestResponseBody(res *meetingservice.BadRequestError) *GetItxMeetingAttachmentDownloadBadRequestResponseBody {
+	body := &GetItxMeetingAttachmentDownloadBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentDownloadForbiddenResponseBody builds the HTTP
+// response body from the result of the "get-itx-meeting-attachment-download"
+// endpoint of the "Meeting Service" service.
+func NewGetItxMeetingAttachmentDownloadForbiddenResponseBody(res *meetingservice.ForbiddenError) *GetItxMeetingAttachmentDownloadForbiddenResponseBody {
+	body := &GetItxMeetingAttachmentDownloadForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentDownloadInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the
+// "get-itx-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxMeetingAttachmentDownloadInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetItxMeetingAttachmentDownloadInternalServerErrorResponseBody {
+	body := &GetItxMeetingAttachmentDownloadInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentDownloadNotFoundResponseBody builds the HTTP
+// response body from the result of the "get-itx-meeting-attachment-download"
+// endpoint of the "Meeting Service" service.
+func NewGetItxMeetingAttachmentDownloadNotFoundResponseBody(res *meetingservice.NotFoundError) *GetItxMeetingAttachmentDownloadNotFoundResponseBody {
+	body := &GetItxMeetingAttachmentDownloadNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentDownloadServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the
+// "get-itx-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxMeetingAttachmentDownloadServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetItxMeetingAttachmentDownloadServiceUnavailableResponseBody {
+	body := &GetItxMeetingAttachmentDownloadServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxMeetingAttachmentDownloadUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "get-itx-meeting-attachment-download"
+// endpoint of the "Meeting Service" service.
+func NewGetItxMeetingAttachmentDownloadUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetItxMeetingAttachmentDownloadUnauthorizedResponseBody {
+	body := &GetItxMeetingAttachmentDownloadUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentBadRequestResponseBody builds the HTTP
+// response body from the result of the "create-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxPastMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *CreateItxPastMeetingAttachmentBadRequestResponseBody {
+	body := &CreateItxPastMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentForbiddenResponseBody builds the HTTP
+// response body from the result of the "create-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxPastMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *CreateItxPastMeetingAttachmentForbiddenResponseBody {
+	body := &CreateItxPastMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the
+// "create-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxPastMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *CreateItxPastMeetingAttachmentInternalServerErrorResponseBody {
+	body := &CreateItxPastMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentNotFoundResponseBody builds the HTTP
+// response body from the result of the "create-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxPastMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *CreateItxPastMeetingAttachmentNotFoundResponseBody {
+	body := &CreateItxPastMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the
+// "create-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+func NewCreateItxPastMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *CreateItxPastMeetingAttachmentServiceUnavailableResponseBody {
+	body := &CreateItxPastMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "create-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewCreateItxPastMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *CreateItxPastMeetingAttachmentUnauthorizedResponseBody {
+	body := &CreateItxPastMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentBadRequestResponseBody builds the HTTP
+// response body from the result of the "get-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *GetItxPastMeetingAttachmentBadRequestResponseBody {
+	body := &GetItxPastMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentForbiddenResponseBody builds the HTTP response
+// body from the result of the "get-itx-past-meeting-attachment" endpoint of
+// the "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *GetItxPastMeetingAttachmentForbiddenResponseBody {
+	body := &GetItxPastMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the "get-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetItxPastMeetingAttachmentInternalServerErrorResponseBody {
+	body := &GetItxPastMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentNotFoundResponseBody builds the HTTP response
+// body from the result of the "get-itx-past-meeting-attachment" endpoint of
+// the "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *GetItxPastMeetingAttachmentNotFoundResponseBody {
+	body := &GetItxPastMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "get-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetItxPastMeetingAttachmentServiceUnavailableResponseBody {
+	body := &GetItxPastMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "get-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewGetItxPastMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetItxPastMeetingAttachmentUnauthorizedResponseBody {
+	body := &GetItxPastMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxPastMeetingAttachmentBadRequestResponseBody builds the HTTP
+// response body from the result of the "update-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewUpdateItxPastMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *UpdateItxPastMeetingAttachmentBadRequestResponseBody {
+	body := &UpdateItxPastMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxPastMeetingAttachmentForbiddenResponseBody builds the HTTP
+// response body from the result of the "update-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewUpdateItxPastMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *UpdateItxPastMeetingAttachmentForbiddenResponseBody {
+	body := &UpdateItxPastMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxPastMeetingAttachmentInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the
+// "update-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+func NewUpdateItxPastMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *UpdateItxPastMeetingAttachmentInternalServerErrorResponseBody {
+	body := &UpdateItxPastMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxPastMeetingAttachmentNotFoundResponseBody builds the HTTP
+// response body from the result of the "update-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewUpdateItxPastMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *UpdateItxPastMeetingAttachmentNotFoundResponseBody {
+	body := &UpdateItxPastMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxPastMeetingAttachmentServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the
+// "update-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+func NewUpdateItxPastMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *UpdateItxPastMeetingAttachmentServiceUnavailableResponseBody {
+	body := &UpdateItxPastMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewUpdateItxPastMeetingAttachmentUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "update-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewUpdateItxPastMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *UpdateItxPastMeetingAttachmentUnauthorizedResponseBody {
+	body := &UpdateItxPastMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxPastMeetingAttachmentBadRequestResponseBody builds the HTTP
+// response body from the result of the "delete-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeleteItxPastMeetingAttachmentBadRequestResponseBody(res *meetingservice.BadRequestError) *DeleteItxPastMeetingAttachmentBadRequestResponseBody {
+	body := &DeleteItxPastMeetingAttachmentBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxPastMeetingAttachmentForbiddenResponseBody builds the HTTP
+// response body from the result of the "delete-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeleteItxPastMeetingAttachmentForbiddenResponseBody(res *meetingservice.ForbiddenError) *DeleteItxPastMeetingAttachmentForbiddenResponseBody {
+	body := &DeleteItxPastMeetingAttachmentForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxPastMeetingAttachmentInternalServerErrorResponseBody builds the
+// HTTP response body from the result of the
+// "delete-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+func NewDeleteItxPastMeetingAttachmentInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *DeleteItxPastMeetingAttachmentInternalServerErrorResponseBody {
+	body := &DeleteItxPastMeetingAttachmentInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxPastMeetingAttachmentNotFoundResponseBody builds the HTTP
+// response body from the result of the "delete-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeleteItxPastMeetingAttachmentNotFoundResponseBody(res *meetingservice.NotFoundError) *DeleteItxPastMeetingAttachmentNotFoundResponseBody {
+	body := &DeleteItxPastMeetingAttachmentNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxPastMeetingAttachmentServiceUnavailableResponseBody builds the
+// HTTP response body from the result of the
+// "delete-itx-past-meeting-attachment" endpoint of the "Meeting Service"
+// service.
+func NewDeleteItxPastMeetingAttachmentServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *DeleteItxPastMeetingAttachmentServiceUnavailableResponseBody {
+	body := &DeleteItxPastMeetingAttachmentServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewDeleteItxPastMeetingAttachmentUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "delete-itx-past-meeting-attachment"
+// endpoint of the "Meeting Service" service.
+func NewDeleteItxPastMeetingAttachmentUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *DeleteItxPastMeetingAttachmentUnauthorizedResponseBody {
+	body := &DeleteItxPastMeetingAttachmentUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentPresignBadRequestResponseBody builds the
+// HTTP response body from the result of the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxPastMeetingAttachmentPresignBadRequestResponseBody(res *meetingservice.BadRequestError) *CreateItxPastMeetingAttachmentPresignBadRequestResponseBody {
+	body := &CreateItxPastMeetingAttachmentPresignBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentPresignForbiddenResponseBody builds the
+// HTTP response body from the result of the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxPastMeetingAttachmentPresignForbiddenResponseBody(res *meetingservice.ForbiddenError) *CreateItxPastMeetingAttachmentPresignForbiddenResponseBody {
+	body := &CreateItxPastMeetingAttachmentPresignForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody
+// builds the HTTP response body from the result of the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *CreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody {
+	body := &CreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentPresignNotFoundResponseBody builds the HTTP
+// response body from the result of the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxPastMeetingAttachmentPresignNotFoundResponseBody(res *meetingservice.NotFoundError) *CreateItxPastMeetingAttachmentPresignNotFoundResponseBody {
+	body := &CreateItxPastMeetingAttachmentPresignNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody
+// builds the HTTP response body from the result of the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *CreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody {
+	body := &CreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewCreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody builds the
+// HTTP response body from the result of the
+// "create-itx-past-meeting-attachment-presign" endpoint of the "Meeting
+// Service" service.
+func NewCreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *CreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody {
+	body := &CreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentDownloadBadRequestResponseBody builds the HTTP
+// response body from the result of the
+// "get-itx-past-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxPastMeetingAttachmentDownloadBadRequestResponseBody(res *meetingservice.BadRequestError) *GetItxPastMeetingAttachmentDownloadBadRequestResponseBody {
+	body := &GetItxPastMeetingAttachmentDownloadBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentDownloadForbiddenResponseBody builds the HTTP
+// response body from the result of the
+// "get-itx-past-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxPastMeetingAttachmentDownloadForbiddenResponseBody(res *meetingservice.ForbiddenError) *GetItxPastMeetingAttachmentDownloadForbiddenResponseBody {
+	body := &GetItxPastMeetingAttachmentDownloadForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody builds
+// the HTTP response body from the result of the
+// "get-itx-past-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody {
+	body := &GetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentDownloadNotFoundResponseBody builds the HTTP
+// response body from the result of the
+// "get-itx-past-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxPastMeetingAttachmentDownloadNotFoundResponseBody(res *meetingservice.NotFoundError) *GetItxPastMeetingAttachmentDownloadNotFoundResponseBody {
+	body := &GetItxPastMeetingAttachmentDownloadNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody builds
+// the HTTP response body from the result of the
+// "get-itx-past-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody {
+	body := &GetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody builds the
+// HTTP response body from the result of the
+// "get-itx-past-meeting-attachment-download" endpoint of the "Meeting Service"
+// service.
+func NewGetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody {
+	body := &GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewCreateItxMeetingPayload builds a Meeting Service service
 // create-itx-meeting endpoint payload.
 func NewCreateItxMeetingPayload(body *CreateItxMeetingRequestBody, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateItxMeetingPayload {
@@ -4668,6 +6989,7 @@ func NewCreateItxMeetingPayload(body *CreateItxMeetingRequestBody, version *stri
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 	}
 	if body.Committees != nil {
@@ -4729,6 +7051,7 @@ func NewUpdateItxMeetingPayload(body *UpdateItxMeetingRequestBody, meetingID str
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 	}
 	if body.Committees != nil {
@@ -4964,6 +7287,22 @@ func NewDeleteItxOccurrencePayload(meetingID string, occurrenceID string, versio
 	return v
 }
 
+// NewSubmitItxMeetingResponsePayload builds a Meeting Service service
+// submit-itx-meeting-response endpoint payload.
+func NewSubmitItxMeetingResponsePayload(body *SubmitItxMeetingResponseRequestBody, meetingID string, version *string, bearerToken *string) *meetingservice.SubmitItxMeetingResponsePayload {
+	v := &meetingservice.SubmitItxMeetingResponsePayload{
+		OccurrenceID: body.OccurrenceID,
+		Response:     *body.Response,
+		Scope:        *body.Scope,
+		RegistrantID: *body.RegistrantID,
+	}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
 // NewCreateItxPastMeetingPayload builds a Meeting Service service
 // create-itx-past-meeting endpoint payload.
 func NewCreateItxPastMeetingPayload(body *CreateItxPastMeetingRequestBody, version *string, bearerToken *string) *meetingservice.CreateItxPastMeetingPayload {
@@ -5156,6 +7495,182 @@ func NewDeleteItxPastMeetingParticipantPayload(pastMeetingID string, participant
 	v := &meetingservice.DeleteItxPastMeetingParticipantPayload{}
 	v.PastMeetingID = pastMeetingID
 	v.ParticipantID = participantID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewCreateItxMeetingAttachmentPayload builds a Meeting Service service
+// create-itx-meeting-attachment endpoint payload.
+func NewCreateItxMeetingAttachmentPayload(body *CreateItxMeetingAttachmentRequestBody, meetingID string, version *string, bearerToken *string) *meetingservice.CreateItxMeetingAttachmentPayload {
+	v := &meetingservice.CreateItxMeetingAttachmentPayload{
+		Type:        *body.Type,
+		Category:    *body.Category,
+		Link:        body.Link,
+		Name:        *body.Name,
+		Description: body.Description,
+	}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentPayload builds a Meeting Service service
+// get-itx-meeting-attachment endpoint payload.
+func NewGetItxMeetingAttachmentPayload(meetingID string, attachmentID string, version *string, bearerToken *string) *meetingservice.GetItxMeetingAttachmentPayload {
+	v := &meetingservice.GetItxMeetingAttachmentPayload{}
+	v.MeetingID = meetingID
+	v.AttachmentID = attachmentID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewUpdateItxMeetingAttachmentPayload builds a Meeting Service service
+// update-itx-meeting-attachment endpoint payload.
+func NewUpdateItxMeetingAttachmentPayload(body *UpdateItxMeetingAttachmentRequestBody, meetingID string, attachmentID string, version *string, bearerToken *string) *meetingservice.UpdateItxMeetingAttachmentPayload {
+	v := &meetingservice.UpdateItxMeetingAttachmentPayload{
+		Type:        *body.Type,
+		Category:    *body.Category,
+		Link:        body.Link,
+		Name:        *body.Name,
+		Description: body.Description,
+	}
+	v.MeetingID = meetingID
+	v.AttachmentID = attachmentID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewDeleteItxMeetingAttachmentPayload builds a Meeting Service service
+// delete-itx-meeting-attachment endpoint payload.
+func NewDeleteItxMeetingAttachmentPayload(meetingID string, attachmentID string, version *string, bearerToken *string) *meetingservice.DeleteItxMeetingAttachmentPayload {
+	v := &meetingservice.DeleteItxMeetingAttachmentPayload{}
+	v.MeetingID = meetingID
+	v.AttachmentID = attachmentID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewCreateItxMeetingAttachmentPresignPayload builds a Meeting Service service
+// create-itx-meeting-attachment-presign endpoint payload.
+func NewCreateItxMeetingAttachmentPresignPayload(body *CreateItxMeetingAttachmentPresignRequestBody, meetingID string, version *string, bearerToken *string) *meetingservice.CreateItxMeetingAttachmentPresignPayload {
+	v := &meetingservice.CreateItxMeetingAttachmentPresignPayload{
+		Name:        *body.Name,
+		Description: body.Description,
+		Category:    body.Category,
+		FileSize:    *body.FileSize,
+		FileType:    *body.FileType,
+	}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentDownloadPayload builds a Meeting Service service
+// get-itx-meeting-attachment-download endpoint payload.
+func NewGetItxMeetingAttachmentDownloadPayload(meetingID string, attachmentID string, version *string, bearerToken *string) *meetingservice.GetItxMeetingAttachmentDownloadPayload {
+	v := &meetingservice.GetItxMeetingAttachmentDownloadPayload{}
+	v.MeetingID = meetingID
+	v.AttachmentID = attachmentID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewCreateItxPastMeetingAttachmentPayload builds a Meeting Service service
+// create-itx-past-meeting-attachment endpoint payload.
+func NewCreateItxPastMeetingAttachmentPayload(body *CreateItxPastMeetingAttachmentRequestBody, meetingAndOccurrenceID string, version *string, bearerToken *string) *meetingservice.CreateItxPastMeetingAttachmentPayload {
+	v := &meetingservice.CreateItxPastMeetingAttachmentPayload{
+		Type:        *body.Type,
+		Category:    *body.Category,
+		Link:        body.Link,
+		Name:        *body.Name,
+		Description: body.Description,
+	}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetItxPastMeetingAttachmentPayload builds a Meeting Service service
+// get-itx-past-meeting-attachment endpoint payload.
+func NewGetItxPastMeetingAttachmentPayload(meetingAndOccurrenceID string, attachmentID string, version *string, bearerToken *string) *meetingservice.GetItxPastMeetingAttachmentPayload {
+	v := &meetingservice.GetItxPastMeetingAttachmentPayload{}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.AttachmentID = attachmentID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewUpdateItxPastMeetingAttachmentPayload builds a Meeting Service service
+// update-itx-past-meeting-attachment endpoint payload.
+func NewUpdateItxPastMeetingAttachmentPayload(body *UpdateItxPastMeetingAttachmentRequestBody, meetingAndOccurrenceID string, attachmentID string, version *string, bearerToken *string) *meetingservice.UpdateItxPastMeetingAttachmentPayload {
+	v := &meetingservice.UpdateItxPastMeetingAttachmentPayload{
+		Type:        *body.Type,
+		Category:    *body.Category,
+		Link:        body.Link,
+		Name:        *body.Name,
+		Description: body.Description,
+	}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.AttachmentID = attachmentID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewDeleteItxPastMeetingAttachmentPayload builds a Meeting Service service
+// delete-itx-past-meeting-attachment endpoint payload.
+func NewDeleteItxPastMeetingAttachmentPayload(meetingAndOccurrenceID string, attachmentID string, version *string, bearerToken *string) *meetingservice.DeleteItxPastMeetingAttachmentPayload {
+	v := &meetingservice.DeleteItxPastMeetingAttachmentPayload{}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.AttachmentID = attachmentID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewCreateItxPastMeetingAttachmentPresignPayload builds a Meeting Service
+// service create-itx-past-meeting-attachment-presign endpoint payload.
+func NewCreateItxPastMeetingAttachmentPresignPayload(body *CreateItxPastMeetingAttachmentPresignRequestBody, meetingAndOccurrenceID string, version *string, bearerToken *string) *meetingservice.CreateItxPastMeetingAttachmentPresignPayload {
+	v := &meetingservice.CreateItxPastMeetingAttachmentPresignPayload{
+		Name:        *body.Name,
+		Description: body.Description,
+		Category:    body.Category,
+		FileSize:    *body.FileSize,
+		FileType:    *body.FileType,
+	}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetItxPastMeetingAttachmentDownloadPayload builds a Meeting Service
+// service get-itx-past-meeting-attachment-download endpoint payload.
+func NewGetItxPastMeetingAttachmentDownloadPayload(meetingAndOccurrenceID string, attachmentID string, version *string, bearerToken *string) *meetingservice.GetItxPastMeetingAttachmentDownloadPayload {
+	v := &meetingservice.GetItxPastMeetingAttachmentDownloadPayload{}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.AttachmentID = attachmentID
 	v.Version = version
 	v.BearerToken = bearerToken
 
@@ -5387,6 +7902,34 @@ func ValidateUpdateItxOccurrenceRequestBody(body *UpdateItxOccurrenceRequestBody
 	return
 }
 
+// ValidateSubmitItxMeetingResponseRequestBody runs the validations defined on
+// Submit-Itx-Meeting-ResponseRequestBody
+func ValidateSubmitItxMeetingResponseRequestBody(body *SubmitItxMeetingResponseRequestBody) (err error) {
+	if body.Response == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response", "body"))
+	}
+	if body.Scope == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("scope", "body"))
+	}
+	if body.RegistrantID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("registrant_id", "body"))
+	}
+	if body.Response != nil {
+		if !(*body.Response == "accepted" || *body.Response == "declined" || *body.Response == "maybe") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.response", *body.Response, []any{"accepted", "declined", "maybe"}))
+		}
+	}
+	if body.Scope != nil {
+		if !(*body.Scope == "single" || *body.Scope == "all" || *body.Scope == "this_and_following") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.scope", *body.Scope, []any{"single", "all", "this_and_following"}))
+		}
+	}
+	if body.RegistrantID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.registrant_id", *body.RegistrantID, goa.FormatUUID))
+	}
+	return
+}
+
 // ValidateCreateItxPastMeetingRequestBody runs the validations defined on
 // Create-Itx-Past-MeetingRequestBody
 func ValidateCreateItxPastMeetingRequestBody(body *CreateItxPastMeetingRequestBody) (err error) {
@@ -5504,6 +8047,156 @@ func ValidateCreateItxPastMeetingParticipantRequestBody(body *CreateItxPastMeeti
 			if err2 := ValidateParticipantSessionRequestBody(e); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
+		}
+	}
+	return
+}
+
+// ValidateCreateItxMeetingAttachmentRequestBody runs the validations defined
+// on Create-Itx-Meeting-AttachmentRequestBody
+func ValidateCreateItxMeetingAttachmentRequestBody(body *CreateItxMeetingAttachmentRequestBody) (err error) {
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
+	if body.Category == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("category", "body"))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+	}
+	return
+}
+
+// ValidateUpdateItxMeetingAttachmentRequestBody runs the validations defined
+// on Update-Itx-Meeting-AttachmentRequestBody
+func ValidateUpdateItxMeetingAttachmentRequestBody(body *UpdateItxMeetingAttachmentRequestBody) (err error) {
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
+	if body.Category == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("category", "body"))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
+		}
+	}
+	return
+}
+
+// ValidateCreateItxMeetingAttachmentPresignRequestBody runs the validations
+// defined on Create-Itx-Meeting-Attachment-PresignRequestBody
+func ValidateCreateItxMeetingAttachmentPresignRequestBody(body *CreateItxMeetingAttachmentPresignRequestBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.FileSize == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
+	}
+	if body.FileType == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_type", "body"))
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
+		}
+	}
+	return
+}
+
+// ValidateCreateItxPastMeetingAttachmentRequestBody runs the validations
+// defined on Create-Itx-Past-Meeting-AttachmentRequestBody
+func ValidateCreateItxPastMeetingAttachmentRequestBody(body *CreateItxPastMeetingAttachmentRequestBody) (err error) {
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
+	if body.Category == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("category", "body"))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
+		}
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+	}
+	return
+}
+
+// ValidateUpdateItxPastMeetingAttachmentRequestBody runs the validations
+// defined on Update-Itx-Past-Meeting-AttachmentRequestBody
+func ValidateUpdateItxPastMeetingAttachmentRequestBody(body *UpdateItxPastMeetingAttachmentRequestBody) (err error) {
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
+	if body.Category == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("category", "body"))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
+		}
+	}
+	return
+}
+
+// ValidateCreateItxPastMeetingAttachmentPresignRequestBody runs the
+// validations defined on Create-Itx-Past-Meeting-Attachment-PresignRequestBody
+func ValidateCreateItxPastMeetingAttachmentPresignRequestBody(body *CreateItxPastMeetingAttachmentPresignRequestBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.FileSize == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_size", "body"))
+	}
+	if body.FileType == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file_type", "body"))
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
 		}
 	}
 	return

@@ -23,7 +23,7 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant)",
+		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant|create-itx-meeting-attachment|get-itx-meeting-attachment|update-itx-meeting-attachment|delete-itx-meeting-attachment|create-itx-meeting-attachment-presign|get-itx-meeting-attachment-download|create-itx-past-meeting-attachment|get-itx-past-meeting-attachment|update-itx-past-meeting-attachment|delete-itx-past-meeting-attachment|create-itx-past-meeting-attachment-presign|get-itx-past-meeting-attachment-download)",
 	}
 }
 
@@ -148,6 +148,12 @@ func ParseEndpoint(
 		meetingServiceDeleteItxOccurrenceVersionFlag      = meetingServiceDeleteItxOccurrenceFlags.String("version", "", "")
 		meetingServiceDeleteItxOccurrenceBearerTokenFlag  = meetingServiceDeleteItxOccurrenceFlags.String("bearer-token", "", "")
 
+		meetingServiceSubmitItxMeetingResponseFlags           = flag.NewFlagSet("submit-itx-meeting-response", flag.ExitOnError)
+		meetingServiceSubmitItxMeetingResponseBodyFlag        = meetingServiceSubmitItxMeetingResponseFlags.String("body", "REQUIRED", "")
+		meetingServiceSubmitItxMeetingResponseMeetingIDFlag   = meetingServiceSubmitItxMeetingResponseFlags.String("meeting-id", "REQUIRED", "The Zoom meeting ID")
+		meetingServiceSubmitItxMeetingResponseVersionFlag     = meetingServiceSubmitItxMeetingResponseFlags.String("version", "", "")
+		meetingServiceSubmitItxMeetingResponseBearerTokenFlag = meetingServiceSubmitItxMeetingResponseFlags.String("bearer-token", "", "")
+
 		meetingServiceCreateItxPastMeetingFlags           = flag.NewFlagSet("create-itx-past-meeting", flag.ExitOnError)
 		meetingServiceCreateItxPastMeetingBodyFlag        = meetingServiceCreateItxPastMeetingFlags.String("body", "REQUIRED", "")
 		meetingServiceCreateItxPastMeetingVersionFlag     = meetingServiceCreateItxPastMeetingFlags.String("version", "", "")
@@ -200,6 +206,80 @@ func ParseEndpoint(
 		meetingServiceDeleteItxPastMeetingParticipantParticipantIDFlag = meetingServiceDeleteItxPastMeetingParticipantFlags.String("participant-id", "REQUIRED", "Participant ID (invitee_id or attendee_id)")
 		meetingServiceDeleteItxPastMeetingParticipantVersionFlag       = meetingServiceDeleteItxPastMeetingParticipantFlags.String("version", "", "")
 		meetingServiceDeleteItxPastMeetingParticipantBearerTokenFlag   = meetingServiceDeleteItxPastMeetingParticipantFlags.String("bearer-token", "", "")
+
+		meetingServiceCreateItxMeetingAttachmentFlags           = flag.NewFlagSet("create-itx-meeting-attachment", flag.ExitOnError)
+		meetingServiceCreateItxMeetingAttachmentBodyFlag        = meetingServiceCreateItxMeetingAttachmentFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxMeetingAttachmentMeetingIDFlag   = meetingServiceCreateItxMeetingAttachmentFlags.String("meeting-id", "REQUIRED", "Meeting ID")
+		meetingServiceCreateItxMeetingAttachmentVersionFlag     = meetingServiceCreateItxMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceCreateItxMeetingAttachmentBearerTokenFlag = meetingServiceCreateItxMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxMeetingAttachmentFlags            = flag.NewFlagSet("get-itx-meeting-attachment", flag.ExitOnError)
+		meetingServiceGetItxMeetingAttachmentMeetingIDFlag    = meetingServiceGetItxMeetingAttachmentFlags.String("meeting-id", "REQUIRED", "Meeting ID")
+		meetingServiceGetItxMeetingAttachmentAttachmentIDFlag = meetingServiceGetItxMeetingAttachmentFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceGetItxMeetingAttachmentVersionFlag      = meetingServiceGetItxMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceGetItxMeetingAttachmentBearerTokenFlag  = meetingServiceGetItxMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxMeetingAttachmentFlags            = flag.NewFlagSet("update-itx-meeting-attachment", flag.ExitOnError)
+		meetingServiceUpdateItxMeetingAttachmentBodyFlag         = meetingServiceUpdateItxMeetingAttachmentFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxMeetingAttachmentMeetingIDFlag    = meetingServiceUpdateItxMeetingAttachmentFlags.String("meeting-id", "REQUIRED", "Meeting ID")
+		meetingServiceUpdateItxMeetingAttachmentAttachmentIDFlag = meetingServiceUpdateItxMeetingAttachmentFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceUpdateItxMeetingAttachmentVersionFlag      = meetingServiceUpdateItxMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceUpdateItxMeetingAttachmentBearerTokenFlag  = meetingServiceUpdateItxMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceDeleteItxMeetingAttachmentFlags            = flag.NewFlagSet("delete-itx-meeting-attachment", flag.ExitOnError)
+		meetingServiceDeleteItxMeetingAttachmentMeetingIDFlag    = meetingServiceDeleteItxMeetingAttachmentFlags.String("meeting-id", "REQUIRED", "Meeting ID")
+		meetingServiceDeleteItxMeetingAttachmentAttachmentIDFlag = meetingServiceDeleteItxMeetingAttachmentFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceDeleteItxMeetingAttachmentVersionFlag      = meetingServiceDeleteItxMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceDeleteItxMeetingAttachmentBearerTokenFlag  = meetingServiceDeleteItxMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceCreateItxMeetingAttachmentPresignFlags           = flag.NewFlagSet("create-itx-meeting-attachment-presign", flag.ExitOnError)
+		meetingServiceCreateItxMeetingAttachmentPresignBodyFlag        = meetingServiceCreateItxMeetingAttachmentPresignFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxMeetingAttachmentPresignMeetingIDFlag   = meetingServiceCreateItxMeetingAttachmentPresignFlags.String("meeting-id", "REQUIRED", "Meeting ID")
+		meetingServiceCreateItxMeetingAttachmentPresignVersionFlag     = meetingServiceCreateItxMeetingAttachmentPresignFlags.String("version", "", "")
+		meetingServiceCreateItxMeetingAttachmentPresignBearerTokenFlag = meetingServiceCreateItxMeetingAttachmentPresignFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxMeetingAttachmentDownloadFlags            = flag.NewFlagSet("get-itx-meeting-attachment-download", flag.ExitOnError)
+		meetingServiceGetItxMeetingAttachmentDownloadMeetingIDFlag    = meetingServiceGetItxMeetingAttachmentDownloadFlags.String("meeting-id", "REQUIRED", "Meeting ID")
+		meetingServiceGetItxMeetingAttachmentDownloadAttachmentIDFlag = meetingServiceGetItxMeetingAttachmentDownloadFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceGetItxMeetingAttachmentDownloadVersionFlag      = meetingServiceGetItxMeetingAttachmentDownloadFlags.String("version", "", "")
+		meetingServiceGetItxMeetingAttachmentDownloadBearerTokenFlag  = meetingServiceGetItxMeetingAttachmentDownloadFlags.String("bearer-token", "", "")
+
+		meetingServiceCreateItxPastMeetingAttachmentFlags                      = flag.NewFlagSet("create-itx-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceCreateItxPastMeetingAttachmentBodyFlag                   = meetingServiceCreateItxPastMeetingAttachmentFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag = meetingServiceCreateItxPastMeetingAttachmentFlags.String("meeting-and-occurrence-id", "REQUIRED", "Past meeting and occurrence ID")
+		meetingServiceCreateItxPastMeetingAttachmentVersionFlag                = meetingServiceCreateItxPastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceCreateItxPastMeetingAttachmentBearerTokenFlag            = meetingServiceCreateItxPastMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxPastMeetingAttachmentFlags                      = flag.NewFlagSet("get-itx-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceGetItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag = meetingServiceGetItxPastMeetingAttachmentFlags.String("meeting-and-occurrence-id", "REQUIRED", "Past meeting and occurrence ID")
+		meetingServiceGetItxPastMeetingAttachmentAttachmentIDFlag           = meetingServiceGetItxPastMeetingAttachmentFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceGetItxPastMeetingAttachmentVersionFlag                = meetingServiceGetItxPastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceGetItxPastMeetingAttachmentBearerTokenFlag            = meetingServiceGetItxPastMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceUpdateItxPastMeetingAttachmentFlags                      = flag.NewFlagSet("update-itx-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceUpdateItxPastMeetingAttachmentBodyFlag                   = meetingServiceUpdateItxPastMeetingAttachmentFlags.String("body", "REQUIRED", "")
+		meetingServiceUpdateItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag = meetingServiceUpdateItxPastMeetingAttachmentFlags.String("meeting-and-occurrence-id", "REQUIRED", "Past meeting and occurrence ID")
+		meetingServiceUpdateItxPastMeetingAttachmentAttachmentIDFlag           = meetingServiceUpdateItxPastMeetingAttachmentFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceUpdateItxPastMeetingAttachmentVersionFlag                = meetingServiceUpdateItxPastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceUpdateItxPastMeetingAttachmentBearerTokenFlag            = meetingServiceUpdateItxPastMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceDeleteItxPastMeetingAttachmentFlags                      = flag.NewFlagSet("delete-itx-past-meeting-attachment", flag.ExitOnError)
+		meetingServiceDeleteItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag = meetingServiceDeleteItxPastMeetingAttachmentFlags.String("meeting-and-occurrence-id", "REQUIRED", "Past meeting and occurrence ID")
+		meetingServiceDeleteItxPastMeetingAttachmentAttachmentIDFlag           = meetingServiceDeleteItxPastMeetingAttachmentFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceDeleteItxPastMeetingAttachmentVersionFlag                = meetingServiceDeleteItxPastMeetingAttachmentFlags.String("version", "", "")
+		meetingServiceDeleteItxPastMeetingAttachmentBearerTokenFlag            = meetingServiceDeleteItxPastMeetingAttachmentFlags.String("bearer-token", "", "")
+
+		meetingServiceCreateItxPastMeetingAttachmentPresignFlags                      = flag.NewFlagSet("create-itx-past-meeting-attachment-presign", flag.ExitOnError)
+		meetingServiceCreateItxPastMeetingAttachmentPresignBodyFlag                   = meetingServiceCreateItxPastMeetingAttachmentPresignFlags.String("body", "REQUIRED", "")
+		meetingServiceCreateItxPastMeetingAttachmentPresignMeetingAndOccurrenceIDFlag = meetingServiceCreateItxPastMeetingAttachmentPresignFlags.String("meeting-and-occurrence-id", "REQUIRED", "Past meeting and occurrence ID")
+		meetingServiceCreateItxPastMeetingAttachmentPresignVersionFlag                = meetingServiceCreateItxPastMeetingAttachmentPresignFlags.String("version", "", "")
+		meetingServiceCreateItxPastMeetingAttachmentPresignBearerTokenFlag            = meetingServiceCreateItxPastMeetingAttachmentPresignFlags.String("bearer-token", "", "")
+
+		meetingServiceGetItxPastMeetingAttachmentDownloadFlags                      = flag.NewFlagSet("get-itx-past-meeting-attachment-download", flag.ExitOnError)
+		meetingServiceGetItxPastMeetingAttachmentDownloadMeetingAndOccurrenceIDFlag = meetingServiceGetItxPastMeetingAttachmentDownloadFlags.String("meeting-and-occurrence-id", "REQUIRED", "Past meeting and occurrence ID")
+		meetingServiceGetItxPastMeetingAttachmentDownloadAttachmentIDFlag           = meetingServiceGetItxPastMeetingAttachmentDownloadFlags.String("attachment-id", "REQUIRED", "Attachment ID")
+		meetingServiceGetItxPastMeetingAttachmentDownloadVersionFlag                = meetingServiceGetItxPastMeetingAttachmentDownloadFlags.String("version", "", "")
+		meetingServiceGetItxPastMeetingAttachmentDownloadBearerTokenFlag            = meetingServiceGetItxPastMeetingAttachmentDownloadFlags.String("bearer-token", "", "")
 	)
 	meetingServiceFlags.Usage = meetingServiceUsage
 	meetingServiceReadyzFlags.Usage = meetingServiceReadyzUsage
@@ -220,6 +300,7 @@ func ParseEndpoint(
 	meetingServiceRegisterItxCommitteeMembersFlags.Usage = meetingServiceRegisterItxCommitteeMembersUsage
 	meetingServiceUpdateItxOccurrenceFlags.Usage = meetingServiceUpdateItxOccurrenceUsage
 	meetingServiceDeleteItxOccurrenceFlags.Usage = meetingServiceDeleteItxOccurrenceUsage
+	meetingServiceSubmitItxMeetingResponseFlags.Usage = meetingServiceSubmitItxMeetingResponseUsage
 	meetingServiceCreateItxPastMeetingFlags.Usage = meetingServiceCreateItxPastMeetingUsage
 	meetingServiceGetItxPastMeetingFlags.Usage = meetingServiceGetItxPastMeetingUsage
 	meetingServiceDeleteItxPastMeetingFlags.Usage = meetingServiceDeleteItxPastMeetingUsage
@@ -229,6 +310,18 @@ func ParseEndpoint(
 	meetingServiceCreateItxPastMeetingParticipantFlags.Usage = meetingServiceCreateItxPastMeetingParticipantUsage
 	meetingServiceUpdateItxPastMeetingParticipantFlags.Usage = meetingServiceUpdateItxPastMeetingParticipantUsage
 	meetingServiceDeleteItxPastMeetingParticipantFlags.Usage = meetingServiceDeleteItxPastMeetingParticipantUsage
+	meetingServiceCreateItxMeetingAttachmentFlags.Usage = meetingServiceCreateItxMeetingAttachmentUsage
+	meetingServiceGetItxMeetingAttachmentFlags.Usage = meetingServiceGetItxMeetingAttachmentUsage
+	meetingServiceUpdateItxMeetingAttachmentFlags.Usage = meetingServiceUpdateItxMeetingAttachmentUsage
+	meetingServiceDeleteItxMeetingAttachmentFlags.Usage = meetingServiceDeleteItxMeetingAttachmentUsage
+	meetingServiceCreateItxMeetingAttachmentPresignFlags.Usage = meetingServiceCreateItxMeetingAttachmentPresignUsage
+	meetingServiceGetItxMeetingAttachmentDownloadFlags.Usage = meetingServiceGetItxMeetingAttachmentDownloadUsage
+	meetingServiceCreateItxPastMeetingAttachmentFlags.Usage = meetingServiceCreateItxPastMeetingAttachmentUsage
+	meetingServiceGetItxPastMeetingAttachmentFlags.Usage = meetingServiceGetItxPastMeetingAttachmentUsage
+	meetingServiceUpdateItxPastMeetingAttachmentFlags.Usage = meetingServiceUpdateItxPastMeetingAttachmentUsage
+	meetingServiceDeleteItxPastMeetingAttachmentFlags.Usage = meetingServiceDeleteItxPastMeetingAttachmentUsage
+	meetingServiceCreateItxPastMeetingAttachmentPresignFlags.Usage = meetingServiceCreateItxPastMeetingAttachmentPresignUsage
+	meetingServiceGetItxPastMeetingAttachmentDownloadFlags.Usage = meetingServiceGetItxPastMeetingAttachmentDownloadUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -318,6 +411,9 @@ func ParseEndpoint(
 			case "delete-itx-occurrence":
 				epf = meetingServiceDeleteItxOccurrenceFlags
 
+			case "submit-itx-meeting-response":
+				epf = meetingServiceSubmitItxMeetingResponseFlags
+
 			case "create-itx-past-meeting":
 				epf = meetingServiceCreateItxPastMeetingFlags
 
@@ -344,6 +440,42 @@ func ParseEndpoint(
 
 			case "delete-itx-past-meeting-participant":
 				epf = meetingServiceDeleteItxPastMeetingParticipantFlags
+
+			case "create-itx-meeting-attachment":
+				epf = meetingServiceCreateItxMeetingAttachmentFlags
+
+			case "get-itx-meeting-attachment":
+				epf = meetingServiceGetItxMeetingAttachmentFlags
+
+			case "update-itx-meeting-attachment":
+				epf = meetingServiceUpdateItxMeetingAttachmentFlags
+
+			case "delete-itx-meeting-attachment":
+				epf = meetingServiceDeleteItxMeetingAttachmentFlags
+
+			case "create-itx-meeting-attachment-presign":
+				epf = meetingServiceCreateItxMeetingAttachmentPresignFlags
+
+			case "get-itx-meeting-attachment-download":
+				epf = meetingServiceGetItxMeetingAttachmentDownloadFlags
+
+			case "create-itx-past-meeting-attachment":
+				epf = meetingServiceCreateItxPastMeetingAttachmentFlags
+
+			case "get-itx-past-meeting-attachment":
+				epf = meetingServiceGetItxPastMeetingAttachmentFlags
+
+			case "update-itx-past-meeting-attachment":
+				epf = meetingServiceUpdateItxPastMeetingAttachmentFlags
+
+			case "delete-itx-past-meeting-attachment":
+				epf = meetingServiceDeleteItxPastMeetingAttachmentFlags
+
+			case "create-itx-past-meeting-attachment-presign":
+				epf = meetingServiceCreateItxPastMeetingAttachmentPresignFlags
+
+			case "get-itx-past-meeting-attachment-download":
+				epf = meetingServiceGetItxPastMeetingAttachmentDownloadFlags
 
 			}
 
@@ -422,6 +554,9 @@ func ParseEndpoint(
 			case "delete-itx-occurrence":
 				endpoint = c.DeleteItxOccurrence()
 				data, err = meetingservicec.BuildDeleteItxOccurrencePayload(*meetingServiceDeleteItxOccurrenceMeetingIDFlag, *meetingServiceDeleteItxOccurrenceOccurrenceIDFlag, *meetingServiceDeleteItxOccurrenceVersionFlag, *meetingServiceDeleteItxOccurrenceBearerTokenFlag)
+			case "submit-itx-meeting-response":
+				endpoint = c.SubmitItxMeetingResponse()
+				data, err = meetingservicec.BuildSubmitItxMeetingResponsePayload(*meetingServiceSubmitItxMeetingResponseBodyFlag, *meetingServiceSubmitItxMeetingResponseMeetingIDFlag, *meetingServiceSubmitItxMeetingResponseVersionFlag, *meetingServiceSubmitItxMeetingResponseBearerTokenFlag)
 			case "create-itx-past-meeting":
 				endpoint = c.CreateItxPastMeeting()
 				data, err = meetingservicec.BuildCreateItxPastMeetingPayload(*meetingServiceCreateItxPastMeetingBodyFlag, *meetingServiceCreateItxPastMeetingVersionFlag, *meetingServiceCreateItxPastMeetingBearerTokenFlag)
@@ -449,6 +584,42 @@ func ParseEndpoint(
 			case "delete-itx-past-meeting-participant":
 				endpoint = c.DeleteItxPastMeetingParticipant()
 				data, err = meetingservicec.BuildDeleteItxPastMeetingParticipantPayload(*meetingServiceDeleteItxPastMeetingParticipantPastMeetingIDFlag, *meetingServiceDeleteItxPastMeetingParticipantParticipantIDFlag, *meetingServiceDeleteItxPastMeetingParticipantVersionFlag, *meetingServiceDeleteItxPastMeetingParticipantBearerTokenFlag)
+			case "create-itx-meeting-attachment":
+				endpoint = c.CreateItxMeetingAttachment()
+				data, err = meetingservicec.BuildCreateItxMeetingAttachmentPayload(*meetingServiceCreateItxMeetingAttachmentBodyFlag, *meetingServiceCreateItxMeetingAttachmentMeetingIDFlag, *meetingServiceCreateItxMeetingAttachmentVersionFlag, *meetingServiceCreateItxMeetingAttachmentBearerTokenFlag)
+			case "get-itx-meeting-attachment":
+				endpoint = c.GetItxMeetingAttachment()
+				data, err = meetingservicec.BuildGetItxMeetingAttachmentPayload(*meetingServiceGetItxMeetingAttachmentMeetingIDFlag, *meetingServiceGetItxMeetingAttachmentAttachmentIDFlag, *meetingServiceGetItxMeetingAttachmentVersionFlag, *meetingServiceGetItxMeetingAttachmentBearerTokenFlag)
+			case "update-itx-meeting-attachment":
+				endpoint = c.UpdateItxMeetingAttachment()
+				data, err = meetingservicec.BuildUpdateItxMeetingAttachmentPayload(*meetingServiceUpdateItxMeetingAttachmentBodyFlag, *meetingServiceUpdateItxMeetingAttachmentMeetingIDFlag, *meetingServiceUpdateItxMeetingAttachmentAttachmentIDFlag, *meetingServiceUpdateItxMeetingAttachmentVersionFlag, *meetingServiceUpdateItxMeetingAttachmentBearerTokenFlag)
+			case "delete-itx-meeting-attachment":
+				endpoint = c.DeleteItxMeetingAttachment()
+				data, err = meetingservicec.BuildDeleteItxMeetingAttachmentPayload(*meetingServiceDeleteItxMeetingAttachmentMeetingIDFlag, *meetingServiceDeleteItxMeetingAttachmentAttachmentIDFlag, *meetingServiceDeleteItxMeetingAttachmentVersionFlag, *meetingServiceDeleteItxMeetingAttachmentBearerTokenFlag)
+			case "create-itx-meeting-attachment-presign":
+				endpoint = c.CreateItxMeetingAttachmentPresign()
+				data, err = meetingservicec.BuildCreateItxMeetingAttachmentPresignPayload(*meetingServiceCreateItxMeetingAttachmentPresignBodyFlag, *meetingServiceCreateItxMeetingAttachmentPresignMeetingIDFlag, *meetingServiceCreateItxMeetingAttachmentPresignVersionFlag, *meetingServiceCreateItxMeetingAttachmentPresignBearerTokenFlag)
+			case "get-itx-meeting-attachment-download":
+				endpoint = c.GetItxMeetingAttachmentDownload()
+				data, err = meetingservicec.BuildGetItxMeetingAttachmentDownloadPayload(*meetingServiceGetItxMeetingAttachmentDownloadMeetingIDFlag, *meetingServiceGetItxMeetingAttachmentDownloadAttachmentIDFlag, *meetingServiceGetItxMeetingAttachmentDownloadVersionFlag, *meetingServiceGetItxMeetingAttachmentDownloadBearerTokenFlag)
+			case "create-itx-past-meeting-attachment":
+				endpoint = c.CreateItxPastMeetingAttachment()
+				data, err = meetingservicec.BuildCreateItxPastMeetingAttachmentPayload(*meetingServiceCreateItxPastMeetingAttachmentBodyFlag, *meetingServiceCreateItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag, *meetingServiceCreateItxPastMeetingAttachmentVersionFlag, *meetingServiceCreateItxPastMeetingAttachmentBearerTokenFlag)
+			case "get-itx-past-meeting-attachment":
+				endpoint = c.GetItxPastMeetingAttachment()
+				data, err = meetingservicec.BuildGetItxPastMeetingAttachmentPayload(*meetingServiceGetItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag, *meetingServiceGetItxPastMeetingAttachmentAttachmentIDFlag, *meetingServiceGetItxPastMeetingAttachmentVersionFlag, *meetingServiceGetItxPastMeetingAttachmentBearerTokenFlag)
+			case "update-itx-past-meeting-attachment":
+				endpoint = c.UpdateItxPastMeetingAttachment()
+				data, err = meetingservicec.BuildUpdateItxPastMeetingAttachmentPayload(*meetingServiceUpdateItxPastMeetingAttachmentBodyFlag, *meetingServiceUpdateItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag, *meetingServiceUpdateItxPastMeetingAttachmentAttachmentIDFlag, *meetingServiceUpdateItxPastMeetingAttachmentVersionFlag, *meetingServiceUpdateItxPastMeetingAttachmentBearerTokenFlag)
+			case "delete-itx-past-meeting-attachment":
+				endpoint = c.DeleteItxPastMeetingAttachment()
+				data, err = meetingservicec.BuildDeleteItxPastMeetingAttachmentPayload(*meetingServiceDeleteItxPastMeetingAttachmentMeetingAndOccurrenceIDFlag, *meetingServiceDeleteItxPastMeetingAttachmentAttachmentIDFlag, *meetingServiceDeleteItxPastMeetingAttachmentVersionFlag, *meetingServiceDeleteItxPastMeetingAttachmentBearerTokenFlag)
+			case "create-itx-past-meeting-attachment-presign":
+				endpoint = c.CreateItxPastMeetingAttachmentPresign()
+				data, err = meetingservicec.BuildCreateItxPastMeetingAttachmentPresignPayload(*meetingServiceCreateItxPastMeetingAttachmentPresignBodyFlag, *meetingServiceCreateItxPastMeetingAttachmentPresignMeetingAndOccurrenceIDFlag, *meetingServiceCreateItxPastMeetingAttachmentPresignVersionFlag, *meetingServiceCreateItxPastMeetingAttachmentPresignBearerTokenFlag)
+			case "get-itx-past-meeting-attachment-download":
+				endpoint = c.GetItxPastMeetingAttachmentDownload()
+				data, err = meetingservicec.BuildGetItxPastMeetingAttachmentDownloadPayload(*meetingServiceGetItxPastMeetingAttachmentDownloadMeetingAndOccurrenceIDFlag, *meetingServiceGetItxPastMeetingAttachmentDownloadAttachmentIDFlag, *meetingServiceGetItxPastMeetingAttachmentDownloadVersionFlag, *meetingServiceGetItxPastMeetingAttachmentDownloadBearerTokenFlag)
 			}
 		}
 	}
@@ -483,6 +654,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    register-itx-committee-members: Register committee members to a meeting asynchronously through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-occurrence: Update a specific occurrence of a recurring meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-occurrence: Delete a specific occurrence of a recurring meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    submit-itx-meeting-response: Submit a meeting response (invite response) for a meeting or occurrence through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting: Create a past meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting: Get a past meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-past-meeting: Delete a past meeting through ITX API proxy`)
@@ -492,6 +664,18 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting-participant: Create a past meeting participant through ITX API proxy - routes to invitee and/or attendee endpoints based on flags`)
 	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting-participant: Update a past meeting participant through ITX API proxy - updates invitee and/or attendee records as needed`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-past-meeting-participant: Delete a past meeting participant through ITX API proxy - deletes invitee and/or attendee records as needed`)
+	fmt.Fprintln(os.Stderr, `    create-itx-meeting-attachment: Create a meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-meeting-attachment: Get a meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    update-itx-meeting-attachment: Update a meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-meeting-attachment: Delete a meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    create-itx-meeting-attachment-presign: Generate presigned URL for meeting attachment upload through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-meeting-attachment-download: Generate presigned URL for meeting attachment download through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting-attachment: Create a past meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting-attachment: Get a past meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting-attachment: Update a past meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-past-meeting-attachment: Delete a past meeting attachment through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting-attachment-presign: Generate presigned URL for past meeting attachment upload through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting-attachment-download: Generate presigned URL for past meeting attachment download through ITX API proxy`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
 	fmt.Fprintf(os.Stderr, "    %s meeting-service COMMAND --help\n", os.Args[0])
@@ -549,7 +733,7 @@ func meetingServiceCreateItxMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting --body '{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"dhj\",\n      \"duration\": 93,\n      \"early_join_time_minutes\": 44,\n      \"meeting_type\": \"Board\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1986-02-03T15:17:06Z\",\n         \"end_times\": 2021793513680499921,\n         \"monthly_day\": 5080625992694716341,\n         \"monthly_week\": 5911468135838275655,\n         \"monthly_week_day\": 1349980424387692222,\n         \"repeat_interval\": 6343173761327140206,\n         \"type\": 2,\n         \"weekly_days\": \"Consequuntur possimus cupiditate quasi aspernatur accusantium vero.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Cumque qui rem doloribus pariatur sed.\",\n      \"title\": \"Animi voluptatem eos id.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }' --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting --body '{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"tw1\",\n      \"duration\": 595,\n      \"early_join_time_minutes\": 55,\n      \"meeting_type\": \"Marketing\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"2012-03-05T08:06:18Z\",\n         \"end_times\": 6645035424863629342,\n         \"monthly_day\": 5391918512888495798,\n         \"monthly_week\": 215672949513519821,\n         \"monthly_week_day\": 6681397425469462938,\n         \"repeat_interval\": 1095566517890292653,\n         \"type\": 2,\n         \"weekly_days\": \"Voluptatem inventore in officia tempore necessitatibus deleniti.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Tempora pariatur excepturi.\",\n      \"title\": \"Iste non sed laudantium velit aliquam.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }' --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
 }
 
 func meetingServiceGetItxMeetingUsage() {
@@ -619,7 +803,7 @@ func meetingServiceUpdateItxMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"jwc\",\n      \"duration\": 456,\n      \"early_join_time_minutes\": 12,\n      \"meeting_type\": \"Other\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"1986-02-03T15:17:06Z\",\n         \"end_times\": 2021793513680499921,\n         \"monthly_day\": 5080625992694716341,\n         \"monthly_week\": 5911468135838275655,\n         \"monthly_week_day\": 1349980424387692222,\n         \"repeat_interval\": 6343173761327140206,\n         \"type\": 2,\n         \"weekly_days\": \"Consequuntur possimus cupiditate quasi aspernatur accusantium vero.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Qui id sed delectus quod sunt.\",\n      \"title\": \"Fugiat iure.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting --body '{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"dny\",\n      \"duration\": 81,\n      \"early_join_time_minutes\": 30,\n      \"meeting_type\": \"Board\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"recurrence\": {\n         \"end_date_time\": \"2012-03-05T08:06:18Z\",\n         \"end_times\": 6645035424863629342,\n         \"monthly_day\": 5391918512888495798,\n         \"monthly_week\": 215672949513519821,\n         \"monthly_week_day\": 6681397425469462938,\n         \"repeat_interval\": 1095566517890292653,\n         \"type\": 2,\n         \"weekly_days\": \"Voluptatem inventore in officia tempore necessitatibus deleniti.\"\n      },\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"In nulla suscipit et rerum.\",\n      \"title\": \"Et odio corrupti nihil consequatur nemo facilis.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
 }
 
 func meetingServiceGetItxMeetingCountUsage() {
@@ -665,7 +849,7 @@ func meetingServiceCreateItxRegistrantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-registrant --body '{\n      \"attended_occurrence_count\": 7055716465626542352,\n      \"committee_uid\": \"Quidem quibusdam recusandae eos quidem qui.\",\n      \"created_at\": \"Accusamus blanditiis eius cumque eum.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Possimus unde quia inventore error eveniet.\",\n      \"last_invite_delivery_status\": \"Vel possimus et consequuntur quaerat ut aliquam.\",\n      \"last_invite_received_message_id\": \"Voluptatum tenetur.\",\n      \"last_invite_received_time\": \"Sed omnis maiores rerum.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"In minus et.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Delectus totam ullam quia iusto sed atque.\",\n      \"total_occurrence_count\": 8229808662094484385,\n      \"type\": \"committee\",\n      \"uid\": \"Sapiente amet provident.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-registrant --body '{\n      \"attended_occurrence_count\": 3962215933756582020,\n      \"committee_uid\": \"Adipisci odio ut a.\",\n      \"created_at\": \"Veritatis fugiat exercitationem.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Sint numquam consequuntur.\",\n      \"last_invite_delivery_status\": \"Voluptatum molestiae.\",\n      \"last_invite_received_message_id\": \"Atque iure ut earum sapiente in magnam.\",\n      \"last_invite_received_time\": \"Quasi id deserunt.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Velit provident expedita veritatis eaque explicabo eaque.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Ut sed.\",\n      \"total_occurrence_count\": 7232784634128323630,\n      \"type\": \"committee\",\n      \"uid\": \"Voluptas id qui blanditiis.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxRegistrantUsage() {
@@ -715,7 +899,7 @@ func meetingServiceUpdateItxRegistrantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-registrant --body '{\n      \"attended_occurrence_count\": 9124820807387163851,\n      \"committee_uid\": \"Aut consequatur ducimus tenetur possimus tempora quis.\",\n      \"created_at\": \"Deserunt corporis nisi ad assumenda.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Ipsam tenetur et expedita.\",\n      \"last_invite_delivery_status\": \"Et dolorem iusto consequuntur labore.\",\n      \"last_invite_received_message_id\": \"Officiis nisi dolorem voluptates repellat odit dolorem.\",\n      \"last_invite_received_time\": \"Quisquam nihil qui ea provident natus ut.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Magni distinctio quia.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Delectus dolores dolorem.\",\n      \"total_occurrence_count\": 3655883918328795135,\n      \"type\": \"committee\",\n      \"uid\": \"Qui sint nobis totam.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-registrant --body '{\n      \"attended_occurrence_count\": 3693433681463565001,\n      \"committee_uid\": \"Et illum ea exercitationem possimus.\",\n      \"created_at\": \"Amet odio quae.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Ipsa qui facilis.\",\n      \"last_invite_delivery_status\": \"Ullam fugiat hic dolores quasi.\",\n      \"last_invite_received_message_id\": \"Ea omnis quis laudantium cupiditate delectus.\",\n      \"last_invite_received_time\": \"Pariatur commodi et nobis.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Aperiam repudiandae.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Quia perspiciatis debitis sit.\",\n      \"total_occurrence_count\": 4666837638383184714,\n      \"type\": \"direct\",\n      \"uid\": \"Voluptatibus quibusdam laborum odit.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxRegistrantUsage() {
@@ -771,7 +955,7 @@ func meetingServiceGetItxJoinLinkUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-join-link --meeting-id \"1234567890\" --version \"1\" --use-email true --user-id \"user123\" --name \"John Doe\" --email \"john.doe@example.com\" --register false --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-join-link --meeting-id \"1234567890\" --version \"1\" --use-email false --user-id \"user123\" --name \"John Doe\" --email \"john.doe@example.com\" --register false --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxRegistrantIcsUsage() {
@@ -891,7 +1075,7 @@ func meetingServiceUpdateItxOccurrenceUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-occurrence --body '{\n      \"agenda\": \"Qui nihil facilis iusto est voluptates repellendus.\",\n      \"duration\": 60,\n      \"recurrence\": {\n         \"end_date_time\": \"1986-02-03T15:17:06Z\",\n         \"end_times\": 2021793513680499921,\n         \"monthly_day\": 5080625992694716341,\n         \"monthly_week\": 5911468135838275655,\n         \"monthly_week_day\": 1349980424387692222,\n         \"repeat_interval\": 6343173761327140206,\n         \"type\": 2,\n         \"weekly_days\": \"Consequuntur possimus cupiditate quasi aspernatur accusantium vero.\"\n      },\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"topic\": \"Nobis repudiandae quia necessitatibus placeat minima.\"\n   }' --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-occurrence --body '{\n      \"agenda\": \"Facere beatae.\",\n      \"duration\": 60,\n      \"recurrence\": {\n         \"end_date_time\": \"2012-03-05T08:06:18Z\",\n         \"end_times\": 6645035424863629342,\n         \"monthly_day\": 5391918512888495798,\n         \"monthly_week\": 215672949513519821,\n         \"monthly_week_day\": 6681397425469462938,\n         \"repeat_interval\": 1095566517890292653,\n         \"type\": 2,\n         \"weekly_days\": \"Voluptatem inventore in officia tempore necessitatibus deleniti.\"\n      },\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"topic\": \"Est nemo.\"\n   }' --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxOccurrenceUsage() {
@@ -918,6 +1102,30 @@ func meetingServiceDeleteItxOccurrenceUsage() {
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-occurrence --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
+func meetingServiceSubmitItxMeetingResponseUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service submit-itx-meeting-response", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Submit a meeting response (invite response) for a meeting or occurrence through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The Zoom meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service submit-itx-meeting-response --body '{\n      \"occurrence_id\": \"1772906400000\",\n      \"registrant_id\": \"ea1e8536-a985-4cf5-b981-a170927a1d11\",\n      \"response\": \"accepted\",\n      \"scope\": \"single\"\n   }' --meeting-id \"98574728662\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
 func meetingServiceCreateItxPastMeetingUsage() {
 	// Header with flags
 	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-past-meeting", os.Args[0])
@@ -937,7 +1145,7 @@ func meetingServiceCreateItxPastMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"8dd\",\n      \"duration\": 241,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"Marketing\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Consectetur debitis possimus qui est est consequatur.\",\n      \"title\": \"Error numquam dignissimos magnam vero accusamus.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\"\n   }' --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"nth\",\n      \"duration\": 273,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"Marketing\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Iure aspernatur laborum voluptatem.\",\n      \"title\": \"Occaecati fugit dolor dolorem exercitationem.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\"\n   }' --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxPastMeetingUsage() {
@@ -1005,7 +1213,7 @@ func meetingServiceUpdateItxPastMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Animi saepe temporibus minima atque sit totam.\",\n               \"Sunt qui aut quia temporibus fugiat.\",\n               \"Soluta at perferendis aliquid incidunt provident accusamus.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"Aut nesciunt quaerat.\",\n      \"duration\": 60,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"webinar\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"a09eaa48-231b-43e5-93ba-91c2e0a0e5f1\",\n      \"recording_enabled\": true,\n      \"restricted\": true,\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"timezone\": \"UTC\",\n      \"title\": \"Laboriosam officia sint.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting --body '{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"Quam explicabo.\",\n               \"Porro iste non commodi sint sed est.\",\n               \"Est cupiditate perferendis quam alias animi.\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"Adipisci corporis totam adipisci est et ea.\",\n      \"duration\": 60,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"webinar\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"a09eaa48-231b-43e5-93ba-91c2e0a0e5f1\",\n      \"recording_enabled\": true,\n      \"restricted\": true,\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"timezone\": \"UTC\",\n      \"title\": \"Velit ratione dolores non.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxPastMeetingSummaryUsage() {
@@ -1055,7 +1263,7 @@ func meetingServiceUpdateItxPastMeetingSummaryUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": false,\n      \"edited_content\": \"Facilis exercitationem rem unde dolorum sed aspernatur.\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": false,\n      \"edited_content\": \"Assumenda explicabo.\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxPastMeetingParticipantUsage() {
@@ -1079,7 +1287,7 @@ func meetingServiceCreateItxPastMeetingParticipantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-participant --body '{\n      \"avatar_url\": \"https://avatars.example.com/jdoe.jpg\",\n      \"committee_id\": \"383f5c1d-a87d-4de6-adc1-40a705cb2b43\",\n      \"committee_role\": \"Developer Seat\",\n      \"committee_voting_status\": \"Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"is_unknown\": true,\n      \"is_verified\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"003P000001cRZVVI9A\",\n      \"org_is_member\": false,\n      \"org_is_project_member\": true,\n      \"org_name\": \"Google\",\n      \"sessions\": [\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Et ab nobis libero nihil aliquam deleniti.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Quis est est molestias eligendi nulla porro.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Et ab nobis libero nihil aliquam deleniti.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Quis est est molestias eligendi nulla porro.\"\n         }\n      ],\n      \"username\": \"jdoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-participant --body '{\n      \"avatar_url\": \"https://avatars.example.com/jdoe.jpg\",\n      \"committee_id\": \"33507200-375f-4c16-963a-007a4642beb6\",\n      \"committee_role\": \"Developer Seat\",\n      \"committee_voting_status\": \"Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"is_unknown\": false,\n      \"is_verified\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"003P000001cRZVVI9A\",\n      \"org_is_member\": true,\n      \"org_is_project_member\": true,\n      \"org_name\": \"Google\",\n      \"sessions\": [\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Ipsam omnis.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Omnis possimus voluptas quis delectus.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Ipsam omnis.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Omnis possimus voluptas quis delectus.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Ipsam omnis.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Omnis possimus voluptas quis delectus.\"\n         }\n      ],\n      \"username\": \"jdoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceUpdateItxPastMeetingParticipantUsage() {
@@ -1105,7 +1313,7 @@ func meetingServiceUpdateItxPastMeetingParticipantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-participant --body '{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_attended\": false,\n      \"is_invited\": true,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-participant --body '{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_attended\": true,\n      \"is_invited\": false,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxPastMeetingParticipantUsage() {
@@ -1130,4 +1338,296 @@ func meetingServiceDeleteItxPastMeetingParticipantUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-past-meeting-participant --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceCreateItxMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Create a meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: Meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Aut ducimus quae unde eos et quia.\",\n      \"link\": \"Soluta voluptatibus corporis voluptatibus possimus reprehenderit.\",\n      \"name\": \"21\",\n      \"type\": \"file\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get a meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: Meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-attachment --meeting-id \"Omnis et alias est dicta.\" --attachment-id \"f3b94901-dfba-4e48-8d1e-b9831a52554b\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: Meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting-attachment --body '{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Maxime modi est corporis quia qui.\",\n      \"link\": \"Molestias natus similique ut debitis autem minima.\",\n      \"name\": \"Ullam voluptate aliquam.\",\n      \"type\": \"link\"\n   }' --meeting-id \"Debitis id inventore et aliquam.\" --attachment-id \"99ba6456-ea63-475e-a679-5bb3e26d671f\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceDeleteItxMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-itx-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Delete a meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: Meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-meeting-attachment --meeting-id \"Rerum dolore ut maxime architecto itaque debitis.\" --attachment-id \"e252fa74-2003-4331-bcb7-d3db46af2183\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceCreateItxMeetingAttachmentPresignUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-meeting-attachment-presign", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Generate presigned URL for meeting attachment upload through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: Meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment-presign --body '{\n      \"category\": \"Other\",\n      \"description\": \"Et laudantium sed blanditiis.\",\n      \"file_size\": 892405908037047214,\n      \"file_type\": \"At nam et voluptatem qui.\",\n      \"name\": \"Qui iure molestiae et consequatur amet minima.\"\n   }' --meeting-id \"Odio sunt laudantium non.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxMeetingAttachmentDownloadUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-meeting-attachment-download", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Generate presigned URL for meeting attachment download through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: Meeting ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-attachment-download --meeting-id \"Minus ut ducimus.\" --attachment-id \"819152de-e189-4b12-81f3-00aeb0c016a9\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceCreateItxPastMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-past-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-and-occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Create a past meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-and-occurrence-id STRING: Past meeting and occurrence ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-attachment --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Et necessitatibus dicta suscipit.\",\n      \"link\": \"Non quisquam praesentium.\",\n      \"name\": \"zd\",\n      \"type\": \"link\"\n   }' --meeting-and-occurrence-id \"Magni sapiente et vel.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxPastMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-past-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-and-occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get a past meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-and-occurrence-id STRING: Past meeting and occurrence ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-attachment --meeting-and-occurrence-id \"Dolorem magnam sed officiis dolorem.\" --attachment-id \"bc25a894-ae8b-4368-9348-34cdd6d3f478\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceUpdateItxPastMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service update-itx-past-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-and-occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Update a past meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-and-occurrence-id STRING: Past meeting and occurrence ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-attachment --body '{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Quo voluptatem architecto debitis.\",\n      \"link\": \"Animi qui veritatis.\",\n      \"name\": \"Et libero et consectetur eum omnis minus.\",\n      \"type\": \"file\"\n   }' --meeting-and-occurrence-id \"Dolor fugit impedit quia nemo illum amet.\" --attachment-id \"d429d52e-fb3d-45cd-85f8-8fab052a2cc6\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceDeleteItxPastMeetingAttachmentUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service delete-itx-past-meeting-attachment", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-and-occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Delete a past meeting attachment through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-and-occurrence-id STRING: Past meeting and occurrence ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-past-meeting-attachment --meeting-and-occurrence-id \"Vel dolorem.\" --attachment-id \"9334dda7-76fc-4f8a-992a-6441bae1f014\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceCreateItxPastMeetingAttachmentPresignUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service create-itx-past-meeting-attachment-presign", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-and-occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Generate presigned URL for past meeting attachment upload through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-and-occurrence-id STRING: Past meeting and occurrence ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-attachment-presign --body '{\n      \"category\": \"Notes\",\n      \"description\": \"Maiores voluptatibus enim.\",\n      \"file_size\": 4400906838231978110,\n      \"file_type\": \"Vitae sit facilis.\",\n      \"name\": \"Neque odit ut.\"\n   }' --meeting-and-occurrence-id \"Iste minima iure.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxPastMeetingAttachmentDownloadUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-past-meeting-attachment-download", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-and-occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -attachment-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Generate presigned URL for past meeting attachment download through ITX API proxy`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-and-occurrence-id STRING: Past meeting and occurrence ID`)
+	fmt.Fprintln(os.Stderr, `    -attachment-id STRING: Attachment ID`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-attachment-download --meeting-and-occurrence-id \"In repellat earum.\" --attachment-id \"0ce118b3-e6e0-443f-be96-a024fd4d725b\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }

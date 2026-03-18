@@ -42,6 +42,7 @@ helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
    ```
 
    Required environment variables:
+
    ```bash
    ITX_ENABLED=true
    ITX_BASE_URL=https://api.dev.itx.linuxfoundation.org
@@ -77,6 +78,8 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **ITX Registrant Operations**: Manage meeting registrants via ITX
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
+- **ITX Meeting Attachment Operations**: Full CRUD operations for meeting attachments with presigned URL support
+- **ITX Past Meeting Attachment Operations**: Full CRUD operations for past meeting attachments with presigned URL support
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications
@@ -116,6 +119,20 @@ lfx-v2-meeting-service/
 ├── Makefile                       # Build and development commands
 └── go.mod                         # Go module definition
 ```
+
+## 📡 Event Processing
+
+The service includes a comprehensive event processing system for v1→v2 data synchronization. It watches NATS JetStream KV buckets for meeting-related data changes and publishes events to both indexer and FGA-sync services.
+
+**Features:**
+
+- 10 meeting-related event types (meetings, registrants, RSVPs, past meetings, participants, recordings, summaries)
+- RRULE occurrence calculation for recurring meetings
+- v1 user enrichment and Auth0 mapping
+- Dual publishing architecture (indexer + FGA-sync)
+- Parent-child dependency handling with retry logic
+
+For complete details, see **[Event Processing Documentation](docs/event-processing.md)**.
 
 ## 🛠️ Development
 
@@ -247,19 +264,54 @@ make test-coverage
 
 ### Helm Chart
 
-The service includes a Helm chart for Kubernetes deployment:
+The service includes a Helm chart for Kubernetes deployment.
+
+#### Prerequisites: Kubernetes Secret
+
+Before installing the chart, create the `meeting-secrets` secret in the `lfx` namespace. The `auth0_client_id` and `auth0_client_private_key` values are in 1Password under the **LFX V2** vault, in the note **LFX Platform Chart Values Secrets - Local Development**.
 
 ```bash
-# Install with default values
+kubectl create secret generic meeting-secrets -n lfx \
+  --from-literal=auth0_client_id="<client-id-from-1password>" \
+  --from-file=auth0_client_private_key=./path/to/private.key
+```
+
+#### Option 1: Install from GHCR (no local code changes)
+
+Use this if you just want to run the service without modifying its code. The image is pulled directly from the container registry:
+
+```bash
 make helm-install
 
-# Install with custom values
+# Or using Helm directly
 helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
   --namespace lfx \
-  --values custom-values.yaml
+  --create-namespace
+```
 
-# View templates
-make helm-templates
+#### Option 2: Install from a Local Build (active development)
+
+Use this if you are making changes to the service code. First, copy the example local values file (it is gitignored):
+
+```bash
+cp charts/lfx-v2-meeting-service/values.local.example.yaml \
+   charts/lfx-v2-meeting-service/values.local.yaml
+```
+
+Then, whenever you make a code change and want to apply it:
+
+```bash
+# Rebuild the local image
+make docker-build
+
+# Install/upgrade the chart using the local image
+make helm-install-local
+
+# Or using Helm directly
+helm upgrade --install lfx-v2-meeting-service ./charts/lfx-v2-meeting-service \
+  --namespace lfx \
+  --create-namespace \
+  --values ./charts/lfx-v2-meeting-service/values.local.yaml
 ```
 
 ### Docker
@@ -290,12 +342,14 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 ### Available Endpoints
 
 #### Health Checks
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/livez` | GET | Liveness check |
 | `/readyz` | GET | Readiness check |
 
 #### ITX Meeting Operations
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/itx/meetings` | POST | Create meeting via ITX |
@@ -303,6 +357,7 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/itx/meetings/{meeting_id}` | PUT | Update meeting |
 | `/itx/meetings/{meeting_id}` | DELETE | Delete meeting |
 | `/itx/meetings/{meeting_id}/join_link` | GET | Get join link for user |
+| `/itx/meetings/{meeting_id}/responses` | POST | Submit meeting RSVP (accepted/declined/maybe) |
 | `/itx/meetings/{meeting_id}/occurrences/{occurrence_id}` | PATCH | Update occurrence |
 | `/itx/meetings/{meeting_id}/occurrences/{occurrence_id}` | DELETE | Delete occurrence |
 | `/itx/meeting_count` | GET | Get meeting count |
@@ -327,19 +382,27 @@ Access the documentation at: `http://localhost:8080/openapi.json`
 | `/itx/past_meetings/{past_meeting_id}`   | PUT    | Update past meeting  |
 | `/itx/past_meetings/{past_meeting_id}`   | DELETE | Delete past meeting  |
 
-## 📡 Event Processing
+#### ITX Meeting Attachment Operations
 
-The service includes a comprehensive event processing system for v1→v2 data synchronization. It watches NATS JetStream KV buckets for meeting-related data changes and publishes events to both indexer and FGA-sync services.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/itx/meetings/{meeting_id}/attachments` | POST | Create meeting attachment |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | GET | Get attachment metadata |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | PUT | Update attachment |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | DELETE | Delete attachment |
+| `/itx/meetings/{meeting_id}/attachments/presign` | POST | Generate presigned upload URL |
+| `/itx/meetings/{meeting_id}/attachments/{attachment_id}/download` | GET | Get download URL |
 
-**Features:**
+#### ITX Past Meeting Attachment Operations
 
-- 10 meeting-related event types (meetings, registrants, RSVPs, past meetings, participants, recordings, summaries)
-- RRULE occurrence calculation for recurring meetings
-- v1 user enrichment and Auth0 mapping
-- Dual publishing architecture (indexer + FGA-sync)
-- Parent-child dependency handling with retry logic
-
-For complete details, see **[Event Processing Documentation](docs/event-processing.md)**.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments` | POST | Create past meeting attachment |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}` | GET | Get attachment metadata |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}` | PUT | Update attachment |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}` | DELETE | Delete attachment |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/presign` | POST | Generate presigned upload URL |
+| `/itx/past_meetings/{meeting_and_occurrence_id}/attachments/{attachment_id}/download` | GET | Get download URL |
 
 ## 🔧 Configuration
 
