@@ -42,10 +42,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	pastMeetingData, err := convertMapToPastMeetingData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, h.v1MappingsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to past meeting")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Validate required fields
@@ -65,10 +62,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingEvent(ctx, string(indexerAction), pastMeetingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish past meeting event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Store mapping
@@ -185,10 +179,7 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 	// Update committee mappings in KV bucket
 	if err := updatePastMeetingCommitteeMappings(ctx, pastMeetingUUID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update past meeting committee mappings")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Re-trigger past meeting indexing
@@ -419,10 +410,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	participantData, err := convertMapToInviteeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invitee participant")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Validate required fields
@@ -442,10 +430,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invitee participant event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Store mapping
@@ -493,10 +478,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	participantData, err := convertMapToAttendeeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to attendee participant")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Validate required fields
@@ -516,10 +498,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish attendee participant event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Store mapping
@@ -822,10 +801,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	recordingData, transcriptData, err := convertMapToRecordingData(ctx, v1Data, h.idMapper, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to recording")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Validate required fields
@@ -845,20 +821,14 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	// Publish recording event to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish recording event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// If transcript is enabled, publish separate transcript event
 	if transcriptData != nil {
 		if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish transcript event")
-			if isTransientError(err) {
-				return true
-			}
-			return false
+			return isTransientError(err)
 		}
 	}
 
@@ -919,10 +889,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	summaryData, err := convertMapToSummaryData(ctx, v1Data, h.idMapper, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to summary")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Validate required fields
@@ -942,10 +909,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish summary event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Store mapping
@@ -1228,4 +1192,3 @@ func buildSummaryMarkdown(overview string, details []SummaryDetailDBRaw, nextSte
 
 	return strings.TrimSpace(sb.String())
 }
-

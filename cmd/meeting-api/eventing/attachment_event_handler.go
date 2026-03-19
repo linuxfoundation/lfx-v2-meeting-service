@@ -60,10 +60,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 
 	if err := h.publisher.PublishMeetingAttachmentEvent(ctx, string(indexerAction), attachmentData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting attachment event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
@@ -208,10 +205,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 
 	if err := h.publisher.PublishPastMeetingAttachmentEvent(ctx, string(indexerAction), attachmentData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish past meeting attachment event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {

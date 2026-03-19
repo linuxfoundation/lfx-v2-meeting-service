@@ -30,10 +30,10 @@ const (
 	authorizationHeaderValue = "Bearer lfx-v2-meeting-service"
 
 	// NATS subjects for indexer messages.
-	IndexV1MeetingSubject              = "lfx.index.v1_meeting"
-	IndexV1MeetingRegistrantSubject    = "lfx.index.v1_meeting_registrant"
-	IndexV1MeetingRSVPSubject          = "lfx.index.v1_meeting_rsvp"
-	IndexV1PastMeetingSubject          = "lfx.index.v1_past_meeting"
+	IndexV1MeetingSubject                = "lfx.index.v1_meeting"
+	IndexV1MeetingRegistrantSubject      = "lfx.index.v1_meeting_registrant"
+	IndexV1MeetingRSVPSubject            = "lfx.index.v1_meeting_rsvp"
+	IndexV1PastMeetingSubject            = "lfx.index.v1_past_meeting"
 	IndexV1PastMeetingParticipantSubject = "lfx.index.v1_past_meeting_participant"
 	IndexV1PastMeetingRecordingSubject   = "lfx.index.v1_past_meeting_recording"
 	IndexV1PastMeetingTranscriptSubject  = "lfx.index.v1_past_meeting_transcript"
@@ -42,10 +42,10 @@ const (
 	IndexV1PastMeetingAttachmentSubject  = "lfx.index.v1_past_meeting_attachment"
 
 	// NATS subjects for access control delete messages.
-	DeleteAllAccessV1MeetingSubject         = "lfx.delete_all_access.v1_meeting"
-	DeleteAllAccessV1PastMeetingSubject     = "lfx.delete_all_access.v1_past_meeting"
-	RemoveRegistrantV1MeetingSubject        = "lfx.remove_registrant.v1_meeting"
-	RemoveParticipantV1PastMeetingSubject   = "lfx.remove_participant.v1_past_meeting"
+	DeleteAllAccessV1MeetingSubject       = "lfx.delete_all_access.v1_meeting"
+	DeleteAllAccessV1PastMeetingSubject   = "lfx.delete_all_access.v1_past_meeting"
+	RemoveRegistrantV1MeetingSubject      = "lfx.remove_registrant.v1_meeting"
+	RemoveParticipantV1PastMeetingSubject = "lfx.remove_participant.v1_past_meeting"
 )
 
 // IndexerMessage is the structure for indexer messages
@@ -411,21 +411,6 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 
 	if err := p.publish(ctx, "lfx.fga-sync.update_access", accessMsg); err != nil {
 		return fmt.Errorf("failed to publish recording access control: %w", err)
-	}
-
-	// If transcript is enabled, also publish transcript event
-	if recording.TranscriptEnabled {
-		transcriptData := &models.TranscriptEventData{
-			ID:                     recording.ID,
-			MeetingAndOccurrenceID: recording.MeetingAndOccurrenceID,
-			ProjectUID:             recording.ProjectUID,
-			TranscriptAccess:       recording.TranscriptAccess,
-			Platform:               "Zoom",
-		}
-
-		if err := p.PublishPastMeetingTranscriptEvent(ctx, action, transcriptData); err != nil {
-			return fmt.Errorf("failed to publish transcript event: %w", err)
-		}
 	}
 
 	return nil

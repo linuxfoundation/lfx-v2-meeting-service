@@ -71,19 +71,13 @@ func (h *EventHandlers) handleMeetingTypeDelete(
 
 	if err := h.publisher.PublishIndexerDelete(ctx, cfg.indexerSubject, id); err != nil {
 		funcLogger.With(logging.ErrKey, err, "subject", cfg.indexerSubject).ErrorContext(ctx, "failed to send delete indexer message")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	if cfg.deleteAllAccessSubject != "" {
 		if err := h.publisher.PublishAccessDelete(ctx, cfg.deleteAllAccessSubject, message); err != nil {
 			funcLogger.With(logging.ErrKey, err, "subject", cfg.deleteAllAccessSubject).ErrorContext(ctx, "failed to send delete-all-access message")
-			if isTransientError(err) {
-				return true
-			}
-			return false
+			return isTransientError(err)
 		}
 	}
 

@@ -140,10 +140,7 @@ func (h *EventHandlers) handleMeetingUpdate(
 	meetingData, err := convertMapToMeetingData(ctx, v1Data, h.idMapper, h.v1MappingsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to meeting")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 	if meetingData == nil {
 		return false // Intentionally skipped (e.g., loop prevention)
@@ -166,10 +163,7 @@ func (h *EventHandlers) handleMeetingUpdate(
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishMeetingEvent(ctx, string(indexerAction), meetingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Store mapping
@@ -227,10 +221,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 	// Update committee mappings in KV bucket
 	if err := updateCommitteeMappings(ctx, meetingID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update committee mappings")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Re-trigger meeting indexing
@@ -269,6 +260,8 @@ func (h *EventHandlers) handleMeetingMappingDelete(
 		if isTransientError(err) {
 			return true
 		}
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to remove committee mapping")
+		return false
 	}
 
 	shouldRetry := h.retriggerMeetingIndexing(ctx, meetingID)
@@ -418,7 +411,6 @@ func convertMapToRegistrantData(
 	}, nil
 }
 
-
 // handleRegistrantUpdate processes updates to meeting registrants
 func (h *EventHandlers) handleRegistrantUpdate(
 	ctx context.Context,
@@ -437,10 +429,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to registrant")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Validate required fields
@@ -460,10 +449,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerAction), registrantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish registrant event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Store mapping
@@ -632,10 +618,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	responseData, err := convertMapToInviteResponseData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invite response")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Validate required fields
@@ -655,10 +638,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	// Publish to indexer
 	if err := h.publisher.PublishInviteResponseEvent(ctx, string(indexerAction), responseData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invite response event")
-		if isTransientError(err) {
-			return true
-		}
-		return false
+		return isTransientError(err)
 	}
 
 	// Store mapping
@@ -748,7 +728,7 @@ func updateCommitteeMappings(
 	} else {
 		if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal existing mappings")
-			mappings = make(map[string]map[string]interface{})
+			return fmt.Errorf("failed to unmarshal existing mappings: %w", err)
 		}
 	}
 
@@ -825,4 +805,3 @@ func (h *EventHandlers) retriggerMeetingIndexing(
 	// Re-process the meeting
 	return h.handleMeetingUpdate(ctx, meetingKey, meetingData)
 }
-
