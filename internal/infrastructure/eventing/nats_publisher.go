@@ -11,6 +11,9 @@ import (
 
 	"github.com/nats-io/nats.go"
 
+	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
+	indexerTypes "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/types"
+
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -25,6 +28,24 @@ const (
 	ActionDeleted MessageAction = "deleted"
 
 	authorizationHeaderValue = "Bearer lfx-v2-meeting-service"
+
+	// NATS subjects for indexer messages.
+	IndexV1MeetingSubject              = "lfx.index.v1_meeting"
+	IndexV1MeetingRegistrantSubject    = "lfx.index.v1_meeting_registrant"
+	IndexV1MeetingRSVPSubject          = "lfx.index.v1_meeting_rsvp"
+	IndexV1PastMeetingSubject          = "lfx.index.v1_past_meeting"
+	IndexV1PastMeetingParticipantSubject = "lfx.index.v1_past_meeting_participant"
+	IndexV1PastMeetingRecordingSubject   = "lfx.index.v1_past_meeting_recording"
+	IndexV1PastMeetingTranscriptSubject  = "lfx.index.v1_past_meeting_transcript"
+	IndexV1PastMeetingSummarySubject     = "lfx.index.v1_past_meeting_summary"
+	IndexV1MeetingAttachmentSubject      = "lfx.index.v1_meeting_attachment"
+	IndexV1PastMeetingAttachmentSubject  = "lfx.index.v1_past_meeting_attachment"
+
+	// NATS subjects for access control delete messages.
+	DeleteAllAccessV1MeetingSubject         = "lfx.delete_all_access.v1_meeting"
+	DeleteAllAccessV1PastMeetingSubject     = "lfx.delete_all_access.v1_past_meeting"
+	RemoveRegistrantV1MeetingSubject        = "lfx.remove_registrant.v1_meeting"
+	RemoveParticipantV1PastMeetingSubject   = "lfx.remove_participant.v1_past_meeting"
 )
 
 // IndexerMessage is the structure for indexer messages
@@ -86,20 +107,29 @@ func NewNATSPublisher(nc *nats.Conn, logger *slog.Logger) (*NATSPublisher, error
 }
 
 // PublishMeetingEvent publishes a meeting event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, meeting *models.MeetingEventData, tags []string) error {
+func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, meeting *models.MeetingEventData) error {
 	p.logger.InfoContext(ctx, "publishing meeting event", "action", action, "meeting_id", meeting.ID)
 
-	// Publish to indexer
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := meeting.Tags()
+	isPublic := meeting.Visibility == "public"
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    meeting,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             meeting.ID,
+			Public:               &isPublic,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + meeting.ID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + meeting.ID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           meeting.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_meeting", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1MeetingSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish meeting to indexer: %w", err)
 	}
 
@@ -111,7 +141,6 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 		references["project"] = []string{meeting.ProjectUID}
 	}
 
-	// Add committee references if present
 	if len(meeting.Committees) > 0 {
 		committeeUIDs := make([]string, 0, len(meeting.Committees))
 		for _, committee := range meeting.Committees {
@@ -129,7 +158,7 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 		Operation:  "update_access",
 		Data: map[string]interface{}{
 			"uid":        meeting.ID,
-			"public":     meeting.Visibility == "public",
+			"public":     isPublic,
 			"relations":  relations,
 			"references": references,
 		},
@@ -143,20 +172,29 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 }
 
 // PublishRegistrantEvent publishes a registrant event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData, tags []string) error {
+func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData) error {
 	p.logger.InfoContext(ctx, "publishing registrant event", "action", action, "registrant_uid", registrant.UID)
 
-	// Publish to indexer
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := registrant.Tags()
+	publicFalse := false
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    registrant,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             registrant.UID,
+			Public:               &publicFalse,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + registrant.MeetingID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + registrant.MeetingID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           registrant.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_meeting_registrant", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1MeetingRegistrantSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish registrant to indexer: %w", err)
 	}
 
@@ -186,20 +224,29 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 }
 
 // PublishInviteResponseEvent publishes an invite response (RSVP) event to indexer service
-func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action string, response *models.InviteResponseEventData, tags []string) error {
+func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action string, response *models.InviteResponseEventData) error {
 	p.logger.InfoContext(ctx, "publishing invite response event", "action", action, "response_id", response.ID)
 
-	// RSVPs only go to indexer, not access control
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := response.Tags()
+	publicFalse := false
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    response,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             response.ID,
+			Public:               &publicFalse,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + response.MeetingID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + response.MeetingID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           response.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_meeting_rsvp", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1MeetingRSVPSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish invite response to indexer: %w", err)
 	}
 
@@ -207,20 +254,29 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 }
 
 // PublishPastMeetingEvent publishes a past meeting event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action string, meeting *models.PastMeetingEventData, tags []string) error {
+func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action string, meeting *models.PastMeetingEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting event", "action", action, "past_meeting_id", meeting.ID)
 
-	// Publish to indexer
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := meeting.Tags()
+	publicFalse := false
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    meeting,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             meeting.ID,
+			Public:               &publicFalse,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.ID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.ID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           meeting.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_past_meeting", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1PastMeetingSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish past meeting to indexer: %w", err)
 	}
 
@@ -237,7 +293,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		Operation:  "update_access",
 		Data: map[string]interface{}{
 			"uid":        meeting.ID,
-			"public":     false, // Past meetings are not public
+			"public":     false,
 			"relations":  relations,
 			"references": references,
 		},
@@ -251,20 +307,29 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 }
 
 // PublishPastMeetingParticipantEvent publishes a participant event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, action string, participant *models.PastMeetingParticipantEventData, tags []string) error {
+func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, action string, participant *models.PastMeetingParticipantEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting participant event", "action", action, "participant_uid", participant.UID)
 
-	// Publish to indexer
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := participant.Tags()
+	publicFalse := false
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    participant,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             participant.UID,
+			Public:               &publicFalse,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           participant.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_past_meeting_participant", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1PastMeetingParticipantSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish participant to indexer: %w", err)
 	}
 
@@ -295,20 +360,29 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 
 // PublishPastMeetingRecordingEvent publishes a recording event to indexer and FGA-sync services
 // Note: This also publishes a transcript event if the recording has transcript files
-func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData, tags []string) error {
+func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting recording event", "action", action, "recording_id", recording.ID)
 
-	// Publish recording to indexer
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := recording.Tags()
+	isPublic := recording.RecordingAccess == "public"
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    recording,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             recording.ID,
+			Public:               &isPublic,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           recording.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_past_meeting_recording", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1PastMeetingRecordingSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish recording to indexer: %w", err)
 	}
 
@@ -323,9 +397,6 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 	if recording.MeetingAndOccurrenceID != "" {
 		references["past_meeting"] = []string{recording.MeetingAndOccurrenceID}
 	}
-
-	// Determine public based on recording_access
-	isPublic := recording.RecordingAccess == "public"
 
 	accessMsg := GenericFGAMessage{
 		ObjectType: "v1_past_meeting_recording",
@@ -352,10 +423,7 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 			Platform:               "Zoom",
 		}
 
-		transcriptTags := make([]string, len(tags))
-		copy(transcriptTags, tags)
-
-		if err := p.PublishPastMeetingTranscriptEvent(ctx, action, transcriptData, transcriptTags); err != nil {
+		if err := p.PublishPastMeetingTranscriptEvent(ctx, action, transcriptData); err != nil {
 			return fmt.Errorf("failed to publish transcript event: %w", err)
 		}
 	}
@@ -364,20 +432,29 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 }
 
 // PublishPastMeetingTranscriptEvent publishes a transcript event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, action string, transcript *models.TranscriptEventData, tags []string) error {
+func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, action string, transcript *models.TranscriptEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting transcript event", "action", action, "transcript_id", transcript.ID)
 
-	// Publish to indexer
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := transcript.Tags()
+	isPublic := transcript.TranscriptAccess == "public"
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    transcript,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             transcript.ID,
+			Public:               &isPublic,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           transcript.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_past_meeting_transcript", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1PastMeetingTranscriptSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish transcript to indexer: %w", err)
 	}
 
@@ -392,9 +469,6 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 	if transcript.MeetingAndOccurrenceID != "" {
 		references["past_meeting"] = []string{transcript.MeetingAndOccurrenceID}
 	}
-
-	// Determine public based on transcript_access
-	isPublic := transcript.TranscriptAccess == "public"
 
 	accessMsg := GenericFGAMessage{
 		ObjectType: "v1_past_meeting_transcript",
@@ -415,25 +489,33 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 }
 
 // PublishPastMeetingSummaryEvent publishes a summary event to indexer and FGA-sync services
-func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData, tags []string) error {
+func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting summary event", "action", action, "summary_id", summary.ID)
 
-	// Publish to indexer
-	headers := make(map[string]string)
-	headers["authorization"] = authorizationHeaderValue
-	indexerMsg := IndexerMessage{
-		Action:  MessageAction(action),
-		Headers: headers,
+	tags := summary.Tags()
+	publicFalse := false
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    summary,
 		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             summary.ID,
+			Public:               &publicFalse,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           summary.ParentRefs(),
+			Tags:                 tags,
+		},
 	}
 
-	if err := p.publish(ctx, "lfx.index.v1_past_meeting_summary", indexerMsg); err != nil {
+	if err := p.publish(ctx, IndexV1PastMeetingSummarySubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish summary to indexer: %w", err)
 	}
 
 	// Publish access control message using generic FGA format
-	// Summaries inherit access from the parent past meeting
 	relations := map[string][]string{}
 	references := map[string][]string{}
 
@@ -450,7 +532,7 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 		Operation:  "update_access",
 		Data: map[string]interface{}{
 			"uid":        summary.ID,
-			"public":     false, // Summaries are not public
+			"public":     false,
 			"relations":  relations,
 			"references": references,
 		},
@@ -460,6 +542,127 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 		return fmt.Errorf("failed to publish summary access control: %w", err)
 	}
 
+	return nil
+}
+
+// PublishMeetingAttachmentEvent publishes a meeting attachment event to indexer and FGA-sync services
+func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, action string, attachment *models.MeetingAttachmentEventData) error {
+	p.logger.InfoContext(ctx, "publishing meeting attachment event", "action", action, "attachment_uid", attachment.UID)
+
+	tags := attachment.Tags()
+	isPublic := false
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
+		Data:    attachment,
+		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             attachment.UID,
+			Public:               &isPublic,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + attachment.MeetingID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + attachment.MeetingID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           attachment.ParentRefs(),
+			Tags:                 tags,
+		},
+	}
+
+	if err := p.publish(ctx, IndexV1MeetingAttachmentSubject, indexerMsg); err != nil {
+		return fmt.Errorf("failed to publish meeting attachment to indexer: %w", err)
+	}
+
+	references := map[string][]string{}
+	if attachment.MeetingID != "" {
+		references["meeting"] = []string{attachment.MeetingID}
+	}
+
+	accessMsg := GenericFGAMessage{
+		ObjectType: "v1_meeting_attachment",
+		Operation:  "update_access",
+		Data: map[string]interface{}{
+			"uid":        attachment.UID,
+			"public":     isPublic,
+			"relations":  map[string][]string{},
+			"references": references,
+		},
+	}
+
+	if err := p.publish(ctx, "lfx.fga-sync.update_access", accessMsg); err != nil {
+		return fmt.Errorf("failed to publish meeting attachment access control: %w", err)
+	}
+
+	return nil
+}
+
+// PublishPastMeetingAttachmentEvent publishes a past meeting attachment event to indexer and FGA-sync services
+func (p *NATSPublisher) PublishPastMeetingAttachmentEvent(ctx context.Context, action string, attachment *models.PastMeetingAttachmentEventData) error {
+	p.logger.InfoContext(ctx, "publishing past meeting attachment event", "action", action, "attachment_uid", attachment.UID)
+
+	tags := attachment.Tags()
+	isPublic := false
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
+		Data:    attachment,
+		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             attachment.UID,
+			Public:               &isPublic,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
+			AccessCheckRelation:  "viewer",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           attachment.ParentRefs(),
+			Tags:                 tags,
+		},
+	}
+
+	if err := p.publish(ctx, IndexV1PastMeetingAttachmentSubject, indexerMsg); err != nil {
+		return fmt.Errorf("failed to publish past meeting attachment to indexer: %w", err)
+	}
+
+	references := map[string][]string{}
+	if attachment.MeetingAndOccurrenceID != "" {
+		references["past_meeting"] = []string{attachment.MeetingAndOccurrenceID}
+	}
+
+	accessMsg := GenericFGAMessage{
+		ObjectType: "v1_past_meeting_attachment",
+		Operation:  "update_access",
+		Data: map[string]interface{}{
+			"uid":        attachment.UID,
+			"public":     isPublic,
+			"relations":  map[string][]string{},
+			"references": references,
+		},
+	}
+
+	if err := p.publish(ctx, "lfx.fga-sync.update_access", accessMsg); err != nil {
+		return fmt.Errorf("failed to publish past meeting attachment access control: %w", err)
+	}
+
+	return nil
+}
+
+// PublishIndexerDelete sends a "deleted" indexer message for the given resource ID to subject.
+func (p *NATSPublisher) PublishIndexerDelete(ctx context.Context, subject, id string) error {
+	msg := IndexerMessage{
+		Action:  ActionDeleted,
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
+		Data:    id,
+		Tags:    []string{},
+	}
+	return p.publish(ctx, subject, msg)
+}
+
+// PublishAccessDelete sends a pre-built access control message payload to subject.
+// The caller is responsible for marshalling the payload; pass []byte(id) for simple deletes.
+func (p *NATSPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
+	if _, err := p.js.Publish(subject, payload); err != nil {
+		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish access delete", "subject", subject)
+		return fmt.Errorf("failed to publish to %s: %w", subject, err)
+	}
 	return nil
 }
 

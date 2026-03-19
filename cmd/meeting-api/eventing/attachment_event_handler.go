@@ -1,0 +1,313 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
+package eventing
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
+)
+
+// =============================================================================
+// Meeting Attachment Event Handler
+// =============================================================================
+
+// handleMeetingAttachmentUpdate processes updates to meeting attachments
+func (h *EventHandlers) handleMeetingAttachmentUpdate(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+) (retry bool) {
+	funcLogger := h.logger.With("key", key, "handler", "meeting_attachment")
+	funcLogger.DebugContext(ctx, "processing meeting attachment update")
+
+	// Check for soft delete
+	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
+		return h.handleMeetingAttachmentDelete(ctx, key, v1Data)
+	}
+
+	attachmentData, err := convertMapToMeetingAttachmentData(v1Data)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to meeting attachment")
+		return false
+	}
+
+	if attachmentData.UID == "" || attachmentData.MeetingID == "" {
+		funcLogger.ErrorContext(ctx, "missing required fields in meeting attachment data")
+		return false
+	}
+	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_id", attachmentData.MeetingID)
+
+	// Validate parent meeting exists
+	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", attachmentData.MeetingID)
+	if _, err := h.v1ObjectsKV.Get(ctx, meetingKey); err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "parent meeting not found, will retry")
+		return true
+	}
+
+	// Determine action (created vs updated)
+	mappingKey := fmt.Sprintf("v1_meeting_attachments.%s", attachmentData.UID)
+	indexerAction := indexerConstants.ActionCreated
+	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+		indexerAction = indexerConstants.ActionUpdated
+	}
+
+	if err := h.publisher.PublishMeetingAttachmentEvent(ctx, string(indexerAction), attachmentData); err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting attachment event")
+		if isTransientError(err) {
+			return true
+		}
+		return false
+	}
+
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting attachment mapping")
+	}
+
+	funcLogger.InfoContext(ctx, "successfully processed meeting attachment")
+	return false
+}
+
+// handleMeetingAttachmentDelete processes meeting attachment deletions
+func (h *EventHandlers) handleMeetingAttachmentDelete(
+	ctx context.Context,
+	key string,
+	_ map[string]interface{},
+) (retry bool) {
+	attachmentUID := extractIDFromKey(key, "itx-zoom-meetings-attachments-v2.")
+	mappingKey := fmt.Sprintf("v1_meeting_attachments.%s", attachmentUID)
+	if h.isTombstoned(ctx, mappingKey) {
+		h.logger.DebugContext(ctx, "meeting attachment delete already processed, skipping", "attachment_uid", attachmentUID)
+		return false
+	}
+	return h.handleMeetingTypeDelete(ctx, key, attachmentUID, []byte(attachmentUID), meetingDeleteConfig{
+		indexerSubject:   "lfx.index.v1_meeting_attachment",
+		tombstoneKeyFmts: []string{"v1_meeting_attachments.%s"},
+	})
+}
+
+// convertMapToMeetingAttachmentData converts a raw v1 map to MeetingAttachmentEventData
+func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.MeetingAttachmentEventData, error) {
+	raw, err := json.Marshal(v1Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
+	}
+
+	var tmp struct {
+		ID               string      `json:"id"`
+		MeetingID        string      `json:"meeting_id"`
+		Type             string      `json:"type"`
+		Category         string      `json:"category"`
+		Link             string      `json:"link"`
+		Name             string      `json:"name"`
+		Description      string      `json:"description"`
+		Source           string      `json:"source"`
+		FileName         string      `json:"file_name"`
+		FileSize         interface{} `json:"file_size"`
+		FileURL          string      `json:"file_url"`
+		FileUploaded     *bool       `json:"file_uploaded"`
+		FileUploadStatus string      `json:"file_upload_status"`
+		FileContentType  string      `json:"file_content_type"`
+		CreatedAt        string      `json:"created_at"`
+		UpdatedAt        string      `json:"updated_at"`
+		CreatedBy        struct {
+			ID    string `json:"id"`
+			Email string `json:"email"`
+			Name  string `json:"name"`
+		} `json:"created_by"`
+		UpdatedBy struct {
+			ID    string `json:"id"`
+			Email string `json:"email"`
+			Name  string `json:"name"`
+		} `json:"updated_by"`
+	}
+	if err := json.Unmarshal(raw, &tmp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal meeting attachment data: %w", err)
+	}
+
+	createdAt, _ := parseTime(tmp.CreatedAt)
+	modifiedAt, _ := parseTime(tmp.UpdatedAt)
+
+	return &models.MeetingAttachmentEventData{
+		UID:              tmp.ID,
+		MeetingID:        tmp.MeetingID,
+		Type:             tmp.Type,
+		Category:         tmp.Category,
+		Link:             tmp.Link,
+		Name:             tmp.Name,
+		Description:      tmp.Description,
+		Source:           tmp.Source,
+		FileName:         tmp.FileName,
+		FileSize:         utils.GetInt(tmp.FileSize),
+		FileURL:          tmp.FileURL,
+		FileUploaded:     tmp.FileUploaded,
+		FileUploadStatus: tmp.FileUploadStatus,
+		FileContentType:  tmp.FileContentType,
+		CreatedAt:        createdAt,
+		ModifiedAt:       modifiedAt,
+		CreatedBy: models.CreatedBy{
+			UserID: tmp.CreatedBy.ID,
+			Email:  tmp.CreatedBy.Email,
+		},
+		UpdatedBy: models.UpdatedBy{
+			UserID: tmp.UpdatedBy.ID,
+			Email:  tmp.UpdatedBy.Email,
+		},
+	}, nil
+}
+
+// =============================================================================
+// Past Meeting Attachment Event Handler
+// =============================================================================
+
+// handlePastMeetingAttachmentUpdate processes updates to past meeting attachments
+func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
+	ctx context.Context,
+	key string,
+	v1Data map[string]interface{},
+) (retry bool) {
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attachment")
+	funcLogger.DebugContext(ctx, "processing past meeting attachment update")
+
+	// Check for soft delete
+	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
+		return h.handlePastMeetingAttachmentDelete(ctx, key, v1Data)
+	}
+
+	attachmentData, err := convertMapToPastMeetingAttachmentData(v1Data)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to past meeting attachment")
+		return false
+	}
+
+	if attachmentData.UID == "" || attachmentData.MeetingAndOccurrenceID == "" {
+		funcLogger.ErrorContext(ctx, "missing required fields in past meeting attachment data")
+		return false
+	}
+	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_and_occurrence_id", attachmentData.MeetingAndOccurrenceID)
+
+	// Validate parent past meeting exists
+	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", attachmentData.MeetingAndOccurrenceID)
+	if _, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey); err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "parent past meeting not found, will retry")
+		return true
+	}
+
+	// Determine action (created vs updated)
+	mappingKey := fmt.Sprintf("v1_past_meeting_attachments.%s", attachmentData.UID)
+	indexerAction := indexerConstants.ActionCreated
+	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+		indexerAction = indexerConstants.ActionUpdated
+	}
+
+	if err := h.publisher.PublishPastMeetingAttachmentEvent(ctx, string(indexerAction), attachmentData); err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish past meeting attachment event")
+		if isTransientError(err) {
+			return true
+		}
+		return false
+	}
+
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting attachment mapping")
+	}
+
+	funcLogger.InfoContext(ctx, "successfully processed past meeting attachment")
+	return false
+}
+
+// handlePastMeetingAttachmentDelete processes past meeting attachment deletions
+func (h *EventHandlers) handlePastMeetingAttachmentDelete(
+	ctx context.Context,
+	key string,
+	_ map[string]interface{},
+) (retry bool) {
+	attachmentUID := extractIDFromKey(key, "itx-zoom-past-meetings-attachments.")
+	mappingKey := fmt.Sprintf("v1_past_meeting_attachments.%s", attachmentUID)
+	if h.isTombstoned(ctx, mappingKey) {
+		h.logger.DebugContext(ctx, "past meeting attachment delete already processed, skipping", "attachment_uid", attachmentUID)
+		return false
+	}
+	return h.handleMeetingTypeDelete(ctx, key, attachmentUID, []byte(attachmentUID), meetingDeleteConfig{
+		indexerSubject:   "lfx.index.v1_past_meeting_attachment",
+		tombstoneKeyFmts: []string{"v1_past_meeting_attachments.%s"},
+	})
+}
+
+// convertMapToPastMeetingAttachmentData converts a raw v1 map to PastMeetingAttachmentEventData
+func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*models.PastMeetingAttachmentEventData, error) {
+	raw, err := json.Marshal(v1Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
+	}
+
+	var tmp struct {
+		ID                     string      `json:"id"`
+		MeetingAndOccurrenceID string      `json:"meeting_and_occurrence_id"`
+		MeetingID              string      `json:"meeting_id"`
+		Type                   string      `json:"type"`
+		Category               string      `json:"category"`
+		Link                   string      `json:"link"`
+		Name                   string      `json:"name"`
+		Description            string      `json:"description"`
+		Source                 string      `json:"source"`
+		FileName               string      `json:"file_name"`
+		FileSize               interface{} `json:"file_size"`
+		FileURL                string      `json:"file_url"`
+		FileUploaded           *bool       `json:"file_uploaded"`
+		FileUploadStatus       string      `json:"file_upload_status"`
+		FileContentType        string      `json:"file_content_type"`
+		CreatedAt              string      `json:"created_at"`
+		UpdatedAt              string      `json:"updated_at"`
+		CreatedBy              struct {
+			ID    string `json:"id"`
+			Email string `json:"email"`
+			Name  string `json:"name"`
+		} `json:"created_by"`
+		UpdatedBy struct {
+			ID    string `json:"id"`
+			Email string `json:"email"`
+			Name  string `json:"name"`
+		} `json:"updated_by"`
+	}
+	if err := json.Unmarshal(raw, &tmp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal past meeting attachment data: %w", err)
+	}
+
+	createdAt, _ := parseTime(tmp.CreatedAt)
+	modifiedAt, _ := parseTime(tmp.UpdatedAt)
+
+	return &models.PastMeetingAttachmentEventData{
+		UID:                    tmp.ID,
+		MeetingAndOccurrenceID: tmp.MeetingAndOccurrenceID,
+		MeetingID:              tmp.MeetingID,
+		Type:                   tmp.Type,
+		Category:               tmp.Category,
+		Link:                   tmp.Link,
+		Name:                   tmp.Name,
+		Description:            tmp.Description,
+		Source:                 tmp.Source,
+		FileName:               tmp.FileName,
+		FileSize:               utils.GetInt(tmp.FileSize),
+		FileURL:                tmp.FileURL,
+		FileUploaded:           tmp.FileUploaded,
+		FileUploadStatus:       tmp.FileUploadStatus,
+		FileContentType:        tmp.FileContentType,
+		CreatedAt:              createdAt,
+		ModifiedAt:             modifiedAt,
+		CreatedBy: models.CreatedBy{
+			UserID: tmp.CreatedBy.ID,
+			Email:  tmp.CreatedBy.Email,
+		},
+		UpdatedBy: models.UpdatedBy{
+			UserID: tmp.UpdatedBy.ID,
+			Email:  tmp.UpdatedBy.Email,
+		},
+	}, nil
+}

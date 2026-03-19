@@ -36,10 +36,12 @@ This document describes the architecture, configuration, data transformation pat
 │  │ - Meetings                 │       │
 │  │ - Registrants              │       │
 │  │ - Invite Responses         │       │
+│  │ - Meeting Attachments      │       │
 │  │ - Past Meetings            │       │
 │  │ - Participants             │       │
 │  │ - Recordings/Transcripts   │       │
 │  │ - Summaries                │       │
+│  │ - Past Meeting Attachments │       │
 │  └───────┬────────────────────┘       │
 │          │                             │
 │  ┌───────▼──────────┐                 │
@@ -76,7 +78,7 @@ This document describes the architecture, configuration, data transformation pat
 
 ## Event Types
 
-The system processes 10 different event types:
+The system processes 12 different event types:
 
 ### Active Meeting Events
 
@@ -86,6 +88,7 @@ The system processes 10 different event types:
 | Meeting Mapping | `itx-zoom-meetings-mappings-v2.` | Committee-to-meeting associations |
 | Registrant | `itx-zoom-meetings-registrants-v2.` | Meeting registrants with user enrichment |
 | Invite Response | `itx-zoom-meetings-invite-responses-v2.` | RSVP responses (accepted, declined, maybe) |
+| Meeting Attachment | `itx-zoom-meetings-attachments-v2.` | Files and links attached to active meetings |
 
 ### Past Meeting Events
 
@@ -97,6 +100,7 @@ The system processes 10 different event types:
 | Attendee | `itx-zoom-past-meetings-attendees.` | Users who attended with session tracking |
 | Recording | `itx-zoom-past-meetings-recordings.` | Meeting recordings and transcripts |
 | Summary | `itx-zoom-past-meetings-summaries.` | AI-generated meeting summaries |
+| Past Meeting Attachment | `itx-zoom-past-meetings-attachments.` | Files and links attached to past meetings |
 
 ## Configuration
 
@@ -354,10 +358,12 @@ func handleRegistrantUpdate(ctx context.Context, key string, data map[string]any
 
 - Registrant → Meeting (validate meeting exists)
 - Invite Response → Meeting (validate meeting exists)
+- Meeting Attachment → Meeting (validate meeting exists)
 - Past Meeting Invitee → Past Meeting (validate past meeting exists)
 - Past Meeting Attendee → Past Meeting (validate past meeting exists)
 - Recording → Past Meeting (validate past meeting exists)
 - Summary → Past Meeting (validate past meeting exists)
+- Past Meeting Attachment → Past Meeting (validate past meeting exists)
 
 ## Publishing
 

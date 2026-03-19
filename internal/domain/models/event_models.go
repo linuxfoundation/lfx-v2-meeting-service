@@ -551,6 +551,34 @@ type MeetingEventData struct {
 	ShowMeetingAttendees bool `json:"show_meeting_attendees"`
 }
 
+// Tags returns the indexer tags for this meeting.
+func (m *MeetingEventData) Tags() []string {
+	tags := []string{
+		m.ID,
+		"meeting_id:" + m.ID,
+		"project_uid:" + m.ProjectUID,
+		"title:" + m.Title,
+	}
+	if m.Visibility != "" {
+		tags = append(tags, "visibility:"+m.Visibility)
+	}
+	if m.MeetingType != "" {
+		tags = append(tags, "meeting_type:"+m.MeetingType)
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this meeting.
+func (m *MeetingEventData) ParentRefs() []string {
+	refs := []string{"project:" + m.ProjectUID}
+	for _, c := range m.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
+	}
+	return refs
+}
+
 // Occurrence represents a single meeting occurrence
 type Occurrence struct {
 	OccurrenceID string                 `json:"occurrence_id"`
@@ -580,6 +608,30 @@ type RegistrantEventData struct {
 	ModifiedAt   time.Time `json:"modified_at"`
 }
 
+// Tags returns the indexer tags for this registrant.
+func (r *RegistrantEventData) Tags() []string {
+	tags := []string{"registrant_uid:" + r.UID}
+	if r.Username != "" {
+		tags = append(tags, "username:"+r.Username)
+	}
+	if r.Email != "" {
+		tags = append(tags, "email:"+r.Email)
+	}
+	if r.Host {
+		tags = append(tags, "host:true")
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this registrant.
+func (r *RegistrantEventData) ParentRefs() []string {
+	refs := []string{"meeting:" + r.MeetingID}
+	if r.CommitteeUID != "" {
+		refs = append(refs, "committee:"+r.CommitteeUID)
+	}
+	return refs
+}
+
 // InviteResponseEventData represents an RSVP event for indexing
 type InviteResponseEventData struct {
 	ID                     string    `json:"id"`
@@ -598,6 +650,27 @@ type InviteResponseEventData struct {
 	ModifiedAt             time.Time `json:"modified_at"`
 }
 
+// Tags returns the indexer tags for this invite response.
+func (r *InviteResponseEventData) Tags() []string {
+	tags := []string{
+		r.ID,
+		"invite_response_uid:" + r.ID,
+		"meeting_and_occurrence_id:" + r.MeetingAndOccurrenceID,
+		"meeting_id:" + r.MeetingID,
+		"registrant_uid:" + r.RegistrantID,
+		"email:" + r.Email,
+	}
+	if r.Username != "" {
+		tags = append(tags, "username:"+r.Username)
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this invite response.
+func (r *InviteResponseEventData) ParentRefs() []string {
+	return []string{"meeting:" + r.MeetingID}
+}
+
 // PastMeetingEventData represents a past meeting event for indexing and access control
 type PastMeetingEventData struct {
 	ID               string      `json:"id"`         // UUID
@@ -614,6 +687,31 @@ type PastMeetingEventData struct {
 	HostKey          string      `json:"host_key"`
 	CreatedAt        time.Time   `json:"created_at"`
 	ModifiedAt       time.Time   `json:"modified_at"`
+}
+
+// Tags returns the indexer tags for this past meeting.
+func (m *PastMeetingEventData) Tags() []string {
+	tags := []string{
+		"past_meeting_id:" + m.ID,
+		"meeting_id:" + m.MeetingID,
+		"project_uid:" + m.ProjectUID,
+		"title:" + m.Title,
+	}
+	if m.Timezone != "" {
+		tags = append(tags, "timezone:"+m.Timezone)
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this past meeting.
+func (m *PastMeetingEventData) ParentRefs() []string {
+	refs := []string{"project:" + m.ProjectUID}
+	for _, c := range m.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
+	}
+	return refs
 }
 
 // PastMeetingParticipantEventData represents a participant (invitee/attendee) event
@@ -637,6 +735,33 @@ type PastMeetingParticipantEventData struct {
 	Sessions               []ParticipantSession `json:"sessions,omitempty"`
 	CreatedAt              time.Time            `json:"created_at"`
 	ModifiedAt             time.Time            `json:"modified_at"`
+}
+
+// Tags returns the indexer tags for this past meeting participant.
+func (p *PastMeetingParticipantEventData) Tags() []string {
+	tags := []string{
+		"past_meeting_participant_uid:" + p.UID,
+		"meeting_and_occurrence_id:" + p.MeetingAndOccurrenceID,
+		"project_uid:" + p.ProjectUID,
+	}
+	if p.Username != "" {
+		tags = append(tags, "username:"+p.Username)
+	}
+	if p.Email != "" {
+		tags = append(tags, "email:"+p.Email)
+	}
+	if p.IsInvited {
+		tags = append(tags, "is_invited:true")
+	}
+	if p.IsAttended {
+		tags = append(tags, "is_attended:true")
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this past meeting participant.
+func (p *PastMeetingParticipantEventData) ParentRefs() []string {
+	return []string{"past_meeting:" + p.MeetingAndOccurrenceID}
 }
 
 // ParticipantSession represents a join/leave session for attendees
@@ -672,6 +797,26 @@ type RecordingEventData struct {
 	UpdatedAt              time.Time          `json:"updated_at"`
 }
 
+// Tags returns the indexer tags for this recording.
+func (r *RecordingEventData) Tags() []string {
+	tags := []string{
+		r.ID,
+		"past_meeting_recording_id:" + r.ID,
+		"meeting_and_occurrence_id:" + r.MeetingAndOccurrenceID,
+		"platform:Zoom",
+		"platform_meeting_id:" + r.PlatformMeetingID,
+	}
+	for _, session := range r.Sessions {
+		tags = append(tags, "platform_meeting_instance_id:"+session.UUID)
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this recording.
+func (r *RecordingEventData) ParentRefs() []string {
+	return []string{"past_meeting:" + r.MeetingAndOccurrenceID}
+}
+
 // RecordingFile represents a single recording file
 type RecordingFile struct {
 	DownloadURL    string    `json:"download_url,omitempty"`
@@ -704,6 +849,21 @@ type TranscriptEventData struct {
 	Platform               string `json:"platform"`          // Always "Zoom"
 }
 
+// Tags returns the indexer tags for this transcript.
+func (t *TranscriptEventData) Tags() []string {
+	return []string{
+		t.ID,
+		"past_meeting_transcript_id:" + t.ID,
+		"meeting_and_occurrence_id:" + t.MeetingAndOccurrenceID,
+		"platform:Zoom",
+	}
+}
+
+// ParentRefs returns the indexer parent references for this transcript.
+func (t *TranscriptEventData) ParentRefs() []string {
+	return []string{"past_meeting:" + t.MeetingAndOccurrenceID}
+}
+
 // SummaryEventData represents an AI-generated summary event
 type SummaryEventData struct {
 	ID                     string            `json:"id"`
@@ -726,8 +886,108 @@ type SummaryEventData struct {
 	UpdatedAt              time.Time         `json:"updated_at"`
 }
 
+// Tags returns the indexer tags for this summary.
+func (s *SummaryEventData) Tags() []string {
+	tags := []string{
+		s.ID,
+		"past_meeting_summary_id:" + s.ID,
+		"meeting_and_occurrence_id:" + s.MeetingAndOccurrenceID,
+		"meeting_id:" + s.MeetingID,
+		"platform:Zoom",
+	}
+	if s.ZoomMeetingTopic != "" {
+		tags = append(tags, "title:"+s.ZoomMeetingTopic)
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this summary.
+func (s *SummaryEventData) ParentRefs() []string {
+	return []string{"past_meeting:" + s.MeetingAndOccurrenceID}
+}
+
 // SummaryZoomConfig contains Zoom-specific configuration for summaries
 type SummaryZoomConfig struct {
 	MeetingID   string `json:"meeting_id"`
 	MeetingUUID string `json:"meeting_uuid"`
+}
+
+// MeetingAttachmentEventData represents an attachment on an active meeting
+type MeetingAttachmentEventData struct {
+	UID              string    `json:"uid"`
+	MeetingID        string    `json:"meeting_id"`
+	Type             string    `json:"type"`
+	Category         string    `json:"category,omitempty"`
+	Link             string    `json:"link,omitempty"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description,omitempty"`
+	Source           string    `json:"source,omitempty"`
+	FileName         string    `json:"file_name,omitempty"`
+	FileSize         int       `json:"file_size,omitempty"`
+	FileURL          string    `json:"file_url,omitempty"`
+	FileUploaded     *bool     `json:"file_uploaded,omitempty"`
+	FileUploadStatus string    `json:"file_upload_status,omitempty"`
+	FileContentType  string    `json:"file_content_type,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
+	ModifiedAt       time.Time `json:"modified_at"`
+	CreatedBy        CreatedBy `json:"created_by"`
+	UpdatedBy        UpdatedBy `json:"updated_by"`
+}
+
+// Tags returns the indexer tags for this meeting attachment.
+func (a *MeetingAttachmentEventData) Tags() []string {
+	tags := []string{
+		"meeting_attachment_uid:" + a.UID,
+		"meeting_id:" + a.MeetingID,
+	}
+	if a.Type != "" {
+		tags = append(tags, "type:"+a.Type)
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this meeting attachment.
+func (a *MeetingAttachmentEventData) ParentRefs() []string {
+	return []string{"meeting:" + a.MeetingID}
+}
+
+// PastMeetingAttachmentEventData represents an attachment on a past meeting
+type PastMeetingAttachmentEventData struct {
+	UID                    string    `json:"uid"`
+	MeetingAndOccurrenceID string    `json:"meeting_and_occurrence_id"`
+	MeetingID              string    `json:"meeting_id"`
+	Type                   string    `json:"type"`
+	Category               string    `json:"category,omitempty"`
+	Link                   string    `json:"link,omitempty"`
+	Name                   string    `json:"name"`
+	Description            string    `json:"description,omitempty"`
+	Source                 string    `json:"source,omitempty"`
+	FileName               string    `json:"file_name,omitempty"`
+	FileSize               int       `json:"file_size,omitempty"`
+	FileURL                string    `json:"file_url,omitempty"`
+	FileUploaded           *bool     `json:"file_uploaded,omitempty"`
+	FileUploadStatus       string    `json:"file_upload_status,omitempty"`
+	FileContentType        string    `json:"file_content_type,omitempty"`
+	CreatedAt              time.Time `json:"created_at"`
+	ModifiedAt             time.Time `json:"modified_at"`
+	CreatedBy              CreatedBy `json:"created_by"`
+	UpdatedBy              UpdatedBy `json:"updated_by"`
+}
+
+// Tags returns the indexer tags for this past meeting attachment.
+func (a *PastMeetingAttachmentEventData) Tags() []string {
+	tags := []string{
+		"past_meeting_attachment_uid:" + a.UID,
+		"meeting_and_occurrence_id:" + a.MeetingAndOccurrenceID,
+		"meeting_id:" + a.MeetingID,
+	}
+	if a.Type != "" {
+		tags = append(tags, "type:"+a.Type)
+	}
+	return tags
+}
+
+// ParentRefs returns the indexer parent references for this past meeting attachment.
+func (a *PastMeetingAttachmentEventData) ParentRefs() []string {
+	return []string{"past_meeting:" + a.MeetingAndOccurrenceID}
 }
