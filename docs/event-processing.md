@@ -81,7 +81,7 @@ The system processes 10 different event types:
 ### Active Meeting Events
 
 | Event Type | Key Prefix | Description |
-|------------|-----------|-------------|
+| ------------ | --------- | ----------- |
 | Meeting | `itx-zoom-meetings-v2.` | Meeting creation, updates, and RRULE occurrence calculation |
 | Meeting Mapping | `itx-zoom-meetings-mappings-v2.` | Committee-to-meeting associations |
 | Registrant | `itx-zoom-meetings-registrants-v2.` | Meeting registrants with user enrichment |
@@ -90,7 +90,7 @@ The system processes 10 different event types:
 ### Past Meeting Events
 
 | Event Type | Key Prefix | Description |
-|------------|-----------|-------------|
+| ------------ | --------- | ----------- |
 | Past Meeting | `itx-zoom-past-meetings.` | Completed meeting records |
 | Past Meeting Mapping | `itx-zoom-past-meetings-mappings.` | Past meeting committee associations |
 | Invitee | `itx-zoom-past-meetings-invitees.` | Users invited to past meetings |
@@ -103,7 +103,7 @@ The system processes 10 different event types:
 ### Environment Variables
 
 | Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
+| -------- | -------- | ------- | ----------- |
 | `EVENT_PROCESSING_ENABLED` | No | `true` | Enable/disable event processing |
 | `EVENT_CONSUMER_NAME` | No | `meeting-service-kv-consumer` | JetStream consumer name |
 | `EVENT_STREAM_NAME` | No | `KV_v1-objects` | KV bucket stream name |
@@ -131,6 +131,7 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 ```
 
 **Key behaviors:**
+
 - **DeliverLastPerSubjectPolicy**: Only processes the latest update for each key (skips intermediate states)
 - **AckExplicitPolicy**: Requires explicit ACK/NAK for each message
 - **MaxDeliver: 3**: Retries failed messages up to 3 times with exponential backoff
@@ -143,7 +144,7 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 #### Meeting Fields
 
 | v1 Field | v2 Field | Transformation |
-|----------|----------|----------------|
+| -------- | -------- | -------------- |
 | `meeting_id` | `id` | Direct copy |
 | `topic` | `title` | Direct copy |
 | `agenda` | `description` | Direct copy |
@@ -162,7 +163,7 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 #### Registrant Fields
 
 | v1 Field | v2 Field | Transformation |
-|----------|----------|----------------|
+| -------- | -------- | -------------- |
 | `id` | `uid` | Direct copy |
 | `first_name` | `first_name` | Direct copy |
 | `last_name` | `last_name` | Direct copy |
@@ -177,7 +178,7 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 #### Participant Fields
 
 | v1 Field | v2 Field | Transformation |
-|----------|----------|----------------|
+| -------- | -------- | -------------- |
 | `id` | `uid` | Direct copy |
 | `meeting_and_occurrence_id` | `meeting_and_occurrence_id` | Direct copy |
 | `meeting_id` | `meeting_id` | Direct copy |
@@ -234,6 +235,7 @@ Meeting occurrences are calculated from v1 recurrence rules using the `github.co
 ```
 
 **Calculation steps:**
+
 1. Parse recurrence type (daily/weekly/monthly)
 2. Generate RRULE string with interval and frequency
 3. Calculate up to 100 future occurrences
@@ -310,6 +312,7 @@ The system distinguishes between transient and permanent errors:
 - Temporary v1 user lookup failures
 
 **Retry behavior:**
+
 - Attempt 1: Immediate redelivery
 - Attempt 2: ~2 second delay
 - Attempt 3: ~10 second delay
@@ -330,7 +333,7 @@ The system handles parent-child dependencies through retry logic:
 ```go
 // Example: Registrant handler checks for parent meeting
 func handleRegistrantUpdate(ctx context.Context, key string, data map[string]any, ...) bool {
-    meetingID := getString(data, "meeting_id")
+    meetingID := utils.GetString(data["meeting_id"])
     if meetingID == "" {
         logger.Error("missing meeting_id")
         return false // ACK - permanent error
@@ -348,6 +351,7 @@ func handleRegistrantUpdate(ctx context.Context, key string, data map[string]any
 ```
 
 **Parent-child relationships:**
+
 - Registrant → Meeting (validate meeting exists)
 - Invite Response → Meeting (validate meeting exists)
 - Past Meeting Invitee → Past Meeting (validate past meeting exists)
@@ -368,6 +372,7 @@ Most events are published to **both** indexer and FGA-sync services:
 **Subject pattern**: `lfx.index.{object_type}`
 
 **Message format**:
+
 ```json
 {
     "action": "created",
@@ -403,6 +408,7 @@ Most events are published to **both** indexer and FGA-sync services:
 **Subject pattern**: `lfx.fga-sync.{operation}`
 
 **Message format**:
+
 ```json
 {
     "operation": "update_access",
@@ -420,7 +426,7 @@ Most events are published to **both** indexer and FGA-sync services:
 Events use these action types:
 
 | Action | Indexer Subject | FGA-Sync Subject | Use Case |
-|--------|----------------|------------------|----------|
+| ------ | --------------- | ---------------- | -------- |
 | `created` | `lfx.index.{type}` | `lfx.fga-sync.update_access` | New resource created |
 | `updated` | `lfx.index.{type}` | `lfx.fga-sync.update_access` | Resource modified |
 | `deleted` | `lfx.index.{type}` | `lfx.fga-sync.delete_access` | Resource removed |
@@ -506,6 +512,7 @@ export EVENT_PROCESSING_ENABLED=true
 ```
 
 **Startup logs:**
+
 ```text
 INFO initializing event processor
 INFO event processor started consumer=meeting-service-kv-consumer
@@ -521,12 +528,14 @@ kill -TERM <pid>
 ```
 
 **Shutdown logs:**
+
 ```text
 INFO shutting down event processor
 INFO event processor stopped successfully timeout=30s pending_messages=0
 ```
 
 **Graceful shutdown behavior:**
+
 - Stop accepting new messages
 - Drain pending messages for up to 30 seconds
 - NAK any messages that can't be processed in time
@@ -543,6 +552,7 @@ nats consumer info KV_v1-objects meeting-service-kv-consumer
 ```
 
 **Key metrics:**
+
 - **Num Pending**: Messages waiting to be processed
 - **Num Ack Pending**: Messages being processed
 - **Num Redelivered**: Messages that failed and are retrying
@@ -573,6 +583,7 @@ Event processing emits structured logs:
 ```
 
 **Error logs:**
+
 ```json
 {
     "level": "warn",
@@ -598,15 +609,18 @@ Event processing emits structured logs:
 #### Consumer Not Processing Messages
 
 **Symptoms:**
+
 - `Num Pending` increasing in consumer info
 - No processing logs
 
 **Checks:**
+
 1. Verify consumer is running: `nats consumer info KV_v1-objects meeting-service-kv-consumer`
 2. Check service logs for startup errors
 3. Verify NATS connectivity: `nats account info`
 
 **Resolution:**
+
 ```bash
 # Restart service
 kubectl rollout restart deployment/meeting-service -n lfx
@@ -615,16 +629,19 @@ kubectl rollout restart deployment/meeting-service -n lfx
 #### Messages Repeatedly Redelivered
 
 **Symptoms:**
+
 - `Num Redelivered` increasing
 - Same `num_delivered` value in logs (2 or 3)
 
 **Checks:**
+
 1. Review error logs for specific failure reasons
 2. Check parent-child ordering issues
 3. Verify ID mapper service availability
 4. Confirm project/committee IDs exist
 
 **Resolution:**
+
 ```bash
 # Check dead letter queue for permanently failed messages
 nats stream info KV_v1-objects
@@ -636,15 +653,18 @@ nats consumer next KV_v1-objects meeting-service-kv-consumer
 #### ID Mapping Failures
 
 **Symptoms:**
+
 - Warnings about failed SFID→UUID mappings
 - NAK retries for ID mapper errors
 
 **Checks:**
+
 1. Verify ID mapper service health
 2. Check if SFIDs exist in v1 system
 3. Review `v1-mappings` KV bucket contents
 
 **Resolution:**
+
 ```bash
 # Query ID mapper directly
 curl -H "Authorization: Bearer $TOKEN" \
@@ -657,15 +677,19 @@ nats kv get v1-mappings "itx-zoom-meetings-v2.{meeting_id}"
 #### User Enrichment Failures
 
 **Symptoms:**
+
 - Missing usernames in registrant/participant events
 - Warnings about v1 user lookup failures
 
 **Checks:**
+
 1. Verify user exists in v1-objects KV bucket: `nats kv get v1-objects "user.{user_id}"`
 2. Check if `lf_user_id` field is populated in v1 data
 
 **Resolution:**
+
 User enrichment failures are non-fatal. Events publish with available data:
+
 ```json
 {
     "uid": "reg-123",
@@ -681,6 +705,7 @@ User enrichment failures are non-fatal. Events publish with available data:
 ### Throughput
 
 **Expected performance:**
+
 - ~1000 events/second per service instance
 - Latency p50: 20ms, p95: 50ms, p99: 100ms
 - Concurrent message processing: Up to 1000 (MaxAckPending)
@@ -688,6 +713,7 @@ User enrichment failures are non-fatal. Events publish with available data:
 ### Backpressure Handling
 
 The system handles backpressure through:
+
 - **MaxAckPending: 1000**: Limits concurrent processing to prevent memory exhaustion
 - **DeliverLastPerSubjectPolicy**: Skips intermediate updates for same key
 - **AckWait: 30s**: Allows sufficient time for complex transformations
@@ -695,6 +721,7 @@ The system handles backpressure through:
 ### Resource Usage
 
 **Per service instance:**
+
 - Memory: ~200MB baseline + ~50KB per pending message
 - CPU: ~0.1 cores baseline + ~0.5 cores per 1000 events/sec
 - Network: Dependent on event size (avg ~5KB per event)
@@ -704,7 +731,7 @@ The system handles backpressure through:
 ### Dependencies
 
 | Service | Purpose | Failure Mode |
-|---------|---------|--------------|
+| ------- | ------- | ------------ |
 | **NATS JetStream** | Event storage and delivery | Service unavailable, all processing stops |
 | **ID Mapper** | SFID→UUID mapping | NAK for retry, fallback to SFID if persistent failure |
 | **Indexer Service** | Search indexing | Event lost if publish fails after 3 retries |
@@ -761,6 +788,7 @@ go test -tags=integration ./cmd/meeting-api/eventing/...
 To add a new event type:
 
 1. **Define event model** in `internal/domain/models/event_models.go`:
+
    ```go
    type NewEventData struct {
        ID         string    `json:"id"`
@@ -770,11 +798,13 @@ To add a new event type:
    ```
 
 2. **Add publisher method** to `internal/domain/event_publisher.go`:
+
    ```go
    PublishNewEvent(ctx context.Context, action string, data *models.NewEventData) error
    ```
 
 3. **Implement handler** in `cmd/meeting-api/eventing/new_event_handler.go`:
+
    ```go
    func handleNewEventUpdate(ctx context.Context, key string, data map[string]any, ...) bool {
        // Validation
@@ -785,12 +815,14 @@ To add a new event type:
    ```
 
 4. **Add routing** to `cmd/meeting-api/eventing/kv_handler.go`:
+
    ```go
    case strings.HasPrefix(key, "new-event-prefix."):
        return handleNewEventUpdate(ctx, key, data, handlers...)
    ```
 
 5. **Implement publisher** in `internal/infrastructure/eventing/nats_publisher.go`:
+
    ```go
    func (p *NATSPublisher) PublishNewEvent(ctx context.Context, action string, data *models.NewEventData) error {
        return p.publish(ctx, "lfx.index.new_event", data)
@@ -1001,5 +1033,5 @@ To add a new event type:
 ---
 
 **Document Version**: 1.0
-**Last Updated**: 2024-01-15
+**Last Updated**: 2026-03-18
 **Maintained By**: LFX Platform Team

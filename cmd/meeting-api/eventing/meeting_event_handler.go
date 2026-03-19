@@ -24,22 +24,6 @@ import (
 // Meeting Event Handler
 // =============================================================================
 
-func generateMeetingTags(meeting *models.MeetingEventData) []string {
-	tags := []string{
-		meeting.ID, // Raw ID without prefix
-		"meeting_id:" + meeting.ID,
-		"project_uid:" + meeting.ProjectUID,
-		"title:" + meeting.Title,
-	}
-	if meeting.Visibility != "" {
-		tags = append(tags, "visibility:"+meeting.Visibility)
-	}
-	if meeting.MeetingType != "" {
-		tags = append(tags, "meeting_type:"+meeting.MeetingType)
-	}
-	return tags
-}
-
 // convertMapToMeetingData converts v1 meeting data to v2 format
 func convertMapToMeetingData(
 	ctx context.Context,
@@ -139,12 +123,11 @@ func convertMapToMeetingData(
 }
 
 // handleMeetingUpdate processes updates to meeting records
-// Returns true to retry (NAK), false to acknowledge (ACK)
 func (h *EventHandlers) handleMeetingUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-) bool {
+) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "meeting")
 	funcLogger.DebugContext(ctx, "processing meeting update")
 
@@ -158,18 +141,18 @@ func (h *EventHandlers) handleMeetingUpdate(
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to meeting")
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
-		return false // Permanent error, ACK and skip
+		return false
 	}
 	if meetingData == nil {
-		return false // Intentionally skipped (e.g., loop prevention), ACK
+		return false // Intentionally skipped (e.g., loop prevention)
 	}
 
 	// Validate required fields
 	if meetingData.ID == "" || meetingData.ProjectUID == "" {
 		funcLogger.ErrorContext(ctx, "missing required fields in meeting data")
-		return false // Permanent error, ACK and skip
+		return false
 	}
 	funcLogger = funcLogger.With("meeting_id", meetingData.ID)
 
@@ -181,13 +164,12 @@ func (h *EventHandlers) handleMeetingUpdate(
 	}
 
 	// Publish to indexer and FGA-sync
-	tags := generateMeetingTags(meetingData)
-	if err := h.publisher.PublishMeetingEvent(ctx, string(indexerAction), meetingData, tags); err != nil {
+	if err := h.publisher.PublishMeetingEvent(ctx, string(indexerAction), meetingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting event")
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
-		return false // Permanent error, ACK and skip
+		return false
 	}
 
 	// Store mapping
@@ -196,38 +178,22 @@ func (h *EventHandlers) handleMeetingUpdate(
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed meeting")
-	return false // Success, ACK
+	return false
 }
 
 // handleMeetingDelete processes meeting deletions
-func (h *EventHandlers) handleMeetingDelete(
-	ctx context.Context,
-	key string,
-	v1Data map[string]interface{},
-) bool {
+func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ map[string]interface{}) (retry bool) {
 	meetingID := extractIDFromKey(key, "itx-zoom-meetings-v2.")
-	funcLogger := h.logger.With("meeting_id", meetingID, "handler", "meeting_delete")
-	funcLogger.InfoContext(ctx, "processing meeting deletion")
-
-	// Create minimal event data for deletion
-	eventData := &models.MeetingEventData{ID: meetingID}
-
-	// Publish delete event
-	tags := generateMeetingTags(eventData)
-	if err := h.publisher.PublishMeetingEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting delete event")
-		if isTransientError(err) {
-			return true // NAK for retry
-		}
-		return false // Permanent error, ACK and skip
-	}
-
-	// Remove mapping
 	mappingKey := fmt.Sprintf("v1_meetings.%s", meetingID)
-	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
-
-	funcLogger.InfoContext(ctx, "successfully processed meeting deletion")
-	return false // Success, ACK
+	if h.isTombstoned(ctx, mappingKey) {
+		h.logger.DebugContext(ctx, "meeting delete already processed, skipping", "meeting_id", meetingID)
+		return false
+	}
+	return h.handleMeetingTypeDelete(ctx, key, meetingID, []byte(meetingID), meetingDeleteConfig{
+		indexerSubject:         "lfx.index.v1_meeting",
+		deleteAllAccessSubject: "lfx.delete_all_access.v1_meeting",
+		tombstoneKeyFmts:       []string{"v1_meetings.%s"},
+	})
 }
 
 // =============================================================================
@@ -239,7 +205,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-) bool {
+) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "meeting_mapping")
 	funcLogger.InfoContext(ctx, "processing meeting mapping update")
 
@@ -249,32 +215,32 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 	}
 
 	// Extract meeting ID and mapping data
-	meetingID := getString(v1Data["meeting_id"])
-	mappingID := getString(v1Data["id"])
-	committeeID := getString(v1Data["committee_id"])
+	meetingID := utils.GetString(v1Data["meeting_id"])
+	mappingID := utils.GetString(v1Data["id"])
+	committeeID := utils.GetString(v1Data["committee_id"])
 
 	if meetingID == "" || mappingID == "" {
 		funcLogger.WarnContext(ctx, "missing required fields in mapping")
-		return false // ACK - permanent error
+		return false
 	}
 
 	// Update committee mappings in KV bucket
 	if err := updateCommitteeMappings(ctx, meetingID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update committee mappings")
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
-		return false // ACK - permanent error
+		return false
 	}
 
 	// Re-trigger meeting indexing
 	shouldRetry := h.retriggerMeetingIndexing(ctx, meetingID)
 	if shouldRetry {
-		return true // NAK for retry
+		return true
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed meeting mapping update")
-	return false // ACK
+	return false
 }
 
 // handleMeetingMappingDelete processes meeting-committee mapping deletions
@@ -282,33 +248,36 @@ func (h *EventHandlers) handleMeetingMappingDelete(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-) bool {
-	meetingID := getString(v1Data["meeting_id"])
-	mappingID := getString(v1Data["id"])
+) (retry bool) {
+	if v1Data == nil {
+		h.logger.WarnContext(ctx, "no v1Data available for meeting mapping delete, skipping", "key", key)
+		return false
+	}
+
+	meetingID := utils.GetString(v1Data["meeting_id"])
+	mappingID := extractIDFromKey(key, "itx-zoom-meetings-mappings-v2.")
 
 	if meetingID == "" || mappingID == "" {
 		h.logger.WarnContext(ctx, "missing required fields in mapping deletion")
-		return false // ACK - permanent error
+		return false
 	}
 
 	funcLogger := h.logger.With("meeting_id", meetingID, "mapping_id", mappingID, "handler", "meeting_mapping_delete")
 	funcLogger.InfoContext(ctx, "processing meeting mapping deletion")
 
-	// Remove the mapping
 	if err := removeCommitteeMapping(ctx, meetingID, mappingID, h.v1MappingsKV, funcLogger); err != nil {
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
 	}
 
-	// Re-trigger meeting indexing
 	shouldRetry := h.retriggerMeetingIndexing(ctx, meetingID)
 	if shouldRetry {
-		return true // NAK for retry
+		return true
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed meeting mapping deletion")
-	return false // ACK
+	return false
 }
 
 // =============================================================================
@@ -369,7 +338,7 @@ func convertMapToRegistrantData(
 		return nil, fmt.Errorf("failed to unmarshal meeting data: %w", err)
 	}
 
-	projectSFID := getString(meetingData["proj_id"])
+	projectSFID := utils.GetString(meetingData["proj_id"])
 	if projectSFID == "" {
 		return nil, fmt.Errorf("meeting missing project ID")
 	}
@@ -417,9 +386,19 @@ func convertMapToRegistrantData(
 		}
 	}
 
-	// Parse times
-	createdAt, _ := parseTime(rawRegistrant.CreatedAt)
-	modifiedAt, _ := parseTime(rawRegistrant.ModifiedAt)
+	// Parse times — propagate errors only for non-empty but malformed strings;
+	// absent timestamps (empty string) remain as zero-value time.Time.
+	var createdAt, modifiedAt time.Time
+	if rawRegistrant.CreatedAt != "" {
+		if createdAt, err = parseTime(rawRegistrant.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to parse created_at: %w", err)
+		}
+	}
+	if rawRegistrant.ModifiedAt != "" {
+		if modifiedAt, err = parseTime(rawRegistrant.ModifiedAt); err != nil {
+			return nil, fmt.Errorf("failed to parse modified_at: %w", err)
+		}
+	}
 
 	return &models.RegistrantEventData{
 		UID:          rawRegistrant.UID,
@@ -433,36 +412,19 @@ func convertMapToRegistrantData(
 		LastName:     rawRegistrant.LastName,
 		AvatarURL:    rawRegistrant.AvatarURL,
 		OrgName:      rawRegistrant.OrgName,
-		Host:         getBool(rawRegistrant.Host),
+		Host:         utils.GetBool(rawRegistrant.Host),
 		CreatedAt:    createdAt,
 		ModifiedAt:   modifiedAt,
 	}, nil
 }
 
-func generateRegistrantTags(registrant *models.RegistrantEventData) []string {
-	tags := []string{
-		"registrant_uid:" + registrant.UID,
-		"meeting_id:" + registrant.MeetingID,
-		"project_uid:" + registrant.ProjectUID,
-	}
-	if registrant.Username != "" {
-		tags = append(tags, "username:"+registrant.Username)
-	}
-	if registrant.Email != "" {
-		tags = append(tags, "email:"+registrant.Email)
-	}
-	if registrant.Host {
-		tags = append(tags, "is_host:true")
-	}
-	return tags
-}
 
 // handleRegistrantUpdate processes updates to meeting registrants
 func (h *EventHandlers) handleRegistrantUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-) bool {
+) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "registrant")
 	funcLogger.DebugContext(ctx, "processing registrant update")
 
@@ -476,15 +438,15 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to registrant")
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
-		return false // Permanent error, ACK and skip
+		return false
 	}
 
 	// Validate required fields
 	if registrantData.UID == "" || registrantData.MeetingID == "" {
 		funcLogger.ErrorContext(ctx, "missing required fields in registrant data")
-		return false // Permanent error, ACK and skip
+		return false
 	}
 	funcLogger = funcLogger.With("registrant_uid", registrantData.UID)
 
@@ -496,13 +458,12 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	}
 
 	// Publish to indexer and FGA-sync
-	tags := generateRegistrantTags(registrantData)
-	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerAction), registrantData, tags); err != nil {
+	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerAction), registrantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish registrant event")
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
-		return false // Permanent error, ACK and skip
+		return false
 	}
 
 	// Store mapping
@@ -511,58 +472,55 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed registrant")
-	return false // Success, ACK
+	return false
 }
 
 // handleRegistrantDelete processes registrant deletions
-func (h *EventHandlers) handleRegistrantDelete(
-	ctx context.Context,
-	key string,
-	v1Data map[string]interface{},
-) bool {
+func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, v1Data map[string]interface{}) (retry bool) {
 	registrantUID := extractIDFromKey(key, "itx-zoom-meetings-registrants-v2.")
-	funcLogger := h.logger.With("registrant_uid", registrantUID, "handler", "registrant_delete")
-	funcLogger.InfoContext(ctx, "processing registrant deletion")
+	funcLogger := h.logger.With("key", key, "registrant_uid", registrantUID)
 
-	// Create minimal event data for deletion
-	eventData := &models.RegistrantEventData{UID: registrantUID}
-
-	// Publish delete event
-	tags := generateRegistrantTags(eventData)
-	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish registrant delete event")
-		if isTransientError(err) {
-			return true // NAK for retry
-		}
-		return false // Permanent error, ACK and skip
+	mappingKey := fmt.Sprintf("v1_registrants.%s", registrantUID)
+	if h.isTombstoned(ctx, mappingKey) {
+		funcLogger.DebugContext(ctx, "registrant delete already processed, skipping")
+		return false
 	}
 
-	// Remove mapping
-	mappingKey := fmt.Sprintf("v1_registrants.%s", registrantUID)
-	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
+	// Extract username and host to conditionally send the access control message.
+	// Without a username, access control cannot identify which user to remove access for.
+	username := utils.GetString(v1Data["username"])
 
-	funcLogger.InfoContext(ctx, "successfully processed registrant deletion")
-	return false // Success, ACK
+	var message []byte
+	var deleteAllAccessSubject string
+
+	if username != "" {
+		accessMsg := map[string]interface{}{
+			"id":         registrantUID,
+			"meeting_id": utils.GetString(v1Data["meeting_id"]),
+			"username":   username,
+			"host":       utils.GetBool(v1Data["host"]),
+		}
+		var err error
+		if message, err = json.Marshal(accessMsg); err != nil {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to marshal registrant access message")
+			return false
+		}
+		deleteAllAccessSubject = "lfx.remove_registrant.v1_meeting"
+	} else {
+		funcLogger.DebugContext(ctx, "no username in v1Data, skipping access control message for registrant delete")
+		message = []byte(registrantUID)
+	}
+
+	return h.handleMeetingTypeDelete(ctx, key, registrantUID, message, meetingDeleteConfig{
+		indexerSubject:         "lfx.index.v1_meeting_registrant",
+		deleteAllAccessSubject: deleteAllAccessSubject,
+		tombstoneKeyFmts:       []string{"v1_registrants.%s"},
+	})
 }
 
 // =============================================================================
 // Invite Response (RSVP) Event Handler
 // =============================================================================
-
-func generateInviteResponseTags(response *models.InviteResponseEventData) []string {
-	tags := []string{
-		response.ID,
-		fmt.Sprintf("invite_response_uid:%s", response.ID),
-		fmt.Sprintf("meeting_and_occurrence_id:%s", response.MeetingAndOccurrenceID),
-		fmt.Sprintf("meeting_id:%s", response.MeetingID),
-		fmt.Sprintf("registrant_uid:%s", response.RegistrantID),
-		fmt.Sprintf("email:%s", response.Email),
-	}
-	if response.Username != "" {
-		tags = append(tags, fmt.Sprintf("username:%s", response.Username))
-	}
-	return tags
-}
 
 // convertMapToInviteResponseData converts v1 invite response data to v2 format
 func convertMapToInviteResponseData(
@@ -605,7 +563,7 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("failed to unmarshal meeting data: %w", err)
 	}
 
-	projectSFID := getString(meetingData["proj_id"])
+	projectSFID := utils.GetString(meetingData["proj_id"])
 	if projectSFID == "" {
 		return nil, fmt.Errorf("meeting missing project ID")
 	}
@@ -624,8 +582,19 @@ func convertMapToInviteResponseData(
 	// Determine if response is for recurring meeting
 	isRecurring := rawResponse.OccurrenceID == "" || rawResponse.Scope == "all" || rawResponse.Scope == "this_and_following"
 
-	createdAt, _ := parseTime(rawResponse.CreatedAt)
-	modifiedAt, _ := parseTime(rawResponse.ModifiedAt)
+	// Parse times — propagate errors only for non-empty but malformed strings;
+	// absent timestamps (empty string) remain as zero-value time.Time.
+	var createdAt, modifiedAt time.Time
+	if rawResponse.CreatedAt != "" {
+		if createdAt, err = parseTime(rawResponse.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to parse created_at: %w", err)
+		}
+	}
+	if rawResponse.ModifiedAt != "" {
+		if modifiedAt, err = parseTime(rawResponse.ModifiedAt); err != nil {
+			return nil, fmt.Errorf("failed to parse modified_at: %w", err)
+		}
+	}
 
 	return &models.InviteResponseEventData{
 		ID:                     rawResponse.ID,
@@ -650,7 +619,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
-) bool {
+) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "invite_response")
 	funcLogger.DebugContext(ctx, "processing invite response update")
 
@@ -664,15 +633,15 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invite response")
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
-		return false // Permanent error, ACK and skip
+		return false
 	}
 
 	// Validate required fields
 	if responseData.ID == "" || responseData.MeetingID == "" {
 		funcLogger.ErrorContext(ctx, "missing required fields in invite response data")
-		return false // Permanent error, ACK and skip
+		return false
 	}
 	funcLogger = funcLogger.With("response_id", responseData.ID)
 
@@ -684,13 +653,12 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	}
 
 	// Publish to indexer
-	tags := generateInviteResponseTags(responseData)
-	if err := h.publisher.PublishInviteResponseEvent(ctx, string(indexerAction), responseData, tags); err != nil {
+	if err := h.publisher.PublishInviteResponseEvent(ctx, string(indexerAction), responseData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invite response event")
 		if isTransientError(err) {
-			return true // NAK for retry
+			return true
 		}
-		return false // Permanent error, ACK and skip
+		return false
 	}
 
 	// Store mapping
@@ -699,38 +667,21 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed invite response")
-	return false // Success, ACK
+	return false
 }
 
 // handleInviteResponseDelete processes invite response deletions
-func (h *EventHandlers) handleInviteResponseDelete(
-	ctx context.Context,
-	key string,
-	v1Data map[string]interface{},
-) bool {
+func (h *EventHandlers) handleInviteResponseDelete(ctx context.Context, key string, _ map[string]interface{}) (retry bool) {
 	responseID := extractIDFromKey(key, "itx-zoom-meetings-invite-responses-v2.")
-	funcLogger := h.logger.With("response_id", responseID, "handler", "invite_response_delete")
-	funcLogger.InfoContext(ctx, "processing invite response deletion")
-
-	// Create minimal event data for deletion
-	eventData := &models.InviteResponseEventData{ID: responseID}
-
-	// Publish delete event
-	tags := generateInviteResponseTags(eventData)
-	if err := h.publisher.PublishInviteResponseEvent(ctx, string(indexerConstants.ActionDeleted), eventData, tags); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invite response delete event")
-		if isTransientError(err) {
-			return true // NAK for retry
-		}
-		return false // Permanent error, ACK and skip
-	}
-
-	// Remove mapping
 	mappingKey := fmt.Sprintf("v1_invite_responses.%s", responseID)
-	_ = h.v1MappingsKV.Delete(ctx, mappingKey)
-
-	funcLogger.InfoContext(ctx, "successfully processed invite response deletion")
-	return false // Success, ACK
+	if h.isTombstoned(ctx, mappingKey) {
+		h.logger.DebugContext(ctx, "invite response delete already processed, skipping", "response_id", responseID)
+		return false
+	}
+	return h.handleMeetingTypeDelete(ctx, key, responseID, []byte(responseID), meetingDeleteConfig{
+		indexerSubject:   "lfx.index.v1_meeting_rsvp",
+		tombstoneKeyFmts: []string{"v1_invite_responses.%s"},
+	})
 }
 
 // =============================================================================
@@ -738,10 +689,6 @@ func (h *EventHandlers) handleInviteResponseDelete(
 // =============================================================================
 
 // Conversion and utility functions
-
-func shouldSkipSync(lastModifiedByID string) bool {
-	return lastModifiedByID == "meeting-service" || lastModifiedByID == "lfx-v2-meeting-service"
-}
 
 func getCommitteesForMeeting(
 	ctx context.Context,
@@ -764,7 +711,7 @@ func getCommitteesForMeeting(
 
 	committees := make([]models.Committee, 0, len(mappings))
 	for _, mapping := range mappings {
-		committeeID := getStringFromMap(mapping, "committee_id")
+		committeeID := utils.GetStringFromMap(mapping, "committee_id")
 		if committeeID != "" {
 			committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, committeeID)
 			if err != nil {
@@ -772,7 +719,7 @@ func getCommitteesForMeeting(
 				continue
 			}
 
-			filters := getStringSliceFromMap(mapping, "committee_filters")
+			filters := utils.GetStringSliceFromMap(mapping, "committee_filters")
 			committees = append(committees, models.Committee{
 				UID:                   committeeUID,
 				AllowedVotingStatuses: utils.CastSlice[itx.CommitteeFilter](filters),
@@ -807,7 +754,7 @@ func updateCommitteeMappings(
 
 	// Update or add mapping
 	mappingData := map[string]interface{}{"committee_id": committeeID}
-	if filters := getStringSliceFromMap(v1Data, "committee_filters"); len(filters) > 0 {
+	if filters := utils.GetStringSliceFromMap(v1Data, "committee_filters"); len(filters) > 0 {
 		mappingData["committee_filters"] = filters
 	}
 	mappings[mappingID] = mappingData
@@ -843,15 +790,12 @@ func removeCommitteeMapping(
 		return fmt.Errorf("failed to unmarshal mappings: %w", err)
 	}
 
-	// Remove the mapping
 	delete(mappings, mappingID)
 
-	// If no mappings left, delete the key
 	if len(mappings) == 0 {
 		return mappingsKV.Delete(ctx, mappingsKey)
 	}
 
-	// Store updated mappings
 	mappingsJSON, err := json.Marshal(mappings)
 	if err != nil {
 		return fmt.Errorf("failed to marshal updated mappings: %w", err)
@@ -864,148 +808,21 @@ func removeCommitteeMapping(
 func (h *EventHandlers) retriggerMeetingIndexing(
 	ctx context.Context,
 	meetingID string,
-) bool {
+) (retry bool) {
 	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
 	meetingEntry, err := h.v1ObjectsKV.Get(ctx, meetingKey)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "meeting not found during retrigger")
-		return false // Meeting might be deleted, ACK
+		return false // Meeting might be deleted
 	}
 
 	var meetingData map[string]interface{}
 	if err := json.Unmarshal(meetingEntry.Value(), &meetingData); err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal meeting data")
-		return false // ACK - permanent error
+		return false
 	}
 
 	// Re-process the meeting
 	return h.handleMeetingUpdate(ctx, meetingKey, meetingData)
 }
 
-func mapResponseType(responseType string) (string, error) {
-	switch strings.ToUpper(responseType) {
-	case "ACCEPTED":
-		return "accepted", nil
-	case "TENTATIVE":
-		return "maybe", nil
-	case "DECLINED":
-		return "declined", nil
-	}
-	return "", fmt.Errorf("invalid response type: %s", responseType)
-}
-
-func parseTime(timeStr string) (time.Time, error) {
-	if timeStr == "" {
-		return time.Time{}, fmt.Errorf("empty time string")
-	}
-
-	// Try RFC3339 first
-	t, err := time.Parse(time.RFC3339, timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	// Try ISO 8601
-	t, err = time.Parse("2006-01-02T15:04:05Z", timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	// Try with milliseconds
-	t, err = time.Parse("2006-01-02T15:04:05.000Z", timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	// Try space-separated format
-	t, err = time.Parse("2006-01-02 15:04:05", timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	return time.Time{}, fmt.Errorf("unable to parse time: %s", timeStr)
-}
-
-func getInt(val interface{}) int {
-	switch v := val.(type) {
-	case int:
-		return v
-	case int64:
-		return int(v)
-	case float64:
-		return int(v)
-	case string:
-		var i int
-		fmt.Sscanf(v, "%d", &i)
-		return i
-	default:
-		return 0
-	}
-}
-
-func getBool(val interface{}) bool {
-	switch v := val.(type) {
-	case bool:
-		return v
-	case string:
-		return v == "true" || v == "1"
-	case int:
-		return v != 0
-	case float64:
-		return v != 0
-	default:
-		return false
-	}
-}
-
-func getString(val interface{}) string {
-	if val == nil {
-		return ""
-	}
-	if s, ok := val.(string); ok {
-		return s
-	}
-	return fmt.Sprintf("%v", val)
-}
-
-func getStringFromMap(m map[string]interface{}, key string) string {
-	if val, ok := m[key]; ok {
-		return getString(val)
-	}
-	return ""
-}
-
-func getStringSliceFromMap(m map[string]interface{}, key string) []string {
-	if val, ok := m[key]; ok {
-		if slice, ok := val.([]interface{}); ok {
-			result := make([]string, 0, len(slice))
-			for _, item := range slice {
-				result = append(result, getString(item))
-			}
-			return result
-		}
-		if slice, ok := val.([]string); ok {
-			return slice
-		}
-	}
-	return nil
-}
-
-func extractIDFromKey(key, prefix string) string {
-	if len(key) > len(prefix) {
-		return key[len(prefix):]
-	}
-	return key
-}
-
-func isTransientError(err error) bool {
-	if err == nil {
-		return false
-	}
-	errStr := err.Error()
-	return strings.Contains(errStr, "timeout") ||
-		strings.Contains(errStr, "connection") ||
-		strings.Contains(errStr, "unavailable") ||
-		strings.Contains(errStr, "temporary") ||
-		strings.Contains(errStr, "transient")
-}
