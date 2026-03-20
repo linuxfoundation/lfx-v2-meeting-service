@@ -16,8 +16,8 @@ type Config struct {
 	// StreamName is the name of the JetStream stream
 	StreamName string
 
-	// FilterSubject is the subject pattern to filter events (e.g., "$KV.v1-objects.>")
-	FilterSubject string
+	// FilterSubjects is the list of subject patterns to filter events
+	FilterSubjects []string
 
 	// MaxDeliver is the maximum number of delivery attempts
 	MaxDeliver int

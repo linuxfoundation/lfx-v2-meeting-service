@@ -46,7 +46,7 @@ type eventConfig struct {
 	Enabled              bool
 	ConsumerName         string
 	StreamName           string
-	FilterSubject        string
+	FilterSubjects       []string
 	MaxDeliver           int
 	AckWait              time.Duration
 	MaxAckPending        int
@@ -182,9 +182,20 @@ func parseEventConfig() eventConfig {
 		streamName = "KV_v1-objects"
 	}
 
-	filterSubject := os.Getenv("EVENT_FILTER_SUBJECT")
-	if filterSubject == "" {
-		filterSubject = "$KV.v1-objects.>"
+	// Filter to only the KV subjects this service handles
+	filterSubjects := []string{
+		"$KV.v1-objects.itx-zoom-meetings-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-mappings-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-registrants-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-invite-responses-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-attachments-v2.>",
+		"$KV.v1-objects.itx-zoom-past-meetings.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-mappings.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-invitees.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-attendees.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-recordings.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-summaries.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-attachments.>",
 	}
 
 	maxDeliver := 3
@@ -217,7 +228,7 @@ func parseEventConfig() eventConfig {
 		Enabled:              enabled,
 		ConsumerName:         consumerName,
 		StreamName:           streamName,
-		FilterSubject:        filterSubject,
+		FilterSubjects:       filterSubjects,
 		MaxDeliver:           maxDeliver,
 		AckWait:              ackWait,
 		MaxAckPending:        maxAckPending,

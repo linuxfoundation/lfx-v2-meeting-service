@@ -197,15 +197,15 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 // setupConsumer creates or updates the durable consumer configuration
 func (ep *EventProcessor) setupConsumer(ctx context.Context) error {
 	consumerConfig := jetstream.ConsumerConfig{
-		Name:          ep.config.ConsumerName,
-		Durable:       ep.config.ConsumerName,
-		Description:   "Meeting service KV bucket event consumer",
-		FilterSubject: ep.config.FilterSubject,
-		DeliverPolicy: jetstream.DeliverLastPerSubjectPolicy, // Process latest version only
-		AckPolicy:     jetstream.AckExplicitPolicy,           // Manual ACK required
-		MaxDeliver:    ep.config.MaxDeliver,                  // Retry limit
-		AckWait:       ep.config.AckWait,                     // ACK timeout
-		MaxAckPending: ep.config.MaxAckPending,               // Max in-flight messages
+		Name:           ep.config.ConsumerName,
+		Durable:        ep.config.ConsumerName,
+		Description:    "Meeting service KV bucket event consumer",
+		FilterSubjects: ep.config.FilterSubjects,
+		DeliverPolicy:  jetstream.DeliverLastPerSubjectPolicy, // Process latest version only
+		AckPolicy:      jetstream.AckExplicitPolicy,           // Manual ACK required
+		MaxDeliver:     ep.config.MaxDeliver,                  // Retry limit
+		AckWait:        ep.config.AckWait,                     // ACK timeout
+		MaxAckPending:  ep.config.MaxAckPending,               // Max in-flight messages
 	}
 
 	// Get or create consumer
@@ -218,7 +218,7 @@ func (ep *EventProcessor) setupConsumer(ctx context.Context) error {
 	ep.logger.Info("consumer configured",
 		"name", ep.config.ConsumerName,
 		"stream", ep.config.StreamName,
-		"filter", ep.config.FilterSubject,
+		"filters", ep.config.FilterSubjects,
 	)
 
 	return nil

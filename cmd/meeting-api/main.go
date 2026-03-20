@@ -141,7 +141,7 @@ func run() int {
 				NATSURL:              natsURL,
 				ConsumerName:         env.EventConfig.ConsumerName,
 				StreamName:           env.EventConfig.StreamName,
-				FilterSubject:        env.EventConfig.FilterSubject,
+				FilterSubjects:       env.EventConfig.FilterSubjects,
 				MaxDeliver:           env.EventConfig.MaxDeliver,
 				AckWait:              env.EventConfig.AckWait,
 				MaxAckPending:        env.EventConfig.MaxAckPending,
