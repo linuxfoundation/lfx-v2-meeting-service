@@ -375,9 +375,12 @@ type MeetingEventData struct {
 	// This is the v2 project UID.
 	ProjectUID string `json:"project_uid"`
 
-	// Committee is the ID of the committee
+	// Committee is the v1 ID of the committee (SFID).
 	// It is a Global Secondary Index on the meeting table.
 	Committee string `json:"committee"`
+
+	// CommitteeUID is the v2 UID of the primary committee, mapped from Committee.
+	CommitteeUID string `json:"committee_uid,omitempty"`
 
 	// CommitteeFilters is the list of filters associated with the committee
 	CommitteeFilters []string `json:"committee_filters"`

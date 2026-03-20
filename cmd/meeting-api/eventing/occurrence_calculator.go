@@ -478,7 +478,8 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 func parseByDay(days string) (string, error) {
 	stringSlice := strings.Split(days, ",")
 	var weekdays strings.Builder
-	for i, item := range stringSlice {
+	var hasWritten bool
+	for _, item := range stringSlice {
 		weekdayNum, err := strconv.Atoi(item)
 		if err != nil {
 			return "", err
@@ -487,11 +488,12 @@ func parseByDay(days string) (string, error) {
 		if weekdayNum < 1 || weekdayNum > 7 {
 			continue
 		}
-		// Except for the first weekday, there should be a comma before each subsequent weekday
-		if i > 0 {
+		// Prepend a comma only after we have already written at least one valid weekday.
+		if hasWritten {
 			weekdays.WriteString(",")
 		}
 		weekdays.WriteString(weekdaysABBRV[weekdayNum-1])
+		hasWritten = true
 	}
 	return weekdays.String(), nil
 }

@@ -124,8 +124,13 @@ func (ep *EventProcessor) Start(ctx context.Context) error {
 		// Handle acknowledgment
 		if shouldRetry {
 			// NAK with delay for retry
-			metadata, _ := msg.Metadata()
-			delay := getRetryDelay(metadata.NumDelivered)
+			var numDelivered uint64
+			if metadata, err := msg.Metadata(); err != nil {
+				ep.logger.With(logging.ErrKey, err).Warn("failed to get message metadata, using default retry delay")
+			} else {
+				numDelivered = metadata.NumDelivered
+			}
+			delay := getRetryDelay(numDelivered)
 
 			if err := msg.NakWithDelay(delay); err != nil {
 				ep.logger.With(logging.ErrKey, err).Error("failed to NAK message")

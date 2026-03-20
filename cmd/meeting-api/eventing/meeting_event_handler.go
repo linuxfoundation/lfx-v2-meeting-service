@@ -84,6 +84,16 @@ func convertMapToMeetingData(
 	committees := getCommitteesForMeeting(ctx, rawMeeting.MeetingID, idMapper, mappingsKV, logger)
 	meeting.Committees = committees
 
+	// Map the primary committee v1 ID to v2 UID
+	if rawMeeting.Committee != "" {
+		committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, rawMeeting.Committee)
+		if err != nil {
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawMeeting.Committee)
+		} else {
+			meeting.CommitteeUID = committeeUID
+		}
+	}
+
 	// Determine artifact visibility (priority: recording > transcript > ai_summary)
 	meeting.ArtifactVisibility = rawMeeting.GetArtifactVisibility()
 
