@@ -46,6 +46,8 @@ type CreateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -84,6 +86,8 @@ type UpdateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -507,6 +511,8 @@ type CreateItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -563,6 +569,8 @@ type GetItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -997,6 +1005,8 @@ type CreateItxMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -1040,6 +1050,8 @@ type GetItxMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -1130,6 +1142,8 @@ type CreateItxPastMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -1175,6 +1189,8 @@ type GetItxPastMeetingAttachmentResponseBody struct {
 	MeetingID string `form:"meeting_id" json:"meeting_id" xml:"meeting_id"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category string `form:"category" json:"category" xml:"category"`
 	// External link URL (for link-type attachments)
@@ -3740,6 +3756,7 @@ func NewCreateItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse)
 		RecordingEnabled:     res.RecordingEnabled,
 		TranscriptEnabled:    res.TranscriptEnabled,
 		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
+		AiSummaryEnabled:     res.AiSummaryEnabled,
 		ArtifactVisibility:   res.ArtifactVisibility,
 		ID:                   res.ID,
 		HostKey:              res.HostKey,
@@ -3793,6 +3810,7 @@ func NewGetItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *G
 		RecordingEnabled:     res.RecordingEnabled,
 		TranscriptEnabled:    res.TranscriptEnabled,
 		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
+		AiSummaryEnabled:     res.AiSummaryEnabled,
 		ArtifactVisibility:   res.ArtifactVisibility,
 		ID:                   res.ID,
 		HostKey:              res.HostKey,
@@ -4166,6 +4184,7 @@ func NewCreateItxMeetingAttachmentResponseBody(res *meetingservice.ITXMeetingAtt
 		UID:              res.UID,
 		MeetingID:        res.MeetingID,
 		Type:             res.Type,
+		Source:           res.Source,
 		Category:         res.Category,
 		Link:             res.Link,
 		Name:             res.Name,
@@ -4200,6 +4219,7 @@ func NewGetItxMeetingAttachmentResponseBody(res *meetingservice.ITXMeetingAttach
 		UID:              res.UID,
 		MeetingID:        res.MeetingID,
 		Type:             res.Type,
+		Source:           res.Source,
 		Category:         res.Category,
 		Link:             res.Link,
 		Name:             res.Name,
@@ -4273,6 +4293,7 @@ func NewCreateItxPastMeetingAttachmentResponseBody(res *meetingservice.ITXPastMe
 		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
 		MeetingID:              res.MeetingID,
 		Type:                   res.Type,
+		Source:                 res.Source,
 		Category:               res.Category,
 		Link:                   res.Link,
 		Name:                   res.Name,
@@ -4308,6 +4329,7 @@ func NewGetItxPastMeetingAttachmentResponseBody(res *meetingservice.ITXPastMeeti
 		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
 		MeetingID:              res.MeetingID,
 		Type:                   res.Type,
+		Source:                 res.Source,
 		Category:               res.Category,
 		Link:                   res.Link,
 		Name:                   res.Name,
@@ -6967,6 +6989,7 @@ func NewCreateItxMeetingPayload(body *CreateItxMeetingRequestBody, version *stri
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 	}
 	if body.Committees != nil {
@@ -7028,6 +7051,7 @@ func NewUpdateItxMeetingPayload(body *UpdateItxMeetingRequestBody, meetingID str
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 	}
 	if body.Committees != nil {

@@ -46,6 +46,8 @@ type CreateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -84,6 +86,8 @@ type UpdateItxMeetingRequestBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -507,6 +511,8 @@ type CreateItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -563,6 +569,8 @@ type GetItxMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether automatic youtube uploading is enabled for the meeting
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
+	// Whether Zoom AI Companion summary is enabled for the meeting
+	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -997,6 +1005,8 @@ type CreateItxMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -1040,6 +1050,8 @@ type GetItxMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -1130,6 +1142,8 @@ type CreateItxPastMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -1175,6 +1189,8 @@ type GetItxPastMeetingAttachmentResponseBody struct {
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
 	// Attachment category
 	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
 	// External link URL (for link-type attachments)
@@ -3740,6 +3756,7 @@ func NewCreateItxMeetingRequestBody(p *meetingservice.CreateItxMeetingPayload) *
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		AiSummaryEnabled:     p.AiSummaryEnabled,
 		ArtifactVisibility:   p.ArtifactVisibility,
 	}
 	if p.Committees != nil {
@@ -3775,6 +3792,7 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 		RecordingEnabled:     p.RecordingEnabled,
 		TranscriptEnabled:    p.TranscriptEnabled,
 		YoutubeUploadEnabled: p.YoutubeUploadEnabled,
+		AiSummaryEnabled:     p.AiSummaryEnabled,
 		ArtifactVisibility:   p.ArtifactVisibility,
 	}
 	if p.Committees != nil {
@@ -4154,6 +4172,7 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 		ID:                   body.ID,
 		HostKey:              body.HostKey,
@@ -4274,6 +4293,7 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 		RecordingEnabled:     body.RecordingEnabled,
 		TranscriptEnabled:    body.TranscriptEnabled,
 		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
+		AiSummaryEnabled:     body.AiSummaryEnabled,
 		ArtifactVisibility:   body.ArtifactVisibility,
 		ID:                   body.ID,
 		HostKey:              body.HostKey,
@@ -6342,6 +6362,7 @@ func NewCreateItxMeetingAttachmentITXMeetingAttachmentCreated(body *CreateItxMee
 		UID:              *body.UID,
 		MeetingID:        *body.MeetingID,
 		Type:             *body.Type,
+		Source:           body.Source,
 		Category:         *body.Category,
 		Link:             body.Link,
 		Name:             *body.Name,
@@ -6443,6 +6464,7 @@ func NewGetItxMeetingAttachmentITXMeetingAttachmentOK(body *GetItxMeetingAttachm
 		UID:              *body.UID,
 		MeetingID:        *body.MeetingID,
 		Type:             *body.Type,
+		Source:           body.Source,
 		Category:         *body.Category,
 		Link:             body.Link,
 		Name:             *body.Name,
@@ -6853,6 +6875,7 @@ func NewCreateItxPastMeetingAttachmentITXPastMeetingAttachmentCreated(body *Crea
 		MeetingAndOccurrenceID: *body.MeetingAndOccurrenceID,
 		MeetingID:              *body.MeetingID,
 		Type:                   *body.Type,
+		Source:                 body.Source,
 		Category:               *body.Category,
 		Link:                   body.Link,
 		Name:                   *body.Name,
@@ -6956,6 +6979,7 @@ func NewGetItxPastMeetingAttachmentITXPastMeetingAttachmentOK(body *GetItxPastMe
 		MeetingAndOccurrenceID: *body.MeetingAndOccurrenceID,
 		MeetingID:              *body.MeetingID,
 		Type:                   *body.Type,
+		Source:                 body.Source,
 		Category:               *body.Category,
 		Link:                   body.Link,
 		Name:                   *body.Name,
@@ -7917,6 +7941,11 @@ func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttach
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
 		}
 	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "description"}))
+		}
+	}
 	if body.Category != nil {
 		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
@@ -7978,6 +8007,11 @@ func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentRe
 	if body.Type != nil {
 		if !(*body.Type == "file" || *body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "description"}))
 		}
 	}
 	if body.Category != nil {
@@ -8089,6 +8123,11 @@ func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeeti
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
 		}
 	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "scheduled_meeting_api" || *body.Source == "scheduled_meeting_description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "scheduled_meeting_api", "scheduled_meeting_description"}))
+		}
+	}
 	if body.Category != nil {
 		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
@@ -8153,6 +8192,11 @@ func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAtta
 	if body.Type != nil {
 		if !(*body.Type == "file" || *body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "scheduled_meeting_api" || *body.Source == "scheduled_meeting_description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "scheduled_meeting_api", "scheduled_meeting_description"}))
 		}
 	}
 	if body.Category != nil {

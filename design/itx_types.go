@@ -82,6 +82,10 @@ func ArtifactVisibilityAttribute() {
 	})
 }
 
+func AISummaryEnabledAttribute() {
+	Attribute("ai_summary_enabled", Boolean, "Whether Zoom AI Companion summary is enabled for the meeting")
+}
+
 func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
 }
@@ -140,6 +144,7 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 	RecordingEnabledAttribute()
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
+	AISummaryEnabledAttribute()
 	ArtifactVisibilityAttribute()
 	RecurrenceAttribute()
 
@@ -622,6 +627,10 @@ var ITXMeetingAttachment = Type("ITXMeetingAttachment", func() {
 		Enum("file", "link")
 		Example("file")
 	})
+	Attribute("source", String, "Attachment source origin", func() {
+		Enum("api", "description")
+		Example("api")
+	})
 	Attribute("category", String, "Attachment category", func() {
 		Enum("Meeting Minutes", "Notes", "Presentation", "Other")
 		Example("Presentation")
@@ -665,6 +674,10 @@ var ITXPastMeetingAttachment = Type("ITXPastMeetingAttachment", func() {
 	Attribute("type", String, "Attachment type", func() {
 		Enum("file", "link")
 		Example("file")
+	})
+	Attribute("source", String, "Attachment source origin", func() {
+		Enum("api", "scheduled_meeting_api", "scheduled_meeting_description")
+		Example("api")
 	})
 	Attribute("category", String, "Attachment category", func() {
 		Enum("Meeting Minutes", "Notes", "Presentation", "Other")
