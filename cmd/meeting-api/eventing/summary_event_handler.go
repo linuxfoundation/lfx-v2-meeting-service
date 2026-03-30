@@ -127,10 +127,24 @@ type SummaryDBRaw struct {
 	ModifiedBy models.UpdatedBy `json:"modified_by"`
 }
 
+// UnmarshalJSON implements custom unmarshaling for SummaryDBRaw.
+func (s *SummaryDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias SummaryDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(s)}
+	return json.Unmarshal(data, &tmp)
+}
+
 // SummaryDetailDBRaw represents raw summary detail data from v1 DynamoDB/NATS KV bucket
 type SummaryDetailDBRaw struct {
 	Label   string `json:"label"`
 	Summary string `json:"summary"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for SummaryDetailDBRaw.
+func (s *SummaryDetailDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias SummaryDetailDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(s)}
+	return json.Unmarshal(data, &tmp)
 }
 
 // handlePastMeetingSummaryUpdate processes updates to past meeting summaries

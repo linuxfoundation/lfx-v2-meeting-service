@@ -4,9 +4,6 @@
 package models
 
 import (
-	"encoding/json"
-	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -29,11 +26,11 @@ type UpdatedBy struct {
 // ZoomMeetingRecurrence is the schema for a meeting recurrence
 type ZoomMeetingRecurrence struct {
 	// Type is the type of recurrence.
-	Type int `json:"-" `
+	Type int `json:"type"`
 
 	// RepeatInterval is the interval of the recurrence.
 	// For example, if the recurrence type is daily, the repeat interval is the number of days between occurrences.
-	RepeatInterval int `json:"-"`
+	RepeatInterval int `json:"repeat_interval"`
 
 	// WeeklyDays is the days of the week that the recurrence occurs on.
 	// This is only relevant for type 2 (weekly) meetings.
@@ -41,188 +38,22 @@ type ZoomMeetingRecurrence struct {
 
 	// MonthlyDay is the day of the month that the recurrence occurs on.
 	// This is only relevant for type 3 (monthly) meetings.
-	MonthlyDay int `json:"-"`
+	MonthlyDay int `json:"monthly_day,omitempty"`
 
 	// MonthlyWeek is the week of the month that the recurrence occurs on.
 	// This is only relevant for type 3 (monthly) meetings and should not be paired with [MonthlyDay].
-	MonthlyWeek int `json:"-"`
+	MonthlyWeek int `json:"monthly_week,omitempty"`
 
 	// MonthlyWeekDay is the day of the week that the recurrence occurs on.
 	// This is only relevant for type 3 (monthly) meetings and it is paired with [MonthlyWeek].
-	MonthlyWeekDay int `json:"-"`
+	MonthlyWeekDay int `json:"monthly_week_day,omitempty"`
 
 	// EndTimes is the number of times to repeat the recurrence pattern.
 	// For example, if set to 30 for a daily recurring meeting, then 30 occurrences will be created.
-	EndTimes int `json:"-"`
+	EndTimes int `json:"end_times,omitempty"`
 
 	// EndDateTime is the date and time in RFC3339 format that the recurrence pattern will end.
 	EndDateTime string `json:"end_date_time,omitempty"`
-}
-
-// MarshalJSON custom marshaler to include integer fields that are excluded from unmarshaling
-func (r ZoomMeetingRecurrence) MarshalJSON() ([]byte, error) {
-	type Alias ZoomMeetingRecurrence
-	return json.Marshal(&struct {
-		Type           int `json:"type"`
-		RepeatInterval int `json:"repeat_interval"`
-		MonthlyDay     int `json:"monthly_day,omitempty"`
-		MonthlyWeek    int `json:"monthly_week,omitempty"`
-		MonthlyWeekDay int `json:"monthly_week_day,omitempty"`
-		EndTimes       int `json:"end_times,omitempty"`
-		*Alias
-	}{
-		Type:           r.Type,
-		RepeatInterval: r.RepeatInterval,
-		MonthlyDay:     r.MonthlyDay,
-		MonthlyWeek:    r.MonthlyWeek,
-		MonthlyWeekDay: r.MonthlyWeekDay,
-		EndTimes:       r.EndTimes,
-		Alias:          (*Alias)(&r),
-	})
-}
-
-// UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
-func (r *ZoomMeetingRecurrence) UnmarshalJSON(data []byte) error {
-	tmp := struct {
-		Type           interface{} `json:"type"`
-		RepeatInterval interface{} `json:"repeat_interval"`
-		WeeklyDays     string      `json:"weekly_days,omitempty"`
-		MonthlyDay     interface{} `json:"monthly_day"`
-		MonthlyWeek    interface{} `json:"monthly_week"`
-		MonthlyWeekDay interface{} `json:"monthly_week_day"`
-		EndTimes       interface{} `json:"end_times"`
-		EndDateTime    string      `json:"end_date_time,omitempty"`
-	}{}
-
-	if err := json.Unmarshal(data, &tmp); err != nil {
-		return err
-	}
-
-	// Handle Type
-	switch v := tmp.Type.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.Type = val
-		}
-	case float64:
-		r.Type = int(v)
-	case int:
-		r.Type = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for type: %T", v)
-		}
-	}
-
-	// Handle RepeatInterval
-	switch v := tmp.RepeatInterval.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.RepeatInterval = val
-		}
-	case float64:
-		r.RepeatInterval = int(v)
-	case int:
-		r.RepeatInterval = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for repeat_interval: %T", v)
-		}
-	}
-
-	// Handle MonthlyDay
-	switch v := tmp.MonthlyDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.MonthlyDay = val
-		}
-	case float64:
-		r.MonthlyDay = int(v)
-	case int:
-		r.MonthlyDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_day: %T", v)
-		}
-	}
-
-	// Handle MonthlyWeek
-	switch v := tmp.MonthlyWeek.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.MonthlyWeek = val
-		}
-	case float64:
-		r.MonthlyWeek = int(v)
-	case int:
-		r.MonthlyWeek = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week: %T", v)
-		}
-	}
-
-	// Handle MonthlyWeekDay
-	switch v := tmp.MonthlyWeekDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.MonthlyWeekDay = val
-		}
-	case float64:
-		r.MonthlyWeekDay = int(v)
-	case int:
-		r.MonthlyWeekDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week_day: %T", v)
-		}
-	}
-
-	// Handle EndTimes
-	switch v := tmp.EndTimes.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.EndTimes = val
-		}
-	case float64:
-		r.EndTimes = int(v)
-	case int:
-		r.EndTimes = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for end_times: %T", v)
-		}
-	}
-
-	// Assign other fields
-	r.WeeklyDays = tmp.WeeklyDays
-	r.EndDateTime = tmp.EndDateTime
-
-	return nil
 }
 
 // UpdatedOccurrence is the schema for an updated meeting occurrence
@@ -240,7 +71,7 @@ type UpdatedOccurrence struct {
 	Timezone string `json:"timezone"`
 
 	// Duration is the updated duration of occurrence in minutes
-	Duration int `json:"-"`
+	Duration int `json:"duration"`
 
 	// Title is the updated title of the occurrence
 	Title string `json:"title"`
@@ -257,66 +88,6 @@ type UpdatedOccurrence struct {
 	AllFollowing bool `json:"all_following"`
 }
 
-// MarshalJSON custom marshaler to include integer fields that are excluded from unmarshaling
-func (u UpdatedOccurrence) MarshalJSON() ([]byte, error) {
-	type Alias UpdatedOccurrence
-	return json.Marshal(&struct {
-		Duration int `json:"duration"`
-		*Alias
-	}{
-		Duration: u.Duration,
-		Alias:    (*Alias)(&u),
-	})
-}
-
-// UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for Duration.
-func (u *UpdatedOccurrence) UnmarshalJSON(data []byte) error {
-	tmp := struct {
-		OldOccurrenceID string                 `json:"old_occurrence_id"`
-		NewOccurrenceID string                 `json:"new_occurrence_id"`
-		Timezone        string                 `json:"timezone"`
-		Duration        interface{}            `json:"duration"`
-		Title           string                 `json:"title"`
-		Description     string                 `json:"description"`
-		Recurrence      *ZoomMeetingRecurrence `json:"recurrence"`
-		AllFollowing    bool                   `json:"all_following"`
-	}{}
-
-	if err := json.Unmarshal(data, &tmp); err != nil {
-		return err
-	}
-
-	// Handle Duration
-	switch v := tmp.Duration.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			u.Duration = val
-		}
-	case float64:
-		u.Duration = int(v)
-	case int:
-		u.Duration = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for duration: %T", v)
-		}
-	}
-
-	// Assign other fields
-	u.OldOccurrenceID = tmp.OldOccurrenceID
-	u.NewOccurrenceID = tmp.NewOccurrenceID
-	u.Timezone = tmp.Timezone
-	u.Title = tmp.Title
-	u.Description = tmp.Description
-	u.Recurrence = tmp.Recurrence
-	u.AllFollowing = tmp.AllFollowing
-
-	return nil
-}
 
 // ZoomConfig is the configuration of the meeting in Zoom.
 type ZoomConfig struct {
@@ -415,16 +186,16 @@ type MeetingEventData struct {
 	Timezone string `json:"timezone"`
 
 	// Duration is the duration of the meeting in minutes.
-	Duration int `json:"-"`
+	Duration int `json:"duration"`
 
 	// EarlyJoinTimeMinutes is the time in minutes before the meeting start time that the user can join the meeting.
 	// This is needed because these meetings are scheduled on shared Zoom users and thus the meeting scheduler
 	// needs to account for this early join time buffer.
-	EarlyJoinTimeMinutes int `json:"-"`
+	EarlyJoinTimeMinutes int `json:"early_join_time_minutes"`
 
 	// LastEndTime is the end time of the last occurrence of the meeting in unix timestamp format.
 	// If the meeting is a non-recurring meeting, this is the end time of the one-time meeting.
-	LastEndTime int64 `json:"-"`
+	LastEndTime int64 `json:"last_end_time"`
 
 	// HostKey is the host key of the Zoom user hosting the meeting.
 	// It is a six-digit PIN that is rotated weekly by our change-host-keys cron job.
@@ -528,22 +299,22 @@ type MeetingEventData struct {
 	LastBulkRegistrantJobStatus string `json:"last_bulk_registrant_job_status"`
 
 	// LastBulkRegistrantsJobFailedCount is the total number of failed records in the last bulk insert job that was run to insert registrants
-	LastBulkRegistrantsJobFailedCount int `json:"-"`
+	LastBulkRegistrantsJobFailedCount int `json:"last_bulk_registrants_job_failed_count"`
 
 	// LastBulkRegistrantsJobWarningCount is the total number of passed records with warnings in the last bulk insert job that was run to insert registrants
-	LastBulkRegistrantsJobWarningCount int `json:"-"`
+	LastBulkRegistrantsJobWarningCount int `json:"last_bulk_registrants_job_warning_count"`
 
 	// LastMailingListMembersSyncJobStatus is the status of the last bulk insert job that was run to insert registrants
 	LastMailingListMembersSyncJobStatus string `json:"last_mailing_list_members_sync_job_status"`
 
 	// LastMailingListMembersSyncJobFailedCount is the total number of failed records in the last bulk insert job that was run to insert registrants
-	LastMailingListMembersSyncJobFailedCount int `json:"-"`
+	LastMailingListMembersSyncJobFailedCount int `json:"last_mailing_list_members_sync_job_failed_count"`
 
 	// MailingListGroupIDs is a list of group IDs that the meeting is associated with
 	MailingListGroupIDs []string `json:"mailing_list_group_ids"`
 
 	// LastMailingListMembersSyncJobWarningCount is the total number of passed records with warnings in the last bulk insert job that was run to insert registrants
-	LastMailingListMembersSyncJobWarningCount int `json:"-"`
+	LastMailingListMembersSyncJobWarningCount int `json:"last_mailing_list_members_sync_job_warning_count"`
 
 	// UseUniqueICSUID is a flag that indicates if the meeting should use a unique event ID for the calendar event.
 	// Apply manually (generate uuid and store in this field) when a meeting has calendar issues, and we wish to use a separate unique uuid instead of the meeting ID.
@@ -790,9 +561,12 @@ type PastMeetingEventData struct {
 	ZoomAIEnabled            *bool       `json:"zoom_ai_enabled,omitempty"`
 	AISummaryAccess          string      `json:"ai_summary_access,omitempty"`
 	RequireAISummaryApproval *bool       `json:"require_ai_summary_approval,omitempty"`
+	EarlyJoinTime            int         `json:"early_join_time,omitempty"`
 	YoutubeLink              string      `json:"youtube_link,omitempty"`
 	Platform                 string      `json:"platform,omitempty"`
 	PlatformMeetingID        string      `json:"platform_meeting_id,omitempty"`
+	RecordingPassword        string      `json:"recording_password,omitempty"`
+	ZoomConfig               *ZoomConfig `json:"zoom_config,omitempty"`
 	CreatedAt                time.Time   `json:"created_at"`
 	ModifiedAt               time.Time   `json:"modified_at"`
 	CreatedBy                CreatedBy   `json:"created_by"`

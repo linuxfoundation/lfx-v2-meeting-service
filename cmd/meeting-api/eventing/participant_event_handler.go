@@ -93,6 +93,13 @@ type InviteeDBRaw struct {
 	UpdatedBy models.UpdatedBy `json:"updated_by"`
 }
 
+// UnmarshalJSON implements custom unmarshaling for InviteeDBRaw.
+func (i *InviteeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias InviteeDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(i)}
+	return json.Unmarshal(data, &tmp)
+}
+
 // handlePastMeetingInviteeUpdate processes updates to past meeting invitees
 func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	ctx context.Context,
@@ -268,12 +275,26 @@ type AttendeeDBRaw struct {
 	IsAutoMatched bool `json:"is_auto_matched,omitempty"`
 }
 
+// UnmarshalJSON implements custom unmarshaling for AttendeeDBRaw.
+func (a *AttendeeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias AttendeeDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
+	return json.Unmarshal(data, &tmp)
+}
+
 // AttendeeSessionDBRaw represents raw attendee session data from v1 DynamoDB/NATS KV bucket
 type AttendeeSessionDBRaw struct {
 	ParticipantUUID string `json:"participant_uuid"`
 	JoinTime        string `json:"join_time"`
 	LeaveTime       string `json:"leave_time"`
 	LeaveReason     string `json:"leave_reason"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for AttendeeSessionDBRaw.
+func (a *AttendeeSessionDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias AttendeeSessionDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
+	return json.Unmarshal(data, &tmp)
 }
 
 // handlePastMeetingAttendeeUpdate processes updates to past meeting attendees

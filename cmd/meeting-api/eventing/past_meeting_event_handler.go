@@ -55,7 +55,7 @@ type PastMeetingDBRaw struct {
 	Description string `json:"description"`
 
 	// Duration is the duration of the past meeting
-	Duration interface{} `json:"duration"`
+	Duration int `json:"duration"`
 
 	// MeetingID is the ID of the meeting associated with the past meeting
 	MeetingID string `json:"meeting_id"`
@@ -99,7 +99,7 @@ type PastMeetingDBRaw struct {
 	TranscriptEnabled bool `json:"transcript_enabled"`
 
 	// Type is the type of the past meeting
-	Type interface{} `json:"type"`
+	Type int `json:"type"`
 
 	// Visibility is the visibility of the past meeting
 	Visibility string `json:"visibility"`
@@ -128,7 +128,7 @@ type PastMeetingDBRaw struct {
 	RequireAISummaryApproval *bool `json:"require_ai_summary_approval,omitempty"`
 
 	// EarlyJoinTime is the number of minutes before the scheduled start time that participants can join the meeting
-	EarlyJoinTime interface{} `json:"early_join_time"`
+	EarlyJoinTime int `json:"early_join_time"`
 
 	// Artifacts is the list of artifacts for the past meeting
 	Artifacts []ZoomPastMeetingArtifact `json:"artifacts"`
@@ -162,9 +162,9 @@ type PastMeetingDBRaw struct {
 func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
 	type Alias PastMeetingDBRaw
 	tmp := struct {
-		Duration             interface{} `json:"duration"`
-		EarlyJoinTimeMinutes interface{} `json:"early_join_time_minutes"`
-		Type                 interface{} `json:"type"`
+		Duration      interface{} `json:"duration"`
+		EarlyJoinTime interface{} `json:"early_join_time"`
+		Type          interface{} `json:"type"`
 		*Alias
 	}{
 		Alias: (*Alias)(p),
@@ -180,38 +180,32 @@ func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
 		if v != "" {
 			val, err := strconv.Atoi(v)
 			if err != nil {
-				return err
+				return fmt.Errorf("invalid value for duration: %w", err)
 			}
 			p.Duration = val
 		}
 	case float64:
 		p.Duration = int(v)
-	case int:
-		p.Duration = v
+	case nil:
 	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for duration: %T", v)
-		}
+		return fmt.Errorf("invalid type for duration: %T", v)
 	}
 
-	// Handle EarlyJoinTimeMinutes
-	switch v := tmp.EarlyJoinTimeMinutes.(type) {
+	// Handle EarlyJoinTime
+	switch v := tmp.EarlyJoinTime.(type) {
 	case string:
 		if v != "" {
 			val, err := strconv.Atoi(v)
 			if err != nil {
-				return err
+				return fmt.Errorf("invalid value for early_join_time: %w", err)
 			}
 			p.EarlyJoinTime = val
 		}
 	case float64:
 		p.EarlyJoinTime = int(v)
-	case int:
-		p.EarlyJoinTime = v
+	case nil:
 	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for early_join_time: %T", v)
-		}
+		return fmt.Errorf("invalid type for early_join_time: %T", v)
 	}
 
 	// Handle Type
@@ -220,18 +214,15 @@ func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
 		if v != "" {
 			val, err := strconv.Atoi(v)
 			if err != nil {
-				return err
+				return fmt.Errorf("invalid value for type: %w", err)
 			}
 			p.Type = val
 		}
 	case float64:
 		p.Type = int(v)
-	case int:
-		p.Type = v
+	case nil:
 	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for type: %T", v)
-		}
+		return fmt.Errorf("invalid type for type: %T", v)
 	}
 
 	return nil
@@ -399,7 +390,7 @@ func convertMapToPastMeetingData(
 		Description:              rawPastMeeting.Description,
 		StartTime:                startTime,
 		EndTime:                  endTime,
-		Duration:                 utils.GetInt(rawPastMeeting.Duration),
+		Duration:                 rawPastMeeting.Duration,
 		Timezone:                 rawPastMeeting.Timezone,
 		MeetingType:              rawPastMeeting.MeetingType,
 		Committees:               committees,
@@ -413,9 +404,12 @@ func convertMapToPastMeetingData(
 		ZoomAIEnabled:            rawPastMeeting.ZoomAIEnabled,
 		AISummaryAccess:          rawPastMeeting.AISummaryAccess,
 		RequireAISummaryApproval: rawPastMeeting.RequireAISummaryApproval,
+		EarlyJoinTime:            rawPastMeeting.EarlyJoinTime,
 		YoutubeLink:              rawPastMeeting.YoutubeLink,
 		Platform:                 rawPastMeeting.Platform,
 		PlatformMeetingID:        rawPastMeeting.PlatformMeetingID,
+		RecordingPassword:        rawPastMeeting.RecordingPassword,
+		ZoomConfig:               rawPastMeeting.ZoomConfig,
 		CreatedAt:                createdAt,
 		ModifiedAt:               modifiedAt,
 		CreatedBy:                models.CreatedBy(rawPastMeeting.CreatedBy),

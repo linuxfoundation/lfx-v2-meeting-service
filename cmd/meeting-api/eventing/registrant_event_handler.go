@@ -56,6 +56,13 @@ type RegistrantDBRaw struct {
 	UpdatedBy                       models.UpdatedBy `json:"updated_by"`
 }
 
+// UnmarshalJSON implements custom unmarshaling for RegistrantDBRaw.
+func (r *RegistrantDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias RegistrantDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(r)}
+	return json.Unmarshal(data, &tmp)
+}
+
 // convertMapToRegistrantData converts v1 registrant data to v2 format
 func convertMapToRegistrantData(
 	ctx context.Context,
@@ -277,6 +284,13 @@ type InviteResponseDBRaw struct {
 	EmailText              string `json:"email_text"`
 	CreatedAt              string `json:"created_at"`
 	ModifiedAt             string `json:"modified_at"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for InviteResponseDBRaw.
+func (i *InviteResponseDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias InviteResponseDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(i)}
+	return json.Unmarshal(data, &tmp)
 }
 
 // convertMapToInviteResponseData converts v1 invite response data to v2 format

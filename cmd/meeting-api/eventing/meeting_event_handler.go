@@ -67,7 +67,7 @@ type MeetingDBRaw struct {
 	Timezone string `json:"timezone"`
 
 	// Duration is the duration of the meeting in minutes.
-	Duration int `json:"-"`
+	Duration int `json:"duration"`
 
 	// EarlyJoinTimeMinutes is the time in minutes before the meeting start time that the user can join the meeting.
 	// This is needed because these meetings are scheduled on shared Zoom users and thus the meeting scheduler
@@ -133,7 +133,7 @@ type MeetingDBRaw struct {
 	// Recurrence is the recurrence pattern of the meeting.
 	// This is managed by this service and not by Zoom. In Zoom, all meetings are scheduled as recurring with
 	// no fixed time (type 3).
-	Recurrence *models.ZoomMeetingRecurrence `json:"recurrence,omitempty"`
+	Recurrence *RecurrenceDBRaw `json:"recurrence,omitempty"`
 
 	// Occurrences is a list of [ZoomMeetingOccurrence] objects that represent the occurrences of the meeting.
 	Occurrences []models.ZoomMeetingOccurrence `json:"occurrences,omitempty"`
@@ -176,22 +176,22 @@ type MeetingDBRaw struct {
 	LastBulkRegistrantJobStatus string `json:"last_bulk_registrant_job_status"`
 
 	// LastBulkRegistrantsJobFailedCount is the total number of failed records in the last bulk insert job that was run to insert registrants
-	LastBulkRegistrantsJobFailedCount int `json:"-"`
+	LastBulkRegistrantsJobFailedCount int `json:"last_bulk_registrants_job_failed_count"`
 
 	// LastBulkRegistrantsJobWarningCount is the total number of passed records with warnings in the last bulk insert job that was run to insert registrants
-	LastBulkRegistrantsJobWarningCount int `json:"-"`
+	LastBulkRegistrantsJobWarningCount int `json:"last_bulk_registrants_job_warning_count"`
 
 	// LastMailingListMembersSyncJobStatus is the status of the last bulk insert job that was run to insert registrants
 	LastMailingListMembersSyncJobStatus string `json:"last_mailing_list_members_sync_job_status"`
 
 	// LastMailingListMembersSyncJobFailedCount is the total number of failed records in the last bulk insert job that was run to insert registrants
-	LastMailingListMembersSyncJobFailedCount int `json:"-"`
+	LastMailingListMembersSyncJobFailedCount int `json:"last_mailing_list_members_sync_job_failed_count"`
 
 	// MailingListGroupIDs is a list of group IDs that the meeting is associated with
 	MailingListGroupIDs []string `json:"mailing_list_group_ids"`
 
 	// LastMailingListMembersSyncJobWarningCount is the total number of passed records with warnings in the last bulk insert job that was run to insert registrants
-	LastMailingListMembersSyncJobWarningCount int `json:"-"`
+	LastMailingListMembersSyncJobWarningCount int `json:"last_mailing_list_members_sync_job_warning_count"`
 
 	// UseUniqueICSUID is a flag that indicates if the meeting should use a unique event ID for the calendar event.
 	// Apply manually (generate uuid and store in this field) when a meeting has calendar issues, and we wish to use a separate unique uuid instead of the meeting ID.
@@ -217,58 +217,20 @@ func (m *MeetingDBRaw) GetArtifactVisibility() string {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
-// This struct is large, so only the 7 fields that need flexible type handling are listed as interface{}.
 func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias MeetingDBRaw
 	tmp := struct {
-		MeetingID                                 string                         `json:"meeting_id"`
-		ProjID                                    string                         `json:"proj_id"`
-		Committee                                 string                         `json:"committee"`
-		CommitteeFilters                          []string                       `json:"committee_filters"`
-		Committees                                []models.Committee             `json:"committees,omitempty"`
-		User                                      string                         `json:"user_id"`
-		Topic                                     string                         `json:"topic"`
-		Agenda                                    string                         `json:"agenda"`
-		Visibility                                string                         `json:"visibility"`
-		MeetingType                               string                         `json:"meeting_type"`
-		StartTime                                 string                         `json:"start_time"`
-		Timezone                                  string                         `json:"timezone"`
-		Duration                                  interface{}                    `json:"duration"`
-		EarlyJoinTimeMinutes                      interface{}                    `json:"early_join_time_minutes"`
-		LastEndTime                               interface{}                    `json:"last_end_time"`
-		HostKey                                   string                         `json:"host_key"`
-		JoinURL                                   string                         `json:"join_url"`
-		Password                                  string                         `json:"password"`
-		Restricted                                bool                           `json:"restricted"`
-		RecordingEnabled                          bool                           `json:"recording_enabled"`
-		TranscriptEnabled                         bool                           `json:"transcript_enabled"`
-		RecordingAccess                           string                         `json:"recording_access"`
-		TranscriptAccess                          string                         `json:"transcript_access"`
-		CreatedAt                                 string                         `json:"created_at"`
-		UpdatedAt                                 string                         `json:"updated_at"`
-		CreatedBy                                 models.CreatedBy               `json:"created_by"`
-		UpdatedBy                                 models.UpdatedBy               `json:"updated_by"`
-		UpdatedByList                             []models.UpdatedBy             `json:"updated_by_list,omitempty"`
-		UseNewInviteEmailAddress                  bool                           `json:"use_new_invite_email_address"`
-		Recurrence                                *models.ZoomMeetingRecurrence  `json:"recurrence,omitempty"`
-		Occurrences                               []models.ZoomMeetingOccurrence `json:"occurrences,omitempty"`
-		CancelledOccurrences                      []string                       `json:"cancelled_occurrences,omitempty"`
-		UpdatedOccurrences                        []models.UpdatedOccurrence     `json:"updated_occurrences,omitempty"`
-		IcsUIDTimezone                            string                         `json:"ics_uid_timezone,omitempty"`
-		IcsAdditionalUids                         []string                       `json:"ics_additional_uids,omitempty"`
-		ZoomConfig                                models.ZoomConfig              `json:"zoom_config"`
-		AISummaryAccess                           string                         `json:"ai_summary_access,omitempty"`
-		YoutubeUploadEnabled                      bool                           `json:"youtube_upload_enabled,omitempty"`
-		ConcurrentZoomUserEnabled                 bool                           `json:"concurrent_zoom_user_enabled,omitempty"`
-		LastBulkRegistrantJobStatus               string                         `json:"last_bulk_registrant_job_status"`
-		LastBulkRegistrantsJobFailedCount         interface{}                    `json:"last_bulk_registrants_job_failed_count"`
-		LastBulkRegistrantsJobWarningCount        interface{}                    `json:"last_bulk_registrants_job_warning_count"`
-		LastMailingListMembersSyncJobStatus       string                         `json:"last_mailing_list_members_sync_job_status"`
-		LastMailingListMembersSyncJobFailedCount  interface{}                    `json:"last_mailing_list_members_sync_job_failed_count"`
-		MailingListGroupIDs                       []string                       `json:"mailing_list_group_ids"`
-		LastMailingListMembersSyncJobWarningCount interface{}                    `json:"last_mailing_list_members_sync_job_warning_count"`
-		UseUniqueICSUID                           string                         `json:"use_unique_ics_uid"`
-		ShowMeetingAttendees                      bool                           `json:"show_meeting_attendees"`
-	}{}
+		Duration                                  interface{} `json:"duration"`
+		EarlyJoinTimeMinutes                      interface{} `json:"early_join_time_minutes"`
+		LastEndTime                               interface{} `json:"last_end_time"`
+		LastBulkRegistrantsJobFailedCount         interface{} `json:"last_bulk_registrants_job_failed_count"`
+		LastBulkRegistrantsJobWarningCount        interface{} `json:"last_bulk_registrants_job_warning_count"`
+		LastMailingListMembersSyncJobFailedCount  interface{} `json:"last_mailing_list_members_sync_job_failed_count"`
+		LastMailingListMembersSyncJobWarningCount interface{} `json:"last_mailing_list_members_sync_job_warning_count"`
+		*Alias
+	}{
+		Alias: (*Alias)(m),
+	}
 
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
@@ -416,49 +378,6 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		}
 	}
 
-	// Assign all other fields
-	m.MeetingID = tmp.MeetingID
-	m.ProjID = tmp.ProjID
-	m.Committee = tmp.Committee
-	m.CommitteeFilters = tmp.CommitteeFilters
-	m.Committees = tmp.Committees
-	m.User = tmp.User
-	m.Topic = tmp.Topic
-	m.Agenda = tmp.Agenda
-	m.Visibility = tmp.Visibility
-	m.MeetingType = tmp.MeetingType
-	m.StartTime = tmp.StartTime
-	m.Timezone = tmp.Timezone
-	m.HostKey = tmp.HostKey
-	m.JoinURL = tmp.JoinURL
-	m.Password = tmp.Password
-	m.Restricted = tmp.Restricted
-	m.RecordingEnabled = tmp.RecordingEnabled
-	m.TranscriptEnabled = tmp.TranscriptEnabled
-	m.RecordingAccess = tmp.RecordingAccess
-	m.TranscriptAccess = tmp.TranscriptAccess
-	m.CreatedAt = tmp.CreatedAt
-	m.UpdatedAt = tmp.UpdatedAt
-	m.CreatedBy = tmp.CreatedBy
-	m.UpdatedBy = tmp.UpdatedBy
-	m.UpdatedByList = tmp.UpdatedByList
-	m.UseNewInviteEmailAddress = tmp.UseNewInviteEmailAddress
-	m.Recurrence = tmp.Recurrence
-	m.Occurrences = tmp.Occurrences
-	m.CancelledOccurrences = tmp.CancelledOccurrences
-	m.UpdatedOccurrences = tmp.UpdatedOccurrences
-	m.IcsUIDTimezone = tmp.IcsUIDTimezone
-	m.IcsAdditionalUids = tmp.IcsAdditionalUids
-	m.ZoomConfig = tmp.ZoomConfig
-	m.AISummaryAccess = tmp.AISummaryAccess
-	m.YoutubeUploadEnabled = tmp.YoutubeUploadEnabled
-	m.ConcurrentZoomUserEnabled = tmp.ConcurrentZoomUserEnabled
-	m.LastBulkRegistrantJobStatus = tmp.LastBulkRegistrantJobStatus
-	m.LastMailingListMembersSyncJobStatus = tmp.LastMailingListMembersSyncJobStatus
-	m.MailingListGroupIDs = tmp.MailingListGroupIDs
-	m.UseUniqueICSUID = tmp.UseUniqueICSUID
-	m.ShowMeetingAttendees = tmp.ShowMeetingAttendees
-
 	return nil
 }
 
@@ -476,6 +395,7 @@ type RecurrenceDBRaw struct {
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
 func (r *RecurrenceDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias RecurrenceDBRaw
 	tmp := struct {
 		Type           interface{} `json:"type"`
 		RepeatInterval interface{} `json:"repeat_interval"`
@@ -485,7 +405,10 @@ func (r *RecurrenceDBRaw) UnmarshalJSON(data []byte) error {
 		MonthlyWeekDay interface{} `json:"monthly_week_day"`
 		EndTimes       interface{} `json:"end_times"`
 		EndDateTime    interface{} `json:"end_date_time"`
-	}{}
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
 
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
@@ -654,24 +577,51 @@ func convertMapToMeetingData(
 	}
 
 	meeting := &models.MeetingEventData{
-		ID:                   rawMeeting.MeetingID,
-		Title:                rawMeeting.Topic,
-		Description:          rawMeeting.Agenda,
-		StartTime:            rawMeeting.StartTime,
-		Duration:             rawMeeting.Duration,
-		Timezone:             rawMeeting.Timezone,
-		Visibility:           rawMeeting.Visibility,
-		Restricted:           rawMeeting.Restricted,
-		MeetingType:          rawMeeting.MeetingType,
-		EarlyJoinTimeMinutes: rawMeeting.EarlyJoinTime,
-		RecordingEnabled:     rawMeeting.RecordingEnabled,
-		TranscriptEnabled:    rawMeeting.TranscriptEnabled,
-		YoutubeUploadEnabled: rawMeeting.YoutubeUploadEnabled,
-		HostKey:              rawMeeting.HostKey,
-		CreatedAt:            rawMeeting.CreatedAt,
-		UpdatedAt:            rawMeeting.UpdatedAt,
-		CreatedBy:            rawMeeting.CreatedBy,
-		UpdatedBy:            rawMeeting.UpdatedBy,
+		ID:                                       rawMeeting.MeetingID,
+		ProjectSFID:                              rawMeeting.ProjID,
+		Committee:                                rawMeeting.Committee,
+		CommitteeFilters:                         rawMeeting.CommitteeFilters,
+		User:                                     rawMeeting.User,
+		Title:                                    rawMeeting.Topic,
+		Description:                              rawMeeting.Agenda,
+		StartTime:                                rawMeeting.StartTime,
+		Duration:                                 rawMeeting.Duration,
+		Timezone:                                 rawMeeting.Timezone,
+		Visibility:                               rawMeeting.Visibility,
+		Restricted:                               rawMeeting.Restricted,
+		MeetingType:                              rawMeeting.MeetingType,
+		EarlyJoinTimeMinutes:                     rawMeeting.EarlyJoinTime,
+		LastEndTime:                              rawMeeting.LastEndTime,
+		HostKey:                                  rawMeeting.HostKey,
+		JoinURL:                                  rawMeeting.JoinURL,
+		Password:                                 rawMeeting.Password,
+		RecordingEnabled:                         rawMeeting.RecordingEnabled,
+		TranscriptEnabled:                        rawMeeting.TranscriptEnabled,
+		RecordingAccess:                          rawMeeting.RecordingAccess,
+		TranscriptAccess:                         rawMeeting.TranscriptAccess,
+		YoutubeUploadEnabled:                     rawMeeting.YoutubeUploadEnabled,
+		ConcurrentZoomUserEnabled:                rawMeeting.ConcurrentZoomUserEnabled,
+		UseNewInviteEmailAddress:                 rawMeeting.UseNewInviteEmailAddress,
+		CancelledOccurrences:                     rawMeeting.CancelledOccurrences,
+		UpdatedOccurrences:                       rawMeeting.UpdatedOccurrences,
+		IcsUIDTimezone:                           rawMeeting.IcsUIDTimezone,
+		IcsAdditionalUids:                        rawMeeting.IcsAdditionalUids,
+		ZoomConfig:                               rawMeeting.ZoomConfig,
+		AISummaryAccess:                          rawMeeting.AISummaryAccess,
+		LastBulkRegistrantJobStatus:              rawMeeting.LastBulkRegistrantJobStatus,
+		LastBulkRegistrantsJobFailedCount:        rawMeeting.LastBulkRegistrantsJobFailedCount,
+		LastBulkRegistrantsJobWarningCount:       rawMeeting.LastBulkRegistrantsJobWarningCount,
+		LastMailingListMembersSyncJobStatus:      rawMeeting.LastMailingListMembersSyncJobStatus,
+		LastMailingListMembersSyncJobFailedCount: rawMeeting.LastMailingListMembersSyncJobFailedCount,
+		LastMailingListMembersSyncJobWarningCount: rawMeeting.LastMailingListMembersSyncJobWarningCount,
+		MailingListGroupIDs:                      rawMeeting.MailingListGroupIDs,
+		UseUniqueICSUID:                          rawMeeting.UseUniqueICSUID,
+		ShowMeetingAttendees:                     rawMeeting.ShowMeetingAttendees,
+		UpdatedByList:                            rawMeeting.UpdatedByList,
+		CreatedAt:                                rawMeeting.CreatedAt,
+		UpdatedAt:                                rawMeeting.UpdatedAt,
+		CreatedBy:                                rawMeeting.CreatedBy,
+		UpdatedBy:                                rawMeeting.UpdatedBy,
 	}
 
 	// Skip if created by this service (prevent sync loops)
@@ -702,6 +652,21 @@ func convertMapToMeetingData(
 			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawMeeting.Committee)
 		} else {
 			meeting.CommitteeUID = committeeUID
+		}
+	}
+
+	// Map recurrence from raw to model
+	if rawMeeting.Recurrence != nil {
+		r := rawMeeting.Recurrence
+		meeting.Recurrence = &models.ZoomMeetingRecurrence{
+			Type:           r.Type,
+			RepeatInterval: r.RepeatInterval,
+			WeeklyDays:     r.WeeklyDays,
+			MonthlyDay:     r.MonthlyDay,
+			MonthlyWeek:    r.MonthlyWeek,
+			MonthlyWeekDay: r.MonthlyWeekDay,
+			EndTimes:       r.EndTimes,
+			EndDateTime:    r.EndDateTime,
 		}
 	}
 

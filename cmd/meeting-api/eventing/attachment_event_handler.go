@@ -73,9 +73,18 @@ func (a *AttachmentDBRaw) UnmarshalJSON(data []byte) error {
 
 // attachmentActorDBRaw represents the created_by/updated_by actor in raw attachment data.
 type attachmentActorDBRaw struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	ID             string `json:"id"`
+	Email          string `json:"email"`
+	Name           string `json:"name"`
+	Username       string `json:"username"`
+	ProfilePicture string `json:"profile_picture"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for attachmentActorDBRaw.
+func (a *attachmentActorDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attachmentActorDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
+	return json.Unmarshal(data, &tmp)
 }
 
 // handleMeetingAttachmentUpdate processes updates to meeting attachments
@@ -182,12 +191,14 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 		CreatedAt:        createdAt,
 		ModifiedAt:       modifiedAt,
 		CreatedBy: models.CreatedBy{
-			UserID: tmp.CreatedBy.ID,
-			Email:  tmp.CreatedBy.Email,
+			UserID:   tmp.CreatedBy.ID,
+			Email:    tmp.CreatedBy.Email,
+			Username: tmp.CreatedBy.Username,
 		},
 		UpdatedBy: models.UpdatedBy{
-			UserID: tmp.UpdatedBy.ID,
-			Email:  tmp.UpdatedBy.Email,
+			UserID:   tmp.UpdatedBy.ID,
+			Email:    tmp.UpdatedBy.Email,
+			Username: tmp.UpdatedBy.Username,
 		},
 	}, nil
 }
@@ -355,12 +366,14 @@ func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*mode
 		CreatedAt:              createdAt,
 		ModifiedAt:             modifiedAt,
 		CreatedBy: models.CreatedBy{
-			UserID: tmp.CreatedBy.ID,
-			Email:  tmp.CreatedBy.Email,
+			UserID:   tmp.CreatedBy.ID,
+			Email:    tmp.CreatedBy.Email,
+			Username: tmp.CreatedBy.Username,
 		},
 		UpdatedBy: models.UpdatedBy{
-			UserID: tmp.UpdatedBy.ID,
-			Email:  tmp.UpdatedBy.Email,
+			UserID:   tmp.UpdatedBy.ID,
+			Email:    tmp.UpdatedBy.Email,
+			Username: tmp.UpdatedBy.Username,
 		},
 	}, nil
 }
