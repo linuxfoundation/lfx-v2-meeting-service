@@ -15,7 +15,9 @@ import (
 	"syscall"
 	"time"
 
+	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -123,6 +125,52 @@ func run() int {
 	authService := service.NewAuthService(jwtAuth)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
 
+	// Initialize event processor if enabled
+	var eventProcessor *apieventing.EventProcessor
+	var eventProcessorCancel context.CancelFunc
+
+	if env.EventConfig.Enabled {
+		slog.InfoContext(ctx, "initializing event processor")
+
+		// Get NATS URL from environment (reuse same URL as ID mapper)
+		natsURL := os.Getenv("NATS_URL")
+		if natsURL == "" {
+			slog.WarnContext(ctx, "EVENT_PROCESSING_ENABLED but NATS_URL not set, event processing will not start")
+		} else {
+			eventConfig := eventing.Config{
+				NATSURL:              natsURL,
+				ConsumerName:         env.EventConfig.ConsumerName,
+				StreamName:           env.EventConfig.StreamName,
+				FilterSubjects:       env.EventConfig.FilterSubjects,
+				MaxDeliver:           env.EventConfig.MaxDeliver,
+				AckWait:              env.EventConfig.AckWait,
+				MaxAckPending:        env.EventConfig.MaxAckPending,
+				V1MappingsBucketName: env.EventConfig.V1MappingsBucketName,
+			}
+
+			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default())
+			if err != nil {
+				slog.With(logging.ErrKey, err).Error("failed to create event processor")
+				return 1
+			}
+			eventProcessor = ep
+
+			// Start event processor in background
+			eventProcessorCtx, cancelFunc := context.WithCancel(ctx)
+			eventProcessorCancel = cancelFunc
+
+			go func() {
+				if err := eventProcessor.Start(eventProcessorCtx); err != nil {
+					slog.With(logging.ErrKey, err).Error("event processor stopped with error")
+				}
+			}()
+
+			slog.InfoContext(ctx, "event processor started")
+		}
+	} else {
+		slog.InfoContext(ctx, "event processing is disabled")
+	}
+
 	svc := NewMeetingsAPI(
 		authService,
 		itxMeetingService,
@@ -146,13 +194,26 @@ func run() int {
 	// This next line blocks until SIGINT or SIGTERM is received.
 	<-done
 
-	gracefulShutdown(httpServer, &gracefulCloseWG, cancel)
+	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel)
 
 	return 0
 }
 
 // gracefulShutdown handles graceful shutdown of the application
-func gracefulShutdown(httpServer *http.Server, gracefulCloseWG *sync.WaitGroup, cancel context.CancelFunc) {
+func gracefulShutdown(httpServer *http.Server, gracefulCloseWG *sync.WaitGroup, cancel context.CancelFunc, eventProcessor *apieventing.EventProcessor, eventProcessorCancel context.CancelFunc) {
+	// Shutdown event processor first if it exists
+	if eventProcessor != nil {
+		slog.Info("shutting down event processor")
+		if eventProcessorCancel != nil {
+			eventProcessorCancel()
+		}
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer shutdownCancel()
+		if err := eventProcessor.Stop(shutdownCtx); err != nil {
+			slog.With(logging.ErrKey, err).Error("error during event processor shutdown")
+		}
+	}
+
 	// Cancel the background context.
 	cancel()
 

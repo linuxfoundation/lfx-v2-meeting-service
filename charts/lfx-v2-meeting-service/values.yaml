@@ -133,7 +133,34 @@ app:
     # If ID_MAPPING_DISABLED=true, this is not used
     NATS_URL:
       value: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
-
+    # EVENT_PROCESSING_ENABLED enables/disables event processing for v1→v2 data synchronization
+    # (default: true)
+    EVENT_PROCESSING_ENABLED:
+      value: "true"
+    # EVENT_CONSUMER_NAME is the JetStream consumer name for event processing
+    # (default: meeting-service-kv-consumer)
+    EVENT_CONSUMER_NAME:
+      value: meeting-service-kv-consumer
+    # EVENT_STREAM_NAME is the JetStream stream name to watch
+    # (default: KV_v1-objects)
+    EVENT_STREAM_NAME:
+      value: KV_v1-objects
+    # EVENT_FILTER_SUBJECT is the NATS subject filter for event processing
+    # (default: $KV.v1-objects.>)
+    EVENT_FILTER_SUBJECT:
+      value: "$KV.v1-objects.>"
+    # EVENT_MAX_DELIVER is the maximum delivery attempts for event processing
+    # (default: 3)
+    EVENT_MAX_DELIVER:
+      value: "3"
+    # EVENT_ACK_WAIT is the acknowledgment timeout for event processing
+    # (default: 30s)
+    EVENT_ACK_WAIT:
+      value: "30s"
+    # EVENT_MAX_ACK_PENDING is the maximum pending acknowledgments for event processing
+    # (default: 1000)
+    EVENT_MAX_ACK_PENDING:
+      value: "1000"
     # OTEL_SERVICE_NAME is the service name for OpenTelemetry resource identification
     # (default: "lfx-v2-meeting-service")
     # OTEL_SERVICE_NAME:

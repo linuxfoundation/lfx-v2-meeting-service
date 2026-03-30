@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
@@ -27,6 +29,7 @@ type environment struct {
 	LFXAppOrigin       string
 	ITXConfig          itxConfig
 	IDMappingDisabled  bool
+	EventConfig        eventConfig
 }
 
 // itxConfig holds ITX proxy configuration
@@ -36,6 +39,18 @@ type itxConfig struct {
 	PrivateKey  string
 	Auth0Domain string
 	Audience    string
+}
+
+// eventConfig holds event processing configuration
+type eventConfig struct {
+	Enabled              bool
+	ConsumerName         string
+	StreamName           string
+	FilterSubjects       []string
+	MaxDeliver           int
+	AckWait              time.Duration
+	MaxAckPending        int
+	V1MappingsBucketName string
 }
 
 // parseFlags parses command line flags for the meeting service
@@ -111,6 +126,7 @@ func parseEnv() environment {
 		LFXAppOrigin:       lfxAppOrigin,
 		ITXConfig:          parseITXConfig(),
 		IDMappingDisabled:  idMappingDisabled,
+		EventConfig:        parseEventConfig(),
 	}
 }
 
@@ -149,5 +165,73 @@ func parseITXConfig() itxConfig {
 		PrivateKey:  privateKey,
 		Auth0Domain: auth0Domain,
 		Audience:    audience,
+	}
+}
+
+// parseEventConfig parses event processing configuration from environment variables
+func parseEventConfig() eventConfig {
+	enabled := os.Getenv("EVENT_PROCESSING_ENABLED") != "false" // Default: true
+
+	consumerName := os.Getenv("EVENT_CONSUMER_NAME")
+	if consumerName == "" {
+		consumerName = "meeting-service-kv-consumer"
+	}
+
+	streamName := os.Getenv("EVENT_STREAM_NAME")
+	if streamName == "" {
+		streamName = "KV_v1-objects"
+	}
+
+	// Filter to only the KV subjects this service handles
+	filterSubjects := []string{
+		"$KV.v1-objects.itx-zoom-meetings-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-mappings-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-registrants-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-invite-responses-v2.>",
+		"$KV.v1-objects.itx-zoom-meetings-attachments-v2.>",
+		"$KV.v1-objects.itx-zoom-past-meetings.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-mappings.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-invitees.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-attendees.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-recordings.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-summaries.>",
+		"$KV.v1-objects.itx-zoom-past-meetings-attachments.>",
+	}
+
+	maxDeliver := 3
+	if maxDeliverStr := os.Getenv("EVENT_MAX_DELIVER"); maxDeliverStr != "" {
+		if val, err := strconv.Atoi(maxDeliverStr); err == nil {
+			maxDeliver = val
+		}
+	}
+
+	ackWait := 30 * time.Second
+	if ackWaitStr := os.Getenv("EVENT_ACK_WAIT"); ackWaitStr != "" {
+		if val, err := time.ParseDuration(ackWaitStr); err == nil {
+			ackWait = val
+		}
+	}
+
+	maxAckPending := 1000
+	if maxAckPendingStr := os.Getenv("EVENT_MAX_ACK_PENDING"); maxAckPendingStr != "" {
+		if val, err := strconv.Atoi(maxAckPendingStr); err == nil {
+			maxAckPending = val
+		}
+	}
+
+	v1MappingsBucketName := os.Getenv("EVENT_V1_MAPPINGS_BUCKET")
+	if v1MappingsBucketName == "" {
+		v1MappingsBucketName = "v1-mappings"
+	}
+
+	return eventConfig{
+		Enabled:              enabled,
+		ConsumerName:         consumerName,
+		StreamName:           streamName,
+		FilterSubjects:       filterSubjects,
+		MaxDeliver:           maxDeliver,
+		AckWait:              ackWait,
+		MaxAckPending:        maxAckPending,
+		V1MappingsBucketName: v1MappingsBucketName,
 	}
 }

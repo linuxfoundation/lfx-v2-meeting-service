@@ -110,3 +110,6 @@ jetstream/
 # Backup files
 *.backup
 *.bak
+
+# Claude AI local files
+.claude/
