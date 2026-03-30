@@ -204,13 +204,15 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 		if registrant.Host {
 			relations = append(relations, "host")
 		}
+		// The fga-sync service expects the username in the Auth0 "sub" format.
+		auth0Username := mapUsernameToAuthSub(registrant.Username)
 
 		memberMsg := GenericFGAMessage{
 			ObjectType: "v1_meeting",
 			Operation:  "member_put",
 			Data: map[string]interface{}{
 				"uid":       registrant.MeetingID,
-				"username":  registrant.Username,
+				"username":  auth0Username,
 				"relations": relations,
 			},
 		}
@@ -340,12 +342,15 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 			relations = append(relations, "host")
 		}
 
+		// The fga-sync service expects the username in the Auth0 "sub" format.
+		auth0Username := mapUsernameToAuthSub(participant.Username)
+
 		memberMsg := GenericFGAMessage{
 			ObjectType: "v1_past_meeting",
 			Operation:  "member_put",
 			Data: map[string]interface{}{
 				"uid":       participant.MeetingID,
-				"username":  participant.Username,
+				"username":  auth0Username,
 				"relations": relations,
 			},
 		}

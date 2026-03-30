@@ -5,14 +5,24 @@ package eventing
 
 import (
 	"context"
+	"crypto/sha512"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"regexp"
 
+	"github.com/akamensky/base58"
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+)
+
+var (
+	// safeNameRE detects usernames that are safe to use directly as Auth0 user IDs.
+	safeNameRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,58}[A-Za-z0-9]$`)
+	// hexUserRE detects hex strings that could collide with Auth0 native DB IDs.
+	hexUserRE = regexp.MustCompile(`^[0-9a-f]{24,60}$`)
 )
 
 // NATSUserLookup implements the V1UserLookup interface using NATS KV bucket
@@ -66,6 +76,35 @@ func getString(data map[string]interface{}, key string) string {
 		}
 	}
 	return ""
+}
+
+// MapUsernameToAuthSub converts a v1 username to the Auth0 "sub" format expected by v2 services.
+//
+// The mapping logic:
+//   - Safe usernames (matching safeNameRE and not hexUserRE): use directly as userID
+//   - Unsafe usernames: hash with SHA512 and encode to base58 (~80 chars) for legacy usernames
+//     longer than 60 characters, with non-standard chars, or that might collide with future
+//     24+ character Auth0 native DB hexadecimal hash
+//
+// Returns: "auth0|{userID}" format string
+func (l *NATSUserLookup) MapUsernameToAuthSub(username string) string {
+	return mapUsernameToAuthSub(username)
+}
+
+func mapUsernameToAuthSub(username string) string {
+	if username == "" {
+		return ""
+	}
+
+	var userID string
+	if safeNameRE.MatchString(username) && !hexUserRE.MatchString(username) {
+		userID = username
+	} else {
+		hash := sha512.Sum512([]byte(username))
+		userID = base58.Encode(hash[:])
+	}
+
+	return "auth0|" + userID
 }
 
 // Ensure NATSUserLookup implements V1UserLookup

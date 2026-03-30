@@ -13,18 +13,6 @@ func shouldSkipSync(lastModifiedByID string) bool {
 	return lastModifiedByID == "meeting-service" || lastModifiedByID == "lfx-v2-meeting-service"
 }
 
-func mapResponseType(responseType string) (string, error) {
-	switch strings.ToUpper(responseType) {
-	case "ACCEPTED":
-		return "accepted", nil
-	case "TENTATIVE":
-		return "maybe", nil
-	case "DECLINED":
-		return "declined", nil
-	}
-	return "", fmt.Errorf("invalid response type: %s", responseType)
-}
-
 func parseTime(timeStr string) (time.Time, error) {
 	if timeStr == "" {
 		return time.Time{}, fmt.Errorf("empty time string")

@@ -9,6 +9,8 @@ import "context"
 type V1UserLookup interface {
 	// LookupUser retrieves v1 user data by platform ID
 	LookupUser(ctx context.Context, platformID string) (*V1User, error)
+	// MapUsernameToAuthSub converts a v1 username to the Auth0 "sub" format expected by v2 services.
+	MapUsernameToAuthSub(username string) string
 }
 
 // V1User represents user data from the v1 system
