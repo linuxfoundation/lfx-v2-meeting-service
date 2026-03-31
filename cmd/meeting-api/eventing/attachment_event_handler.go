@@ -34,6 +34,8 @@ type AttachmentDBRaw struct {
 	FileUploaded     *bool                `json:"file_uploaded"`
 	FileUploadStatus string               `json:"file_upload_status"`
 	FileContentType  string               `json:"file_content_type"`
+	FileUploadedBy   *attachmentActorDBRaw `json:"file_uploaded_by"`
+	FileUploadedAt   string               `json:"file_uploaded_at"`
 	CreatedAt        string               `json:"created_at"`
 	UpdatedAt        string               `json:"updated_at"`
 	CreatedBy        attachmentActorDBRaw `json:"created_by"`
@@ -172,6 +174,18 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
 	modifiedAt, _ := parseTime(tmp.UpdatedAt)
+	fileUploadedAt, _ := parseTime(tmp.FileUploadedAt)
+
+	var fileUploadedBy *models.CreatedBy
+	if tmp.FileUploadedBy != nil {
+		fileUploadedBy = &models.CreatedBy{
+			UserID:         tmp.FileUploadedBy.ID,
+			Email:          tmp.FileUploadedBy.Email,
+			Username:       tmp.FileUploadedBy.Username,
+			Name:           tmp.FileUploadedBy.Name,
+			ProfilePicture: tmp.FileUploadedBy.ProfilePicture,
+		}
+	}
 
 	return &models.MeetingAttachmentEventData{
 		UID:              tmp.ID,
@@ -188,17 +202,23 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 		FileUploaded:     tmp.FileUploaded,
 		FileUploadStatus: tmp.FileUploadStatus,
 		FileContentType:  tmp.FileContentType,
+		FileUploadedBy:   fileUploadedBy,
+		FileUploadedAt:   fileUploadedAt,
 		CreatedAt:        createdAt,
 		ModifiedAt:       modifiedAt,
 		CreatedBy: models.CreatedBy{
-			UserID:   tmp.CreatedBy.ID,
-			Email:    tmp.CreatedBy.Email,
-			Username: tmp.CreatedBy.Username,
+			UserID:         tmp.CreatedBy.ID,
+			Email:          tmp.CreatedBy.Email,
+			Username:       tmp.CreatedBy.Username,
+			Name:           tmp.CreatedBy.Name,
+			ProfilePicture: tmp.CreatedBy.ProfilePicture,
 		},
 		UpdatedBy: models.UpdatedBy{
-			UserID:   tmp.UpdatedBy.ID,
-			Email:    tmp.UpdatedBy.Email,
-			Username: tmp.UpdatedBy.Username,
+			UserID:         tmp.UpdatedBy.ID,
+			Email:          tmp.UpdatedBy.Email,
+			Username:       tmp.UpdatedBy.Username,
+			Name:           tmp.UpdatedBy.Name,
+			ProfilePicture: tmp.UpdatedBy.ProfilePicture,
 		},
 	}, nil
 }
@@ -221,13 +241,15 @@ type PastMeetingAttachmentDBRaw struct {
 	FileName               string               `json:"file_name"`
 	FileSize               int                  `json:"file_size"`
 	FileURL                string               `json:"file_url"`
-	FileUploaded           *bool                `json:"file_uploaded"`
-	FileUploadStatus       string               `json:"file_upload_status"`
-	FileContentType        string               `json:"file_content_type"`
-	CreatedAt              string               `json:"created_at"`
-	UpdatedAt              string               `json:"updated_at"`
-	CreatedBy              attachmentActorDBRaw `json:"created_by"`
-	UpdatedBy              attachmentActorDBRaw `json:"updated_by"`
+	FileUploaded           *bool                 `json:"file_uploaded"`
+	FileUploadStatus       string                `json:"file_upload_status"`
+	FileContentType        string                `json:"file_content_type"`
+	FileUploadedBy         *attachmentActorDBRaw `json:"file_uploaded_by"`
+	FileUploadedAt         string                `json:"file_uploaded_at"`
+	CreatedAt              string                `json:"created_at"`
+	UpdatedAt              string                `json:"updated_at"`
+	CreatedBy              attachmentActorDBRaw  `json:"created_by"`
+	UpdatedBy              attachmentActorDBRaw  `json:"updated_by"`
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
@@ -346,6 +368,18 @@ func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*mode
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
 	modifiedAt, _ := parseTime(tmp.UpdatedAt)
+	fileUploadedAt, _ := parseTime(tmp.FileUploadedAt)
+
+	var fileUploadedBy *models.CreatedBy
+	if tmp.FileUploadedBy != nil {
+		fileUploadedBy = &models.CreatedBy{
+			UserID:         tmp.FileUploadedBy.ID,
+			Email:          tmp.FileUploadedBy.Email,
+			Username:       tmp.FileUploadedBy.Username,
+			Name:           tmp.FileUploadedBy.Name,
+			ProfilePicture: tmp.FileUploadedBy.ProfilePicture,
+		}
+	}
 
 	return &models.PastMeetingAttachmentEventData{
 		UID:                    tmp.ID,
@@ -363,17 +397,23 @@ func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*mode
 		FileUploaded:           tmp.FileUploaded,
 		FileUploadStatus:       tmp.FileUploadStatus,
 		FileContentType:        tmp.FileContentType,
+		FileUploadedBy:         fileUploadedBy,
+		FileUploadedAt:         fileUploadedAt,
 		CreatedAt:              createdAt,
 		ModifiedAt:             modifiedAt,
 		CreatedBy: models.CreatedBy{
-			UserID:   tmp.CreatedBy.ID,
-			Email:    tmp.CreatedBy.Email,
-			Username: tmp.CreatedBy.Username,
+			UserID:         tmp.CreatedBy.ID,
+			Email:          tmp.CreatedBy.Email,
+			Username:       tmp.CreatedBy.Username,
+			Name:           tmp.CreatedBy.Name,
+			ProfilePicture: tmp.CreatedBy.ProfilePicture,
 		},
 		UpdatedBy: models.UpdatedBy{
-			UserID:   tmp.UpdatedBy.ID,
-			Email:    tmp.UpdatedBy.Email,
-			Username: tmp.UpdatedBy.Username,
+			UserID:         tmp.UpdatedBy.ID,
+			Email:          tmp.UpdatedBy.Email,
+			Username:       tmp.UpdatedBy.Username,
+			Name:           tmp.UpdatedBy.Name,
+			ProfilePicture: tmp.UpdatedBy.ProfilePicture,
 		},
 	}, nil
 }

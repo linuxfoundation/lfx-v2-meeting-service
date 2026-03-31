@@ -119,9 +119,8 @@ type SummaryDBRaw struct {
 	// CreatedBy is the user who created the summary.
 	CreatedBy models.CreatedBy `json:"created_by"`
 
-	// UpdatedAt is the last modification time of the summary in RFC3339 format.
-	// This is a v2 only attribute.
-	UpdatedAt string `json:"updated_at"`
+	// ModifiedAt is the last modification time of the summary in RFC3339 format.
+	ModifiedAt string `json:"modified_at"`
 
 	// ModifiedBy is the user who last modified the summary.
 	ModifiedBy models.UpdatedBy `json:"modified_by"`
@@ -249,7 +248,7 @@ func convertMapToSummaryData(
 
 	// Parse times
 	createdAt, _ := parseTime(rawSummary.CreatedAt)
-	updatedAt, _ := parseTime(rawSummary.UpdatedAt)
+	updatedAt, _ := parseTime(rawSummary.ModifiedAt)
 
 	return &models.SummaryEventData{
 		ID:                      rawSummary.ID,

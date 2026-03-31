@@ -33,13 +33,13 @@ type RegistrantDBRaw struct {
 	CaseInsensitiveEmail            string           `json:"case_insensitive_email"`
 	FirstName                       string           `json:"first_name"`
 	LastName                        string           `json:"last_name"`
-	OrgName                         string           `json:"org_name,omitempty"`
+	Org                             string           `json:"org,omitempty"`
 	OrgIsMember                     *bool            `json:"org_is_member,omitempty"`
 	OrgIsProjectMember              *bool            `json:"org_is_project_member,omitempty"`
 	JobTitle                        string           `json:"job_title,omitempty"`
 	Host                            *bool            `json:"host"`
 	Occurrence                      string           `json:"occurrence,omitempty"`
-	AvatarURL                       string           `json:"avatar_url"`
+	ProfilePicture                  string           `json:"profile_picture"`
 	Username                        string           `json:"username,omitempty"`
 	LastInviteReceivedTime          string           `json:"last_invite_received_time"`
 	LastInviteReceivedMessageID     *string          `json:"last_invite_received_message_id,omitempty"`
@@ -51,7 +51,7 @@ type RegistrantDBRaw struct {
 	LastInviteBouncedSubType        string           `json:"last_invite_bounced_sub_type,omitempty"`
 	LastInviteBouncedDiagnosticCode string           `json:"last_invite_bounced_diagnostic_code,omitempty"`
 	CreatedAt                       string           `json:"created_at"`
-	UpdatedAt                       string           `json:"updated_at"`
+	ModifiedAt                      string           `json:"modified_at"`
 	CreatedBy                       models.CreatedBy `json:"created_by"`
 	UpdatedBy                       models.UpdatedBy `json:"updated_by"`
 }
@@ -111,11 +111,11 @@ func convertMapToRegistrantData(
 			if rawRegistrant.LastName == "" {
 				rawRegistrant.LastName = v1User.LastName
 			}
-			if rawRegistrant.AvatarURL == "" {
-				rawRegistrant.AvatarURL = v1User.AvatarURL
+			if rawRegistrant.ProfilePicture == "" {
+				rawRegistrant.ProfilePicture = v1User.AvatarURL
 			}
-			if rawRegistrant.OrgName == "" {
-				rawRegistrant.OrgName = v1User.OrgName
+			if rawRegistrant.Org == "" {
+				rawRegistrant.Org = v1User.OrgName
 			}
 		}
 	}
@@ -130,13 +130,13 @@ func convertMapToRegistrantData(
 		CaseInsensitiveEmail:            rawRegistrant.CaseInsensitiveEmail,
 		FirstName:                       rawRegistrant.FirstName,
 		LastName:                        rawRegistrant.LastName,
-		OrgName:                         rawRegistrant.OrgName,
+		OrgName:                         rawRegistrant.Org,
 		OrgIsMember:                     rawRegistrant.OrgIsMember,
 		OrgIsProjectMember:              rawRegistrant.OrgIsProjectMember,
 		JobTitle:                        rawRegistrant.JobTitle,
 		Host:                            utils.GetBool(rawRegistrant.Host),
 		Occurrence:                      rawRegistrant.Occurrence,
-		AvatarURL:                       rawRegistrant.AvatarURL,
+		AvatarURL:                       rawRegistrant.ProfilePicture,
 		Username:                        username,
 		LastInviteReceivedTime:          rawRegistrant.LastInviteReceivedTime,
 		LastInviteReceivedMessageID:     rawRegistrant.LastInviteReceivedMessageID,
@@ -148,7 +148,7 @@ func convertMapToRegistrantData(
 		LastInviteBouncedSubType:        rawRegistrant.LastInviteBouncedSubType,
 		LastInviteBouncedDiagnosticCode: rawRegistrant.LastInviteBouncedDiagnosticCode,
 		CreatedAt:                       rawRegistrant.CreatedAt,
-		UpdatedAt:                       rawRegistrant.UpdatedAt,
+		UpdatedAt:                       rawRegistrant.ModifiedAt,
 		CreatedBy:                       models.CreatedBy(rawRegistrant.CreatedBy),
 		UpdatedBy:                       models.UpdatedBy(rawRegistrant.UpdatedBy),
 	}, nil
@@ -277,7 +277,9 @@ type InviteResponseDBRaw struct {
 	Org                    string `json:"org"`
 	JobTitle               string `json:"job_title"`
 	Response               string `json:"response"`
-	Scope                  string `json:"scope"`
+	IsResponseRecurring    bool   `json:"is_response_recurring"`
+	Scope                  string `json:"scope,omitempty"`
+	Source                 string `json:"source,omitempty"`
 	ResponseDate           string `json:"response_date"`
 	SESMessageID           string `json:"ses_message_id"`
 	EmailSubject           string `json:"email_subject"`
@@ -362,8 +364,18 @@ func convertMapToInviteResponseData(
 		return nil, err
 	}
 
-	// Determine if response is for recurring meeting
-	isRecurring := rawResponse.OccurrenceID == "" || rawResponse.Scope == "all" || rawResponse.Scope == "this_and_following"
+	// Derive scope from occurrence_id and is_response_recurring, matching v1-sync-helper logic.
+	var scope string
+	if rawResponse.OccurrenceID != "" {
+		if rawResponse.IsResponseRecurring {
+			scope = "this_and_following"
+		} else {
+			scope = "single"
+		}
+	} else {
+		scope = "all"
+	}
+	isRecurring := scope == "all" || scope == "this_and_following"
 
 	// Parse times — propagate errors only for non-empty but malformed strings;
 	// absent timestamps (empty string) remain as zero-value time.Time.
@@ -388,9 +400,12 @@ func convertMapToInviteResponseData(
 		ProjectUID:             projectUID,
 		UserID:                 rawResponse.UserID,
 		Username:               username,
+		Name:                   rawResponse.Name,
 		Email:                  rawResponse.Email,
+		Org:                    rawResponse.Org,
+		JobTitle:               rawResponse.JobTitle,
 		ResponseType:           responseType,
-		Scope:                  rawResponse.Scope,
+		Scope:                  scope,
 		IsRecurring:            isRecurring,
 		CreatedAt:              createdAt,
 		ModifiedAt:             modifiedAt,

@@ -11,16 +11,20 @@ import (
 
 // CreatedBy represents the user that created a resource.
 type CreatedBy struct {
-	UserID   string `json:"user_id,omitempty"`
-	Username string `json:"username,omitempty"`
-	Email    string `json:"email,omitempty"`
+	UserID         string `json:"user_id,omitempty"`
+	Username       string `json:"username,omitempty"`
+	Email          string `json:"email,omitempty"`
+	Name           string `json:"name,omitempty"`
+	ProfilePicture string `json:"profile_picture,omitempty"`
 }
 
 // UpdatedBy represents the user that updated a resource.
 type UpdatedBy struct {
-	UserID   string `json:"user_id,omitempty"`
-	Username string `json:"username,omitempty"`
-	Email    string `json:"email,omitempty"`
+	UserID         string `json:"user_id,omitempty"`
+	Username       string `json:"username,omitempty"`
+	Email          string `json:"email,omitempty"`
+	Name           string `json:"name,omitempty"`
+	ProfilePicture string `json:"profile_picture,omitempty"`
 }
 
 // ZoomMeetingRecurrence is the schema for a meeting recurrence
@@ -323,6 +327,9 @@ type MeetingEventData struct {
 	// ShowMeetingAttendees determines whether or not LFX One should show data about
 	// meeting attendees to each other
 	ShowMeetingAttendees bool `json:"show_meeting_attendees"`
+
+	// Organizers is the list of usernames (Auth0 sub format) that are organizers of the meeting.
+	Organizers []string `json:"organizers"`
 }
 
 // Tags returns the indexer tags for this meeting.
@@ -506,7 +513,10 @@ type InviteResponseEventData struct {
 	ProjectUID             string    `json:"project_uid"`
 	UserID                 string    `json:"user_id"`
 	Username               string    `json:"username,omitempty"`
+	Name                   string    `json:"name,omitempty"`
 	Email                  string    `json:"email"`
+	Org                    string    `json:"org,omitempty"`
+	JobTitle               string    `json:"job_title,omitempty"`
 	ResponseType           string    `json:"response_type"` // accepted, declined, maybe
 	Scope                  string    `json:"scope"`         // all, single, this_and_following
 	IsRecurring            bool      `json:"is_recurring"`
@@ -541,8 +551,11 @@ type PastMeetingEventData struct {
 	MeetingID                string      `json:"meeting_id"` // Original meeting ID
 	MeetingAndOccurrenceID   string      `json:"meeting_and_occurrence_id"`
 	OccurrenceID             string      `json:"occurrence_id,omitempty"`
+	ProjectSFID              string      `json:"proj_id,omitempty"`
 	ProjectUID               string      `json:"project_uid"`
 	ProjectSlug              string      `json:"project_slug,omitempty"`
+	Committee                string      `json:"committee,omitempty"`
+	CommitteeFilters         []string    `json:"committee_filters,omitempty"`
 	Title                    string      `json:"title"`
 	Description              string      `json:"description"`
 	StartTime                time.Time   `json:"start_time"`
@@ -561,16 +574,18 @@ type PastMeetingEventData struct {
 	ZoomAIEnabled            *bool       `json:"zoom_ai_enabled,omitempty"`
 	AISummaryAccess          string      `json:"ai_summary_access,omitempty"`
 	RequireAISummaryApproval *bool       `json:"require_ai_summary_approval,omitempty"`
-	EarlyJoinTime            int         `json:"early_join_time,omitempty"`
+	EarlyJoinTimeMinutes     int         `json:"early_join_time_minutes,omitempty"`
 	YoutubeLink              string      `json:"youtube_link,omitempty"`
 	Platform                 string      `json:"platform,omitempty"`
 	PlatformMeetingID        string      `json:"platform_meeting_id,omitempty"`
 	RecordingPassword        string      `json:"recording_password,omitempty"`
-	ZoomConfig               *ZoomConfig `json:"zoom_config,omitempty"`
-	CreatedAt                time.Time   `json:"created_at"`
-	ModifiedAt               time.Time   `json:"modified_at"`
-	CreatedBy                CreatedBy   `json:"created_by"`
-	UpdatedBy                UpdatedBy   `json:"updated_by"`
+	ZoomConfig               *ZoomConfig  `json:"zoom_config,omitempty"`
+	IsManuallyCreated        bool         `json:"is_manually_created,omitempty"`
+	CreatedAt                time.Time    `json:"created_at"`
+	UpdatedAt                time.Time    `json:"updated_at"`
+	CreatedBy                CreatedBy    `json:"created_by"`
+	UpdatedBy                UpdatedBy    `json:"updated_by"`
+	UpdatedByList            []UpdatedBy  `json:"updated_by_list,omitempty"`
 }
 
 // Tags returns the indexer tags for this past meeting.
@@ -618,7 +633,7 @@ type PastMeetingParticipantEventData struct {
 	IsAttended             bool                 `json:"is_attended"`
 	Sessions               []ParticipantSession `json:"sessions,omitempty"`
 	CreatedAt              time.Time            `json:"created_at"`
-	ModifiedAt             time.Time            `json:"modified_at"`
+	UpdatedAt              time.Time            `json:"updated_at"`
 }
 
 // Tags returns the indexer tags for this past meeting participant.
@@ -823,6 +838,8 @@ type MeetingAttachmentEventData struct {
 	FileUploaded     *bool     `json:"file_uploaded,omitempty"`
 	FileUploadStatus string    `json:"file_upload_status,omitempty"`
 	FileContentType  string    `json:"file_content_type,omitempty"`
+	FileUploadedBy   *CreatedBy `json:"file_uploaded_by,omitempty"`
+	FileUploadedAt   time.Time `json:"file_uploaded_at,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 	ModifiedAt       time.Time `json:"modified_at"`
 	CreatedBy        CreatedBy `json:"created_by"`
@@ -860,13 +877,15 @@ type PastMeetingAttachmentEventData struct {
 	FileName               string    `json:"file_name,omitempty"`
 	FileSize               int       `json:"file_size,omitempty"`
 	FileURL                string    `json:"file_url,omitempty"`
-	FileUploaded           *bool     `json:"file_uploaded,omitempty"`
-	FileUploadStatus       string    `json:"file_upload_status,omitempty"`
-	FileContentType        string    `json:"file_content_type,omitempty"`
-	CreatedAt              time.Time `json:"created_at"`
-	ModifiedAt             time.Time `json:"modified_at"`
-	CreatedBy              CreatedBy `json:"created_by"`
-	UpdatedBy              UpdatedBy `json:"updated_by"`
+	FileUploaded           *bool      `json:"file_uploaded,omitempty"`
+	FileUploadStatus       string     `json:"file_upload_status,omitempty"`
+	FileContentType        string     `json:"file_content_type,omitempty"`
+	FileUploadedBy         *CreatedBy `json:"file_uploaded_by,omitempty"`
+	FileUploadedAt         time.Time  `json:"file_uploaded_at,omitempty"`
+	CreatedAt              time.Time  `json:"created_at"`
+	ModifiedAt             time.Time  `json:"modified_at"`
+	CreatedBy              CreatedBy  `json:"created_by"`
+	UpdatedBy              UpdatedBy  `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this past meeting attachment.

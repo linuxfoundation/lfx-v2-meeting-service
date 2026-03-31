@@ -26,12 +26,7 @@ import (
 
 // PastMeetingDBRaw represents raw past meeting data from v1 DynamoDB/NATS KV bucket
 type PastMeetingDBRaw struct {
-	// ID is the partition key of the past meeting table
-	// This is the same as the [MeetingAndOccurrenceID] field, but with the json tag to match what the v2 system expects.
-	ID string `json:"id"`
-
 	// MeetingAndOccurrenceID is the partition key of the past meeting table
-	// This is a v2 attribute
 	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
 
 	// ProjectID is the ID of the salesforce (v1) project associated with the past meeting
@@ -46,13 +41,11 @@ type PastMeetingDBRaw struct {
 	// CommitteeFilters is the list of filters associated with the committee
 	CommitteeFilters []string `json:"committee_filters"`
 
-	// Committees is the list of committees associated with the past meeting
-	// This is a v2 attribute
-	Committees []models.Committee `json:"committees"`
+	// Topic is the title/topic of the past meeting (v1 field name)
+	Topic string `json:"topic"`
 
-	// Description is the description of the past meeting
-	// This is a v2 only attribute, where the value should come from the "agenda" field in the v1 data.
-	Description string `json:"description"`
+	// Agenda is the description/agenda of the past meeting (v1 field name)
+	Agenda string `json:"agenda"`
 
 	// Duration is the duration of the past meeting
 	Duration int `json:"duration"`
@@ -85,10 +78,6 @@ type PastMeetingDBRaw struct {
 	// Timezone is the timezone of the past meeting
 	Timezone string `json:"timezone"`
 
-	// Title is the title of the past meeting
-	// This is a v2 only attribute, where the value should come from the "topic" field in the v1 data.
-	Title string `json:"title"`
-
 	// MeetingType is the type of the past meeting
 	MeetingType string `json:"meeting_type"`
 
@@ -104,14 +93,14 @@ type PastMeetingDBRaw struct {
 	// Visibility is the visibility of the past meeting
 	Visibility string `json:"visibility"`
 
-	// ArtifactVisibility is the visibility of the artifacts of the past meeting
-	ArtifactVisibility string `json:"artifact_visibility"`
-
 	// Recurrence is the recurrence of the past meeting
 	Recurrence *RecurrenceDBRaw `json:"recurrence"`
 
 	// Restricted is whether the past meeting is restricted to only invited participants
 	Restricted bool `json:"restricted"`
+
+	// IsManuallyCreated indicates whether the past meeting was created manually
+	IsManuallyCreated bool `json:"is_manually_created"`
 
 	// RecordingPassword is the password of the past meeting recording
 	// This is no longer relevant for recordings since sometime in 2023 because now the recordings
@@ -136,26 +125,20 @@ type PastMeetingDBRaw struct {
 	// YoutubeLink is the link to the YouTube video of the past meeting
 	YoutubeLink string `json:"youtube_link,omitempty"`
 
-	// Platform is the platform of the past meeting
-	Platform string `json:"platform"`
-
-	// PlatformMeetingID is the platform-specific meeting ID of the past meeting
-	PlatformMeetingID string `json:"platform_meeting_id,omitempty"`
-
-	// ZoomConfig is the configuration of the Zoom meeting
-	ZoomConfig *models.ZoomConfig `json:"zoom_config,omitempty"`
-
 	// CreatedAt is the creation time of the past meeting
 	CreatedAt string `json:"created_at"`
 
-	// UpdatedAt is the last modification time in RFC3339 format of the past meeting
-	UpdatedAt string `json:"updated_at"`
+	// ModifiedAt is the last modification time in RFC3339 format of the past meeting
+	ModifiedAt string `json:"modified_at"`
 
 	// CreatedBy is the user who created the past meeting
 	CreatedBy models.CreatedBy `json:"created_by"`
 
 	// UpdatedBy is the user who last updated the past meeting
 	UpdatedBy models.UpdatedBy `json:"updated_by"`
+
+	// UpdatedByList is the list of users who have updated the past meeting
+	UpdatedByList []models.UpdatedBy `json:"updated_by_list"`
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
@@ -359,8 +342,8 @@ func convertMapToPastMeetingData(
 	}
 
 	// Validate required fields
-	if rawPastMeeting.ID == "" || rawPastMeeting.ProjectID == "" {
-		return nil, fmt.Errorf("missing required fields: id or proj_id")
+	if rawPastMeeting.MeetingAndOccurrenceID == "" || rawPastMeeting.ProjectID == "" {
+		return nil, fmt.Errorf("missing required fields: meeting_and_occurrence_id or proj_id")
 	}
 
 	// Map project ID from v1 SFID to v2 UID
@@ -373,21 +356,39 @@ func convertMapToPastMeetingData(
 	startTime, _ := parseTime(rawPastMeeting.ScheduledStartTime)
 	endTime, _ := parseTime(rawPastMeeting.ScheduledEndTime)
 	createdAt, _ := parseTime(rawPastMeeting.CreatedAt)
-	modifiedAt, _ := parseTime(rawPastMeeting.UpdatedAt)
+	modifiedAt, _ := parseTime(rawPastMeeting.ModifiedAt)
 
 	// Get committees from mapping index (same logic as active meetings)
-	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.ID, idMapper, mappingsKV, logger)
+	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
+
+	// Compute artifact visibility from access fields (fallback chain)
+	artifactVisibility := rawPastMeeting.RecordingAccess
+	if artifactVisibility == "" {
+		artifactVisibility = rawPastMeeting.TranscriptAccess
+	}
+	if artifactVisibility == "" {
+		artifactVisibility = rawPastMeeting.AISummaryAccess
+	}
+	if artifactVisibility == "" {
+		artifactVisibility = "meeting_hosts"
+	}
+
+	// Build ZoomConfig from flat v1 fields
+	zoomConfig := buildPastMeetingZoomConfig(&rawPastMeeting)
 
 	// Build event data
 	return &models.PastMeetingEventData{
-		ID:                       rawPastMeeting.ID,
+		ID:                       rawPastMeeting.MeetingAndOccurrenceID,
 		MeetingID:                rawPastMeeting.MeetingID,
 		MeetingAndOccurrenceID:   rawPastMeeting.MeetingAndOccurrenceID,
 		OccurrenceID:             rawPastMeeting.OccurrenceID,
+		ProjectSFID:              rawPastMeeting.ProjectID,
 		ProjectUID:               projectUID,
 		ProjectSlug:              rawPastMeeting.ProjectSlug,
-		Title:                    rawPastMeeting.Title,
-		Description:              rawPastMeeting.Description,
+		Committee:                rawPastMeeting.Committee,
+		CommitteeFilters:         rawPastMeeting.CommitteeFilters,
+		Title:                    rawPastMeeting.Topic,
+		Description:              rawPastMeeting.Agenda,
 		StartTime:                startTime,
 		EndTime:                  endTime,
 		Duration:                 rawPastMeeting.Duration,
@@ -395,7 +396,7 @@ func convertMapToPastMeetingData(
 		MeetingType:              rawPastMeeting.MeetingType,
 		Committees:               committees,
 		Visibility:               rawPastMeeting.Visibility,
-		ArtifactVisibility:       rawPastMeeting.ArtifactVisibility,
+		ArtifactVisibility:       artifactVisibility,
 		Restricted:               rawPastMeeting.Restricted,
 		RecordingEnabled:         rawPastMeeting.RecordingEnabled,
 		RecordingAccess:          rawPastMeeting.RecordingAccess,
@@ -404,17 +405,29 @@ func convertMapToPastMeetingData(
 		ZoomAIEnabled:            rawPastMeeting.ZoomAIEnabled,
 		AISummaryAccess:          rawPastMeeting.AISummaryAccess,
 		RequireAISummaryApproval: rawPastMeeting.RequireAISummaryApproval,
-		EarlyJoinTime:            rawPastMeeting.EarlyJoinTime,
+		EarlyJoinTimeMinutes:     rawPastMeeting.EarlyJoinTime,
 		YoutubeLink:              rawPastMeeting.YoutubeLink,
-		Platform:                 rawPastMeeting.Platform,
-		PlatformMeetingID:        rawPastMeeting.PlatformMeetingID,
 		RecordingPassword:        rawPastMeeting.RecordingPassword,
-		ZoomConfig:               rawPastMeeting.ZoomConfig,
+		ZoomConfig:               zoomConfig,
+		IsManuallyCreated:        rawPastMeeting.IsManuallyCreated,
 		CreatedAt:                createdAt,
-		ModifiedAt:               modifiedAt,
+		UpdatedAt:                modifiedAt,
 		CreatedBy:                models.CreatedBy(rawPastMeeting.CreatedBy),
 		UpdatedBy:                models.UpdatedBy(rawPastMeeting.UpdatedBy),
+		UpdatedByList:            rawPastMeeting.UpdatedByList,
 	}, nil
+}
+
+// buildPastMeetingZoomConfig constructs a ZoomConfig from flat v1 fields on the raw past meeting.
+func buildPastMeetingZoomConfig(m *PastMeetingDBRaw) *models.ZoomConfig {
+	cfg := &models.ZoomConfig{}
+	if m.ZoomAIEnabled != nil {
+		cfg.AICompanionEnabled = *m.ZoomAIEnabled
+	}
+	if m.RequireAISummaryApproval != nil {
+		cfg.AISummaryRequireApproval = *m.RequireAISummaryApproval
+	}
+	return cfg
 }
 
 // =============================================================================

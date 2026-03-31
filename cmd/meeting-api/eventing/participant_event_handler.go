@@ -213,6 +213,9 @@ type AttendeeDBRaw struct {
 	// IsUnknown is whether or not the attendee has been marked as unknown attendee
 	IsUnknown bool `json:"is_unknown"`
 
+	// IsAIReconciled is true when the attendee record was updated via AI reconcile
+	IsAIReconciled bool `json:"is_ai_reconciled"`
+
 	// Org is the organization of the attendee
 	Org string `json:"org"`
 
@@ -502,7 +505,7 @@ func convertMapToInviteeParticipantData(
 		IsAttended:             false,
 		Sessions:               nil, // Invitees don't have sessions
 		CreatedAt:              createdAt,
-		ModifiedAt:             modifiedAt,
+		UpdatedAt:              modifiedAt,
 	}, nil
 }
 
@@ -612,6 +615,6 @@ func convertMapToAttendeeParticipantData(
 		IsAttended:             true,
 		Sessions:               sessions,
 		CreatedAt:              createdAt,
-		ModifiedAt:             modifiedAt,
+		UpdatedAt:              modifiedAt,
 	}, nil
 }

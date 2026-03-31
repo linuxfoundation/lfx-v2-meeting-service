@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
@@ -113,8 +114,8 @@ type MeetingDBRaw struct {
 	// CreatedAt is the timestamp of when the meeting was created in RFC3339 format.
 	CreatedAt string `json:"created_at"`
 
-	// UpdatedAt is the timestamp of when the meeting was last updated in RFC3339 format.
-	UpdatedAt string `json:"updated_at"`
+	// ModifiedAt is the timestamp of when the meeting was last updated in RFC3339 format.
+	ModifiedAt string `json:"modified_at"`
 
 	// CreatedBy is the user that created the meeting.
 	CreatedBy models.CreatedBy `json:"created_by"`
@@ -157,8 +158,14 @@ type MeetingDBRaw struct {
 	// to represent that sequence of occurrences in ICS. Those UIDs are stored in the database to keep track of them.
 	IcsAdditionalUids []string `json:"ics_additional_uids,omitempty"`
 
-	// ZoomConfig is the configuration of the meeting in Zoom.
-	ZoomConfig models.ZoomConfig `json:"zoom_config"`
+	// Passcode is the Zoom meeting passcode (flat v1 field, used to build ZoomConfig).
+	Passcode string `json:"passcode,omitempty"`
+
+	// ZoomAIEnabled indicates whether Zoom AI Companion is enabled (flat v1 field, used to build ZoomConfig).
+	ZoomAIEnabled *bool `json:"zoom_ai_enabled,omitempty"`
+
+	// RequireAISummaryApproval indicates whether AI summary approval is required (flat v1 field, used to build ZoomConfig).
+	RequireAISummaryApproval *bool `json:"ai_summary_require_approval,omitempty"`
 
 	// AISummaryAccess is the access level of the meeting AI summary within the LFX platform.
 	// This is only relevant if [ZoomAIEnabled] is true.
@@ -200,6 +207,9 @@ type MeetingDBRaw struct {
 	// ShowMeetingAttendees determines whether or not LFX One should show data about
 	// meeting attendees to each other
 	ShowMeetingAttendees bool `json:"show_meeting_attendees"`
+
+	// Organizers is the list of usernames that are organizers of the meeting.
+	Organizers []string `json:"organizers,omitempty"`
 }
 
 // GetArtifactVisibility returns the artifact visibility of the meeting.
@@ -221,7 +231,7 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 	type Alias MeetingDBRaw
 	tmp := struct {
 		Duration                                  interface{} `json:"duration"`
-		EarlyJoinTimeMinutes                      interface{} `json:"early_join_time_minutes"`
+		EarlyJoinTime                             interface{} `json:"early_join_time"`
 		LastEndTime                               interface{} `json:"last_end_time"`
 		LastBulkRegistrantsJobFailedCount         interface{} `json:"last_bulk_registrants_job_failed_count"`
 		LastBulkRegistrantsJobWarningCount        interface{} `json:"last_bulk_registrants_job_warning_count"`
@@ -256,8 +266,8 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		}
 	}
 
-	// Handle EarlyJoinTimeMinutes
-	switch v := tmp.EarlyJoinTimeMinutes.(type) {
+	// Handle EarlyJoinTime
+	switch v := tmp.EarlyJoinTime.(type) {
 	case string:
 		if v != "" {
 			val, err := strconv.Atoi(v)
@@ -557,6 +567,44 @@ func (r *RecurrenceDBRaw) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// mapUpdatedOccurrences maps v1 field names to v2 field names in updated occurrences.
+// V1 stores topic→title and agenda→description on each occurrence entry.
+func mapUpdatedOccurrences(v1Data map[string]interface{}, occurrences []models.UpdatedOccurrence) []models.UpdatedOccurrence {
+	rawOccs, ok := v1Data["updated_occurrences"].([]interface{})
+	if !ok || len(rawOccs) != len(occurrences) {
+		return occurrences
+	}
+	for i, rawOcc := range rawOccs {
+		occMap, ok := rawOcc.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if topic, ok := occMap["topic"].(string); ok && topic != "" {
+			occurrences[i].Title = topic
+		}
+		if agenda, ok := occMap["agenda"].(string); ok && agenda != "" {
+			occurrences[i].Description = agenda
+		}
+	}
+	return occurrences
+}
+
+// buildMeetingZoomConfig constructs a ZoomConfig from flat v1 fields on the raw meeting.
+// V1 stores these as top-level fields rather than a nested zoom_config object.
+func buildMeetingZoomConfig(m *MeetingDBRaw) *models.ZoomConfig {
+	cfg := &models.ZoomConfig{
+		MeetingID: m.MeetingID,
+		Passcode:  m.Passcode,
+	}
+	if m.ZoomAIEnabled != nil {
+		cfg.AICompanionEnabled = *m.ZoomAIEnabled
+	}
+	if m.RequireAISummaryApproval != nil {
+		cfg.AISummaryRequireApproval = *m.RequireAISummaryApproval
+	}
+	return cfg
+}
+
 // convertMapToMeetingData converts v1 meeting data to v2 format
 func convertMapToMeetingData(
 	ctx context.Context,
@@ -603,10 +651,10 @@ func convertMapToMeetingData(
 		ConcurrentZoomUserEnabled:                rawMeeting.ConcurrentZoomUserEnabled,
 		UseNewInviteEmailAddress:                 rawMeeting.UseNewInviteEmailAddress,
 		CancelledOccurrences:                     rawMeeting.CancelledOccurrences,
-		UpdatedOccurrences:                       rawMeeting.UpdatedOccurrences,
+		UpdatedOccurrences:                       mapUpdatedOccurrences(v1Data, rawMeeting.UpdatedOccurrences),
 		IcsUIDTimezone:                           rawMeeting.IcsUIDTimezone,
 		IcsAdditionalUids:                        rawMeeting.IcsAdditionalUids,
-		ZoomConfig:                               rawMeeting.ZoomConfig,
+		ZoomConfig:                               *buildMeetingZoomConfig(&rawMeeting),
 		AISummaryAccess:                          rawMeeting.AISummaryAccess,
 		LastBulkRegistrantJobStatus:              rawMeeting.LastBulkRegistrantJobStatus,
 		LastBulkRegistrantsJobFailedCount:        rawMeeting.LastBulkRegistrantsJobFailedCount,
@@ -619,9 +667,13 @@ func convertMapToMeetingData(
 		ShowMeetingAttendees:                     rawMeeting.ShowMeetingAttendees,
 		UpdatedByList:                            rawMeeting.UpdatedByList,
 		CreatedAt:                                rawMeeting.CreatedAt,
-		UpdatedAt:                                rawMeeting.UpdatedAt,
+		UpdatedAt:                                rawMeeting.ModifiedAt,
 		CreatedBy:                                rawMeeting.CreatedBy,
 		UpdatedBy:                                rawMeeting.UpdatedBy,
+		Organizers:                               rawMeeting.Organizers,
+	}
+	if meeting.Organizers == nil {
+		meeting.Organizers = []string{}
 	}
 
 	// Skip if created by this service (prevent sync loops)
@@ -672,6 +724,11 @@ func convertMapToMeetingData(
 
 	// Determine artifact visibility (priority: recording > transcript > ai_summary)
 	meeting.ArtifactVisibility = rawMeeting.GetArtifactVisibility()
+
+	// Dynamically derive ShowMeetingAttendees — only enabled for board meetings
+	// belonging to a specific project, regardless of what is stored in the KV bucket.
+	meeting.ShowMeetingAttendees = strings.EqualFold(rawMeeting.MeetingType, "board") &&
+		rawMeeting.ProjID == "a0941000002wBz9AAE"
 
 	// Calculate occurrences if recurring
 	calc := NewOccurrenceCalculator(logger)

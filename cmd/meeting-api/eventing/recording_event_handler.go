@@ -22,16 +22,11 @@ import (
 
 // RecordingDBRaw represents raw past meeting recording data from v1 DynamoDB/NATS KV bucket
 type RecordingDBRaw struct {
-	// ID is the recording record ID in the v2 system.
-	// It is the same as the [MeetingAndOccurrenceID] field, but with the json tag to match what the v2 system expects.
-	ID string `json:"id"`
-
-	// MeetingAndOccurrenceID is the ID of the past meeting associated with the recording.
-	// This is the primary key of the recording table since there is only one recording record for a past meeting.
+	// MeetingAndOccurrenceID is the primary key of the recording table since there is only one recording record for a past meeting.
 	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
 
-	// ProjectUID is the ID of the project associated with the recording.
-	ProjectID string `json:"project_id"`
+	// ProjectID is the ID of the project associated with the recording.
+	ProjectID string `json:"proj_id"`
 
 	// ProjectSlug is the slug of the project associated with the recording.
 	ProjectSlug string `json:"project_slug"`
@@ -47,12 +42,6 @@ type RecordingDBRaw struct {
 
 	// OccurrenceID is the ID of the occurrence associated with the recording.
 	OccurrenceID string `json:"occurrence_id"`
-
-	// Platform name (e.g., "Zoom", etc.)
-	Platform string `json:"platform"`
-
-	// PlatformMeetingID is the platform-specific meeting ID.
-	PlatformMeetingID string `json:"platform_meeting_id"`
 
 	// RecordingAccess is the access type of the recording.
 	RecordingAccess string `json:"recording_access"`
@@ -92,8 +81,8 @@ type RecordingDBRaw struct {
 	// CreatedAt is the creation time of the recording in RFC3339 format.
 	CreatedAt string `json:"created_at"`
 
-	// UpdatedAt is the last modification time of the recording in RFC3339 format.
-	UpdatedAt string `json:"updated_at"`
+	// ModifiedAt is the last modification time of the recording in RFC3339 format.
+	ModifiedAt string `json:"modified_at"`
 
 	// CreatedBy is the user who created the recording record in this system.
 	CreatedBy models.CreatedBy `json:"created_by"`
@@ -352,8 +341,8 @@ func convertMapToRecordingData(
 	}
 
 	// Validate required fields
-	if rawRecording.ID == "" || rawRecording.MeetingAndOccurrenceID == "" {
-		return nil, nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	if rawRecording.MeetingAndOccurrenceID == "" {
+		return nil, nil, fmt.Errorf("missing required fields: meeting_and_occurrence_id")
 	}
 
 	// Use ProjectID from recording record directly
@@ -416,7 +405,7 @@ func convertMapToRecordingData(
 	// Parse times
 	startTime, _ := parseTime(rawRecording.StartTime)
 	createdAt, _ := parseTime(rawRecording.CreatedAt)
-	updatedAt, _ := parseTime(rawRecording.UpdatedAt)
+	updatedAt, _ := parseTime(rawRecording.ModifiedAt)
 
 	// Set transcript enabled flag
 	transcriptEnabled := hasTranscript
@@ -426,7 +415,7 @@ func convertMapToRecordingData(
 	}
 
 	recordingData := &models.RecordingEventData{
-		ID:                     rawRecording.ID,
+		ID:                     rawRecording.MeetingAndOccurrenceID,
 		MeetingAndOccurrenceID: rawRecording.MeetingAndOccurrenceID,
 		ProjectUID:             projectUID,
 		HostEmail:              rawRecording.HostEmail,
@@ -434,7 +423,6 @@ func convertMapToRecordingData(
 		MeetingID:              rawRecording.MeetingID,
 		OccurrenceID:           rawRecording.OccurrenceID,
 		Platform:               "Zoom",
-		PlatformMeetingID:      rawRecording.PlatformMeetingID,
 		RecordingAccess:        recordingAccess,
 		Title:                  rawRecording.Topic,
 		TranscriptAccess:       transcriptAccess,
@@ -456,7 +444,7 @@ func convertMapToRecordingData(
 	var transcriptData *models.TranscriptEventData
 	if hasTranscript {
 		transcriptData = &models.TranscriptEventData{
-			ID:                     rawRecording.ID,
+			ID:                     rawRecording.MeetingAndOccurrenceID,
 			MeetingAndOccurrenceID: rawRecording.MeetingAndOccurrenceID,
 			ProjectUID:             projectUID,
 			TranscriptAccess:       transcriptAccess,
