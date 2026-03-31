@@ -92,7 +92,6 @@ type UpdatedOccurrence struct {
 	AllFollowing bool `json:"all_following"`
 }
 
-
 // ZoomConfig is the configuration of the meeting in Zoom.
 type ZoomConfig struct {
 	MeetingID                string `json:"meeting_id,omitempty"`
@@ -579,13 +578,13 @@ type PastMeetingEventData struct {
 	Platform                 string      `json:"platform,omitempty"`
 	PlatformMeetingID        string      `json:"platform_meeting_id,omitempty"`
 	RecordingPassword        string      `json:"recording_password,omitempty"`
-	ZoomConfig               *ZoomConfig  `json:"zoom_config,omitempty"`
-	IsManuallyCreated        bool         `json:"is_manually_created,omitempty"`
-	CreatedAt                time.Time    `json:"created_at"`
-	UpdatedAt                time.Time    `json:"updated_at"`
-	CreatedBy                CreatedBy    `json:"created_by"`
-	UpdatedBy                UpdatedBy    `json:"updated_by"`
-	UpdatedByList            []UpdatedBy  `json:"updated_by_list,omitempty"`
+	ZoomConfig               *ZoomConfig `json:"zoom_config,omitempty"`
+	IsManuallyCreated        bool        `json:"is_manually_created,omitempty"`
+	CreatedAt                time.Time   `json:"created_at"`
+	UpdatedAt                time.Time   `json:"updated_at"`
+	CreatedBy                CreatedBy   `json:"created_by"`
+	UpdatedBy                UpdatedBy   `json:"updated_by"`
+	UpdatedByList            []UpdatedBy `json:"updated_by_list,omitempty"`
 }
 
 // Tags returns the indexer tags for this past meeting.
@@ -824,26 +823,26 @@ type SummaryZoomConfig struct {
 
 // MeetingAttachmentEventData represents an attachment on an active meeting
 type MeetingAttachmentEventData struct {
-	UID              string    `json:"uid"`
-	MeetingID        string    `json:"meeting_id"`
-	Type             string    `json:"type"`
-	Category         string    `json:"category,omitempty"`
-	Link             string    `json:"link,omitempty"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description,omitempty"`
-	Source           string    `json:"source,omitempty"`
-	FileName         string    `json:"file_name,omitempty"`
-	FileSize         int       `json:"file_size,omitempty"`
-	FileURL          string    `json:"file_url,omitempty"`
-	FileUploaded     *bool     `json:"file_uploaded,omitempty"`
-	FileUploadStatus string    `json:"file_upload_status,omitempty"`
-	FileContentType  string    `json:"file_content_type,omitempty"`
+	UID              string     `json:"uid"`
+	MeetingID        string     `json:"meeting_id"`
+	Type             string     `json:"type"`
+	Category         string     `json:"category,omitempty"`
+	Link             string     `json:"link,omitempty"`
+	Name             string     `json:"name"`
+	Description      string     `json:"description,omitempty"`
+	Source           string     `json:"source,omitempty"`
+	FileName         string     `json:"file_name,omitempty"`
+	FileSize         int        `json:"file_size,omitempty"`
+	FileURL          string     `json:"file_url,omitempty"`
+	FileUploaded     *bool      `json:"file_uploaded,omitempty"`
+	FileUploadStatus string     `json:"file_upload_status,omitempty"`
+	FileContentType  string     `json:"file_content_type,omitempty"`
 	FileUploadedBy   *CreatedBy `json:"file_uploaded_by,omitempty"`
-	FileUploadedAt   time.Time `json:"file_uploaded_at,omitempty"`
-	CreatedAt        time.Time `json:"created_at"`
-	ModifiedAt       time.Time `json:"modified_at"`
-	CreatedBy        CreatedBy `json:"created_by"`
-	UpdatedBy        UpdatedBy `json:"updated_by"`
+	FileUploadedAt   time.Time  `json:"file_uploaded_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	ModifiedAt       time.Time  `json:"modified_at"`
+	CreatedBy        CreatedBy  `json:"created_by"`
+	UpdatedBy        UpdatedBy  `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this meeting attachment.
@@ -865,18 +864,18 @@ func (a *MeetingAttachmentEventData) ParentRefs() []string {
 
 // PastMeetingAttachmentEventData represents an attachment on a past meeting
 type PastMeetingAttachmentEventData struct {
-	UID                    string    `json:"uid"`
-	MeetingAndOccurrenceID string    `json:"meeting_and_occurrence_id"`
-	MeetingID              string    `json:"meeting_id"`
-	Type                   string    `json:"type"`
-	Category               string    `json:"category,omitempty"`
-	Link                   string    `json:"link,omitempty"`
-	Name                   string    `json:"name"`
-	Description            string    `json:"description,omitempty"`
-	Source                 string    `json:"source,omitempty"`
-	FileName               string    `json:"file_name,omitempty"`
-	FileSize               int       `json:"file_size,omitempty"`
-	FileURL                string    `json:"file_url,omitempty"`
+	UID                    string     `json:"uid"`
+	MeetingAndOccurrenceID string     `json:"meeting_and_occurrence_id"`
+	MeetingID              string     `json:"meeting_id"`
+	Type                   string     `json:"type"`
+	Category               string     `json:"category,omitempty"`
+	Link                   string     `json:"link,omitempty"`
+	Name                   string     `json:"name"`
+	Description            string     `json:"description,omitempty"`
+	Source                 string     `json:"source,omitempty"`
+	FileName               string     `json:"file_name,omitempty"`
+	FileSize               int        `json:"file_size,omitempty"`
+	FileURL                string     `json:"file_url,omitempty"`
 	FileUploaded           *bool      `json:"file_uploaded,omitempty"`
 	FileUploadStatus       string     `json:"file_upload_status,omitempty"`
 	FileContentType        string     `json:"file_content_type,omitempty"`
