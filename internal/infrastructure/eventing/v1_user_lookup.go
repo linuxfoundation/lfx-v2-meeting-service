@@ -5,35 +5,30 @@ package eventing
 
 import (
 	"context"
-	"crypto/sha512"
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"regexp"
 
-	"github.com/akamensky/base58"
+	nats "github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
-var (
-	// safeNameRE detects usernames that are safe to use directly as Auth0 user IDs.
-	safeNameRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,58}[A-Za-z0-9]$`)
-	// hexUserRE detects hex strings that could collide with Auth0 native DB IDs.
-	hexUserRE = regexp.MustCompile(`^[0-9a-f]{24,60}$`)
-)
+const authServiceUsernameToSubSubject = "lfx.auth-service.username_to_sub"
 
 // NATSUserLookup implements the V1UserLookup interface using NATS KV bucket
 type NATSUserLookup struct {
+	nc          *nats.Conn
 	v1ObjectsKV jetstream.KeyValue
 	logger      *slog.Logger
 }
 
 // NewNATSUserLookup creates a new NATS-based v1 user lookup service
-func NewNATSUserLookup(v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) *NATSUserLookup {
+func NewNATSUserLookup(nc *nats.Conn, v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) *NATSUserLookup {
 	return &NATSUserLookup{
+		nc:          nc,
 		v1ObjectsKV: v1ObjectsKV,
 		logger:      logger,
 	}
@@ -78,33 +73,28 @@ func getString(data map[string]interface{}, key string) string {
 	return ""
 }
 
-// MapUsernameToAuthSub converts a v1 username to the Auth0 "sub" format expected by v2 services.
-//
-// The mapping logic:
-//   - Safe usernames (matching safeNameRE and not hexUserRE): use directly as userID
-//   - Unsafe usernames: hash with SHA512 and encode to base58 (~80 chars) for legacy usernames
-//     longer than 60 characters, with non-standard chars, or that might collide with future
-//     24+ character Auth0 native DB hexadecimal hash
-//
-// Returns: "auth0|{userID}" format string
-func (l *NATSUserLookup) MapUsernameToAuthSub(username string) string {
-	return mapUsernameToAuthSub(username)
+// MapUsernameToAuthSub converts a v1 username to the Auth0 "sub" format by calling the
+// auth service over NATS on subject lfx.auth-service.username_to_sub.
+func (l *NATSUserLookup) MapUsernameToAuthSub(ctx context.Context, username string) (string, error) {
+	return lookupUsernameToAuthSub(ctx, l.nc, username, l.logger)
 }
 
-func mapUsernameToAuthSub(username string) string {
+// lookupUsernameToAuthSub calls the auth service over NATS to convert a v1 username
+// to the Auth0 "sub" format expected by v2 services.
+func lookupUsernameToAuthSub(ctx context.Context, nc *nats.Conn, username string, logger *slog.Logger) (string, error) {
 	if username == "" {
-		return ""
+		return "", nil
 	}
-
-	var userID string
-	if safeNameRE.MatchString(username) && !hexUserRE.MatchString(username) {
-		userID = username
-	} else {
-		hash := sha512.Sum512([]byte(username))
-		userID = base58.Encode(hash[:])
+	msg, err := nc.RequestWithContext(ctx, authServiceUsernameToSubSubject, []byte(username))
+	if err != nil {
+		return "", fmt.Errorf("auth service username lookup failed: %w", err)
 	}
-
-	return "auth0|" + userID
+	sub := string(msg.Data)
+	if sub == "" {
+		logger.WarnContext(ctx, "auth service returned empty sub for username", "username", username)
+		return "", nil
+	}
+	return sub, nil
 }
 
 // Ensure NATSUserLookup implements V1UserLookup

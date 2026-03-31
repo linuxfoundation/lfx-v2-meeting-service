@@ -209,7 +209,10 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 			relations = append(relations, "host")
 		}
 		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username := mapUsernameToAuthSub(registrant.Username)
+		auth0Username, err := lookupUsernameToAuthSub(ctx, p.nc, registrant.Username, p.logger)
+		if err != nil {
+			return fmt.Errorf("failed to resolve auth sub for registrant: %w", err)
+		}
 
 		memberMsg := GenericFGAMessage{
 			ObjectType: "v1_meeting",
@@ -360,7 +363,10 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 		}
 
 		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username := mapUsernameToAuthSub(participant.Username)
+		auth0Username, err := lookupUsernameToAuthSub(ctx, p.nc, participant.Username, p.logger)
+		if err != nil {
+			return fmt.Errorf("failed to resolve auth sub for participant: %w", err)
+		}
 
 		memberMsg := GenericFGAMessage{
 			ObjectType: "v1_past_meeting",

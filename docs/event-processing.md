@@ -267,6 +267,24 @@ userData := v1ObjectsKV.Get(key)
 }
 ```
 
+### Auth0 Sub Resolution
+
+FGA-sync requires usernames in Auth0 `sub` format (e.g., `auth0|jdoe`). The service delegates this conversion to the auth service over NATS:
+
+```text
+Subject:  lfx.auth-service.username_to_sub
+Request:  <v1 username string>  (e.g., "jdoe")
+Response: <Auth0 sub string>    (e.g., "auth0|jdoe")
+```
+
+This call is made for:
+
+- Registrant `member_put` FGA messages (when a registrant has a username)
+- Past meeting participant `member_put` FGA messages
+- Registrant delete access-control messages
+
+If the auth service is unavailable or returns an error, the event is NAK'd for retry. If an empty sub is returned, the username field is left empty and a warning is logged.
+
 ### ID Mapping
 
 Project and committee IDs are mapped from v1 SFIDs to v2 UUIDs:
