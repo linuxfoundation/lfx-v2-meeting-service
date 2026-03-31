@@ -7,16 +7,88 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // =============================================================================
 // Meeting Attachment Event Handler
 // =============================================================================
+
+// AttachmentDBRaw represents raw meeting attachment data from v1 DynamoDB/NATS KV bucket.
+type AttachmentDBRaw struct {
+	ID               string                `json:"id"`
+	MeetingID        string                `json:"meeting_id"`
+	Type             string                `json:"type"`
+	Category         string                `json:"category"`
+	Link             string                `json:"link"`
+	Name             string                `json:"name"`
+	Description      string                `json:"description"`
+	Source           string                `json:"source"`
+	FileName         string                `json:"file_name"`
+	FileSize         int                   `json:"file_size"`
+	FileURL          string                `json:"file_url"`
+	FileUploaded     *bool                 `json:"file_uploaded"`
+	FileUploadStatus string                `json:"file_upload_status"`
+	FileContentType  string                `json:"file_content_type"`
+	FileUploadedBy   *attachmentActorDBRaw `json:"file_uploaded_by"`
+	FileUploadedAt   string                `json:"file_uploaded_at"`
+	CreatedAt        string                `json:"created_at"`
+	UpdatedAt        string                `json:"updated_at"`
+	CreatedBy        attachmentActorDBRaw  `json:"created_by"`
+	UpdatedBy        attachmentActorDBRaw  `json:"updated_by"`
+}
+
+// UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
+func (a *AttachmentDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias AttachmentDBRaw
+	tmp := struct {
+		FileSize interface{} `json:"file_size"`
+		*Alias
+	}{
+		Alias: (*Alias)(a),
+	}
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	switch v := tmp.FileSize.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid value for file_size: %w", err)
+			}
+			a.FileSize = val
+		}
+	case float64:
+		a.FileSize = int(v)
+	case nil:
+		// leave as zero value
+	default:
+		return fmt.Errorf("invalid type for file_size: %T", v)
+	}
+	return nil
+}
+
+// attachmentActorDBRaw represents the created_by/updated_by actor in raw attachment data.
+type attachmentActorDBRaw struct {
+	ID             string `json:"id"`
+	Email          string `json:"email"`
+	Name           string `json:"name"`
+	Username       string `json:"username"`
+	ProfilePicture string `json:"profile_picture"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for attachmentActorDBRaw.
+func (a *attachmentActorDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attachmentActorDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
+	return json.Unmarshal(data, &tmp)
+}
 
 // handleMeetingAttachmentUpdate processes updates to meeting attachments
 func (h *EventHandlers) handleMeetingAttachmentUpdate(
@@ -96,40 +168,28 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
 	}
 
-	var tmp struct {
-		ID               string      `json:"id"`
-		MeetingID        string      `json:"meeting_id"`
-		Type             string      `json:"type"`
-		Category         string      `json:"category"`
-		Link             string      `json:"link"`
-		Name             string      `json:"name"`
-		Description      string      `json:"description"`
-		Source           string      `json:"source"`
-		FileName         string      `json:"file_name"`
-		FileSize         interface{} `json:"file_size"`
-		FileURL          string      `json:"file_url"`
-		FileUploaded     *bool       `json:"file_uploaded"`
-		FileUploadStatus string      `json:"file_upload_status"`
-		FileContentType  string      `json:"file_content_type"`
-		CreatedAt        string      `json:"created_at"`
-		UpdatedAt        string      `json:"updated_at"`
-		CreatedBy        struct {
-			ID    string `json:"id"`
-			Email string `json:"email"`
-			Name  string `json:"name"`
-		} `json:"created_by"`
-		UpdatedBy struct {
-			ID    string `json:"id"`
-			Email string `json:"email"`
-			Name  string `json:"name"`
-		} `json:"updated_by"`
-	}
+	var tmp AttachmentDBRaw
 	if err := json.Unmarshal(raw, &tmp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
 	modifiedAt, _ := parseTime(tmp.UpdatedAt)
+	var fileUploadedAt *time.Time
+	if t, err := parseTime(tmp.FileUploadedAt); err == nil {
+		fileUploadedAt = &t
+	}
+
+	var fileUploadedBy *models.CreatedBy
+	if tmp.FileUploadedBy != nil {
+		fileUploadedBy = &models.CreatedBy{
+			UserID:         tmp.FileUploadedBy.ID,
+			Email:          tmp.FileUploadedBy.Email,
+			Username:       tmp.FileUploadedBy.Username,
+			Name:           tmp.FileUploadedBy.Name,
+			ProfilePicture: tmp.FileUploadedBy.ProfilePicture,
+		}
+	}
 
 	return &models.MeetingAttachmentEventData{
 		UID:              tmp.ID,
@@ -141,20 +201,28 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 		Description:      tmp.Description,
 		Source:           tmp.Source,
 		FileName:         tmp.FileName,
-		FileSize:         utils.GetInt(tmp.FileSize),
+		FileSize:         tmp.FileSize,
 		FileURL:          tmp.FileURL,
 		FileUploaded:     tmp.FileUploaded,
 		FileUploadStatus: tmp.FileUploadStatus,
 		FileContentType:  tmp.FileContentType,
+		FileUploadedBy:   fileUploadedBy,
+		FileUploadedAt:   fileUploadedAt,
 		CreatedAt:        createdAt,
 		ModifiedAt:       modifiedAt,
 		CreatedBy: models.CreatedBy{
-			UserID: tmp.CreatedBy.ID,
-			Email:  tmp.CreatedBy.Email,
+			UserID:         tmp.CreatedBy.ID,
+			Email:          tmp.CreatedBy.Email,
+			Username:       tmp.CreatedBy.Username,
+			Name:           tmp.CreatedBy.Name,
+			ProfilePicture: tmp.CreatedBy.ProfilePicture,
 		},
 		UpdatedBy: models.UpdatedBy{
-			UserID: tmp.UpdatedBy.ID,
-			Email:  tmp.UpdatedBy.Email,
+			UserID:         tmp.UpdatedBy.ID,
+			Email:          tmp.UpdatedBy.Email,
+			Username:       tmp.UpdatedBy.Username,
+			Name:           tmp.UpdatedBy.Name,
+			ProfilePicture: tmp.UpdatedBy.ProfilePicture,
 		},
 	}, nil
 }
@@ -162,6 +230,62 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 // =============================================================================
 // Past Meeting Attachment Event Handler
 // =============================================================================
+
+// PastMeetingAttachmentDBRaw represents raw past meeting attachment data from v1 DynamoDB/NATS KV bucket.
+type PastMeetingAttachmentDBRaw struct {
+	ID                     string                `json:"id"`
+	MeetingAndOccurrenceID string                `json:"meeting_and_occurrence_id"`
+	MeetingID              string                `json:"meeting_id"`
+	Type                   string                `json:"type"`
+	Category               string                `json:"category"`
+	Link                   string                `json:"link"`
+	Name                   string                `json:"name"`
+	Description            string                `json:"description"`
+	Source                 string                `json:"source"`
+	FileName               string                `json:"file_name"`
+	FileSize               int                   `json:"file_size"`
+	FileURL                string                `json:"file_url"`
+	FileUploaded           *bool                 `json:"file_uploaded"`
+	FileUploadStatus       string                `json:"file_upload_status"`
+	FileContentType        string                `json:"file_content_type"`
+	FileUploadedBy         *attachmentActorDBRaw `json:"file_uploaded_by"`
+	FileUploadedAt         string                `json:"file_uploaded_at"`
+	CreatedAt              string                `json:"created_at"`
+	UpdatedAt              string                `json:"updated_at"`
+	CreatedBy              attachmentActorDBRaw  `json:"created_by"`
+	UpdatedBy              attachmentActorDBRaw  `json:"updated_by"`
+}
+
+// UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
+func (a *PastMeetingAttachmentDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias PastMeetingAttachmentDBRaw
+	tmp := struct {
+		FileSize interface{} `json:"file_size"`
+		*Alias
+	}{
+		Alias: (*Alias)(a),
+	}
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	switch v := tmp.FileSize.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid value for file_size: %w", err)
+			}
+			a.FileSize = val
+		}
+	case float64:
+		a.FileSize = int(v)
+	case nil:
+		// leave as zero value
+	default:
+		return fmt.Errorf("invalid type for file_size: %T", v)
+	}
+	return nil
+}
 
 // handlePastMeetingAttachmentUpdate processes updates to past meeting attachments
 func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
@@ -241,41 +365,28 @@ func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*mode
 		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
 	}
 
-	var tmp struct {
-		ID                     string      `json:"id"`
-		MeetingAndOccurrenceID string      `json:"meeting_and_occurrence_id"`
-		MeetingID              string      `json:"meeting_id"`
-		Type                   string      `json:"type"`
-		Category               string      `json:"category"`
-		Link                   string      `json:"link"`
-		Name                   string      `json:"name"`
-		Description            string      `json:"description"`
-		Source                 string      `json:"source"`
-		FileName               string      `json:"file_name"`
-		FileSize               interface{} `json:"file_size"`
-		FileURL                string      `json:"file_url"`
-		FileUploaded           *bool       `json:"file_uploaded"`
-		FileUploadStatus       string      `json:"file_upload_status"`
-		FileContentType        string      `json:"file_content_type"`
-		CreatedAt              string      `json:"created_at"`
-		UpdatedAt              string      `json:"updated_at"`
-		CreatedBy              struct {
-			ID    string `json:"id"`
-			Email string `json:"email"`
-			Name  string `json:"name"`
-		} `json:"created_by"`
-		UpdatedBy struct {
-			ID    string `json:"id"`
-			Email string `json:"email"`
-			Name  string `json:"name"`
-		} `json:"updated_by"`
-	}
+	var tmp PastMeetingAttachmentDBRaw
 	if err := json.Unmarshal(raw, &tmp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal past meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
 	modifiedAt, _ := parseTime(tmp.UpdatedAt)
+	var fileUploadedAt *time.Time
+	if t, err := parseTime(tmp.FileUploadedAt); err == nil {
+		fileUploadedAt = &t
+	}
+
+	var fileUploadedBy *models.CreatedBy
+	if tmp.FileUploadedBy != nil {
+		fileUploadedBy = &models.CreatedBy{
+			UserID:         tmp.FileUploadedBy.ID,
+			Email:          tmp.FileUploadedBy.Email,
+			Username:       tmp.FileUploadedBy.Username,
+			Name:           tmp.FileUploadedBy.Name,
+			ProfilePicture: tmp.FileUploadedBy.ProfilePicture,
+		}
+	}
 
 	return &models.PastMeetingAttachmentEventData{
 		UID:                    tmp.ID,
@@ -288,20 +399,28 @@ func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*mode
 		Description:            tmp.Description,
 		Source:                 tmp.Source,
 		FileName:               tmp.FileName,
-		FileSize:               utils.GetInt(tmp.FileSize),
+		FileSize:               tmp.FileSize,
 		FileURL:                tmp.FileURL,
 		FileUploaded:           tmp.FileUploaded,
 		FileUploadStatus:       tmp.FileUploadStatus,
 		FileContentType:        tmp.FileContentType,
+		FileUploadedBy:         fileUploadedBy,
+		FileUploadedAt:         fileUploadedAt,
 		CreatedAt:              createdAt,
 		ModifiedAt:             modifiedAt,
 		CreatedBy: models.CreatedBy{
-			UserID: tmp.CreatedBy.ID,
-			Email:  tmp.CreatedBy.Email,
+			UserID:         tmp.CreatedBy.ID,
+			Email:          tmp.CreatedBy.Email,
+			Username:       tmp.CreatedBy.Username,
+			Name:           tmp.CreatedBy.Name,
+			ProfilePicture: tmp.CreatedBy.ProfilePicture,
 		},
 		UpdatedBy: models.UpdatedBy{
-			UserID: tmp.UpdatedBy.ID,
-			Email:  tmp.UpdatedBy.Email,
+			UserID:         tmp.UpdatedBy.ID,
+			Email:          tmp.UpdatedBy.Email,
+			Username:       tmp.UpdatedBy.Username,
+			Name:           tmp.UpdatedBy.Name,
+			ProfilePicture: tmp.UpdatedBy.ProfilePicture,
 		},
 	}, nil
 }

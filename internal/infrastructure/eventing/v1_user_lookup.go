@@ -9,21 +9,26 @@ import (
 	"fmt"
 	"log/slog"
 
+	nats "github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
+const authServiceUsernameToSubSubject = "lfx.auth-service.username_to_sub"
+
 // NATSUserLookup implements the V1UserLookup interface using NATS KV bucket
 type NATSUserLookup struct {
+	nc          *nats.Conn
 	v1ObjectsKV jetstream.KeyValue
 	logger      *slog.Logger
 }
 
 // NewNATSUserLookup creates a new NATS-based v1 user lookup service
-func NewNATSUserLookup(v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) *NATSUserLookup {
+func NewNATSUserLookup(nc *nats.Conn, v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) *NATSUserLookup {
 	return &NATSUserLookup{
+		nc:          nc,
 		v1ObjectsKV: v1ObjectsKV,
 		logger:      logger,
 	}
@@ -66,6 +71,30 @@ func getString(data map[string]interface{}, key string) string {
 		}
 	}
 	return ""
+}
+
+// MapUsernameToAuthSub converts a v1 username to the Auth0 "sub" format by calling the
+// auth service over NATS on subject lfx.auth-service.username_to_sub.
+func (l *NATSUserLookup) MapUsernameToAuthSub(ctx context.Context, username string) (string, error) {
+	return lookupUsernameToAuthSub(ctx, l.nc, username, l.logger)
+}
+
+// lookupUsernameToAuthSub calls the auth service over NATS to convert a v1 username
+// to the Auth0 "sub" format expected by v2 services.
+func lookupUsernameToAuthSub(ctx context.Context, nc *nats.Conn, username string, logger *slog.Logger) (string, error) {
+	if username == "" {
+		return "", nil
+	}
+	msg, err := nc.RequestWithContext(ctx, authServiceUsernameToSubSubject, []byte(username))
+	if err != nil {
+		return "", fmt.Errorf("auth service username lookup failed: %w", err)
+	}
+	sub := string(msg.Data)
+	if sub == "" {
+		logger.WarnContext(ctx, "auth service returned empty sub for username", "username", username)
+		return "", nil
+	}
+	return sub, nil
 }
 
 // Ensure NATSUserLookup implements V1UserLookup

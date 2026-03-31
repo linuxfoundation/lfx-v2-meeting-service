@@ -4,9 +4,6 @@
 package models
 
 import (
-	"encoding/json"
-	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -14,26 +11,30 @@ import (
 
 // CreatedBy represents the user that created a resource.
 type CreatedBy struct {
-	UserID   string `json:"user_id,omitempty"`
-	Username string `json:"username,omitempty"`
-	Email    string `json:"email,omitempty"`
+	UserID         string `json:"user_id,omitempty"`
+	Username       string `json:"username,omitempty"`
+	Email          string `json:"email,omitempty"`
+	Name           string `json:"name,omitempty"`
+	ProfilePicture string `json:"profile_picture,omitempty"`
 }
 
 // UpdatedBy represents the user that updated a resource.
 type UpdatedBy struct {
-	UserID   string `json:"user_id,omitempty"`
-	Username string `json:"username,omitempty"`
-	Email    string `json:"email,omitempty"`
+	UserID         string `json:"user_id,omitempty"`
+	Username       string `json:"username,omitempty"`
+	Email          string `json:"email,omitempty"`
+	Name           string `json:"name,omitempty"`
+	ProfilePicture string `json:"profile_picture,omitempty"`
 }
 
 // ZoomMeetingRecurrence is the schema for a meeting recurrence
 type ZoomMeetingRecurrence struct {
 	// Type is the type of recurrence.
-	Type int `json:"-" `
+	Type int `json:"type"`
 
 	// RepeatInterval is the interval of the recurrence.
 	// For example, if the recurrence type is daily, the repeat interval is the number of days between occurrences.
-	RepeatInterval int `json:"-"`
+	RepeatInterval int `json:"repeat_interval"`
 
 	// WeeklyDays is the days of the week that the recurrence occurs on.
 	// This is only relevant for type 2 (weekly) meetings.
@@ -41,188 +42,22 @@ type ZoomMeetingRecurrence struct {
 
 	// MonthlyDay is the day of the month that the recurrence occurs on.
 	// This is only relevant for type 3 (monthly) meetings.
-	MonthlyDay int `json:"-"`
+	MonthlyDay int `json:"monthly_day,omitempty"`
 
 	// MonthlyWeek is the week of the month that the recurrence occurs on.
 	// This is only relevant for type 3 (monthly) meetings and should not be paired with [MonthlyDay].
-	MonthlyWeek int `json:"-"`
+	MonthlyWeek int `json:"monthly_week,omitempty"`
 
 	// MonthlyWeekDay is the day of the week that the recurrence occurs on.
 	// This is only relevant for type 3 (monthly) meetings and it is paired with [MonthlyWeek].
-	MonthlyWeekDay int `json:"-"`
+	MonthlyWeekDay int `json:"monthly_week_day,omitempty"`
 
 	// EndTimes is the number of times to repeat the recurrence pattern.
 	// For example, if set to 30 for a daily recurring meeting, then 30 occurrences will be created.
-	EndTimes int `json:"-"`
+	EndTimes int `json:"end_times,omitempty"`
 
 	// EndDateTime is the date and time in RFC3339 format that the recurrence pattern will end.
 	EndDateTime string `json:"end_date_time,omitempty"`
-}
-
-// MarshalJSON custom marshaler to include integer fields that are excluded from unmarshaling
-func (r ZoomMeetingRecurrence) MarshalJSON() ([]byte, error) {
-	type Alias ZoomMeetingRecurrence
-	return json.Marshal(&struct {
-		Type           int `json:"type"`
-		RepeatInterval int `json:"repeat_interval"`
-		MonthlyDay     int `json:"monthly_day,omitempty"`
-		MonthlyWeek    int `json:"monthly_week,omitempty"`
-		MonthlyWeekDay int `json:"monthly_week_day,omitempty"`
-		EndTimes       int `json:"end_times,omitempty"`
-		*Alias
-	}{
-		Type:           r.Type,
-		RepeatInterval: r.RepeatInterval,
-		MonthlyDay:     r.MonthlyDay,
-		MonthlyWeek:    r.MonthlyWeek,
-		MonthlyWeekDay: r.MonthlyWeekDay,
-		EndTimes:       r.EndTimes,
-		Alias:          (*Alias)(&r),
-	})
-}
-
-// UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
-func (r *ZoomMeetingRecurrence) UnmarshalJSON(data []byte) error {
-	tmp := struct {
-		Type           interface{} `json:"type"`
-		RepeatInterval interface{} `json:"repeat_interval"`
-		WeeklyDays     string      `json:"weekly_days,omitempty"`
-		MonthlyDay     interface{} `json:"monthly_day"`
-		MonthlyWeek    interface{} `json:"monthly_week"`
-		MonthlyWeekDay interface{} `json:"monthly_week_day"`
-		EndTimes       interface{} `json:"end_times"`
-		EndDateTime    string      `json:"end_date_time,omitempty"`
-	}{}
-
-	if err := json.Unmarshal(data, &tmp); err != nil {
-		return err
-	}
-
-	// Handle Type
-	switch v := tmp.Type.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.Type = val
-		}
-	case float64:
-		r.Type = int(v)
-	case int:
-		r.Type = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for type: %T", v)
-		}
-	}
-
-	// Handle RepeatInterval
-	switch v := tmp.RepeatInterval.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.RepeatInterval = val
-		}
-	case float64:
-		r.RepeatInterval = int(v)
-	case int:
-		r.RepeatInterval = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for repeat_interval: %T", v)
-		}
-	}
-
-	// Handle MonthlyDay
-	switch v := tmp.MonthlyDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.MonthlyDay = val
-		}
-	case float64:
-		r.MonthlyDay = int(v)
-	case int:
-		r.MonthlyDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_day: %T", v)
-		}
-	}
-
-	// Handle MonthlyWeek
-	switch v := tmp.MonthlyWeek.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.MonthlyWeek = val
-		}
-	case float64:
-		r.MonthlyWeek = int(v)
-	case int:
-		r.MonthlyWeek = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week: %T", v)
-		}
-	}
-
-	// Handle MonthlyWeekDay
-	switch v := tmp.MonthlyWeekDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.MonthlyWeekDay = val
-		}
-	case float64:
-		r.MonthlyWeekDay = int(v)
-	case int:
-		r.MonthlyWeekDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week_day: %T", v)
-		}
-	}
-
-	// Handle EndTimes
-	switch v := tmp.EndTimes.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			r.EndTimes = val
-		}
-	case float64:
-		r.EndTimes = int(v)
-	case int:
-		r.EndTimes = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for end_times: %T", v)
-		}
-	}
-
-	// Assign other fields
-	r.WeeklyDays = tmp.WeeklyDays
-	r.EndDateTime = tmp.EndDateTime
-
-	return nil
 }
 
 // UpdatedOccurrence is the schema for an updated meeting occurrence
@@ -240,7 +75,7 @@ type UpdatedOccurrence struct {
 	Timezone string `json:"timezone"`
 
 	// Duration is the updated duration of occurrence in minutes
-	Duration int `json:"-"`
+	Duration int `json:"duration"`
 
 	// Title is the updated title of the occurrence
 	Title string `json:"title"`
@@ -255,67 +90,6 @@ type UpdatedOccurrence struct {
 	// If this is set to true, then occurrences after this updated occurrence will used these values up until the next
 	// occurrence that is also updated to a new set of values.
 	AllFollowing bool `json:"all_following"`
-}
-
-// MarshalJSON custom marshaler to include integer fields that are excluded from unmarshaling
-func (u UpdatedOccurrence) MarshalJSON() ([]byte, error) {
-	type Alias UpdatedOccurrence
-	return json.Marshal(&struct {
-		Duration int `json:"duration"`
-		*Alias
-	}{
-		Duration: u.Duration,
-		Alias:    (*Alias)(&u),
-	})
-}
-
-// UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for Duration.
-func (u *UpdatedOccurrence) UnmarshalJSON(data []byte) error {
-	tmp := struct {
-		OldOccurrenceID string                 `json:"old_occurrence_id"`
-		NewOccurrenceID string                 `json:"new_occurrence_id"`
-		Timezone        string                 `json:"timezone"`
-		Duration        interface{}            `json:"duration"`
-		Title           string                 `json:"title"`
-		Description     string                 `json:"description"`
-		Recurrence      *ZoomMeetingRecurrence `json:"recurrence"`
-		AllFollowing    bool                   `json:"all_following"`
-	}{}
-
-	if err := json.Unmarshal(data, &tmp); err != nil {
-		return err
-	}
-
-	// Handle Duration
-	switch v := tmp.Duration.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			u.Duration = val
-		}
-	case float64:
-		u.Duration = int(v)
-	case int:
-		u.Duration = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for duration: %T", v)
-		}
-	}
-
-	// Assign other fields
-	u.OldOccurrenceID = tmp.OldOccurrenceID
-	u.NewOccurrenceID = tmp.NewOccurrenceID
-	u.Timezone = tmp.Timezone
-	u.Title = tmp.Title
-	u.Description = tmp.Description
-	u.Recurrence = tmp.Recurrence
-	u.AllFollowing = tmp.AllFollowing
-
-	return nil
 }
 
 // ZoomConfig is the configuration of the meeting in Zoom.
@@ -415,16 +189,16 @@ type MeetingEventData struct {
 	Timezone string `json:"timezone"`
 
 	// Duration is the duration of the meeting in minutes.
-	Duration int `json:"-"`
+	Duration int `json:"duration"`
 
 	// EarlyJoinTimeMinutes is the time in minutes before the meeting start time that the user can join the meeting.
 	// This is needed because these meetings are scheduled on shared Zoom users and thus the meeting scheduler
 	// needs to account for this early join time buffer.
-	EarlyJoinTimeMinutes int `json:"-"`
+	EarlyJoinTimeMinutes int `json:"early_join_time_minutes"`
 
 	// LastEndTime is the end time of the last occurrence of the meeting in unix timestamp format.
 	// If the meeting is a non-recurring meeting, this is the end time of the one-time meeting.
-	LastEndTime int64 `json:"-"`
+	LastEndTime int64 `json:"last_end_time"`
 
 	// HostKey is the host key of the Zoom user hosting the meeting.
 	// It is a six-digit PIN that is rotated weekly by our change-host-keys cron job.
@@ -528,22 +302,22 @@ type MeetingEventData struct {
 	LastBulkRegistrantJobStatus string `json:"last_bulk_registrant_job_status"`
 
 	// LastBulkRegistrantsJobFailedCount is the total number of failed records in the last bulk insert job that was run to insert registrants
-	LastBulkRegistrantsJobFailedCount int `json:"-"`
+	LastBulkRegistrantsJobFailedCount int `json:"last_bulk_registrants_job_failed_count"`
 
 	// LastBulkRegistrantsJobWarningCount is the total number of passed records with warnings in the last bulk insert job that was run to insert registrants
-	LastBulkRegistrantsJobWarningCount int `json:"-"`
+	LastBulkRegistrantsJobWarningCount int `json:"last_bulk_registrants_job_warning_count"`
 
 	// LastMailingListMembersSyncJobStatus is the status of the last bulk insert job that was run to insert registrants
 	LastMailingListMembersSyncJobStatus string `json:"last_mailing_list_members_sync_job_status"`
 
 	// LastMailingListMembersSyncJobFailedCount is the total number of failed records in the last bulk insert job that was run to insert registrants
-	LastMailingListMembersSyncJobFailedCount int `json:"-"`
+	LastMailingListMembersSyncJobFailedCount int `json:"last_mailing_list_members_sync_job_failed_count"`
 
 	// MailingListGroupIDs is a list of group IDs that the meeting is associated with
 	MailingListGroupIDs []string `json:"mailing_list_group_ids"`
 
 	// LastMailingListMembersSyncJobWarningCount is the total number of passed records with warnings in the last bulk insert job that was run to insert registrants
-	LastMailingListMembersSyncJobWarningCount int `json:"-"`
+	LastMailingListMembersSyncJobWarningCount int `json:"last_mailing_list_members_sync_job_warning_count"`
 
 	// UseUniqueICSUID is a flag that indicates if the meeting should use a unique event ID for the calendar event.
 	// Apply manually (generate uuid and store in this field) when a meeting has calendar issues, and we wish to use a separate unique uuid instead of the meeting ID.
@@ -552,6 +326,9 @@ type MeetingEventData struct {
 	// ShowMeetingAttendees determines whether or not LFX One should show data about
 	// meeting attendees to each other
 	ShowMeetingAttendees bool `json:"show_meeting_attendees"`
+
+	// Organizers is the list of usernames (Auth0 sub format) that are organizers of the meeting.
+	Organizers []string `json:"organizers"`
 }
 
 // Tags returns the indexer tags for this meeting.
@@ -595,20 +372,110 @@ type Occurrence struct {
 
 // RegistrantEventData represents a registrant event for indexing and access control
 type RegistrantEventData struct {
-	UID          string    `json:"uid"`
-	MeetingID    string    `json:"meeting_id"`
-	ProjectUID   string    `json:"project_uid"`
-	CommitteeUID string    `json:"committee_uid,omitempty"`
-	UserID       string    `json:"user_id"`
-	Username     string    `json:"username,omitempty"`
-	Email        string    `json:"email"`
-	FirstName    string    `json:"first_name"`
-	LastName     string    `json:"last_name"`
-	AvatarURL    string    `json:"avatar_url,omitempty"`
-	OrgName      string    `json:"org_name,omitempty"`
-	Host         bool      `json:"host"`
-	CreatedAt    time.Time `json:"created_at"`
-	ModifiedAt   time.Time `json:"modified_at"`
+	// UID is the partition key of the registrant (it is a UUID)
+	UID string `json:"uid"`
+
+	// MeetingID is the ID of the meeting that the registrant is associated with.
+	// It is a Global Secondary Index on the registrant table.
+	MeetingID string `json:"meeting_id"`
+
+	// Type is the type of registrant
+	Type string `json:"type"`
+
+	// CommitteeUID is the UID of the committee that the registrant is associated with.
+	// It is only relevant if the [Type] field is [RegistrantTypeCommittee].
+	// It is a Global Secondary Index on the registrant table.
+	CommitteeUID string `json:"committee_uid"`
+
+	// UserID is the ID of the user that the registrant is associated with.
+	// It is a Global Secondary Index on the registrant table.
+	UserID string `json:"user_id"`
+
+	// Email is the email of the registrant.
+	// This is the email address that will receive meeting invites and notifications.
+	// It is a Global Secondary Index on the registrant table.
+	Email string `json:"email"`
+
+	// CaseInsensitiveEmail is the email of the registrant in lowercase.
+	// It is a Global Secondary Index on the registrant table.
+	CaseInsensitiveEmail string `json:"case_insensitive_email"`
+
+	// FirstName is the first name of the registrant
+	FirstName string `json:"first_name"`
+
+	// LastName is the last name of the registrant
+	LastName string `json:"last_name"`
+
+	// OrgName is the name of the organization of the registrant
+	OrgName string `json:"org_name,omitempty"`
+
+	// OrgIsMember is a flag that indicates if the [OrgName] field is an organization that is a member of
+	// the Linux Foundation.
+	OrgIsMember *bool `json:"org_is_member,omitempty"`
+
+	// OrgIsProjectMember is a flag that indicates if the [OrgName] field is an organization that is a member of
+	// the LF project that the meeting is associated with.
+	OrgIsProjectMember *bool `json:"org_is_project_member,omitempty"`
+
+	// JobTitle is the job title of the registrant
+	JobTitle string `json:"job_title,omitempty"`
+
+	// Host is a flag that indicates if the registrant is a host.
+	// If the registrant is a host, then they will be able to obtain the Zoom host key in the LFX platform.
+	Host bool `json:"host"`
+
+	// Occurrence is set with an occurrence ID when a registrant is invited to a specific occurrence of a meeting.
+	// We only support a registrant being invited to a single occurrence or all occurrences of a meeting.
+	// If this is unset, then the registrant is invited to all occurrences of the meeting.
+	Occurrence string `json:"occurrence,omitempty"`
+
+	// AvatarURL is the profile picture of the registrant
+	AvatarURL string `json:"avatar_url"`
+
+	// Username is the LF username of the registrant
+	// It is a Global Secondary Index on the registrant table.
+	Username string `json:"username,omitempty"`
+
+	// LastInviteReceivedTime is the timestamp in RFC3339 format of the last invite sent to the registrant
+	// TODO: rename this field in the database to last_invite_sent_time
+	LastInviteReceivedTime string `json:"last_invite_received_time"`
+
+	// LastInviteReceivedMessageID is the SES message ID of the last invite sent to the registrant
+	// TODO: rename this field in the database to last_invite_sent_message_id
+	LastInviteReceivedMessageID *string `json:"last_invite_received_message_id,omitempty"`
+
+	// LastInviteDeliverySuccessful is a flag that indicates if the last invite email was delivered (tracked by SES)
+	LastInviteDeliverySuccessful *bool `json:"last_invite_delivery_successful,omitempty"`
+
+	// LastInviteDeliveredTime is the timestamp in RFC3339 format of when the last invite email was delivered (tracked by SES)
+	LastInviteDeliveredTime string `json:"last_invite_delivered_time,omitempty"`
+
+	// LastInviteBounced is a flag that indicates if the last invite email bounced (tracked by SES)
+	LastInviteBounced *bool `json:"last_invite_bounced,omitempty"`
+
+	// LastInviteBouncedTime is the timestamp in RFC3339 format of when the last invite email bounced (tracked by SES)
+	LastInviteBouncedTime string `json:"last_invite_bounced_time,omitempty"`
+
+	// LastInviteBouncedType is the type of bounce for the last invite email
+	LastInviteBouncedType string `json:"last_invite_bounced_type,omitempty"`
+
+	// LastInviteBouncedSubType is the sub-type of bounce for the last invite email
+	LastInviteBouncedSubType string `json:"last_invite_bounced_sub_type,omitempty"`
+
+	// LastInviteBouncedDiagnosticCode is the diagnostic code for the bounce for the last invite email
+	LastInviteBouncedDiagnosticCode string `json:"last_invite_bounced_diagnostic_code,omitempty"`
+
+	// CreatedAt is the timestamp in RFC3339 format of when the registrant was created
+	CreatedAt string `json:"created_at"`
+
+	// UpdatedAt is the timestamp in RFC3339 format of when the registrant was last updated
+	UpdatedAt string `json:"updated_at"`
+
+	// CreatedBy is the user that created the registrant
+	CreatedBy CreatedBy `json:"created_by"`
+
+	// UpdatedBy is the user that last updated the registrant
+	UpdatedBy UpdatedBy `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this registrant.
@@ -645,7 +512,10 @@ type InviteResponseEventData struct {
 	ProjectUID             string    `json:"project_uid"`
 	UserID                 string    `json:"user_id"`
 	Username               string    `json:"username,omitempty"`
+	Name                   string    `json:"name,omitempty"`
 	Email                  string    `json:"email"`
+	Org                    string    `json:"org,omitempty"`
+	JobTitle               string    `json:"job_title,omitempty"`
 	ResponseType           string    `json:"response_type"` // accepted, declined, maybe
 	Scope                  string    `json:"scope"`         // all, single, this_and_following
 	IsRecurring            bool      `json:"is_recurring"`
@@ -676,20 +546,45 @@ func (r *InviteResponseEventData) ParentRefs() []string {
 
 // PastMeetingEventData represents a past meeting event for indexing and access control
 type PastMeetingEventData struct {
-	ID               string      `json:"id"`         // UUID
-	MeetingID        string      `json:"meeting_id"` // Original meeting ID
-	ProjectUID       string      `json:"project_uid"`
-	Title            string      `json:"title"`
-	Description      string      `json:"description"`
-	StartTime        time.Time   `json:"start_time"`
-	EndTime          time.Time   `json:"end_time"`
-	Duration         int         `json:"duration"` // Actual duration in minutes
-	Timezone         string      `json:"timezone"`
-	ParticipantCount int         `json:"participant_count"`
-	Committees       []Committee `json:"committees"`
-	HostKey          string      `json:"host_key"`
-	CreatedAt        time.Time   `json:"created_at"`
-	ModifiedAt       time.Time   `json:"modified_at"`
+	ID                       string      `json:"id"`         // UUID
+	MeetingID                string      `json:"meeting_id"` // Original meeting ID
+	MeetingAndOccurrenceID   string      `json:"meeting_and_occurrence_id"`
+	OccurrenceID             string      `json:"occurrence_id,omitempty"`
+	ProjectSFID              string      `json:"proj_id,omitempty"`
+	ProjectUID               string      `json:"project_uid"`
+	ProjectSlug              string      `json:"project_slug,omitempty"`
+	Committee                string      `json:"committee,omitempty"`
+	CommitteeFilters         []string    `json:"committee_filters,omitempty"`
+	Title                    string      `json:"title"`
+	Description              string      `json:"description"`
+	StartTime                time.Time   `json:"start_time"`
+	EndTime                  time.Time   `json:"end_time"`
+	Duration                 int         `json:"duration"` // Actual duration in minutes
+	Timezone                 string      `json:"timezone"`
+	MeetingType              string      `json:"meeting_type,omitempty"`
+	Committees               []Committee `json:"committees"`
+	Visibility               string      `json:"visibility,omitempty"`
+	ArtifactVisibility       string      `json:"artifact_visibility,omitempty"`
+	Restricted               bool        `json:"restricted"`
+	RecordingEnabled         bool        `json:"recording_enabled"`
+	RecordingAccess          string      `json:"recording_access,omitempty"`
+	TranscriptEnabled        bool        `json:"transcript_enabled"`
+	TranscriptAccess         string      `json:"transcript_access,omitempty"`
+	ZoomAIEnabled            *bool       `json:"zoom_ai_enabled,omitempty"`
+	AISummaryAccess          string      `json:"ai_summary_access,omitempty"`
+	RequireAISummaryApproval *bool       `json:"require_ai_summary_approval,omitempty"`
+	EarlyJoinTimeMinutes     int         `json:"early_join_time_minutes,omitempty"`
+	YoutubeLink              string      `json:"youtube_link,omitempty"`
+	Platform                 string      `json:"platform,omitempty"`
+	PlatformMeetingID        string      `json:"platform_meeting_id,omitempty"`
+	RecordingPassword        string      `json:"recording_password,omitempty"`
+	ZoomConfig               *ZoomConfig `json:"zoom_config,omitempty"`
+	IsManuallyCreated        bool        `json:"is_manually_created,omitempty"`
+	CreatedAt                time.Time   `json:"created_at"`
+	UpdatedAt                time.Time   `json:"updated_at"`
+	CreatedBy                CreatedBy   `json:"created_by"`
+	UpdatedBy                UpdatedBy   `json:"updated_by"`
+	UpdatedByList            []UpdatedBy `json:"updated_by_list,omitempty"`
 }
 
 // Tags returns the indexer tags for this past meeting.
@@ -737,7 +632,7 @@ type PastMeetingParticipantEventData struct {
 	IsAttended             bool                 `json:"is_attended"`
 	Sessions               []ParticipantSession `json:"sessions,omitempty"`
 	CreatedAt              time.Time            `json:"created_at"`
-	ModifiedAt             time.Time            `json:"modified_at"`
+	UpdatedAt              time.Time            `json:"updated_at"`
 }
 
 // Tags returns the indexer tags for this past meeting participant.
@@ -780,6 +675,7 @@ type RecordingEventData struct {
 	ID                     string             `json:"id"`
 	MeetingAndOccurrenceID string             `json:"meeting_and_occurrence_id"`
 	ProjectUID             string             `json:"project_uid"`
+	ProjectSlug            string             `json:"project_slug"`
 	HostEmail              string             `json:"host_email"`
 	HostID                 string             `json:"host_id"`
 	MeetingID              string             `json:"meeting_id"`
@@ -798,6 +694,8 @@ type RecordingEventData struct {
 	TotalSize              int64              `json:"total_size"`
 	CreatedAt              time.Time          `json:"created_at"`
 	UpdatedAt              time.Time          `json:"updated_at"`
+	CreatedBy              CreatedBy          `json:"created_by"`
+	UpdatedBy              UpdatedBy          `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this recording.
@@ -869,24 +767,32 @@ func (t *TranscriptEventData) ParentRefs() []string {
 
 // SummaryEventData represents an AI-generated summary event
 type SummaryEventData struct {
-	ID                     string            `json:"id"`
-	MeetingAndOccurrenceID string            `json:"meeting_and_occurrence_id"`
-	ProjectUID             string            `json:"project_uid"`
-	MeetingID              string            `json:"meeting_id"`
-	OccurrenceID           string            `json:"occurrence_id"`
-	ZoomMeetingUUID        string            `json:"zoom_meeting_uuid"`
-	ZoomMeetingHostID      string            `json:"zoom_meeting_host_id"`
-	ZoomMeetingHostEmail   string            `json:"zoom_meeting_host_email"`
-	ZoomMeetingTopic       string            `json:"zoom_meeting_topic"`
-	Content                string            `json:"content"`        // Consolidated markdown
-	EditedContent          string            `json:"edited_content"` // Edited markdown
-	RequiresApproval       bool              `json:"requires_approval"`
-	Approved               bool              `json:"approved"`
-	Platform               string            `json:"platform"` // Always "Zoom"
-	ZoomConfig             SummaryZoomConfig `json:"zoom_config"`
-	EmailSent              bool              `json:"email_sent"`
-	CreatedAt              time.Time         `json:"created_at"`
-	UpdatedAt              time.Time         `json:"updated_at"`
+	ID                      string            `json:"id"`
+	MeetingAndOccurrenceID  string            `json:"meeting_and_occurrence_id"`
+	ProjectUID              string            `json:"project_uid"`
+	MeetingID               string            `json:"meeting_id"`
+	OccurrenceID            string            `json:"occurrence_id"`
+	ZoomMeetingUUID         string            `json:"zoom_meeting_uuid"`
+	ZoomMeetingHostID       string            `json:"zoom_meeting_host_id"`
+	ZoomMeetingHostEmail    string            `json:"zoom_meeting_host_email"`
+	ZoomMeetingTopic        string            `json:"zoom_meeting_topic"`
+	ZoomWebhookEvent        string            `json:"zoom_webhook_event,omitempty"`
+	SummaryTitle            string            `json:"summary_title,omitempty"`
+	SummaryStartTime        string            `json:"summary_start_time,omitempty"`
+	SummaryEndTime          string            `json:"summary_end_time,omitempty"`
+	SummaryCreatedTime      string            `json:"summary_created_time,omitempty"`
+	SummaryLastModifiedTime string            `json:"summary_last_modified_time,omitempty"`
+	Content                 string            `json:"content"`        // Consolidated markdown
+	EditedContent           string            `json:"edited_content"` // Edited markdown
+	RequiresApproval        bool              `json:"requires_approval"`
+	Approved                bool              `json:"approved"`
+	Platform                string            `json:"platform"` // Always "Zoom"
+	ZoomConfig              SummaryZoomConfig `json:"zoom_config"`
+	EmailSent               bool              `json:"email_sent"`
+	CreatedAt               time.Time         `json:"created_at"`
+	UpdatedAt               time.Time         `json:"updated_at"`
+	CreatedBy               CreatedBy         `json:"created_by"`
+	UpdatedBy               UpdatedBy         `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this summary.
@@ -917,24 +823,26 @@ type SummaryZoomConfig struct {
 
 // MeetingAttachmentEventData represents an attachment on an active meeting
 type MeetingAttachmentEventData struct {
-	UID              string    `json:"uid"`
-	MeetingID        string    `json:"meeting_id"`
-	Type             string    `json:"type"`
-	Category         string    `json:"category,omitempty"`
-	Link             string    `json:"link,omitempty"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description,omitempty"`
-	Source           string    `json:"source,omitempty"`
-	FileName         string    `json:"file_name,omitempty"`
-	FileSize         int       `json:"file_size,omitempty"`
-	FileURL          string    `json:"file_url,omitempty"`
-	FileUploaded     *bool     `json:"file_uploaded,omitempty"`
-	FileUploadStatus string    `json:"file_upload_status,omitempty"`
-	FileContentType  string    `json:"file_content_type,omitempty"`
-	CreatedAt        time.Time `json:"created_at"`
-	ModifiedAt       time.Time `json:"modified_at"`
-	CreatedBy        CreatedBy `json:"created_by"`
-	UpdatedBy        UpdatedBy `json:"updated_by"`
+	UID              string     `json:"uid"`
+	MeetingID        string     `json:"meeting_id"`
+	Type             string     `json:"type"`
+	Category         string     `json:"category,omitempty"`
+	Link             string     `json:"link,omitempty"`
+	Name             string     `json:"name"`
+	Description      string     `json:"description,omitempty"`
+	Source           string     `json:"source,omitempty"`
+	FileName         string     `json:"file_name,omitempty"`
+	FileSize         int        `json:"file_size,omitempty"`
+	FileURL          string     `json:"file_url,omitempty"`
+	FileUploaded     *bool      `json:"file_uploaded,omitempty"`
+	FileUploadStatus string     `json:"file_upload_status,omitempty"`
+	FileContentType  string     `json:"file_content_type,omitempty"`
+	FileUploadedBy   *CreatedBy `json:"file_uploaded_by,omitempty"`
+	FileUploadedAt   *time.Time `json:"file_uploaded_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	ModifiedAt       time.Time  `json:"modified_at"`
+	CreatedBy        CreatedBy  `json:"created_by"`
+	UpdatedBy        UpdatedBy  `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this meeting attachment.
@@ -956,25 +864,27 @@ func (a *MeetingAttachmentEventData) ParentRefs() []string {
 
 // PastMeetingAttachmentEventData represents an attachment on a past meeting
 type PastMeetingAttachmentEventData struct {
-	UID                    string    `json:"uid"`
-	MeetingAndOccurrenceID string    `json:"meeting_and_occurrence_id"`
-	MeetingID              string    `json:"meeting_id"`
-	Type                   string    `json:"type"`
-	Category               string    `json:"category,omitempty"`
-	Link                   string    `json:"link,omitempty"`
-	Name                   string    `json:"name"`
-	Description            string    `json:"description,omitempty"`
-	Source                 string    `json:"source,omitempty"`
-	FileName               string    `json:"file_name,omitempty"`
-	FileSize               int       `json:"file_size,omitempty"`
-	FileURL                string    `json:"file_url,omitempty"`
-	FileUploaded           *bool     `json:"file_uploaded,omitempty"`
-	FileUploadStatus       string    `json:"file_upload_status,omitempty"`
-	FileContentType        string    `json:"file_content_type,omitempty"`
-	CreatedAt              time.Time `json:"created_at"`
-	ModifiedAt             time.Time `json:"modified_at"`
-	CreatedBy              CreatedBy `json:"created_by"`
-	UpdatedBy              UpdatedBy `json:"updated_by"`
+	UID                    string     `json:"uid"`
+	MeetingAndOccurrenceID string     `json:"meeting_and_occurrence_id"`
+	MeetingID              string     `json:"meeting_id"`
+	Type                   string     `json:"type"`
+	Category               string     `json:"category,omitempty"`
+	Link                   string     `json:"link,omitempty"`
+	Name                   string     `json:"name"`
+	Description            string     `json:"description,omitempty"`
+	Source                 string     `json:"source,omitempty"`
+	FileName               string     `json:"file_name,omitempty"`
+	FileSize               int        `json:"file_size,omitempty"`
+	FileURL                string     `json:"file_url,omitempty"`
+	FileUploaded           *bool      `json:"file_uploaded,omitempty"`
+	FileUploadStatus       string     `json:"file_upload_status,omitempty"`
+	FileContentType        string     `json:"file_content_type,omitempty"`
+	FileUploadedBy         *CreatedBy `json:"file_uploaded_by,omitempty"`
+	FileUploadedAt         *time.Time `json:"file_uploaded_at,omitempty"`
+	CreatedAt              time.Time  `json:"created_at"`
+	ModifiedAt             time.Time  `json:"modified_at"`
+	CreatedBy              CreatedBy  `json:"created_by"`
+	UpdatedBy              UpdatedBy  `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this past meeting attachment.

@@ -21,7 +21,7 @@ type EventPublisher interface {
 	PublishPastMeetingParticipantEvent(ctx context.Context, action string, participant *models.PastMeetingParticipantEventData) error
 	PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData) error
 	PublishPastMeetingTranscriptEvent(ctx context.Context, action string, transcript *models.TranscriptEventData) error
-	PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData) error
+	PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData, summaryAccess string) error
 
 	// Attachment events
 	PublishMeetingAttachmentEvent(ctx context.Context, action string, attachment *models.MeetingAttachmentEventData) error

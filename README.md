@@ -228,7 +228,8 @@ When modifying the API:
 | Target | Description |
 |--------|-------------|
 | `make all` | Complete build pipeline (clean, deps, apigen, fmt, lint, test, build) |
-| `make deps` | Install dependencies and tools |
+| `make deps` | Install dependencies, tools, and git hooks |
+| `make install-hooks` | Install git hooks (pre-commit gofmt check) |
 | `make apigen` | Generate API code from design files |
 | `make build` | Build the binary |
 | `make run` | Run the service locally |

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -22,6 +23,238 @@ import (
 // =============================================================================
 // Past Meeting Event Handler
 // =============================================================================
+
+// PastMeetingDBRaw represents raw past meeting data from v1 DynamoDB/NATS KV bucket
+type PastMeetingDBRaw struct {
+	// MeetingAndOccurrenceID is the partition key of the past meeting table
+	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
+
+	// ProjectID is the ID of the salesforce (v1) project associated with the past meeting
+	ProjectID string `json:"proj_id"`
+
+	// ProjectSlug is the slug of the project associated with the past meeting
+	ProjectSlug string `json:"project_slug"`
+
+	// Committee is the ID of the committee associated with the past meeting
+	Committee string `json:"committee"`
+
+	// CommitteeFilters is the list of filters associated with the committee
+	CommitteeFilters []string `json:"committee_filters"`
+
+	// Topic is the title/topic of the past meeting (v1 field name)
+	Topic string `json:"topic"`
+
+	// Agenda is the description/agenda of the past meeting (v1 field name)
+	Agenda string `json:"agenda"`
+
+	// Duration is the duration of the past meeting
+	Duration int `json:"duration"`
+
+	// MeetingID is the ID of the meeting associated with the past meeting
+	MeetingID string `json:"meeting_id"`
+
+	// OccurrenceID is the ID of the occurrence associated with the past meeting
+	OccurrenceID string `json:"occurrence_id"`
+
+	// RecordingAccess is the access type of the recording of the past meeting
+	RecordingAccess string `json:"recording_access"`
+
+	// RecordingEnabled is whether the recording of the past meeting is enabled
+	RecordingEnabled bool `json:"recording_enabled"`
+
+	// ScheduledStartTime is the scheduled start time of the past meeting.
+	// This differs from the actual start time of the meeting because the [Sessions] stores
+	// the actual start and end times of the meeting from Zoom of when it officially started.
+	ScheduledStartTime string `json:"scheduled_start_time"`
+
+	// ScheduledEndTime is the scheduled end time of the past meeting
+	// This differs from the actual end time of the meeting because the [Sessions] stores
+	// the actual start and end times of the meeting from Zoom of when it officially ended.
+	ScheduledEndTime string `json:"scheduled_end_time"`
+
+	// Sessions is the list of sessions associated with the past meeting
+	Sessions []ZoomPastMeetingSession `json:"sessions"`
+
+	// Timezone is the timezone of the past meeting
+	Timezone string `json:"timezone"`
+
+	// MeetingType is the type of the past meeting
+	MeetingType string `json:"meeting_type"`
+
+	// TranscriptAccess is the access type of the transcript of the past meeting
+	TranscriptAccess string `json:"transcript_access"`
+
+	// TranscriptEnabled is whether the transcript of the past meeting is enabled
+	TranscriptEnabled bool `json:"transcript_enabled"`
+
+	// Type is the type of the past meeting
+	Type int `json:"type"`
+
+	// Visibility is the visibility of the past meeting
+	Visibility string `json:"visibility"`
+
+	// Recurrence is the recurrence of the past meeting
+	Recurrence *RecurrenceDBRaw `json:"recurrence"`
+
+	// Restricted is whether the past meeting is restricted to only invited participants
+	Restricted bool `json:"restricted"`
+
+	// IsManuallyCreated indicates whether the past meeting was created manually
+	IsManuallyCreated bool `json:"is_manually_created"`
+
+	// RecordingPassword is the password of the past meeting recording
+	// This is no longer relevant for recordings since sometime in 2023 because now the recordings
+	// aren't hidden behind a password to access them.
+	RecordingPassword string `json:"recording_password"`
+
+	// ZoomAIEnabled is whether the meeting was hosted on a zoom user with AI-companion enabled
+	ZoomAIEnabled *bool `json:"zoom_ai_enabled,omitempty"`
+
+	// AISummaryAccess is the access level of the meeting AI summary within the LFX platform.
+	AISummaryAccess string `json:"ai_summary_access,omitempty"`
+
+	// RequireAISummaryApproval is whether the meeting requires approval of the AI summary
+	RequireAISummaryApproval *bool `json:"require_ai_summary_approval,omitempty"`
+
+	// EarlyJoinTime is the number of minutes before the scheduled start time that participants can join the meeting
+	EarlyJoinTime int `json:"early_join_time"`
+
+	// Artifacts is the list of artifacts for the past meeting
+	Artifacts []ZoomPastMeetingArtifact `json:"artifacts"`
+
+	// YoutubeLink is the link to the YouTube video of the past meeting
+	YoutubeLink string `json:"youtube_link,omitempty"`
+
+	// CreatedAt is the creation time of the past meeting
+	CreatedAt string `json:"created_at"`
+
+	// ModifiedAt is the last modification time in RFC3339 format of the past meeting
+	ModifiedAt string `json:"modified_at"`
+
+	// CreatedBy is the user who created the past meeting
+	CreatedBy models.CreatedBy `json:"created_by"`
+
+	// UpdatedBy is the user who last updated the past meeting
+	UpdatedBy models.UpdatedBy `json:"updated_by"`
+
+	// UpdatedByList is the list of users who have updated the past meeting
+	UpdatedByList []models.UpdatedBy `json:"updated_by_list"`
+}
+
+// UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
+func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias PastMeetingDBRaw
+	tmp := struct {
+		Duration      interface{} `json:"duration"`
+		EarlyJoinTime interface{} `json:"early_join_time"`
+		Type          interface{} `json:"type"`
+		*Alias
+	}{
+		Alias: (*Alias)(p),
+	}
+
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+
+	// Handle Duration
+	switch v := tmp.Duration.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid value for duration: %w", err)
+			}
+			p.Duration = val
+		}
+	case float64:
+		p.Duration = int(v)
+	case nil:
+	default:
+		return fmt.Errorf("invalid type for duration: %T", v)
+	}
+
+	// Handle EarlyJoinTime
+	switch v := tmp.EarlyJoinTime.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid value for early_join_time: %w", err)
+			}
+			p.EarlyJoinTime = val
+		}
+	case float64:
+		p.EarlyJoinTime = int(v)
+	case nil:
+	default:
+		return fmt.Errorf("invalid type for early_join_time: %T", v)
+	}
+
+	// Handle Type
+	switch v := tmp.Type.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid value for type: %w", err)
+			}
+			p.Type = val
+		}
+	case float64:
+		p.Type = int(v)
+	case nil:
+	default:
+		return fmt.Errorf("invalid type for type: %T", v)
+	}
+
+	return nil
+}
+
+// ZoomPastMeetingSession represents a single meeting instance/session
+// A meeting being started then ended is one session, then restarting it is a second session.
+type ZoomPastMeetingSession struct {
+	// UUID is the UUID of the session.
+	// This comes from Zoom when the meeting is started and ended. It is unique to each time
+	// that the meeting is run, so if the same meeting is restarted then it will have a different UUID.
+	UUID string `json:"uuid"`
+
+	// StartTime is the start time of the session in RFC3339 format
+	StartTime string `json:"start_time"`
+
+	// EndTime is the end time of the session in RFC3339 format
+	EndTime string `json:"end_time"`
+}
+
+// ZoomPastMeetingArtifact represents a a meeting artifact.
+// An artifact is a link to a url where some information about the meeting can be found.
+// For example a spreadsheet for meeting minutes or a link to an agenda can be represented
+// by this artifact model.
+type ZoomPastMeetingArtifact struct {
+	// ID is the UUID of the artifact record.
+	ID string `json:"id"`
+
+	// Category is the category of the artifact.
+	Category string `json:"category"`
+
+	// Link is the link to the artifact.
+	Link string `json:"link"`
+
+	// Name is the name of the artifact.
+	Name string `json:"name"`
+
+	// CreatedAt is the creation time of the artifact in RFC3339 format.
+	CreatedAt string `json:"created_at"`
+
+	// CreatedBy is the user who created the artifact.
+	CreatedBy models.CreatedBy `json:"created_by"`
+
+	// UpdatedAt is the last modification time of the artifact in RFC3339 format.
+	UpdatedAt string `json:"updated_at"`
+
+	// UpdatedBy is the user who last updated the artifact.
+	UpdatedBy models.UpdatedBy `json:"updated_by"`
+}
 
 // handlePastMeetingUpdate processes updates to past meeting records
 func (h *EventHandlers) handlePastMeetingUpdate(
@@ -109,8 +342,8 @@ func convertMapToPastMeetingData(
 	}
 
 	// Validate required fields
-	if rawPastMeeting.UUID == "" || rawPastMeeting.ProjectID == "" {
-		return nil, fmt.Errorf("missing required fields: uuid or proj_id")
+	if rawPastMeeting.MeetingAndOccurrenceID == "" || rawPastMeeting.ProjectID == "" {
+		return nil, fmt.Errorf("missing required fields: meeting_and_occurrence_id or proj_id")
 	}
 
 	// Map project ID from v1 SFID to v2 UID
@@ -120,31 +353,85 @@ func convertMapToPastMeetingData(
 	}
 
 	// Parse times
-	startTime, _ := parseTime(rawPastMeeting.StartTime)
-	endTime, _ := parseTime(rawPastMeeting.EndTime)
+	startTime, _ := parseTime(rawPastMeeting.ScheduledStartTime)
+	endTime, _ := parseTime(rawPastMeeting.ScheduledEndTime)
 	createdAt, _ := parseTime(rawPastMeeting.CreatedAt)
 	modifiedAt, _ := parseTime(rawPastMeeting.ModifiedAt)
 
 	// Get committees from mapping index (same logic as active meetings)
-	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.UUID, idMapper, mappingsKV, logger)
+	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
+
+	// Compute artifact visibility from access fields (fallback chain)
+	artifactVisibility := rawPastMeeting.RecordingAccess
+	if artifactVisibility == "" {
+		artifactVisibility = rawPastMeeting.TranscriptAccess
+	}
+	if artifactVisibility == "" {
+		artifactVisibility = rawPastMeeting.AISummaryAccess
+	}
+	if artifactVisibility == "" {
+		artifactVisibility = "meeting_hosts"
+	}
+
+	// Build ZoomConfig from flat v1 fields
+	zoomConfig := buildPastMeetingZoomConfig(&rawPastMeeting)
 
 	// Build event data
 	return &models.PastMeetingEventData{
-		ID:               rawPastMeeting.UUID,
-		MeetingID:        rawPastMeeting.MeetingID,
-		ProjectUID:       projectUID,
-		Title:            rawPastMeeting.Topic,
-		Description:      rawPastMeeting.Agenda,
-		StartTime:        startTime,
-		EndTime:          endTime,
-		Duration:         utils.GetInt(rawPastMeeting.Duration),
-		Timezone:         rawPastMeeting.Timezone,
-		ParticipantCount: utils.GetInt(rawPastMeeting.ParticipantsCount),
-		Committees:       committees,
-		HostKey:          rawPastMeeting.HostID,
-		CreatedAt:        createdAt,
-		ModifiedAt:       modifiedAt,
+		ID:                       rawPastMeeting.MeetingAndOccurrenceID,
+		MeetingID:                rawPastMeeting.MeetingID,
+		MeetingAndOccurrenceID:   rawPastMeeting.MeetingAndOccurrenceID,
+		OccurrenceID:             rawPastMeeting.OccurrenceID,
+		ProjectSFID:              rawPastMeeting.ProjectID,
+		ProjectUID:               projectUID,
+		ProjectSlug:              rawPastMeeting.ProjectSlug,
+		Committee:                rawPastMeeting.Committee,
+		CommitteeFilters:         rawPastMeeting.CommitteeFilters,
+		Title:                    rawPastMeeting.Topic,
+		Description:              rawPastMeeting.Agenda,
+		StartTime:                startTime,
+		EndTime:                  endTime,
+		Duration:                 rawPastMeeting.Duration,
+		Timezone:                 rawPastMeeting.Timezone,
+		MeetingType:              rawPastMeeting.MeetingType,
+		Committees:               committees,
+		Visibility:               rawPastMeeting.Visibility,
+		ArtifactVisibility:       artifactVisibility,
+		Restricted:               rawPastMeeting.Restricted,
+		RecordingEnabled:         rawPastMeeting.RecordingEnabled,
+		RecordingAccess:          rawPastMeeting.RecordingAccess,
+		TranscriptEnabled:        rawPastMeeting.TranscriptEnabled,
+		TranscriptAccess:         rawPastMeeting.TranscriptAccess,
+		ZoomAIEnabled:            rawPastMeeting.ZoomAIEnabled,
+		AISummaryAccess:          rawPastMeeting.AISummaryAccess,
+		RequireAISummaryApproval: rawPastMeeting.RequireAISummaryApproval,
+		EarlyJoinTimeMinutes:     rawPastMeeting.EarlyJoinTime,
+		YoutubeLink:              rawPastMeeting.YoutubeLink,
+		RecordingPassword:        rawPastMeeting.RecordingPassword,
+		ZoomConfig:               zoomConfig,
+		IsManuallyCreated:        rawPastMeeting.IsManuallyCreated,
+		CreatedAt:                createdAt,
+		UpdatedAt:                modifiedAt,
+		CreatedBy:                models.CreatedBy(rawPastMeeting.CreatedBy),
+		UpdatedBy:                models.UpdatedBy(rawPastMeeting.UpdatedBy),
+		UpdatedByList:            rawPastMeeting.UpdatedByList,
 	}, nil
+}
+
+// buildPastMeetingZoomConfig constructs a ZoomConfig from flat v1 fields on the raw past meeting.
+// Returns nil if no source fields are present so ZoomConfig is omitted from the event payload.
+func buildPastMeetingZoomConfig(m *PastMeetingDBRaw) *models.ZoomConfig {
+	if m.ZoomAIEnabled == nil && m.RequireAISummaryApproval == nil {
+		return nil
+	}
+	cfg := &models.ZoomConfig{}
+	if m.ZoomAIEnabled != nil {
+		cfg.AICompanionEnabled = *m.ZoomAIEnabled
+	}
+	if m.RequireAISummaryApproval != nil {
+		cfg.AISummaryRequireApproval = *m.RequireAISummaryApproval
+	}
+	return cfg
 }
 
 // =============================================================================

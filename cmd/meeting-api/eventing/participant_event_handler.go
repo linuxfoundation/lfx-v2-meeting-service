@@ -21,6 +21,85 @@ import (
 // Past Meeting Invitee Event Handler
 // =============================================================================
 
+// InviteeDBRaw represents raw past meeting invitee data from v1 DynamoDB/NATS KV bucket
+type InviteeDBRaw struct {
+	// InviteeID is the partition key of the invitee table
+	InviteeID string `json:"invitee_id"`
+
+	// FirstName is the first name of the invitee
+	FirstName string `json:"first_name"`
+
+	// LastName is the last name of the invitee
+	LastName string `json:"last_name"`
+
+	// Email is the email of the invitee
+	Email string `json:"email"`
+
+	// ProfilePicture is the profile picture of the invitee
+	ProfilePicture string `json:"profile_picture"`
+
+	// LFSSO is the LF username of the invitee
+	LFSSO string `json:"lf_sso"`
+
+	// LFUserID is the ID of the invitee
+	LFUserID string `json:"lf_user_id,omitempty"`
+
+	// CommitteeID is the ID of the committee associated with the invitee
+	CommitteeID string `json:"committee_id"`
+
+	// CommitteeRole is the role of the invitee in the committee
+	CommitteeRole string `json:"committee_role"`
+
+	// CommitteeVotingStatus is the voting status of the invitee in the committee
+	CommitteeVotingStatus string `json:"committee_voting_status"`
+
+	// Org is the organization of the invitee
+	Org string `json:"org"`
+
+	// OrgIsMember is whether the [Org] field is an organization that is a member of the Linux Foundation
+	OrgIsMember *bool `json:"org_is_member,omitempty"`
+
+	// OrgIsProjectMember is whether the [Org] field is an organization that is a member of the project associated with the meeting
+	OrgIsProjectMember *bool `json:"org_is_project_member,omitempty"`
+
+	// JobTitle is the job title of the invitee
+	JobTitle string `json:"job_title"`
+
+	// RegistrantID is the ID of the registrant record associated with the invitee
+	RegistrantID string `json:"registrant_id"`
+
+	// ProjectID is the ID of the project associated with the invitee
+	ProjectID string `json:"proj_id,omitempty"`
+
+	// MeetingAndOccurrenceID is the ID of the meeting and occurrence associated with the invitee
+	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id,omitempty"` // secondary index
+
+	// MeetingID is the ID of the meeting associated with the invitee
+	MeetingID string `json:"meeting_id,omitempty"`
+
+	// OccurrenceID is the ID of the occurrence associated with the invitee
+	OccurrenceID string `json:"occurrence_id"`
+
+	// CreatedAt is the creation time of the invitee
+	CreatedAt string `json:"created_at"`
+
+	// ModifiedAt is the last modification time of the invitee
+	ModifiedAt string `json:"modified_at"`
+
+	// CreatedBy is the user who created the invitee
+	CreatedBy models.CreatedBy `json:"created_by"`
+
+	// UpdatedBy is the user who last updated the invitee
+	UpdatedBy models.UpdatedBy `json:"updated_by"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for InviteeDBRaw.
+func (i *InviteeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias InviteeDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(i)}
+	return json.Unmarshal(data, &tmp)
+}
+
 // handlePastMeetingInviteeUpdate processes updates to past meeting invitees
 func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	ctx context.Context,
@@ -88,6 +167,138 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 // =============================================================================
 // Past Meeting Attendee Event Handler
 // =============================================================================
+
+// AttendeeDBRaw represents raw past meeting attendee data from v1 DynamoDB/NATS KV bucket
+type AttendeeDBRaw struct {
+	// ID is the partition key of the attendee table
+	// This is from the v1 system
+	ID string `json:"id"`
+
+	// ProjectID is the ID of the project associated with the attendee
+	ProjectID string `json:"proj_id"`
+
+	// ProjectSlug is the slug of the project associated with the attendee
+	ProjectSlug string `json:"project_slug"`
+
+	// RegistrantID is the ID of the registrant associated with the attendee.
+	// This is only populated for attendees who are registrants for the meeting.
+	RegistrantID string `json:"registrant_id"`
+
+	// Email is the email of the attendee.
+	// This may be empty if the attendee is not a known LF user because Zoom does not provide the email
+	// of users when they join a meeting.
+	Email string `json:"email"`
+
+	// Name is the full name of the attendee.
+	// If the user is not a known LF user, then the name is just the Zoom display name of the participant.
+	// Otherwise, the name comes from the LF user record.
+	Name string `json:"name"`
+
+	// ZoomUserName is the Zoom display name of the attendee.
+	ZoomUserName string `json:"zoom_user_name"`
+
+	// MappedInviteeName is the full name of the invitee that the attendee was matched to.
+	// This is only populated if the attendee was auto-matched to an invitee.
+	MappedInviteeName string `json:"mapped_invitee_name"`
+
+	// LFSSO is the LF username of the attendee
+	LFSSO string `json:"lf_sso"`
+
+	// LFUserID is the ID of the attendee
+	LFUserID string `json:"lf_user_id"`
+
+	// IsVerified is whether or not the attendee is a verified user
+	IsVerified bool `json:"is_verified"`
+
+	// IsUnknown is whether or not the attendee has been marked as unknown attendee
+	IsUnknown bool `json:"is_unknown"`
+
+	// IsAIReconciled is true when the attendee record was updated via AI reconcile
+	IsAIReconciled bool `json:"is_ai_reconciled"`
+
+	// Org is the organization of the attendee
+	Org string `json:"org"`
+
+	// OrgIsMember is whether the [Org] field is an organization that is a member of the Linux Foundation
+	OrgIsMember *bool `json:"org_is_member,omitempty"`
+
+	// OrgIsProjectMember is whether the [Org] field is an organization that is a member of the project associated with the meeting
+	OrgIsProjectMember *bool `json:"org_is_project_member,omitempty"`
+
+	// JobTitle is the job title of the attendee
+	JobTitle string `json:"job_title"`
+
+	// CommitteeID is the ID of the committee associated with the attendee
+	CommitteeID string `json:"committee_id"`
+
+	// IsCommitteeMember is only relevant if the past meeting is associated with a committee.
+	// It is true if the attendee is a member of that committee.
+	IsCommitteeMember bool `json:"is_committee_member"`
+
+	// CommitteeRole is only relevant if the past meeting is associated with a committee.
+	// It is the role of the attendee in the committee.
+	CommitteeRole string `json:"committee_role"`
+
+	// CommitteeVotingStatus is only relevant if the past meeting is associated with a committee.
+	// It is the voting status of the attendee in the committee.
+	CommitteeVotingStatus string `json:"committee_voting_status"`
+
+	// ProfilePicture is the profile picture of the attendee
+	ProfilePicture string `json:"profile_picture"`
+
+	// MeetingID is the ID of the meeting associated with the attendee
+	MeetingID string `json:"meeting_id"`
+
+	// OccurrenceID is the ID of the occurrence associated with the attendee
+	OccurrenceID string `json:"occurrence_id"`
+
+	// MeetingAndOccurrenceID is the ID of the combined meeting and occurrence associated with the attendee
+	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
+
+	// AverageAttendance is the average attendance of the attendee as a percentage.
+	// This is the average of the [Sessions] field.
+	AverageAttendance int `json:"-"`
+
+	// Sessions is the list of sessions associated with the attendee
+	Sessions []AttendeeSessionDBRaw `json:"sessions"`
+
+	// CreatedAt is the creation time of the attendee
+	CreatedAt string `json:"created_at"`
+
+	// ModifiedAt is the last modification time of the attendee
+	ModifiedAt string `json:"modified_at"`
+
+	// CreatedBy is the user who created the attendee
+	CreatedBy models.CreatedBy `json:"created_by"`
+
+	// UpdatedBy is the user who last updated the attendee
+	UpdatedBy models.UpdatedBy `json:"updated_by"`
+
+	// IsAutoMatched is true if the attendee name was auto-matched to a registrant's email
+	IsAutoMatched bool `json:"is_auto_matched,omitempty"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for AttendeeDBRaw.
+func (a *AttendeeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias AttendeeDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
+	return json.Unmarshal(data, &tmp)
+}
+
+// AttendeeSessionDBRaw represents raw attendee session data from v1 DynamoDB/NATS KV bucket
+type AttendeeSessionDBRaw struct {
+	ParticipantUUID string `json:"participant_uuid"`
+	JoinTime        string `json:"join_time"`
+	LeaveTime       string `json:"leave_time"`
+	LeaveReason     string `json:"leave_reason"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for AttendeeSessionDBRaw.
+func (a *AttendeeSessionDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias AttendeeSessionDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
+	return json.Unmarshal(data, &tmp)
+}
 
 // handlePastMeetingAttendeeUpdate processes updates to past meeting attendees
 func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
@@ -211,7 +422,7 @@ func convertMapToInviteeParticipantData(
 	}
 
 	// Validate required fields
-	if rawInvitee.ID == "" || rawInvitee.MeetingAndOccurrenceID == "" {
+	if rawInvitee.InviteeID == "" || rawInvitee.MeetingAndOccurrenceID == "" {
 		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
 	}
 
@@ -276,7 +487,7 @@ func convertMapToInviteeParticipantData(
 	}
 
 	return &models.PastMeetingParticipantEventData{
-		UID:                    rawInvitee.ID,
+		UID:                    rawInvitee.InviteeID,
 		MeetingAndOccurrenceID: rawInvitee.MeetingAndOccurrenceID,
 		MeetingID:              rawInvitee.MeetingID,
 		ProjectUID:             projectUID,
@@ -294,7 +505,7 @@ func convertMapToInviteeParticipantData(
 		IsAttended:             false,
 		Sessions:               nil, // Invitees don't have sessions
 		CreatedAt:              createdAt,
-		ModifiedAt:             modifiedAt,
+		UpdatedAt:              modifiedAt,
 	}, nil
 }
 
@@ -404,6 +615,6 @@ func convertMapToAttendeeParticipantData(
 		IsAttended:             true,
 		Sessions:               sessions,
 		CreatedAt:              createdAt,
-		ModifiedAt:             modifiedAt,
+		UpdatedAt:              modifiedAt,
 	}, nil
 }

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strconv"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -18,6 +19,221 @@ import (
 // =============================================================================
 // Past Meeting Recording Event Handler
 // =============================================================================
+
+// RecordingDBRaw represents raw past meeting recording data from v1 DynamoDB/NATS KV bucket
+type RecordingDBRaw struct {
+	// MeetingAndOccurrenceID is the primary key of the recording table since there is only one recording record for a past meeting.
+	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
+
+	// ProjectID is the ID of the project associated with the recording.
+	ProjectID string `json:"proj_id"`
+
+	// ProjectSlug is the slug of the project associated with the recording.
+	ProjectSlug string `json:"project_slug"`
+
+	// HostEmail is the email of the host of the recorded meeting. This comes from Zoom.
+	HostEmail string `json:"host_email"`
+
+	// HostID is the Zoom user ID of the host of the recorded meeting. This comes from Zoom.
+	HostID string `json:"host_id"`
+
+	// MeetingID is the ID of the meeting associated with the recording.
+	MeetingID string `json:"meeting_id"`
+
+	// OccurrenceID is the ID of the occurrence associated with the recording.
+	OccurrenceID string `json:"occurrence_id"`
+
+	// RecordingAccess is the access type of the recording.
+	RecordingAccess string `json:"recording_access"`
+
+	// Topic is the topic of the recorded meeting.
+	Topic string `json:"topic"`
+
+	// TranscriptAccess is the access type of the transcript of the recording.
+	TranscriptAccess string `json:"transcript_access"`
+
+	// TranscriptEnabled is whether the transcript of the recording is enabled.
+	TranscriptEnabled bool `json:"transcript_enabled"`
+
+	// Visibility is the visibility of the recording on the LFX platform.
+	Visibility string `json:"visibility"`
+
+	// RecordingCount is the number of recording files in the recording.
+	// A recording record can have many files due to there being multiple sessions of the same meeting,
+	// and the fact that each session has an MP4 file, M4A file, and optionally a VTT and JSON file
+	// if there is a transcript available.
+	RecordingCount int `json:"recording_count"`
+
+	// RecordingFiles is the list of files in the recording.
+	RecordingFiles []RecordingFileDBRaw `json:"recording_files"`
+
+	// Sessions is the list of sessions in the recording.
+	// There can be multiple sessions in a recording due to the fact that a meeting can be restarted
+	// and that is considered a new session in Zoom.
+	Sessions []RecordingSessionDBRaw `json:"sessions"`
+
+	// StartTime is the start time of the recording in RFC3339 format.
+	StartTime string `json:"start_time"`
+
+	// TotalSize is the total size of the recording in bytes.
+	TotalSize int64 `json:"total_size"`
+
+	// CreatedAt is the creation time of the recording in RFC3339 format.
+	CreatedAt string `json:"created_at"`
+
+	// ModifiedAt is the last modification time of the recording in RFC3339 format.
+	ModifiedAt string `json:"modified_at"`
+
+	// CreatedBy is the user who created the recording record in this system.
+	CreatedBy models.CreatedBy `json:"created_by"`
+
+	// UpdatedBy is the user who last updated the recording record in this system.
+	UpdatedBy models.UpdatedBy `json:"updated_by"`
+}
+
+// UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
+func (r *RecordingDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias RecordingDBRaw
+	tmp := struct {
+		RecordingCount interface{} `json:"recording_count"`
+		TotalSize      interface{} `json:"total_size"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+
+	switch v := tmp.RecordingCount.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("invalid value for recording_count: %w", err)
+			}
+			r.RecordingCount = val
+		}
+	case float64:
+		r.RecordingCount = int(v)
+	case nil:
+		// leave as zero value
+	default:
+		return fmt.Errorf("invalid type for recording_count: %T", v)
+	}
+
+	switch v := tmp.TotalSize.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid value for total_size: %w", err)
+			}
+			r.TotalSize = val
+		}
+	case float64:
+		r.TotalSize = int64(v)
+	case nil:
+		// leave as zero value
+	default:
+		return fmt.Errorf("invalid type for total_size: %T", v)
+	}
+
+	return nil
+}
+
+// RecordingFileDBRaw represents raw recording file data from v1 DynamoDB/NATS KV bucket
+type RecordingFileDBRaw struct {
+	DownloadURL    string `json:"download_url,omitempty"`
+	FileExtension  string `json:"file_extension"`
+	FileSize       int64  `json:"file_size"`
+	FileType       string `json:"file_type"`
+	ID             string `json:"id"`
+	MeetingID      string `json:"meeting_id"`
+	PlayURL        string `json:"play_url,omitempty"`
+	RecordingStart string `json:"recording_start"`
+	RecordingEnd   string `json:"recording_end"`
+	RecordingType  string `json:"recording_type"`
+	Status         string `json:"status"`
+}
+
+// UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
+func (r *RecordingFileDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias RecordingFileDBRaw
+	tmp := struct {
+		FileSize interface{} `json:"file_size"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+
+	switch v := tmp.FileSize.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid value for file_size: %w", err)
+			}
+			r.FileSize = val
+		}
+	case float64:
+		r.FileSize = int64(v)
+	case nil:
+		// leave as zero value
+	default:
+		return fmt.Errorf("invalid type for file_size: %T", v)
+	}
+
+	return nil
+}
+
+// RecordingSessionDBRaw represents raw recording session data from v1 DynamoDB/NATS KV bucket
+type RecordingSessionDBRaw struct {
+	UUID      string `json:"uuid"`
+	ShareURL  string `json:"share_url"`
+	TotalSize int64  `json:"total_size"`
+	StartTime string `json:"start_time"`
+	Password  string `json:"password"`
+}
+
+// UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
+func (r *RecordingSessionDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias RecordingSessionDBRaw
+	tmp := struct {
+		TotalSize interface{} `json:"total_size"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+
+	switch v := tmp.TotalSize.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid value for total_size: %w", err)
+			}
+			r.TotalSize = val
+		}
+	case float64:
+		r.TotalSize = int64(v)
+	case nil:
+		// leave as zero value
+	default:
+		return fmt.Errorf("invalid type for total_size: %T", v)
+	}
+
+	return nil
+}
 
 // handlePastMeetingRecordingUpdate processes updates to past meeting recordings
 func (h *EventHandlers) handlePastMeetingRecordingUpdate(
@@ -125,8 +341,8 @@ func convertMapToRecordingData(
 	}
 
 	// Validate required fields
-	if rawRecording.ID == "" || rawRecording.MeetingAndOccurrenceID == "" {
-		return nil, nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	if rawRecording.MeetingAndOccurrenceID == "" {
+		return nil, nil, fmt.Errorf("missing required fields: meeting_and_occurrence_id")
 	}
 
 	// Use ProjectID from recording record directly
@@ -199,7 +415,7 @@ func convertMapToRecordingData(
 	}
 
 	recordingData := &models.RecordingEventData{
-		ID:                     rawRecording.ID,
+		ID:                     rawRecording.MeetingAndOccurrenceID,
 		MeetingAndOccurrenceID: rawRecording.MeetingAndOccurrenceID,
 		ProjectUID:             projectUID,
 		HostEmail:              rawRecording.HostEmail,
@@ -207,7 +423,6 @@ func convertMapToRecordingData(
 		MeetingID:              rawRecording.MeetingID,
 		OccurrenceID:           rawRecording.OccurrenceID,
 		Platform:               "Zoom",
-		PlatformMeetingID:      rawRecording.PlatformMeetingID,
 		RecordingAccess:        recordingAccess,
 		Title:                  rawRecording.Topic,
 		TranscriptAccess:       transcriptAccess,
@@ -218,15 +433,18 @@ func convertMapToRecordingData(
 		Sessions:               sessions,
 		StartTime:              startTime,
 		TotalSize:              rawRecording.TotalSize,
+		ProjectSlug:            rawRecording.ProjectSlug,
 		CreatedAt:              createdAt,
 		UpdatedAt:              updatedAt,
+		CreatedBy:              rawRecording.CreatedBy,
+		UpdatedBy:              rawRecording.UpdatedBy,
 	}
 
 	// Create transcript event data if transcript is enabled
 	var transcriptData *models.TranscriptEventData
 	if hasTranscript {
 		transcriptData = &models.TranscriptEventData{
-			ID:                     rawRecording.ID,
+			ID:                     rawRecording.MeetingAndOccurrenceID,
 			MeetingAndOccurrenceID: rawRecording.MeetingAndOccurrenceID,
 			ProjectUID:             projectUID,
 			TranscriptAccess:       transcriptAccess,

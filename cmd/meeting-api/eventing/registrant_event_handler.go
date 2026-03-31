@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -24,19 +25,43 @@ import (
 // =============================================================================
 
 type RegistrantDBRaw struct {
-	UID         string      `json:"uid"`
-	MeetingID   string      `json:"meeting_id"`
-	CommitteeID string      `json:"committee_id"`
-	UserID      string      `json:"user_id"`
-	Username    string      `json:"username"`
-	Email       string      `json:"email"`
-	FirstName   string      `json:"first_name"`
-	LastName    string      `json:"last_name"`
-	AvatarURL   string      `json:"avatar_url"`
-	OrgName     string      `json:"org_name"`
-	Host        interface{} `json:"host"`
-	CreatedAt   string      `json:"created_at"`
-	ModifiedAt  string      `json:"modified_at"`
+	ID                              string           `json:"id"`
+	MeetingID                       string           `json:"meeting_id"`
+	Type                            string           `json:"type"`
+	CommitteeID                     string           `json:"committee_id"`
+	UserID                          string           `json:"user_id"`
+	Email                           string           `json:"email"`
+	CaseInsensitiveEmail            string           `json:"case_insensitive_email"`
+	FirstName                       string           `json:"first_name"`
+	LastName                        string           `json:"last_name"`
+	Org                             string           `json:"org,omitempty"`
+	OrgIsMember                     *bool            `json:"org_is_member,omitempty"`
+	OrgIsProjectMember              *bool            `json:"org_is_project_member,omitempty"`
+	JobTitle                        string           `json:"job_title,omitempty"`
+	Host                            *bool            `json:"host"`
+	Occurrence                      string           `json:"occurrence,omitempty"`
+	ProfilePicture                  string           `json:"profile_picture"`
+	Username                        string           `json:"username,omitempty"`
+	LastInviteReceivedTime          string           `json:"last_invite_received_time"`
+	LastInviteReceivedMessageID     *string          `json:"last_invite_received_message_id,omitempty"`
+	LastInviteDeliverySuccessful    *bool            `json:"last_invite_delivery_successful,omitempty"`
+	LastInviteDeliveredTime         string           `json:"last_invite_delivered_time,omitempty"`
+	LastInviteBounced               *bool            `json:"last_invite_bounced,omitempty"`
+	LastInviteBouncedTime           string           `json:"last_invite_bounced_time,omitempty"`
+	LastInviteBouncedType           string           `json:"last_invite_bounced_type,omitempty"`
+	LastInviteBouncedSubType        string           `json:"last_invite_bounced_sub_type,omitempty"`
+	LastInviteBouncedDiagnosticCode string           `json:"last_invite_bounced_diagnostic_code,omitempty"`
+	CreatedAt                       string           `json:"created_at"`
+	ModifiedAt                      string           `json:"modified_at"`
+	CreatedBy                       models.CreatedBy `json:"created_by"`
+	UpdatedBy                       models.UpdatedBy `json:"updated_by"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for RegistrantDBRaw.
+func (r *RegistrantDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias RegistrantDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(r)}
+	return json.Unmarshal(data, &tmp)
 }
 
 // convertMapToRegistrantData converts v1 registrant data to v2 format
@@ -45,7 +70,6 @@ func convertMapToRegistrantData(
 	v1Data map[string]interface{},
 	userLookup domain.V1UserLookup,
 	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.RegistrantEventData, error) {
 	// Convert map to JSON bytes, then to RegistrantDBRaw
@@ -57,35 +81,6 @@ func convertMapToRegistrantData(
 	var rawRegistrant RegistrantDBRaw
 	if err := json.Unmarshal(jsonBytes, &rawRegistrant); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal registrant data: %w", err)
-	}
-
-	// Validate required fields
-	if rawRegistrant.UID == "" || rawRegistrant.MeetingID == "" {
-		return nil, fmt.Errorf("missing required fields: uid or meeting_id")
-	}
-
-	// Parent validation - meeting must exist
-	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", rawRegistrant.MeetingID)
-	meetingEntry, err := v1ObjectsKV.Get(ctx, meetingKey)
-	if err != nil {
-		return nil, fmt.Errorf("parent meeting not found (transient): %w", err)
-	}
-
-	// Get project ID from meeting
-	var meetingData map[string]interface{}
-	if err := json.Unmarshal(meetingEntry.Value(), &meetingData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal meeting data: %w", err)
-	}
-
-	projectSFID := utils.GetString(meetingData["proj_id"])
-	if projectSFID == "" {
-		return nil, fmt.Errorf("meeting missing project ID")
-	}
-
-	// Map project ID from v1 SFID to v2 UID
-	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
 	// Map committee ID if present
@@ -116,44 +111,46 @@ func convertMapToRegistrantData(
 			if rawRegistrant.LastName == "" {
 				rawRegistrant.LastName = v1User.LastName
 			}
-			if rawRegistrant.AvatarURL == "" {
-				rawRegistrant.AvatarURL = v1User.AvatarURL
+			if rawRegistrant.ProfilePicture == "" {
+				rawRegistrant.ProfilePicture = v1User.AvatarURL
 			}
-			if rawRegistrant.OrgName == "" {
-				rawRegistrant.OrgName = v1User.OrgName
+			if rawRegistrant.Org == "" {
+				rawRegistrant.Org = v1User.OrgName
 			}
-		}
-	}
-
-	// Parse times — propagate errors only for non-empty but malformed strings;
-	// absent timestamps (empty string) remain as zero-value time.Time.
-	var createdAt, modifiedAt time.Time
-	if rawRegistrant.CreatedAt != "" {
-		if createdAt, err = parseTime(rawRegistrant.CreatedAt); err != nil {
-			return nil, fmt.Errorf("failed to parse created_at: %w", err)
-		}
-	}
-	if rawRegistrant.ModifiedAt != "" {
-		if modifiedAt, err = parseTime(rawRegistrant.ModifiedAt); err != nil {
-			return nil, fmt.Errorf("failed to parse modified_at: %w", err)
 		}
 	}
 
 	return &models.RegistrantEventData{
-		UID:          rawRegistrant.UID,
-		MeetingID:    rawRegistrant.MeetingID,
-		ProjectUID:   projectUID,
-		CommitteeUID: committeeUID,
-		UserID:       rawRegistrant.UserID,
-		Username:     username,
-		Email:        rawRegistrant.Email,
-		FirstName:    rawRegistrant.FirstName,
-		LastName:     rawRegistrant.LastName,
-		AvatarURL:    rawRegistrant.AvatarURL,
-		OrgName:      rawRegistrant.OrgName,
-		Host:         utils.GetBool(rawRegistrant.Host),
-		CreatedAt:    createdAt,
-		ModifiedAt:   modifiedAt,
+		UID:                             rawRegistrant.ID,
+		MeetingID:                       rawRegistrant.MeetingID,
+		Type:                            rawRegistrant.Type,
+		CommitteeUID:                    committeeUID,
+		UserID:                          rawRegistrant.UserID,
+		Email:                           rawRegistrant.Email,
+		CaseInsensitiveEmail:            rawRegistrant.CaseInsensitiveEmail,
+		FirstName:                       rawRegistrant.FirstName,
+		LastName:                        rawRegistrant.LastName,
+		OrgName:                         rawRegistrant.Org,
+		OrgIsMember:                     rawRegistrant.OrgIsMember,
+		OrgIsProjectMember:              rawRegistrant.OrgIsProjectMember,
+		JobTitle:                        rawRegistrant.JobTitle,
+		Host:                            rawRegistrant.Host != nil && *rawRegistrant.Host,
+		Occurrence:                      rawRegistrant.Occurrence,
+		AvatarURL:                       rawRegistrant.ProfilePicture,
+		Username:                        username,
+		LastInviteReceivedTime:          rawRegistrant.LastInviteReceivedTime,
+		LastInviteReceivedMessageID:     rawRegistrant.LastInviteReceivedMessageID,
+		LastInviteDeliverySuccessful:    rawRegistrant.LastInviteDeliverySuccessful,
+		LastInviteDeliveredTime:         rawRegistrant.LastInviteDeliveredTime,
+		LastInviteBounced:               rawRegistrant.LastInviteBounced,
+		LastInviteBouncedTime:           rawRegistrant.LastInviteBouncedTime,
+		LastInviteBouncedType:           rawRegistrant.LastInviteBouncedType,
+		LastInviteBouncedSubType:        rawRegistrant.LastInviteBouncedSubType,
+		LastInviteBouncedDiagnosticCode: rawRegistrant.LastInviteBouncedDiagnosticCode,
+		CreatedAt:                       rawRegistrant.CreatedAt,
+		UpdatedAt:                       rawRegistrant.ModifiedAt,
+		CreatedBy:                       models.CreatedBy(rawRegistrant.CreatedBy),
+		UpdatedBy:                       models.UpdatedBy(rawRegistrant.UpdatedBy),
 	}, nil
 }
 
@@ -172,7 +169,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	}
 
 	// Convert v1Data to registrant event data
-	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
+	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to registrant")
 		return isTransientError(err)
@@ -185,8 +182,22 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	}
 	funcLogger = funcLogger.With("registrant_uid", registrantData.UID)
 
+	// Parent validation - meeting must exist
+	// This pre-requisite ensures that the meeting is not a meeting that is filtered out and won't be added
+	// to the v1-mappings KV bucket after this event is processed.
+	meetingMappingKey := fmt.Sprintf("v1_meetings.%s", registrantData.MeetingID)
+	_, err = h.v1MappingsKV.Get(ctx, meetingMappingKey)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			funcLogger.InfoContext(ctx, "parent meeting not in mappings (filtered/not indexed), skipping registrant")
+			return false
+		}
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent meeting mapping, will retry")
+		return true
+	}
+
 	// Determine action (created vs updated)
-	mappingKey := fmt.Sprintf("v1_registrants.%s", registrantData.UID)
+	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantData.UID)
 	indexerAction := indexerConstants.ActionCreated
 	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
@@ -212,7 +223,7 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	registrantUID := extractIDFromKey(key, "itx-zoom-meetings-registrants-v2.")
 	funcLogger := h.logger.With("key", key, "registrant_uid", registrantUID)
 
-	mappingKey := fmt.Sprintf("v1_registrants.%s", registrantUID)
+	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantUID)
 	if h.isTombstoned(ctx, mappingKey) {
 		funcLogger.DebugContext(ctx, "registrant delete already processed, skipping")
 		return false
@@ -226,13 +237,18 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	var deleteAllAccessSubject string
 
 	if username != "" {
+		// The fga-sync service expects the username in the Auth0 "sub" format.
+		auth0Username, err := h.userLookup.MapUsernameToAuthSub(ctx, username)
+		if err != nil {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to resolve auth sub for registrant delete")
+			return true
+		}
 		accessMsg := map[string]interface{}{
 			"id":         registrantUID,
 			"meeting_id": utils.GetString(v1Data["meeting_id"]),
-			"username":   username,
+			"username":   auth0Username,
 			"host":       utils.GetBool(v1Data["host"]),
 		}
-		var err error
 		if message, err = json.Marshal(accessMsg); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to marshal registrant access message")
 			return false
@@ -246,7 +262,7 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	return h.handleMeetingTypeDelete(ctx, key, registrantUID, message, meetingDeleteConfig{
 		indexerSubject:         "lfx.index.v1_meeting_registrant",
 		deleteAllAccessSubject: deleteAllAccessSubject,
-		tombstoneKeyFmts:       []string{"v1_registrants.%s"},
+		tombstoneKeyFmts:       []string{"v1_meeting_registrants.%s"},
 	})
 }
 
@@ -254,10 +270,43 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 // Invite Response (RSVP) Event Handler
 // =============================================================================
 
+// InviteResponseDBRaw represents raw invite response data from v1 DynamoDB/NATS KV bucket
+type InviteResponseDBRaw struct {
+	ID                     string `json:"id"`
+	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
+	MeetingID              string `json:"meeting_id"`
+	OccurrenceID           string `json:"occurrence_id"`
+	RegistrantID           string `json:"registrant_id"`
+	Email                  string `json:"email"`
+	Name                   string `json:"name"`
+	UserID                 string `json:"user_id"`
+	Username               string `json:"username"`
+	Org                    string `json:"org"`
+	JobTitle               string `json:"job_title"`
+	Response               string `json:"response"`
+	IsResponseRecurring    bool   `json:"is_response_recurring"`
+	Scope                  string `json:"scope,omitempty"`
+	Source                 string `json:"source,omitempty"`
+	ResponseDate           string `json:"response_date"`
+	SESMessageID           string `json:"ses_message_id"`
+	EmailSubject           string `json:"email_subject"`
+	EmailText              string `json:"email_text"`
+	CreatedAt              string `json:"created_at"`
+	ModifiedAt             string `json:"modified_at"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for InviteResponseDBRaw.
+func (i *InviteResponseDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias InviteResponseDBRaw
+	tmp := struct{ *Alias }{Alias: (*Alias)(i)}
+	return json.Unmarshal(data, &tmp)
+}
+
 // convertMapToInviteResponseData converts v1 invite response data to v2 format
 func convertMapToInviteResponseData(
 	ctx context.Context,
 	v1Data map[string]interface{},
+	userLookup domain.V1UserLookup,
 	idMapper domain.IDMapper,
 	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
@@ -283,6 +332,17 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("skipping mailer daemon response")
 	}
 
+	// If username is blank but we have a v1 Platform ID (user_id), lookup the username.
+	username := rawResponse.Username
+	if username == "" && rawResponse.UserID != "" {
+		if v1User, lookupErr := userLookup.LookupUser(ctx, rawResponse.UserID); lookupErr == nil && v1User != nil && v1User.Username != "" {
+			username = v1User.Username
+			logger.With("user_id", rawResponse.UserID, "username", v1User.Username).DebugContext(ctx, "looked up username for invite response")
+		} else if lookupErr != nil {
+			logger.With(logging.ErrKey, lookupErr, "user_id", rawResponse.UserID).WarnContext(ctx, "failed to lookup v1 user for invite response")
+		}
+	}
+
 	// Get project ID from meeting
 	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", rawResponse.MeetingID)
 	meetingEntry, err := v1ObjectsKV.Get(ctx, meetingKey)
@@ -306,13 +366,23 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
-	responseType, err := mapResponseType(rawResponse.Response)
+	responseType, err := mapInviteResponseType(rawResponse.Response)
 	if err != nil {
 		return nil, err
 	}
 
-	// Determine if response is for recurring meeting
-	isRecurring := rawResponse.OccurrenceID == "" || rawResponse.Scope == "all" || rawResponse.Scope == "this_and_following"
+	// Derive scope from occurrence_id and is_response_recurring, matching v1-sync-helper logic.
+	var scope string
+	if rawResponse.OccurrenceID != "" {
+		if rawResponse.IsResponseRecurring {
+			scope = "this_and_following"
+		} else {
+			scope = "single"
+		}
+	} else {
+		scope = "all"
+	}
+	isRecurring := scope == "all" || scope == "this_and_following"
 
 	// Parse times — propagate errors only for non-empty but malformed strings;
 	// absent timestamps (empty string) remain as zero-value time.Time.
@@ -336,10 +406,13 @@ func convertMapToInviteResponseData(
 		RegistrantID:           rawResponse.RegistrantID,
 		ProjectUID:             projectUID,
 		UserID:                 rawResponse.UserID,
-		Username:               rawResponse.Username,
+		Username:               username,
+		Name:                   rawResponse.Name,
 		Email:                  rawResponse.Email,
+		Org:                    rawResponse.Org,
+		JobTitle:               rawResponse.JobTitle,
 		ResponseType:           responseType,
-		Scope:                  rawResponse.Scope,
+		Scope:                  scope,
 		IsRecurring:            isRecurring,
 		CreatedAt:              createdAt,
 		ModifiedAt:             modifiedAt,
@@ -361,7 +434,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	}
 
 	// Convert v1Data to invite response event data
-	responseData, err := convertMapToInviteResponseData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, funcLogger)
+	responseData, err := convertMapToInviteResponseData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invite response")
 		return isTransientError(err)
@@ -408,4 +481,17 @@ func (h *EventHandlers) handleInviteResponseDelete(ctx context.Context, key stri
 		indexerSubject:   "lfx.index.v1_meeting_rsvp",
 		tombstoneKeyFmts: []string{"v1_invite_responses.%s"},
 	})
+}
+
+// mapInviteResponseType maps v1 invite response type to v2 invite response type
+func mapInviteResponseType(inviteResponseType string) (string, error) {
+	switch strings.ToUpper(inviteResponseType) {
+	case "ACCEPTED":
+		return "accepted", nil
+	case "TENTATIVE":
+		return "maybe", nil
+	case "DECLINED":
+		return "declined", nil
+	}
+	return "", fmt.Errorf("invalid invite response type: %s", inviteResponseType)
 }

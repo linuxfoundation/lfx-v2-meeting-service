@@ -267,6 +267,24 @@ userData := v1ObjectsKV.Get(key)
 }
 ```
 
+### Auth0 Sub Resolution
+
+FGA-sync requires usernames in Auth0 `sub` format (e.g., `auth0|jdoe`). The service delegates this conversion to the auth service over NATS:
+
+```text
+Subject:  lfx.auth-service.username_to_sub
+Request:  <v1 username string>  (e.g., "jdoe")
+Response: <Auth0 sub string>    (e.g., "auth0|jdoe")
+```
+
+This call is made for:
+
+- Registrant `member_put` FGA messages (when a registrant has a username)
+- Past meeting participant `member_put` FGA messages
+- Registrant delete access-control messages
+
+If the auth service is unavailable or returns an error, the event is NAK'd for retry. If an empty sub is returned, the username field is left empty and a warning is logged.
+
 ### ID Mapping
 
 Project and committee IDs are mapped from v1 SFIDs to v2 UUIDs:
@@ -312,7 +330,7 @@ The system distinguishes between transient and permanent errors:
 - NATS connection timeouts
 - ID mapper service unavailable
 - Network failures
-- Parent resource not yet synced (registrant before meeting)
+- Parent resource lookup returns a non-`ErrKeyNotFound` error (e.g., NATS transient failure)
 - Temporary v1 user lookup failures
 
 **Retry behavior:**
@@ -327,32 +345,35 @@ The system distinguishes between transient and permanent errors:
 - Invalid JSON format
 - Missing required fields
 - Malformed data (invalid timestamps, negative numbers)
+- Parent meeting not found in v1-mappings KV bucket (`jetstream.ErrKeyNotFound`) — meeting was filtered out or not indexed
 - Parent missing after max retries
 - Filtered emails (MAILER-DAEMON)
+- `MeetingAndOccurrenceID` empty on participant publish (returns `domain.ValidationError` immediately)
 
 ### Parent-Child Ordering
 
 The system handles parent-child dependencies through retry logic:
 
 ```go
-// Example: Registrant handler checks for parent meeting
-func handleRegistrantUpdate(ctx context.Context, key string, data map[string]any, ...) bool {
-    meetingID := utils.GetString(data["meeting_id"])
-    if meetingID == "" {
-        logger.Error("missing meeting_id")
-        return false // ACK - permanent error
+// Example: Registrant handler checks for parent meeting in v1-mappings KV bucket
+meetingMappingKey := fmt.Sprintf("v1_meetings.%s", registrantData.MeetingID)
+_, err = h.v1MappingsKV.Get(ctx, meetingMappingKey)
+if err != nil {
+    if errors.Is(err, jetstream.ErrKeyNotFound) {
+        // Meeting was filtered out or is not being indexed — permanent skip
+        logger.Info("parent meeting not in mappings (filtered/not indexed), skipping registrant")
+        return false // ACK - permanent skip, will not retry
     }
-
-    // Check if parent meeting exists
-    meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
-    if _, err := v1ObjectsKV.Get(meetingKey); err != nil {
-        logger.Warn("parent meeting not yet synced, will retry", "meeting_id", meetingID)
-        return true // NAK - retry later
-    }
-
-    // Process registrant...
+    // Transient error (NATS unavailable, etc.) — retry
+    logger.Warn("transient error looking up parent meeting mapping, will retry")
+    return true // NAK - retry later
 }
 ```
+
+**Error distinction for parent-meeting check:**
+
+- `jetstream.ErrKeyNotFound`: The parent meeting was deliberately not indexed (filtered out or not yet written). This is a **permanent skip** — ACK the message without retrying, because retrying will never succeed if the meeting is excluded.
+- Any other error: Transient infrastructure failure (NATS connectivity, timeout). NAK the message for retry.
 
 **Parent-child relationships:**
 
@@ -413,19 +434,56 @@ Most events are published to **both** indexer and FGA-sync services:
 
 **Subject pattern**: `lfx.fga-sync.{operation}`
 
-**Message format**:
+All FGA messages use the `GenericFGAMessage` format. There are two operation types:
+
+**Access control** (meetings, past meetings, recordings, transcripts, summaries):
+
+Subject: `lfx.fga-sync.update_access`
 
 ```json
 {
-    "operation": "update_access",
     "object_type": "v1_meeting",
-    "object_id": "550e8400-e29b-41d4-a716-446655440000",
-    "relations": {
-        "project": ["project-uuid"],
-        "committees": ["committee-uuid-1", "committee-uuid-2"]
+    "operation": "update_access",
+    "data": {
+        "uid": "550e8400-e29b-41d4-a716-446655440000",
+        "public": false,
+        "relations": {
+            "organizer": ["auth0|jdoe"]
+        },
+        "references": {
+            "project": ["project-uuid"],
+            "committee": ["committee-uuid-1", "committee-uuid-2"]
+        }
     }
 }
 ```
+
+**Member access** (registrants, participants):
+
+Subject: `lfx.fga-sync.member_put`
+
+```json
+{
+    "object_type": "v1_meeting",
+    "operation": "member_put",
+    "data": {
+        "uid": "meeting-uuid",
+        "username": "auth0|jdoe",
+        "relations": ["registrant", "host"],
+        "mutually_exclusive_with": ["registrant", "host"]
+    }
+}
+```
+
+**Artifact visibility via `references` keys** (recordings, transcripts, summaries):
+
+The `references` map in the FGA message controls which past meeting role relations grant access:
+
+| `recording_access` / `transcript_access` / `ai_summary_access` | `public` flag | `references` keys included |
+| --------------------------------------------------------------- | ------------- | -------------------------- |
+| `"public"` | `true` | `past_meeting` only (`public` flag handles viewer access) |
+| `"meeting_participants"` | `false` | `past_meeting`, `past_meeting_for_host_view`, `past_meeting_for_attendee_view`, `past_meeting_for_participant_view` |
+| `"meeting_hosts"` or unset | `false` | `past_meeting`, `past_meeting_for_host_view` |
 
 ### Actions
 
@@ -462,6 +520,64 @@ if hasTranscript {
     publisher.PublishPastMeetingTranscriptEvent(ctx, "created", transcriptData)
 }
 ```
+
+#### Past Meeting FGA References
+
+Past meeting FGA `update_access` messages include three reference keys: `meeting`, `project`, and `committee`. The `meeting` reference links the past meeting record back to its originating active meeting:
+
+```json
+{
+    "object_type": "v1_past_meeting",
+    "operation": "update_access",
+    "data": {
+        "uid": "past-meeting-uuid",
+        "public": false,
+        "relations": {},
+        "references": {
+            "meeting": ["meeting-uuid"],
+            "project": ["project-uuid"],
+            "committee": ["committee-uuid-1", "committee-uuid-2"]
+        }
+    }
+}
+```
+
+#### Summary `ai_summary_access` Lookup
+
+The `ai_summary_access` value used for summary FGA publishing is **not stored on the summary record itself**. It is looked up at publish time from the parent past meeting record in the `v1-objects` KV bucket:
+
+```go
+// Key: itx-zoom-past-meetings.{meeting_and_occurrence_id}
+pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", summaryData.MeetingAndOccurrenceID)
+entry, _ := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
+// Extract ai_summary_access from past meeting data
+aiSummaryAccess = pastMeetingData["ai_summary_access"].(string)
+
+// Pass to publisher
+publisher.PublishPastMeetingSummaryEvent(ctx, action, summaryData, aiSummaryAccess)
+```
+
+If the past meeting record cannot be fetched, `ai_summary_access` defaults to `""` (which maps to the `"meeting_hosts"` visibility case).
+
+#### `UpdatedOccurrences` Duration Coercion
+
+The `Duration` field in each `updated_occurrences` entry is safely coerced from either a JSON string or a number during unmarshaling. This handles v1 data where numeric fields may be stored as strings:
+
+```json
+// Both of these are handled correctly:
+{"duration": 60}
+{"duration": "60"}
+```
+
+Additionally, the `occurrences` array from the raw KV data is **always ignored** and discarded during deserialization. Occurrences are always recomputed from the RRULE calculation — the stored `occurrences` field is never used.
+
+#### `FileUploadedAt` as Optional Pointer
+
+The `FileUploadedAt` field on `MeetingAttachmentEventData` and `PastMeetingAttachmentEventData` is typed as `*time.Time`. When the field is absent from the source data, it is `nil` and is omitted from the serialized JSON output. This prevents zero-value timestamps (`0001-01-01T00:00:00Z`) from being published for attachments that have not been uploaded yet.
+
+#### `MeetingAndOccurrenceID` Validation for Participants
+
+In `PublishPastMeetingParticipantEvent`, if `MeetingAndOccurrenceID` is empty, a `domain.ValidationError` is returned immediately before any publishing occurs. This is treated as a permanent error (ACK) by the handler since the data is structurally invalid and retrying will not resolve it.
 
 #### Summary Content Assembly
 
@@ -1039,5 +1155,5 @@ To add a new event type:
 ---
 
 **Document Version**: 1.0
-**Last Updated**: 2026-03-18
+**Last Updated**: 2026-03-31
 **Maintained By**: LFX Platform Team
