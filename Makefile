@@ -70,12 +70,16 @@ deps: install-hooks
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	}
 
-# Install git hooks from scripts/hooks into .git/hooks
+# Install git hooks from scripts/hooks into .git/hooks (no-op in CI or tarballs)
 install-hooks:
-	@echo "==> Installing git hooks..."
-	@cp scripts/hooks/pre-commit .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
-	@echo "==> Git hooks installed"
+	@if [ -d .git/hooks ]; then \
+		echo "==> Installing git hooks..."; \
+		cp scripts/hooks/pre-commit .git/hooks/pre-commit; \
+		chmod +x .git/hooks/pre-commit; \
+		echo "==> Git hooks installed"; \
+	else \
+		echo "==> Skipping git hooks install (.git/hooks not found)"; \
+	fi
 
 # Generate API code from design files
 apigen: deps
