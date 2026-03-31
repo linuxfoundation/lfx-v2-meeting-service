@@ -30,7 +30,7 @@ LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X 
 TEST_FLAGS=-v -race -cover
 TEST_TIMEOUT=5m
 
-.PHONY: all help deps apigen build run debug test test-verbose test-coverage clean lint fmt check verify docker-build helm-install helm-install-local helm-templates helm-templates-local helm-uninstall
+.PHONY: all help deps apigen build run debug test test-verbose test-coverage clean lint fmt check verify docker-build helm-install helm-install-local helm-templates helm-templates-local helm-uninstall install-hooks
 
 # Default target
 all: clean deps apigen fmt lint test build
@@ -52,6 +52,7 @@ help:
 	@echo "  fmt            - Format Go code"
 	@echo "  check          - Run fmt and lint without modifying files"
 	@echo "  verify         - Verify API generation is up to date"
+	@echo "  install-hooks  - Install git hooks (pre-commit gofmt check)"
 	@echo "  docker-build   - Build Docker image"
 	@echo "  helm-install         - Install Helm chart"
 	@echo "  helm-install-local   - Install Helm chart with local values override (values.local.yaml)"
@@ -60,7 +61,7 @@ help:
 	@echo "  helm-uninstall       - Uninstall Helm chart"
 
 # Install dependencies
-deps:
+deps: install-hooks
 	@echo "==> Installing dependencies..."
 	go mod download
 	go install goa.design/goa/v3/cmd/goa@$(GOA_VERSION)
@@ -68,6 +69,13 @@ deps:
 		echo "==> Installing golangci-lint..."; \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	}
+
+# Install git hooks from scripts/hooks into .git/hooks
+install-hooks:
+	@echo "==> Installing git hooks..."
+	@cp scripts/hooks/pre-commit .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "==> Git hooks installed"
 
 # Generate API code from design files
 apigen: deps

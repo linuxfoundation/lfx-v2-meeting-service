@@ -1,0 +1,20 @@
+#!/bin/sh
+# Run gofmt on staged Go files before committing.
+
+staged_go_files=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.go$')
+
+if [ -z "$staged_go_files" ]; then
+  exit 0
+fi
+
+unformatted=$(echo "$staged_go_files" | xargs gofmt -l)
+
+if [ -z "$unformatted" ]; then
+  exit 0
+fi
+
+echo "gofmt: the following files need formatting:"
+echo "$unformatted" | sed 's/^/  /'
+echo ""
+echo "Run: gofmt -w \$(git diff --cached --name-only --diff-filter=ACMR | grep '\\.go\$')"
+exit 1

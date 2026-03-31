@@ -398,14 +398,14 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		m.UpdatedOccurrences = make([]models.UpdatedOccurrence, 0, len(tmp.UpdatedOccurrences))
 		for _, raw := range tmp.UpdatedOccurrences {
 			var occTmp struct {
-				OldOccurrenceID string      `json:"old_occurrence_id"`
-				NewOccurrenceID string      `json:"new_occurrence_id"`
-				Timezone        string      `json:"timezone"`
-				Duration        interface{} `json:"duration"`
-				Title           string      `json:"title"`
-				Description     string      `json:"description"`
+				OldOccurrenceID string                        `json:"old_occurrence_id"`
+				NewOccurrenceID string                        `json:"new_occurrence_id"`
+				Timezone        string                        `json:"timezone"`
+				Duration        interface{}                   `json:"duration"`
+				Title           string                        `json:"title"`
+				Description     string                        `json:"description"`
 				Recurrence      *models.ZoomMeetingRecurrence `json:"recurrence"`
-				AllFollowing    bool        `json:"all_following"`
+				AllFollowing    bool                          `json:"all_following"`
 			}
 			if err := json.Unmarshal(raw, &occTmp); err != nil {
 				return fmt.Errorf("failed to unmarshal updated_occurrence: %w", err)
