@@ -419,7 +419,11 @@ func convertMapToPastMeetingData(
 }
 
 // buildPastMeetingZoomConfig constructs a ZoomConfig from flat v1 fields on the raw past meeting.
+// Returns nil if no source fields are present so ZoomConfig is omitted from the event payload.
 func buildPastMeetingZoomConfig(m *PastMeetingDBRaw) *models.ZoomConfig {
+	if m.ZoomAIEnabled == nil && m.RequireAISummaryApproval == nil {
+		return nil
+	}
 	cfg := &models.ZoomConfig{}
 	if m.ZoomAIEnabled != nil {
 		cfg.AICompanionEnabled = *m.ZoomAIEnabled

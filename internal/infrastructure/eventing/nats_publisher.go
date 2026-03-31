@@ -324,6 +324,9 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 
 // PublishPastMeetingParticipantEvent publishes a participant event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, action string, participant *models.PastMeetingParticipantEventData) error {
+	if participant.MeetingAndOccurrenceID == "" {
+		return domain.NewValidationError("meeting_and_occurrence_id is required for participant event")
+	}
 	p.logger.InfoContext(ctx, "publishing past meeting participant event", "action", action, "participant_uid", participant.UID)
 
 	tags := participant.Tags()
@@ -363,9 +366,9 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 			ObjectType: "v1_past_meeting",
 			Operation:  "member_put",
 			Data: map[string]interface{}{
-				"uid":                    participant.MeetingAndOccurrenceID,
-				"username":               auth0Username,
-				"relations":              relations,
+				"uid":                     participant.MeetingAndOccurrenceID,
+				"username":                auth0Username,
+				"relations":               relations,
 				"mutually_exclusive_with": []string{"participant", "host"},
 			},
 		}

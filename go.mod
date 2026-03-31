@@ -6,6 +6,7 @@ module github.com/linuxfoundation/lfx-v2-meeting-service
 go 1.24.5
 
 require (
+	github.com/akamensky/base58 v0.0.0-20210829145138-ce8bf8802e8f
 	github.com/auth0/go-auth0 v1.33.0
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/google/uuid v1.6.0
@@ -35,7 +36,6 @@ require (
 
 require (
 	github.com/PuerkitoBio/rehttp v1.4.0 // indirect
-	github.com/akamensky/base58 v0.0.0-20210829145138-ce8bf8802e8f // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

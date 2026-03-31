@@ -230,13 +230,15 @@ func (m *MeetingDBRaw) GetArtifactVisibility() string {
 func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 	type Alias MeetingDBRaw
 	tmp := struct {
-		Duration                                  interface{} `json:"duration"`
-		EarlyJoinTime                             interface{} `json:"early_join_time"`
-		LastEndTime                               interface{} `json:"last_end_time"`
-		LastBulkRegistrantsJobFailedCount         interface{} `json:"last_bulk_registrants_job_failed_count"`
-		LastBulkRegistrantsJobWarningCount        interface{} `json:"last_bulk_registrants_job_warning_count"`
-		LastMailingListMembersSyncJobFailedCount  interface{} `json:"last_mailing_list_members_sync_job_failed_count"`
-		LastMailingListMembersSyncJobWarningCount interface{} `json:"last_mailing_list_members_sync_job_warning_count"`
+		Duration                                  interface{}       `json:"duration"`
+		EarlyJoinTime                             interface{}       `json:"early_join_time"`
+		LastEndTime                               interface{}       `json:"last_end_time"`
+		LastBulkRegistrantsJobFailedCount         interface{}       `json:"last_bulk_registrants_job_failed_count"`
+		LastBulkRegistrantsJobWarningCount        interface{}       `json:"last_bulk_registrants_job_warning_count"`
+		LastMailingListMembersSyncJobFailedCount  interface{}       `json:"last_mailing_list_members_sync_job_failed_count"`
+		LastMailingListMembersSyncJobWarningCount interface{}       `json:"last_mailing_list_members_sync_job_warning_count"`
+		Occurrences                               []json.RawMessage `json:"occurrences"`
+		UpdatedOccurrences                        []json.RawMessage `json:"updated_occurrences"`
 		*Alias
 	}{
 		Alias: (*Alias)(m),
@@ -385,6 +387,53 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 	default:
 		if v != nil {
 			return fmt.Errorf("invalid type for last_mailing_list_members_sync_job_warning_count: %T", v)
+		}
+	}
+
+	// Occurrences are recomputed from RRULE calculation; discard the raw field (already shadowed above).
+	m.Occurrences = nil
+
+	// Decode UpdatedOccurrences manually to coerce Duration from string or number.
+	if len(tmp.UpdatedOccurrences) > 0 {
+		m.UpdatedOccurrences = make([]models.UpdatedOccurrence, 0, len(tmp.UpdatedOccurrences))
+		for _, raw := range tmp.UpdatedOccurrences {
+			var occTmp struct {
+				OldOccurrenceID string      `json:"old_occurrence_id"`
+				NewOccurrenceID string      `json:"new_occurrence_id"`
+				Timezone        string      `json:"timezone"`
+				Duration        interface{} `json:"duration"`
+				Title           string      `json:"title"`
+				Description     string      `json:"description"`
+				Recurrence      *models.ZoomMeetingRecurrence `json:"recurrence"`
+				AllFollowing    bool        `json:"all_following"`
+			}
+			if err := json.Unmarshal(raw, &occTmp); err != nil {
+				return fmt.Errorf("failed to unmarshal updated_occurrence: %w", err)
+			}
+			occ := models.UpdatedOccurrence{
+				OldOccurrenceID: occTmp.OldOccurrenceID,
+				NewOccurrenceID: occTmp.NewOccurrenceID,
+				Timezone:        occTmp.Timezone,
+				Title:           occTmp.Title,
+				Description:     occTmp.Description,
+				Recurrence:      occTmp.Recurrence,
+				AllFollowing:    occTmp.AllFollowing,
+			}
+			switch v := occTmp.Duration.(type) {
+			case string:
+				if v != "" {
+					val, err := strconv.Atoi(v)
+					if err != nil {
+						return fmt.Errorf("invalid duration in updated_occurrence: %w", err)
+					}
+					occ.Duration = val
+				}
+			case float64:
+				occ.Duration = int(v)
+			case int:
+				occ.Duration = v
+			}
+			m.UpdatedOccurrences = append(m.UpdatedOccurrences, occ)
 		}
 	}
 

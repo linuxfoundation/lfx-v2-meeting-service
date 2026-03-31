@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
@@ -161,7 +160,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	}
 
 	// Convert v1Data to summary event data
-	summaryData, err := convertMapToSummaryData(ctx, v1Data, h.idMapper, funcLogger)
+	summaryData, err := convertMapToSummaryData(ctx, v1Data, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to summary")
 		return isTransientError(err)
@@ -237,7 +236,6 @@ func (h *EventHandlers) handlePastMeetingSummaryDelete(
 func convertMapToSummaryData(
 	ctx context.Context,
 	v1Data map[string]interface{},
-	idMapper domain.IDMapper,
 	logger *slog.Logger,
 ) (*models.SummaryEventData, error) {
 	// Convert map to JSON bytes, then to SummaryDBRaw

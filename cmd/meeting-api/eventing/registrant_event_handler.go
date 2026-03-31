@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -187,7 +188,11 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	meetingMappingKey := fmt.Sprintf("v1_meetings.%s", registrantData.MeetingID)
 	_, err = h.v1MappingsKV.Get(ctx, meetingMappingKey)
 	if err != nil {
-		funcLogger.With(logging.ErrKey, err).InfoContext(ctx, "parent meeting not found in mappings, will retry meeting registrant sync")
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			funcLogger.InfoContext(ctx, "parent meeting not in mappings (filtered/not indexed), skipping registrant")
+			return false
+		}
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent meeting mapping, will retry")
 		return true
 	}
 

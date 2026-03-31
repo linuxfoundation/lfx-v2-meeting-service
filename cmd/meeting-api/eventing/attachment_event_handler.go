@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -20,26 +21,26 @@ import (
 
 // AttachmentDBRaw represents raw meeting attachment data from v1 DynamoDB/NATS KV bucket.
 type AttachmentDBRaw struct {
-	ID               string               `json:"id"`
-	MeetingID        string               `json:"meeting_id"`
-	Type             string               `json:"type"`
-	Category         string               `json:"category"`
-	Link             string               `json:"link"`
-	Name             string               `json:"name"`
-	Description      string               `json:"description"`
-	Source           string               `json:"source"`
-	FileName         string               `json:"file_name"`
-	FileSize         int                  `json:"file_size"`
-	FileURL          string               `json:"file_url"`
-	FileUploaded     *bool                `json:"file_uploaded"`
-	FileUploadStatus string               `json:"file_upload_status"`
-	FileContentType  string               `json:"file_content_type"`
+	ID               string                `json:"id"`
+	MeetingID        string                `json:"meeting_id"`
+	Type             string                `json:"type"`
+	Category         string                `json:"category"`
+	Link             string                `json:"link"`
+	Name             string                `json:"name"`
+	Description      string                `json:"description"`
+	Source           string                `json:"source"`
+	FileName         string                `json:"file_name"`
+	FileSize         int                   `json:"file_size"`
+	FileURL          string                `json:"file_url"`
+	FileUploaded     *bool                 `json:"file_uploaded"`
+	FileUploadStatus string                `json:"file_upload_status"`
+	FileContentType  string                `json:"file_content_type"`
 	FileUploadedBy   *attachmentActorDBRaw `json:"file_uploaded_by"`
-	FileUploadedAt   string               `json:"file_uploaded_at"`
-	CreatedAt        string               `json:"created_at"`
-	UpdatedAt        string               `json:"updated_at"`
-	CreatedBy        attachmentActorDBRaw `json:"created_by"`
-	UpdatedBy        attachmentActorDBRaw `json:"updated_by"`
+	FileUploadedAt   string                `json:"file_uploaded_at"`
+	CreatedAt        string                `json:"created_at"`
+	UpdatedAt        string                `json:"updated_at"`
+	CreatedBy        attachmentActorDBRaw  `json:"created_by"`
+	UpdatedBy        attachmentActorDBRaw  `json:"updated_by"`
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
@@ -174,7 +175,10 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
 	modifiedAt, _ := parseTime(tmp.UpdatedAt)
-	fileUploadedAt, _ := parseTime(tmp.FileUploadedAt)
+	var fileUploadedAt *time.Time
+	if t, err := parseTime(tmp.FileUploadedAt); err == nil {
+		fileUploadedAt = &t
+	}
 
 	var fileUploadedBy *models.CreatedBy
 	if tmp.FileUploadedBy != nil {
@@ -229,18 +233,18 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 
 // PastMeetingAttachmentDBRaw represents raw past meeting attachment data from v1 DynamoDB/NATS KV bucket.
 type PastMeetingAttachmentDBRaw struct {
-	ID                     string               `json:"id"`
-	MeetingAndOccurrenceID string               `json:"meeting_and_occurrence_id"`
-	MeetingID              string               `json:"meeting_id"`
-	Type                   string               `json:"type"`
-	Category               string               `json:"category"`
-	Link                   string               `json:"link"`
-	Name                   string               `json:"name"`
-	Description            string               `json:"description"`
-	Source                 string               `json:"source"`
-	FileName               string               `json:"file_name"`
-	FileSize               int                  `json:"file_size"`
-	FileURL                string               `json:"file_url"`
+	ID                     string                `json:"id"`
+	MeetingAndOccurrenceID string                `json:"meeting_and_occurrence_id"`
+	MeetingID              string                `json:"meeting_id"`
+	Type                   string                `json:"type"`
+	Category               string                `json:"category"`
+	Link                   string                `json:"link"`
+	Name                   string                `json:"name"`
+	Description            string                `json:"description"`
+	Source                 string                `json:"source"`
+	FileName               string                `json:"file_name"`
+	FileSize               int                   `json:"file_size"`
+	FileURL                string                `json:"file_url"`
 	FileUploaded           *bool                 `json:"file_uploaded"`
 	FileUploadStatus       string                `json:"file_upload_status"`
 	FileContentType        string                `json:"file_content_type"`
@@ -368,7 +372,10 @@ func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*mode
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
 	modifiedAt, _ := parseTime(tmp.UpdatedAt)
-	fileUploadedAt, _ := parseTime(tmp.FileUploadedAt)
+	var fileUploadedAt *time.Time
+	if t, err := parseTime(tmp.FileUploadedAt); err == nil {
+		fileUploadedAt = &t
+	}
 
 	var fileUploadedBy *models.CreatedBy
 	if tmp.FileUploadedBy != nil {
