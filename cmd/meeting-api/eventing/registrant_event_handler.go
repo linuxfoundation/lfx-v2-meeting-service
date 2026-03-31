@@ -69,7 +69,6 @@ func convertMapToRegistrantData(
 	v1Data map[string]interface{},
 	userLookup domain.V1UserLookup,
 	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.RegistrantEventData, error) {
 	// Convert map to JSON bytes, then to RegistrantDBRaw
@@ -134,7 +133,7 @@ func convertMapToRegistrantData(
 		OrgIsMember:                     rawRegistrant.OrgIsMember,
 		OrgIsProjectMember:              rawRegistrant.OrgIsProjectMember,
 		JobTitle:                        rawRegistrant.JobTitle,
-		Host:                            utils.GetBool(rawRegistrant.Host),
+		Host:                            rawRegistrant.Host != nil && *rawRegistrant.Host,
 		Occurrence:                      rawRegistrant.Occurrence,
 		AvatarURL:                       rawRegistrant.ProfilePicture,
 		Username:                        username,
@@ -169,7 +168,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	}
 
 	// Convert v1Data to registrant event data
-	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
+	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to registrant")
 		return isTransientError(err)

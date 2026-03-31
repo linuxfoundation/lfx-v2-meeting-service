@@ -181,8 +181,24 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	// Look up ai_summary_access from the parent past meeting record.
+	aiSummaryAccess := ""
+	if summaryData.MeetingAndOccurrenceID != "" {
+		pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", summaryData.MeetingAndOccurrenceID)
+		if entry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get past meeting data for summary access")
+		} else {
+			var pastMeetingData map[string]interface{}
+			if jsonErr := json.Unmarshal(entry.Value(), &pastMeetingData); jsonErr == nil {
+				if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
+					aiSummaryAccess = access
+				}
+			}
+		}
+	}
+
 	// Publish to indexer and FGA-sync
-	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData); err != nil {
+	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData, aiSummaryAccess); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish summary event")
 		return isTransientError(err)
 	}
