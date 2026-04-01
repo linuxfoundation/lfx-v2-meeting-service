@@ -126,6 +126,10 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		funcLogger.ErrorContext(ctx, "missing required fields in invitee participant data")
 		return false
 	}
+	if participantData.ProjectUID == "" {
+		funcLogger.InfoContext(ctx, "skipping invitee participant sync - parent project not found in mappings")
+		return false
+	}
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
 
 	// Determine action (created vs updated)
@@ -326,6 +330,10 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		funcLogger.ErrorContext(ctx, "missing required fields in attendee participant data")
 		return false
 	}
+	if participantData.ProjectUID == "" {
+		funcLogger.InfoContext(ctx, "skipping attendee participant sync - parent project not found in mappings")
+		return false
+	}
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
 
 	// Determine action (created vs updated)
@@ -432,19 +440,15 @@ func convertMapToInviteeParticipantData(
 		return nil, fmt.Errorf("invitee missing project ID")
 	}
 
-	// Map project ID
-	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
-	}
+	// Map project ID. A missing mapping is not an error — the caller checks ProjectUID == "" and skips.
+	projectUID, _ := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 
 	// Determine if host (lookup registrant if available)
 	isHost := false
 	if rawInvitee.RegistrantID != "" {
 		registrantKey := fmt.Sprintf("itx-zoom-meetings-registrants-v2.%s", rawInvitee.RegistrantID)
 		if registrantEntry, err := v1ObjectsKV.Get(ctx, registrantKey); err == nil {
-			var registrantData map[string]interface{}
-			if err := json.Unmarshal(registrantEntry.Value(), &registrantData); err == nil {
+			if registrantData, err := decodeData(registrantEntry.Value()); err == nil {
 				isHost = utils.GetBool(registrantData["host"])
 			}
 		}
@@ -539,11 +543,8 @@ func convertMapToAttendeeParticipantData(
 		return nil, fmt.Errorf("attendee missing project ID")
 	}
 
-	// Map project ID
-	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
-	}
+	// Map project ID. A missing mapping is not an error — the caller checks ProjectUID == "" and skips.
+	projectUID, _ := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 
 	// Check if this user was also invited (registrant_id present)
 	isInvited := rawAttendee.RegistrantID != ""
@@ -572,14 +573,17 @@ func convertMapToAttendeeParticipantData(
 	// Convert sessions
 	var sessions []models.ParticipantSession
 	for _, rawSession := range rawAttendee.Sessions {
-		joinTime, _ := parseTime(rawSession.JoinTime)
-		leaveTime, _ := parseTime(rawSession.LeaveTime)
-		sessions = append(sessions, models.ParticipantSession{
+		s := models.ParticipantSession{
 			UID:         rawSession.ParticipantUUID,
-			JoinTime:    &joinTime,
-			LeaveTime:   &leaveTime,
 			LeaveReason: rawSession.LeaveReason,
-		})
+		}
+		if t, err := parseTime(rawSession.JoinTime); err == nil {
+			s.JoinTime = &t
+		}
+		if t, err := parseTime(rawSession.LeaveTime); err == nil {
+			s.LeaveTime = &t
+		}
+		sessions = append(sessions, s)
 	}
 
 	// Parse times

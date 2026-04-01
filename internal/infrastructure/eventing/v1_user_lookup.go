@@ -11,6 +11,7 @@ import (
 
 	nats "github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"github.com/vmihailenco/msgpack/v5"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -46,8 +47,10 @@ func (l *NATSUserLookup) LookupUser(ctx context.Context, platformID string) (*do
 
 	var userData map[string]interface{}
 	if err := json.Unmarshal(entry.Value(), &userData); err != nil {
-		l.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal v1 user data", "platform_id", platformID)
-		return nil, fmt.Errorf("failed to unmarshal v1 user data: %w", err)
+		if err := msgpack.Unmarshal(entry.Value(), &userData); err != nil {
+			l.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode v1 user data", "platform_id", platformID)
+			return nil, fmt.Errorf("failed to decode v1 user data: %w", err)
+		}
 	}
 
 	user := &domain.V1User{

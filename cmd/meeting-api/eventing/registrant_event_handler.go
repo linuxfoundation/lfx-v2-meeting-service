@@ -25,7 +25,7 @@ import (
 // =============================================================================
 
 type RegistrantDBRaw struct {
-	ID                              string           `json:"id"`
+	ID                              string           `json:"registrant_id"`
 	MeetingID                       string           `json:"meeting_id"`
 	Type                            string           `json:"type"`
 	CommitteeID                     string           `json:"committee_id"`
@@ -350,9 +350,9 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("parent meeting not found (transient): %w", err)
 	}
 
-	var meetingData map[string]interface{}
-	if err := json.Unmarshal(meetingEntry.Value(), &meetingData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal meeting data: %w", err)
+	meetingData, err := decodeData(meetingEntry.Value())
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode meeting data: %w", err)
 	}
 
 	projectSFID := utils.GetString(meetingData["proj_id"])
@@ -360,11 +360,8 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("meeting missing project ID")
 	}
 
-	// Map project ID
-	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
-	}
+	// Map project ID. A missing mapping is not an error — the caller checks ProjectUID == "" and skips.
+	projectUID, _ := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 
 	responseType, err := mapInviteResponseType(rawResponse.Response)
 	if err != nil {
@@ -443,6 +440,10 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	// Validate required fields
 	if responseData.ID == "" || responseData.MeetingID == "" {
 		funcLogger.ErrorContext(ctx, "missing required fields in invite response data")
+		return false
+	}
+	if responseData.ProjectUID == "" {
+		funcLogger.InfoContext(ctx, "skipping invite response sync - parent project not found in mappings")
 		return false
 	}
 	funcLogger = funcLogger.With("response_id", responseData.ID)

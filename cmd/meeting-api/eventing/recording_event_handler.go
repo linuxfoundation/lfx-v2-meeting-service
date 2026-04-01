@@ -261,6 +261,10 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		funcLogger.ErrorContext(ctx, "missing required fields in recording data")
 		return false
 	}
+	if recordingData.ProjectUID == "" {
+		funcLogger.InfoContext(ctx, "skipping recording sync - parent project not found in mappings")
+		return false
+	}
 	funcLogger = funcLogger.With("recording_id", recordingData.ID)
 
 	// Determine action (created vs updated)
@@ -351,11 +355,8 @@ func convertMapToRecordingData(
 		return nil, nil, fmt.Errorf("recording missing project ID")
 	}
 
-	// Map project ID
-	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to map project ID (transient): %w", err)
-	}
+	// Map project ID. A missing mapping is not an error — the caller checks ProjectUID == "" and skips.
+	projectUID, _ := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 
 	// Default recording access to meeting_hosts (most restrictive)
 	recordingAccess := rawRecording.RecordingAccess
@@ -363,14 +364,16 @@ func convertMapToRecordingData(
 		recordingAccess = "meeting_hosts"
 	}
 
-	// Convert recording files
+	// Split recording files into recording-only and transcript-only lists.
+	// Transcript file types from Zoom: TRANSCRIPT (VTT), TIMELINE (JSON timeline).
+	// All other file types (MP4, M4A, CC, etc.) belong to the recording.
 	var recordingFiles []models.RecordingFile
-	hasTranscript := false
+	var transcriptFiles []models.RecordingFile
 	for _, rawFile := range rawRecording.RecordingFiles {
 		recordingStart, _ := parseTime(rawFile.RecordingStart)
 		recordingEnd, _ := parseTime(rawFile.RecordingEnd)
 
-		recordingFiles = append(recordingFiles, models.RecordingFile{
+		file := models.RecordingFile{
 			DownloadURL:    rawFile.DownloadURL,
 			FileExtension:  rawFile.FileExtension,
 			FileSize:       rawFile.FileSize,
@@ -382,13 +385,15 @@ func convertMapToRecordingData(
 			RecordingEnd:   recordingEnd,
 			RecordingType:  rawFile.RecordingType,
 			Status:         rawFile.Status,
-		})
+		}
 
-		// Check if this is a transcript file
 		if rawFile.FileType == "TRANSCRIPT" || rawFile.FileType == "TIMELINE" {
-			hasTranscript = true
+			transcriptFiles = append(transcriptFiles, file)
+		} else {
+			recordingFiles = append(recordingFiles, file)
 		}
 	}
+	hasTranscript := len(transcriptFiles) > 0
 
 	// Convert recording sessions
 	var sessions []models.RecordingSession
@@ -440,15 +445,30 @@ func convertMapToRecordingData(
 		UpdatedBy:              rawRecording.UpdatedBy,
 	}
 
-	// Create transcript event data if transcript is enabled
+	// Create transcript event data if transcript files are present
 	var transcriptData *models.TranscriptEventData
 	if hasTranscript {
 		transcriptData = &models.TranscriptEventData{
 			ID:                     rawRecording.MeetingAndOccurrenceID,
 			MeetingAndOccurrenceID: rawRecording.MeetingAndOccurrenceID,
 			ProjectUID:             projectUID,
-			TranscriptAccess:       transcriptAccess,
+			ProjectSlug:            rawRecording.ProjectSlug,
+			HostEmail:              rawRecording.HostEmail,
+			HostID:                 rawRecording.HostID,
+			MeetingID:              rawRecording.MeetingID,
+			OccurrenceID:           rawRecording.OccurrenceID,
 			Platform:               "Zoom",
+			TranscriptAccess:       transcriptAccess,
+			Title:                  rawRecording.Topic,
+			Visibility:             rawRecording.Visibility,
+			RecordingFiles:         transcriptFiles,
+			Sessions:               sessions,
+			StartTime:              startTime,
+			TotalSize:              rawRecording.TotalSize,
+			CreatedAt:              createdAt,
+			UpdatedAt:              updatedAt,
+			CreatedBy:              rawRecording.CreatedBy,
+			UpdatedBy:              rawRecording.UpdatedBy,
 		}
 	}
 

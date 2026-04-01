@@ -388,7 +388,6 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 }
 
 // PublishPastMeetingRecordingEvent publishes a recording event to indexer and FGA-sync services
-// Note: This also publishes a transcript event if the recording has transcript files
 func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting recording event", "action", action, "recording_id", recording.ID)
 

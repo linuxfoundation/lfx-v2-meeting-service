@@ -736,12 +736,12 @@ func convertMapToMeetingData(
 		return nil, fmt.Errorf("missing required fields: meeting_id or proj_id")
 	}
 
-	// Map project ID from v1 SFID to v2 UID
+	// Map project ID from v1 SFID to v2 UID. A missing mapping is not an error —
+	// the caller checks ProjectUID == "" and skips (no retry), matching v1-sync-helper behaviour.
 	projectUID, err := idMapper.MapProjectV1ToV2(ctx, rawMeeting.ProjID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	if err == nil {
+		meeting.ProjectUID = projectUID
 	}
-	meeting.ProjectUID = projectUID
 
 	committees := getCommitteesForMeeting(ctx, rawMeeting.MeetingID, idMapper, mappingsKV, logger)
 	meeting.Committees = committees
@@ -838,8 +838,12 @@ func (h *EventHandlers) handleMeetingUpdate(
 	}
 
 	// Validate required fields
-	if meetingData.ID == "" || meetingData.ProjectUID == "" {
+	if meetingData.ID == "" {
 		funcLogger.ErrorContext(ctx, "missing required fields in meeting data")
+		return false
+	}
+	if meetingData.ProjectUID == "" {
+		funcLogger.InfoContext(ctx, "skipping meeting sync - parent project not found in mappings", "project_sfid", meetingData.ProjectSFID)
 		return false
 	}
 	funcLogger = funcLogger.With("meeting_id", meetingData.ID)
@@ -1096,9 +1100,9 @@ func (h *EventHandlers) retriggerMeetingIndexing(
 		return false // Meeting might be deleted
 	}
 
-	var meetingData map[string]interface{}
-	if err := json.Unmarshal(meetingEntry.Value(), &meetingData); err != nil {
-		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal meeting data")
+	meetingData, err := decodeData(meetingEntry.Value())
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode meeting data")
 		return false
 	}
 
