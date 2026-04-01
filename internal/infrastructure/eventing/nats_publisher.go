@@ -85,23 +85,16 @@ type GenericMemberData struct {
 	MutuallyExclusiveWith []string `json:"mutually_exclusive_with"` // Optional: auto-remove these
 }
 
-// NATSPublisher implements the EventPublisher interface using NATS JetStream
+// NATSPublisher implements the EventPublisher interface using core NATS pub/sub
 type NATSPublisher struct {
 	nc     *nats.Conn
-	js     nats.JetStreamContext
 	logger *slog.Logger
 }
 
 // NewNATSPublisher creates a new NATS event publisher
 func NewNATSPublisher(nc *nats.Conn, logger *slog.Logger) (*NATSPublisher, error) {
-	js, err := nc.JetStream()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get jetstream context: %w", err)
-	}
-
 	return &NATSPublisher{
 		nc:     nc,
-		js:     js,
 		logger: logger,
 	}, nil
 }
@@ -683,7 +676,7 @@ func (p *NATSPublisher) PublishIndexerDelete(ctx context.Context, subject, id st
 // PublishAccessDelete sends a pre-built access control message payload to subject.
 // The caller is responsible for marshalling the payload; pass []byte(id) for simple deletes.
 func (p *NATSPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
-	if _, err := p.js.Publish(subject, payload); err != nil {
+	if err := p.nc.Publish(subject, payload); err != nil {
 		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish access delete", "subject", subject)
 		return fmt.Errorf("failed to publish to %s: %w", subject, err)
 	}
@@ -698,7 +691,7 @@ func (p *NATSPublisher) publish(ctx context.Context, subject string, data interf
 		return fmt.Errorf("failed to marshal event data: %w", err)
 	}
 
-	if _, err := p.js.Publish(subject, payload); err != nil {
+	if err := p.nc.Publish(subject, payload); err != nil {
 		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish event", "subject", subject)
 		return fmt.Errorf("failed to publish to %s: %w", subject, err)
 	}

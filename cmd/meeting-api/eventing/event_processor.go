@@ -5,6 +5,7 @@ package eventing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -98,17 +99,48 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	return ep, nil
 }
 
-// Start begins processing events from the NATS JetStream
+// Start begins processing events from the NATS JetStream.
+// If the consumer is deleted on the server at runtime, it is automatically
+// recreated and consumption resumes without requiring a service restart.
 func (ep *EventProcessor) Start(ctx context.Context) error {
 	ep.logger.Info("starting event processor", "consumer", ep.config.ConsumerName)
 
-	// Setup consumer
-	if err := ep.setupConsumer(ctx); err != nil {
-		return fmt.Errorf("failed to setup consumer: %w", err)
-	}
+	for {
+		if err := ep.setupConsumer(ctx); err != nil {
+			return fmt.Errorf("failed to setup consumer: %w", err)
+		}
 
-	// Consume messages
-	consumeCtx, err := ep.consumer.Consume(func(msg jetstream.Msg) {
+		consumerDeleted := make(chan struct{})
+
+		consumeCtx, err := ep.consumer.Consume(ep.msgHandler(ctx), jetstream.ConsumeErrHandler(
+			func(_ jetstream.ConsumeContext, err error) {
+				if errors.Is(err, jetstream.ErrConsumerDeleted) {
+					ep.logger.Warn("consumer was deleted on the server, will recreate")
+					close(consumerDeleted)
+					return
+				}
+				ep.logger.With(logging.ErrKey, err).Warn("consumer error")
+			},
+		))
+		if err != nil {
+			return fmt.Errorf("failed to start consuming: %w", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			ep.logger.Info("context cancelled, stopping consumer")
+			consumeCtx.Stop()
+			return nil
+		case <-consumerDeleted:
+			// consumeCtx is already stopped by the terminal error — just loop and recreate.
+			ep.logger.Info("recreating consumer after deletion")
+		}
+	}
+}
+
+// msgHandler returns the JetStream message handler closure.
+func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandler {
+	return func(msg jetstream.Msg) {
 		defer func() {
 			if r := recover(); r != nil {
 				ep.logger.Error("panic in event handler, NAKing message", "subject", msg.Subject(), "panic", r)
@@ -118,12 +150,9 @@ func (ep *EventProcessor) Start(ctx context.Context) error {
 			}
 		}()
 
-		// Process message in KV handler
 		shouldRetry := kvHandler(ctx, msg, ep.handlers)
 
-		// Handle acknowledgment
 		if shouldRetry {
-			// NAK with delay for retry
 			var numDelivered uint64
 			if metadata, err := msg.Metadata(); err != nil {
 				ep.logger.With(logging.ErrKey, err).Warn("failed to get message metadata, using default retry delay")
@@ -131,30 +160,16 @@ func (ep *EventProcessor) Start(ctx context.Context) error {
 				numDelivered = metadata.NumDelivered
 			}
 			delay := getRetryDelay(numDelivered)
-
 			if err := msg.NakWithDelay(delay); err != nil {
 				ep.logger.With(logging.ErrKey, err).Error("failed to NAK message")
 			}
 			ep.logger.Info("message NAKed for retry", "subject", msg.Subject(), "delay", delay)
 		} else {
-			// ACK - message processed successfully or permanently failed
 			if err := msg.Ack(); err != nil {
 				ep.logger.With(logging.ErrKey, err).Error("failed to ACK message")
 			}
 		}
-	})
-	if err != nil {
-		return fmt.Errorf("failed to start consuming: %w", err)
 	}
-
-	// Wait for context cancellation
-	<-ctx.Done()
-	ep.logger.Info("context cancelled, stopping consumer")
-
-	// Stop consuming
-	consumeCtx.Stop()
-
-	return nil
 }
 
 // Stop gracefully stops the event processor
