@@ -554,6 +554,7 @@ type PastMeetingEventData struct {
 	ProjectUID               string               `json:"project_uid"`
 	ProjectSlug              string               `json:"project_slug,omitempty"`
 	Committee                string               `json:"committee,omitempty"`
+	CommitteeUID             string               `json:"committee_uid,omitempty"`
 	CommitteeFilters         []string             `json:"committee_filters,omitempty"`
 	Title                    string               `json:"title"`
 	Description              string               `json:"description"`
@@ -605,6 +606,11 @@ func (m *PastMeetingEventData) Tags() []string {
 	}
 	if m.Timezone != "" {
 		tags = append(tags, "timezone:"+m.Timezone)
+	}
+	for _, c := range m.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
 	}
 	return tags
 }

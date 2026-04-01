@@ -378,6 +378,26 @@ func convertMapToPastMeetingData(
 	// Get committees from mapping index (same logic as active meetings)
 	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
 
+	// Resolve the primary committee UID from the v1 SFID (mirrors MeetingEventData.CommitteeUID).
+	var primaryCommitteeUID string
+	if rawPastMeeting.Committee != "" {
+		mapped, err := idMapper.MapCommitteeV1ToV2(ctx, rawPastMeeting.Committee)
+		if err != nil {
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawPastMeeting.Committee)
+		} else {
+			primaryCommitteeUID = mapped
+		}
+	}
+
+	// Fallback: if no committees from the mapping index and the primary committee was resolved,
+	// use it as the sole entry. This mirrors v1-sync-helper's fallback path.
+	if len(committees) == 0 && primaryCommitteeUID != "" {
+		committees = []models.Committee{{
+			UID:                   primaryCommitteeUID,
+			AllowedVotingStatuses: utils.CastSlice[itx.CommitteeFilter](rawPastMeeting.CommitteeFilters),
+		}}
+	}
+
 	// Compute artifact visibility from access fields (fallback chain)
 	artifactVisibility := rawPastMeeting.RecordingAccess
 	if artifactVisibility == "" {
@@ -403,6 +423,7 @@ func convertMapToPastMeetingData(
 		ProjectUID:               projectUID,
 		ProjectSlug:              rawPastMeeting.ProjectSlug,
 		Committee:                rawPastMeeting.Committee,
+		CommitteeUID:             primaryCommitteeUID,
 		CommitteeFilters:         rawPastMeeting.CommitteeFilters,
 		Title:                    rawPastMeeting.Topic,
 		Description:              rawPastMeeting.Agenda,
@@ -548,7 +569,7 @@ func getCommitteesForPastMeeting(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) []models.Committee {
-	key := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
+	key := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
 		if !errors.Is(err, jetstream.ErrKeyNotFound) {
@@ -593,7 +614,7 @@ func updatePastMeetingCommitteeMappings(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
+	mappingsKey := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	var mappings map[string]map[string]interface{}
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
@@ -635,7 +656,7 @@ func removePastMeetingCommitteeMapping(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
+	mappingsKey := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {

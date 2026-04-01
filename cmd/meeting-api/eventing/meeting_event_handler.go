@@ -982,7 +982,7 @@ func getCommitteesForMeeting(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) []models.Committee {
-	key := fmt.Sprintf("meeting-mappings.%s", meetingID)
+	key := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
 		return nil
@@ -1024,7 +1024,7 @@ func updateCommitteeMappings(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("meeting-mappings.%s", meetingID)
+	mappingsKey := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	var mappings map[string]map[string]interface{}
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
@@ -1064,7 +1064,7 @@ func removeCommitteeMapping(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("meeting-mappings.%s", meetingID)
+	mappingsKey := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
 		return nil // No mappings found
