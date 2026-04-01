@@ -318,10 +318,15 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 		h.logger.DebugContext(ctx, "past meeting delete already processed, skipping", "past_meeting_id", pastMeetingID)
 		return false
 	}
-	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, []byte(pastMeetingID), meetingDeleteConfig{
-		indexerSubject:         "lfx.index.v1_past_meeting",
-		deleteAllAccessSubject: "lfx.delete_all_access.v1_past_meeting",
-		tombstoneKeyFmts:       []string{"v1_past_meetings.%s"},
+	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_past_meeting", pastMeetingID)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "past_meeting_id", pastMeetingID)
+		return false
+	}
+	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, deleteAccessPayload, meetingDeleteConfig{
+		indexerSubject:      "lfx.index.v1_past_meeting",
+		deleteAccessSubject: "lfx.fga-sync.delete_access",
+		tombstoneKeyFmts:    []string{"v1_past_meetings.%s"},
 	})
 }
 

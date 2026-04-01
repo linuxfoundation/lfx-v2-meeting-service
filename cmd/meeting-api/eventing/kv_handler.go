@@ -33,12 +33,40 @@ const tombstoneMarker = "!del"
 type meetingDeleteConfig struct {
 	// indexerSubject is the NATS subject to send the indexer delete message to.
 	indexerSubject string
-	// deleteAllAccessSubject is the NATS subject to send the delete-all-access message to.
+	// deleteAccessSubject is the NATS subject for the access control delete message
+	// (e.g. lfx.fga-sync.delete_access or lfx.fga-sync.member_remove).
 	// Leave empty to skip sending an access control delete message.
-	deleteAllAccessSubject string
+	deleteAccessSubject string
 	// tombstoneKeyFmts are fmt format strings (each with one %s for the ID) for
 	// mappings that should be tombstoned on delete.
 	tombstoneKeyFmts []string
+}
+
+// buildGenericDeleteAccessPayload builds the JSON payload for a lfx.fga-sync.delete_access message.
+func buildGenericDeleteAccessPayload(objectType, uid string) ([]byte, error) {
+	msg := map[string]interface{}{
+		"object_type": objectType,
+		"operation":   "delete_access",
+		"data": map[string]interface{}{
+			"uid": uid,
+		},
+	}
+	return json.Marshal(msg)
+}
+
+// buildGenericMemberRemovePayload builds the JSON payload for a lfx.fga-sync.member_remove message.
+// An empty relations slice instructs fga-sync to remove ALL relations for the user.
+func buildGenericMemberRemovePayload(objectType, uid, username string) ([]byte, error) {
+	msg := map[string]interface{}{
+		"object_type": objectType,
+		"operation":   "member_remove",
+		"data": map[string]interface{}{
+			"uid":       uid,
+			"username":  username,
+			"relations": []string{},
+		},
+	}
+	return json.Marshal(msg)
 }
 
 // isTombstoned returns true if mappingKey holds a tombstone marker,
@@ -57,13 +85,13 @@ func (h *EventHandlers) tombstoneMapping(ctx context.Context, mappingKey string)
 }
 
 // handleMeetingTypeDelete is the generic delete handler for all meeting-related resources.
-// It sends the indexer delete message, optionally sends a delete-all-access message,
+// It sends the indexer delete message, optionally sends an access control message,
 // and tombstones any configured mapping keys.
-// message is the pre-built payload for the access message; callers are responsible for constructing it.
+// accessPayload is the pre-built payload for the access control message; callers are responsible for constructing it.
 func (h *EventHandlers) handleMeetingTypeDelete(
 	ctx context.Context,
 	key, id string,
-	message []byte,
+	accessPayload []byte,
 	cfg meetingDeleteConfig,
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "id", id)
@@ -74,9 +102,9 @@ func (h *EventHandlers) handleMeetingTypeDelete(
 		return isTransientError(err)
 	}
 
-	if cfg.deleteAllAccessSubject != "" {
-		if err := h.publisher.PublishAccessDelete(ctx, cfg.deleteAllAccessSubject, message); err != nil {
-			funcLogger.With(logging.ErrKey, err, "subject", cfg.deleteAllAccessSubject).ErrorContext(ctx, "failed to send delete-all-access message")
+	if cfg.deleteAccessSubject != "" {
+		if err := h.publisher.PublishAccessDelete(ctx, cfg.deleteAccessSubject, accessPayload); err != nil {
+			funcLogger.With(logging.ErrKey, err, "subject", cfg.deleteAccessSubject).ErrorContext(ctx, "failed to send access control delete message")
 			return isTransientError(err)
 		}
 	}
