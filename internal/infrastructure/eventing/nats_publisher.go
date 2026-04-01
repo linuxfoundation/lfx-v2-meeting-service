@@ -40,12 +40,6 @@ const (
 	IndexV1PastMeetingSummarySubject     = "lfx.index.v1_past_meeting_summary"
 	IndexV1MeetingAttachmentSubject      = "lfx.index.v1_meeting_attachment"
 	IndexV1PastMeetingAttachmentSubject  = "lfx.index.v1_past_meeting_attachment"
-
-	// NATS subjects for access control delete messages.
-	DeleteAllAccessV1MeetingSubject       = "lfx.delete_all_access.v1_meeting"
-	DeleteAllAccessV1PastMeetingSubject   = "lfx.delete_all_access.v1_past_meeting"
-	RemoveRegistrantV1MeetingSubject      = "lfx.remove_registrant.v1_meeting"
-	RemoveParticipantV1PastMeetingSubject = "lfx.remove_participant.v1_past_meeting"
 )
 
 // IndexerMessage is the structure for indexer messages
@@ -154,10 +148,11 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 		ObjectType: "v1_meeting",
 		Operation:  "update_access",
 		Data: map[string]interface{}{
-			"uid":        meeting.ID,
-			"public":     isPublic,
-			"relations":  relations,
-			"references": references,
+			"uid":               meeting.ID,
+			"public":            isPublic,
+			"relations":         relations,
+			"references":        references,
+			"exclude_relations": []string{"participant", "host"},
 		},
 	}
 
@@ -195,25 +190,31 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 		return fmt.Errorf("failed to publish registrant to indexer: %w", err)
 	}
 
-	// If registrant has username (authenticated user), publish access control
+	// If registrant has username (authenticated user), publish access control.
+	// fga-sync sets either "host" or "participant" exclusively — access as a participant
+	// is granted transitively via the schema (participant: [user] or host).
 	if registrant.Username != "" {
-		relations := []string{"registrant"}
-		if registrant.Host {
-			relations = append(relations, "host")
-		}
 		// The fga-sync service expects the username in the Auth0 "sub" format.
 		auth0Username, err := lookupUsernameToAuthSub(ctx, p.nc, registrant.Username, p.logger)
 		if err != nil {
 			return fmt.Errorf("failed to resolve auth sub for registrant: %w", err)
 		}
 
+		relation := "participant"
+		mutuallyExclusive := "host"
+		if registrant.Host {
+			relation = "host"
+			mutuallyExclusive = "participant"
+		}
+
 		memberMsg := GenericFGAMessage{
 			ObjectType: "v1_meeting",
 			Operation:  "member_put",
 			Data: map[string]interface{}{
-				"uid":       registrant.MeetingID,
-				"username":  auth0Username,
-				"relations": relations,
+				"uid":                     registrant.MeetingID,
+				"username":                auth0Username,
+				"relations":               []string{relation},
+				"mutually_exclusive_with": []string{mutuallyExclusive},
 			},
 		}
 
@@ -350,9 +351,17 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 
 	// If participant has username (authenticated user), publish access control.
 	if participant.Username != "" {
-		relations := []string{"participant"}
+		// Build the set of desired relations based on participant flags.
+		// v1_past_meeting uses "host", "invitee", and "attendee" relations.
+		var relations []string
 		if participant.Host {
 			relations = append(relations, "host")
+		}
+		if participant.IsInvited {
+			relations = append(relations, "invitee")
+		}
+		if participant.IsAttended {
+			relations = append(relations, "attendee")
 		}
 
 		// The fga-sync service expects the username in the Auth0 "sub" format.
@@ -368,7 +377,7 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 				"uid":                     participant.MeetingAndOccurrenceID,
 				"username":                auth0Username,
 				"relations":               relations,
-				"mutually_exclusive_with": []string{"participant", "host"},
+				"mutually_exclusive_with": []string{"host", "invitee", "attendee"},
 			},
 		}
 

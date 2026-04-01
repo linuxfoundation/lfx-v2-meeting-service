@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -823,11 +824,6 @@ func (h *EventHandlers) handleMeetingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "meeting")
 	funcLogger.DebugContext(ctx, "processing meeting update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleMeetingDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to meeting event data
 	meetingData, err := convertMapToMeetingData(ctx, v1Data, h.idMapper, h.v1MappingsKV, funcLogger)
 	if err != nil {
@@ -879,10 +875,15 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 		h.logger.DebugContext(ctx, "meeting delete already processed, skipping", "meeting_id", meetingID)
 		return false
 	}
-	return h.handleMeetingTypeDelete(ctx, key, meetingID, []byte(meetingID), meetingDeleteConfig{
-		indexerSubject:         "lfx.index.v1_meeting",
-		deleteAllAccessSubject: "lfx.delete_all_access.v1_meeting",
-		tombstoneKeyFmts:       []string{"v1_meetings.%s"},
+	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_meeting", meetingID)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "meeting_id", meetingID)
+		return false
+	}
+	return h.handleMeetingTypeDelete(ctx, key, meetingID, deleteAccessPayload, meetingDeleteConfig{
+		indexerSubject:      "lfx.index.v1_meeting",
+		deleteAccessSubject: "lfx.fga-sync.delete_access",
+		tombstoneKeyFmts:    []string{"v1_meetings.%s", "v1-mappings.meeting-mappings.%s"},
 	})
 }
 
@@ -898,11 +899,6 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "meeting_mapping")
 	funcLogger.InfoContext(ctx, "processing meeting mapping update")
-
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleMeetingMappingDelete(ctx, key, v1Data)
-	}
 
 	// Extract meeting ID and mapping data
 	meetingID := utils.GetString(v1Data["meeting_id"])
@@ -985,6 +981,12 @@ func getCommitteesForMeeting(
 	key := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load meeting committee mappings", "key", key)
+		}
+		return nil
+	}
+	if string(entry.Value()) == tombstoneMarker {
 		return nil
 	}
 
@@ -1029,9 +1031,14 @@ func updateCommitteeMappings(
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			return fmt.Errorf("failed to load meeting mappings: %w", err)
+		}
 		mappings = make(map[string]map[string]interface{})
 	} else {
-		if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
+		if string(entry.Value()) == tombstoneMarker {
+			mappings = make(map[string]map[string]interface{})
+		} else if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal existing mappings")
 			return fmt.Errorf("failed to unmarshal existing mappings: %w", err)
 		}
@@ -1067,7 +1074,13 @@ func removeCommitteeMapping(
 	mappingsKey := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
-		return nil // No mappings found
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return nil // No mappings found
+		}
+		return fmt.Errorf("failed to load meeting mappings: %w", err)
+	}
+	if string(entry.Value()) == tombstoneMarker {
+		return nil // Already tombstoned, nothing to remove
 	}
 
 	var mappings map[string]map[string]interface{}

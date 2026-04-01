@@ -140,6 +140,7 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 - **AckExplicitPolicy**: Requires explicit ACK/NAK for each message
 - **MaxDeliver: 3**: Retries failed messages up to 3 times with exponential backoff
 - **AckWait: 30s**: Handler has 30 seconds to process before automatic redelivery
+- **Auto-recreate on deletion**: If the consumer is deleted on the NATS server at runtime (e.g. via CLI or server-side cleanup), the service detects the deletion and automatically recreates it with exponential backoff (1s → 5s → 15s → 30s). The service never requires a restart for this condition.
 
 ## Data Transformation
 
@@ -462,6 +463,8 @@ Subject: `lfx.fga-sync.update_access`
 
 Subject: `lfx.fga-sync.member_put`
 
+For registrants, exactly one relation is sent — `"host"` or `"participant"` — with the other listed as `mutually_exclusive_with` so fga-sync removes any prior conflicting tuple:
+
 ```json
 {
     "object_type": "v1_meeting",
@@ -469,8 +472,23 @@ Subject: `lfx.fga-sync.member_put`
     "data": {
         "uid": "meeting-uuid",
         "username": "auth0|jdoe",
-        "relations": ["registrant", "host"],
-        "mutually_exclusive_with": ["registrant", "host"]
+        "relations": ["host"],
+        "mutually_exclusive_with": ["participant"]
+    }
+}
+```
+
+For past meeting participants, all applicable relations (`"host"`, `"invitee"`, `"attendee"`) are included in `relations` based on the participant's flags, and all three are listed in `mutually_exclusive_with` so any stale tuples are replaced atomically:
+
+```json
+{
+    "object_type": "v1_past_meeting",
+    "operation": "member_put",
+    "data": {
+        "uid": "meeting-and-occurrence-uuid",
+        "username": "auth0|jdoe",
+        "relations": ["invitee", "attendee"],
+        "mutually_exclusive_with": ["host", "invitee", "attendee"]
     }
 }
 ```
@@ -638,6 +656,24 @@ export EVENT_PROCESSING_ENABLED=true
 ```text
 INFO initializing event processor
 INFO event processor started consumer=meeting-service-kv-consumer
+```
+
+**Consumer deletion and auto-recreation logs:**
+
+If the consumer is deleted on the server while the service is running, it is automatically recreated without a service restart:
+
+```text
+WARN consumer was deleted on the server, will recreate
+INFO recreating consumer after deletion
+INFO consumer configured name=meeting-service-kv-consumer stream=KV_v1-objects
+```
+
+If recreation fails transiently (e.g. context deadline exceeded), the service retries with backoff:
+
+```text
+WARN failed to setup consumer, retrying attempt=1 retry_in=1s error=...
+WARN failed to setup consumer, retrying attempt=2 retry_in=5s error=...
+INFO consumer configured name=meeting-service-kv-consumer stream=KV_v1-objects
 ```
 
 ### Stopping the Event Processor

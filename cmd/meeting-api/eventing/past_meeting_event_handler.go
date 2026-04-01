@@ -265,11 +265,6 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting")
 	funcLogger.DebugContext(ctx, "processing past meeting update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to past meeting event data
 	pastMeetingData, err := convertMapToPastMeetingData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, h.v1MappingsKV, funcLogger)
 	if err != nil {
@@ -318,10 +313,15 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 		h.logger.DebugContext(ctx, "past meeting delete already processed, skipping", "past_meeting_id", pastMeetingID)
 		return false
 	}
-	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, []byte(pastMeetingID), meetingDeleteConfig{
-		indexerSubject:         "lfx.index.v1_past_meeting",
-		deleteAllAccessSubject: "lfx.delete_all_access.v1_past_meeting",
-		tombstoneKeyFmts:       []string{"v1_past_meetings.%s"},
+	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_past_meeting", pastMeetingID)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "past_meeting_id", pastMeetingID)
+		return false
+	}
+	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, deleteAccessPayload, meetingDeleteConfig{
+		indexerSubject:      "lfx.index.v1_past_meeting",
+		deleteAccessSubject: "lfx.fga-sync.delete_access",
+		tombstoneKeyFmts:    []string{"v1_past_meetings.%s", "v1-mappings.past-meeting-mappings.%s"},
 	})
 }
 
@@ -376,7 +376,10 @@ func convertMapToPastMeetingData(
 	}
 
 	// Get committees from mapping index (same logic as active meetings)
-	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
+	committees, err := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
+	if err != nil {
+		return nil, err
+	}
 
 	// Resolve the primary committee UID from the v1 SFID (mirrors MeetingEventData.CommitteeUID).
 	var primaryCommitteeUID string
@@ -486,11 +489,6 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_mapping")
 	funcLogger.InfoContext(ctx, "processing past meeting mapping update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingMappingDelete(ctx, key, v1Data)
-	}
-
 	// Extract past meeting ID and mapping data
 	pastMeetingUUID := utils.GetString(v1Data["past_meeting_uuid"])
 	mappingID := utils.GetString(v1Data["id"])
@@ -568,20 +566,24 @@ func getCommitteesForPastMeeting(
 	idMapper domain.IDMapper,
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
-) []models.Committee {
+) ([]models.Committee, error) {
 	key := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
 		if !errors.Is(err, jetstream.ErrKeyNotFound) {
 			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load past meeting committee mappings", "key", key)
+			return nil, fmt.Errorf("failed to load past meeting committee mappings: %w", err)
 		}
-		return nil
+		return nil, nil
+	}
+	if string(entry.Value()) == tombstoneMarker {
+		return nil, nil
 	}
 
 	var mappings map[string]map[string]interface{}
 	if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to unmarshal past meeting committee mappings")
-		return nil
+		return nil, nil
 	}
 
 	committees := make([]models.Committee, 0, len(mappings))
@@ -602,7 +604,7 @@ func getCommitteesForPastMeeting(
 		}
 	}
 
-	return committees
+	return committees, nil
 }
 
 func updatePastMeetingCommitteeMappings(
@@ -624,7 +626,9 @@ func updatePastMeetingCommitteeMappings(
 		}
 		mappings = make(map[string]map[string]interface{})
 	} else {
-		if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
+		if string(entry.Value()) == tombstoneMarker {
+			mappings = make(map[string]map[string]interface{})
+		} else if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 			return fmt.Errorf("failed to unmarshal existing past meeting mappings: %w", err)
 		}
 	}
@@ -663,6 +667,9 @@ func removePastMeetingCommitteeMapping(
 			return nil // No mappings found
 		}
 		return fmt.Errorf("failed to load past meeting mappings: %w", err)
+	}
+	if string(entry.Value()) == tombstoneMarker {
+		return nil // Already tombstoned, nothing to remove
 	}
 
 	var mappings map[string]map[string]interface{}

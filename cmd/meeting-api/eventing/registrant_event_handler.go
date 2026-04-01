@@ -163,11 +163,6 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "registrant")
 	funcLogger.DebugContext(ctx, "processing registrant update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleRegistrantDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to registrant event data
 	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, funcLogger)
 	if err != nil {
@@ -229,12 +224,12 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 		return false
 	}
 
-	// Extract username and host to conditionally send the access control message.
+	// Extract username to conditionally send the access control message.
 	// Without a username, access control cannot identify which user to remove access for.
 	username := utils.GetString(v1Data["username"])
 
-	var message []byte
-	var deleteAllAccessSubject string
+	var accessPayload []byte
+	var deleteAccessSubject string
 
 	if username != "" {
 		// The fga-sync service expects the username in the Auth0 "sub" format.
@@ -243,26 +238,20 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to resolve auth sub for registrant delete")
 			return true
 		}
-		accessMsg := map[string]interface{}{
-			"id":         registrantUID,
-			"meeting_id": utils.GetString(v1Data["meeting_id"]),
-			"username":   auth0Username,
-			"host":       utils.GetBool(v1Data["host"]),
-		}
-		if message, err = json.Marshal(accessMsg); err != nil {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to marshal registrant access message")
+		meetingID := utils.GetString(v1Data["meeting_id"])
+		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, auth0Username); err != nil {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}
-		deleteAllAccessSubject = "lfx.remove_registrant.v1_meeting"
+		deleteAccessSubject = "lfx.fga-sync.member_remove"
 	} else {
 		funcLogger.DebugContext(ctx, "no username in v1Data, skipping access control message for registrant delete")
-		message = []byte(registrantUID)
 	}
 
-	return h.handleMeetingTypeDelete(ctx, key, registrantUID, message, meetingDeleteConfig{
-		indexerSubject:         "lfx.index.v1_meeting_registrant",
-		deleteAllAccessSubject: deleteAllAccessSubject,
-		tombstoneKeyFmts:       []string{"v1_meeting_registrants.%s"},
+	return h.handleMeetingTypeDelete(ctx, key, registrantUID, accessPayload, meetingDeleteConfig{
+		indexerSubject:      "lfx.index.v1_meeting_registrant",
+		deleteAccessSubject: deleteAccessSubject,
+		tombstoneKeyFmts:    []string{"v1_meeting_registrants.%s"},
 	})
 }
 
@@ -428,11 +417,6 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "invite_response")
 	funcLogger.DebugContext(ctx, "processing invite response update")
-
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleInviteResponseDelete(ctx, key, v1Data)
-	}
 
 	// Convert v1Data to invite response event data
 	responseData, err := convertMapToInviteResponseData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)

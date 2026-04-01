@@ -106,7 +106,7 @@ func (ep *EventProcessor) Start(ctx context.Context) error {
 	ep.logger.Info("starting event processor", "consumer", ep.config.ConsumerName)
 
 	for {
-		if err := ep.setupConsumer(ctx); err != nil {
+		if err := ep.setupConsumerWithRetry(ctx); err != nil {
 			return fmt.Errorf("failed to setup consumer: %w", err)
 		}
 
@@ -207,6 +207,32 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 
 	ep.logger.Info("event processor stopped")
 	return nil
+}
+
+// setupConsumerWithRetry calls setupConsumer with exponential backoff until it
+// succeeds or the context is cancelled. This handles transient errors (e.g.
+// context deadline exceeded) that can occur when recreating a deleted consumer.
+func (ep *EventProcessor) setupConsumerWithRetry(ctx context.Context) error {
+	delays := []time.Duration{1 * time.Second, 5 * time.Second, 15 * time.Second, 30 * time.Second}
+	for attempt, maxAttempt := 0, len(delays); ; attempt++ {
+		err := ep.setupConsumer(ctx)
+		if err == nil {
+			return nil
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		delay := delays[min(attempt, maxAttempt-1)]
+		ep.logger.With(logging.ErrKey, err).Warn("failed to setup consumer, retrying",
+			"attempt", attempt+1,
+			"retry_in", delay,
+		)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+	}
 }
 
 // setupConsumer creates or updates the durable consumer configuration

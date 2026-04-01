@@ -154,11 +154,6 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_summary")
 	funcLogger.DebugContext(ctx, "processing past meeting summary update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingSummaryDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to summary event data
 	summaryData, err := convertMapToSummaryData(ctx, v1Data, funcLogger)
 	if err != nil {

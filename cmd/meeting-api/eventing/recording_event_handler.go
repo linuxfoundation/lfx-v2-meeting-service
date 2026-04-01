@@ -244,11 +244,6 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_recording")
 	funcLogger.DebugContext(ctx, "processing past meeting recording update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingRecordingDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to recording event data
 	recordingData, transcriptData, err := convertMapToRecordingData(ctx, v1Data, h.idMapper, funcLogger)
 	if err != nil {
