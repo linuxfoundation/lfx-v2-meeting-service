@@ -97,6 +97,17 @@ func lookupUsernameToAuthSub(ctx context.Context, nc *nats.Conn, username string
 		logger.WarnContext(ctx, "auth service returned empty sub for username", "username", username)
 		return "", nil
 	}
+	// The auth service returns a plain sub string on success, or a JSON error object on failure.
+	// Detect the error case so we don't forward the raw JSON as an FGA user identifier.
+	if sub[0] == '{' {
+		var errResp struct {
+			Success bool   `json:"success"`
+			Error   string `json:"error"`
+		}
+		if jsonErr := json.Unmarshal(msg.Data, &errResp); jsonErr == nil && !errResp.Success {
+			return "", fmt.Errorf("auth service could not resolve username %q to auth sub: %s", username, errResp.Error)
+		}
+	}
 	return sub, nil
 }
 
