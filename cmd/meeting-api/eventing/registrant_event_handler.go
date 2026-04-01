@@ -360,8 +360,12 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("meeting missing project ID")
 	}
 
-	// Map project ID. A missing mapping is not an error — the caller checks ProjectUID == "" and skips.
-	projectUID, _ := idMapper.MapProjectV1ToV2(ctx, projectSFID)
+	// Map project ID. A missing mapping means the project isn't in v2 yet — return empty so the caller skips.
+	// Any other error (e.g. NATS timeout) is transient and should be propagated for retry.
+	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
+	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
+		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	}
 
 	responseType, err := mapInviteResponseType(rawResponse.Response)
 	if err != nil {

@@ -736,12 +736,13 @@ func convertMapToMeetingData(
 		return nil, fmt.Errorf("missing required fields: meeting_id or proj_id")
 	}
 
-	// Map project ID from v1 SFID to v2 UID. A missing mapping is not an error —
-	// the caller checks ProjectUID == "" and skips (no retry), matching v1-sync-helper behaviour.
+	// Map project ID from v1 SFID to v2 UID. A missing mapping means the project isn't in v2 yet —
+	// the caller checks ProjectUID == "" and skips. Any other error is transient and propagated for retry.
 	projectUID, err := idMapper.MapProjectV1ToV2(ctx, rawMeeting.ProjID)
-	if err == nil {
-		meeting.ProjectUID = projectUID
+	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
+		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
+	meeting.ProjectUID = projectUID
 
 	committees := getCommitteesForMeeting(ctx, rawMeeting.MeetingID, idMapper, mappingsKV, logger)
 	meeting.Committees = committees

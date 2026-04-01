@@ -350,9 +350,12 @@ func convertMapToPastMeetingData(
 		return nil, fmt.Errorf("missing required fields: meeting_and_occurrence_id or proj_id")
 	}
 
-	// Map project ID from v1 SFID to v2 UID. A missing mapping is not an error —
-	// the caller checks ProjectUID == "" and skips (no retry).
-	projectUID, _ := idMapper.MapProjectV1ToV2(ctx, rawPastMeeting.ProjectID)
+	// Map project ID from v1 SFID to v2 UID. A missing mapping means the project isn't in v2 yet —
+	// the caller checks ProjectUID == "" and skips. Any other error is transient and propagated for retry.
+	projectUID, err := idMapper.MapProjectV1ToV2(ctx, rawPastMeeting.ProjectID)
+	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
+		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	}
 
 	// Parse times
 	startTime, _ := parseTime(rawPastMeeting.ScheduledStartTime)
