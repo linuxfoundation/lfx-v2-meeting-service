@@ -326,7 +326,7 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, deleteAccessPayload, meetingDeleteConfig{
 		indexerSubject:      "lfx.index.v1_past_meeting",
 		deleteAccessSubject: "lfx.fga-sync.delete_access",
-		tombstoneKeyFmts:    []string{"v1_past_meetings.%s"},
+		tombstoneKeyFmts:    []string{"v1_past_meetings.%s", "v1-mappings.past-meeting-mappings.%s"},
 	})
 }
 
@@ -553,12 +553,15 @@ func getCommitteesForPastMeeting(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) []models.Committee {
-	key := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
+	key := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
 		if !errors.Is(err, jetstream.ErrKeyNotFound) {
 			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load past meeting committee mappings", "key", key)
 		}
+		return nil
+	}
+	if string(entry.Value()) == tombstoneMarker {
 		return nil
 	}
 
@@ -598,7 +601,7 @@ func updatePastMeetingCommitteeMappings(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
+	mappingsKey := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	var mappings map[string]map[string]interface{}
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
@@ -608,7 +611,9 @@ func updatePastMeetingCommitteeMappings(
 		}
 		mappings = make(map[string]map[string]interface{})
 	} else {
-		if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
+		if string(entry.Value()) == tombstoneMarker {
+			mappings = make(map[string]map[string]interface{})
+		} else if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 			return fmt.Errorf("failed to unmarshal existing past meeting mappings: %w", err)
 		}
 	}
@@ -640,13 +645,16 @@ func removePastMeetingCommitteeMapping(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("past-meeting-mappings.%s", pastMeetingUUID)
+	mappingsKey := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return nil // No mappings found
 		}
 		return fmt.Errorf("failed to load past meeting mappings: %w", err)
+	}
+	if string(entry.Value()) == tombstoneMarker {
+		return nil // Already tombstoned, nothing to remove
 	}
 
 	var mappings map[string]map[string]interface{}

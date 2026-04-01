@@ -887,7 +887,7 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 	return h.handleMeetingTypeDelete(ctx, key, meetingID, deleteAccessPayload, meetingDeleteConfig{
 		indexerSubject:      "lfx.index.v1_meeting",
 		deleteAccessSubject: "lfx.fga-sync.delete_access",
-		tombstoneKeyFmts:    []string{"v1_meetings.%s"},
+		tombstoneKeyFmts:    []string{"v1_meetings.%s", "v1-mappings.meeting-mappings.%s"},
 	})
 }
 
@@ -987,9 +987,12 @@ func getCommitteesForMeeting(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) []models.Committee {
-	key := fmt.Sprintf("meeting-mappings.%s", meetingID)
+	key := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
+		return nil
+	}
+	if string(entry.Value()) == tombstoneMarker {
 		return nil
 	}
 
@@ -1029,14 +1032,16 @@ func updateCommitteeMappings(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("meeting-mappings.%s", meetingID)
+	mappingsKey := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	var mappings map[string]map[string]interface{}
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
 		mappings = make(map[string]map[string]interface{})
 	} else {
-		if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
+		if string(entry.Value()) == tombstoneMarker {
+			mappings = make(map[string]map[string]interface{})
+		} else if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal existing mappings")
 			return fmt.Errorf("failed to unmarshal existing mappings: %w", err)
 		}
@@ -1069,10 +1074,13 @@ func removeCommitteeMapping(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) error {
-	mappingsKey := fmt.Sprintf("meeting-mappings.%s", meetingID)
+	mappingsKey := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
 		return nil // No mappings found
+	}
+	if string(entry.Value()) == tombstoneMarker {
+		return nil // Already tombstoned, nothing to remove
 	}
 
 	var mappings map[string]map[string]interface{}
