@@ -376,7 +376,10 @@ func convertMapToPastMeetingData(
 	}
 
 	// Get committees from mapping index (same logic as active meetings)
-	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
+	committees, err := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
+	if err != nil {
+		return nil, err
+	}
 
 	// Compute artifact visibility from access fields (fallback chain)
 	artifactVisibility := rawPastMeeting.RecordingAccess
@@ -542,23 +545,24 @@ func getCommitteesForPastMeeting(
 	idMapper domain.IDMapper,
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
-) []models.Committee {
+) ([]models.Committee, error) {
 	key := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
 		if !errors.Is(err, jetstream.ErrKeyNotFound) {
 			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load past meeting committee mappings", "key", key)
+			return nil, fmt.Errorf("failed to load past meeting committee mappings: %w", err)
 		}
-		return nil
+		return nil, nil
 	}
 	if string(entry.Value()) == tombstoneMarker {
-		return nil
+		return nil, nil
 	}
 
 	var mappings map[string]map[string]interface{}
 	if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to unmarshal past meeting committee mappings")
-		return nil
+		return nil, nil
 	}
 
 	committees := make([]models.Committee, 0, len(mappings))
@@ -579,7 +583,7 @@ func getCommitteesForPastMeeting(
 		}
 	}
 
-	return committees
+	return committees, nil
 }
 
 func updatePastMeetingCommitteeMappings(

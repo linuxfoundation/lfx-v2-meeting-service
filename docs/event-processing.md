@@ -463,6 +463,8 @@ Subject: `lfx.fga-sync.update_access`
 
 Subject: `lfx.fga-sync.member_put`
 
+For registrants, exactly one relation is sent — `"host"` or `"participant"` — with the other listed as `mutually_exclusive_with` so fga-sync removes any prior conflicting tuple:
+
 ```json
 {
     "object_type": "v1_meeting",
@@ -470,8 +472,23 @@ Subject: `lfx.fga-sync.member_put`
     "data": {
         "uid": "meeting-uuid",
         "username": "auth0|jdoe",
-        "relations": ["registrant", "host"],
-        "mutually_exclusive_with": ["registrant", "host"]
+        "relations": ["host"],
+        "mutually_exclusive_with": ["participant"]
+    }
+}
+```
+
+For past meeting participants, all applicable relations (`"host"`, `"invitee"`, `"attendee"`) are included in `relations` based on the participant's flags, and all three are listed in `mutually_exclusive_with` so any stale tuples are replaced atomically:
+
+```json
+{
+    "object_type": "v1_past_meeting",
+    "operation": "member_put",
+    "data": {
+        "uid": "meeting-and-occurrence-uuid",
+        "username": "auth0|jdoe",
+        "relations": ["invitee", "attendee"],
+        "mutually_exclusive_with": ["host", "invitee", "attendee"]
     }
 }
 ```

@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -980,6 +981,9 @@ func getCommitteesForMeeting(
 	key := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load meeting committee mappings", "key", key)
+		}
 		return nil
 	}
 	if string(entry.Value()) == tombstoneMarker {
@@ -1027,6 +1031,9 @@ func updateCommitteeMappings(
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			return fmt.Errorf("failed to load meeting mappings: %w", err)
+		}
 		mappings = make(map[string]map[string]interface{})
 	} else {
 		if string(entry.Value()) == tombstoneMarker {
@@ -1067,7 +1074,10 @@ func removeCommitteeMapping(
 	mappingsKey := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
-		return nil // No mappings found
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return nil // No mappings found
+		}
+		return fmt.Errorf("failed to load meeting mappings: %w", err)
 	}
 	if string(entry.Value()) == tombstoneMarker {
 		return nil // Already tombstoned, nothing to remove

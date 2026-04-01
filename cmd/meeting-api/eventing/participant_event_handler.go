@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -132,8 +133,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	if participantData.Username != "" {
 		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !h.isTombstoned(ctx, attendeeXrefKey) {
-			_ = entry
+		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(entry) {
 			participantData.IsAttended = true
 		}
 	}
@@ -193,15 +193,26 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 	// Check if an attendee record still exists for this participant.
 	if username != "" && meetingAndOccurrenceID != "" {
 		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username)
-		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !h.isTombstoned(ctx, attendeeXrefKey) {
+		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(entry) {
 			survivingAttendeeID := string(entry.Value())
 			funcLogger.DebugContext(ctx, "participant has active attendee record; applying partial invitee delete",
 				"surviving_attendee_id", survivingAttendeeID)
-			return h.handlePartialInviteeDelete(ctx, funcLogger, inviteeID, survivingAttendeeID, meetingAndOccurrenceID, username)
+			return h.handlePartialInviteeDelete(ctx, funcLogger, key, inviteeID, survivingAttendeeID, meetingAndOccurrenceID, username)
 		}
 	}
 
 	// Full delete — no attendee record survives.
+	return h.fullDeleteInvitee(ctx, funcLogger, key, inviteeID, meetingAndOccurrenceID, username)
+}
+
+// fullDeleteInvitee performs a full indexer delete and FGA member_remove for an invitee
+// when no sibling attendee record survives. Called from both the normal delete path and
+// as a fallback when the sibling is found to be missing.
+func (h *EventHandlers) fullDeleteInvitee(
+	ctx context.Context,
+	funcLogger *slog.Logger,
+	key, inviteeID, meetingAndOccurrenceID, username string,
+) (retry bool) {
 	var accessPayload []byte
 	var deleteAccessSubject string
 	if username != "" {
@@ -223,8 +234,7 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 		tombstoneKeyFmts:    []string{"v1_past_meeting_invitees.%s"},
 	})
 	if !result && username != "" && meetingAndOccurrenceID != "" {
-		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username)
-		h.tombstoneMapping(ctx, xrefKey)
+		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username))
 	}
 	return result
 }
@@ -235,13 +245,19 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 func (h *EventHandlers) handlePartialInviteeDelete(
 	ctx context.Context,
 	funcLogger *slog.Logger,
-	inviteeID, survivingAttendeeID, meetingAndOccurrenceID, username string,
+	key, inviteeID, survivingAttendeeID, meetingAndOccurrenceID, username string,
 ) (retry bool) {
 	// Fetch the surviving attendee data to build an accurate participant record.
 	attendeeEntry, err := h.v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-past-meetings-attendees.%s", survivingAttendeeID))
 	if err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to fetch attendee data for partial invitee delete; skipping")
-		return false
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching attendee data for partial invitee delete")
+			return true
+		}
+		// Sibling attendee is gone — fall back to a full invitee delete.
+		funcLogger.WarnContext(ctx, "surviving attendee not found during partial invitee delete; falling back to full delete",
+			"surviving_attendee_id", survivingAttendeeID)
+		return h.fullDeleteInvitee(ctx, funcLogger, key, inviteeID, meetingAndOccurrenceID, username)
 	}
 	attendeeData, err := decodeData(attendeeEntry.Value())
 	if err != nil {
@@ -257,6 +273,11 @@ func (h *EventHandlers) handlePartialInviteeDelete(
 	// The invitee record is gone; the attendee record remains.
 	participantData.IsInvited = false
 	participantData.IsAttended = true
+
+	if err := h.publisher.PublishIndexerDelete(ctx, "lfx.index.v1_past_meeting_participant", inviteeID); err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send indexer delete for partial invitee delete")
+		return isTransientError(err)
+	}
 
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), participantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send partial invitee delete indexer update")
@@ -440,8 +461,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	if participantData.Username != "" {
 		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !h.isTombstoned(ctx, inviteeXrefKey) {
-			_ = entry
+		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !entryIsTombstoned(entry) {
 			participantData.IsInvited = true
 		}
 	}
@@ -505,15 +525,26 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 	// Check if an invitee record still exists for this participant.
 	if username != "" && meetingAndOccurrenceID != "" {
 		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username)
-		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !h.isTombstoned(ctx, inviteeXrefKey) {
+		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !entryIsTombstoned(entry) {
 			survivingInviteeID := string(entry.Value())
 			funcLogger.DebugContext(ctx, "participant has active invitee record; applying partial attendee delete",
 				"surviving_invitee_id", survivingInviteeID)
-			return h.handlePartialAttendeeDelete(ctx, funcLogger, attendeeID, survivingInviteeID, meetingAndOccurrenceID, username)
+			return h.handlePartialAttendeeDelete(ctx, funcLogger, key, attendeeID, survivingInviteeID, meetingAndOccurrenceID, username)
 		}
 	}
 
 	// Full delete — no invitee record survives.
+	return h.fullDeleteAttendee(ctx, funcLogger, key, attendeeID, meetingAndOccurrenceID, username)
+}
+
+// fullDeleteAttendee performs a full indexer delete and FGA member_remove for an attendee
+// when no sibling invitee record survives. Called from both the normal delete path and
+// as a fallback when the sibling is found to be missing.
+func (h *EventHandlers) fullDeleteAttendee(
+	ctx context.Context,
+	funcLogger *slog.Logger,
+	key, attendeeID, meetingAndOccurrenceID, username string,
+) (retry bool) {
 	var accessPayload []byte
 	var deleteAccessSubject string
 	if username != "" {
@@ -528,7 +559,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 		}
 		deleteAccessSubject = "lfx.fga-sync.member_remove"
 	} else {
-		funcLogger.DebugContext(ctx, "no username in v1Data, skipping access control message for attendee delete")
+		funcLogger.DebugContext(ctx, "no username available, skipping access control message for attendee delete")
 	}
 
 	result := h.handleMeetingTypeDelete(ctx, key, attendeeID, accessPayload, meetingDeleteConfig{
@@ -537,8 +568,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 		tombstoneKeyFmts:    []string{"v1_past_meeting_attendees.%s"},
 	})
 	if !result && username != "" && meetingAndOccurrenceID != "" {
-		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username)
-		h.tombstoneMapping(ctx, xrefKey)
+		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username))
 	}
 	return result
 }
@@ -549,13 +579,19 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 func (h *EventHandlers) handlePartialAttendeeDelete(
 	ctx context.Context,
 	funcLogger *slog.Logger,
-	attendeeID, survivingInviteeID, meetingAndOccurrenceID, username string,
+	key, attendeeID, survivingInviteeID, meetingAndOccurrenceID, username string,
 ) (retry bool) {
 	// Fetch the surviving invitee data to build an accurate participant record.
 	inviteeEntry, err := h.v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-past-meetings-invitees.%s", survivingInviteeID))
 	if err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to fetch invitee data for partial attendee delete; skipping")
-		return false
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching invitee data for partial attendee delete")
+			return true
+		}
+		// Sibling invitee is gone — fall back to a full attendee delete.
+		funcLogger.WarnContext(ctx, "surviving invitee not found during partial attendee delete; falling back to full delete",
+			"surviving_invitee_id", survivingInviteeID)
+		return h.fullDeleteAttendee(ctx, funcLogger, key, attendeeID, meetingAndOccurrenceID, username)
 	}
 	inviteeData, err := decodeData(inviteeEntry.Value())
 	if err != nil {
@@ -571,6 +607,11 @@ func (h *EventHandlers) handlePartialAttendeeDelete(
 	// The attendee record is gone; the invitee record remains.
 	participantData.IsInvited = true
 	participantData.IsAttended = false
+
+	if err := h.publisher.PublishIndexerDelete(ctx, "lfx.index.v1_past_meeting_participant", attendeeID); err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send indexer delete for partial attendee delete")
+		return isTransientError(err)
+	}
 
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), participantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send partial attendee delete indexer update")

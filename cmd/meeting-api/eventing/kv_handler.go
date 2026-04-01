@@ -76,6 +76,12 @@ func (h *EventHandlers) isTombstoned(ctx context.Context, mappingKey string) boo
 	return err == nil && string(entry.Value()) == tombstoneMarker
 }
 
+// entryIsTombstoned returns true if the already-fetched entry holds a tombstone marker.
+// Use this when you have already called Get to avoid a second KV round-trip.
+func entryIsTombstoned(entry jetstream.KeyValueEntry) bool {
+	return string(entry.Value()) == tombstoneMarker
+}
+
 // tombstoneMapping writes "!del" to mappingKey so that re-deliveries of the same
 // delete event are detected and skipped.
 func (h *EventHandlers) tombstoneMapping(ctx context.Context, mappingKey string) {
