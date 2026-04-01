@@ -278,8 +278,12 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	}
 
 	// Validate required fields
-	if pastMeetingData.ID == "" || pastMeetingData.ProjectUID == "" {
+	if pastMeetingData.ID == "" {
 		funcLogger.ErrorContext(ctx, "missing required fields in past meeting data")
+		return false
+	}
+	if pastMeetingData.ProjectUID == "" {
+		funcLogger.InfoContext(ctx, "skipping past meeting sync - parent project not found in mappings", "project_sfid", pastMeetingData.ProjectSFID)
 		return false
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
@@ -346,9 +350,10 @@ func convertMapToPastMeetingData(
 		return nil, fmt.Errorf("missing required fields: meeting_and_occurrence_id or proj_id")
 	}
 
-	// Map project ID from v1 SFID to v2 UID
+	// Map project ID from v1 SFID to v2 UID. A missing mapping means the project isn't in v2 yet —
+	// the caller checks ProjectUID == "" and skips. Any other error is transient and propagated for retry.
 	projectUID, err := idMapper.MapProjectV1ToV2(ctx, rawPastMeeting.ProjectID)
-	if err != nil {
+	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
@@ -357,6 +362,18 @@ func convertMapToPastMeetingData(
 	endTime, _ := parseTime(rawPastMeeting.ScheduledEndTime)
 	createdAt, _ := parseTime(rawPastMeeting.CreatedAt)
 	modifiedAt, _ := parseTime(rawPastMeeting.ModifiedAt)
+
+	// Convert sessions
+	var sessions []models.PastMeetingSession
+	for _, rawSession := range rawPastMeeting.Sessions {
+		sessionStart, _ := parseTime(rawSession.StartTime)
+		sessionEnd, _ := parseTime(rawSession.EndTime)
+		sessions = append(sessions, models.PastMeetingSession{
+			UUID:      rawSession.UUID,
+			StartTime: sessionStart,
+			EndTime:   sessionEnd,
+		})
+	}
 
 	// Get committees from mapping index (same logic as active meetings)
 	committees := getCommitteesForPastMeeting(ctx, rawPastMeeting.MeetingAndOccurrenceID, idMapper, mappingsKV, logger)
@@ -410,6 +427,7 @@ func convertMapToPastMeetingData(
 		RecordingPassword:        rawPastMeeting.RecordingPassword,
 		ZoomConfig:               zoomConfig,
 		IsManuallyCreated:        rawPastMeeting.IsManuallyCreated,
+		Sessions:                 sessions,
 		CreatedAt:                createdAt,
 		UpdatedAt:                modifiedAt,
 		CreatedBy:                models.CreatedBy(rawPastMeeting.CreatedBy),
@@ -664,9 +682,9 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 		return true
 	}
 
-	var pastMeetingData map[string]interface{}
-	if err := json.Unmarshal(pastMeetingEntry.Value(), &pastMeetingData); err != nil {
-		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to unmarshal past meeting data")
+	pastMeetingData, err := decodeData(pastMeetingEntry.Value())
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode past meeting data")
 		return false
 	}
 

@@ -187,8 +187,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		if entry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey); err != nil {
 			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get past meeting data for summary access")
 		} else {
-			var pastMeetingData map[string]interface{}
-			if jsonErr := json.Unmarshal(entry.Value(), &pastMeetingData); jsonErr == nil {
+			if pastMeetingData, decodeErr := decodeData(entry.Value()); decodeErr == nil {
 				if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
 					aiSummaryAccess = access
 				}

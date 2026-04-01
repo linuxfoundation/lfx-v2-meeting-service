@@ -546,45 +546,53 @@ func (r *InviteResponseEventData) ParentRefs() []string {
 
 // PastMeetingEventData represents a past meeting event for indexing and access control
 type PastMeetingEventData struct {
-	ID                       string      `json:"id"`         // UUID
-	MeetingID                string      `json:"meeting_id"` // Original meeting ID
-	MeetingAndOccurrenceID   string      `json:"meeting_and_occurrence_id"`
-	OccurrenceID             string      `json:"occurrence_id,omitempty"`
-	ProjectSFID              string      `json:"proj_id,omitempty"`
-	ProjectUID               string      `json:"project_uid"`
-	ProjectSlug              string      `json:"project_slug,omitempty"`
-	Committee                string      `json:"committee,omitempty"`
-	CommitteeFilters         []string    `json:"committee_filters,omitempty"`
-	Title                    string      `json:"title"`
-	Description              string      `json:"description"`
-	StartTime                time.Time   `json:"start_time"`
-	EndTime                  time.Time   `json:"end_time"`
-	Duration                 int         `json:"duration"` // Actual duration in minutes
-	Timezone                 string      `json:"timezone"`
-	MeetingType              string      `json:"meeting_type,omitempty"`
-	Committees               []Committee `json:"committees"`
-	Visibility               string      `json:"visibility,omitempty"`
-	ArtifactVisibility       string      `json:"artifact_visibility,omitempty"`
-	Restricted               bool        `json:"restricted"`
-	RecordingEnabled         bool        `json:"recording_enabled"`
-	RecordingAccess          string      `json:"recording_access,omitempty"`
-	TranscriptEnabled        bool        `json:"transcript_enabled"`
-	TranscriptAccess         string      `json:"transcript_access,omitempty"`
-	ZoomAIEnabled            *bool       `json:"zoom_ai_enabled,omitempty"`
-	AISummaryAccess          string      `json:"ai_summary_access,omitempty"`
-	RequireAISummaryApproval *bool       `json:"require_ai_summary_approval,omitempty"`
-	EarlyJoinTimeMinutes     int         `json:"early_join_time_minutes,omitempty"`
-	YoutubeLink              string      `json:"youtube_link,omitempty"`
-	Platform                 string      `json:"platform,omitempty"`
-	PlatformMeetingID        string      `json:"platform_meeting_id,omitempty"`
-	RecordingPassword        string      `json:"recording_password,omitempty"`
-	ZoomConfig               *ZoomConfig `json:"zoom_config,omitempty"`
-	IsManuallyCreated        bool        `json:"is_manually_created,omitempty"`
-	CreatedAt                time.Time   `json:"created_at"`
-	UpdatedAt                time.Time   `json:"updated_at"`
-	CreatedBy                CreatedBy   `json:"created_by"`
-	UpdatedBy                UpdatedBy   `json:"updated_by"`
-	UpdatedByList            []UpdatedBy `json:"updated_by_list,omitempty"`
+	ID                       string               `json:"id"`         // UUID
+	MeetingID                string               `json:"meeting_id"` // Original meeting ID
+	MeetingAndOccurrenceID   string               `json:"meeting_and_occurrence_id"`
+	OccurrenceID             string               `json:"occurrence_id,omitempty"`
+	ProjectSFID              string               `json:"proj_id,omitempty"`
+	ProjectUID               string               `json:"project_uid"`
+	ProjectSlug              string               `json:"project_slug,omitempty"`
+	Committee                string               `json:"committee,omitempty"`
+	CommitteeFilters         []string             `json:"committee_filters,omitempty"`
+	Title                    string               `json:"title"`
+	Description              string               `json:"description"`
+	StartTime                time.Time            `json:"start_time"`
+	EndTime                  time.Time            `json:"end_time"`
+	Duration                 int                  `json:"duration"` // Actual duration in minutes
+	Timezone                 string               `json:"timezone"`
+	MeetingType              string               `json:"meeting_type,omitempty"`
+	Committees               []Committee          `json:"committees"`
+	Visibility               string               `json:"visibility,omitempty"`
+	ArtifactVisibility       string               `json:"artifact_visibility,omitempty"`
+	Restricted               bool                 `json:"restricted"`
+	RecordingEnabled         bool                 `json:"recording_enabled"`
+	RecordingAccess          string               `json:"recording_access,omitempty"`
+	TranscriptEnabled        bool                 `json:"transcript_enabled"`
+	TranscriptAccess         string               `json:"transcript_access,omitempty"`
+	ZoomAIEnabled            *bool                `json:"zoom_ai_enabled,omitempty"`
+	AISummaryAccess          string               `json:"ai_summary_access,omitempty"`
+	RequireAISummaryApproval *bool                `json:"require_ai_summary_approval,omitempty"`
+	EarlyJoinTimeMinutes     int                  `json:"early_join_time_minutes,omitempty"`
+	YoutubeLink              string               `json:"youtube_link,omitempty"`
+	Platform                 string               `json:"platform,omitempty"`
+	PlatformMeetingID        string               `json:"platform_meeting_id,omitempty"`
+	RecordingPassword        string               `json:"recording_password,omitempty"`
+	ZoomConfig               *ZoomConfig          `json:"zoom_config,omitempty"`
+	IsManuallyCreated        bool                 `json:"is_manually_created,omitempty"`
+	Sessions                 []PastMeetingSession `json:"sessions,omitempty"`
+	CreatedAt                time.Time            `json:"created_at"`
+	UpdatedAt                time.Time            `json:"updated_at"`
+	CreatedBy                CreatedBy            `json:"created_by"`
+	UpdatedBy                UpdatedBy            `json:"updated_by"`
+	UpdatedByList            []UpdatedBy          `json:"updated_by_list,omitempty"`
+}
+
+// PastMeetingSession represents a single Zoom meeting instance within a past meeting
+type PastMeetingSession struct {
+	UUID      string    `json:"uuid"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
 }
 
 // Tags returns the indexer tags for this past meeting.
@@ -743,21 +751,40 @@ type RecordingSession struct {
 
 // TranscriptEventData represents a transcript artifact event
 type TranscriptEventData struct {
-	ID                     string `json:"id"`
-	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
-	ProjectUID             string `json:"project_uid"`
-	TranscriptAccess       string `json:"transcript_access"` // public, meeting_hosts, meeting_participants
-	Platform               string `json:"platform"`          // Always "Zoom"
+	ID                     string             `json:"id"`
+	MeetingAndOccurrenceID string             `json:"meeting_and_occurrence_id"`
+	ProjectUID             string             `json:"project_uid"`
+	ProjectSlug            string             `json:"project_slug"`
+	HostEmail              string             `json:"host_email"`
+	HostID                 string             `json:"host_id"`
+	MeetingID              string             `json:"meeting_id"`
+	OccurrenceID           string             `json:"occurrence_id"`
+	Platform               string             `json:"platform"`          // Always "Zoom"
+	TranscriptAccess       string             `json:"transcript_access"` // public, meeting_hosts, meeting_participants
+	Title                  string             `json:"title"`
+	Visibility             string             `json:"visibility"`
+	RecordingFiles         []RecordingFile    `json:"recording_files"`
+	Sessions               []RecordingSession `json:"sessions"`
+	StartTime              time.Time          `json:"start_time"`
+	TotalSize              int64              `json:"total_size"`
+	CreatedAt              time.Time          `json:"created_at"`
+	UpdatedAt              time.Time          `json:"updated_at"`
+	CreatedBy              CreatedBy          `json:"created_by"`
+	UpdatedBy              UpdatedBy          `json:"updated_by"`
 }
 
 // Tags returns the indexer tags for this transcript.
 func (t *TranscriptEventData) Tags() []string {
-	return []string{
+	tags := []string{
 		t.ID,
 		"past_meeting_transcript_id:" + t.ID,
 		"meeting_and_occurrence_id:" + t.MeetingAndOccurrenceID,
 		"platform:Zoom",
 	}
+	for _, session := range t.Sessions {
+		tags = append(tags, "platform_meeting_instance_id:"+session.UUID)
+	}
+	return tags
 }
 
 // ParentRefs returns the indexer parent references for this transcript.
