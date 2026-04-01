@@ -99,11 +99,6 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "meeting_attachment")
 	funcLogger.DebugContext(ctx, "processing meeting attachment update")
 
-	// Check for soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleMeetingAttachmentDelete(ctx, key, v1Data)
-	}
-
 	attachmentData, err := convertMapToMeetingAttachmentData(v1Data)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to meeting attachment")
@@ -295,11 +290,6 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attachment")
 	funcLogger.DebugContext(ctx, "processing past meeting attachment update")
-
-	// Check for soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingAttachmentDelete(ctx, key, v1Data)
-	}
 
 	attachmentData, err := convertMapToPastMeetingAttachmentData(v1Data)
 	if err != nil {

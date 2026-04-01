@@ -265,11 +265,6 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting")
 	funcLogger.DebugContext(ctx, "processing past meeting update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to past meeting event data
 	pastMeetingData, err := convertMapToPastMeetingData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, h.v1MappingsKV, funcLogger)
 	if err != nil {
@@ -469,11 +464,6 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_mapping")
 	funcLogger.InfoContext(ctx, "processing past meeting mapping update")
-
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingMappingDelete(ctx, key, v1Data)
-	}
 
 	// Extract past meeting ID and mapping data
 	pastMeetingUUID := utils.GetString(v1Data["past_meeting_uuid"])

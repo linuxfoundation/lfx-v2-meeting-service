@@ -163,11 +163,6 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "registrant")
 	funcLogger.DebugContext(ctx, "processing registrant update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleRegistrantDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to registrant event data
 	registrantData, err := convertMapToRegistrantData(ctx, v1Data, h.userLookup, h.idMapper, funcLogger)
 	if err != nil {
@@ -422,11 +417,6 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "invite_response")
 	funcLogger.DebugContext(ctx, "processing invite response update")
-
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleInviteResponseDelete(ctx, key, v1Data)
-	}
 
 	// Convert v1Data to invite response event data
 	responseData, err := convertMapToInviteResponseData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)

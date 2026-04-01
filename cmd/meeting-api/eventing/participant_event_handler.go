@@ -109,11 +109,6 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_invitee")
 	funcLogger.DebugContext(ctx, "processing past meeting invitee update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingInviteeDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to participant event data
 	participantData, err := convertMapToInviteeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
@@ -421,11 +416,6 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attendee")
 	funcLogger.DebugContext(ctx, "processing past meeting attendee update")
-
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handlePastMeetingAttendeeDelete(ctx, key, v1Data)
-	}
 
 	// Convert v1Data to participant event data
 	participantData, err := convertMapToAttendeeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)

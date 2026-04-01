@@ -823,11 +823,6 @@ func (h *EventHandlers) handleMeetingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "meeting")
 	funcLogger.DebugContext(ctx, "processing meeting update")
 
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleMeetingDelete(ctx, key, v1Data)
-	}
-
 	// Convert v1Data to meeting event data
 	meetingData, err := convertMapToMeetingData(ctx, v1Data, h.idMapper, h.v1MappingsKV, funcLogger)
 	if err != nil {
@@ -903,11 +898,6 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "meeting_mapping")
 	funcLogger.InfoContext(ctx, "processing meeting mapping update")
-
-	// Check if this is a soft delete
-	if isDeleted, ok := v1Data["_sdc_deleted_at"].(string); ok && isDeleted != "" {
-		return h.handleMeetingMappingDelete(ctx, key, v1Data)
-	}
 
 	// Extract meeting ID and mapping data
 	meetingID := utils.GetString(v1Data["meeting_id"])

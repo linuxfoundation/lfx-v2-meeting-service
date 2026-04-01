@@ -163,7 +163,7 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 
 	// Handle delete operations
 	if operation == jetstream.KeyValueDelete || operation == jetstream.KeyValuePurge {
-		return handleKVDelete(ctx, key, handlers)
+		return routeDelete(ctx, key, nil, handlers)
 	}
 
 	// Handle put operations - decode the data
@@ -176,8 +176,16 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 	return handleKVPut(ctx, key, data, handlers)
 }
 
-// handleKVPut routes put/update operations to specific handlers
+// handleKVPut routes put/update operations to specific handlers.
+// If the record carries a _sdc_deleted_at field it is treated as a soft delete
+// and routed to handleKVSoftDelete instead of the normal update handler.
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) (retry bool) {
+	// Check for soft delete (record written to KV with _sdc_deleted_at set).
+	if deletedAt, exists := data["_sdc_deleted_at"]; exists && deletedAt != nil && deletedAt != "" {
+		handlers.logger.Info("processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
+		return routeDelete(ctx, key, data, handlers)
+	}
+
 	switch {
 	case strings.HasPrefix(key, "itx-zoom-meetings-v2."):
 		return handlers.handleMeetingUpdate(ctx, key, data)
@@ -222,47 +230,48 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 	}
 }
 
-// handleKVDelete routes delete/purge operations to entity-specific delete handlers.
-// KV deletes carry no payload, so nil is passed as v1Data.
-func handleKVDelete(ctx context.Context, key string, handlers *EventHandlers) (retry bool) {
+// routeDelete routes a delete operation to the appropriate entity-specific delete handler.
+// v1Data is nil for hard KV deletes (DEL/PURGE) and populated for soft deletes
+// (_sdc_deleted_at), allowing handlers to extract fields needed for access control messages.
+func routeDelete(ctx context.Context, key string, v1Data map[string]any, handlers *EventHandlers) (retry bool) {
 	handlers.logger.Info("routing delete operation", "key", key)
 
 	switch {
 	case strings.HasPrefix(key, "itx-zoom-meetings-v2."):
-		return handlers.handleMeetingDelete(ctx, key, nil)
+		return handlers.handleMeetingDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-mappings-v2."):
-		return handlers.handleMeetingMappingDelete(ctx, key, nil)
+		return handlers.handleMeetingMappingDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-registrants-v2."):
-		return handlers.handleRegistrantDelete(ctx, key, nil)
+		return handlers.handleRegistrantDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-invite-responses-v2."):
-		return handlers.handleInviteResponseDelete(ctx, key, nil)
+		return handlers.handleInviteResponseDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-mappings."):
-		return handlers.handlePastMeetingMappingDelete(ctx, key, nil)
+		return handlers.handlePastMeetingMappingDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings."):
-		return handlers.handlePastMeetingDelete(ctx, key, nil)
+		return handlers.handlePastMeetingDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-invitees."):
-		return handlers.handlePastMeetingInviteeDelete(ctx, key, nil)
+		return handlers.handlePastMeetingInviteeDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-attendees."):
-		return handlers.handlePastMeetingAttendeeDelete(ctx, key, nil)
+		return handlers.handlePastMeetingAttendeeDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-recordings."):
-		return handlers.handlePastMeetingRecordingDelete(ctx, key, nil)
+		return handlers.handlePastMeetingRecordingDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-summaries."):
-		return handlers.handlePastMeetingSummaryDelete(ctx, key, nil)
+		return handlers.handlePastMeetingSummaryDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-meetings-attachments-v2."):
-		return handlers.handleMeetingAttachmentDelete(ctx, key, nil)
+		return handlers.handleMeetingAttachmentDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-attachments."):
-		return handlers.handlePastMeetingAttachmentDelete(ctx, key, nil)
+		return handlers.handlePastMeetingAttachmentDelete(ctx, key, v1Data)
 
 	default:
 		handlers.logger.Debug("skipping delete for unrecognized key", "key", key)
