@@ -350,6 +350,11 @@ var ITXPastZoomMeeting = Type("ITXPastZoomMeeting", func() {
 	})
 	Attribute("transcript_enabled", Boolean, "Whether transcription was enabled")
 
+	// Password
+	Attribute("password", String, "UUID password for join page", func() {
+		Example("bdiYA1mTRBOhv2dqHuanxg==")
+	})
+
 	// Metadata
 	Attribute("is_manually_created", Boolean, "Whether past meeting was manually created")
 })

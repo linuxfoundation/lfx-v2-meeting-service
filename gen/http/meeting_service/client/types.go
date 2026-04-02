@@ -767,6 +767,8 @@ type CreateItxPastMeetingResponseBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// Whether transcription was enabled
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// UUID password for join page
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
 }
@@ -806,6 +808,8 @@ type GetItxPastMeetingResponseBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// Whether transcription was enabled
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
+	// UUID password for join page
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
 }
@@ -5540,6 +5544,7 @@ func NewCreateItxPastMeetingITXPastZoomMeetingCreated(body *CreateItxPastMeeting
 		RecordingEnabled:   body.RecordingEnabled,
 		ArtifactVisibility: body.ArtifactVisibility,
 		TranscriptEnabled:  body.TranscriptEnabled,
+		Password:           body.Password,
 		IsManuallyCreated:  body.IsManuallyCreated,
 	}
 	if body.Committees != nil {
@@ -5652,6 +5657,7 @@ func NewGetItxPastMeetingITXPastZoomMeetingOK(body *GetItxPastMeetingResponseBod
 		RecordingEnabled:   body.RecordingEnabled,
 		ArtifactVisibility: body.ArtifactVisibility,
 		TranscriptEnabled:  body.TranscriptEnabled,
+		Password:           body.Password,
 		IsManuallyCreated:  body.IsManuallyCreated,
 	}
 	if body.Committees != nil {

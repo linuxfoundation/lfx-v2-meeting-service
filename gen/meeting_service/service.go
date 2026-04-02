@@ -976,6 +976,8 @@ type ITXPastZoomMeeting struct {
 	ArtifactVisibility *string
 	// Whether transcription was enabled
 	TranscriptEnabled *bool
+	// UUID password for join page
+	Password *string
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool
 }

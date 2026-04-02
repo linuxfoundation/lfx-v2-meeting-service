@@ -59,6 +59,9 @@ type PastMeetingResponse struct {
 	TranscriptEnabled bool           `json:"transcript_enabled"`          // Was transcription enabled
 	TranscriptAccess  ArtifactAccess `json:"transcript_access,omitempty"` // Who can access transcripts
 
+	// Password
+	Password string `json:"password,omitempty"` // UUID for join page
+
 	// Metadata
 	IsManuallyCreated bool `json:"is_manually_created,omitempty"` // Whether manually created
 }

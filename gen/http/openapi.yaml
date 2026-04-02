@@ -4174,6 +4174,10 @@ definitions:
                 type: string
                 description: Zoom occurrence ID (Unix timestamp)
                 example: "1630560600000"
+            password:
+                type: string
+                description: UUID password for join page
+                example: bdiYA1mTRBOhv2dqHuanxg==
             project_uid:
                 type: string
                 description: LF project UID
@@ -4239,6 +4243,7 @@ definitions:
             meeting_id: "12343245463"
             meeting_type: Board
             occurrence_id: "1630560600000"
+            password: bdiYA1mTRBOhv2dqHuanxg==
             project_uid: a1234567-89ab-cdef-0123-456789abcdef
             recording_enabled: true
             restricted: false

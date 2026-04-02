@@ -154,6 +154,7 @@ func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXP
 		TranscriptEnabled:  &resp.TranscriptEnabled,
 		ArtifactVisibility: utils.StringPtrOmitEmpty(string(resp.RecordingAccess)),
 
+		Password:          utils.StringPtrOmitEmpty(resp.Password),
 		IsManuallyCreated: &resp.IsManuallyCreated,
 	}
 
