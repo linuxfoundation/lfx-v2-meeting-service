@@ -286,7 +286,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 	// Publish past meeting access control via generic FGA handler.
 	pastMeetingRefs := map[string][]string{}
 	if meeting.MeetingID != "" {
-		pastMeetingRefs["meeting"] = []string{meeting.MeetingID}
+		pastMeetingRefs["meeting"] = []string{"v1_meeting:" + meeting.MeetingID}
 	}
 	if meeting.ProjectUID != "" {
 		pastMeetingRefs["project"] = []string{meeting.ProjectUID}
@@ -417,19 +417,21 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 	}
 
 	// Publish recording access control via generic FGA handler.
-	// references builds object-to-object tuples: (past_meeting:<id>, <relation>, v1_past_meeting_recording:<id>)
+	// references builds object-to-object tuples; values use "v1_past_meeting:<id>" so fga-sync
+	// writes the correct type (define past_meeting: [v1_past_meeting]).
+	pastMeetingRef := "v1_past_meeting:" + recording.MeetingAndOccurrenceID
 	recordingRefs := map[string][]string{
-		"past_meeting": {recording.MeetingAndOccurrenceID},
+		"past_meeting": {pastMeetingRef},
 	}
 	switch recording.RecordingAccess {
 	case "public":
 		// isPublic=true handles viewer access via user:*
 	case "meeting_participants":
-		recordingRefs["past_meeting_for_host_view"] = []string{recording.MeetingAndOccurrenceID}
-		recordingRefs["past_meeting_for_attendee_view"] = []string{recording.MeetingAndOccurrenceID}
-		recordingRefs["past_meeting_for_participant_view"] = []string{recording.MeetingAndOccurrenceID}
+		recordingRefs["past_meeting_for_host_view"] = []string{pastMeetingRef}
+		recordingRefs["past_meeting_for_attendee_view"] = []string{pastMeetingRef}
+		recordingRefs["past_meeting_for_participant_view"] = []string{pastMeetingRef}
 	default: // meeting_hosts or unset
-		recordingRefs["past_meeting_for_host_view"] = []string{recording.MeetingAndOccurrenceID}
+		recordingRefs["past_meeting_for_host_view"] = []string{pastMeetingRef}
 	}
 
 	recordingAccessMsg := GenericFGAMessage{
@@ -478,18 +480,19 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 	}
 
 	// Publish transcript access control via generic FGA handler.
+	pastMeetingRef := "v1_past_meeting:" + transcript.MeetingAndOccurrenceID
 	transcriptRefs := map[string][]string{
-		"past_meeting": {transcript.MeetingAndOccurrenceID},
+		"past_meeting": {pastMeetingRef},
 	}
 	switch transcript.TranscriptAccess {
 	case "public":
 		// isPublic=true handles viewer access via user:*
 	case "meeting_participants":
-		transcriptRefs["past_meeting_for_host_view"] = []string{transcript.MeetingAndOccurrenceID}
-		transcriptRefs["past_meeting_for_attendee_view"] = []string{transcript.MeetingAndOccurrenceID}
-		transcriptRefs["past_meeting_for_participant_view"] = []string{transcript.MeetingAndOccurrenceID}
+		transcriptRefs["past_meeting_for_host_view"] = []string{pastMeetingRef}
+		transcriptRefs["past_meeting_for_attendee_view"] = []string{pastMeetingRef}
+		transcriptRefs["past_meeting_for_participant_view"] = []string{pastMeetingRef}
 	default: // meeting_hosts or unset
-		transcriptRefs["past_meeting_for_host_view"] = []string{transcript.MeetingAndOccurrenceID}
+		transcriptRefs["past_meeting_for_host_view"] = []string{pastMeetingRef}
 	}
 
 	transcriptAccessMsg := GenericFGAMessage{
@@ -539,18 +542,19 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 	}
 
 	// Publish summary access control via generic FGA handler.
+	pastMeetingRef := "v1_past_meeting:" + summary.MeetingAndOccurrenceID
 	summaryRefs := map[string][]string{
-		"past_meeting": {summary.MeetingAndOccurrenceID},
+		"past_meeting": {pastMeetingRef},
 	}
 	switch summaryAccess {
 	case "public":
 		// isPublic=true handles viewer access via user:*
 	case "meeting_participants":
-		summaryRefs["past_meeting_for_host_view"] = []string{summary.MeetingAndOccurrenceID}
-		summaryRefs["past_meeting_for_attendee_view"] = []string{summary.MeetingAndOccurrenceID}
-		summaryRefs["past_meeting_for_participant_view"] = []string{summary.MeetingAndOccurrenceID}
+		summaryRefs["past_meeting_for_host_view"] = []string{pastMeetingRef}
+		summaryRefs["past_meeting_for_attendee_view"] = []string{pastMeetingRef}
+		summaryRefs["past_meeting_for_participant_view"] = []string{pastMeetingRef}
 	default: // meeting_hosts or unset
-		summaryRefs["past_meeting_for_host_view"] = []string{summary.MeetingAndOccurrenceID}
+		summaryRefs["past_meeting_for_host_view"] = []string{pastMeetingRef}
 	}
 
 	summaryAccessMsg := GenericFGAMessage{
@@ -598,26 +602,6 @@ func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, actio
 		return fmt.Errorf("failed to publish meeting attachment to indexer: %w", err)
 	}
 
-	references := map[string][]string{}
-	if attachment.MeetingID != "" {
-		references["meeting"] = []string{attachment.MeetingID}
-	}
-
-	accessMsg := GenericFGAMessage{
-		ObjectType: "v1_meeting_attachment",
-		Operation:  "update_access",
-		Data: map[string]interface{}{
-			"uid":        attachment.UID,
-			"public":     isPublic,
-			"relations":  map[string][]string{},
-			"references": references,
-		},
-	}
-
-	if err := p.publish(ctx, "lfx.fga-sync.update_access", accessMsg); err != nil {
-		return fmt.Errorf("failed to publish meeting attachment access control: %w", err)
-	}
-
 	return nil
 }
 
@@ -646,26 +630,6 @@ func (p *NATSPublisher) PublishPastMeetingAttachmentEvent(ctx context.Context, a
 
 	if err := p.publish(ctx, IndexV1PastMeetingAttachmentSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish past meeting attachment to indexer: %w", err)
-	}
-
-	references := map[string][]string{}
-	if attachment.MeetingAndOccurrenceID != "" {
-		references["past_meeting"] = []string{attachment.MeetingAndOccurrenceID}
-	}
-
-	accessMsg := GenericFGAMessage{
-		ObjectType: "v1_past_meeting_attachment",
-		Operation:  "update_access",
-		Data: map[string]interface{}{
-			"uid":        attachment.UID,
-			"public":     isPublic,
-			"relations":  map[string][]string{},
-			"references": references,
-		},
-	}
-
-	if err := p.publish(ctx, "lfx.fga-sync.update_access", accessMsg); err != nil {
-		return fmt.Errorf("failed to publish past meeting attachment access control: %w", err)
 	}
 
 	return nil
