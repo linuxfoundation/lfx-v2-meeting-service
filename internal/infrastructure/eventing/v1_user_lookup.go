@@ -94,8 +94,7 @@ func lookupUsernameToAuthSub(ctx context.Context, nc *nats.Conn, username string
 	}
 	sub := string(msg.Data)
 	if sub == "" {
-		logger.WarnContext(ctx, "auth service returned empty sub for username", "username", username)
-		return "", nil
+		return "", fmt.Errorf("auth service returned empty sub for username %q", username)
 	}
 	// The auth service returns a plain sub string on success, or a JSON error object on failure.
 	// Detect the error case so we don't forward the raw JSON as an FGA user identifier.
