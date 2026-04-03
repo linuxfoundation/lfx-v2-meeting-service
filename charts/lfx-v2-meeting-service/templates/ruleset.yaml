@@ -597,7 +597,7 @@ spec:
         methods:
           - GET
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}
+          - path: /itx/past_meetings/:past_meeting_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -628,7 +628,7 @@ spec:
         methods:
           - DELETE
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}
+          - path: /itx/past_meetings/:past_meeting_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -659,7 +659,7 @@ spec:
         methods:
           - PUT
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}
+          - path: /itx/past_meetings/:past_meeting_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -686,7 +686,7 @@ spec:
         methods:
           - GET
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}
+          - path: /itx/past_meetings/:past_meeting_id/summaries/:summary_uid
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -717,7 +717,7 @@ spec:
         methods:
           - PUT
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}
+          - path: /itx/past_meetings/:past_meeting_id/summaries/:summary_uid
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -748,7 +748,7 @@ spec:
         methods:
           - POST
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}/participants
+          - path: /itx/past_meetings/:past_meeting_id/participants
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -779,7 +779,7 @@ spec:
         methods:
           - PUT
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}/participants/{participant_id}
+          - path: /itx/past_meetings/:past_meeting_id/participants/:participant_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
@@ -810,7 +810,7 @@ spec:
         methods:
           - DELETE
         routes:
-          - path: /itx/past_meetings/{past_meeting_id}/participants/{participant_id}
+          - path: /itx/past_meetings/:past_meeting_id/participants/:participant_id
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
