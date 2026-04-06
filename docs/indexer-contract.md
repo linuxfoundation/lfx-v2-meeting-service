@@ -39,7 +39,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `committee` | string | v1 Salesforce ID of the primary committee |
 | `committee_uid` | string (optional) | v2 UUID of the primary committee; omitted when empty |
 | `committee_filters` | []string | List of committee filter values |
-| `committees` | []object | Associated committees (see [Committee schema](#committee-schema)) |
+| `committees` | []object (optional) | Associated committees (see [Committee schema](#committee-schema)); omitted when empty |
 | `user_id` | string | Zoom user ID of the meeting host |
 | `title` | string | Meeting title (from Zoom `topic`) |
 | `description` | string | Meeting description (from Zoom `agenda`) |
@@ -82,7 +82,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `last_mailing_list_members_sync_job_failed_count` | int | Failed count from last mailing list sync job |
 | `mailing_list_group_ids` | []string | Mailing list group IDs associated with this meeting |
 | `last_mailing_list_members_sync_job_warning_count` | int | Warning count from last mailing list sync job |
-| `use_unique_ics_uid` | string | Override UUID for calendar event ID (when calendar issues require a new UID) |
+| `use_unique_ics_uid` | bool | Whether to generate/use a unique ICS UID for calendar events |
 | `show_meeting_attendees` | bool | Whether attendee data is visible to other attendees |
 | `organizers` | []string | Auth0 sub-format usernames of meeting organizers |
 
@@ -93,7 +93,7 @@ Each entry in `committees` has:
 | Field | Type | Description |
 |---|---|---|
 | `uid` | string | Committee v2 UUID |
-| `allowed_voting_statuses` | []object (optional) | Voting status filters for the committee |
+| `allowed_voting_statuses` | []string (optional) | Voting status filters for the committee |
 
 #### User Reference Schema
 
