@@ -82,7 +82,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `last_mailing_list_members_sync_job_failed_count` | int | Failed count from last mailing list sync job |
 | `mailing_list_group_ids` | []string | Mailing list group IDs associated with this meeting |
 | `last_mailing_list_members_sync_job_warning_count` | int | Warning count from last mailing list sync job |
-| `use_unique_ics_uid` | bool | Whether to generate/use a unique ICS UID for calendar events |
+| `use_unique_ics_uid` | string | UUID used as the unique ICS UID for calendar events (empty string when not set) |
 | `show_meeting_attendees` | bool | Whether attendee data is visible to other attendees |
 | `organizers` | []string | Auth0 sub-format usernames of meeting organizers |
 
@@ -93,7 +93,7 @@ Each entry in `committees` has:
 | Field | Type | Description |
 |---|---|---|
 | `uid` | string | Committee v2 UUID |
-| `allowed_voting_statuses` | []string (optional) | Voting status filters for the committee |
+| `allowed_voting_statuses` | []string (optional) | Voting status filter strings for the committee; omitted when empty |
 
 #### User Reference Schema
 
@@ -301,8 +301,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `response_type` | string | RSVP response (`"accepted"`, `"declined"`, `"maybe"`) |
 | `scope` | string | Response scope (`"all"`, `"single"`, `"this_and_following"`) |
 | `is_recurring` | bool | Whether the parent meeting is recurring |
-| `created_at` | timestamp | Creation time |
-| `modified_at` | timestamp | Last modification time |
+| `created_at` | string (RFC3339) | Creation time |
+| `modified_at` | string (RFC3339) | Last modification time |
 
 ### Tags
 
@@ -366,12 +366,12 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `committee_filters` | []string (optional) | Committee filter values |
 | `title` | string | Meeting title |
 | `description` | string | Meeting description |
-| `start_time` | timestamp | Occurrence start time |
-| `end_time` | timestamp | Occurrence end time |
+| `start_time` | string (RFC3339) | Occurrence start time |
+| `end_time` | string (RFC3339) | Occurrence end time |
 | `duration` | int | Actual duration in minutes |
 | `timezone` | string | Meeting timezone (IANA) |
 | `meeting_type` | string (optional) | Zoom meeting type |
-| `committees` | []object | Associated committees (see [Committee schema](#committee-schema)) |
+| `committees` | []object (optional) | Associated committees (see [Committee schema](#committee-schema)); omitted when empty |
 | `visibility` | string (optional) | Meeting visibility |
 | `artifact_visibility` | string (optional) | Visibility of meeting artifacts |
 | `restricted` | bool | Whether the meeting was restricted |
@@ -390,8 +390,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `zoom_config` | object (optional) | Zoom-specific configuration (see [Zoom Config schema](#zoom-config-schema)) |
 | `is_manually_created` | bool (optional) | Whether this past meeting was created manually |
 | `sessions` | []object (optional) | Zoom meeting instances within this past meeting (each has `uuid`, `start_time`, `end_time`) |
-| `created_at` | timestamp | Creation time |
-| `updated_at` | timestamp | Last update time |
+| `created_at` | string (RFC3339) | Creation time |
+| `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by_list` | []object (optional) | All users who have updated the record |
@@ -463,8 +463,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `is_invited` | bool | Whether the participant was invited |
 | `is_attended` | bool | Whether the participant attended |
 | `sessions` | []object (optional) | Join/leave sessions (each has `uid`, `join_time`, `leave_time`, `leave_reason`) |
-| `created_at` | timestamp | Creation time |
-| `updated_at` | timestamp | Last update time |
+| `created_at` | string (RFC3339) | Creation time |
+| `updated_at` | string (RFC3339) | Last update time |
 
 ### Tags
 
@@ -534,10 +534,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `recording_count` | int | Number of recording files |
 | `recording_files` | []object | Recording files (see [Recording File schema](#recording-file-schema)) |
 | `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
-| `start_time` | timestamp | Recording start time |
+| `start_time` | string (RFC3339) | Recording start time |
 | `total_size` | int64 | Total size of all recording files in bytes |
-| `created_at` | timestamp | Creation time |
-| `updated_at` | timestamp | Last update time |
+| `created_at` | string (RFC3339) | Creation time |
+| `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 
@@ -552,8 +552,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_size` | int64 | File size in bytes |
 | `recording_type` | string | Zoom recording type (e.g., `"shared_screen_with_speaker_view"`) |
 | `status` | string | File status |
-| `recording_start` | timestamp | Recording start time |
-| `recording_end` | timestamp | Recording end time |
+| `recording_start` | string (RFC3339) | Recording start time |
+| `recording_end` | string (RFC3339) | Recording end time |
 | `download_url` | string (optional) | Download URL |
 | `play_url` | string (optional) | Playback URL |
 
@@ -562,7 +562,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Field | Type | Description |
 |---|---|---|
 | `uuid` | string | Zoom meeting instance UUID |
-| `start_time` | timestamp | Session start time |
+| `start_time` | string (RFC3339) | Session start time |
 | `total_size` | int64 | Session total size in bytes |
 | `share_url` | string (optional) | Share URL for the session |
 
@@ -629,10 +629,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `visibility` | string | Transcript visibility |
 | `recording_files` | []object | Associated recording files (see [Recording File schema](#recording-file-schema)) |
 | `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
-| `start_time` | timestamp | Transcript start time |
+| `start_time` | string (RFC3339) | Transcript start time |
 | `total_size` | int64 | Total size in bytes |
-| `created_at` | timestamp | Creation time |
-| `updated_at` | timestamp | Last update time |
+| `created_at` | string (RFC3339) | Creation time |
+| `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 
@@ -708,8 +708,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform` | string | Meeting platform (always `"Zoom"`) |
 | `zoom_config` | object | Zoom identifiers (has `meeting_id` string and `meeting_uuid` string) |
 | `email_sent` | bool | Whether a summary notification email has been sent |
-| `created_at` | timestamp | Creation time |
-| `updated_at` | timestamp | Last update time |
+| `created_at` | string (RFC3339) | Creation time |
+| `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 
@@ -777,9 +777,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_upload_status` | string (optional) | Upload status |
 | `file_content_type` | string (optional) | MIME content type |
 | `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
-| `file_uploaded_at` | timestamp (optional) | Time the file was uploaded |
-| `created_at` | timestamp | Creation time |
-| `modified_at` | timestamp | Last modification time |
+| `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `created_at` | string (RFC3339) | Creation time |
+| `modified_at` | string (RFC3339) | Last modification time |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the attachment (see [User Reference schema](#user-reference-schema)) |
 
@@ -845,9 +845,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_upload_status` | string (optional) | Upload status |
 | `file_content_type` | string (optional) | MIME content type |
 | `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
-| `file_uploaded_at` | timestamp (optional) | Time the file was uploaded |
-| `created_at` | timestamp | Creation time |
-| `modified_at` | timestamp | Last modification time |
+| `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `created_at` | string (RFC3339) | Creation time |
+| `modified_at` | string (RFC3339) | Last modification time |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the attachment (see [User Reference schema](#user-reference-schema)) |
 
