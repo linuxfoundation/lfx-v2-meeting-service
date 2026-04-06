@@ -182,7 +182,11 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 ### Search Behavior
 
-_(not configured — `fulltext`, `name_and_aliases`, and `sort_name` are not set in IndexingConfig)_
+| Field | Value |
+|---|---|
+| `sort_name` | `title` (trimmed) |
+| `name_and_aliases` | `[title]` (omitted when empty) |
+| `fulltext` | `title` + `description` (space-joined, deduplicated, omits empty values) |
 
 ### Parent References
 
@@ -257,7 +261,11 @@ _(not configured — `fulltext`, `name_and_aliases`, and `sort_name` are not set
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `email` (trimmed) |
+| `name_and_aliases` | `[username, email]` (deduplicated, omits empty values) |
+| `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
 
@@ -322,7 +330,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `email` (trimmed) |
+| `name_and_aliases` | `[username, email]` (deduplicated, omits empty values) |
+| `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
 
@@ -409,7 +421,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `title` (trimmed) |
+| `name_and_aliases` | `[title]` (omitted when empty) |
+| `fulltext` | `title` + `description` (space-joined, deduplicated, omits empty values) |
 
 ### Parent References
 
@@ -476,7 +492,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `email` (trimmed) |
+| `name_and_aliases` | `[first_name, last_name, username]` (deduplicated, omits empty values) |
+| `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
 
@@ -571,7 +591,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `title` (trimmed) |
+| `name_and_aliases` | `[title]` (omitted when empty) |
+| `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
 
@@ -636,7 +660,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `title` (trimmed) |
+| `name_and_aliases` | `[title]` (omitted when empty) |
+| `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
 
@@ -710,7 +738,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `zoom_meeting_topic` (trimmed) |
+| `name_and_aliases` | `[zoom_meeting_topic]` (omitted when empty) |
+| `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
 
@@ -773,7 +805,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `name` (trimmed) |
+| `name_and_aliases` | `[file_name, link, name]` (deduplicated, omits empty values) |
+| `fulltext` | `sort_name` + `name_and_aliases` + `description` (space-joined, deduplicated, omits empty values) |
 
 ### Parent References
 
@@ -838,7 +874,11 @@ _(not configured)_
 
 ### Search Behavior
 
-_(not configured)_
+| Field | Value |
+|---|---|
+| `sort_name` | `name` (trimmed) |
+| `name_and_aliases` | `[file_name, link, name]` (deduplicated, omits empty values) |
+| `fulltext` | `sort_name` + `name_and_aliases` + `description` (space-joined, deduplicated, omits empty values) |
 
 ### Parent References
 
