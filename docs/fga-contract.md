@@ -22,12 +22,13 @@ The full OpenFGA type definitions (relations, schema) for all object types are d
 
 ## Message Format
 
-This service uses three FGA operation types:
+This service uses four FGA operation types:
 
 | Subject | Operation | Used for |
 |---|---|---|
 | `lfx.fga-sync.update_access` | `update_access` | Create and update — sets object-level access config and references |
 | `lfx.fga-sync.member_put` | `member_put` | Adds a user to one or more relations on an object |
+| `lfx.fga-sync.member_remove` | `member_remove` | Removes a user from an object; sent on registrant delete and on full participant deletes. An empty `relations` array removes all relations for that user on the object |
 | `lfx.fga-sync.delete_access` | `delete_access` | Delete — removes all FGA tuples for the object |
 
 ---
@@ -86,6 +87,17 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 | `mutually_exclusive_with` | `["participant"]` | When `registrant.Host == true` |
 | `mutually_exclusive_with` | `["host"]` | When `registrant.Host == false` |
 
+### member_remove (Registrant Delete)
+
+Published to `lfx.fga-sync.member_remove` when a registrant delete event is processed and the registrant has a non-empty `Username`. The username is resolved to an Auth0 `sub` value before sending.
+
+| Field | Value |
+|---|---|
+| `object_type` | `v1_meeting` |
+| `uid` | `MeetingID` (parent meeting) |
+| `username` | Auth0 `sub` of the registrant |
+| `relations` | `[]` (empty — removes all relations for the user) |
+
 ### Delete
 
 On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` with only the meeting `uid` — all FGA tuples for `v1_meeting:{uid}` are removed by the fga-sync service.
@@ -138,6 +150,19 @@ The object UID is the **parent past meeting's `MeetingAndOccurrenceID`**, not th
 | `username` | Auth0 `sub` of the participant | Always (skipped if Username is empty) |
 | `relations` | Subset of `["host", "invitee", "attendee"]` | `"host"` added when `participant.Host == true`; `"invitee"` when `IsInvited == true`; `"attendee"` when `IsAttended == true` |
 | `mutually_exclusive_with` | `["host", "invitee", "attendee"]` | Always (all three, regardless of which relations are set) |
+
+### member_remove (Participant Full Delete)
+
+Published to `lfx.fga-sync.member_remove` when a participant is fully deleted — i.e., no sibling invitee or attendee record remains for the same user on the same past meeting. Skipped if `Username` is empty.
+
+When a participant record is deleted but a sibling record still exists (e.g., an attendee record remains when an invitee record is deleted), a `member_put` is sent instead to update the user's remaining relations rather than remove them entirely.
+
+| Field | Value |
+|---|---|
+| `object_type` | `v1_past_meeting` |
+| `uid` | `MeetingAndOccurrenceID` (parent past meeting) |
+| `username` | Auth0 `sub` of the participant |
+| `relations` | `[]` (empty — removes all relations for the user) |
 
 ### Delete
 
@@ -264,10 +289,13 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Create/update meeting | `v1_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete meeting | `v1_meeting` | `lfx.fga-sync.delete_access` | Always sent |
 | Create/update registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_put` | Skipped if `Username` is empty |
+| Delete registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_remove` | Skipped if `Username` is empty |
 | Create/update meeting RSVP | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
 | Create/update past meeting | `v1_past_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete past meeting | `v1_past_meeting` | `lfx.fga-sync.delete_access` | Always sent |
 | Create/update participant (with username) | `v1_past_meeting` | `lfx.fga-sync.member_put` | Skipped if `Username` is empty |
+| Delete participant (full delete, with username) | `v1_past_meeting` | `lfx.fga-sync.member_remove` | Sent when no invitee/attendee sibling record remains; skipped if `Username` is empty |
+| Delete participant (partial delete, with username) | `v1_past_meeting` | `lfx.fga-sync.member_put` | Sent when a sibling invitee/attendee record still exists — updates remaining relations instead of removing |
 | Create/update recording | `v1_past_meeting_recording` | `lfx.fga-sync.update_access` | Always sent |
 | Delete recording | `v1_past_meeting_recording` | `lfx.fga-sync.delete_access` | Always sent |
 | Create/update transcript | `v1_past_meeting_transcript` | `lfx.fga-sync.update_access` | Always sent |
