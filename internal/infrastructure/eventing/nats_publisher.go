@@ -124,10 +124,6 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 	relations := map[string][]string{}
 	references := map[string][]string{}
 
-	if len(meeting.Organizers) > 0 {
-		relations["organizer"] = meeting.Organizers
-	}
-
 	if meeting.ProjectUID != "" {
 		references["project"] = []string{meeting.ProjectUID}
 	}
