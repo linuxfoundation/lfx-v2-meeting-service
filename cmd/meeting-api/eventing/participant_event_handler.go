@@ -72,6 +72,9 @@ type InviteeDBRaw struct {
 	// ProjectID is the ID of the project associated with the invitee
 	ProjectID string `json:"proj_id,omitempty"`
 
+	// ProjectSlug is the slug of the project associated with the invitee
+	ProjectSlug string `json:"project_slug,omitempty"`
+
 	// MeetingAndOccurrenceID is the ID of the meeting and occurrence associated with the invitee
 	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id,omitempty"` // secondary index
 
@@ -655,10 +658,27 @@ func convertMapToInviteeParticipantData(
 		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
 	}
 
-	// Use ProjectID from invitee record directly if available
+	// Get project SFID and slug: prefer the values from the invitee record, but fall back to
+	// the parent past_meeting when proj_id is absent (it is omitempty and may be missing for
+	// some v1 invitee records). This ensures those records are indexed rather than silently
+	// dropped, and that project_slug is always propagated so the Persona Service can resolve
+	// the project without per-record fetches at query time.
 	projectSFID := rawInvitee.ProjectID
+	projectSlug := rawInvitee.ProjectSlug
+	if projectSFID == "" || projectSlug == "" {
+		sfid, slug, err := lookupProjectFromPastMeeting(ctx, rawInvitee.MeetingAndOccurrenceID, v1ObjectsKV, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
+		}
+		if projectSFID == "" {
+			projectSFID = sfid
+		}
+		if projectSlug == "" {
+			projectSlug = slug
+		}
+	}
 	if projectSFID == "" {
-		return nil, fmt.Errorf("invitee missing project ID")
+		return nil, fmt.Errorf("invitee missing project ID: proj_id absent and not found in parent past_meeting")
 	}
 
 	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
@@ -720,6 +740,7 @@ func convertMapToInviteeParticipantData(
 		MeetingAndOccurrenceID: rawInvitee.MeetingAndOccurrenceID,
 		MeetingID:              rawInvitee.MeetingID,
 		ProjectUID:             projectUID,
+		ProjectSlug:            projectSlug,
 		Email:                  rawInvitee.Email,
 		FirstName:              firstName,
 		LastName:               lastName,
@@ -762,10 +783,24 @@ func convertMapToAttendeeParticipantData(
 		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
 	}
 
-	// Use ProjectID from attendee record directly
+	// Get project SFID and slug from the attendee record; fall back to the parent past_meeting
+	// for any missing values so the Persona Service can always resolve the project at query time.
 	projectSFID := rawAttendee.ProjectID
+	projectSlug := rawAttendee.ProjectSlug
+	if projectSFID == "" || projectSlug == "" {
+		sfid, slug, err := lookupProjectFromPastMeeting(ctx, rawAttendee.MeetingAndOccurrenceID, v1ObjectsKV, logger)
+		if err != nil {
+			return nil, fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
+		}
+		if projectSFID == "" {
+			projectSFID = sfid
+		}
+		if projectSlug == "" {
+			projectSlug = slug
+		}
+	}
 	if projectSFID == "" {
-		return nil, fmt.Errorf("attendee missing project ID")
+		return nil, fmt.Errorf("attendee missing project ID: proj_id absent and not found in parent past_meeting")
 	}
 
 	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
@@ -834,6 +869,7 @@ func convertMapToAttendeeParticipantData(
 		MeetingAndOccurrenceID: rawAttendee.MeetingAndOccurrenceID,
 		MeetingID:              rawAttendee.MeetingID,
 		ProjectUID:             projectUID,
+		ProjectSlug:            projectSlug,
 		Email:                  rawAttendee.Email,
 		FirstName:              firstName,
 		LastName:               lastName,
@@ -850,4 +886,33 @@ func convertMapToAttendeeParticipantData(
 		CreatedAt:              createdAt,
 		UpdatedAt:              modifiedAt,
 	}, nil
+}
+
+// lookupProjectFromPastMeeting fetches the proj_id and project_slug of the parent past meeting
+// from the v1-objects KV bucket. Returns empty strings when the record is not found (permanent,
+// non-retryable). Returns a non-nil error for transient KV failures (caller should retry).
+func lookupProjectFromPastMeeting(
+	ctx context.Context,
+	meetingAndOccurrenceID string,
+	v1ObjectsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) (projSFID, projectSlug string, err error) {
+	if meetingAndOccurrenceID == "" {
+		return "", "", nil
+	}
+	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", meetingAndOccurrenceID)
+	entry, kvErr := v1ObjectsKV.Get(ctx, pastMeetingKey)
+	if kvErr != nil {
+		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
+			logger.WarnContext(ctx, "parent past_meeting not found for project lookup", "key", pastMeetingKey)
+			return "", "", nil
+		}
+		return "", "", fmt.Errorf("transient error fetching parent past_meeting: %w", kvErr)
+	}
+	pastMeetingData, decErr := decodeData(entry.Value())
+	if decErr != nil {
+		logger.With(logging.ErrKey, decErr).WarnContext(ctx, "failed to decode parent past_meeting for project lookup", "key", pastMeetingKey)
+		return "", "", nil
+	}
+	return utils.GetString(pastMeetingData["proj_id"]), utils.GetString(pastMeetingData["project_slug"]), nil
 }

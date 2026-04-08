@@ -755,6 +755,7 @@ type PastMeetingParticipantEventData struct {
 	MeetingAndOccurrenceID string               `json:"meeting_and_occurrence_id"`
 	MeetingID              string               `json:"meeting_id"`
 	ProjectUID             string               `json:"project_uid"`
+	ProjectSlug            string               `json:"project_slug,omitempty"`
 	Email                  string               `json:"email"`
 	FirstName              string               `json:"first_name"`
 	LastName               string               `json:"last_name"`
@@ -810,6 +811,9 @@ func (p *PastMeetingParticipantEventData) Tags() []string {
 		"past_meeting_participant_uid:" + p.UID,
 		"meeting_and_occurrence_id:" + p.MeetingAndOccurrenceID,
 		"project_uid:" + p.ProjectUID,
+	}
+	if p.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+p.ProjectSlug)
 	}
 	if p.Username != "" {
 		tags = append(tags, "username:"+p.Username)

@@ -470,6 +470,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
 | `meeting_id` | string | ID of the originating active meeting |
 | `project_uid` | string | v2 UUID of the associated project |
+| `project_slug` | string (optional) | URL slug of the associated project, propagated from the parent past meeting at index time |
 | `email` | string | Participant email address |
 | `first_name` | string | Participant first name |
 | `last_name` | string | Participant last name |
@@ -493,12 +494,13 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `past_meeting_participant_uid:{uid}` | `past_meeting_participant_uid:a1b2c3d4-...` | Lookup by participant UID |
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find participants for a past meeting |
 | `project_uid:{value}` | `project_uid:cbef1ed5-...` | Find participants for a project |
+| `project_slug:{value}` | `project_slug:my-project` | Find participants by project slug |
 | `username:{value}` | `username:jdoe` | Find participants by username |
 | `email:{value}` | `email:jdoe@example.com` | Find participants by email |
 | `is_invited:true` | `is_invited:true` | Find invited participants |
 | `is_attended:true` | `is_attended:true` | Find attendees |
 
-> `username` and `email` tags are only emitted when non-empty. `is_invited:true` and `is_attended:true` are only emitted when the corresponding flag is `true`.
+> `project_slug`, `username`, and `email` tags are only emitted when non-empty. `is_invited:true` and `is_attended:true` are only emitted when the corresponding flag is `true`.
 
 ### Access Control (IndexingConfig)
 
