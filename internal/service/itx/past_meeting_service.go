@@ -5,6 +5,7 @@ package itx
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
@@ -60,12 +61,16 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 		resp.ProjectID = v2UID
 	}
 
-	// Map committee IDs back to v2 UIDs
+	// Map committee IDs back to v2 UIDs. A missing mapping or transient error leaves the
+	// committee UID empty so the caller still receives the full past meeting response.
 	for i := range resp.Committees {
 		if resp.Committees[i].ID != "" {
 			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
 			if err != nil {
-				return nil, err
+				slog.WarnContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
+					"v1_id", resp.Committees[i].ID, "err", err)
+				resp.Committees[i].ID = ""
+				continue
 			}
 			resp.Committees[i].ID = v2UID
 		}
