@@ -23,6 +23,10 @@ This document is the authoritative reference for all data the meeting service se
 
 ## V1 Meeting
 
+**Object type:** `v1_meeting`
+
+**NATS subject:** `lfx.index.v1_meeting`
+
 **Source struct:** `internal/domain/models/event_models.go` — `MeetingEventData`
 
 **Indexed on:** create, update, delete of a meeting (sourced from the v1 meeting data).
@@ -199,6 +203,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 ## V1 Meeting Registrant
 
+**Object type:** `v1_meeting_registrant`
+
+**NATS subject:** `lfx.index.v1_meeting_registrant`
+
 **Source struct:** `internal/domain/models/event_models.go` — `RegistrantEventData`
 
 **Indexed on:** create, update, delete of a meeting registrant.
@@ -278,6 +286,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 ## V1 Meeting RSVP
 
+**Object type:** `v1_meeting_rsvp`
+
+**NATS subject:** `lfx.index.v1_meeting_rsvp`
+
 **Source struct:** `internal/domain/models/event_models.go` — `InviteResponseEventData`
 
 **Indexed on:** create, update, delete of a meeting RSVP (invite response).
@@ -345,6 +357,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 ---
 
 ## V1 Past Meeting
+
+**Object type:** `v1_past_meeting`
+
+**NATS subject:** `lfx.index.v1_past_meeting`
 
 **Source struct:** `internal/domain/models/event_models.go` — `PastMeetingEventData`
 
@@ -438,6 +454,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 ## V1 Past Meeting Participant
 
+**Object type:** `v1_past_meeting_participant`
+
+**NATS subject:** `lfx.index.v1_past_meeting_participant`
+
 **Source struct:** `internal/domain/models/event_models.go` — `PastMeetingParticipantEventData`
 
 **Indexed on:** create, update, delete of a past meeting participant (invitee or attendee).
@@ -507,6 +527,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 ---
 
 ## V1 Past Meeting Recording
+
+**Object type:** `v1_past_meeting_recording`
+
+**NATS subject:** `lfx.index.v1_past_meeting_recording`
 
 **Source struct:** `internal/domain/models/event_models.go` — `RecordingEventData`
 
@@ -607,6 +631,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 ## V1 Past Meeting Transcript
 
+**Object type:** `v1_past_meeting_transcript`
+
+**NATS subject:** `lfx.index.v1_past_meeting_transcript`
+
 **Source struct:** `internal/domain/models/event_models.go` — `TranscriptEventData`
 
 **Indexed on:** create, update, delete of a past meeting transcript.
@@ -675,6 +703,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 ---
 
 ## V1 Past Meeting Summary
+
+**Object type:** `v1_past_meeting_summary`
+
+**NATS subject:** `lfx.index.v1_past_meeting_summary`
 
 **Source struct:** `internal/domain/models/event_models.go` — `SummaryEventData`
 
@@ -754,6 +786,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 ## V1 Meeting Attachment
 
+**Object type:** `v1_meeting_attachment`
+
+**NATS subject:** `lfx.index.v1_meeting_attachment`
+
 **Source struct:** `internal/domain/models/event_models.go` — `MeetingAttachmentEventData`
 
 **Indexed on:** create, update, delete of an attachment on an active meeting.
@@ -820,6 +856,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 ---
 
 ## V1 Past Meeting Attachment
+
+**Object type:** `v1_past_meeting_attachment`
+
+**NATS subject:** `lfx.index.v1_past_meeting_attachment`
 
 **Source struct:** `internal/domain/models/event_models.go` — `PastMeetingAttachmentEventData`
 
