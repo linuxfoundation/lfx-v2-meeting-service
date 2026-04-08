@@ -387,7 +387,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `duration` | int | Actual duration in minutes |
 | `timezone` | string | Meeting timezone (IANA) |
 | `meeting_type` | string (optional) | Zoom meeting type |
-| `committees` | []object (optional) | Associated committees (see [Committee schema](#committee-schema)); omitted when empty |
+| `committees` | []object \| null | Associated committees (see [Committee schema](#committee-schema)); may be null when unset |
 | `visibility` | string (optional) | Meeting visibility |
 | `artifact_visibility` | string (optional) | Visibility of meeting artifacts |
 | `restricted` | bool | Whether the meeting was restricted |

@@ -810,7 +810,9 @@ func (p *PastMeetingParticipantEventData) Tags() []string {
 	tags := []string{
 		"past_meeting_participant_uid:" + p.UID,
 		"meeting_and_occurrence_id:" + p.MeetingAndOccurrenceID,
-		"project_uid:" + p.ProjectUID,
+	}
+	if p.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+p.ProjectUID)
 	}
 	if p.ProjectSlug != "" {
 		tags = append(tags, "project_slug:"+p.ProjectSlug)

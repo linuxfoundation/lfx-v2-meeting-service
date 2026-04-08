@@ -868,36 +868,37 @@ func convertMapToAttendeeParticipantData(
 	}, nil
 }
 
-// resolveProjectFields returns the project SFID and slug for a participant record. It prefers
-// values already present on the record and falls back to a KV lookup of the parent past_meeting
-// when either field is absent. This shared helper keeps the invitee and attendee conversion
-// paths consistent and avoids future drift.
+// resolveProjectFields returns the project SFID and slug for a participant record.
+// If either field is missing from the record, it falls back to a KV lookup of the
+// parent past_meeting to fill the gaps.
 func resolveProjectFields(
 	ctx context.Context,
 	meetingAndOccurrenceID, projectSFID, projectSlug string,
 	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (resolvedSFID, resolvedSlug string, err error) {
-	resolvedSFID = projectSFID
-	resolvedSlug = projectSlug
-	if resolvedSFID == "" || resolvedSlug == "" {
-		sfid, slug, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
-		}
-		if resolvedSFID == "" {
-			resolvedSFID = sfid
-		}
-		if resolvedSlug == "" {
-			resolvedSlug = slug
-		}
+	if projectSFID != "" && projectSlug != "" {
+		return projectSFID, projectSlug, nil
 	}
-	return resolvedSFID, resolvedSlug, nil
+
+	sfid, slug, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
+	}
+
+	if projectSFID != "" {
+		sfid = projectSFID
+	}
+	if projectSlug != "" {
+		slug = projectSlug
+	}
+	return sfid, slug, nil
 }
 
 // lookupProjectFromPastMeeting fetches the proj_id and project_slug of the parent past meeting
-// from the v1-objects KV bucket. Returns empty strings when the record is not found (permanent,
-// non-retryable). Returns a non-nil error for transient KV failures (caller should retry).
+// from the v1-objects KV bucket. Returns empty strings (no error) when the record is not found —
+// that is a permanent miss and the caller should not retry. Returns a non-nil error for transient
+// KV fetch failures or decode failures (caller should retry).
 func lookupProjectFromPastMeeting(
 	ctx context.Context,
 	meetingAndOccurrenceID string,
@@ -918,8 +919,7 @@ func lookupProjectFromPastMeeting(
 	}
 	pastMeetingData, decErr := decodeData(entry.Value())
 	if decErr != nil {
-		logger.With(logging.ErrKey, decErr).WarnContext(ctx, "failed to decode parent past_meeting for project lookup", "key", pastMeetingKey)
-		return "", "", nil
+		return "", "", fmt.Errorf("transient error decoding parent past_meeting: %w", decErr)
 	}
 	return utils.GetString(pastMeetingData["proj_id"]), utils.GetString(pastMeetingData["project_slug"]), nil
 }
