@@ -4,6 +4,7 @@
 package models
 
 import (
+	"strings"
 	"time"
 )
 
@@ -331,6 +332,35 @@ type MeetingEventData struct {
 	Organizers []string `json:"organizers"`
 }
 
+// SortName returns the primary sort name for this meeting.
+func (m *MeetingEventData) SortName() string {
+	return strings.TrimSpace(m.Title)
+}
+
+// NameAndAliases returns the searchable name aliases for this meeting.
+func (m *MeetingEventData) NameAndAliases() []string {
+	if t := strings.TrimSpace(m.Title); t != "" {
+		return []string{t}
+	}
+	return nil
+}
+
+// FullText returns the fulltext search content for this meeting.
+func (m *MeetingEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{m.SortName()}, m.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	if desc := strings.TrimSpace(m.Description); desc != "" && !seen[desc] {
+		parts = append(parts, desc)
+	}
+	return strings.Join(parts, " ")
+}
+
 // Tags returns the indexer tags for this meeting.
 func (m *MeetingEventData) Tags() []string {
 	tags := []string{
@@ -478,6 +508,38 @@ type RegistrantEventData struct {
 	UpdatedBy UpdatedBy `json:"updated_by"`
 }
 
+// SortName returns the primary sort name for this registrant.
+func (r *RegistrantEventData) SortName() string {
+	return strings.TrimSpace(r.Email)
+}
+
+// NameAndAliases returns the searchable name aliases for this registrant.
+func (r *RegistrantEventData) NameAndAliases() []string {
+	seen := make(map[string]bool)
+	var result []string
+	for _, v := range []string{r.Username, r.Email} {
+		v = strings.TrimSpace(v)
+		if v != "" && !seen[v] {
+			result = append(result, v)
+			seen[v] = true
+		}
+	}
+	return result
+}
+
+// FullText returns the fulltext search content for this registrant.
+func (r *RegistrantEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{r.SortName()}, r.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
 // Tags returns the indexer tags for this registrant.
 func (r *RegistrantEventData) Tags() []string {
 	tags := []string{"registrant_uid:" + r.UID}
@@ -521,6 +583,38 @@ type InviteResponseEventData struct {
 	IsRecurring            bool      `json:"is_recurring"`
 	CreatedAt              time.Time `json:"created_at"`
 	ModifiedAt             time.Time `json:"modified_at"`
+}
+
+// SortName returns the primary sort name for this invite response.
+func (r *InviteResponseEventData) SortName() string {
+	return strings.TrimSpace(r.Email)
+}
+
+// NameAndAliases returns the searchable name aliases for this invite response.
+func (r *InviteResponseEventData) NameAndAliases() []string {
+	seen := make(map[string]bool)
+	var result []string
+	for _, v := range []string{r.Username, r.Email} {
+		v = strings.TrimSpace(v)
+		if v != "" && !seen[v] {
+			result = append(result, v)
+			seen[v] = true
+		}
+	}
+	return result
+}
+
+// FullText returns the fulltext search content for this invite response.
+func (r *InviteResponseEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{r.SortName()}, r.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 // Tags returns the indexer tags for this invite response.
@@ -596,6 +690,35 @@ type PastMeetingSession struct {
 	EndTime   time.Time `json:"end_time"`
 }
 
+// SortName returns the primary sort name for this past meeting.
+func (m *PastMeetingEventData) SortName() string {
+	return strings.TrimSpace(m.Title)
+}
+
+// NameAndAliases returns the searchable name aliases for this past meeting.
+func (m *PastMeetingEventData) NameAndAliases() []string {
+	if t := strings.TrimSpace(m.Title); t != "" {
+		return []string{t}
+	}
+	return nil
+}
+
+// FullText returns the fulltext search content for this past meeting.
+func (m *PastMeetingEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{m.SortName()}, m.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	if desc := strings.TrimSpace(m.Description); desc != "" && !seen[desc] {
+		parts = append(parts, desc)
+	}
+	return strings.Join(parts, " ")
+}
+
 // Tags returns the indexer tags for this past meeting.
 func (m *PastMeetingEventData) Tags() []string {
 	tags := []string{
@@ -632,6 +755,7 @@ type PastMeetingParticipantEventData struct {
 	MeetingAndOccurrenceID string               `json:"meeting_and_occurrence_id"`
 	MeetingID              string               `json:"meeting_id"`
 	ProjectUID             string               `json:"project_uid"`
+	ProjectSlug            string               `json:"project_slug,omitempty"`
 	Email                  string               `json:"email"`
 	FirstName              string               `json:"first_name"`
 	LastName               string               `json:"last_name"`
@@ -649,12 +773,49 @@ type PastMeetingParticipantEventData struct {
 	UpdatedAt              time.Time            `json:"updated_at"`
 }
 
+// SortName returns the primary sort name for this past meeting participant.
+func (p *PastMeetingParticipantEventData) SortName() string {
+	return strings.TrimSpace(p.Email)
+}
+
+// NameAndAliases returns the searchable name aliases for this past meeting participant.
+func (p *PastMeetingParticipantEventData) NameAndAliases() []string {
+	seen := make(map[string]bool)
+	var result []string
+	for _, v := range []string{p.FirstName, p.LastName, p.Username} {
+		v = strings.TrimSpace(v)
+		if v != "" && !seen[v] {
+			result = append(result, v)
+			seen[v] = true
+		}
+	}
+	return result
+}
+
+// FullText returns the fulltext search content for this past meeting participant.
+func (p *PastMeetingParticipantEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{p.SortName()}, p.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
 // Tags returns the indexer tags for this past meeting participant.
 func (p *PastMeetingParticipantEventData) Tags() []string {
 	tags := []string{
 		"past_meeting_participant_uid:" + p.UID,
 		"meeting_and_occurrence_id:" + p.MeetingAndOccurrenceID,
-		"project_uid:" + p.ProjectUID,
+	}
+	if p.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+p.ProjectUID)
+	}
+	if p.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+p.ProjectSlug)
 	}
 	if p.Username != "" {
 		tags = append(tags, "username:"+p.Username)
@@ -710,6 +871,32 @@ type RecordingEventData struct {
 	UpdatedAt              time.Time          `json:"updated_at"`
 	CreatedBy              CreatedBy          `json:"created_by"`
 	UpdatedBy              UpdatedBy          `json:"updated_by"`
+}
+
+// SortName returns the primary sort name for this recording.
+func (r *RecordingEventData) SortName() string {
+	return strings.TrimSpace(r.Title)
+}
+
+// NameAndAliases returns the searchable name aliases for this recording.
+func (r *RecordingEventData) NameAndAliases() []string {
+	if t := strings.TrimSpace(r.Title); t != "" {
+		return []string{t}
+	}
+	return nil
+}
+
+// FullText returns the fulltext search content for this recording.
+func (r *RecordingEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{r.SortName()}, r.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 // Tags returns the indexer tags for this recording.
@@ -779,6 +966,32 @@ type TranscriptEventData struct {
 	UpdatedBy              UpdatedBy          `json:"updated_by"`
 }
 
+// SortName returns the primary sort name for this transcript.
+func (t *TranscriptEventData) SortName() string {
+	return strings.TrimSpace(t.Title)
+}
+
+// NameAndAliases returns the searchable name aliases for this transcript.
+func (t *TranscriptEventData) NameAndAliases() []string {
+	if v := strings.TrimSpace(t.Title); v != "" {
+		return []string{v}
+	}
+	return nil
+}
+
+// FullText returns the fulltext search content for this transcript.
+func (t *TranscriptEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{t.SortName()}, t.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
 // Tags returns the indexer tags for this transcript.
 func (t *TranscriptEventData) Tags() []string {
 	tags := []string{
@@ -826,6 +1039,32 @@ type SummaryEventData struct {
 	UpdatedAt               time.Time         `json:"updated_at"`
 	CreatedBy               CreatedBy         `json:"created_by"`
 	UpdatedBy               UpdatedBy         `json:"updated_by"`
+}
+
+// SortName returns the primary sort name for this summary.
+func (s *SummaryEventData) SortName() string {
+	return strings.TrimSpace(s.ZoomMeetingTopic)
+}
+
+// NameAndAliases returns the searchable name aliases for this summary.
+func (s *SummaryEventData) NameAndAliases() []string {
+	if v := strings.TrimSpace(s.ZoomMeetingTopic); v != "" {
+		return []string{v}
+	}
+	return nil
+}
+
+// FullText returns the fulltext search content for this summary.
+func (s *SummaryEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{s.SortName()}, s.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 // Tags returns the indexer tags for this summary.
@@ -878,6 +1117,41 @@ type MeetingAttachmentEventData struct {
 	UpdatedBy        UpdatedBy  `json:"updated_by"`
 }
 
+// SortName returns the primary sort name for this meeting attachment.
+func (a *MeetingAttachmentEventData) SortName() string {
+	return strings.TrimSpace(a.Name)
+}
+
+// NameAndAliases returns the searchable name aliases for this meeting attachment.
+func (a *MeetingAttachmentEventData) NameAndAliases() []string {
+	seen := make(map[string]bool)
+	var result []string
+	for _, v := range []string{a.FileName, a.Link, a.Name} {
+		v = strings.TrimSpace(v)
+		if v != "" && !seen[v] {
+			result = append(result, v)
+			seen[v] = true
+		}
+	}
+	return result
+}
+
+// FullText returns the fulltext search content for this meeting attachment.
+func (a *MeetingAttachmentEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{a.SortName()}, a.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	if desc := strings.TrimSpace(a.Description); desc != "" && !seen[desc] {
+		parts = append(parts, desc)
+	}
+	return strings.Join(parts, " ")
+}
+
 // Tags returns the indexer tags for this meeting attachment.
 func (a *MeetingAttachmentEventData) Tags() []string {
 	tags := []string{
@@ -918,6 +1192,41 @@ type PastMeetingAttachmentEventData struct {
 	ModifiedAt             time.Time  `json:"modified_at"`
 	CreatedBy              CreatedBy  `json:"created_by"`
 	UpdatedBy              UpdatedBy  `json:"updated_by"`
+}
+
+// SortName returns the primary sort name for this past meeting attachment.
+func (a *PastMeetingAttachmentEventData) SortName() string {
+	return strings.TrimSpace(a.Name)
+}
+
+// NameAndAliases returns the searchable name aliases for this past meeting attachment.
+func (a *PastMeetingAttachmentEventData) NameAndAliases() []string {
+	seen := make(map[string]bool)
+	var result []string
+	for _, v := range []string{a.FileName, a.Link, a.Name} {
+		v = strings.TrimSpace(v)
+		if v != "" && !seen[v] {
+			result = append(result, v)
+			seen[v] = true
+		}
+	}
+	return result
+}
+
+// FullText returns the fulltext search content for this past meeting attachment.
+func (a *PastMeetingAttachmentEventData) FullText() string {
+	seen := make(map[string]bool)
+	var parts []string
+	for _, v := range append([]string{a.SortName()}, a.NameAndAliases()...) {
+		if v != "" && !seen[v] {
+			parts = append(parts, v)
+			seen[v] = true
+		}
+	}
+	if desc := strings.TrimSpace(a.Description); desc != "" && !seen[desc] {
+		parts = append(parts, desc)
+	}
+	return strings.Join(parts, " ")
 }
 
 // Tags returns the indexer tags for this past meeting attachment.
