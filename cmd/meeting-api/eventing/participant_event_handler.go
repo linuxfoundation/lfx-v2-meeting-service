@@ -655,7 +655,7 @@ func convertMapToInviteeParticipantData(
 
 	// Validate required fields
 	if rawInvitee.InviteeID == "" || rawInvitee.MeetingAndOccurrenceID == "" {
-		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+		return nil, fmt.Errorf("missing required fields: invitee_id or meeting_and_occurrence_id")
 	}
 
 	// Get project SFID and slug: prefer the values from the invitee record, but fall back to
@@ -663,22 +663,12 @@ func convertMapToInviteeParticipantData(
 	// some v1 invitee records). This ensures those records are indexed rather than silently
 	// dropped, and that project_slug is always propagated so the Persona Service can resolve
 	// the project without per-record fetches at query time.
-	projectSFID := rawInvitee.ProjectID
-	projectSlug := rawInvitee.ProjectSlug
-	if projectSFID == "" || projectSlug == "" {
-		sfid, slug, err := lookupProjectFromPastMeeting(ctx, rawInvitee.MeetingAndOccurrenceID, v1ObjectsKV, logger)
-		if err != nil {
-			return nil, fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
-		}
-		if projectSFID == "" {
-			projectSFID = sfid
-		}
-		if projectSlug == "" {
-			projectSlug = slug
-		}
+	projectSFID, projectSlug, err := resolveProjectFields(ctx, rawInvitee.MeetingAndOccurrenceID, rawInvitee.ProjectID, rawInvitee.ProjectSlug, v1ObjectsKV, logger)
+	if err != nil {
+		return nil, err
 	}
 	if projectSFID == "" {
-		return nil, fmt.Errorf("invitee missing project ID: proj_id absent and not found in parent past_meeting")
+		return nil, fmt.Errorf("invitee missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
 	}
 
 	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
@@ -785,22 +775,12 @@ func convertMapToAttendeeParticipantData(
 
 	// Get project SFID and slug from the attendee record; fall back to the parent past_meeting
 	// for any missing values so the Persona Service can always resolve the project at query time.
-	projectSFID := rawAttendee.ProjectID
-	projectSlug := rawAttendee.ProjectSlug
-	if projectSFID == "" || projectSlug == "" {
-		sfid, slug, err := lookupProjectFromPastMeeting(ctx, rawAttendee.MeetingAndOccurrenceID, v1ObjectsKV, logger)
-		if err != nil {
-			return nil, fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
-		}
-		if projectSFID == "" {
-			projectSFID = sfid
-		}
-		if projectSlug == "" {
-			projectSlug = slug
-		}
+	projectSFID, projectSlug, err := resolveProjectFields(ctx, rawAttendee.MeetingAndOccurrenceID, rawAttendee.ProjectID, rawAttendee.ProjectSlug, v1ObjectsKV, logger)
+	if err != nil {
+		return nil, err
 	}
 	if projectSFID == "" {
-		return nil, fmt.Errorf("attendee missing project ID: proj_id absent and not found in parent past_meeting")
+		return nil, fmt.Errorf("attendee missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
 	}
 
 	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
@@ -886,6 +866,33 @@ func convertMapToAttendeeParticipantData(
 		CreatedAt:              createdAt,
 		UpdatedAt:              modifiedAt,
 	}, nil
+}
+
+// resolveProjectFields returns the project SFID and slug for a participant record. It prefers
+// values already present on the record and falls back to a KV lookup of the parent past_meeting
+// when either field is absent. This shared helper keeps the invitee and attendee conversion
+// paths consistent and avoids future drift.
+func resolveProjectFields(
+	ctx context.Context,
+	meetingAndOccurrenceID, projectSFID, projectSlug string,
+	v1ObjectsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) (resolvedSFID, resolvedSlug string, err error) {
+	resolvedSFID = projectSFID
+	resolvedSlug = projectSlug
+	if resolvedSFID == "" || resolvedSlug == "" {
+		sfid, slug, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
+		}
+		if resolvedSFID == "" {
+			resolvedSFID = sfid
+		}
+		if resolvedSlug == "" {
+			resolvedSlug = slug
+		}
+	}
+	return resolvedSFID, resolvedSlug, nil
 }
 
 // lookupProjectFromPastMeeting fetches the proj_id and project_slug of the parent past meeting
