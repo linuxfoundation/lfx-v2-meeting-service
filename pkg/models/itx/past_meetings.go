@@ -61,4 +61,7 @@ type PastMeetingResponse struct {
 
 	// Metadata
 	IsManuallyCreated bool `json:"is_manually_created,omitempty"` // Whether manually created
+
+	// Security
+	MeetingPassword string `json:"meeting_password,omitempty"` // ITX-generated UUID for securing the past meeting join page
 }

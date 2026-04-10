@@ -978,6 +978,8 @@ type ITXPastZoomMeeting struct {
 	TranscriptEnabled *bool
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool
+	// ITX-generated UUID password used to secure the past meeting join page URL
+	MeetingPassword *string
 }
 
 // User information from ITX
