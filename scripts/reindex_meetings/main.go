@@ -245,7 +245,7 @@ func reindexType(
 			if isParticipant {
 				kvKeys = resolveParticipantKeys(ctx, kvMappings, hit)
 				if len(kvKeys) == 0 {
-					slog.WarnContext(ctx, "skipping participant: neither is_invited nor is_attended set", "object_id", id)
+					slog.WarnContext(ctx, "skipping participant: no participant KV keys resolved", "object_id", id)
 					skipped++
 					continue
 				}
@@ -292,7 +292,7 @@ func reindexType(
 			"not_found", notFound,
 		)
 
-		page, err = nextScrollPage(ctx, httpClient, osURL, scrollID)
+		page, scrollID, err = nextScrollPage(ctx, httpClient, osURL, scrollID)
 		if err != nil {
 			return processed, failed, skipped, notFound, fmt.Errorf("scroll page: %w", err)
 		}
@@ -402,35 +402,35 @@ func openScroll(ctx context.Context, client *http.Client, osURL, objectType stri
 	return result.ScrollID, result.Hits.Hits, nil
 }
 
-// nextScrollPage fetches the next page using the scroll ID.
-func nextScrollPage(ctx context.Context, client *http.Client, osURL, scrollID string) ([]osHit, error) {
+// nextScrollPage fetches the next page using the scroll ID and returns the updated scroll ID.
+func nextScrollPage(ctx context.Context, client *http.Client, osURL, scrollID string) ([]osHit, string, error) {
 	payload := map[string]string{"scroll": "2m", "scroll_id": scrollID}
 	body, _ := json.Marshal(payload)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, osURL+"/_search/scroll", bytes.NewReader(body))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read scroll page body: %w", err)
+		return nil, "", fmt.Errorf("read scroll page body: %w", err)
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("OpenSearch returned status %d: %s", resp.StatusCode, string(raw))
+		return nil, "", fmt.Errorf("OpenSearch returned status %d: %s", resp.StatusCode, string(raw))
 	}
 	var result osScrollResponse
 	if err := json.Unmarshal(raw, &result); err != nil {
-		return nil, fmt.Errorf("unmarshal scroll page: %w", err)
+		return nil, "", fmt.Errorf("unmarshal scroll page: %w", err)
 	}
-	return result.Hits.Hits, nil
+	return result.Hits.Hits, result.ScrollID, nil
 }
 
 // deleteScroll cleans up the scroll context in OpenSearch.
