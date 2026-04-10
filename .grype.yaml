@@ -1,0 +1,17 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+
+fail-on-severity: "high"
+
+ignore:
+  # Ignored by default; disputed and unwarranted CVE that causes Megalinter to fail
+  # @link https://nvd.nist.gov/vuln/detail/CVE-2018-20225
+  - vulnerability: CVE-2018-20225
+
+  # Pre-existing vulnerabilities in go.opentelemetry.io/otel dependencies.
+  # These are tracked upstream and will be resolved when the otel packages are upgraded.
+  # @link https://github.com/advisories/GHSA-hfvc-g4fc-pqhx
+  - vulnerability: GHSA-hfvc-g4fc-pqhx
+
+  # @link https://github.com/advisories/GHSA-w8rr-5gcm-pp58
+  - vulnerability: GHSA-w8rr-5gcm-pp58
