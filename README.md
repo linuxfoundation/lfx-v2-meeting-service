@@ -134,6 +134,8 @@ The service includes a comprehensive event processing system for v1→v2 data sy
 
 For complete details, see **[Event Processing Documentation](docs/event-processing.md)**.
 
+For the data schemas, tags, access control values, and parent references for all indexed resource types — see **[Indexer Contract](docs/indexer-contract.md)**.
+
 ## 🛠️ Development
 
 ### Prerequisites

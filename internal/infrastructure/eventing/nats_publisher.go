@@ -113,6 +113,9 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           meeting.ParentRefs(),
 			Tags:                 tags,
+			SortName:             meeting.SortName(),
+			NameAndAliases:       meeting.NameAndAliases(),
+			Fulltext:             meeting.FullText(),
 		},
 	}
 
@@ -179,6 +182,9 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           registrant.ParentRefs(),
 			Tags:                 tags,
+			SortName:             registrant.SortName(),
+			NameAndAliases:       registrant.NameAndAliases(),
+			Fulltext:             registrant.FullText(),
 		},
 	}
 
@@ -242,6 +248,9 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           response.ParentRefs(),
 			Tags:                 tags,
+			SortName:             response.SortName(),
+			NameAndAliases:       response.NameAndAliases(),
+			Fulltext:             response.FullText(),
 		},
 	}
 
@@ -272,6 +281,9 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           meeting.ParentRefs(),
 			Tags:                 tags,
+			SortName:             meeting.SortName(),
+			NameAndAliases:       meeting.NameAndAliases(),
+			Fulltext:             meeting.FullText(),
 		},
 	}
 
@@ -338,6 +350,9 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           participant.ParentRefs(),
 			Tags:                 tags,
+			SortName:             participant.SortName(),
+			NameAndAliases:       participant.NameAndAliases(),
+			Fulltext:             participant.FullText(),
 		},
 	}
 
@@ -405,6 +420,9 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           recording.ParentRefs(),
 			Tags:                 tags,
+			SortName:             recording.SortName(),
+			NameAndAliases:       recording.NameAndAliases(),
+			Fulltext:             recording.FullText(),
 		},
 	}
 
@@ -468,6 +486,9 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           transcript.ParentRefs(),
 			Tags:                 tags,
+			SortName:             transcript.SortName(),
+			NameAndAliases:       transcript.NameAndAliases(),
+			Fulltext:             transcript.FullText(),
 		},
 	}
 
@@ -530,6 +551,9 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           summary.ParentRefs(),
 			Tags:                 tags,
+			SortName:             summary.SortName(),
+			NameAndAliases:       summary.NameAndAliases(),
+			Fulltext:             summary.FullText(),
 		},
 	}
 
@@ -591,6 +615,9 @@ func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, actio
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           attachment.ParentRefs(),
 			Tags:                 tags,
+			SortName:             attachment.SortName(),
+			NameAndAliases:       attachment.NameAndAliases(),
+			Fulltext:             attachment.FullText(),
 		},
 	}
 
@@ -621,6 +648,9 @@ func (p *NATSPublisher) PublishPastMeetingAttachmentEvent(ctx context.Context, a
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           attachment.ParentRefs(),
 			Tags:                 tags,
+			SortName:             attachment.SortName(),
+			NameAndAliases:       attachment.NameAndAliases(),
+			Fulltext:             attachment.FullText(),
 		},
 	}
 

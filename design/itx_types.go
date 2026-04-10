@@ -352,6 +352,12 @@ var ITXPastZoomMeeting = Type("ITXPastZoomMeeting", func() {
 
 	// Metadata
 	Attribute("is_manually_created", Boolean, "Whether past meeting was manually created")
+
+	// Security
+	Attribute("meeting_password", String, "ITX-generated UUID password used to secure the past meeting join page URL", func() {
+		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
+		Format(FormatUUID)
+	})
 })
 
 // SummaryDetail represents a detailed summary item with label and content

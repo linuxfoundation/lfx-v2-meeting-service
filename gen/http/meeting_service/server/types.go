@@ -769,6 +769,8 @@ type CreateItxPastMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
+	// ITX-generated UUID password used to secure the past meeting join page URL
+	MeetingPassword *string `form:"meeting_password,omitempty" json:"meeting_password,omitempty" xml:"meeting_password,omitempty"`
 }
 
 // GetItxPastMeetingResponseBody is the type of the "Meeting Service" service
@@ -808,6 +810,8 @@ type GetItxPastMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
+	// ITX-generated UUID password used to secure the past meeting join page URL
+	MeetingPassword *string `form:"meeting_password,omitempty" json:"meeting_password,omitempty" xml:"meeting_password,omitempty"`
 }
 
 // GetItxPastMeetingSummaryResponseBody is the type of the "Meeting Service"
@@ -3975,6 +3979,7 @@ func NewCreateItxPastMeetingResponseBody(res *meetingservice.ITXPastZoomMeeting)
 		ArtifactVisibility: res.ArtifactVisibility,
 		TranscriptEnabled:  res.TranscriptEnabled,
 		IsManuallyCreated:  res.IsManuallyCreated,
+		MeetingPassword:    res.MeetingPassword,
 	}
 	if res.Committees != nil {
 		body.Committees = make([]*CommitteeResponseBody, len(res.Committees))
@@ -4010,6 +4015,7 @@ func NewGetItxPastMeetingResponseBody(res *meetingservice.ITXPastZoomMeeting) *G
 		ArtifactVisibility: res.ArtifactVisibility,
 		TranscriptEnabled:  res.TranscriptEnabled,
 		IsManuallyCreated:  res.IsManuallyCreated,
+		MeetingPassword:    res.MeetingPassword,
 	}
 	if res.Committees != nil {
 		body.Committees = make([]*CommitteeResponseBody, len(res.Committees))
