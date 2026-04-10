@@ -25,7 +25,6 @@
 //	           v1_past_meeting_attachment
 //	-reindex Actually re-put KV entries and trigger reindexing (default: false,
 //	         logs what would be re-put without making any changes)
-//	-batch   OpenSearch scroll page size (default: 200)
 //
 // Environment variables:
 //
@@ -37,12 +36,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -53,6 +54,7 @@ import (
 const (
 	kvBucketName         = "v1-objects"
 	kvMappingsBucketName = "v1-mappings"
+	scrollPageSize       = 200
 )
 
 // objectTypeConfig maps an OpenSearch object_type to one or more KV key prefixes.
@@ -94,7 +96,6 @@ type osScrollResponse struct {
 func main() {
 	typesFlag := flag.String("types", "", "comma-separated list of object types to reindex (required)")
 	reindex := flag.Bool("reindex", false, "actually re-put KV entries and trigger reindexing (default: logs only)")
-	batchSize := flag.Int("batch", 200, "OpenSearch scroll page size")
 	flag.Parse()
 
 	osURL := os.Getenv("OPENSEARCH_URL")
@@ -142,24 +143,29 @@ func main() {
 		slog.ErrorContext(ctx, "failed to connect to NATS", "error", err)
 		os.Exit(1)
 	}
-	defer nc.Close()
 
+	exitCode := run(ctx, nc, natsURL, osURL, requestedTypes, *reindex)
+	nc.Close()
+	os.Exit(exitCode)
+}
+
+func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []string, reindex bool) int {
 	js, err := jetstream.New(nc)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create JetStream context", "error", err)
-		os.Exit(1)
+		return 1
 	}
 
 	kv, err := js.KeyValue(ctx, kvBucketName)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to bind to KV bucket", "bucket", kvBucketName, "error", err)
-		os.Exit(1)
+		return 1
 	}
 
 	kvMappings, err := js.KeyValue(ctx, kvMappingsBucketName)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to bind to KV bucket", "bucket", kvMappingsBucketName, "error", err)
-		os.Exit(1)
+		return 1
 	}
 
 	httpClient := &http.Client{Timeout: 30 * time.Second}
@@ -172,10 +178,10 @@ func main() {
 
 		slog.InfoContext(ctx, "processing object type", "object_type", objectType)
 
-		processed, failed, skipped, notFound, err := reindexType(ctx, httpClient, kv, kvMappings, osURL, objectType, prefixes, *batchSize, *reindex)
+		processed, failed, skipped, notFound, err := reindexType(ctx, httpClient, kv, kvMappings, osURL, objectType, prefixes, reindex)
 		if err != nil {
 			slog.ErrorContext(ctx, "fatal error processing type", "object_type", objectType, "error", err)
-			os.Exit(1)
+			return 1
 		}
 
 		slog.InfoContext(ctx, "finished object type",
@@ -200,8 +206,9 @@ func main() {
 	)
 
 	if totalFailed > 0 {
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 // reindexType scrolls OpenSearch for a given object_type, then re-puts each
@@ -214,10 +221,9 @@ func reindexType(
 	kvMappings jetstream.KeyValue,
 	osURL, objectType string,
 	kvPrefixes []string,
-	batchSize int,
 	reindex bool,
 ) (processed, failed, skipped, notFound int, err error) {
-	scrollID, firstPage, err := openScroll(ctx, httpClient, osURL, objectType, batchSize)
+	scrollID, firstPage, err := openScroll(ctx, httpClient, osURL, objectType, scrollPageSize)
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("open scroll: %w", err)
 	}
@@ -226,10 +232,7 @@ func reindexType(
 	isParticipant := objectType == "v1_past_meeting_participant"
 
 	page := firstPage
-	for {
-		if len(page) == 0 {
-			break
-		}
+	for len(page) > 0 {
 
 		for _, hit := range page {
 			id := hit.Source.ObjectID
@@ -261,7 +264,7 @@ func reindexType(
 
 				entry, getErr := kv.Get(ctx, kvKey)
 				if getErr != nil {
-					if getErr == jetstream.ErrKeyNotFound {
+					if errors.Is(getErr, jetstream.ErrKeyNotFound) {
 						slog.WarnContext(ctx, "key not found in KV bucket", "key", kvKey)
 						notFound++
 						continue
@@ -331,7 +334,7 @@ func resolveParticipantKeys(ctx context.Context, kvMappings jetstream.KeyValue, 
 				if inviteeID := string(entry.Value()); inviteeID != "" {
 					keys = append(keys, "itx-zoom-past-meetings-invitees."+inviteeID)
 				}
-			} else if xrefErr != jetstream.ErrKeyNotFound {
+			} else if !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
 				slog.WarnContext(ctx, "failed to look up invitee cross-reference", "xref_key", inviteeXref, "error", xrefErr)
 			}
 
@@ -340,7 +343,7 @@ func resolveParticipantKeys(ctx context.Context, kvMappings jetstream.KeyValue, 
 				if attendeeID := string(entry.Value()); attendeeID != "" {
 					keys = append(keys, "itx-zoom-past-meetings-attendees."+attendeeID)
 				}
-			} else if xrefErr != jetstream.ErrKeyNotFound {
+			} else if !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
 				slog.WarnContext(ctx, "failed to look up attendee cross-reference", "xref_key", attendeeXref, "error", xrefErr)
 			}
 		}
@@ -385,7 +388,13 @@ func openScroll(ctx context.Context, client *http.Client, osURL, objectType stri
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
-	raw, _ := io.ReadAll(resp.Body)
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", nil, fmt.Errorf("read scroll response body: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		return "", nil, fmt.Errorf("OpenSearch returned status %d: %s", resp.StatusCode, string(raw))
+	}
 	var result osScrollResponse
 	if err := json.Unmarshal(raw, &result); err != nil {
 		return "", nil, fmt.Errorf("unmarshal scroll response: %w", err)
@@ -410,7 +419,13 @@ func nextScrollPage(ctx context.Context, client *http.Client, osURL, scrollID st
 	}
 	defer resp.Body.Close() //nolint:errcheck
 
-	raw, _ := io.ReadAll(resp.Body)
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read scroll page body: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("OpenSearch returned status %d: %s", resp.StatusCode, string(raw))
+	}
 	var result osScrollResponse
 	if err := json.Unmarshal(raw, &result); err != nil {
 		return nil, fmt.Errorf("unmarshal scroll page: %w", err)
@@ -443,5 +458,6 @@ func supportedTypes() []string {
 	for t := range objectTypeConfig {
 		types = append(types, t)
 	}
+	sort.Strings(types)
 	return types
 }

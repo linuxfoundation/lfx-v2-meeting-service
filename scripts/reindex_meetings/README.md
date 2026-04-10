@@ -36,7 +36,6 @@ NATS_URL=nats://localhost:4222 OPENSEARCH_URL=http://localhost:9200 \
 |------|---------|-------------|
 | `-types` | *(required)* | Comma-separated list of object types to reindex |
 | `-reindex` | `false` | Actually re-put KV entries; omit to log only |
-| `-batch` | `200` | OpenSearch scroll page size |
 
 ## Environment variables
 
