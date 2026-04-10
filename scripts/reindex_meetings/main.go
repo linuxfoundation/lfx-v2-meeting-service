@@ -1,3 +1,6 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
 // reindex_meetings re-triggers the full event processing pipeline for any
 // combination of v1 object types by re-putting their NATS KV entries so the
 // existing consumer event handler picks them up and re-enriches + re-indexes them.

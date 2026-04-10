@@ -1,20 +1,51 @@
 #!/bin/sh
-# Run gofmt on staged Go files before committing.
+# Run gofmt and license header checks on staged files before committing.
 
 staged_go_files=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.go$')
+staged_checkable_files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(go|yaml|yml|sh)$')
 
-if [ -z "$staged_go_files" ]; then
-  exit 0
+# ---------------------------------------------------------------------------
+# gofmt check
+# ---------------------------------------------------------------------------
+if [ -n "$staged_go_files" ]; then
+  unformatted=$(echo "$staged_go_files" | xargs gofmt -l)
+
+  if [ -n "$unformatted" ]; then
+    echo "gofmt: the following files need formatting:"
+    echo "$unformatted" | sed 's/^/  /'
+    echo ""
+    echo "Run: gofmt -w \$(git diff --cached --name-only --diff-filter=ACMR | grep '\\.go\$')"
+    exit 1
+  fi
 fi
 
-unformatted=$(echo "$staged_go_files" | xargs gofmt -l)
+# ---------------------------------------------------------------------------
+# License header check
+# ---------------------------------------------------------------------------
+# Mirrors the CI workflow (.github/workflows/license-header-check.yaml).
+# Excludes: gen/, cmd/meeting-api/kodata/
+COPYRIGHT="Copyright The Linux Foundation and each contributor to LFX."
 
-if [ -z "$unformatted" ]; then
-  exit 0
+missing_license=""
+for f in $staged_checkable_files; do
+  # Skip excluded paths
+  case "$f" in
+    gen/*|cmd/meeting-api/kodata/*)
+      continue
+      ;;
+  esac
+
+  if ! grep -qF "$COPYRIGHT" "$f"; then
+    missing_license="$missing_license\n  $f"
+  fi
+done
+
+if [ -n "$missing_license" ]; then
+  echo "license-header: the following files are missing the copyright header:"
+  printf "%b\n" "$missing_license"
+  echo ""
+  echo "Add the following lines at the top of each file (use the appropriate comment style):"
+  echo "  // Copyright The Linux Foundation and each contributor to LFX."
+  echo "  // SPDX-License-Identifier: MIT"
+  exit 1
 fi
-
-echo "gofmt: the following files need formatting:"
-echo "$unformatted" | sed 's/^/  /'
-echo ""
-echo "Run: gofmt -w \$(git diff --cached --name-only --diff-filter=ACMR | grep '\\.go\$')"
-exit 1
