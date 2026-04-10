@@ -107,6 +107,10 @@ type PastMeetingDBRaw struct {
 	// aren't hidden behind a password to access them.
 	RecordingPassword string `json:"recording_password"`
 
+	// MeetingPassword is the ITX-generated UUID password from the active meeting record,
+	// used to secure the past meeting join page URL.
+	MeetingPassword string `json:"meeting_password"`
+
 	// ZoomAIEnabled is whether the meeting was hosted on a zoom user with AI-companion enabled
 	ZoomAIEnabled *bool `json:"zoom_ai_enabled,omitempty"`
 
@@ -449,6 +453,7 @@ func convertMapToPastMeetingData(
 		EarlyJoinTimeMinutes:     rawPastMeeting.EarlyJoinTime,
 		YoutubeLink:              rawPastMeeting.YoutubeLink,
 		RecordingPassword:        rawPastMeeting.RecordingPassword,
+		MeetingPassword:          rawPastMeeting.MeetingPassword,
 		ZoomConfig:               zoomConfig,
 		IsManuallyCreated:        rawPastMeeting.IsManuallyCreated,
 		Sessions:                 sessions,

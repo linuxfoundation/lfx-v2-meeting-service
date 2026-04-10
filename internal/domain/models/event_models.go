@@ -673,6 +673,7 @@ type PastMeetingEventData struct {
 	Platform                 string               `json:"platform,omitempty"`
 	PlatformMeetingID        string               `json:"platform_meeting_id,omitempty"`
 	RecordingPassword        string               `json:"recording_password,omitempty"`
+	MeetingPassword          string               `json:"meeting_password,omitempty"`
 	ZoomConfig               *ZoomConfig          `json:"zoom_config,omitempty"`
 	IsManuallyCreated        bool                 `json:"is_manually_created,omitempty"`
 	Sessions                 []PastMeetingSession `json:"sessions,omitempty"`

@@ -769,6 +769,8 @@ type CreateItxPastMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
+	// ITX-generated UUID password used to secure the past meeting join page URL
+	MeetingPassword *string `form:"meeting_password,omitempty" json:"meeting_password,omitempty" xml:"meeting_password,omitempty"`
 }
 
 // GetItxPastMeetingResponseBody is the type of the "Meeting Service" service
@@ -808,6 +810,8 @@ type GetItxPastMeetingResponseBody struct {
 	TranscriptEnabled *bool `form:"transcript_enabled,omitempty" json:"transcript_enabled,omitempty" xml:"transcript_enabled,omitempty"`
 	// Whether past meeting was manually created
 	IsManuallyCreated *bool `form:"is_manually_created,omitempty" json:"is_manually_created,omitempty" xml:"is_manually_created,omitempty"`
+	// ITX-generated UUID password used to secure the past meeting join page URL
+	MeetingPassword *string `form:"meeting_password,omitempty" json:"meeting_password,omitempty" xml:"meeting_password,omitempty"`
 }
 
 // GetItxPastMeetingSummaryResponseBody is the type of the "Meeting Service"
@@ -5541,6 +5545,7 @@ func NewCreateItxPastMeetingITXPastZoomMeetingCreated(body *CreateItxPastMeeting
 		ArtifactVisibility: body.ArtifactVisibility,
 		TranscriptEnabled:  body.TranscriptEnabled,
 		IsManuallyCreated:  body.IsManuallyCreated,
+		MeetingPassword:    body.MeetingPassword,
 	}
 	if body.Committees != nil {
 		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
@@ -5653,6 +5658,7 @@ func NewGetItxPastMeetingITXPastZoomMeetingOK(body *GetItxPastMeetingResponseBod
 		ArtifactVisibility: body.ArtifactVisibility,
 		TranscriptEnabled:  body.TranscriptEnabled,
 		IsManuallyCreated:  body.IsManuallyCreated,
+		MeetingPassword:    body.MeetingPassword,
 	}
 	if body.Committees != nil {
 		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
@@ -7692,6 +7698,9 @@ func ValidateCreateItxPastMeetingResponseBody(body *CreateItxPastMeetingResponse
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
 	}
+	if body.MeetingPassword != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_password", *body.MeetingPassword, goa.FormatUUID))
+	}
 	return
 }
 
@@ -7725,6 +7734,9 @@ func ValidateGetItxPastMeetingResponseBody(body *GetItxPastMeetingResponseBody) 
 		if !(*body.ArtifactVisibility == "meeting_hosts" || *body.ArtifactVisibility == "meeting_participants" || *body.ArtifactVisibility == "public") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.artifact_visibility", *body.ArtifactVisibility, []any{"meeting_hosts", "meeting_participants", "public"}))
 		}
+	}
+	if body.MeetingPassword != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.meeting_password", *body.MeetingPassword, goa.FormatUUID))
 	}
 	return
 }

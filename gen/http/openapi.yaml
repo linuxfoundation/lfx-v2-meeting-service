@@ -4158,6 +4158,11 @@ definitions:
                 type: string
                 description: Zoom meeting ID
                 example: "12343245463"
+            meeting_password:
+                type: string
+                description: ITX-generated UUID password used to secure the past meeting join page URL
+                example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                format: uuid
             meeting_type:
                 type: string
                 description: Type of meeting
@@ -4237,6 +4242,7 @@ definitions:
             id: 12343245463-1630560600000
             is_manually_created: false
             meeting_id: "12343245463"
+            meeting_password: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             meeting_type: Board
             occurrence_id: "1630560600000"
             project_uid: a1234567-89ab-cdef-0123-456789abcdef

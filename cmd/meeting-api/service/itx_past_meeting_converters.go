@@ -155,6 +155,8 @@ func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXP
 		ArtifactVisibility: utils.StringPtrOmitEmpty(string(resp.RecordingAccess)),
 
 		IsManuallyCreated: &resp.IsManuallyCreated,
+
+		MeetingPassword: utils.StringPtrOmitEmpty(resp.MeetingPassword),
 	}
 
 	// Convert committees
