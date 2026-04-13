@@ -78,6 +78,9 @@ type CreateZoomMeetingRequest struct {
 	// Advanced
 	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
+
+	// Update notification
+	Note string `json:"note,omitempty"`
 }
 
 // CommitteeFilter represents the voting status filter for committee members.

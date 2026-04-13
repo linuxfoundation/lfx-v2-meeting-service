@@ -90,6 +90,12 @@ func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
 }
 
+func UpdateNoteAttribute() {
+	Attribute("update_note", String, "An optional note to include in the meeting update notification emails sent to registrants", func() {
+		MaxLength(500)
+	})
+}
+
 // Committee represents a committee associated with a meeting
 var Committee = Type("Committee", func() {
 	Description("A committee associated with a meeting")
