@@ -12,6 +12,12 @@ image:
 
 replicaCount: 1
 
+# deployment configures the Deployment object itself.
+deployment:
+  # labels are additional labels applied to the Deployment metadata.
+  labels:
+    app.kubernetes.io/name: "lfx-v2-meeting-service"
+
 # podAnnotations are additional annotations applied to the pod template.
 # Example:
 #   prometheus.io/scrape: "true"
