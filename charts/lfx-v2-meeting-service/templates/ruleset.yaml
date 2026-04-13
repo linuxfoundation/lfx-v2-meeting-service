@@ -51,7 +51,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: writer
+              relation: meetings_creator
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
         {{- else }}
         {{/*
@@ -579,7 +579,7 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: writer
+              relation: meetings_creator
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
         {{- else }}
         {{/*
