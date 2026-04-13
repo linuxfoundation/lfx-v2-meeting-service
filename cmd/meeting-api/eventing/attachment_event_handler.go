@@ -13,6 +13,7 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // =============================================================================
@@ -303,11 +304,32 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_and_occurrence_id", attachmentData.MeetingAndOccurrenceID)
 
-	// Validate parent past meeting exists
+	// Look up project info from the parent past meeting record.
 	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", attachmentData.MeetingAndOccurrenceID)
-	if _, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey); err != nil {
+	entry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
+	if err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "parent past meeting not found, will retry")
 		return true
+	}
+	if pastMeetingData, decErr := decodeData(entry.Value()); decErr == nil {
+		projSFID := utils.GetString(pastMeetingData["proj_id"])
+		attachmentData.ProjectSlug = utils.GetString(pastMeetingData["project_slug"])
+		if projSFID != "" {
+			projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
+			if mapErr != nil {
+				funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "failed to map project v1 to v2 for attachment")
+			} else {
+				attachmentData.ProjectUID = projectUID
+			}
+		}
+	} else {
+		funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "failed to decode parent past meeting data for attachment")
+	}
+
+	// Skip if project is not yet mapped to v2
+	if attachmentData.ProjectUID == "" {
+		funcLogger.WarnContext(ctx, "skipping attachment: project not yet in v2")
+		return false
 	}
 
 	// Determine action (created vs updated)

@@ -13,6 +13,7 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // =============================================================================
@@ -175,19 +176,35 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
-	// Look up ai_summary_access from the parent past meeting record.
+	// Look up project info and ai_summary_access from the parent past meeting record.
 	aiSummaryAccess := ""
 	if summaryData.MeetingAndOccurrenceID != "" {
 		pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", summaryData.MeetingAndOccurrenceID)
 		if entry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get past meeting data for summary access")
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get past meeting data for summary")
 		} else {
 			if pastMeetingData, decodeErr := decodeData(entry.Value()); decodeErr == nil {
 				if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
 					aiSummaryAccess = access
 				}
+				projSFID := utils.GetString(pastMeetingData["proj_id"])
+				summaryData.ProjectSlug = utils.GetString(pastMeetingData["project_slug"])
+				if projSFID != "" {
+					projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
+					if mapErr != nil {
+						funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "failed to map project v1 to v2 for summary")
+					} else {
+						summaryData.ProjectUID = projectUID
+					}
+				}
 			}
 		}
+	}
+
+	// Skip if project is not yet mapped to v2
+	if summaryData.ProjectUID == "" {
+		funcLogger.WarnContext(ctx, "skipping summary: project not yet in v2")
+		return false
 	}
 
 	// Publish to indexer and FGA-sync
