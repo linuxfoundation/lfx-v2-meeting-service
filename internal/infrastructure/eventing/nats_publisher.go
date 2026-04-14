@@ -296,7 +296,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 
 	switch meeting.RecordingAccess {
 	case "public":
-		pastMeetingRelations["recording_viewer"] = []string{"user:*"}
+		pastMeetingRelations["recording_viewer"] = []string{"*"}
 	case "meeting_participants":
 		pastMeetingRefs["past_meeting_for_host_recording_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_attendee_recording_view"] = []string{selfRef}
@@ -307,7 +307,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 
 	switch meeting.TranscriptAccess {
 	case "public":
-		pastMeetingRelations["transcript_viewer"] = []string{"user:*"}
+		pastMeetingRelations["transcript_viewer"] = []string{"*"}
 	case "meeting_participants":
 		pastMeetingRefs["past_meeting_for_host_transcript_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_attendee_transcript_view"] = []string{selfRef}
@@ -318,7 +318,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 
 	switch meeting.AISummaryAccess {
 	case "public":
-		pastMeetingRelations["ai_summary_viewer"] = []string{"user:*"}
+		pastMeetingRelations["ai_summary_viewer"] = []string{"*"}
 	case "meeting_participants":
 		pastMeetingRefs["past_meeting_for_host_summary_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_attendee_summary_view"] = []string{selfRef}
