@@ -132,12 +132,28 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
 
 	// If an attendee cross-reference exists for this participant, preserve is_attended=true
-	// so a late-arriving invitee upsert doesn't reset a flag the attendee handler already set.
+	// and carry over attendee-only fields so a late-arriving invitee upsert doesn't overwrite
+	// values that the attendee handler already set (e.g. is_unknown, is_ai_reconciled).
 	if participantData.Username != "" {
 		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(entry) {
+		if xrefEntry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(xrefEntry) {
 			participantData.IsAttended = true
+			attendeeID := string(xrefEntry.Value())
+			if attendeeEntry, err := h.v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-past-meetings-attendees.%s", attendeeID)); err == nil {
+				if attendeeMap, err := decodeData(attendeeEntry.Value()); err == nil {
+					if jsonBytes, err := json.Marshal(attendeeMap); err == nil {
+						var rawAttendee AttendeeDBRaw
+						if err := json.Unmarshal(jsonBytes, &rawAttendee); err == nil {
+							participantData.IsUnknown = rawAttendee.IsUnknown
+							participantData.IsAIReconciled = rawAttendee.IsAIReconciled
+							participantData.IsAutoMatched = rawAttendee.IsAutoMatched
+							participantData.ZoomUserName = rawAttendee.ZoomUserName
+							participantData.MappedInviteeName = rawAttendee.MappedInviteeName
+						}
+					}
+				}
+			}
 		}
 	}
 
