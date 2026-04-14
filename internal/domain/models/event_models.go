@@ -769,6 +769,11 @@ type PastMeetingParticipantEventData struct {
 	Username               string               `json:"username,omitempty"`
 	IsInvited              bool                 `json:"is_invited"`
 	IsAttended             bool                 `json:"is_attended"`
+	IsUnknown              bool                 `json:"is_unknown,omitempty"`
+	IsAIReconciled         bool                 `json:"is_ai_reconciled,omitempty"`
+	IsAutoMatched          bool                 `json:"is_auto_matched,omitempty"`
+	ZoomUserName           string               `json:"zoom_user_name,omitempty"`
+	MappedInviteeName      string               `json:"mapped_invitee_name,omitempty"`
 	Sessions               []ParticipantSession `json:"sessions,omitempty"`
 	CreatedAt              time.Time            `json:"created_at"`
 	UpdatedAt              time.Time            `json:"updated_at"`
