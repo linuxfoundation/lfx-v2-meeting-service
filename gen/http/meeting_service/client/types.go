@@ -922,6 +922,16 @@ type CreateItxPastMeetingParticipantResponseBody struct {
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
 	// Whether attendee is marked as unknown (attendees only)
 	IsUnknown *bool `form:"is_unknown,omitempty" json:"is_unknown,omitempty" xml:"is_unknown,omitempty"`
+	// Whether the attendee record was updated via AI reconciliation (attendees
+	// only)
+	IsAiReconciled *bool `form:"is_ai_reconciled,omitempty" json:"is_ai_reconciled,omitempty" xml:"is_ai_reconciled,omitempty"`
+	// Whether the attendee name was auto-matched to a registrant's email
+	// (attendees only)
+	IsAutoMatched *bool `form:"is_auto_matched,omitempty" json:"is_auto_matched,omitempty" xml:"is_auto_matched,omitempty"`
+	// Zoom display name of the attendee (attendees only)
+	ZoomUserName *string `form:"zoom_user_name,omitempty" json:"zoom_user_name,omitempty" xml:"zoom_user_name,omitempty"`
+	// Full name of the invitee the attendee was matched to (attendees only)
+	MappedInviteeName *string `form:"mapped_invitee_name,omitempty" json:"mapped_invitee_name,omitempty" xml:"mapped_invitee_name,omitempty"`
 	// Array of session objects with join/leave times (attendees only)
 	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// Average attendance percentage (attendees only, calculated)
@@ -986,6 +996,16 @@ type UpdateItxPastMeetingParticipantResponseBody struct {
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
 	// Whether attendee is marked as unknown (attendees only)
 	IsUnknown *bool `form:"is_unknown,omitempty" json:"is_unknown,omitempty" xml:"is_unknown,omitempty"`
+	// Whether the attendee record was updated via AI reconciliation (attendees
+	// only)
+	IsAiReconciled *bool `form:"is_ai_reconciled,omitempty" json:"is_ai_reconciled,omitempty" xml:"is_ai_reconciled,omitempty"`
+	// Whether the attendee name was auto-matched to a registrant's email
+	// (attendees only)
+	IsAutoMatched *bool `form:"is_auto_matched,omitempty" json:"is_auto_matched,omitempty" xml:"is_auto_matched,omitempty"`
+	// Zoom display name of the attendee (attendees only)
+	ZoomUserName *string `form:"zoom_user_name,omitempty" json:"zoom_user_name,omitempty" xml:"zoom_user_name,omitempty"`
+	// Full name of the invitee the attendee was matched to (attendees only)
+	MappedInviteeName *string `form:"mapped_invitee_name,omitempty" json:"mapped_invitee_name,omitempty" xml:"mapped_invitee_name,omitempty"`
 	// Array of session objects with join/leave times (attendees only)
 	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// Average attendance percentage (attendees only, calculated)
@@ -6080,6 +6100,10 @@ func NewCreateItxPastMeetingParticipantITXPastMeetingParticipantCreated(body *Cr
 		IsAttended:            body.IsAttended,
 		IsVerified:            body.IsVerified,
 		IsUnknown:             body.IsUnknown,
+		IsAiReconciled:        body.IsAiReconciled,
+		IsAutoMatched:         body.IsAutoMatched,
+		ZoomUserName:          body.ZoomUserName,
+		MappedInviteeName:     body.MappedInviteeName,
 		AverageAttendance:     body.AverageAttendance,
 		CreatedAt:             body.CreatedAt,
 		ModifiedAt:            body.ModifiedAt,
@@ -6200,6 +6224,10 @@ func NewUpdateItxPastMeetingParticipantITXPastMeetingParticipantOK(body *UpdateI
 		IsAttended:            body.IsAttended,
 		IsVerified:            body.IsVerified,
 		IsUnknown:             body.IsUnknown,
+		IsAiReconciled:        body.IsAiReconciled,
+		IsAutoMatched:         body.IsAutoMatched,
+		ZoomUserName:          body.ZoomUserName,
+		MappedInviteeName:     body.MappedInviteeName,
 		AverageAttendance:     body.AverageAttendance,
 		CreatedAt:             body.CreatedAt,
 		ModifiedAt:            body.ModifiedAt,

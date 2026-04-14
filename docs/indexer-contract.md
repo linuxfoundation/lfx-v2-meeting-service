@@ -483,6 +483,11 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `username` | string (optional) | LFX username |
 | `is_invited` | bool | Whether the participant was invited |
 | `is_attended` | bool | Whether the participant attended |
+| `is_unknown` | bool | Whether the attendee could not be matched to any known user (attendee records only; `false` for invitee-only records) |
+| `is_ai_reconciled` | bool | Whether the attendee record was last updated via AI reconciliation (attendee records only; `false` for invitee-only records) |
+| `is_auto_matched` | bool | Whether the attendee was automatically matched to an invitee by name (attendee records only; `false` for invitee-only records) |
+| `zoom_user_name` | string | Zoom display name of the attendee (attendee records only; `""` for invitee-only records) |
+| `mapped_invitee_name` | string | Full name of the invitee the attendee was auto-matched to (attendee records only; `""` for invitee-only records) |
 | `sessions` | []object (optional) | Join/leave sessions (each has `uid`, `join_time`, `leave_time`, `leave_reason`) |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |

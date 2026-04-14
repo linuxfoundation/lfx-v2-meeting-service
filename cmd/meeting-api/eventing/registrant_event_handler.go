@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -243,7 +244,7 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}
-		deleteAccessSubject = "lfx.fga-sync.member_remove"
+		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
 	} else {
 		funcLogger.DebugContext(ctx, "no username in v1Data, skipping access control message for registrant delete")
 	}
