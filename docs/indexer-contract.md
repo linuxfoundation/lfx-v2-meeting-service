@@ -614,8 +614,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Field | Value |
 |---|---|
-| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` (access checked on the parent past meeting) |
-| `access_check_relation` | `viewer` |
+| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
+| `access_check_relation` | `recording_viewer` |
 | `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
 | `history_check_relation` | `auditor` |
 | `public` | `true` when `recording_access == "public"`, `false` otherwise |
@@ -687,8 +687,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Field | Value |
 |---|---|
-| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` (access checked on the parent past meeting) |
-| `access_check_relation` | `viewer` |
+| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
+| `access_check_relation` | `transcript_viewer` |
 | `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
 | `history_check_relation` | `auditor` |
 | `public` | `true` when `transcript_access == "public"`, `false` otherwise |
@@ -769,11 +769,11 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Field | Value |
 |---|---|
-| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` (access checked on the parent past meeting) |
-| `access_check_relation` | `viewer` |
+| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
+| `access_check_relation` | `ai_summary_viewer` |
 | `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
 | `history_check_relation` | `auditor` |
-| `public` | `true` when the parent past meeting's `ai_summary_access == "public"`, `false` otherwise |
+| `public` | `true` when `ai_summary_access == "public"`, `false` otherwise |
 
 ### Search Behavior
 
