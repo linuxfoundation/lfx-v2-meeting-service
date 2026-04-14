@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"strconv"
 
+	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -324,7 +325,7 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 	}
 	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, deleteAccessPayload, meetingDeleteConfig{
 		indexerSubject:      "lfx.index.v1_past_meeting",
-		deleteAccessSubject: "lfx.fga-sync.delete_access",
+		deleteAccessSubject: fgaconstants.GenericDeleteAccessSubject,
 		tombstoneKeyFmts:    []string{"v1_past_meetings.%s", "v1-mappings.past-meeting-mappings.%s"},
 	})
 }

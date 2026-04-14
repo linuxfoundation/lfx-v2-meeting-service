@@ -550,6 +550,14 @@ var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
 	})
 	Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendees only)")
 	Attribute("is_unknown", Boolean, "Whether attendee is marked as unknown (attendees only)")
+	Attribute("is_ai_reconciled", Boolean, "Whether the attendee record was updated via AI reconciliation (attendees only)")
+	Attribute("is_auto_matched", Boolean, "Whether the attendee name was auto-matched to a registrant's email (attendees only)")
+	Attribute("zoom_user_name", String, "Zoom display name of the attendee (attendees only)", func() {
+		Example("John Doe")
+	})
+	Attribute("mapped_invitee_name", String, "Full name of the invitee the attendee was matched to (attendees only)", func() {
+		Example("John Doe")
+	})
 
 	// Attendance tracking
 	Attribute("sessions", ArrayOf(ParticipantSession), "Array of session objects with join/leave times (attendees only)")

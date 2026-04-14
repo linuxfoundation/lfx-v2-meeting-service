@@ -1313,7 +1313,7 @@ func meetingServiceUpdateItxPastMeetingParticipantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-participant --body '{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_attended\": true,\n      \"is_invited\": false,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-participant --body '{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_attended\": false,\n      \"is_invited\": false,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxPastMeetingParticipantUsage() {
@@ -1361,7 +1361,7 @@ func meetingServiceCreateItxMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Aut ducimus quae unde eos et quia.\",\n      \"link\": \"Soluta voluptatibus corporis voluptatibus possimus reprehenderit.\",\n      \"name\": \"21\",\n      \"type\": \"file\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Unde eos et quia id vel aspernatur.\",\n      \"link\": \"Possimus reprehenderit ullam ducimus libero suscipit.\",\n      \"name\": \"u\",\n      \"type\": \"file\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxMeetingAttachmentUsage() {

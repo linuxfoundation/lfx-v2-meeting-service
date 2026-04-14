@@ -927,6 +927,16 @@ type ITXPastMeetingParticipant struct {
 	IsVerified *bool
 	// Whether attendee is marked as unknown (attendees only)
 	IsUnknown *bool
+	// Whether the attendee record was updated via AI reconciliation (attendees
+	// only)
+	IsAiReconciled *bool
+	// Whether the attendee name was auto-matched to a registrant's email
+	// (attendees only)
+	IsAutoMatched *bool
+	// Zoom display name of the attendee (attendees only)
+	ZoomUserName *string
+	// Full name of the invitee the attendee was matched to (attendees only)
+	MappedInviteeName *string
 	// Array of session objects with join/leave times (attendees only)
 	Sessions []*ParticipantSession
 	// Average attendance percentage (attendees only, calculated)
