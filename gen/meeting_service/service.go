@@ -1348,6 +1348,9 @@ type UpdateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+	// An optional note to include in the meeting update notification emails sent
+	// to registrants
+	UpdateNote *string
 }
 
 // UpdateItxOccurrencePayload is the payload type of the Meeting Service

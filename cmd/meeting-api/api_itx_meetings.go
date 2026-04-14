@@ -10,6 +10,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // CreateItxMeeting creates a meeting via ITX proxy
@@ -57,6 +58,7 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 	})
 
 	req.ID = p.MeetingID
+	req.UpdateNote = utils.StringValue(p.UpdateNote)
 	err := s.itxMeetingService.UpdateMeeting(ctx, p.MeetingID, req)
 	if err != nil {
 		return handleError(err)
