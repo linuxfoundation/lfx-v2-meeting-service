@@ -292,7 +292,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 
 	// Per-artifact access: self-referential references enable role-based access
 	// via the existing host/attendee/invitee tuples on the same v1_past_meeting object.
-	selfRef := "v1_past_meeting:" + meeting.ID
+	selfRef := "v1_past_meeting:" + meeting.MeetingAndOccurrenceID
 
 	switch meeting.RecordingAccess {
 	case "public":
@@ -331,10 +331,13 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		ObjectType: "v1_past_meeting",
 		Operation:  "update_access",
 		Data: fgatypes.GenericAccessData{
-			UID:        meeting.ID,
+			UID:        meeting.MeetingAndOccurrenceID,
 			Public:     false,
 			Relations:  pastMeetingRelations,
 			References: pastMeetingRefs,
+			// host/invitee/attendee are managed by PublishPastMeetingParticipantEvent
+			// and must not be overwritten here.
+			ExcludeRelations: []string{"host", "invitee", "attendee"},
 		},
 	}
 
