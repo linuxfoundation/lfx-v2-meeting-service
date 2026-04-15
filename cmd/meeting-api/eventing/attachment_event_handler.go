@@ -135,7 +135,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 
 	// Look up project slug from the projects API via NATS.
 	// An empty slug (no error) means the project was found but has no slug — proceed without it.
-	projectSlug, slugErr := h.projectSlugLookup.GetProjectSlug(ctx, projectUID)
+	projectSlug, slugErr := h.projectLookup.GetProjectSlug(ctx, projectUID)
 	if slugErr != nil {
 		funcLogger.With(logging.ErrKey, slugErr).WarnContext(ctx, "transient error looking up project slug, will retry")
 		return true

@@ -18,15 +18,15 @@ const (
 	projectSlugLookupTimeout = 5 * time.Second
 )
 
-// NATSProjectSlugLookup implements domain.ProjectSlugLookup using NATS request/reply.
-type NATSProjectSlugLookup struct {
+// NATSProjectLookup implements domain.ProjectLookup using NATS request/reply.
+type NATSProjectLookup struct {
 	nc      *nats.Conn
 	timeout time.Duration
 }
 
-// NewNATSProjectSlugLookup creates a new NATS-based project slug lookup.
-func NewNATSProjectSlugLookup(nc *nats.Conn) *NATSProjectSlugLookup {
-	return &NATSProjectSlugLookup{
+// NewNATSProjectLookup creates a new NATS-based project slug lookup.
+func NewNATSProjectLookup(nc *nats.Conn) *NATSProjectLookup {
+	return &NATSProjectLookup{
 		nc:      nc,
 		timeout: projectSlugLookupTimeout,
 	}
@@ -36,7 +36,7 @@ func NewNATSProjectSlugLookup(nc *nats.Conn) *NATSProjectSlugLookup {
 // projects API over NATS on subject lfx.projects-api.get_slug.
 // Returns ("", nil) when the project is not found (empty reply).
 // Returns a non-nil error for transient NATS failures.
-func (p *NATSProjectSlugLookup) GetProjectSlug(ctx context.Context, projectUID string) (string, error) {
+func (p *NATSProjectLookup) GetProjectSlug(ctx context.Context, projectUID string) (string, error) {
 	if projectUID == "" {
 		return "", nil
 	}
@@ -50,5 +50,5 @@ func (p *NATSProjectSlugLookup) GetProjectSlug(ctx context.Context, projectUID s
 	return string(msg.Data), nil
 }
 
-// Ensure NATSProjectSlugLookup implements domain.ProjectSlugLookup.
-var _ domain.ProjectSlugLookup = (*NATSProjectSlugLookup)(nil)
+// Ensure NATSProjectLookup implements domain.ProjectLookup.
+var _ domain.ProjectLookup = (*NATSProjectLookup)(nil)

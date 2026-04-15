@@ -21,13 +21,13 @@ import (
 
 // EventHandlers contains all the specific event type handlers
 type EventHandlers struct {
-	publisher         domain.EventPublisher
-	userLookup        domain.V1UserLookup
-	idMapper          domain.IDMapper
-	projectSlugLookup domain.ProjectSlugLookup
-	v1ObjectsKV       jetstream.KeyValue
-	v1MappingsKV      jetstream.KeyValue
-	logger            *slog.Logger
+	publisher     domain.EventPublisher
+	userLookup    domain.V1UserLookup
+	idMapper      domain.IDMapper
+	projectLookup domain.ProjectLookup
+	v1ObjectsKV   jetstream.KeyValue
+	v1MappingsKV  jetstream.KeyValue
+	logger        *slog.Logger
 }
 
 const tombstoneMarker = "!del"
@@ -129,19 +129,19 @@ func NewEventHandlers(
 	publisher domain.EventPublisher,
 	userLookup domain.V1UserLookup,
 	idMapper domain.IDMapper,
-	projectSlugLookup domain.ProjectSlugLookup,
+	projectLookup domain.ProjectLookup,
 	v1ObjectsKV jetstream.KeyValue,
 	v1MappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) *EventHandlers {
 	return &EventHandlers{
-		publisher:         publisher,
-		userLookup:        userLookup,
-		idMapper:          idMapper,
-		projectSlugLookup: projectSlugLookup,
-		v1ObjectsKV:       v1ObjectsKV,
-		v1MappingsKV:      v1MappingsKV,
-		logger:            logger,
+		publisher:     publisher,
+		userLookup:    userLookup,
+		idMapper:      idMapper,
+		projectLookup: projectLookup,
+		v1ObjectsKV:   v1ObjectsKV,
+		v1MappingsKV:  v1MappingsKV,
+		logger:        logger,
 	}
 }
 
