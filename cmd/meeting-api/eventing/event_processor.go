@@ -80,8 +80,11 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	// Create user lookup
 	userLookup := eventing.NewNATSUserLookup(nc, v1ObjectsKV, logger)
 
+	// Create project slug lookup
+	projectSlugLookup := eventing.NewNATSProjectSlugLookup(nc)
+
 	// Create event handlers
-	handlers := NewEventHandlers(publisher, userLookup, idMapper, v1ObjectsKV, v1MappingsKV, logger)
+	handlers := NewEventHandlers(publisher, userLookup, idMapper, projectSlugLookup, v1ObjectsKV, v1MappingsKV, logger)
 
 	ep := &EventProcessor{
 		nc:           nc,

@@ -111,12 +111,36 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_id", attachmentData.MeetingID)
 
-	// Validate parent meeting exists
-	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", attachmentData.MeetingID)
-	if _, err := h.v1ObjectsKV.Get(ctx, meetingKey); err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "parent meeting not found, will retry")
+	// Look up project UID from parent meeting. lookupProjectFromMeeting returns ("", nil) for
+	// ErrKeyNotFound (permanent miss) and a non-nil error for transient KV/decode failures.
+	projSFID, err := lookupProjectFromMeeting(ctx, attachmentData.MeetingID, h.v1ObjectsKV, funcLogger)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent meeting, will retry")
 		return true
 	}
+	if projSFID == "" {
+		funcLogger.WarnContext(ctx, "skipping attachment: parent meeting not found or has no project")
+		return false
+	}
+	projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
+	if mapErr != nil {
+		funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for attachment")
+		return isTransientError(mapErr)
+	}
+	if projectUID == "" {
+		funcLogger.WarnContext(ctx, "skipping attachment: project not yet in v2")
+		return false
+	}
+	attachmentData.ProjectUID = projectUID
+
+	// Look up project slug from the projects API via NATS.
+	// An empty slug (no error) means the project was found but has no slug — proceed without it.
+	projectSlug, slugErr := h.projectSlugLookup.GetProjectSlug(ctx, projectUID)
+	if slugErr != nil {
+		funcLogger.With(logging.ErrKey, slugErr).WarnContext(ctx, "transient error looking up project slug, will retry")
+		return true
+	}
+	attachmentData.ProjectSlug = projectSlug
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_meeting_attachments.%s", attachmentData.UID)

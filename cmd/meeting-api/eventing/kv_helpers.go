@@ -13,6 +13,34 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
+// lookupProjectFromMeeting fetches the proj_id of the parent active meeting from the v1-objects KV
+// bucket. Returns an empty string (no error) when the record is not found — that is a permanent
+// miss and the caller should not retry. Returns a non-nil error for transient KV/decode failures.
+func lookupProjectFromMeeting(
+	ctx context.Context,
+	meetingID string,
+	v1ObjectsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) (projSFID string, err error) {
+	if meetingID == "" {
+		return "", nil
+	}
+	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
+	entry, kvErr := v1ObjectsKV.Get(ctx, meetingKey)
+	if kvErr != nil {
+		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
+			logger.WarnContext(ctx, "parent meeting not found for project lookup", "key", meetingKey)
+			return "", nil
+		}
+		return "", fmt.Errorf("transient error fetching parent meeting: %w", kvErr)
+	}
+	meetingData, decErr := decodeData(entry.Value())
+	if decErr != nil {
+		return "", fmt.Errorf("transient error decoding parent meeting: %w", decErr)
+	}
+	return utils.GetString(meetingData["proj_id"]), nil
+}
+
 // lookupProjectFromPastMeeting fetches the proj_id and project_slug of the parent past meeting
 // from the v1-objects KV bucket. Returns empty strings (no error) when the record is not found —
 // that is a permanent miss and the caller should not retry. Returns a non-nil error for transient
