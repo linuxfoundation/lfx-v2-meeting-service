@@ -728,6 +728,9 @@ func (m *PastMeetingEventData) Tags() []string {
 		"project_uid:" + m.ProjectUID,
 		"title:" + m.Title,
 	}
+	if m.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+m.ProjectSlug)
+	}
 	if m.Timezone != "" {
 		tags = append(tags, "timezone:"+m.Timezone)
 	}
@@ -769,6 +772,11 @@ type PastMeetingParticipantEventData struct {
 	Username               string               `json:"username,omitempty"`
 	IsInvited              bool                 `json:"is_invited"`
 	IsAttended             bool                 `json:"is_attended"`
+	IsUnknown              bool                 `json:"is_unknown"`
+	IsAIReconciled         bool                 `json:"is_ai_reconciled"`
+	IsAutoMatched          bool                 `json:"is_auto_matched"`
+	ZoomUserName           string               `json:"zoom_user_name"`
+	MappedInviteeName      string               `json:"mapped_invitee_name"`
 	Sessions               []ParticipantSession `json:"sessions,omitempty"`
 	CreatedAt              time.Time            `json:"created_at"`
 	UpdatedAt              time.Time            `json:"updated_at"`
@@ -835,7 +843,11 @@ func (p *PastMeetingParticipantEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this past meeting participant.
 func (p *PastMeetingParticipantEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + p.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + p.MeetingAndOccurrenceID}
+	if p.ProjectUID != "" {
+		refs = append(refs, "project:"+p.ProjectUID)
+	}
+	return refs
 }
 
 // ParticipantSession represents a join/leave session for attendees
@@ -909,6 +921,12 @@ func (r *RecordingEventData) Tags() []string {
 		"platform:Zoom",
 		"platform_meeting_id:" + r.PlatformMeetingID,
 	}
+	if r.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+r.ProjectUID)
+	}
+	if r.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+r.ProjectSlug)
+	}
 	for _, session := range r.Sessions {
 		tags = append(tags, "platform_meeting_instance_id:"+session.UUID)
 	}
@@ -917,7 +935,11 @@ func (r *RecordingEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this recording.
 func (r *RecordingEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + r.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + r.MeetingAndOccurrenceID}
+	if r.ProjectUID != "" {
+		refs = append(refs, "project:"+r.ProjectUID)
+	}
+	return refs
 }
 
 // RecordingFile represents a single recording file
@@ -1001,6 +1023,12 @@ func (t *TranscriptEventData) Tags() []string {
 		"meeting_and_occurrence_id:" + t.MeetingAndOccurrenceID,
 		"platform:Zoom",
 	}
+	if t.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+t.ProjectUID)
+	}
+	if t.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+t.ProjectSlug)
+	}
 	for _, session := range t.Sessions {
 		tags = append(tags, "platform_meeting_instance_id:"+session.UUID)
 	}
@@ -1009,7 +1037,11 @@ func (t *TranscriptEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this transcript.
 func (t *TranscriptEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + t.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + t.MeetingAndOccurrenceID}
+	if t.ProjectUID != "" {
+		refs = append(refs, "project:"+t.ProjectUID)
+	}
+	return refs
 }
 
 // SummaryEventData represents an AI-generated summary event
@@ -1017,6 +1049,7 @@ type SummaryEventData struct {
 	ID                      string            `json:"id"`
 	MeetingAndOccurrenceID  string            `json:"meeting_and_occurrence_id"`
 	ProjectUID              string            `json:"project_uid"`
+	ProjectSlug             string            `json:"project_slug"`
 	MeetingID               string            `json:"meeting_id"`
 	OccurrenceID            string            `json:"occurrence_id"`
 	ZoomMeetingUUID         string            `json:"zoom_meeting_uuid"`
@@ -1077,6 +1110,12 @@ func (s *SummaryEventData) Tags() []string {
 		"meeting_id:" + s.MeetingID,
 		"platform:Zoom",
 	}
+	if s.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+s.ProjectUID)
+	}
+	if s.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+s.ProjectSlug)
+	}
 	if s.ZoomMeetingTopic != "" {
 		tags = append(tags, "title:"+s.ZoomMeetingTopic)
 	}
@@ -1085,7 +1124,11 @@ func (s *SummaryEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this summary.
 func (s *SummaryEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + s.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + s.MeetingAndOccurrenceID}
+	if s.ProjectUID != "" {
+		refs = append(refs, "project:"+s.ProjectUID)
+	}
+	return refs
 }
 
 // SummaryZoomConfig contains Zoom-specific configuration for summaries
@@ -1175,6 +1218,8 @@ type PastMeetingAttachmentEventData struct {
 	UID                    string     `json:"uid"`
 	MeetingAndOccurrenceID string     `json:"meeting_and_occurrence_id"`
 	MeetingID              string     `json:"meeting_id"`
+	ProjectUID             string     `json:"project_uid"`
+	ProjectSlug            string     `json:"project_slug"`
 	Type                   string     `json:"type"`
 	Category               string     `json:"category,omitempty"`
 	Link                   string     `json:"link,omitempty"`
@@ -1237,6 +1282,12 @@ func (a *PastMeetingAttachmentEventData) Tags() []string {
 		"meeting_and_occurrence_id:" + a.MeetingAndOccurrenceID,
 		"meeting_id:" + a.MeetingID,
 	}
+	if a.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+a.ProjectUID)
+	}
+	if a.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+a.ProjectSlug)
+	}
 	if a.Type != "" {
 		tags = append(tags, "type:"+a.Type)
 	}
@@ -1245,5 +1296,9 @@ func (a *PastMeetingAttachmentEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this past meeting attachment.
 func (a *PastMeetingAttachmentEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + a.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + a.MeetingAndOccurrenceID}
+	if a.ProjectUID != "" {
+		refs = append(refs, "project:"+a.ProjectUID)
+	}
+	return refs
 }

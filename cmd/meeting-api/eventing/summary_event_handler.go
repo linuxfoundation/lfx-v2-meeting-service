@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -13,6 +14,8 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 // =============================================================================
@@ -175,19 +178,43 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
-	// Look up ai_summary_access from the parent past meeting record.
+	// Look up project info and ai_summary_access from the parent past meeting record.
+	// ErrKeyNotFound is a permanent miss — skip without retry.
+	// Any other KV or decode error is transient — retry.
 	aiSummaryAccess := ""
-	if summaryData.MeetingAndOccurrenceID != "" {
-		pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", summaryData.MeetingAndOccurrenceID)
-		if entry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get past meeting data for summary access")
-		} else {
-			if pastMeetingData, decodeErr := decodeData(entry.Value()); decodeErr == nil {
-				if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
-					aiSummaryAccess = access
-				}
-			}
+	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", summaryData.MeetingAndOccurrenceID)
+	entry, kvErr := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
+	if kvErr != nil {
+		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
+			funcLogger.WarnContext(ctx, "skipping summary: parent past meeting not found")
+			return false
 		}
+		funcLogger.With(logging.ErrKey, kvErr).WarnContext(ctx, "transient error fetching parent past meeting, will retry")
+		return true
+	}
+	pastMeetingData, decErr := decodeData(entry.Value())
+	if decErr != nil {
+		funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "transient error decoding parent past meeting, will retry")
+		return true
+	}
+	if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
+		aiSummaryAccess = access
+	}
+	projSFID := utils.GetString(pastMeetingData["proj_id"])
+	summaryData.ProjectSlug = utils.GetString(pastMeetingData["project_slug"])
+	if projSFID != "" {
+		projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
+		if mapErr != nil {
+			funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for summary")
+			return isTransientError(mapErr)
+		}
+		summaryData.ProjectUID = projectUID
+	}
+
+	// Skip if project is not yet mapped to v2
+	if summaryData.ProjectUID == "" {
+		funcLogger.WarnContext(ctx, "skipping summary: project not yet in v2")
+		return false
 	}
 
 	// Publish to indexer and FGA-sync

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -132,12 +133,28 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
 
 	// If an attendee cross-reference exists for this participant, preserve is_attended=true
-	// so a late-arriving invitee upsert doesn't reset a flag the attendee handler already set.
+	// and carry over attendee-only fields so a late-arriving invitee upsert doesn't overwrite
+	// values that the attendee handler already set (e.g. is_unknown, is_ai_reconciled).
 	if participantData.Username != "" {
 		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(entry) {
+		if xrefEntry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(xrefEntry) {
 			participantData.IsAttended = true
+			attendeeID := string(xrefEntry.Value())
+			if attendeeEntry, err := h.v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-past-meetings-attendees.%s", attendeeID)); err == nil {
+				if attendeeMap, err := decodeData(attendeeEntry.Value()); err == nil {
+					if jsonBytes, err := json.Marshal(attendeeMap); err == nil {
+						var rawAttendee AttendeeDBRaw
+						if err := json.Unmarshal(jsonBytes, &rawAttendee); err == nil {
+							participantData.IsUnknown = rawAttendee.IsUnknown
+							participantData.IsAIReconciled = rawAttendee.IsAIReconciled
+							participantData.IsAutoMatched = rawAttendee.IsAutoMatched
+							participantData.ZoomUserName = rawAttendee.ZoomUserName
+							participantData.MappedInviteeName = rawAttendee.MappedInviteeName
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -228,7 +245,7 @@ func (h *EventHandlers) fullDeleteInvitee(
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}
-		deleteAccessSubject = "lfx.fga-sync.member_remove"
+		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
 	}
 
 	result := h.handleMeetingTypeDelete(ctx, key, inviteeID, accessPayload, meetingDeleteConfig{
@@ -560,7 +577,7 @@ func (h *EventHandlers) fullDeleteAttendee(
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}
-		deleteAccessSubject = "lfx.fga-sync.member_remove"
+		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
 	} else {
 		funcLogger.DebugContext(ctx, "no username available, skipping access control message for attendee delete")
 	}
@@ -862,6 +879,11 @@ func convertMapToAttendeeParticipantData(
 		Username:               username,
 		IsInvited:              isInvited,
 		IsAttended:             true,
+		IsUnknown:              rawAttendee.IsUnknown,
+		IsAIReconciled:         rawAttendee.IsAIReconciled,
+		IsAutoMatched:          rawAttendee.IsAutoMatched,
+		ZoomUserName:           rawAttendee.ZoomUserName,
+		MappedInviteeName:      rawAttendee.MappedInviteeName,
 		Sessions:               sessions,
 		CreatedAt:              createdAt,
 		UpdatedAt:              modifiedAt,
@@ -893,33 +915,4 @@ func resolveProjectFields(
 		slug = projectSlug
 	}
 	return sfid, slug, nil
-}
-
-// lookupProjectFromPastMeeting fetches the proj_id and project_slug of the parent past meeting
-// from the v1-objects KV bucket. Returns empty strings (no error) when the record is not found —
-// that is a permanent miss and the caller should not retry. Returns a non-nil error for transient
-// KV fetch failures or decode failures (caller should retry).
-func lookupProjectFromPastMeeting(
-	ctx context.Context,
-	meetingAndOccurrenceID string,
-	v1ObjectsKV jetstream.KeyValue,
-	logger *slog.Logger,
-) (projSFID, projectSlug string, err error) {
-	if meetingAndOccurrenceID == "" {
-		return "", "", nil
-	}
-	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", meetingAndOccurrenceID)
-	entry, kvErr := v1ObjectsKV.Get(ctx, pastMeetingKey)
-	if kvErr != nil {
-		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
-			logger.WarnContext(ctx, "parent past_meeting not found for project lookup", "key", pastMeetingKey)
-			return "", "", nil
-		}
-		return "", "", fmt.Errorf("transient error fetching parent past_meeting: %w", kvErr)
-	}
-	pastMeetingData, decErr := decodeData(entry.Value())
-	if decErr != nil {
-		return "", "", fmt.Errorf("transient error decoding parent past_meeting: %w", decErr)
-	}
-	return utils.GetString(pastMeetingData["proj_id"]), utils.GetString(pastMeetingData["project_slug"]), nil
 }
