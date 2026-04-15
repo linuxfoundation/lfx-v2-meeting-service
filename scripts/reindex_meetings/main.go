@@ -227,7 +227,11 @@ func reindexType(
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("open scroll: %w", err)
 	}
-	defer deleteScroll(ctx, httpClient, osURL, scrollID) //nolint:errcheck
+	defer func() {
+		if err := deleteScroll(ctx, httpClient, osURL, scrollID); err != nil {
+			slog.WarnContext(ctx, "failed to delete scroll context", "error", err)
+		}
+	}()
 
 	isParticipant := objectType == "v1_past_meeting_participant"
 
