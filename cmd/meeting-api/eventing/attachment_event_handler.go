@@ -303,12 +303,29 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_and_occurrence_id", attachmentData.MeetingAndOccurrenceID)
 
-	// Validate parent past meeting exists
-	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", attachmentData.MeetingAndOccurrenceID)
-	if _, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey); err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "parent past meeting not found, will retry")
+	// Look up project info from the parent past meeting record.
+	// lookupProjectFromPastMeeting returns ("","",nil) for ErrKeyNotFound (permanent miss)
+	// and a non-nil error for transient KV/decode failures.
+	projSFID, projectSlug, err := lookupProjectFromPastMeeting(ctx, attachmentData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent past meeting, will retry")
 		return true
 	}
+	if projSFID == "" {
+		funcLogger.WarnContext(ctx, "skipping attachment: parent past meeting not found or has no project")
+		return false
+	}
+	attachmentData.ProjectSlug = projectSlug
+	projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
+	if mapErr != nil {
+		funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for attachment")
+		return isTransientError(mapErr)
+	}
+	if projectUID == "" {
+		funcLogger.WarnContext(ctx, "skipping attachment: project not yet in v2")
+		return false
+	}
+	attachmentData.ProjectUID = projectUID
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_attachments.%s", attachmentData.UID)
