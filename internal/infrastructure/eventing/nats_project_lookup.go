@@ -34,7 +34,8 @@ func NewNATSProjectLookup(nc *nats.Conn) *NATSProjectLookup {
 
 // GetProjectSlug returns the URL slug for the given project UID by calling the
 // projects API over NATS on subject lfx.projects-api.get_slug.
-// Returns ("", nil) when the project is not found (empty reply).
+// Returns ("", nil) when no slug can be resolved — an empty reply can indicate
+// the project was not found or that it exists but has no slug.
 // Returns a non-nil error for transient NATS failures.
 func (p *NATSProjectLookup) GetProjectSlug(ctx context.Context, projectUID string) (string, error) {
 	if projectUID == "" {

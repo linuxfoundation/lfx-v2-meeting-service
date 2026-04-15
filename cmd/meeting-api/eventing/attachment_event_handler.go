@@ -111,15 +111,24 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_id", attachmentData.MeetingID)
 
-	// Look up project UID from parent meeting. lookupProjectFromMeeting returns ("", nil) for
-	// ErrKeyNotFound (permanent miss) and a non-nil error for transient KV/decode failures.
+	// Look up project UID from parent meeting.
+	// lookupProjectFromMeeting returns ("", nil) both when the meeting record is missing
+	// and when the meeting has no proj_id, so we distinguish the two cases to decide
+	// whether to retry or permanently skip.
 	projSFID, err := lookupProjectFromMeeting(ctx, attachmentData.MeetingID, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent meeting, will retry")
 		return true
 	}
 	if projSFID == "" {
-		funcLogger.WarnContext(ctx, "skipping attachment: parent meeting not found or has no project")
+		// Verify whether the meeting record itself is missing (KV events may arrive out of
+		// order) or whether it exists but carries no proj_id.
+		meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", attachmentData.MeetingID)
+		if _, meetingErr := h.v1ObjectsKV.Get(ctx, meetingKey); meetingErr != nil {
+			funcLogger.WarnContext(ctx, "parent meeting not yet in KV, will retry attachment")
+			return true
+		}
+		funcLogger.WarnContext(ctx, "skipping attachment: parent meeting exists but has no project")
 		return false
 	}
 	projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
@@ -134,7 +143,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 	attachmentData.ProjectUID = projectUID
 
 	// Look up project slug from the projects API via NATS.
-	// An empty slug (no error) means the project was found but has no slug — proceed without it.
+	// An empty slug (no error) means no slug could be resolved (project not found or has no slug) — proceed without it.
 	projectSlug, slugErr := h.projectLookup.GetProjectSlug(ctx, projectUID)
 	if slugErr != nil {
 		funcLogger.With(logging.ErrKey, slugErr).WarnContext(ctx, "transient error looking up project slug, will retry")
