@@ -240,7 +240,11 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 
 // PublishPastMeetingEvent publishes a past meeting event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action string, meeting *models.PastMeetingEventData) error {
-	p.logger.InfoContext(ctx, "publishing past meeting event", "action", action, "past_meeting_id", meeting.ID)
+	if meeting.MeetingAndOccurrenceID == "" {
+		return domain.NewValidationError("meeting_and_occurrence_id is required for publishing messages about the past meeting")
+	}
+
+	p.logger.InfoContext(ctx, "publishing past meeting event", "action", action, "past_meeting_id", meeting.MeetingAndOccurrenceID)
 
 	tags := meeting.Tags()
 	publicFalse := false
@@ -250,11 +254,11 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		Data:    meeting,
 		Tags:    tags,
 		IndexingConfig: &indexerTypes.IndexingConfig{
-			ObjectID:             meeting.ID,
+			ObjectID:             meeting.MeetingAndOccurrenceID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.ID,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.ID,
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           meeting.ParentRefs(),
 			Tags:                 tags,
