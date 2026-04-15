@@ -807,6 +807,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|---|
 | `uid` | string | Attachment unique identifier |
 | `meeting_id` | string | ID of the parent meeting |
+| `project_uid` | string (optional) | v2 UUID of the parent project (omitted when project not yet in v2) |
+| `project_slug` | string (optional) | URL slug of the parent project (resolved via `lfx.projects-api.get_slug`; omitted when unavailable) |
 | `type` | string | Attachment type (e.g., `"link"`, `"file"`) |
 | `category` | string (optional) | Attachment category |
 | `link` | string (optional) | Link URL (for link-type attachments) |
@@ -832,9 +834,11 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|---|
 | `meeting_attachment_uid:{uid}` | `meeting_attachment_uid:a1b2c3d4-...` | Lookup by attachment UID |
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find attachments for a meeting |
+| `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
+| `project_slug:{value}` | `project_slug:cncf` | Find attachments by project slug |
 | `type:{value}` | `type:file` | Find attachments by type |
 
-> `type` tag is only emitted when non-empty.
+> `project_uid`, `project_slug`, and `type` tags are only emitted when non-empty. `project_slug` is resolved at event-processing time via the `lfx.projects-api.get_slug` NATS subject.
 
 ### Access Control (IndexingConfig)
 
@@ -859,6 +863,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `meeting:{meeting_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
 
 ---
 
@@ -879,6 +884,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `uid` | string | Attachment unique identifier |
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
 | `meeting_id` | string | ID of the originating active meeting |
+| `project_uid` | string (optional) | v2 UUID of the parent project (omitted when project not yet in v2) |
+| `project_slug` | string (optional) | URL slug of the parent project (sourced from the past meeting KV record) |
 | `type` | string | Attachment type (e.g., `"link"`, `"file"`) |
 | `category` | string (optional) | Attachment category |
 | `link` | string (optional) | Link URL (for link-type attachments) |
@@ -905,9 +912,11 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `past_meeting_attachment_uid:{uid}` | `past_meeting_attachment_uid:a1b2c3d4-...` | Lookup by attachment UID |
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find attachments for a past meeting |
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find attachments by originating meeting |
+| `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
+| `project_slug:{value}` | `project_slug:my-project` | Find attachments by project slug |
 | `type:{value}` | `type:link` | Find attachments by type |
 
-> `type` tag is only emitted when non-empty.
+> `project_uid`, `project_slug`, and `type` tags are only emitted when non-empty.
 
 ### Access Control (IndexingConfig)
 
@@ -932,3 +941,4 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |

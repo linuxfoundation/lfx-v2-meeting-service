@@ -1141,6 +1141,8 @@ type SummaryZoomConfig struct {
 type MeetingAttachmentEventData struct {
 	UID              string     `json:"uid"`
 	MeetingID        string     `json:"meeting_id"`
+	ProjectUID       string     `json:"project_uid,omitempty"`
+	ProjectSlug      string     `json:"project_slug,omitempty"`
 	Type             string     `json:"type"`
 	Category         string     `json:"category,omitempty"`
 	Link             string     `json:"link,omitempty"`
@@ -1202,6 +1204,12 @@ func (a *MeetingAttachmentEventData) Tags() []string {
 		"meeting_attachment_uid:" + a.UID,
 		"meeting_id:" + a.MeetingID,
 	}
+	if a.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+a.ProjectUID)
+	}
+	if a.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+a.ProjectSlug)
+	}
 	if a.Type != "" {
 		tags = append(tags, "type:"+a.Type)
 	}
@@ -1210,7 +1218,11 @@ func (a *MeetingAttachmentEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this meeting attachment.
 func (a *MeetingAttachmentEventData) ParentRefs() []string {
-	return []string{"meeting:" + a.MeetingID}
+	refs := []string{"meeting:" + a.MeetingID}
+	if a.ProjectUID != "" {
+		refs = append(refs, "project:"+a.ProjectUID)
+	}
+	return refs
 }
 
 // PastMeetingAttachmentEventData represents an attachment on a past meeting
