@@ -212,6 +212,12 @@ type MeetingDBRaw struct {
 
 	// Organizers is the list of usernames that are organizers of the meeting.
 	Organizers []string `json:"organizers,omitempty"`
+
+	// AutoEmailReminderEnabled indicates whether automatic email reminders are enabled for the meeting.
+	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled,omitempty"`
+
+	// AutoEmailReminderTime is the time in minutes before the meeting start time that the reminder email is sent.
+	AutoEmailReminderTime int `json:"auto_email_reminder_time,omitempty"`
 }
 
 // GetArtifactVisibility returns the artifact visibility of the meeting.
@@ -716,6 +722,8 @@ func convertMapToMeetingData(
 		MailingListGroupIDs:                       rawMeeting.MailingListGroupIDs,
 		UseUniqueICSUID:                           rawMeeting.UseUniqueICSUID,
 		ShowMeetingAttendees:                      rawMeeting.ShowMeetingAttendees,
+		AutoEmailReminderEnabled:                  rawMeeting.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:                     rawMeeting.AutoEmailReminderTime,
 		UpdatedByList:                             rawMeeting.UpdatedByList,
 		CreatedAt:                                 rawMeeting.CreatedAt,
 		UpdatedAt:                                 rawMeeting.ModifiedAt,
