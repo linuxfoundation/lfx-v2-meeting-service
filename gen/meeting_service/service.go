@@ -231,6 +231,8 @@ type CreateItxMeetingPayload struct {
 	YoutubeUploadEnabled *bool
 	// Whether Zoom AI Companion summary is enabled for the meeting
 	AiSummaryEnabled *bool
+	// Whether AI summary requires approval before being shared
+	RequireAiSummaryApproval *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
@@ -1094,10 +1096,36 @@ type ITXZoomMeetingResponse struct {
 	YoutubeUploadEnabled *bool
 	// Whether Zoom AI Companion summary is enabled for the meeting
 	AiSummaryEnabled *bool
+	// Whether AI summary requires approval before being shared
+	RequireAiSummaryApproval *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int
+	// Status of the last bulk registrant import job
+	LastBulkRegistrantJobStatus *string
+	// Number of records with warnings in the last bulk registrant import job
+	LastBulkRegistrantsJobWarningCount *int
+	// Number of email delivery errors for the meeting
+	EmailDeliveryErrorCount *int
+	// Whether invite responses (RSVP) are enabled for the meeting
+	IsInviteResponsesEnabled *bool
+	// Number of 'yes' RSVP responses for the meeting
+	ResponseCountYes *int
+	// Number of 'maybe' RSVP responses for the meeting
+	ResponseCountMaybe *int
+	// Number of 'no' RSVP responses for the meeting
+	ResponseCountNo *int
+	// Status of the last mailing list members sync job
+	LastMailingListMembersSyncJobStatus *string
+	// Number of failed records in the last mailing list members sync job
+	LastMailingListMembersSyncJobFailedCount *int
+	// Number of records with warnings in the last mailing list members sync job
+	LastMailingListMembersSyncJobWarningCount *int
 	// Zoom meeting ID from ITX
 	ID *string
 	// 6-digit host key
@@ -1354,6 +1382,8 @@ type UpdateItxMeetingPayload struct {
 	YoutubeUploadEnabled *bool
 	// Whether Zoom AI Companion summary is enabled for the meeting
 	AiSummaryEnabled *bool
+	// Whether AI summary requires approval before being shared
+	RequireAiSummaryApproval *bool
 	// The visibility of artifacts to users
 	ArtifactVisibility *string
 	// The recurrence of the meeting
