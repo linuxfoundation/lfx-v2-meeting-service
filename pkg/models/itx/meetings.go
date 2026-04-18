@@ -152,6 +152,18 @@ type ZoomMeetingResponse struct {
 	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled,omitempty"`
 	AutoEmailReminderTime    int  `json:"auto_email_reminder_time,omitempty"`
 
+	IsInviteResponsesEnabled bool `json:"is_invite_responses_enabled,omitempty"`
+	ResponseCountYes         int  `json:"response_count_yes,omitempty"`
+	ResponseCountMaybe       int  `json:"response_count_maybe,omitempty"`
+	ResponseCountNo          int  `json:"response_count_no,omitempty"`
+
+	LastBulkRegistrantJobStatus        string `json:"last_bulk_registrant_job_status,omitempty"`
+	LastBulkRegistrantsJobWarningCount int    `json:"last_bulk_registrants_job_warning_count,omitempty"`
+
+	LastMailingListMembersSyncJobStatus       string `json:"last_mailing_list_members_sync_job_status,omitempty"`
+	LastMailingListMembersSyncJobFailedCount  int    `json:"last_mailing_list_members_sync_job_failed_count,omitempty"`
+	LastMailingListMembersSyncJobWarningCount int    `json:"last_mailing_list_members_sync_job_warning_count,omitempty"`
+
 	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
 
