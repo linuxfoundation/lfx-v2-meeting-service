@@ -332,10 +332,10 @@ type MeetingEventData struct {
 	Organizers []string `json:"organizers"`
 
 	// AutoEmailReminderEnabled indicates whether automatic email reminders are enabled for the meeting.
-	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled,omitempty"`
+	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled"`
 
 	// AutoEmailReminderTime is the time in minutes before the meeting start time that the reminder email is sent.
-	AutoEmailReminderTime int `json:"auto_email_reminder_time,omitempty"`
+	AutoEmailReminderTime int `json:"auto_email_reminder_time"`
 }
 
 // SortName returns the primary sort name for this meeting.
