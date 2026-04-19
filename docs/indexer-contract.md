@@ -835,6 +835,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_content_type` | string (optional) | MIME content type |
 | `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
 | `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `committees` | []object | Associated committees sourced from the parent meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `modified_at` | string (RFC3339) | Last modification time |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
@@ -849,8 +850,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
 | `project_slug:{value}` | `project_slug:cncf` | Find attachments by project slug |
 | `type:{value}` | `type:file` | Find attachments by type |
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find attachments by committee |
 
-> `project_uid`, `project_slug`, and `type` tags are only emitted when non-empty. `project_slug` is resolved at event-processing time via the `lfx.projects-api.get_slug` NATS subject.
+> `project_uid`, `project_slug`, `type`, and `committee_uid` tags are only emitted when non-empty. `project_slug` is resolved at event-processing time via the `lfx.projects-api.get_slug` NATS subject. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -876,6 +878,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|
 | `meeting:{meeting_id}` | Always set |
 | `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 

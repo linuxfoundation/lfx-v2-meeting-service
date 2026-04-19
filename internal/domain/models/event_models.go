@@ -1178,28 +1178,29 @@ type SummaryZoomConfig struct {
 
 // MeetingAttachmentEventData represents an attachment on an active meeting
 type MeetingAttachmentEventData struct {
-	UID              string     `json:"uid"`
-	MeetingID        string     `json:"meeting_id"`
-	ProjectUID       string     `json:"project_uid,omitempty"`
-	ProjectSlug      string     `json:"project_slug,omitempty"`
-	Type             string     `json:"type"`
-	Category         string     `json:"category,omitempty"`
-	Link             string     `json:"link,omitempty"`
-	Name             string     `json:"name"`
-	Description      string     `json:"description,omitempty"`
-	Source           string     `json:"source,omitempty"`
-	FileName         string     `json:"file_name,omitempty"`
-	FileSize         int        `json:"file_size,omitempty"`
-	FileURL          string     `json:"file_url,omitempty"`
-	FileUploaded     *bool      `json:"file_uploaded,omitempty"`
-	FileUploadStatus string     `json:"file_upload_status,omitempty"`
-	FileContentType  string     `json:"file_content_type,omitempty"`
-	FileUploadedBy   *CreatedBy `json:"file_uploaded_by,omitempty"`
-	FileUploadedAt   *time.Time `json:"file_uploaded_at,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
-	ModifiedAt       time.Time  `json:"modified_at"`
-	CreatedBy        CreatedBy  `json:"created_by"`
-	UpdatedBy        UpdatedBy  `json:"updated_by"`
+	UID              string      `json:"uid"`
+	MeetingID        string      `json:"meeting_id"`
+	ProjectUID       string      `json:"project_uid,omitempty"`
+	ProjectSlug      string      `json:"project_slug,omitempty"`
+	Type             string      `json:"type"`
+	Category         string      `json:"category,omitempty"`
+	Link             string      `json:"link,omitempty"`
+	Name             string      `json:"name"`
+	Description      string      `json:"description,omitempty"`
+	Source           string      `json:"source,omitempty"`
+	FileName         string      `json:"file_name,omitempty"`
+	FileSize         int         `json:"file_size,omitempty"`
+	FileURL          string      `json:"file_url,omitempty"`
+	FileUploaded     *bool       `json:"file_uploaded,omitempty"`
+	FileUploadStatus string      `json:"file_upload_status,omitempty"`
+	FileContentType  string      `json:"file_content_type,omitempty"`
+	FileUploadedBy   *CreatedBy  `json:"file_uploaded_by,omitempty"`
+	FileUploadedAt   *time.Time  `json:"file_uploaded_at,omitempty"`
+	Committees       []Committee `json:"committees"`
+	CreatedAt        time.Time   `json:"created_at"`
+	ModifiedAt       time.Time   `json:"modified_at"`
+	CreatedBy        CreatedBy   `json:"created_by"`
+	UpdatedBy        UpdatedBy   `json:"updated_by"`
 }
 
 // SortName returns the primary sort name for this meeting attachment.
@@ -1252,6 +1253,11 @@ func (a *MeetingAttachmentEventData) Tags() []string {
 	if a.Type != "" {
 		tags = append(tags, "type:"+a.Type)
 	}
+	for _, c := range a.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
+	}
 	return tags
 }
 
@@ -1260,6 +1266,11 @@ func (a *MeetingAttachmentEventData) ParentRefs() []string {
 	refs := []string{"meeting:" + a.MeetingID}
 	if a.ProjectUID != "" {
 		refs = append(refs, "project:"+a.ProjectUID)
+	}
+	for _, c := range a.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
 	}
 	return refs
 }
