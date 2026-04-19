@@ -112,9 +112,9 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_id", attachmentData.MeetingID)
 
 	// Look up project UID and primary committee SFID from parent meeting.
-	// lookupProjectFromMeeting returns ("","",nil) both when the meeting record is missing
-	// and when the meeting has no proj_id, so we distinguish the two cases to decide
-	// whether to retry or permanently skip.
+	// lookupProjectFromMeeting returns ("","",nil) when the meeting record is missing.
+	// When the meeting exists but has no proj_id, projSFID is empty but primaryCommitteeSFID
+	// may still be populated — we distinguish the two proj_id cases to decide whether to retry.
 	projSFID, primaryCommitteeSFID, err := lookupProjectFromMeeting(ctx, attachmentData.MeetingID, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent meeting, will retry")
@@ -141,7 +141,12 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 		return false
 	}
 	attachmentData.ProjectUID = projectUID
-	attachmentData.Committees = resolveParentMeetingCommittees(ctx, attachmentData.MeetingID, primaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
+	committees, commErr := resolveParentMeetingCommittees(ctx, attachmentData.MeetingID, primaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
+	if commErr != nil {
+		funcLogger.With(logging.ErrKey, commErr).WarnContext(ctx, "transient error resolving parent committees for attachment, will retry")
+		return true
+	}
+	attachmentData.Committees = committees
 
 	// Look up project slug from the projects API via NATS.
 	// An empty slug (no error) means no slug could be resolved (project not found or has no slug) — proceed without it.

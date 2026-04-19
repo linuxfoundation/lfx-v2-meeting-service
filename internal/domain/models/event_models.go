@@ -663,7 +663,7 @@ type PastMeetingEventData struct {
 	Duration                 int                  `json:"duration"` // Actual duration in minutes
 	Timezone                 string               `json:"timezone"`
 	MeetingType              string               `json:"meeting_type,omitempty"`
-	Committees               []Committee          `json:"committees"`
+	Committees               []Committee          `json:"committees,omitempty"`
 	Visibility               string               `json:"visibility,omitempty"`
 	ArtifactVisibility       string               `json:"artifact_visibility,omitempty"`
 	Restricted               bool                 `json:"restricted"`
@@ -886,7 +886,7 @@ type RecordingEventData struct {
 	Sessions               []RecordingSession `json:"sessions"`
 	StartTime              time.Time          `json:"start_time"`
 	TotalSize              int64              `json:"total_size"`
-	Committees             []Committee        `json:"committees"`
+	Committees             []Committee        `json:"committees,omitempty"`
 	CreatedAt              time.Time          `json:"created_at"`
 	UpdatedAt              time.Time          `json:"updated_at"`
 	CreatedBy              CreatedBy          `json:"created_by"`
@@ -1000,7 +1000,7 @@ type TranscriptEventData struct {
 	Sessions               []RecordingSession `json:"sessions"`
 	StartTime              time.Time          `json:"start_time"`
 	TotalSize              int64              `json:"total_size"`
-	Committees             []Committee        `json:"committees"`
+	Committees             []Committee        `json:"committees,omitempty"`
 	CreatedAt              time.Time          `json:"created_at"`
 	UpdatedAt              time.Time          `json:"updated_at"`
 	CreatedBy              CreatedBy          `json:"created_by"`
@@ -1097,7 +1097,7 @@ type SummaryEventData struct {
 	Platform                string            `json:"platform"` // Always "Zoom"
 	ZoomConfig              SummaryZoomConfig `json:"zoom_config"`
 	EmailSent               bool              `json:"email_sent"`
-	Committees              []Committee       `json:"committees"`
+	Committees              []Committee       `json:"committees,omitempty"`
 	CreatedAt               time.Time         `json:"created_at"`
 	UpdatedAt               time.Time         `json:"updated_at"`
 	CreatedBy               CreatedBy         `json:"created_by"`
@@ -1196,7 +1196,7 @@ type MeetingAttachmentEventData struct {
 	FileContentType  string      `json:"file_content_type,omitempty"`
 	FileUploadedBy   *CreatedBy  `json:"file_uploaded_by,omitempty"`
 	FileUploadedAt   *time.Time  `json:"file_uploaded_at,omitempty"`
-	Committees       []Committee `json:"committees"`
+	Committees       []Committee `json:"committees,omitempty"`
 	CreatedAt        time.Time   `json:"created_at"`
 	ModifiedAt       time.Time   `json:"modified_at"`
 	CreatedBy        CreatedBy   `json:"created_by"`
@@ -1296,7 +1296,7 @@ type PastMeetingAttachmentEventData struct {
 	FileContentType        string      `json:"file_content_type,omitempty"`
 	FileUploadedBy         *CreatedBy  `json:"file_uploaded_by,omitempty"`
 	FileUploadedAt         *time.Time  `json:"file_uploaded_at,omitempty"`
-	Committees             []Committee `json:"committees"`
+	Committees             []Committee `json:"committees,omitempty"`
 	CreatedAt              time.Time   `json:"created_at"`
 	ModifiedAt             time.Time   `json:"modified_at"`
 	CreatedBy              CreatedBy   `json:"created_by"`
