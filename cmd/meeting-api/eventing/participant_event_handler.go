@@ -903,7 +903,7 @@ func resolveProjectFields(
 		return projectSFID, projectSlug, nil
 	}
 
-	sfid, slug, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
+	sfid, slug, _, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
 	}

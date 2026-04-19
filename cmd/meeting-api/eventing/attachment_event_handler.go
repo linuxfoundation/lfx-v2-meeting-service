@@ -336,10 +336,10 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_and_occurrence_id", attachmentData.MeetingAndOccurrenceID)
 
-	// Look up project info from the parent past meeting record.
-	// lookupProjectFromPastMeeting returns ("","",nil) for ErrKeyNotFound (permanent miss)
+	// Look up project info and primary committee SFID from the parent past meeting record.
+	// lookupProjectFromPastMeeting returns ("","","",nil) for ErrKeyNotFound (permanent miss)
 	// and a non-nil error for transient KV/decode failures.
-	projSFID, projectSlug, err := lookupProjectFromPastMeeting(ctx, attachmentData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
+	projSFID, projectSlug, primaryCommitteeSFID, err := lookupProjectFromPastMeeting(ctx, attachmentData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent past meeting, will retry")
 		return true
@@ -359,6 +359,13 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		return false
 	}
 	attachmentData.ProjectUID = projectUID
+
+	committees, commErr := resolveParentPastMeetingCommittees(ctx, attachmentData.MeetingAndOccurrenceID, primaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
+	if commErr != nil {
+		funcLogger.With(logging.ErrKey, commErr).WarnContext(ctx, "transient error resolving parent committees for attachment, will retry")
+		return true
+	}
+	attachmentData.Committees = committees
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_attachments.%s", attachmentData.UID)
