@@ -567,6 +567,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
 | `start_time` | string (RFC3339) | Recording start time |
 | `total_size` | int64 | Total size of all recording files in bytes |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
@@ -607,8 +608,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform:Zoom` | `platform:Zoom` | All recordings (platform is always Zoom) |
 | `platform_meeting_id:{value}` | `platform_meeting_id:93699735000` | Find recordings by Zoom meeting ID |
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find recordings by Zoom session UUID |
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find recordings by committee |
 
-> One `platform_meeting_instance_id` tag is emitted per session in `sessions`.
+> One `platform_meeting_instance_id` tag is emitted per session in `sessions`. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -633,6 +635,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -666,6 +670,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
 | `start_time` | string (RFC3339) | Transcript start time |
 | `total_size` | int64 | Total size in bytes |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
@@ -680,8 +685,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find transcripts for a past meeting |
 | `platform:Zoom` | `platform:Zoom` | All transcripts (platform is always Zoom) |
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find transcripts by Zoom session UUID |
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find transcripts by committee |
 
-> One `platform_meeting_instance_id` tag is emitted per session in `sessions`.
+> One `platform_meeting_instance_id` tag is emitted per session in `sessions`. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -706,6 +712,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -747,6 +755,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform` | string | Meeting platform (always `"Zoom"`) |
 | `zoom_config` | object | Zoom identifiers (has `meeting_id` string and `meeting_uuid` string) |
 | `email_sent` | bool | Whether a summary notification email has been sent |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
@@ -762,8 +771,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find summaries for a meeting |
 | `platform:Zoom` | `platform:Zoom` | All summaries (platform is always Zoom) |
 | `title:{value}` | `title:TSC Monthly Meeting` | Find summaries by Zoom meeting topic |
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find summaries by committee |
 
-> `title` tag uses `zoom_meeting_topic` and is only emitted when non-empty.
+> `title` tag uses `zoom_meeting_topic` and is only emitted when non-empty. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -788,6 +798,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -823,6 +835,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_content_type` | string (optional) | MIME content type |
 | `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
 | `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `committees` | []object (optional) | Associated committees sourced from the parent meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `modified_at` | string (RFC3339) | Last modification time |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
@@ -837,8 +850,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
 | `project_slug:{value}` | `project_slug:cncf` | Find attachments by project slug |
 | `type:{value}` | `type:file` | Find attachments by type |
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find attachments by committee |
 
-> `project_uid`, `project_slug`, and `type` tags are only emitted when non-empty. `project_slug` is resolved at event-processing time via the `lfx.projects-api.get_slug` NATS subject.
+> `project_uid`, `project_slug`, `type`, and `committee_uid` tags are only emitted when non-empty. `project_slug` is resolved at event-processing time via the `lfx.projects-api.get_slug` NATS subject. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -864,6 +878,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|
 | `meeting:{meeting_id}` | Always set |
 | `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -900,6 +915,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_content_type` | string (optional) | MIME content type |
 | `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
 | `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `modified_at` | string (RFC3339) | Last modification time |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
@@ -915,8 +931,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
 | `project_slug:{value}` | `project_slug:my-project` | Find attachments by project slug |
 | `type:{value}` | `type:link` | Find attachments by type |
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find attachments by committee |
 
-> `project_uid`, `project_slug`, and `type` tags are only emitted when non-empty.
+> `project_uid`, `project_slug`, `type`, and `committee_uid` tags are only emitted when non-empty. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -942,3 +959,4 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
 | `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |

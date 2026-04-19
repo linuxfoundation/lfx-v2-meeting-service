@@ -613,6 +613,37 @@ func getCommitteesForPastMeeting(
 	return committees, nil
 }
 
+// resolveParentPastMeetingCommittees returns the fully-resolved committee list for a past meeting,
+// matching the shape PastMeetingEventData.Committees is populated with. Combines the v1-mappings KV
+// lookup with the primary-committee fallback from the past-meeting row itself.
+func resolveParentPastMeetingCommittees(
+	ctx context.Context,
+	meetingAndOccurrenceID string,
+	primaryCommitteeSFID string,
+	idMapper domain.IDMapper,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) ([]models.Committee, error) {
+	committees, err := getCommitteesForPastMeeting(ctx, meetingAndOccurrenceID, idMapper, mappingsKV, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(committees) == 0 && primaryCommitteeSFID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, primaryCommitteeSFID)
+		if mapErr != nil {
+			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
+				return nil, fmt.Errorf("failed to map primary committee ID for parent past meeting (transient): %w", mapErr)
+			}
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "primary committee mapping not found for parent past meeting", "v1_id", primaryCommitteeSFID)
+		} else if uid != "" {
+			committees = []models.Committee{{UID: uid}}
+		}
+	}
+
+	return committees, nil
+}
+
 func updatePastMeetingCommitteeMappings(
 	ctx context.Context,
 	pastMeetingUUID string,

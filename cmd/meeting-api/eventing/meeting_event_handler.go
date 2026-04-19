@@ -754,7 +754,10 @@ func convertMapToMeetingData(
 	}
 	meeting.ProjectUID = projectUID
 
-	committees := getCommitteesForMeeting(ctx, rawMeeting.MeetingID, idMapper, mappingsKV, logger)
+	committees, err := getCommitteesForMeeting(ctx, rawMeeting.MeetingID, idMapper, mappingsKV, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch committee mappings (transient): %w", err)
+	}
 	meeting.Committees = committees
 
 	// Map the primary committee v1 ID to v2 UID
@@ -986,23 +989,24 @@ func getCommitteesForMeeting(
 	idMapper domain.IDMapper,
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
-) []models.Committee {
+) ([]models.Committee, error) {
 	key := fmt.Sprintf("v1-mappings.meeting-mappings.%s", meetingID)
 	entry, err := mappingsKV.Get(ctx, key)
 	if err != nil {
 		if !errors.Is(err, jetstream.ErrKeyNotFound) {
 			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load meeting committee mappings", "key", key)
+			return nil, fmt.Errorf("failed to load meeting committee mappings: %w", err)
 		}
-		return nil
+		return nil, nil
 	}
 	if string(entry.Value()) == tombstoneMarker {
-		return nil
+		return nil, nil
 	}
 
 	var mappings map[string]map[string]interface{}
 	if err := json.Unmarshal(entry.Value(), &mappings); err != nil {
 		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to unmarshal committee mappings")
-		return nil
+		return nil, nil
 	}
 
 	committees := make([]models.Committee, 0, len(mappings))
@@ -1023,7 +1027,36 @@ func getCommitteesForMeeting(
 		}
 	}
 
-	return committees
+	return committees, nil
+}
+
+// resolveParentMeetingCommittees returns the fully-resolved committee list for an active meeting,
+// matching the shape MeetingEventData.Committees is populated with. Combines the v1-mappings KV
+// lookup with the primary-committee fallback from the meeting row itself.
+func resolveParentMeetingCommittees(
+	ctx context.Context,
+	meetingID string,
+	primaryCommitteeSFID string,
+	idMapper domain.IDMapper,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) ([]models.Committee, error) {
+	committees, err := getCommitteesForMeeting(ctx, meetingID, idMapper, mappingsKV, logger)
+	if err != nil {
+		return nil, err
+	}
+	if len(committees) == 0 && primaryCommitteeSFID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, primaryCommitteeSFID)
+		if mapErr != nil {
+			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
+				return nil, fmt.Errorf("failed to map primary committee ID for parent meeting (transient): %w", mapErr)
+			}
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "primary committee mapping not found for parent meeting", "v1_id", primaryCommitteeSFID)
+		} else if uid != "" {
+			committees = []models.Committee{{UID: uid}}
+		}
+	}
+	return committees, nil
 }
 
 func updateCommitteeMappings(

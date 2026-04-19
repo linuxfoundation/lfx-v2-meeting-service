@@ -201,6 +201,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		aiSummaryAccess = access
 	}
 	projSFID := utils.GetString(pastMeetingData["proj_id"])
+	primaryCommitteeSFID := utils.GetString(pastMeetingData["committee"])
 	summaryData.ProjectSlug = utils.GetString(pastMeetingData["project_slug"])
 	if projSFID != "" {
 		projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
@@ -216,6 +217,13 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		funcLogger.WarnContext(ctx, "skipping summary: project not yet in v2")
 		return false
 	}
+
+	committees, commErr := resolveParentPastMeetingCommittees(ctx, summaryData.MeetingAndOccurrenceID, primaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
+	if commErr != nil {
+		funcLogger.With(logging.ErrKey, commErr).WarnContext(ctx, "transient error resolving parent committees for summary, will retry")
+		return true
+	}
+	summaryData.Committees = committees
 
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData, aiSummaryAccess); err != nil {
