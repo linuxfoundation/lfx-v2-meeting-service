@@ -4,6 +4,8 @@ This document is the authoritative reference for all data the meeting service se
 
 **Update this document in the same PR as any change to indexer message construction.**
 
+**Convention:** Tags and parent refs containing a `{value}` placeholder are only emitted when the corresponding field is non-empty.
+
 ---
 
 ## Resource Types

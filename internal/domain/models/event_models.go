@@ -385,9 +385,15 @@ func (m *MeetingEventData) Tags() []string {
 	if m.MeetingType != "" {
 		tags = append(tags, "meeting_type:"+m.MeetingType)
 	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
 	for _, c := range m.Committees {
-		if c.UID != "" {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
 			tags = append(tags, "committee_uid:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
 		}
 	}
 	return tags
@@ -399,9 +405,15 @@ func (m *MeetingEventData) ParentRefs() []string {
 	if m.ProjectUID != "" {
 		refs = append(refs, "project:"+m.ProjectUID)
 	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		refs = append(refs, "committee:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
 	for _, c := range m.Committees {
-		if c.UID != "" {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
 			refs = append(refs, "committee:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
 		}
 	}
 	return refs
@@ -775,9 +787,15 @@ func (m *PastMeetingEventData) Tags() []string {
 	if m.Timezone != "" {
 		tags = append(tags, "timezone:"+m.Timezone)
 	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
 	for _, c := range m.Committees {
-		if c.UID != "" {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
 			tags = append(tags, "committee_uid:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
 		}
 	}
 	return tags
@@ -789,9 +807,15 @@ func (m *PastMeetingEventData) ParentRefs() []string {
 	if m.ProjectUID != "" {
 		refs = append(refs, "project:"+m.ProjectUID)
 	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		refs = append(refs, "committee:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
 	for _, c := range m.Committees {
-		if c.UID != "" {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
 			refs = append(refs, "committee:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
 		}
 	}
 	return refs
