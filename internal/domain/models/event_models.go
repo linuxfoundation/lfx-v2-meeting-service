@@ -804,6 +804,7 @@ type PastMeetingParticipantEventData struct {
 	MeetingID              string               `json:"meeting_id"`
 	ProjectUID             string               `json:"project_uid"`
 	ProjectSlug            string               `json:"project_slug,omitempty"`
+	CommitteeUID           string               `json:"committee_uid,omitempty"`
 	Email                  string               `json:"email"`
 	FirstName              string               `json:"first_name"`
 	LastName               string               `json:"last_name"`
@@ -867,6 +868,9 @@ func (p *PastMeetingParticipantEventData) Tags() []string {
 	if p.ProjectUID != "" {
 		tags = append(tags, "project_uid:"+p.ProjectUID)
 	}
+	if p.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+p.CommitteeUID)
+	}
 	if p.ProjectSlug != "" {
 		tags = append(tags, "project_slug:"+p.ProjectSlug)
 	}
@@ -893,6 +897,9 @@ func (p *PastMeetingParticipantEventData) ParentRefs() []string {
 	}
 	if p.ProjectUID != "" {
 		refs = append(refs, "project:"+p.ProjectUID)
+	}
+	if p.CommitteeUID != "" {
+		refs = append(refs, "committee:"+p.CommitteeUID)
 	}
 	return refs
 }

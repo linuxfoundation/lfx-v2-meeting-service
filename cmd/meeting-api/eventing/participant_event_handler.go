@@ -695,6 +695,21 @@ func convertMapToInviteeParticipantData(
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
+	// Map the invitee's own committee_id to a v2 UID. Only set when the invitee record carries a
+	// committee_id — a missing mapping is non-fatal.
+	var committeeUID string
+	if rawInvitee.CommitteeID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawInvitee.CommitteeID)
+		if mapErr != nil {
+			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
+				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
+			}
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for invitee", "v1_id", rawInvitee.CommitteeID)
+		} else {
+			committeeUID = uid
+		}
+	}
+
 	// Determine if host (lookup registrant if available)
 	isHost := false
 	if rawInvitee.RegistrantID != "" {
@@ -748,6 +763,7 @@ func convertMapToInviteeParticipantData(
 		MeetingID:              rawInvitee.MeetingID,
 		ProjectUID:             projectUID,
 		ProjectSlug:            projectSlug,
+		CommitteeUID:           committeeUID,
 		Email:                  rawInvitee.Email,
 		FirstName:              firstName,
 		LastName:               lastName,
@@ -805,6 +821,21 @@ func convertMapToAttendeeParticipantData(
 	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	}
+
+	// Map the attendee's own committee_id to a v2 UID. Only set when the attendee record carries a
+	// committee_id — a missing mapping is non-fatal.
+	var committeeUID string
+	if rawAttendee.CommitteeID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawAttendee.CommitteeID)
+		if mapErr != nil {
+			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
+				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
+			}
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for attendee", "v1_id", rawAttendee.CommitteeID)
+		} else {
+			committeeUID = uid
+		}
 	}
 
 	// Check if this user was also invited (registrant_id present)
@@ -867,6 +898,7 @@ func convertMapToAttendeeParticipantData(
 		MeetingID:              rawAttendee.MeetingID,
 		ProjectUID:             projectUID,
 		ProjectSlug:            projectSlug,
+		CommitteeUID:           committeeUID,
 		Email:                  rawAttendee.Email,
 		FirstName:              firstName,
 		LastName:               lastName,
