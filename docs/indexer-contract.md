@@ -171,8 +171,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `title:{value}` | `title:TSC Monthly Meeting` | Find meetings by title |
 | `visibility:{value}` | `visibility:public` | Find meetings by visibility |
 | `meeting_type:{value}` | `meeting_type:recurring` | Find meetings by type |
-
-> `visibility` and `meeting_type` tags are only emitted when the value is non-empty.
+| `committee_uid:{value}` | `committee_uid:061a110a-...` | Find meetings by committee |
 
 ### Access Control (IndexingConfig)
 
@@ -196,7 +195,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `project:{project_uid}` | Always set |
+| `project:{project_uid}` | Only when `project_uid` is non-empty |
 | `committee:{uid}` | For each entry in `committees` with a non-empty `uid` |
 
 ---
@@ -251,11 +250,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Tag Format | Example | Purpose |
 |---|---|---|
 | `registrant_uid:{uid}` | `registrant_uid:a1b2c3d4-...` | Lookup by registrant UID |
+| `committee_uid:{value}` | `committee_uid:061a110a-...` | Find registrants by committee |
 | `username:{value}` | `username:jdoe` | Find registrants by username |
 | `email:{value}` | `email:jdoe@example.com` | Find registrants by email |
 | `host:true` | `host:true` | Find registrants who are hosts |
-
-> `username` and `email` tags are only emitted when non-empty. `host:true` is only emitted when `host` is `true`.
 
 ### Access Control (IndexingConfig)
 
@@ -279,7 +277,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `meeting:{meeting_id}` | Always set |
+| `meeting:{meeting_id}` | Only when `meeting_id` is non-empty |
 | `committee:{committee_uid}` | Only when `committee_uid` is non-empty |
 
 ---
@@ -328,8 +326,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `email:{value}` | `email:jdoe@example.com` | Find RSVPs by email |
 | `username:{value}` | `username:jdoe` | Find RSVPs by username |
 
-> `username` is only emitted when non-empty.
-
 ### Access Control (IndexingConfig)
 
 | Field | Value |
@@ -352,7 +348,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `meeting:{meeting_id}` | Always set |
+| `meeting:{meeting_id}` | Only when `meeting_id` is non-empty |
 
 ---
 
@@ -423,8 +419,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `timezone:{value}` | `timezone:America/Los_Angeles` | Find past meetings by timezone |
 | `committee_uid:{value}` | `committee_uid:061a110a-...` | Find past meetings for a committee |
 
-> `timezone` is only emitted when non-empty. One `committee_uid` tag is emitted per committee in `committees` with a non-empty `uid`.
-
 ### Access Control (IndexingConfig)
 
 | Field | Value |
@@ -447,7 +441,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `project:{project_uid}` | Always set |
+| `project:{project_uid}` | Only when `project_uid` is non-empty |
 | `committee:{uid}` | For each entry in `committees` with a non-empty `uid` |
 
 ---
@@ -505,8 +499,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `is_invited:true` | `is_invited:true` | Find invited participants |
 | `is_attended:true` | `is_attended:true` | Find attendees |
 
-> `project_slug`, `username`, and `email` tags are only emitted when non-empty. `is_invited:true` and `is_attended:true` are only emitted when the corresponding flag is `true`.
-
 ### Access Control (IndexingConfig)
 
 | Field | Value |
@@ -529,7 +521,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `past_meeting:{meeting_and_occurrence_id}` | Only when `meeting_and_occurrence_id` is non-empty |
+| `project:{project_uid}` | Only when `project_uid` is non-empty |
 
 ---
 
@@ -610,8 +603,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find recordings by Zoom session UUID |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find recordings by committee |
 
-> One `platform_meeting_instance_id` tag is emitted per session in `sessions`. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
-
 ### Access Control (IndexingConfig)
 
 | Field | Value |
@@ -687,8 +678,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find transcripts by Zoom session UUID |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find transcripts by committee |
 
-> One `platform_meeting_instance_id` tag is emitted per session in `sessions`. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
-
 ### Access Control (IndexingConfig)
 
 | Field | Value |
@@ -726,8 +715,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 **Source struct:** `internal/domain/models/event_models.go` — `SummaryEventData`
 
 **Indexed on:** create, update, delete of an AI-generated past meeting summary.
-
-> The `public` flag is derived from the **parent past meeting's** `ai_summary_access` field, not from a field on the summary itself.
 
 ### Data Schema
 
@@ -772,8 +759,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform:Zoom` | `platform:Zoom` | All summaries (platform is always Zoom) |
 | `title:{value}` | `title:TSC Monthly Meeting` | Find summaries by Zoom meeting topic |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find summaries by committee |
-
-> `title` tag uses `zoom_meeting_topic` and is only emitted when non-empty. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -851,8 +836,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `project_slug:{value}` | `project_slug:cncf` | Find attachments by project slug |
 | `type:{value}` | `type:file` | Find attachments by type |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find attachments by committee |
-
-> `project_uid`, `project_slug`, `type`, and `committee_uid` tags are only emitted when non-empty. `project_slug` is resolved at event-processing time via the `lfx.projects-api.get_slug` NATS subject. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
@@ -932,8 +915,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `project_slug:{value}` | `project_slug:my-project` | Find attachments by project slug |
 | `type:{value}` | `type:link` | Find attachments by type |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find attachments by committee |
-
-> `project_uid`, `project_slug`, `type`, and `committee_uid` tags are only emitted when non-empty. One `committee_uid` tag is emitted per entry in `committees` with a non-empty `uid`.
 
 ### Access Control (IndexingConfig)
 
