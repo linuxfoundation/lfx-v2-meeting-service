@@ -483,6 +483,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `zoom_user_name` | string | Zoom display name of the attendee (attendee records only; `""` for invitee-only records) |
 | `mapped_invitee_name` | string | Full name of the invitee the attendee was auto-matched to (attendee records only; `""` for invitee-only records) |
 | `sessions` | []object (optional) | Join/leave sessions (each has `uid`, `join_time`, `leave_time`, `leave_reason`) |
+| `committee_uid` | string (optional) | v2 UUID of the committee the participant is associated with; sourced from the participant's own `committee_id` field |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 
@@ -494,6 +495,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find participants for a past meeting |
 | `project_uid:{value}` | `project_uid:cbef1ed5-...` | Find participants for a project |
 | `project_slug:{value}` | `project_slug:my-project` | Find participants by project slug |
+| `committee_uid:{value}` | `committee_uid:061a110a-...` | Find participants by committee |
 | `username:{value}` | `username:jdoe` | Find participants by username |
 | `email:{value}` | `email:jdoe@example.com` | Find participants by email |
 | `is_invited:true` | `is_invited:true` | Find invited participants |
@@ -523,6 +525,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Only when `meeting_and_occurrence_id` is non-empty |
 | `project:{project_uid}` | Only when `project_uid` is non-empty |
+| `committee:{committee_uid}` | Only when `committee_uid` is non-empty |
 
 ---
 
