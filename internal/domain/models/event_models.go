@@ -372,8 +372,12 @@ func (m *MeetingEventData) Tags() []string {
 	tags := []string{
 		m.ID,
 		"meeting_id:" + m.ID,
-		"project_uid:" + m.ProjectUID,
-		"title:" + m.Title,
+	}
+	if m.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+m.ProjectUID)
+	}
+	if m.Title != "" {
+		tags = append(tags, "title:"+m.Title)
 	}
 	if m.Visibility != "" {
 		tags = append(tags, "visibility:"+m.Visibility)
@@ -381,12 +385,20 @@ func (m *MeetingEventData) Tags() []string {
 	if m.MeetingType != "" {
 		tags = append(tags, "meeting_type:"+m.MeetingType)
 	}
+	for _, c := range m.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
+	}
 	return tags
 }
 
 // ParentRefs returns the indexer parent references for this meeting.
 func (m *MeetingEventData) ParentRefs() []string {
-	refs := []string{"project:" + m.ProjectUID}
+	var refs []string
+	if m.ProjectUID != "" {
+		refs = append(refs, "project:"+m.ProjectUID)
+	}
 	for _, c := range m.Committees {
 		if c.UID != "" {
 			refs = append(refs, "committee:"+c.UID)
@@ -549,6 +561,9 @@ func (r *RegistrantEventData) FullText() string {
 // Tags returns the indexer tags for this registrant.
 func (r *RegistrantEventData) Tags() []string {
 	tags := []string{"registrant_uid:" + r.UID}
+	if r.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+r.CommitteeUID)
+	}
 	if r.Username != "" {
 		tags = append(tags, "username:"+r.Username)
 	}
@@ -563,7 +578,10 @@ func (r *RegistrantEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this registrant.
 func (r *RegistrantEventData) ParentRefs() []string {
-	refs := []string{"meeting:" + r.MeetingID}
+	var refs []string
+	if r.MeetingID != "" {
+		refs = append(refs, "meeting:"+r.MeetingID)
+	}
 	if r.CommitteeUID != "" {
 		refs = append(refs, "committee:"+r.CommitteeUID)
 	}
@@ -628,10 +646,18 @@ func (r *InviteResponseEventData) Tags() []string {
 	tags := []string{
 		r.ID,
 		"invite_response_uid:" + r.ID,
-		"meeting_and_occurrence_id:" + r.MeetingAndOccurrenceID,
-		"meeting_id:" + r.MeetingID,
-		"registrant_uid:" + r.RegistrantID,
-		"email:" + r.Email,
+	}
+	if r.MeetingAndOccurrenceID != "" {
+		tags = append(tags, "meeting_and_occurrence_id:"+r.MeetingAndOccurrenceID)
+	}
+	if r.MeetingID != "" {
+		tags = append(tags, "meeting_id:"+r.MeetingID)
+	}
+	if r.RegistrantID != "" {
+		tags = append(tags, "registrant_uid:"+r.RegistrantID)
+	}
+	if r.Email != "" {
+		tags = append(tags, "email:"+r.Email)
 	}
 	if r.Username != "" {
 		tags = append(tags, "username:"+r.Username)
@@ -641,7 +667,10 @@ func (r *InviteResponseEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this invite response.
 func (r *InviteResponseEventData) ParentRefs() []string {
-	return []string{"meeting:" + r.MeetingID}
+	if r.MeetingID != "" {
+		return []string{"meeting:" + r.MeetingID}
+	}
+	return nil
 }
 
 // PastMeetingEventData represents a past meeting event for indexing and access control
@@ -730,9 +759,15 @@ func (m *PastMeetingEventData) FullText() string {
 func (m *PastMeetingEventData) Tags() []string {
 	tags := []string{
 		"past_meeting_id:" + m.ID,
-		"meeting_id:" + m.MeetingID,
-		"project_uid:" + m.ProjectUID,
-		"title:" + m.Title,
+	}
+	if m.MeetingID != "" {
+		tags = append(tags, "meeting_id:"+m.MeetingID)
+	}
+	if m.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+m.ProjectUID)
+	}
+	if m.Title != "" {
+		tags = append(tags, "title:"+m.Title)
 	}
 	if m.ProjectSlug != "" {
 		tags = append(tags, "project_slug:"+m.ProjectSlug)
@@ -750,7 +785,10 @@ func (m *PastMeetingEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this past meeting.
 func (m *PastMeetingEventData) ParentRefs() []string {
-	refs := []string{"project:" + m.ProjectUID}
+	var refs []string
+	if m.ProjectUID != "" {
+		refs = append(refs, "project:"+m.ProjectUID)
+	}
 	for _, c := range m.Committees {
 		if c.UID != "" {
 			refs = append(refs, "committee:"+c.UID)
@@ -849,7 +887,10 @@ func (p *PastMeetingParticipantEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this past meeting participant.
 func (p *PastMeetingParticipantEventData) ParentRefs() []string {
-	refs := []string{"past_meeting:" + p.MeetingAndOccurrenceID}
+	var refs []string
+	if p.MeetingAndOccurrenceID != "" {
+		refs = append(refs, "past_meeting:"+p.MeetingAndOccurrenceID)
+	}
 	if p.ProjectUID != "" {
 		refs = append(refs, "project:"+p.ProjectUID)
 	}
