@@ -738,9 +738,12 @@ type PastMeetingSession struct {
 	EndTime   time.Time `json:"end_time"`
 }
 
-// SortName returns the primary sort name for this past meeting.
+// SortName returns the scheduled start time in RFC3339 format for chronological sorting.
 func (m *PastMeetingEventData) SortName() string {
-	return strings.TrimSpace(m.Title)
+	if m.StartTime.IsZero() {
+		return ""
+	}
+	return m.StartTime.UTC().Format(time.RFC3339)
 }
 
 // NameAndAliases returns the searchable name aliases for this past meeting.
