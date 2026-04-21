@@ -25,6 +25,8 @@
 //	           v1_past_meeting_attachment
 //	-reindex Actually re-put KV entries and trigger reindexing (default: false,
 //	         logs what would be re-put without making any changes)
+//	-workers    Number of concurrent KV Get+Put workers per page (default: 3)
+//	-page-size  Number of documents to fetch per OpenSearch scroll page (default: 200)
 //
 // Environment variables:
 //
@@ -45,6 +47,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -96,6 +99,8 @@ type osScrollResponse struct {
 func main() {
 	typesFlag := flag.String("types", "", "comma-separated list of object types to reindex (required)")
 	reindex := flag.Bool("reindex", false, "actually re-put KV entries and trigger reindexing (default: logs only)")
+	workers := flag.Int("workers", 3, "number of concurrent KV Get+Put workers per page")
+	pageSize := flag.Int("page-size", scrollPageSize, "number of documents to fetch per OpenSearch scroll page")
 	flag.Parse()
 
 	osURL := os.Getenv("OPENSEARCH_URL")
@@ -144,12 +149,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	exitCode := run(ctx, nc, natsURL, osURL, requestedTypes, *reindex)
+	exitCode := run(ctx, nc, natsURL, osURL, requestedTypes, *reindex, *workers, *pageSize)
 	nc.Close()
 	os.Exit(exitCode)
 }
 
-func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []string, reindex bool) int {
+func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []string, reindex bool, workers, pageSize int) int {
 	js, err := jetstream.New(nc)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create JetStream context", "error", err)
@@ -178,7 +183,7 @@ func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []s
 
 		slog.InfoContext(ctx, "processing object type", "object_type", objectType)
 
-		processed, failed, skipped, notFound, err := reindexType(ctx, httpClient, kv, kvMappings, osURL, objectType, prefixes, reindex)
+		processed, failed, skipped, notFound, err := reindexType(ctx, httpClient, kv, kvMappings, osURL, objectType, prefixes, reindex, workers, pageSize)
 		if err != nil {
 			slog.ErrorContext(ctx, "fatal error processing type", "object_type", objectType, "error", err)
 			return 1
@@ -222,8 +227,10 @@ func reindexType(
 	osURL, objectType string,
 	kvPrefixes []string,
 	reindex bool,
+	workers int,
+	pageSize int,
 ) (processed, failed, skipped, notFound int, err error) {
-	scrollID, firstPage, err := openScroll(ctx, httpClient, osURL, objectType, scrollPageSize)
+	scrollID, firstPage, err := openScroll(ctx, httpClient, osURL, objectType, pageSize)
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("open scroll: %w", err)
 	}
@@ -235,13 +242,19 @@ func reindexType(
 
 	isParticipant := objectType == "v1_past_meeting_participant"
 
+	sem := make(chan struct{}, workers)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
 	page := firstPage
 	for len(page) > 0 {
 
 		for _, hit := range page {
 			id := hit.Source.ObjectID
 			if id == "" {
+				mu.Lock()
 				skipped++
+				mu.Unlock()
 				continue
 			}
 
@@ -250,7 +263,9 @@ func reindexType(
 				kvKeys = resolveParticipantKeys(ctx, kvMappings, hit)
 				if len(kvKeys) == 0 {
 					slog.WarnContext(ctx, "skipping participant: no participant KV keys resolved", "object_id", id)
+					mu.Lock()
 					skipped++
+					mu.Unlock()
 					continue
 				}
 			} else {
@@ -260,33 +275,52 @@ func reindexType(
 			}
 
 			for _, kvKey := range kvKeys {
+				kvKey := kvKey
 				if !reindex {
 					slog.InfoContext(ctx, "[dry-run] would re-put", "key", kvKey)
+					mu.Lock()
 					processed++
+					mu.Unlock()
 					continue
 				}
 
-				entry, getErr := kv.Get(ctx, kvKey)
-				if getErr != nil {
-					if errors.Is(getErr, jetstream.ErrKeyNotFound) {
-						slog.WarnContext(ctx, "key not found in KV bucket", "key", kvKey)
-						notFound++
-						continue
+				sem <- struct{}{}
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					defer func() { <-sem }()
+
+					entry, getErr := kv.Get(ctx, kvKey)
+					if getErr != nil {
+						if errors.Is(getErr, jetstream.ErrKeyNotFound) {
+							slog.WarnContext(ctx, "key not found in KV bucket", "key", kvKey)
+							mu.Lock()
+							notFound++
+							mu.Unlock()
+							return
+						}
+						slog.ErrorContext(ctx, "failed to get KV entry", "key", kvKey, "error", getErr)
+						mu.Lock()
+						failed++
+						mu.Unlock()
+						return
 					}
-					slog.ErrorContext(ctx, "failed to get KV entry", "key", kvKey, "error", getErr)
-					failed++
-					continue
-				}
 
-				if _, putErr := kv.Put(ctx, kvKey, entry.Value()); putErr != nil {
-					slog.ErrorContext(ctx, "failed to re-put KV entry", "key", kvKey, "error", putErr)
-					failed++
-					continue
-				}
+					if _, putErr := kv.Put(ctx, kvKey, entry.Value()); putErr != nil {
+						slog.ErrorContext(ctx, "failed to re-put KV entry", "key", kvKey, "error", putErr)
+						mu.Lock()
+						failed++
+						mu.Unlock()
+						return
+					}
 
-				processed++
+					mu.Lock()
+					processed++
+					mu.Unlock()
+				}()
 			}
 		}
+		wg.Wait()
 
 		slog.InfoContext(ctx, "progress",
 			"object_type", objectType,
