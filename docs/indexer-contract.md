@@ -435,7 +435,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Field | Value |
 |---|---|
-| `sort_name` | `title` (trimmed) |
+| `sort_name` | `start_time` formatted as RFC3339 (UTC); empty string when `start_time` is zero |
 | `name_and_aliases` | `[title]` (omitted when empty) |
 | `fulltext` | `title` + `description` (space-joined, deduplicated, omits empty values) |
 
