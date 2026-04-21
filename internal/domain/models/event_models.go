@@ -758,7 +758,7 @@ func (m *PastMeetingEventData) NameAndAliases() []string {
 func (m *PastMeetingEventData) FullText() string {
 	seen := make(map[string]bool)
 	var parts []string
-	for _, v := range append([]string{m.SortName()}, m.NameAndAliases()...) {
+	for _, v := range m.NameAndAliases() {
 		if v != "" && !seen[v] {
 			parts = append(parts, v)
 			seen[v] = true
