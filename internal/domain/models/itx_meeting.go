@@ -22,24 +22,25 @@ type UpdatePastMeetingParticipant struct {
 
 // CreateITXMeetingRequest represents a domain request to create a meeting via ITX proxy
 type CreateITXMeetingRequest struct {
-	ID                   string // Meeting ID (only used for updates - must match URL path)
-	ProjectUID           string
-	Title                string
-	StartTime            string // RFC3339 format
-	Duration             int
-	Timezone             string
-	Visibility           itx.MeetingVisibility
-	Description          string
-	Restricted           bool
-	Committees           []Committee
-	MeetingType          itx.MeetingType
-	EarlyJoinTimeMinutes int
-	RecordingEnabled     bool
-	TranscriptEnabled    bool
-	YoutubeUploadEnabled bool
-	AISummaryEnabled     bool
-	ArtifactVisibility   itx.ArtifactAccess
-	Recurrence           *ITXRecurrence
+	ID                       string // Meeting ID (only used for updates - must match URL path)
+	ProjectUID               string
+	Title                    string
+	StartTime                string // RFC3339 format
+	Duration                 int
+	Timezone                 string
+	Visibility               itx.MeetingVisibility
+	Description              string
+	Restricted               bool
+	Committees               []Committee
+	MeetingType              itx.MeetingType
+	EarlyJoinTimeMinutes     int
+	RecordingEnabled         bool
+	TranscriptEnabled        bool
+	YoutubeUploadEnabled     bool
+	AISummaryEnabled         bool
+	RequireAISummaryApproval bool
+	ArtifactVisibility       itx.ArtifactAccess
+	Recurrence               *ITXRecurrence
 }
 
 // ITXRecurrence represents recurrence for ITX requests (with string EndDateTime)

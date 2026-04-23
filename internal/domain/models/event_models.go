@@ -330,6 +330,12 @@ type MeetingEventData struct {
 
 	// Organizers is the list of usernames (Auth0 sub format) that are organizers of the meeting.
 	Organizers []string `json:"organizers"`
+
+	// AutoEmailReminderEnabled indicates whether automatic email reminders are enabled for the meeting.
+	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled"`
+
+	// AutoEmailReminderTime is the time in minutes before the meeting start time that the reminder email is sent.
+	AutoEmailReminderTime int `json:"auto_email_reminder_time"`
 }
 
 // SortName returns the primary sort name for this meeting.
@@ -366,8 +372,12 @@ func (m *MeetingEventData) Tags() []string {
 	tags := []string{
 		m.ID,
 		"meeting_id:" + m.ID,
-		"project_uid:" + m.ProjectUID,
-		"title:" + m.Title,
+	}
+	if m.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+m.ProjectUID)
+	}
+	if m.Title != "" {
+		tags = append(tags, "title:"+m.Title)
 	}
 	if m.Visibility != "" {
 		tags = append(tags, "visibility:"+m.Visibility)
@@ -375,15 +385,35 @@ func (m *MeetingEventData) Tags() []string {
 	if m.MeetingType != "" {
 		tags = append(tags, "meeting_type:"+m.MeetingType)
 	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
+	for _, c := range m.Committees {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
+			tags = append(tags, "committee_uid:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
+		}
+	}
 	return tags
 }
 
 // ParentRefs returns the indexer parent references for this meeting.
 func (m *MeetingEventData) ParentRefs() []string {
-	refs := []string{"project:" + m.ProjectUID}
+	var refs []string
+	if m.ProjectUID != "" {
+		refs = append(refs, "project:"+m.ProjectUID)
+	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		refs = append(refs, "committee:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
 	for _, c := range m.Committees {
-		if c.UID != "" {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
 			refs = append(refs, "committee:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
 		}
 	}
 	return refs
@@ -543,6 +573,9 @@ func (r *RegistrantEventData) FullText() string {
 // Tags returns the indexer tags for this registrant.
 func (r *RegistrantEventData) Tags() []string {
 	tags := []string{"registrant_uid:" + r.UID}
+	if r.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+r.CommitteeUID)
+	}
 	if r.Username != "" {
 		tags = append(tags, "username:"+r.Username)
 	}
@@ -557,7 +590,10 @@ func (r *RegistrantEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this registrant.
 func (r *RegistrantEventData) ParentRefs() []string {
-	refs := []string{"meeting:" + r.MeetingID}
+	var refs []string
+	if r.MeetingID != "" {
+		refs = append(refs, "meeting:"+r.MeetingID)
+	}
 	if r.CommitteeUID != "" {
 		refs = append(refs, "committee:"+r.CommitteeUID)
 	}
@@ -622,10 +658,18 @@ func (r *InviteResponseEventData) Tags() []string {
 	tags := []string{
 		r.ID,
 		"invite_response_uid:" + r.ID,
-		"meeting_and_occurrence_id:" + r.MeetingAndOccurrenceID,
-		"meeting_id:" + r.MeetingID,
-		"registrant_uid:" + r.RegistrantID,
-		"email:" + r.Email,
+	}
+	if r.MeetingAndOccurrenceID != "" {
+		tags = append(tags, "meeting_and_occurrence_id:"+r.MeetingAndOccurrenceID)
+	}
+	if r.MeetingID != "" {
+		tags = append(tags, "meeting_id:"+r.MeetingID)
+	}
+	if r.RegistrantID != "" {
+		tags = append(tags, "registrant_uid:"+r.RegistrantID)
+	}
+	if r.Email != "" {
+		tags = append(tags, "email:"+r.Email)
 	}
 	if r.Username != "" {
 		tags = append(tags, "username:"+r.Username)
@@ -635,7 +679,10 @@ func (r *InviteResponseEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this invite response.
 func (r *InviteResponseEventData) ParentRefs() []string {
-	return []string{"meeting:" + r.MeetingID}
+	if r.MeetingID != "" {
+		return []string{"meeting:" + r.MeetingID}
+	}
+	return nil
 }
 
 // PastMeetingEventData represents a past meeting event for indexing and access control
@@ -657,7 +704,7 @@ type PastMeetingEventData struct {
 	Duration                 int                  `json:"duration"` // Actual duration in minutes
 	Timezone                 string               `json:"timezone"`
 	MeetingType              string               `json:"meeting_type,omitempty"`
-	Committees               []Committee          `json:"committees"`
+	Committees               []Committee          `json:"committees,omitempty"`
 	Visibility               string               `json:"visibility,omitempty"`
 	ArtifactVisibility       string               `json:"artifact_visibility,omitempty"`
 	Restricted               bool                 `json:"restricted"`
@@ -691,9 +738,12 @@ type PastMeetingSession struct {
 	EndTime   time.Time `json:"end_time"`
 }
 
-// SortName returns the primary sort name for this past meeting.
+// SortName returns the scheduled start time in RFC3339 format for chronological sorting.
 func (m *PastMeetingEventData) SortName() string {
-	return strings.TrimSpace(m.Title)
+	if m.StartTime.IsZero() {
+		return ""
+	}
+	return m.StartTime.UTC().Format(time.RFC3339)
 }
 
 // NameAndAliases returns the searchable name aliases for this past meeting.
@@ -708,7 +758,7 @@ func (m *PastMeetingEventData) NameAndAliases() []string {
 func (m *PastMeetingEventData) FullText() string {
 	seen := make(map[string]bool)
 	var parts []string
-	for _, v := range append([]string{m.SortName()}, m.NameAndAliases()...) {
+	for _, v := range m.NameAndAliases() {
 		if v != "" && !seen[v] {
 			parts = append(parts, v)
 			seen[v] = true
@@ -724,16 +774,31 @@ func (m *PastMeetingEventData) FullText() string {
 func (m *PastMeetingEventData) Tags() []string {
 	tags := []string{
 		"past_meeting_id:" + m.ID,
-		"meeting_id:" + m.MeetingID,
-		"project_uid:" + m.ProjectUID,
-		"title:" + m.Title,
+	}
+	if m.MeetingID != "" {
+		tags = append(tags, "meeting_id:"+m.MeetingID)
+	}
+	if m.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+m.ProjectUID)
+	}
+	if m.Title != "" {
+		tags = append(tags, "title:"+m.Title)
+	}
+	if m.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+m.ProjectSlug)
 	}
 	if m.Timezone != "" {
 		tags = append(tags, "timezone:"+m.Timezone)
 	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
 	for _, c := range m.Committees {
-		if c.UID != "" {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
 			tags = append(tags, "committee_uid:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
 		}
 	}
 	return tags
@@ -741,10 +806,19 @@ func (m *PastMeetingEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this past meeting.
 func (m *PastMeetingEventData) ParentRefs() []string {
-	refs := []string{"project:" + m.ProjectUID}
+	var refs []string
+	if m.ProjectUID != "" {
+		refs = append(refs, "project:"+m.ProjectUID)
+	}
+	seenCommitteeUIDs := make(map[string]bool)
+	if m.CommitteeUID != "" {
+		refs = append(refs, "committee:"+m.CommitteeUID)
+		seenCommitteeUIDs[m.CommitteeUID] = true
+	}
 	for _, c := range m.Committees {
-		if c.UID != "" {
+		if c.UID != "" && !seenCommitteeUIDs[c.UID] {
 			refs = append(refs, "committee:"+c.UID)
+			seenCommitteeUIDs[c.UID] = true
 		}
 	}
 	return refs
@@ -757,6 +831,7 @@ type PastMeetingParticipantEventData struct {
 	MeetingID              string               `json:"meeting_id"`
 	ProjectUID             string               `json:"project_uid"`
 	ProjectSlug            string               `json:"project_slug,omitempty"`
+	CommitteeUID           string               `json:"committee_uid,omitempty"`
 	Email                  string               `json:"email"`
 	FirstName              string               `json:"first_name"`
 	LastName               string               `json:"last_name"`
@@ -820,6 +895,9 @@ func (p *PastMeetingParticipantEventData) Tags() []string {
 	if p.ProjectUID != "" {
 		tags = append(tags, "project_uid:"+p.ProjectUID)
 	}
+	if p.CommitteeUID != "" {
+		tags = append(tags, "committee_uid:"+p.CommitteeUID)
+	}
 	if p.ProjectSlug != "" {
 		tags = append(tags, "project_slug:"+p.ProjectSlug)
 	}
@@ -840,7 +918,17 @@ func (p *PastMeetingParticipantEventData) Tags() []string {
 
 // ParentRefs returns the indexer parent references for this past meeting participant.
 func (p *PastMeetingParticipantEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + p.MeetingAndOccurrenceID}
+	var refs []string
+	if p.MeetingAndOccurrenceID != "" {
+		refs = append(refs, "past_meeting:"+p.MeetingAndOccurrenceID)
+	}
+	if p.ProjectUID != "" {
+		refs = append(refs, "project:"+p.ProjectUID)
+	}
+	if p.CommitteeUID != "" {
+		refs = append(refs, "committee:"+p.CommitteeUID)
+	}
+	return refs
 }
 
 // ParticipantSession represents a join/leave session for attendees
@@ -873,6 +961,7 @@ type RecordingEventData struct {
 	Sessions               []RecordingSession `json:"sessions"`
 	StartTime              time.Time          `json:"start_time"`
 	TotalSize              int64              `json:"total_size"`
+	Committees             []Committee        `json:"committees,omitempty"`
 	CreatedAt              time.Time          `json:"created_at"`
 	UpdatedAt              time.Time          `json:"updated_at"`
 	CreatedBy              CreatedBy          `json:"created_by"`
@@ -914,15 +1003,35 @@ func (r *RecordingEventData) Tags() []string {
 		"platform:Zoom",
 		"platform_meeting_id:" + r.PlatformMeetingID,
 	}
+	if r.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+r.ProjectUID)
+	}
+	if r.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+r.ProjectSlug)
+	}
 	for _, session := range r.Sessions {
 		tags = append(tags, "platform_meeting_instance_id:"+session.UUID)
+	}
+	for _, c := range r.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
 	}
 	return tags
 }
 
 // ParentRefs returns the indexer parent references for this recording.
 func (r *RecordingEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + r.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + r.MeetingAndOccurrenceID}
+	if r.ProjectUID != "" {
+		refs = append(refs, "project:"+r.ProjectUID)
+	}
+	for _, c := range r.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
+	}
+	return refs
 }
 
 // RecordingFile represents a single recording file
@@ -966,6 +1075,7 @@ type TranscriptEventData struct {
 	Sessions               []RecordingSession `json:"sessions"`
 	StartTime              time.Time          `json:"start_time"`
 	TotalSize              int64              `json:"total_size"`
+	Committees             []Committee        `json:"committees,omitempty"`
 	CreatedAt              time.Time          `json:"created_at"`
 	UpdatedAt              time.Time          `json:"updated_at"`
 	CreatedBy              CreatedBy          `json:"created_by"`
@@ -1006,15 +1116,35 @@ func (t *TranscriptEventData) Tags() []string {
 		"meeting_and_occurrence_id:" + t.MeetingAndOccurrenceID,
 		"platform:Zoom",
 	}
+	if t.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+t.ProjectUID)
+	}
+	if t.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+t.ProjectSlug)
+	}
 	for _, session := range t.Sessions {
 		tags = append(tags, "platform_meeting_instance_id:"+session.UUID)
+	}
+	for _, c := range t.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
 	}
 	return tags
 }
 
 // ParentRefs returns the indexer parent references for this transcript.
 func (t *TranscriptEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + t.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + t.MeetingAndOccurrenceID}
+	if t.ProjectUID != "" {
+		refs = append(refs, "project:"+t.ProjectUID)
+	}
+	for _, c := range t.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
+	}
+	return refs
 }
 
 // SummaryEventData represents an AI-generated summary event
@@ -1022,6 +1152,7 @@ type SummaryEventData struct {
 	ID                      string            `json:"id"`
 	MeetingAndOccurrenceID  string            `json:"meeting_and_occurrence_id"`
 	ProjectUID              string            `json:"project_uid"`
+	ProjectSlug             string            `json:"project_slug"`
 	MeetingID               string            `json:"meeting_id"`
 	OccurrenceID            string            `json:"occurrence_id"`
 	ZoomMeetingUUID         string            `json:"zoom_meeting_uuid"`
@@ -1041,6 +1172,7 @@ type SummaryEventData struct {
 	Platform                string            `json:"platform"` // Always "Zoom"
 	ZoomConfig              SummaryZoomConfig `json:"zoom_config"`
 	EmailSent               bool              `json:"email_sent"`
+	Committees              []Committee       `json:"committees,omitempty"`
 	CreatedAt               time.Time         `json:"created_at"`
 	UpdatedAt               time.Time         `json:"updated_at"`
 	CreatedBy               CreatedBy         `json:"created_by"`
@@ -1082,15 +1214,35 @@ func (s *SummaryEventData) Tags() []string {
 		"meeting_id:" + s.MeetingID,
 		"platform:Zoom",
 	}
+	if s.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+s.ProjectUID)
+	}
+	if s.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+s.ProjectSlug)
+	}
 	if s.ZoomMeetingTopic != "" {
 		tags = append(tags, "title:"+s.ZoomMeetingTopic)
+	}
+	for _, c := range s.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
 	}
 	return tags
 }
 
 // ParentRefs returns the indexer parent references for this summary.
 func (s *SummaryEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + s.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + s.MeetingAndOccurrenceID}
+	if s.ProjectUID != "" {
+		refs = append(refs, "project:"+s.ProjectUID)
+	}
+	for _, c := range s.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
+	}
+	return refs
 }
 
 // SummaryZoomConfig contains Zoom-specific configuration for summaries
@@ -1101,26 +1253,29 @@ type SummaryZoomConfig struct {
 
 // MeetingAttachmentEventData represents an attachment on an active meeting
 type MeetingAttachmentEventData struct {
-	UID              string     `json:"uid"`
-	MeetingID        string     `json:"meeting_id"`
-	Type             string     `json:"type"`
-	Category         string     `json:"category,omitempty"`
-	Link             string     `json:"link,omitempty"`
-	Name             string     `json:"name"`
-	Description      string     `json:"description,omitempty"`
-	Source           string     `json:"source,omitempty"`
-	FileName         string     `json:"file_name,omitempty"`
-	FileSize         int        `json:"file_size,omitempty"`
-	FileURL          string     `json:"file_url,omitempty"`
-	FileUploaded     *bool      `json:"file_uploaded,omitempty"`
-	FileUploadStatus string     `json:"file_upload_status,omitempty"`
-	FileContentType  string     `json:"file_content_type,omitempty"`
-	FileUploadedBy   *CreatedBy `json:"file_uploaded_by,omitempty"`
-	FileUploadedAt   *time.Time `json:"file_uploaded_at,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
-	ModifiedAt       time.Time  `json:"modified_at"`
-	CreatedBy        CreatedBy  `json:"created_by"`
-	UpdatedBy        UpdatedBy  `json:"updated_by"`
+	UID              string      `json:"uid"`
+	MeetingID        string      `json:"meeting_id"`
+	ProjectUID       string      `json:"project_uid,omitempty"`
+	ProjectSlug      string      `json:"project_slug,omitempty"`
+	Type             string      `json:"type"`
+	Category         string      `json:"category,omitempty"`
+	Link             string      `json:"link,omitempty"`
+	Name             string      `json:"name"`
+	Description      string      `json:"description,omitempty"`
+	Source           string      `json:"source,omitempty"`
+	FileName         string      `json:"file_name,omitempty"`
+	FileSize         int         `json:"file_size,omitempty"`
+	FileURL          string      `json:"file_url,omitempty"`
+	FileUploaded     *bool       `json:"file_uploaded,omitempty"`
+	FileUploadStatus string      `json:"file_upload_status,omitempty"`
+	FileContentType  string      `json:"file_content_type,omitempty"`
+	FileUploadedBy   *CreatedBy  `json:"file_uploaded_by,omitempty"`
+	FileUploadedAt   *time.Time  `json:"file_uploaded_at,omitempty"`
+	Committees       []Committee `json:"committees,omitempty"`
+	CreatedAt        time.Time   `json:"created_at"`
+	ModifiedAt       time.Time   `json:"modified_at"`
+	CreatedBy        CreatedBy   `json:"created_by"`
+	UpdatedBy        UpdatedBy   `json:"updated_by"`
 }
 
 // SortName returns the primary sort name for this meeting attachment.
@@ -1164,40 +1319,63 @@ func (a *MeetingAttachmentEventData) Tags() []string {
 		"meeting_attachment_uid:" + a.UID,
 		"meeting_id:" + a.MeetingID,
 	}
+	if a.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+a.ProjectUID)
+	}
+	if a.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+a.ProjectSlug)
+	}
 	if a.Type != "" {
 		tags = append(tags, "type:"+a.Type)
+	}
+	for _, c := range a.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
 	}
 	return tags
 }
 
 // ParentRefs returns the indexer parent references for this meeting attachment.
 func (a *MeetingAttachmentEventData) ParentRefs() []string {
-	return []string{"meeting:" + a.MeetingID}
+	refs := []string{"meeting:" + a.MeetingID}
+	if a.ProjectUID != "" {
+		refs = append(refs, "project:"+a.ProjectUID)
+	}
+	for _, c := range a.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
+	}
+	return refs
 }
 
 // PastMeetingAttachmentEventData represents an attachment on a past meeting
 type PastMeetingAttachmentEventData struct {
-	UID                    string     `json:"uid"`
-	MeetingAndOccurrenceID string     `json:"meeting_and_occurrence_id"`
-	MeetingID              string     `json:"meeting_id"`
-	Type                   string     `json:"type"`
-	Category               string     `json:"category,omitempty"`
-	Link                   string     `json:"link,omitempty"`
-	Name                   string     `json:"name"`
-	Description            string     `json:"description,omitempty"`
-	Source                 string     `json:"source,omitempty"`
-	FileName               string     `json:"file_name,omitempty"`
-	FileSize               int        `json:"file_size,omitempty"`
-	FileURL                string     `json:"file_url,omitempty"`
-	FileUploaded           *bool      `json:"file_uploaded,omitempty"`
-	FileUploadStatus       string     `json:"file_upload_status,omitempty"`
-	FileContentType        string     `json:"file_content_type,omitempty"`
-	FileUploadedBy         *CreatedBy `json:"file_uploaded_by,omitempty"`
-	FileUploadedAt         *time.Time `json:"file_uploaded_at,omitempty"`
-	CreatedAt              time.Time  `json:"created_at"`
-	ModifiedAt             time.Time  `json:"modified_at"`
-	CreatedBy              CreatedBy  `json:"created_by"`
-	UpdatedBy              UpdatedBy  `json:"updated_by"`
+	UID                    string      `json:"uid"`
+	MeetingAndOccurrenceID string      `json:"meeting_and_occurrence_id"`
+	MeetingID              string      `json:"meeting_id"`
+	ProjectUID             string      `json:"project_uid"`
+	ProjectSlug            string      `json:"project_slug"`
+	Type                   string      `json:"type"`
+	Category               string      `json:"category,omitempty"`
+	Link                   string      `json:"link,omitempty"`
+	Name                   string      `json:"name"`
+	Description            string      `json:"description,omitempty"`
+	Source                 string      `json:"source,omitempty"`
+	FileName               string      `json:"file_name,omitempty"`
+	FileSize               int         `json:"file_size,omitempty"`
+	FileURL                string      `json:"file_url,omitempty"`
+	FileUploaded           *bool       `json:"file_uploaded,omitempty"`
+	FileUploadStatus       string      `json:"file_upload_status,omitempty"`
+	FileContentType        string      `json:"file_content_type,omitempty"`
+	FileUploadedBy         *CreatedBy  `json:"file_uploaded_by,omitempty"`
+	FileUploadedAt         *time.Time  `json:"file_uploaded_at,omitempty"`
+	Committees             []Committee `json:"committees,omitempty"`
+	CreatedAt              time.Time   `json:"created_at"`
+	ModifiedAt             time.Time   `json:"modified_at"`
+	CreatedBy              CreatedBy   `json:"created_by"`
+	UpdatedBy              UpdatedBy   `json:"updated_by"`
 }
 
 // SortName returns the primary sort name for this past meeting attachment.
@@ -1242,13 +1420,33 @@ func (a *PastMeetingAttachmentEventData) Tags() []string {
 		"meeting_and_occurrence_id:" + a.MeetingAndOccurrenceID,
 		"meeting_id:" + a.MeetingID,
 	}
+	if a.ProjectUID != "" {
+		tags = append(tags, "project_uid:"+a.ProjectUID)
+	}
+	if a.ProjectSlug != "" {
+		tags = append(tags, "project_slug:"+a.ProjectSlug)
+	}
 	if a.Type != "" {
 		tags = append(tags, "type:"+a.Type)
+	}
+	for _, c := range a.Committees {
+		if c.UID != "" {
+			tags = append(tags, "committee_uid:"+c.UID)
+		}
 	}
 	return tags
 }
 
 // ParentRefs returns the indexer parent references for this past meeting attachment.
 func (a *PastMeetingAttachmentEventData) ParentRefs() []string {
-	return []string{"past_meeting:" + a.MeetingAndOccurrenceID}
+	refs := []string{"past_meeting:" + a.MeetingAndOccurrenceID}
+	if a.ProjectUID != "" {
+		refs = append(refs, "project:"+a.ProjectUID)
+	}
+	for _, c := range a.Committees {
+		if c.UID != "" {
+			refs = append(refs, "committee:"+c.UID)
+		}
+	}
+	return refs
 }

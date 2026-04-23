@@ -154,21 +154,22 @@ func validateMeetingRequest(req *models.CreateITXMeetingRequest) error {
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{
-		ID:                   req.ID, // Only used for updates
-		Project:              req.ProjectUID,
-		Topic:                req.Title,
-		StartTime:            req.StartTime,
-		Duration:             req.Duration,
-		Timezone:             req.Timezone,
-		Visibility:           req.Visibility,
-		Agenda:               req.Description,
-		Restricted:           req.Restricted,
-		MeetingType:          req.MeetingType,
-		EarlyJoinTime:        req.EarlyJoinTimeMinutes,
-		RecordingEnabled:     req.RecordingEnabled,
-		TranscriptEnabled:    req.TranscriptEnabled,
-		YoutubeUploadEnabled: req.YoutubeUploadEnabled,
-		ZoomAIEnabled:        req.AISummaryEnabled,
+		ID:                       req.ID, // Only used for updates
+		Project:                  req.ProjectUID,
+		Topic:                    req.Title,
+		StartTime:                req.StartTime,
+		Duration:                 req.Duration,
+		Timezone:                 req.Timezone,
+		Visibility:               req.Visibility,
+		Agenda:                   req.Description,
+		Restricted:               req.Restricted,
+		MeetingType:              req.MeetingType,
+		EarlyJoinTime:            req.EarlyJoinTimeMinutes,
+		RecordingEnabled:         req.RecordingEnabled,
+		TranscriptEnabled:        req.TranscriptEnabled,
+		YoutubeUploadEnabled:     req.YoutubeUploadEnabled,
+		ZoomAIEnabled:            req.AISummaryEnabled,
+		RequireAISummaryApproval: req.RequireAISummaryApproval,
 	}
 
 	// Map artifact visibility to access controls only when the respective feature is enabled

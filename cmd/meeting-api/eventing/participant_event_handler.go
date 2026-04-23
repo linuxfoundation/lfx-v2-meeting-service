@@ -695,6 +695,21 @@ func convertMapToInviteeParticipantData(
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
+	// Map the invitee's own committee_id to a v2 UID. Only set when the invitee record carries a
+	// committee_id — a missing mapping is non-fatal.
+	var committeeUID string
+	if rawInvitee.CommitteeID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawInvitee.CommitteeID)
+		if mapErr != nil {
+			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
+				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
+			}
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for invitee", "v1_id", rawInvitee.CommitteeID)
+		} else {
+			committeeUID = uid
+		}
+	}
+
 	// Determine if host (lookup registrant if available)
 	isHost := false
 	if rawInvitee.RegistrantID != "" {
@@ -748,6 +763,7 @@ func convertMapToInviteeParticipantData(
 		MeetingID:              rawInvitee.MeetingID,
 		ProjectUID:             projectUID,
 		ProjectSlug:            projectSlug,
+		CommitteeUID:           committeeUID,
 		Email:                  rawInvitee.Email,
 		FirstName:              firstName,
 		LastName:               lastName,
@@ -805,6 +821,21 @@ func convertMapToAttendeeParticipantData(
 	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
+	}
+
+	// Map the attendee's own committee_id to a v2 UID. Only set when the attendee record carries a
+	// committee_id — a missing mapping is non-fatal.
+	var committeeUID string
+	if rawAttendee.CommitteeID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawAttendee.CommitteeID)
+		if mapErr != nil {
+			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
+				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
+			}
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for attendee", "v1_id", rawAttendee.CommitteeID)
+		} else {
+			committeeUID = uid
+		}
 	}
 
 	// Check if this user was also invited (registrant_id present)
@@ -867,6 +898,7 @@ func convertMapToAttendeeParticipantData(
 		MeetingID:              rawAttendee.MeetingID,
 		ProjectUID:             projectUID,
 		ProjectSlug:            projectSlug,
+		CommitteeUID:           committeeUID,
 		Email:                  rawAttendee.Email,
 		FirstName:              firstName,
 		LastName:               lastName,
@@ -903,7 +935,7 @@ func resolveProjectFields(
 		return projectSFID, projectSlug, nil
 	}
 
-	sfid, slug, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
+	sfid, slug, _, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
 	}
@@ -915,33 +947,4 @@ func resolveProjectFields(
 		slug = projectSlug
 	}
 	return sfid, slug, nil
-}
-
-// lookupProjectFromPastMeeting fetches the proj_id and project_slug of the parent past meeting
-// from the v1-objects KV bucket. Returns empty strings (no error) when the record is not found —
-// that is a permanent miss and the caller should not retry. Returns a non-nil error for transient
-// KV fetch failures or decode failures (caller should retry).
-func lookupProjectFromPastMeeting(
-	ctx context.Context,
-	meetingAndOccurrenceID string,
-	v1ObjectsKV jetstream.KeyValue,
-	logger *slog.Logger,
-) (projSFID, projectSlug string, err error) {
-	if meetingAndOccurrenceID == "" {
-		return "", "", nil
-	}
-	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", meetingAndOccurrenceID)
-	entry, kvErr := v1ObjectsKV.Get(ctx, pastMeetingKey)
-	if kvErr != nil {
-		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
-			logger.WarnContext(ctx, "parent past_meeting not found for project lookup", "key", pastMeetingKey)
-			return "", "", nil
-		}
-		return "", "", fmt.Errorf("transient error fetching parent past_meeting: %w", kvErr)
-	}
-	pastMeetingData, decErr := decodeData(entry.Value())
-	if decErr != nil {
-		return "", "", fmt.Errorf("transient error decoding parent past_meeting: %w", decErr)
-	}
-	return utils.GetString(pastMeetingData["proj_id"]), utils.GetString(pastMeetingData["project_slug"]), nil
 }

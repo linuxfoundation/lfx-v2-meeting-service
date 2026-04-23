@@ -4,6 +4,8 @@ This document is the authoritative reference for all data the meeting service se
 
 **Update this document in the same PR as any change to indexer message construction.**
 
+**Convention:** Tags and parent refs containing a `{value}` placeholder are only emitted when the corresponding field is non-empty.
+
 ---
 
 ## Resource Types
@@ -171,8 +173,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `title:{value}` | `title:TSC Monthly Meeting` | Find meetings by title |
 | `visibility:{value}` | `visibility:public` | Find meetings by visibility |
 | `meeting_type:{value}` | `meeting_type:recurring` | Find meetings by type |
-
-> `visibility` and `meeting_type` tags are only emitted when the value is non-empty.
+| `committee_uid:{value}` | `committee_uid:061a110a-...` | Find meetings by committee |
 
 ### Access Control (IndexingConfig)
 
@@ -196,7 +197,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `project:{project_uid}` | Always set |
+| `project:{project_uid}` | Only when `project_uid` is non-empty |
 | `committee:{uid}` | For each entry in `committees` with a non-empty `uid` |
 
 ---
@@ -251,11 +252,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Tag Format | Example | Purpose |
 |---|---|---|
 | `registrant_uid:{uid}` | `registrant_uid:a1b2c3d4-...` | Lookup by registrant UID |
+| `committee_uid:{value}` | `committee_uid:061a110a-...` | Find registrants by committee |
 | `username:{value}` | `username:jdoe` | Find registrants by username |
 | `email:{value}` | `email:jdoe@example.com` | Find registrants by email |
 | `host:true` | `host:true` | Find registrants who are hosts |
-
-> `username` and `email` tags are only emitted when non-empty. `host:true` is only emitted when `host` is `true`.
 
 ### Access Control (IndexingConfig)
 
@@ -279,7 +279,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `meeting:{meeting_id}` | Always set |
+| `meeting:{meeting_id}` | Only when `meeting_id` is non-empty |
 | `committee:{committee_uid}` | Only when `committee_uid` is non-empty |
 
 ---
@@ -328,8 +328,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `email:{value}` | `email:jdoe@example.com` | Find RSVPs by email |
 | `username:{value}` | `username:jdoe` | Find RSVPs by username |
 
-> `username` is only emitted when non-empty.
-
 ### Access Control (IndexingConfig)
 
 | Field | Value |
@@ -352,7 +350,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `meeting:{meeting_id}` | Always set |
+| `meeting:{meeting_id}` | Only when `meeting_id` is non-empty |
 
 ---
 
@@ -423,8 +421,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `timezone:{value}` | `timezone:America/Los_Angeles` | Find past meetings by timezone |
 | `committee_uid:{value}` | `committee_uid:061a110a-...` | Find past meetings for a committee |
 
-> `timezone` is only emitted when non-empty. One `committee_uid` tag is emitted per committee in `committees` with a non-empty `uid`.
-
 ### Access Control (IndexingConfig)
 
 | Field | Value |
@@ -439,7 +435,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Field | Value |
 |---|---|
-| `sort_name` | `title` (trimmed) |
+| `sort_name` | `start_time` formatted as RFC3339 (UTC); empty string when `start_time` is zero |
 | `name_and_aliases` | `[title]` (omitted when empty) |
 | `fulltext` | `title` + `description` (space-joined, deduplicated, omits empty values) |
 
@@ -447,7 +443,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `project:{project_uid}` | Always set |
+| `project:{project_uid}` | Only when `project_uid` is non-empty |
 | `committee:{uid}` | For each entry in `committees` with a non-empty `uid` |
 
 ---
@@ -489,6 +485,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `zoom_user_name` | string | Zoom display name of the attendee (attendee records only; `""` for invitee-only records) |
 | `mapped_invitee_name` | string | Full name of the invitee the attendee was auto-matched to (attendee records only; `""` for invitee-only records) |
 | `sessions` | []object (optional) | Join/leave sessions (each has `uid`, `join_time`, `leave_time`, `leave_reason`) |
+| `committee_uid` | string (optional) | v2 UUID of the committee the participant is associated with; sourced from the participant's own `committee_id` field |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 
@@ -500,12 +497,11 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find participants for a past meeting |
 | `project_uid:{value}` | `project_uid:cbef1ed5-...` | Find participants for a project |
 | `project_slug:{value}` | `project_slug:my-project` | Find participants by project slug |
+| `committee_uid:{value}` | `committee_uid:061a110a-...` | Find participants by committee |
 | `username:{value}` | `username:jdoe` | Find participants by username |
 | `email:{value}` | `email:jdoe@example.com` | Find participants by email |
 | `is_invited:true` | `is_invited:true` | Find invited participants |
 | `is_attended:true` | `is_attended:true` | Find attendees |
-
-> `project_slug`, `username`, and `email` tags are only emitted when non-empty. `is_invited:true` and `is_attended:true` are only emitted when the corresponding flag is `true`.
 
 ### Access Control (IndexingConfig)
 
@@ -529,7 +525,9 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 | Ref | Condition |
 |---|---|
-| `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `past_meeting:{meeting_and_occurrence_id}` | Only when `meeting_and_occurrence_id` is non-empty |
+| `project:{project_uid}` | Only when `project_uid` is non-empty |
+| `committee:{committee_uid}` | Only when `committee_uid` is non-empty |
 
 ---
 
@@ -567,6 +565,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
 | `start_time` | string (RFC3339) | Recording start time |
 | `total_size` | int64 | Total size of all recording files in bytes |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
@@ -607,8 +606,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform:Zoom` | `platform:Zoom` | All recordings (platform is always Zoom) |
 | `platform_meeting_id:{value}` | `platform_meeting_id:93699735000` | Find recordings by Zoom meeting ID |
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find recordings by Zoom session UUID |
-
-> One `platform_meeting_instance_id` tag is emitted per session in `sessions`.
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find recordings by committee |
 
 ### Access Control (IndexingConfig)
 
@@ -633,6 +631,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -666,6 +666,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
 | `start_time` | string (RFC3339) | Transcript start time |
 | `total_size` | int64 | Total size in bytes |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
@@ -680,8 +681,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find transcripts for a past meeting |
 | `platform:Zoom` | `platform:Zoom` | All transcripts (platform is always Zoom) |
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find transcripts by Zoom session UUID |
-
-> One `platform_meeting_instance_id` tag is emitted per session in `sessions`.
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find transcripts by committee |
 
 ### Access Control (IndexingConfig)
 
@@ -706,6 +706,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -718,8 +720,6 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 **Source struct:** `internal/domain/models/event_models.go` — `SummaryEventData`
 
 **Indexed on:** create, update, delete of an AI-generated past meeting summary.
-
-> The `public` flag is derived from the **parent past meeting's** `ai_summary_access` field, not from a field on the summary itself.
 
 ### Data Schema
 
@@ -747,6 +747,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `platform` | string | Meeting platform (always `"Zoom"`) |
 | `zoom_config` | object | Zoom identifiers (has `meeting_id` string and `meeting_uuid` string) |
 | `email_sent` | bool | Whether a summary notification email has been sent |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `updated_at` | string (RFC3339) | Last update time |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
@@ -762,8 +763,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find summaries for a meeting |
 | `platform:Zoom` | `platform:Zoom` | All summaries (platform is always Zoom) |
 | `title:{value}` | `title:TSC Monthly Meeting` | Find summaries by Zoom meeting topic |
-
-> `title` tag uses `zoom_meeting_topic` and is only emitted when non-empty.
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find summaries by committee |
 
 ### Access Control (IndexingConfig)
 
@@ -788,6 +788,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -807,6 +809,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|---|
 | `uid` | string | Attachment unique identifier |
 | `meeting_id` | string | ID of the parent meeting |
+| `project_uid` | string (optional) | v2 UUID of the parent project (omitted when project not yet in v2) |
+| `project_slug` | string (optional) | URL slug of the parent project (resolved via `lfx.projects-api.get_slug`; omitted when unavailable) |
 | `type` | string | Attachment type (e.g., `"link"`, `"file"`) |
 | `category` | string (optional) | Attachment category |
 | `link` | string (optional) | Link URL (for link-type attachments) |
@@ -821,6 +825,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_content_type` | string (optional) | MIME content type |
 | `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
 | `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `committees` | []object (optional) | Associated committees sourced from the parent meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `modified_at` | string (RFC3339) | Last modification time |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
@@ -832,9 +837,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|---|
 | `meeting_attachment_uid:{uid}` | `meeting_attachment_uid:a1b2c3d4-...` | Lookup by attachment UID |
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find attachments for a meeting |
+| `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
+| `project_slug:{value}` | `project_slug:cncf` | Find attachments by project slug |
 | `type:{value}` | `type:file` | Find attachments by type |
-
-> `type` tag is only emitted when non-empty.
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find attachments by committee |
 
 ### Access Control (IndexingConfig)
 
@@ -859,6 +865,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `meeting:{meeting_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
 
 ---
 
@@ -879,6 +887,8 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `uid` | string | Attachment unique identifier |
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
 | `meeting_id` | string | ID of the originating active meeting |
+| `project_uid` | string (optional) | v2 UUID of the parent project (omitted when project not yet in v2) |
+| `project_slug` | string (optional) | URL slug of the parent project (sourced from the past meeting KV record) |
 | `type` | string | Attachment type (e.g., `"link"`, `"file"`) |
 | `category` | string (optional) | Attachment category |
 | `link` | string (optional) | Link URL (for link-type attachments) |
@@ -893,6 +903,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `file_content_type` | string (optional) | MIME content type |
 | `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
 | `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
 | `modified_at` | string (RFC3339) | Last modification time |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
@@ -905,9 +916,10 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `past_meeting_attachment_uid:{uid}` | `past_meeting_attachment_uid:a1b2c3d4-...` | Lookup by attachment UID |
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find attachments for a past meeting |
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find attachments by originating meeting |
+| `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
+| `project_slug:{value}` | `project_slug:my-project` | Find attachments by project slug |
 | `type:{value}` | `type:link` | Find attachments by type |
-
-> `type` tag is only emitted when non-empty.
+| `committee_uid:{value}` | `committee_uid:abc123...` | Find attachments by committee |
 
 ### Access Control (IndexingConfig)
 
@@ -932,3 +944,5 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Ref | Condition |
 |---|---|
 | `past_meeting:{meeting_and_occurrence_id}` | Always set |
+| `project:{project_uid}` | Set when `project_uid` is non-empty |
+| `committee:{uid}` | Set once per entry in `committees` with a non-empty `uid` |
