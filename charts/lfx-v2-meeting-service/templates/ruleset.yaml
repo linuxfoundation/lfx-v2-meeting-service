@@ -698,8 +698,8 @@ spec:
         - authorizer: openfga_check
           config:
             values:
-              relation: viewer
-              object: "v1_past_meeting_summary:{{ "{{- .Request.URL.Captures.summary_uid -}}" }}"
+              relation: ai_summary_viewer
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -730,7 +730,7 @@ spec:
           config:
             values:
               relation: organizer
-              object: "v1_past_meeting_summary:{{ "{{- .Request.URL.Captures.summary_uid -}}" }}"
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.past_meeting_id -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
