@@ -61,7 +61,7 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 	handler = otelhttp.NewHandler(handler, "meeting-api",
 		otelhttp.WithFilter(func(r *http.Request) bool {
 			p := r.URL.Path
-			return p != "/healthz" && p != "/livez" && p != "/readyz"
+			return p != genhttp.LivezMeetingServicePath() && p != genhttp.ReadyzMeetingServicePath()
 		}),
 	)
 
