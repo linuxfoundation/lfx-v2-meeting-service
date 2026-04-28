@@ -210,6 +210,7 @@ paths:
                                 host_key: "123456"
                                 id: "1234567890"
                                 is_invite_responses_enabled: true
+                                join_url: https://us02web.zoom.us/j/1234567890?pwd=abc123
                                 last_bulk_registrant_job_status: Et atque perferendis temporibus laboriosam vel eos.
                                 last_bulk_registrants_job_warning_count: 1443106685303663363
                                 last_mailing_list_members_sync_job_failed_count: 3227356722954869122
@@ -471,6 +472,7 @@ paths:
                                 host_key: "123456"
                                 id: "1234567890"
                                 is_invite_responses_enabled: false
+                                join_url: https://us02web.zoom.us/j/1234567890?pwd=abc123
                                 last_bulk_registrant_job_status: Fugit ratione consequuntur tenetur.
                                 last_bulk_registrants_job_warning_count: 5359079769923856694
                                 last_mailing_list_members_sync_job_failed_count: 5869554500234700580
@@ -6656,6 +6658,11 @@ components:
                     type: boolean
                     description: Whether invite responses (RSVP) are enabled for the meeting
                     example: false
+                join_url:
+                    type: string
+                    description: Direct Zoom join URL returned by the Zoom API when the meeting was created.
+                    example: https://us02web.zoom.us/j/1234567890?pwd=abc123
+                    format: uri
                 last_bulk_registrant_job_status:
                     type: string
                     description: Status of the last bulk registrant import job
@@ -6737,7 +6744,7 @@ components:
                     example: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 public_link:
                     type: string
-                    description: Public meeting join URL
+                    description: LFX-branded landing-page URL for the meeting (used in calendar invites). Use `join_url` for the direct Zoom join link.
                     example: https://zoom-lfx.platform.linuxfoundation.org/meeting/1234567890
                     format: uri
                 recording_enabled:
@@ -6827,6 +6834,7 @@ components:
                 host_key: "123456"
                 id: "1234567890"
                 is_invite_responses_enabled: false
+                join_url: https://us02web.zoom.us/j/1234567890?pwd=abc123
                 last_bulk_registrant_job_status: Et et dolores inventore.
                 last_bulk_registrants_job_warning_count: 4886960874806492599
                 last_mailing_list_members_sync_job_failed_count: 6063773424427203130

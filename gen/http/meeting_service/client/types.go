@@ -555,8 +555,11 @@ type CreateItxMeetingResponseBody struct {
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
-	// Public meeting join URL
+	// LFX-branded landing-page URL for the meeting (used in calendar invites). Use
+	// `join_url` for the direct Zoom join link.
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Direct Zoom join URL returned by the Zoom API when the meeting was created.
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Last modification timestamp (RFC3339)
@@ -639,8 +642,11 @@ type GetItxMeetingResponseBody struct {
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
-	// Public meeting join URL
+	// LFX-branded landing-page URL for the meeting (used in calendar invites). Use
+	// `join_url` for the direct Zoom join link.
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Direct Zoom join URL returned by the Zoom API when the meeting was created.
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Last modification timestamp (RFC3339)
@@ -4274,6 +4280,7 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 		Passcode:        body.Passcode,
 		Password:        body.Password,
 		PublicLink:      body.PublicLink,
+		JoinURL:         body.JoinURL,
 		CreatedAt:       body.CreatedAt,
 		ModifiedAt:      body.ModifiedAt,
 		RegistrantCount: body.RegistrantCount,
@@ -4408,6 +4415,7 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 		Passcode:        body.Passcode,
 		Password:        body.Password,
 		PublicLink:      body.PublicLink,
+		JoinURL:         body.JoinURL,
 		CreatedAt:       body.CreatedAt,
 		ModifiedAt:      body.ModifiedAt,
 		RegistrantCount: body.RegistrantCount,
@@ -7568,6 +7576,9 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 	if body.PublicLink != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
 	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
+	}
 	if body.CreatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
@@ -7647,6 +7658,9 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 	}
 	if body.PublicLink != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.public_link", *body.PublicLink, goa.FormatURI))
+	}
+	if body.JoinURL != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_url", *body.JoinURL, goa.FormatURI))
 	}
 	if body.CreatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))

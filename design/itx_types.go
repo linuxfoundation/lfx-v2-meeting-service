@@ -227,8 +227,12 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
 		Format(FormatUUID)
 	})
-	Attribute("public_link", String, "Public meeting join URL", func() {
+	Attribute("public_link", String, "LFX-branded landing-page URL for the meeting (used in calendar invites). Use `join_url` for the direct Zoom join link.", func() {
 		Example("https://zoom-lfx.platform.linuxfoundation.org/meeting/1234567890")
+		Format(FormatURI)
+	})
+	Attribute("join_url", String, "Direct Zoom join URL returned by the Zoom API when the meeting was created.", func() {
+		Example("https://us02web.zoom.us/j/1234567890?pwd=abc123")
 		Format(FormatURI)
 	})
 	Attribute("created_at", String, "Creation timestamp (RFC3339)", func() {

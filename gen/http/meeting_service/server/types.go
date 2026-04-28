@@ -555,8 +555,11 @@ type CreateItxMeetingResponseBody struct {
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
-	// Public meeting join URL
+	// LFX-branded landing-page URL for the meeting (used in calendar invites). Use
+	// `join_url` for the direct Zoom join link.
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Direct Zoom join URL returned by the Zoom API when the meeting was created.
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Last modification timestamp (RFC3339)
@@ -639,8 +642,11 @@ type GetItxMeetingResponseBody struct {
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
-	// Public meeting join URL
+	// LFX-branded landing-page URL for the meeting (used in calendar invites). Use
+	// `join_url` for the direct Zoom join link.
 	PublicLink *string `form:"public_link,omitempty" json:"public_link,omitempty" xml:"public_link,omitempty"`
+	// Direct Zoom join URL returned by the Zoom API when the meeting was created.
+	JoinURL *string `form:"join_url,omitempty" json:"join_url,omitempty" xml:"join_url,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Last modification timestamp (RFC3339)
@@ -3856,6 +3862,7 @@ func NewCreateItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse)
 		Passcode:        res.Passcode,
 		Password:        res.Password,
 		PublicLink:      res.PublicLink,
+		JoinURL:         res.JoinURL,
 		CreatedAt:       res.CreatedAt,
 		ModifiedAt:      res.ModifiedAt,
 		RegistrantCount: res.RegistrantCount,
@@ -3923,6 +3930,7 @@ func NewGetItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *G
 		Passcode:        res.Passcode,
 		Password:        res.Password,
 		PublicLink:      res.PublicLink,
+		JoinURL:         res.JoinURL,
 		CreatedAt:       res.CreatedAt,
 		ModifiedAt:      res.ModifiedAt,
 		RegistrantCount: res.RegistrantCount,

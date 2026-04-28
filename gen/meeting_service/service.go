@@ -1134,8 +1134,11 @@ type ITXZoomMeetingResponse struct {
 	Passcode *string
 	// UUID password for join page
 	Password *string
-	// Public meeting join URL
+	// LFX-branded landing-page URL for the meeting (used in calendar invites). Use
+	// `join_url` for the direct Zoom join link.
 	PublicLink *string
+	// Direct Zoom join URL returned by the Zoom API when the meeting was created.
+	JoinURL *string
 	// Creation timestamp (RFC3339)
 	CreatedAt *string
 	// Last modification timestamp (RFC3339)
