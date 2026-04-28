@@ -172,7 +172,8 @@ type ZoomMeetingResponse struct {
 	HostKey                 string       `json:"host_key"`    // 6-digit PIN
 	Passcode                string       `json:"passcode"`    // Zoom passcode
 	Password                string       `json:"password"`    // UUID for join page
-	PublicLink              string       `json:"public_link"` // Public meeting URL
+	PublicLink              string       `json:"public_link"` // LFX-branded landing-page URL (used in calendar invites)
+	JoinURL                 string       `json:"join_url"`    // Direct Zoom join URL returned by the Zoom API
 	CreatedAt               string       `json:"created_at"`  // RFC3339
 	ModifiedAt              string       `json:"modified_at"` // RFC3339
 	CreatedBy               *User        `json:"created_by,omitempty"`

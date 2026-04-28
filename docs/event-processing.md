@@ -1030,7 +1030,8 @@ To add a new event type:
     ],
     "host_key": "123456",
     "passcode": "abc123",
-    "public_link": "https://zoom.us/j/123456789",
+    "public_link": "https://zoom-lfx.platform.linuxfoundation.org/meeting/123456789",
+    "join_url": "https://us02web.zoom.us/j/123456789?pwd=abc123",
     "created_at": "2024-01-10T08:00:00Z",
     "modified_at": "2024-01-10T08:00:00Z",
     "tags": ["project:proj-uuid", "visibility:public", "type:recurring"]
