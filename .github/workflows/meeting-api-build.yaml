@@ -24,12 +24,6 @@ jobs:
       - name: Download Dependencies
         run: make deps
 
-      - name: Generate service code
-        run: make apigen
-
-      - name: Build
-        run: make build
-
       - name: Verify modules
         run: go mod verify
 
@@ -37,6 +31,12 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code go.mod go.sum
+
+      - name: Generate service code
+        run: make apigen
+
+      - name: Build
+        run: make build
 
       - name: Test
         run: go test ./... -v
