@@ -24,6 +24,14 @@ jobs:
       - name: Download Dependencies
         run: make deps
 
+      - name: Verify modules
+        run: go mod verify
+
+      - name: Check go mod tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+
       - name: Generate service code
         run: make apigen
 
