@@ -9,6 +9,7 @@ CMD_PATH=$(GO_MODULE)/cmd/meeting-api
 DESIGN_MODULE=$(GO_MODULE)/design
 GO_FILES=$(shell find . -name '*.go' -not -path './gen/*' -not -path './vendor/*')
 GOA_VERSION=v3.23.4
+GOLANGCI_LINT_VERSION=v2.6.0
 
 # Docker variables
 DOCKER_IMAGE=linuxfoundation/lfx-v2-meeting-service
@@ -67,7 +68,7 @@ deps: install-hooks
 	go install goa.design/goa/v3/cmd/goa@$(GOA_VERSION)
 	@command -v golangci-lint >/dev/null 2>&1 || { \
 		echo "==> Installing golangci-lint..."; \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION); \
 	}
 
 # Install git hooks from scripts/hooks into .git/hooks (no-op in CI or tarballs)

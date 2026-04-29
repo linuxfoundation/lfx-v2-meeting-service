@@ -24,7 +24,10 @@ jobs:
           go-version-file: go.mod
 
       - name: Download Dependencies
-        run: make deps
+        run: go mod download
+
+      - name: Install goa
+        run: go install goa.design/goa/v3/cmd/goa@v3.23.4
 
       - name: Verify modules
         run: go mod verify
