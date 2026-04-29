@@ -58,7 +58,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `last_end_time` | int64 | End time of the last occurrence (Unix timestamp) |
 | `host_key` | string | Six-digit Zoom host PIN (rotated weekly) |
 | `join_url` | string | Direct Zoom join URL returned by the Zoom API (e.g. `https://us02web.zoom.us/j/12345?pwd=...`) |
-| `password` | string | UUID-style password used by the LFX/branded join flow (paired with `public_link`); distinct from the direct Zoom `join_url` |
+| `password` | string | UUID-style password used by the LFX meeting-join page (`/meetings/{id}?password=…`) to authorize access before revealing `join_url`; distinct from the direct Zoom `join_url` |
 | `restricted` | bool | Whether only invited users can join |
 | `artifact_visibility` | string | Visibility of meeting artifacts (recordings, transcripts, summaries) |
 | `recording_enabled` | bool | Whether Zoom recording is enabled |
