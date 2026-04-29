@@ -16,6 +16,11 @@ jobs:
       GOTOOLCHAIN: local
 
     steps:
+      - uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40  # v2.19.0
+        with:
+          egress-policy: audit
+          disable-sudo: true
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup go
@@ -45,3 +50,8 @@ jobs:
 
       - name: Test
         run: go test ./... -v
+
+      - name: Vulnerability scan
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
+          govulncheck ./...
