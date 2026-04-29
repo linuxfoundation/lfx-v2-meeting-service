@@ -101,7 +101,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		Passcode:        &resp.Passcode,
 		Password:        &resp.Password,
 		PublicLink:      &resp.PublicLink,
-		JoinURL:         &resp.JoinURL,
+		JoinURL:         utils.StringPtrOmitEmpty(resp.JoinURL),
 		CreatedAt:       &resp.CreatedAt,
 		ModifiedAt:      &resp.ModifiedAt,
 		RegistrantCount: utils.IntPtrOmitZero(resp.RegistrantCount),
