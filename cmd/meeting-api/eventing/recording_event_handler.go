@@ -262,6 +262,22 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	}
 	funcLogger = funcLogger.With("recording_id", recordingData.ID)
 
+	// Resolve committees from the parent past meeting record.
+	_, _, primaryCommitteeSFID, lookupErr := lookupProjectFromPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
+	if lookupErr != nil {
+		funcLogger.With(logging.ErrKey, lookupErr).WarnContext(ctx, "transient error fetching parent past meeting for committees, will retry")
+		return true
+	}
+	committees, commErr := resolveParentPastMeetingCommittees(ctx, recordingData.MeetingAndOccurrenceID, primaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
+	if commErr != nil {
+		funcLogger.With(logging.ErrKey, commErr).WarnContext(ctx, "transient error resolving parent committees for recording, will retry")
+		return true
+	}
+	recordingData.Committees = committees
+	if transcriptData != nil {
+		transcriptData.Committees = committees
+	}
+
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_recordings.%s", recordingData.ID)
 	indexerAction := indexerConstants.ActionCreated

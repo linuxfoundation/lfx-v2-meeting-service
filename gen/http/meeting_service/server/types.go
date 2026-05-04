@@ -48,6 +48,8 @@ type CreateItxMeetingRequestBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// Whether Zoom AI Companion summary is enabled for the meeting
 	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
+	// Whether AI summary requires approval before being shared
+	RequireAiSummaryApproval *bool `form:"require_ai_summary_approval,omitempty" json:"require_ai_summary_approval,omitempty" xml:"require_ai_summary_approval,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -88,6 +90,8 @@ type UpdateItxMeetingRequestBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// Whether Zoom AI Companion summary is enabled for the meeting
 	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
+	// Whether AI summary requires approval before being shared
+	RequireAiSummaryApproval *bool `form:"require_ai_summary_approval,omitempty" json:"require_ai_summary_approval,omitempty" xml:"require_ai_summary_approval,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
@@ -516,10 +520,36 @@ type CreateItxMeetingResponseBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// Whether Zoom AI Companion summary is enabled for the meeting
 	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
+	// Whether AI summary requires approval before being shared
+	RequireAiSummaryApproval *bool `form:"require_ai_summary_approval,omitempty" json:"require_ai_summary_approval,omitempty" xml:"require_ai_summary_approval,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// Status of the last bulk registrant import job
+	LastBulkRegistrantJobStatus *string `form:"last_bulk_registrant_job_status,omitempty" json:"last_bulk_registrant_job_status,omitempty" xml:"last_bulk_registrant_job_status,omitempty"`
+	// Number of records with warnings in the last bulk registrant import job
+	LastBulkRegistrantsJobWarningCount *int `form:"last_bulk_registrants_job_warning_count,omitempty" json:"last_bulk_registrants_job_warning_count,omitempty" xml:"last_bulk_registrants_job_warning_count,omitempty"`
+	// Number of email delivery errors for the meeting
+	EmailDeliveryErrorCount *int `form:"email_delivery_error_count,omitempty" json:"email_delivery_error_count,omitempty" xml:"email_delivery_error_count,omitempty"`
+	// Whether invite responses (RSVP) are enabled for the meeting
+	IsInviteResponsesEnabled *bool `form:"is_invite_responses_enabled,omitempty" json:"is_invite_responses_enabled,omitempty" xml:"is_invite_responses_enabled,omitempty"`
+	// Number of 'yes' RSVP responses for the meeting
+	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
+	// Number of 'maybe' RSVP responses for the meeting
+	ResponseCountMaybe *int `form:"response_count_maybe,omitempty" json:"response_count_maybe,omitempty" xml:"response_count_maybe,omitempty"`
+	// Number of 'no' RSVP responses for the meeting
+	ResponseCountNo *int `form:"response_count_no,omitempty" json:"response_count_no,omitempty" xml:"response_count_no,omitempty"`
+	// Status of the last mailing list members sync job
+	LastMailingListMembersSyncJobStatus *string `form:"last_mailing_list_members_sync_job_status,omitempty" json:"last_mailing_list_members_sync_job_status,omitempty" xml:"last_mailing_list_members_sync_job_status,omitempty"`
+	// Number of failed records in the last mailing list members sync job
+	LastMailingListMembersSyncJobFailedCount *int `form:"last_mailing_list_members_sync_job_failed_count,omitempty" json:"last_mailing_list_members_sync_job_failed_count,omitempty" xml:"last_mailing_list_members_sync_job_failed_count,omitempty"`
+	// Number of records with warnings in the last mailing list members sync job
+	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// 6-digit host key
@@ -574,10 +604,36 @@ type GetItxMeetingResponseBody struct {
 	YoutubeUploadEnabled *bool `form:"youtube_upload_enabled,omitempty" json:"youtube_upload_enabled,omitempty" xml:"youtube_upload_enabled,omitempty"`
 	// Whether Zoom AI Companion summary is enabled for the meeting
 	AiSummaryEnabled *bool `form:"ai_summary_enabled,omitempty" json:"ai_summary_enabled,omitempty" xml:"ai_summary_enabled,omitempty"`
+	// Whether AI summary requires approval before being shared
+	RequireAiSummaryApproval *bool `form:"require_ai_summary_approval,omitempty" json:"require_ai_summary_approval,omitempty" xml:"require_ai_summary_approval,omitempty"`
 	// The visibility of artifacts to users
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceResponseBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// Status of the last bulk registrant import job
+	LastBulkRegistrantJobStatus *string `form:"last_bulk_registrant_job_status,omitempty" json:"last_bulk_registrant_job_status,omitempty" xml:"last_bulk_registrant_job_status,omitempty"`
+	// Number of records with warnings in the last bulk registrant import job
+	LastBulkRegistrantsJobWarningCount *int `form:"last_bulk_registrants_job_warning_count,omitempty" json:"last_bulk_registrants_job_warning_count,omitempty" xml:"last_bulk_registrants_job_warning_count,omitempty"`
+	// Number of email delivery errors for the meeting
+	EmailDeliveryErrorCount *int `form:"email_delivery_error_count,omitempty" json:"email_delivery_error_count,omitempty" xml:"email_delivery_error_count,omitempty"`
+	// Whether invite responses (RSVP) are enabled for the meeting
+	IsInviteResponsesEnabled *bool `form:"is_invite_responses_enabled,omitempty" json:"is_invite_responses_enabled,omitempty" xml:"is_invite_responses_enabled,omitempty"`
+	// Number of 'yes' RSVP responses for the meeting
+	ResponseCountYes *int `form:"response_count_yes,omitempty" json:"response_count_yes,omitempty" xml:"response_count_yes,omitempty"`
+	// Number of 'maybe' RSVP responses for the meeting
+	ResponseCountMaybe *int `form:"response_count_maybe,omitempty" json:"response_count_maybe,omitempty" xml:"response_count_maybe,omitempty"`
+	// Number of 'no' RSVP responses for the meeting
+	ResponseCountNo *int `form:"response_count_no,omitempty" json:"response_count_no,omitempty" xml:"response_count_no,omitempty"`
+	// Status of the last mailing list members sync job
+	LastMailingListMembersSyncJobStatus *string `form:"last_mailing_list_members_sync_job_status,omitempty" json:"last_mailing_list_members_sync_job_status,omitempty" xml:"last_mailing_list_members_sync_job_status,omitempty"`
+	// Number of failed records in the last mailing list members sync job
+	LastMailingListMembersSyncJobFailedCount *int `form:"last_mailing_list_members_sync_job_failed_count,omitempty" json:"last_mailing_list_members_sync_job_failed_count,omitempty" xml:"last_mailing_list_members_sync_job_failed_count,omitempty"`
+	// Number of records with warnings in the last mailing list members sync job
+	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// 6-digit host key
@@ -925,6 +981,16 @@ type CreateItxPastMeetingParticipantResponseBody struct {
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
 	// Whether attendee is marked as unknown (attendees only)
 	IsUnknown *bool `form:"is_unknown,omitempty" json:"is_unknown,omitempty" xml:"is_unknown,omitempty"`
+	// Whether the attendee record was updated via AI reconciliation (attendees
+	// only)
+	IsAiReconciled *bool `form:"is_ai_reconciled,omitempty" json:"is_ai_reconciled,omitempty" xml:"is_ai_reconciled,omitempty"`
+	// Whether the attendee name was auto-matched to a registrant's email
+	// (attendees only)
+	IsAutoMatched *bool `form:"is_auto_matched,omitempty" json:"is_auto_matched,omitempty" xml:"is_auto_matched,omitempty"`
+	// Zoom display name of the attendee (attendees only)
+	ZoomUserName *string `form:"zoom_user_name,omitempty" json:"zoom_user_name,omitempty" xml:"zoom_user_name,omitempty"`
+	// Full name of the invitee the attendee was matched to (attendees only)
+	MappedInviteeName *string `form:"mapped_invitee_name,omitempty" json:"mapped_invitee_name,omitempty" xml:"mapped_invitee_name,omitempty"`
 	// Array of session objects with join/leave times (attendees only)
 	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// Average attendance percentage (attendees only, calculated)
@@ -989,6 +1055,16 @@ type UpdateItxPastMeetingParticipantResponseBody struct {
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
 	// Whether attendee is marked as unknown (attendees only)
 	IsUnknown *bool `form:"is_unknown,omitempty" json:"is_unknown,omitempty" xml:"is_unknown,omitempty"`
+	// Whether the attendee record was updated via AI reconciliation (attendees
+	// only)
+	IsAiReconciled *bool `form:"is_ai_reconciled,omitempty" json:"is_ai_reconciled,omitempty" xml:"is_ai_reconciled,omitempty"`
+	// Whether the attendee name was auto-matched to a registrant's email
+	// (attendees only)
+	IsAutoMatched *bool `form:"is_auto_matched,omitempty" json:"is_auto_matched,omitempty" xml:"is_auto_matched,omitempty"`
+	// Zoom display name of the attendee (attendees only)
+	ZoomUserName *string `form:"zoom_user_name,omitempty" json:"zoom_user_name,omitempty" xml:"zoom_user_name,omitempty"`
+	// Full name of the invitee the attendee was matched to (attendees only)
+	MappedInviteeName *string `form:"mapped_invitee_name,omitempty" json:"mapped_invitee_name,omitempty" xml:"mapped_invitee_name,omitempty"`
 	// Array of session objects with join/leave times (attendees only)
 	Sessions []*ParticipantSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 	// Average attendance percentage (attendees only, calculated)
@@ -3750,29 +3826,42 @@ type ParticipantSessionRequestBody struct {
 // result of the "create-itx-meeting" endpoint of the "Meeting Service" service.
 func NewCreateItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *CreateItxMeetingResponseBody {
 	body := &CreateItxMeetingResponseBody{
-		ProjectUID:           res.ProjectUID,
-		Title:                res.Title,
-		StartTime:            res.StartTime,
-		Duration:             res.Duration,
-		Timezone:             res.Timezone,
-		Visibility:           res.Visibility,
-		Description:          res.Description,
-		Restricted:           res.Restricted,
-		MeetingType:          res.MeetingType,
-		EarlyJoinTimeMinutes: res.EarlyJoinTimeMinutes,
-		RecordingEnabled:     res.RecordingEnabled,
-		TranscriptEnabled:    res.TranscriptEnabled,
-		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
-		AiSummaryEnabled:     res.AiSummaryEnabled,
-		ArtifactVisibility:   res.ArtifactVisibility,
-		ID:                   res.ID,
-		HostKey:              res.HostKey,
-		Passcode:             res.Passcode,
-		Password:             res.Password,
-		PublicLink:           res.PublicLink,
-		CreatedAt:            res.CreatedAt,
-		ModifiedAt:           res.ModifiedAt,
-		RegistrantCount:      res.RegistrantCount,
+		ProjectUID:                               res.ProjectUID,
+		Title:                                    res.Title,
+		StartTime:                                res.StartTime,
+		Duration:                                 res.Duration,
+		Timezone:                                 res.Timezone,
+		Visibility:                               res.Visibility,
+		Description:                              res.Description,
+		Restricted:                               res.Restricted,
+		MeetingType:                              res.MeetingType,
+		EarlyJoinTimeMinutes:                     res.EarlyJoinTimeMinutes,
+		RecordingEnabled:                         res.RecordingEnabled,
+		TranscriptEnabled:                        res.TranscriptEnabled,
+		YoutubeUploadEnabled:                     res.YoutubeUploadEnabled,
+		AiSummaryEnabled:                         res.AiSummaryEnabled,
+		RequireAiSummaryApproval:                 res.RequireAiSummaryApproval,
+		ArtifactVisibility:                       res.ArtifactVisibility,
+		AutoEmailReminderEnabled:                 res.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:                    res.AutoEmailReminderTime,
+		LastBulkRegistrantJobStatus:              res.LastBulkRegistrantJobStatus,
+		LastBulkRegistrantsJobWarningCount:       res.LastBulkRegistrantsJobWarningCount,
+		EmailDeliveryErrorCount:                  res.EmailDeliveryErrorCount,
+		IsInviteResponsesEnabled:                 res.IsInviteResponsesEnabled,
+		ResponseCountYes:                         res.ResponseCountYes,
+		ResponseCountMaybe:                       res.ResponseCountMaybe,
+		ResponseCountNo:                          res.ResponseCountNo,
+		LastMailingListMembersSyncJobStatus:      res.LastMailingListMembersSyncJobStatus,
+		LastMailingListMembersSyncJobFailedCount: res.LastMailingListMembersSyncJobFailedCount,
+		LastMailingListMembersSyncJobWarningCount: res.LastMailingListMembersSyncJobWarningCount,
+		ID:              res.ID,
+		HostKey:         res.HostKey,
+		Passcode:        res.Passcode,
+		Password:        res.Password,
+		PublicLink:      res.PublicLink,
+		CreatedAt:       res.CreatedAt,
+		ModifiedAt:      res.ModifiedAt,
+		RegistrantCount: res.RegistrantCount,
 	}
 	if res.Committees != nil {
 		body.Committees = make([]*CommitteeResponseBody, len(res.Committees))
@@ -3804,29 +3893,42 @@ func NewCreateItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse)
 // of the "get-itx-meeting" endpoint of the "Meeting Service" service.
 func NewGetItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *GetItxMeetingResponseBody {
 	body := &GetItxMeetingResponseBody{
-		ProjectUID:           res.ProjectUID,
-		Title:                res.Title,
-		StartTime:            res.StartTime,
-		Duration:             res.Duration,
-		Timezone:             res.Timezone,
-		Visibility:           res.Visibility,
-		Description:          res.Description,
-		Restricted:           res.Restricted,
-		MeetingType:          res.MeetingType,
-		EarlyJoinTimeMinutes: res.EarlyJoinTimeMinutes,
-		RecordingEnabled:     res.RecordingEnabled,
-		TranscriptEnabled:    res.TranscriptEnabled,
-		YoutubeUploadEnabled: res.YoutubeUploadEnabled,
-		AiSummaryEnabled:     res.AiSummaryEnabled,
-		ArtifactVisibility:   res.ArtifactVisibility,
-		ID:                   res.ID,
-		HostKey:              res.HostKey,
-		Passcode:             res.Passcode,
-		Password:             res.Password,
-		PublicLink:           res.PublicLink,
-		CreatedAt:            res.CreatedAt,
-		ModifiedAt:           res.ModifiedAt,
-		RegistrantCount:      res.RegistrantCount,
+		ProjectUID:                               res.ProjectUID,
+		Title:                                    res.Title,
+		StartTime:                                res.StartTime,
+		Duration:                                 res.Duration,
+		Timezone:                                 res.Timezone,
+		Visibility:                               res.Visibility,
+		Description:                              res.Description,
+		Restricted:                               res.Restricted,
+		MeetingType:                              res.MeetingType,
+		EarlyJoinTimeMinutes:                     res.EarlyJoinTimeMinutes,
+		RecordingEnabled:                         res.RecordingEnabled,
+		TranscriptEnabled:                        res.TranscriptEnabled,
+		YoutubeUploadEnabled:                     res.YoutubeUploadEnabled,
+		AiSummaryEnabled:                         res.AiSummaryEnabled,
+		RequireAiSummaryApproval:                 res.RequireAiSummaryApproval,
+		ArtifactVisibility:                       res.ArtifactVisibility,
+		AutoEmailReminderEnabled:                 res.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:                    res.AutoEmailReminderTime,
+		LastBulkRegistrantJobStatus:              res.LastBulkRegistrantJobStatus,
+		LastBulkRegistrantsJobWarningCount:       res.LastBulkRegistrantsJobWarningCount,
+		EmailDeliveryErrorCount:                  res.EmailDeliveryErrorCount,
+		IsInviteResponsesEnabled:                 res.IsInviteResponsesEnabled,
+		ResponseCountYes:                         res.ResponseCountYes,
+		ResponseCountMaybe:                       res.ResponseCountMaybe,
+		ResponseCountNo:                          res.ResponseCountNo,
+		LastMailingListMembersSyncJobStatus:      res.LastMailingListMembersSyncJobStatus,
+		LastMailingListMembersSyncJobFailedCount: res.LastMailingListMembersSyncJobFailedCount,
+		LastMailingListMembersSyncJobWarningCount: res.LastMailingListMembersSyncJobWarningCount,
+		ID:              res.ID,
+		HostKey:         res.HostKey,
+		Passcode:        res.Passcode,
+		Password:        res.Password,
+		PublicLink:      res.PublicLink,
+		CreatedAt:       res.CreatedAt,
+		ModifiedAt:      res.ModifiedAt,
+		RegistrantCount: res.RegistrantCount,
 	}
 	if res.Committees != nil {
 		body.Committees = make([]*CommitteeResponseBody, len(res.Committees))
@@ -4111,6 +4213,10 @@ func NewCreateItxPastMeetingParticipantResponseBody(res *meetingservice.ITXPastM
 		IsAttended:            res.IsAttended,
 		IsVerified:            res.IsVerified,
 		IsUnknown:             res.IsUnknown,
+		IsAiReconciled:        res.IsAiReconciled,
+		IsAutoMatched:         res.IsAutoMatched,
+		ZoomUserName:          res.ZoomUserName,
+		MappedInviteeName:     res.MappedInviteeName,
 		AverageAttendance:     res.AverageAttendance,
 		CreatedAt:             res.CreatedAt,
 		ModifiedAt:            res.ModifiedAt,
@@ -4162,6 +4268,10 @@ func NewUpdateItxPastMeetingParticipantResponseBody(res *meetingservice.ITXPastM
 		IsAttended:            res.IsAttended,
 		IsVerified:            res.IsVerified,
 		IsUnknown:             res.IsUnknown,
+		IsAiReconciled:        res.IsAiReconciled,
+		IsAutoMatched:         res.IsAutoMatched,
+		ZoomUserName:          res.ZoomUserName,
+		MappedInviteeName:     res.MappedInviteeName,
 		AverageAttendance:     res.AverageAttendance,
 		CreatedAt:             res.CreatedAt,
 		ModifiedAt:            res.ModifiedAt,
@@ -6985,21 +7095,22 @@ func NewGetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody(res *meeting
 // create-itx-meeting endpoint payload.
 func NewCreateItxMeetingPayload(body *CreateItxMeetingRequestBody, version *string, bearerToken *string, xSync *bool) *meetingservice.CreateItxMeetingPayload {
 	v := &meetingservice.CreateItxMeetingPayload{
-		ProjectUID:           *body.ProjectUID,
-		Title:                *body.Title,
-		StartTime:            *body.StartTime,
-		Duration:             *body.Duration,
-		Timezone:             *body.Timezone,
-		Visibility:           *body.Visibility,
-		Description:          body.Description,
-		Restricted:           body.Restricted,
-		MeetingType:          body.MeetingType,
-		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
-		RecordingEnabled:     body.RecordingEnabled,
-		TranscriptEnabled:    body.TranscriptEnabled,
-		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
-		AiSummaryEnabled:     body.AiSummaryEnabled,
-		ArtifactVisibility:   body.ArtifactVisibility,
+		ProjectUID:               *body.ProjectUID,
+		Title:                    *body.Title,
+		StartTime:                *body.StartTime,
+		Duration:                 *body.Duration,
+		Timezone:                 *body.Timezone,
+		Visibility:               *body.Visibility,
+		Description:              body.Description,
+		Restricted:               body.Restricted,
+		MeetingType:              body.MeetingType,
+		EarlyJoinTimeMinutes:     body.EarlyJoinTimeMinutes,
+		RecordingEnabled:         body.RecordingEnabled,
+		TranscriptEnabled:        body.TranscriptEnabled,
+		YoutubeUploadEnabled:     body.YoutubeUploadEnabled,
+		AiSummaryEnabled:         body.AiSummaryEnabled,
+		RequireAiSummaryApproval: body.RequireAiSummaryApproval,
+		ArtifactVisibility:       body.ArtifactVisibility,
 	}
 	if body.Committees != nil {
 		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
@@ -7047,22 +7158,23 @@ func NewDeleteItxMeetingPayload(meetingID string, version *string, bearerToken *
 // update-itx-meeting endpoint payload.
 func NewUpdateItxMeetingPayload(body *UpdateItxMeetingRequestBody, meetingID string, version *string, bearerToken *string, xSync *bool) *meetingservice.UpdateItxMeetingPayload {
 	v := &meetingservice.UpdateItxMeetingPayload{
-		ProjectUID:           *body.ProjectUID,
-		Title:                *body.Title,
-		StartTime:            *body.StartTime,
-		Duration:             *body.Duration,
-		Timezone:             *body.Timezone,
-		Visibility:           *body.Visibility,
-		Description:          body.Description,
-		Restricted:           body.Restricted,
-		MeetingType:          body.MeetingType,
-		EarlyJoinTimeMinutes: body.EarlyJoinTimeMinutes,
-		RecordingEnabled:     body.RecordingEnabled,
-		TranscriptEnabled:    body.TranscriptEnabled,
-		YoutubeUploadEnabled: body.YoutubeUploadEnabled,
-		AiSummaryEnabled:     body.AiSummaryEnabled,
-		ArtifactVisibility:   body.ArtifactVisibility,
-		UpdateNote:           body.UpdateNote,
+		ProjectUID:               *body.ProjectUID,
+		Title:                    *body.Title,
+		StartTime:                *body.StartTime,
+		Duration:                 *body.Duration,
+		Timezone:                 *body.Timezone,
+		Visibility:               *body.Visibility,
+		Description:              body.Description,
+		Restricted:               body.Restricted,
+		MeetingType:              body.MeetingType,
+		EarlyJoinTimeMinutes:     body.EarlyJoinTimeMinutes,
+		RecordingEnabled:         body.RecordingEnabled,
+		TranscriptEnabled:        body.TranscriptEnabled,
+		YoutubeUploadEnabled:     body.YoutubeUploadEnabled,
+		AiSummaryEnabled:         body.AiSummaryEnabled,
+		RequireAiSummaryApproval: body.RequireAiSummaryApproval,
+		ArtifactVisibility:       body.ArtifactVisibility,
+		UpdateNote:               body.UpdateNote,
 	}
 	if body.Committees != nil {
 		v.Committees = make([]*meetingservice.Committee, len(body.Committees))

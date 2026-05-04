@@ -86,6 +86,58 @@ func AISummaryEnabledAttribute() {
 	Attribute("ai_summary_enabled", Boolean, "Whether Zoom AI Companion summary is enabled for the meeting")
 }
 
+func RequireAiSummaryApprovalAttribute() {
+	Attribute("require_ai_summary_approval", Boolean, "Whether AI summary requires approval before being shared")
+}
+
+func AutoEmailReminderEnabledAttribute() {
+	Attribute("auto_email_reminder_enabled", Boolean, "Whether automatic email reminders are enabled for the meeting")
+}
+
+func AutoEmailReminderTimeAttribute() {
+	Attribute("auto_email_reminder_time", Int, "Time in minutes before the meeting to send the automatic email reminder")
+}
+
+func LastBulkRegistrantJobStatusAttribute() {
+	Attribute("last_bulk_registrant_job_status", String, "Status of the last bulk registrant import job")
+}
+
+func LastBulkRegistrantsJobWarningCountAttribute() {
+	Attribute("last_bulk_registrants_job_warning_count", Int, "Number of records with warnings in the last bulk registrant import job")
+}
+
+func EmailDeliveryErrorCountAttribute() {
+	Attribute("email_delivery_error_count", Int, "Number of email delivery errors for the meeting")
+}
+
+func LastMailingListMembersSyncJobStatusAttribute() {
+	Attribute("last_mailing_list_members_sync_job_status", String, "Status of the last mailing list members sync job")
+}
+
+func LastMailingListMembersSyncJobFailedCountAttribute() {
+	Attribute("last_mailing_list_members_sync_job_failed_count", Int, "Number of failed records in the last mailing list members sync job")
+}
+
+func LastMailingListMembersSyncJobWarningCountAttribute() {
+	Attribute("last_mailing_list_members_sync_job_warning_count", Int, "Number of records with warnings in the last mailing list members sync job")
+}
+
+func IsInviteResponsesEnabledAttribute() {
+	Attribute("is_invite_responses_enabled", Boolean, "Whether invite responses (RSVP) are enabled for the meeting")
+}
+
+func ResponseCountYesAttribute() {
+	Attribute("response_count_yes", Int, "Number of 'yes' RSVP responses for the meeting")
+}
+
+func ResponseCountMaybeAttribute() {
+	Attribute("response_count_maybe", Int, "Number of 'maybe' RSVP responses for the meeting")
+}
+
+func ResponseCountNoAttribute() {
+	Attribute("response_count_no", Int, "Number of 'no' RSVP responses for the meeting")
+}
+
 func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
 }
@@ -151,8 +203,21 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 	TranscriptEnabledAttribute()
 	YoutubeUploadEnabledAttribute()
 	AISummaryEnabledAttribute()
+	RequireAiSummaryApprovalAttribute()
 	ArtifactVisibilityAttribute()
 	RecurrenceAttribute()
+	AutoEmailReminderEnabledAttribute()
+	AutoEmailReminderTimeAttribute()
+	LastBulkRegistrantJobStatusAttribute()
+	LastBulkRegistrantsJobWarningCountAttribute()
+	EmailDeliveryErrorCountAttribute()
+	IsInviteResponsesEnabledAttribute()
+	ResponseCountYesAttribute()
+	ResponseCountMaybeAttribute()
+	ResponseCountNoAttribute()
+	LastMailingListMembersSyncJobStatusAttribute()
+	LastMailingListMembersSyncJobFailedCountAttribute()
+	LastMailingListMembersSyncJobWarningCountAttribute()
 
 	// Read-only response fields from ITX
 	Attribute("id", String, "Zoom meeting ID from ITX", func() {
@@ -556,6 +621,14 @@ var ITXPastMeetingParticipant = Type("ITXPastMeetingParticipant", func() {
 	})
 	Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendees only)")
 	Attribute("is_unknown", Boolean, "Whether attendee is marked as unknown (attendees only)")
+	Attribute("is_ai_reconciled", Boolean, "Whether the attendee record was updated via AI reconciliation (attendees only)")
+	Attribute("is_auto_matched", Boolean, "Whether the attendee name was auto-matched to a registrant's email (attendees only)")
+	Attribute("zoom_user_name", String, "Zoom display name of the attendee (attendees only)", func() {
+		Example("John Doe")
+	})
+	Attribute("mapped_invitee_name", String, "Full name of the invitee the attendee was matched to (attendees only)", func() {
+		Example("John Doe")
+	})
 
 	// Attendance tracking
 	Attribute("sessions", ArrayOf(ParticipantSession), "Array of session objects with join/leave times (attendees only)")

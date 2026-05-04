@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"strconv"
 
+	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -324,7 +325,7 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 	}
 	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, deleteAccessPayload, meetingDeleteConfig{
 		indexerSubject:      "lfx.index.v1_past_meeting",
-		deleteAccessSubject: "lfx.fga-sync.delete_access",
+		deleteAccessSubject: fgaconstants.GenericDeleteAccessSubject,
 		tombstoneKeyFmts:    []string{"v1_past_meetings.%s", "v1-mappings.past-meeting-mappings.%s"},
 	})
 }
@@ -606,6 +607,37 @@ func getCommitteesForPastMeeting(
 				UID:                   committeeUID,
 				AllowedVotingStatuses: utils.CastSlice[itx.CommitteeFilter](filters),
 			})
+		}
+	}
+
+	return committees, nil
+}
+
+// resolveParentPastMeetingCommittees returns the fully-resolved committee list for a past meeting,
+// matching the shape PastMeetingEventData.Committees is populated with. Combines the v1-mappings KV
+// lookup with the primary-committee fallback from the past-meeting row itself.
+func resolveParentPastMeetingCommittees(
+	ctx context.Context,
+	meetingAndOccurrenceID string,
+	primaryCommitteeSFID string,
+	idMapper domain.IDMapper,
+	mappingsKV jetstream.KeyValue,
+	logger *slog.Logger,
+) ([]models.Committee, error) {
+	committees, err := getCommitteesForPastMeeting(ctx, meetingAndOccurrenceID, idMapper, mappingsKV, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(committees) == 0 && primaryCommitteeSFID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, primaryCommitteeSFID)
+		if mapErr != nil {
+			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
+				return nil, fmt.Errorf("failed to map primary committee ID for parent past meeting (transient): %w", mapErr)
+			}
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "primary committee mapping not found for parent past meeting", "v1_id", primaryCommitteeSFID)
+		} else if uid != "" {
+			committees = []models.Committee{{UID: uid}}
 		}
 	}
 

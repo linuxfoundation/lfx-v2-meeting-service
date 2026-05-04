@@ -13,18 +13,21 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/vmihailenco/msgpack/v5"
 
+	fgatypes "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/types"
+
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
 // EventHandlers contains all the specific event type handlers
 type EventHandlers struct {
-	publisher    domain.EventPublisher
-	userLookup   domain.V1UserLookup
-	idMapper     domain.IDMapper
-	v1ObjectsKV  jetstream.KeyValue
-	v1MappingsKV jetstream.KeyValue
-	logger       *slog.Logger
+	publisher     domain.EventPublisher
+	userLookup    domain.V1UserLookup
+	idMapper      domain.IDMapper
+	projectLookup domain.ProjectLookup
+	v1ObjectsKV   jetstream.KeyValue
+	v1MappingsKV  jetstream.KeyValue
+	logger        *slog.Logger
 }
 
 const tombstoneMarker = "!del"
@@ -44,12 +47,10 @@ type meetingDeleteConfig struct {
 
 // buildGenericDeleteAccessPayload builds the JSON payload for a lfx.fga-sync.delete_access message.
 func buildGenericDeleteAccessPayload(objectType, uid string) ([]byte, error) {
-	msg := map[string]interface{}{
-		"object_type": objectType,
-		"operation":   "delete_access",
-		"data": map[string]interface{}{
-			"uid": uid,
-		},
+	msg := fgatypes.GenericFGAMessage{
+		ObjectType: objectType,
+		Operation:  "delete_access",
+		Data:       fgatypes.GenericDeleteData{UID: uid},
 	}
 	return json.Marshal(msg)
 }
@@ -57,13 +58,13 @@ func buildGenericDeleteAccessPayload(objectType, uid string) ([]byte, error) {
 // buildGenericMemberRemovePayload builds the JSON payload for a lfx.fga-sync.member_remove message.
 // An empty relations slice instructs fga-sync to remove ALL relations for the user.
 func buildGenericMemberRemovePayload(objectType, uid, username string) ([]byte, error) {
-	msg := map[string]interface{}{
-		"object_type": objectType,
-		"operation":   "member_remove",
-		"data": map[string]interface{}{
-			"uid":       uid,
-			"username":  username,
-			"relations": []string{},
+	msg := fgatypes.GenericFGAMessage{
+		ObjectType: objectType,
+		Operation:  "member_remove",
+		Data: fgatypes.GenericMemberData{
+			UID:       uid,
+			Username:  username,
+			Relations: []string{},
 		},
 	}
 	return json.Marshal(msg)
@@ -128,17 +129,19 @@ func NewEventHandlers(
 	publisher domain.EventPublisher,
 	userLookup domain.V1UserLookup,
 	idMapper domain.IDMapper,
+	projectLookup domain.ProjectLookup,
 	v1ObjectsKV jetstream.KeyValue,
 	v1MappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) *EventHandlers {
 	return &EventHandlers{
-		publisher:    publisher,
-		userLookup:   userLookup,
-		idMapper:     idMapper,
-		v1ObjectsKV:  v1ObjectsKV,
-		v1MappingsKV: v1MappingsKV,
-		logger:       logger,
+		publisher:     publisher,
+		userLookup:    userLookup,
+		idMapper:      idMapper,
+		projectLookup: projectLookup,
+		v1ObjectsKV:   v1ObjectsKV,
+		v1MappingsKV:  v1MappingsKV,
+		logger:        logger,
 	}
 }
 
