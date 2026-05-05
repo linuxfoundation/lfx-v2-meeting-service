@@ -416,11 +416,11 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 		return "", fmt.Errorf("invalid recurrence type: %d", reccurrence.Type)
 	}
 
-	rrule.WriteString(fmt.Sprintf("FREQ=%s;", strings.ToUpper(typeName[reccurrence.Type-1])))
+	fmt.Fprintf(&rrule, "FREQ=%s;", strings.ToUpper(typeName[reccurrence.Type-1]))
 	rrule.WriteString("WKST=SU;")
 
 	if reccurrence.RepeatInterval != 0 {
-		rrule.WriteString(fmt.Sprintf("INTERVAL=%d;", reccurrence.RepeatInterval))
+		fmt.Fprintf(&rrule, "INTERVAL=%d;", reccurrence.RepeatInterval)
 	}
 
 	if reccurrence.WeeklyDays != "" {
@@ -428,9 +428,9 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 		if err != nil {
 			return "", err
 		}
-		rrule.WriteString(fmt.Sprintf("BYDAY=%s;", s))
+		fmt.Fprintf(&rrule, "BYDAY=%s;", s)
 	} else if reccurrence.MonthlyWeek != 0 && reccurrence.MonthlyWeekDay != 0 {
-		rrule.WriteString(fmt.Sprintf("BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1]))
+		fmt.Fprintf(&rrule, "BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1])
 	}
 
 	if reccurrence.MonthlyDay != 0 {
@@ -442,12 +442,12 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 		case 31:
 			rrule.WriteString("BYMONTHDAY=28,29,30,31;BYSETPOS=-1;")
 		default:
-			rrule.WriteString(fmt.Sprintf("BYMONTHDAY=%d;", reccurrence.MonthlyDay))
+			fmt.Fprintf(&rrule, "BYMONTHDAY=%d;", reccurrence.MonthlyDay)
 		}
 	}
 
 	if endTime != nil {
-		rrule.WriteString(fmt.Sprintf("UNTIL=%s;", endTime.Format("20060102T150405Z")))
+		fmt.Fprintf(&rrule, "UNTIL=%s;", endTime.Format("20060102T150405Z"))
 	} else {
 		// Use a local copy to avoid mutating the caller's recurrence object
 		endTimes := reccurrence.EndTimes
@@ -457,11 +457,11 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 			if err != nil {
 				return "", fmt.Errorf("failed to parse recurrence end_date_time %s: %w", reccurrence.EndDateTime, err)
 			}
-			rrule.WriteString(fmt.Sprintf("UNTIL=%s;", t.Format("20060102T150405Z")))
+			fmt.Fprintf(&rrule, "UNTIL=%s;", t.Format("20060102T150405Z"))
 		}
 
 		if endTimes != 0 {
-			rrule.WriteString(fmt.Sprintf("COUNT=%d;", endTimes))
+			fmt.Fprintf(&rrule, "COUNT=%d;", endTimes)
 		} else if reccurrence.EndDateTime == "" {
 			// No terminal condition — add a safety cap to prevent set.All() from
 			// generating an unbounded sequence and exhausting memory.
