@@ -14,15 +14,27 @@ updates:
       semver-major-days: 30
       semver-minor-days: 7
       semver-patch-days: 3
+    groups:
+      go-modules:
+        patterns:
+          - "*"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   # Helm chart dependencies
   - package-ecosystem: "helm"
     directory: "/charts/lfx-v2-meeting-service"
     schedule:
       interval: "daily"
+    groups:
+      helm-dependencies:
+        patterns:
+          - "*"
