@@ -24,13 +24,13 @@ jobs:
 
     steps:
       # Git Checkout
-      - uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40  # v2.19.0
+      - uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450  # v2.19.1
         with:
           egress-policy: audit
           disable-sudo: true
 
       - name: Checkout Code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
         with:
           fetch-depth: 0
 
@@ -38,7 +38,7 @@ jobs:
       - name: MegaLinter
         id: ml
         # Use the Go flavor.
-        uses: oxsecurity/megalinter/flavors/go@62c799d895af9bcbca5eacfebca29d527f125a57  # 9.1.0
+        uses: oxsecurity/megalinter/flavors/go@8fbdead70d1409964ab3d5afa885e18ee85388bb  # 9.4.0
         env:
           # All available variables are described in documentation
           # https://megalinter.io/configuration/
