@@ -13,7 +13,7 @@ type testStruct struct {
 	Age     int    `json:"age" xml:"age"`
 	Email   string `json:"email"`
 	Active  bool   `json:"active"`
-	private string `json:"private"` //nolint:govet // unexported field used for testing
+	private string `json:"private"` //nolint:govet,staticcheck // unexported field used for testing
 	NoTags  string // field without tags
 }
 
