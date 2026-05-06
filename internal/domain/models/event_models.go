@@ -185,6 +185,12 @@ type MeetingEventData struct {
 	// If the meeting is a recurring meeting, this is the start time of the first occurrence.
 	StartTime string `json:"start_time"`
 
+	// NextOccurrenceStartTime is the RFC3339 start time of the next upcoming occurrence.
+	// For recurring meetings this is the next occurrence whose end time is still in the future.
+	// For non-recurring meetings this equals StartTime while the meeting has not yet ended, and is
+	// empty once the meeting has ended. Empty when no future occurrence exists.
+	NextOccurrenceStartTime string `json:"next_occurrence_start_time,omitempty"`
+
 	// Timezone is the timezone of the meeting.
 	// The value should be from the IANA Timezone Database (e.g. "America/Los_Angeles").
 	Timezone string `json:"timezone"`
