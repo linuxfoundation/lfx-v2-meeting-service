@@ -217,6 +217,7 @@ paths:
                                 last_mailing_list_members_sync_job_warning_count: 2960991145266108411
                                 meeting_type: None
                                 modified_at: "2021-01-01T00:00:00Z"
+                                next_occurrence_start_time: "2026-06-01T10:00:00Z"
                                 occurrences:
                                     - duration: 5754868614731646189
                                       occurrence_id: "1640995200"
@@ -478,6 +479,7 @@ paths:
                                 last_mailing_list_members_sync_job_warning_count: 3490803123581171910
                                 meeting_type: Board
                                 modified_at: "2021-01-01T00:00:00Z"
+                                next_occurrence_start_time: "2026-06-01T10:00:00Z"
                                 occurrences:
                                     - duration: 5754868614731646189
                                       occurrence_id: "1640995200"
@@ -6696,6 +6698,11 @@ components:
                     description: Last modification timestamp (RFC3339)
                     example: "2021-01-01T00:00:00Z"
                     format: date-time
+                next_occurrence_start_time:
+                    type: string
+                    description: RFC3339 start time of the next upcoming occurrence. Empty when no future occurrence exists.
+                    example: "2026-06-01T10:00:00Z"
+                    format: date-time
                 occurrences:
                     type: array
                     items:
@@ -6834,6 +6841,7 @@ components:
                 last_mailing_list_members_sync_job_warning_count: 7963805891483622094
                 meeting_type: None
                 modified_at: "2021-01-01T00:00:00Z"
+                next_occurrence_start_time: "2026-06-01T10:00:00Z"
                 occurrences:
                     - duration: 7515253795355862648
                       occurrence_id: "1640995200"

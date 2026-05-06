@@ -168,13 +168,16 @@ type ZoomMeetingResponse struct {
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
 
 	// Read-only fields (set by ITX)
-	ID                      string       `json:"id"`          // Zoom meeting ID
-	HostKey                 string       `json:"host_key"`    // 6-digit PIN
-	Passcode                string       `json:"passcode"`    // Zoom passcode
-	Password                string       `json:"password"`    // UUID for join page
-	PublicLink              string       `json:"public_link"` // Public meeting URL
-	CreatedAt               string       `json:"created_at"`  // RFC3339
-	ModifiedAt              string       `json:"modified_at"` // RFC3339
+	ID         string `json:"id"`          // Zoom meeting ID
+	HostKey    string `json:"host_key"`    // 6-digit PIN
+	Passcode   string `json:"passcode"`    // Zoom passcode
+	Password   string `json:"password"`    // UUID for join page
+	PublicLink string `json:"public_link"` // Public meeting URL
+	CreatedAt  string `json:"created_at"`  // RFC3339
+	ModifiedAt string `json:"modified_at"` // RFC3339
+	// NextOccurrenceStartTime is the RFC3339 start time of the next upcoming occurrence.
+	// Empty when no future occurrence exists.
+	NextOccurrenceStartTime string       `json:"next_occurrence_start_time,omitempty"`
 	CreatedBy               *User        `json:"created_by,omitempty"`
 	UpdatedBy               *User        `json:"updated_by,omitempty"`
 	Occurrences             []Occurrence `json:"occurrences,omitempty"`

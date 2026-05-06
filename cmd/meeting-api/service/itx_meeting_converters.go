@@ -96,14 +96,15 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		LastMailingListMembersSyncJobWarningCount: utils.IntPtrOmitZero(resp.LastMailingListMembersSyncJobWarningCount),
 
 		// Read-only response fields
-		ID:              &resp.ID,
-		HostKey:         &resp.HostKey,
-		Passcode:        &resp.Passcode,
-		Password:        &resp.Password,
-		PublicLink:      &resp.PublicLink,
-		CreatedAt:       &resp.CreatedAt,
-		ModifiedAt:      &resp.ModifiedAt,
-		RegistrantCount: utils.IntPtrOmitZero(resp.RegistrantCount),
+		NextOccurrenceStartTime: utils.StringPtrOmitEmpty(resp.NextOccurrenceStartTime),
+		ID:                      &resp.ID,
+		HostKey:                 &resp.HostKey,
+		Passcode:                &resp.Passcode,
+		Password:                &resp.Password,
+		PublicLink:              &resp.PublicLink,
+		CreatedAt:               &resp.CreatedAt,
+		ModifiedAt:              &resp.ModifiedAt,
+		RegistrantCount:         utils.IntPtrOmitZero(resp.RegistrantCount),
 	}
 
 	// Convert committees
