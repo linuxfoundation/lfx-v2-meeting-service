@@ -65,6 +65,10 @@ type MeetingDBRaw struct {
 	// If the meeting is a recurring meeting, this is the start time of the first occurrence.
 	StartTime string `json:"start_time"`
 
+	// NextOccurrenceStartTime is the RFC3339 start time of the next upcoming occurrence.
+	// Empty when no future occurrence exists (series ended or one-time meeting in the past).
+	NextOccurrenceStartTime string `json:"next_occurrence_start_time,omitempty"`
+
 	// Timezone is the timezone of the meeting.
 	// The value should be from the IANA Timezone Database (e.g. "America/Los_Angeles").
 	Timezone string `json:"timezone"`
@@ -690,6 +694,7 @@ func convertMapToMeetingData(
 		Title:                                    rawMeeting.Topic,
 		Description:                              rawMeeting.Agenda,
 		StartTime:                                rawMeeting.StartTime,
+		NextOccurrenceStartTime:                  rawMeeting.NextOccurrenceStartTime,
 		Duration:                                 rawMeeting.Duration,
 		Timezone:                                 rawMeeting.Timezone,
 		Visibility:                               rawMeeting.Visibility,

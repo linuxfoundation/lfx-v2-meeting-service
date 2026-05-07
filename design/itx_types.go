@@ -90,6 +90,13 @@ func RequireAiSummaryApprovalAttribute() {
 	Attribute("require_ai_summary_approval", Boolean, "Whether AI summary requires approval before being shared")
 }
 
+func NextOccurrenceStartTimeAttribute() {
+	Attribute("next_occurrence_start_time", String, "RFC3339 start time of the next upcoming occurrence. Empty when no future occurrence exists.", func() {
+		Example("2026-06-01T10:00:00Z")
+		Format(FormatDateTime)
+	})
+}
+
 func AutoEmailReminderEnabledAttribute() {
 	Attribute("auto_email_reminder_enabled", Boolean, "Whether automatic email reminders are enabled for the meeting")
 }
@@ -218,6 +225,8 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 	LastMailingListMembersSyncJobStatusAttribute()
 	LastMailingListMembersSyncJobFailedCountAttribute()
 	LastMailingListMembersSyncJobWarningCountAttribute()
+
+	NextOccurrenceStartTimeAttribute()
 
 	// Read-only response fields from ITX
 	Attribute("id", String, "Zoom meeting ID from ITX", func() {
