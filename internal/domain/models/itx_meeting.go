@@ -41,6 +41,7 @@ type CreateITXMeetingRequest struct {
 	RequireAISummaryApproval bool
 	ArtifactVisibility       itx.ArtifactAccess
 	Recurrence               *ITXRecurrence
+	UpdateNote               string
 }
 
 // ITXRecurrence represents recurrence for ITX requests (with string EndDateTime)
