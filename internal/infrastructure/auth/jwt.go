@@ -11,9 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"net/http"
+
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
@@ -92,7 +95,8 @@ func NewJWTAuth(config JWTAuthConfig) (*JWTAuth, error) {
 		slog.Error("unexpected URL parsing of default issuer", logging.ErrKey, err)
 		return nil, err
 	}
-	provider := jwks.NewCachingProvider(issuer, 5*time.Minute, jwks.WithCustomJWKSURI(jwksURL))
+	otelClient := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	provider := jwks.NewCachingProvider(issuer, 5*time.Minute, jwks.WithCustomJWKSURI(jwksURL), jwks.WithCustomClient(otelClient))
 
 	// Set up the JWT validator.
 	jwtValidator, err := validator.New(
