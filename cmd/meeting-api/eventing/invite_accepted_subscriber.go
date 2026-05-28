@@ -15,6 +15,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
@@ -96,6 +97,11 @@ func (s *InviteAcceptedSubscriber) handle(ctx context.Context, msg *natsgo.Msg) 
 	if evt.Email == "" {
 		slog.WarnContext(ctx, "invite_accepted: missing email — cannot fan out; invite-service may need updating",
 			"invite_uid", evt.InviteUID)
+		return
+	}
+	if evt.ResourceType != "" && evt.ResourceType != constants.ResourceTypeMeeting {
+		slog.DebugContext(ctx, "invite_accepted: skipping non-meeting resource type",
+			"resource_type", evt.ResourceType, "invite_uid", evt.InviteUID)
 		return
 	}
 

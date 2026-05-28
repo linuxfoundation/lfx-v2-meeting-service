@@ -28,6 +28,9 @@ type errorEnvelope struct {
 // SubByEmail resolves the Auth0 sub for the given primary email address.
 // The auth service replies with a plain-text sub on success, or a JSON error envelope on miss.
 func (u *userReader) SubByEmail(ctx context.Context, email string) (string, error) {
+	if u.nc == nil {
+		return "", domain.NewUnavailableError("user reader is not configured")
+	}
 	reply, err := u.nc.RequestMsgWithContext(ctx, &natsgo.Msg{
 		Subject: constants.AuthEmailToSubSubject,
 		Data:    []byte(email),

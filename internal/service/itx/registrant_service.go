@@ -12,6 +12,7 @@ import (
 	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
@@ -43,7 +44,7 @@ func WithSelfServeBaseURL(u string) Option {
 	return func(s *RegistrantService) { s.selfServeBaseURL = u }
 }
 
-// WithInviteFeatureEnabled controls whether the invite flow is active (default true).
+// WithInviteFeatureEnabled controls whether the invite flow is active (default false).
 func WithInviteFeatureEnabled(enabled bool) Option {
 	return func(s *RegistrantService) { s.inviteFeatureEnabled = enabled }
 }
@@ -136,7 +137,7 @@ func (s *RegistrantService) issueInvite(ctx context.Context, meetingID string, r
 		RecipientName:  name,
 		ResourceUID:    meetingID,
 		ResourceName:   meetingID,
-		ResourceType:   "meeting",
+		ResourceType:   constants.ResourceTypeMeeting,
 		Role:           "Member",
 		ReturnURL:      s.selfServeBaseURL,
 		ExpirationDays: 30,
