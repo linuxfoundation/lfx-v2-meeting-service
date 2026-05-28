@@ -102,6 +102,12 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	return ep, nil
 }
 
+// Publisher returns the event publisher used by this processor, so callers can share it
+// with other subsystems (e.g. the invite_accepted subscriber).
+func (ep *EventProcessor) Publisher() domain.EventPublisher {
+	return ep.publisher
+}
+
 // Start begins processing events from the NATS JetStream.
 // If the consumer is deleted on the server at runtime, it is automatically
 // recreated and consumption resumes without requiring a service restart.

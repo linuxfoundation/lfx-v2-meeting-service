@@ -2054,3 +2054,93 @@ func (c *Client) DeletePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	return nil
 }
+
+// registrantInviteBody is the JSON payload for PUT /v2/zoom/registrants/{id}/invite.
+type registrantInviteBody struct {
+	LFIDInviteUID       string `json:"lfid_invite_uid"`
+	LFIDInviteEmail     string `json:"lfid_invite_email"`
+	LFIDInviteExpiresAt string `json:"lfid_invite_expires_at"`
+}
+
+// UpdateRegistrantInvite writes LFID invite fields onto a registrant after an invite is issued.
+func (c *Client) UpdateRegistrantInvite(ctx context.Context, registrantID string, fields domain.ITXRegistrantInviteFields) error {
+	body, err := json.Marshal(registrantInviteBody{
+		LFIDInviteUID:       fields.LFIDInviteUID,
+		LFIDInviteEmail:     fields.LFIDInviteEmail,
+		LFIDInviteExpiresAt: fields.LFIDInviteExpiresAt,
+	})
+	if err != nil {
+		return domain.NewInternalError("failed to marshal invite fields", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/v2/zoom/registrants/%s/invite", c.config.BaseURL, registrantID)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, reqURL, bytes.NewReader(body))
+	if err != nil {
+		return domain.NewInternalError("failed to create request", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read response", err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+	return nil
+}
+
+// acceptInviteRequest is the JSON payload for POST /v2/zoom/registrants/accept-invite.
+type acceptInviteRequest struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+}
+
+// acceptInviteResponse is the JSON response from POST /v2/zoom/registrants/accept-invite.
+type acceptInviteResponse struct {
+	Updated []*itx.ZoomMeetingRegistrant `json:"updated"`
+}
+
+// AcceptInvite fans out a username update across all registrants with the given lfid_invite_email.
+func (c *Client) AcceptInvite(ctx context.Context, email, username string) (*domain.ITXAcceptInviteResult, error) {
+	body, err := json.Marshal(acceptInviteRequest{Email: email, Username: username})
+	if err != nil {
+		return nil, domain.NewInternalError("failed to marshal accept-invite request", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/v2/zoom/registrants/accept-invite", c.config.BaseURL)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(body))
+	if err != nil {
+		return nil, domain.NewInternalError("failed to create request", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, domain.NewUnavailableError("ITX service request failed", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, domain.NewInternalError("failed to read response", err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	var result acceptInviteResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, domain.NewInternalError("failed to parse accept-invite response", err)
+	}
+	return &domain.ITXAcceptInviteResult{Updated: result.Updated}, nil
+}

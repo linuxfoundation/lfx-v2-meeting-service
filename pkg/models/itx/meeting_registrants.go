@@ -16,8 +16,9 @@ const (
 // ZoomMeetingRegistrant represents a meeting registrant in ITX
 type ZoomMeetingRegistrant struct {
 	// Read-only fields
-	ID   string         `json:"id,omitempty"`   // Registrant ID (read-only)
-	Type RegistrantType `json:"type,omitempty"` // read-only
+	ID        string         `json:"id,omitempty"`         // Registrant ID (read-only)
+	MeetingID string         `json:"meeting_id,omitempty"` // Meeting ID (read-only; populated in accept-invite responses)
+	Type      RegistrantType `json:"type,omitempty"`       // read-only
 
 	// Identity fields
 	CommitteeID string `json:"committee_id,omitempty"` // Committee ID (for committee registrants)
@@ -49,6 +50,12 @@ type ZoomMeetingRegistrant struct {
 	CreatedBy  *User  `json:"created_by,omitempty"`  // Creator user info
 	ModifiedAt string `json:"modified_at,omitempty"` // Last modified timestamp (RFC3339)
 	UpdatedBy  *User  `json:"updated_by,omitempty"`  // Last updater user info
+
+	// LFID invite fields (response-side only; written via UpdateRegistrantInvite).
+	// Set when an invite has been issued for a no-LFID registrant; cleared on acceptance.
+	LFIDInviteUID       string `json:"lfid_invite_uid,omitempty"`
+	LFIDInviteEmail     string `json:"lfid_invite_email,omitempty"`
+	LFIDInviteExpiresAt string `json:"lfid_invite_expires_at,omitempty"` // RFC3339
 }
 
 // RegistrantICS represents an ICS calendar file response from ITX

@@ -24,6 +24,18 @@ type ITXMeetingClient interface {
 	SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error)
 }
 
+// ITXRegistrantInviteFields holds the LFID invite metadata written to an ITX registrant on invite issuance.
+type ITXRegistrantInviteFields struct {
+	LFIDInviteUID       string
+	LFIDInviteEmail     string
+	LFIDInviteExpiresAt string // RFC3339
+}
+
+// ITXAcceptInviteResult holds the registrants updated by AcceptInvite.
+type ITXAcceptInviteResult struct {
+	Updated []*itx.ZoomMeetingRegistrant
+}
+
 // ITXRegistrantClient defines the interface for ITX registrant operations
 type ITXRegistrantClient interface {
 	CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error)
@@ -32,6 +44,15 @@ type ITXRegistrantClient interface {
 	DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error
 	GetRegistrantICS(ctx context.Context, meetingID, registrantID string) (*itx.RegistrantICS, error)
 	ResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error
+
+	// UpdateRegistrantInvite writes LFID invite fields onto a registrant after an invite is issued.
+	// Corresponds to PUT /v2/zoom/registrants/{registrantID}/invite on the ITX side.
+	UpdateRegistrantInvite(ctx context.Context, registrantID string, fields ITXRegistrantInviteFields) error
+
+	// AcceptInvite fans out a username update across all registrants with the given
+	// lfid_invite_email, clears their invite fields, and returns the updated records.
+	// Corresponds to POST /v2/zoom/registrants/accept-invite on the ITX side.
+	AcceptInvite(ctx context.Context, email, username string) (*ITXAcceptInviteResult, error)
 }
 
 // ITXPastMeetingClient defines the interface for ITX past meeting operations
