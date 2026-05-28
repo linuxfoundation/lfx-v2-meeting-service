@@ -15,10 +15,13 @@ import (
 	"syscall"
 	"time"
 
+	natsgo "github.com/nats-io/nats.go"
+
 	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
+	infraNATS "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/nats"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
@@ -115,8 +118,40 @@ func run() int {
 		Timeout:     30 * time.Second,
 	}
 	itxProxyClient := proxy.NewClient(itxProxyConfig)
+
+	// Build invite-feature options for the registrant service.
+	// A shared NATS connection is opened here if NATS_URL is set; the ID mapper may have
+	// already opened its own connection — we open a second here to keep concerns separate
+	// and avoid coupling the invite lifecycle to ID-mapping availability.
+	var inviteNC *natsgo.Conn
+	registrantOpts := []itxservice.Option{
+		itxservice.WithInviteFeatureEnabled(env.InviteConfig.Enabled),
+	}
+	if env.InviteConfig.Enabled {
+		natsURL := os.Getenv("NATS_URL")
+		if natsURL != "" {
+			nc, ncErr := natsgo.Connect(natsURL,
+				natsgo.Name("lfx-v2-meeting-service-invite"),
+				natsgo.MaxReconnects(-1),
+			)
+			if ncErr != nil {
+				slog.With(logging.ErrKey, ncErr).Warn("failed to connect to NATS for invite feature; invite sending will be disabled")
+			} else {
+				inviteNC = nc
+				registrantOpts = append(registrantOpts,
+					itxservice.WithUserReader(infraNATS.NewUserReader(nc)),
+					itxservice.WithInviteSender(infraNATS.NewInviteSender(nc)),
+					itxservice.WithSelfServeBaseURL(env.InviteConfig.SelfServeBaseURL),
+				)
+				slog.InfoContext(ctx, "NATS invite connection established")
+			}
+		} else {
+			slog.WarnContext(ctx, "INVITE_FEATURE_ENABLED but NATS_URL not set; invite sending disabled")
+		}
+	}
+
 	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper)
-	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
+	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper, registrantOpts...)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient)
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper)
@@ -171,6 +206,24 @@ func run() int {
 		slog.InfoContext(ctx, "event processing is disabled")
 	}
 
+	// Start invite-accepted subscriber if NATS is available and the event processor is wired.
+	// The subscriber shares the inviteNC connection and relies on the event publisher from
+	// the event processor. We only start it when both the invite feature is on and we have
+	// a publisher to forward the reconciled events.
+	var inviteSubscriber *apieventing.InviteAcceptedSubscriber
+	if inviteNC != nil && eventProcessor != nil {
+		pub := eventProcessor.Publisher()
+		if pub != nil {
+			inviteSubscriber = apieventing.NewInviteAcceptedSubscriber(inviteNC, itxRegistrantService, pub)
+			if subErr := inviteSubscriber.Start(ctx); subErr != nil {
+				slog.With(logging.ErrKey, subErr).Error("failed to start invite_accepted subscriber")
+				return 1
+			}
+		} else {
+			slog.WarnContext(ctx, "event publisher not available; invite_accepted subscriber not started")
+		}
+	}
+
 	svc := NewMeetingsAPI(
 		authService,
 		itxMeetingService,
@@ -194,13 +247,29 @@ func run() int {
 	// This next line blocks until SIGINT or SIGTERM is received.
 	<-done
 
-	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel)
+	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel, inviteSubscriber, inviteNC)
 
 	return 0
 }
 
 // gracefulShutdown handles graceful shutdown of the application
-func gracefulShutdown(httpServer *http.Server, gracefulCloseWG *sync.WaitGroup, cancel context.CancelFunc, eventProcessor *apieventing.EventProcessor, eventProcessorCancel context.CancelFunc) {
+func gracefulShutdown(
+	httpServer *http.Server,
+	gracefulCloseWG *sync.WaitGroup,
+	cancel context.CancelFunc,
+	eventProcessor *apieventing.EventProcessor,
+	eventProcessorCancel context.CancelFunc,
+	inviteSubscriber *apieventing.InviteAcceptedSubscriber,
+	inviteNC *natsgo.Conn,
+) {
+	// Stop invite subscriber before closing the NATS connection.
+	if inviteSubscriber != nil {
+		inviteSubscriber.Stop()
+	}
+	if inviteNC != nil {
+		inviteNC.Close()
+	}
+
 	// Shutdown event processor first if it exists
 	if eventProcessor != nil {
 		slog.Info("shutting down event processor")

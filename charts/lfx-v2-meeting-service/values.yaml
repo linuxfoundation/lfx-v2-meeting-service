@@ -161,6 +161,14 @@ app:
     # (default: 1000)
     EVENT_MAX_ACK_PENDING:
       value: "1000"
+    # INVITE_FEATURE_ENABLED enables/disables the LFID invite flow for no-LFID registrants
+    # (default: true)
+    INVITE_FEATURE_ENABLED:
+      value: "true"
+    # LFX_SELF_SERVE_BASE_URL is the base URL included in LFID invite emails as a return URL
+    # (default: empty)
+    LFX_SELF_SERVE_BASE_URL:
+      value: ""
     # OTEL_SERVICE_NAME is the service name for OpenTelemetry resource identification
     # (default: "lfx-v2-meeting-service")
     # OTEL_SERVICE_NAME:

@@ -437,7 +437,9 @@ The service can be configured via environment variables:
 | `LOG_ADD_SOURCE` | Add source location to logs | `true` |
 | `LFX_ENVIRONMENT` | LFX environment (dev, staging, prod) | `prod` |
 | `ID_MAPPING_DISABLED` | Disable v1/v2 ID mapping | `false` |
-| `NATS_URL` | NATS server URL (for ID mapping) | `nats://lfx-platform-nats.lfx.svc.cluster.local:4222` |
+| `NATS_URL` | NATS server URL (for ID mapping and invite feature) | `nats://lfx-platform-nats.lfx.svc.cluster.local:4222` |
+| `INVITE_FEATURE_ENABLED` | Send LFID invites for no-LFID registrants (LFXV2-1831) | `true` |
+| `LFX_SELF_SERVE_BASE_URL` | Return URL included in LFID invite emails | `""` |
 
 ### ID Mapping
 

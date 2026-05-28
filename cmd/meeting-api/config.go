@@ -30,6 +30,13 @@ type environment struct {
 	ITXConfig          itxConfig
 	IDMappingDisabled  bool
 	EventConfig        eventConfig
+	InviteConfig       inviteConfig
+}
+
+// inviteConfig holds LFID invite feature configuration
+type inviteConfig struct {
+	Enabled          bool
+	SelfServeBaseURL string
 }
 
 // itxConfig holds ITX proxy configuration
@@ -127,6 +134,7 @@ func parseEnv() environment {
 		ITXConfig:          parseITXConfig(),
 		IDMappingDisabled:  idMappingDisabled,
 		EventConfig:        parseEventConfig(),
+		InviteConfig:       parseInviteConfig(),
 	}
 }
 
@@ -233,5 +241,17 @@ func parseEventConfig() eventConfig {
 		AckWait:              ackWait,
 		MaxAckPending:        maxAckPending,
 		V1MappingsBucketName: v1MappingsBucketName,
+	}
+}
+
+// parseInviteConfig parses LFID invite feature configuration from environment variables
+func parseInviteConfig() inviteConfig {
+	enabled := os.Getenv("INVITE_FEATURE_ENABLED") != "false" // Default: true
+
+	selfServeBaseURL := os.Getenv("LFX_SELF_SERVE_BASE_URL")
+
+	return inviteConfig{
+		Enabled:          enabled,
+		SelfServeBaseURL: selfServeBaseURL,
 	}
 }
