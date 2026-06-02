@@ -166,7 +166,7 @@ func ConvertPastMeetingToGoa(resp *itx.PastMeetingResponse) *meetingservice.ITXP
 			uid := c.ID
 			goaResp.Committees[i] = &meetingservice.Committee{
 				UID:                   &uid,
-				AllowedVotingStatuses: utils.CastSlice[string](c.Filters),
+				AllowedVotingStatuses: filterVotingStatuses(c.Filters),
 			}
 		}
 	}

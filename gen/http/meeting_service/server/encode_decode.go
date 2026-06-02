@@ -6190,9 +6190,9 @@ func unmarshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestB
 		UID: v.UID,
 	}
 	if v.AllowedVotingStatuses != nil {
-		res.AllowedVotingStatuses = make([]string, len(v.AllowedVotingStatuses))
+		res.AllowedVotingStatuses = make([]meetingservice.AllowedVotingStatus, len(v.AllowedVotingStatuses))
 		for i, val := range v.AllowedVotingStatuses {
-			res.AllowedVotingStatuses[i] = val
+			res.AllowedVotingStatuses[i] = meetingservice.AllowedVotingStatus(val)
 		}
 	}
 
@@ -6231,7 +6231,7 @@ func marshalMeetingserviceCommitteeToCommitteeResponseBody(v *meetingservice.Com
 	if v.AllowedVotingStatuses != nil {
 		res.AllowedVotingStatuses = make([]string, len(v.AllowedVotingStatuses))
 		for i, val := range v.AllowedVotingStatuses {
-			res.AllowedVotingStatuses[i] = val
+			res.AllowedVotingStatuses[i] = string(val)
 		}
 	}
 
