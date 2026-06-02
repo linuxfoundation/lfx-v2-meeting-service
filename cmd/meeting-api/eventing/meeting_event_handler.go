@@ -775,7 +775,10 @@ func convertMapToMeetingData(
 		}
 	}
 
-	// Map recurrence from raw to model
+	// Map the raw V1 recurrence into the meeting model.
+	// Note: this copies the top-level V1 rule, which may be stale if the cadence was
+	// changed via an all_following update. The effective rule is reconciled below, after
+	// occurrence calculation.
 	if rawMeeting.Recurrence != nil {
 		r := rawMeeting.Recurrence
 		meeting.Recurrence = &models.ZoomMeetingRecurrence{
@@ -827,6 +830,16 @@ func convertMapToMeetingData(
 			ResponseCountNo:  0,
 			RegistrantCount:  0,
 		}
+	}
+
+	// Reconcile the indexed recurrence rule with the currently active cadence.
+	// The top-level V1 recurrence field is not updated when a cadence change is made via an
+	// all_following occurrence update — only the updated_occurrences entry carries the new
+	// pattern. getEffectiveRecurrence walks those updates and returns the rule governing
+	// today's occurrences (e.g. repeat_interval:3 for quarterly), ensuring that Self Serve's
+	// cadence label (derived from this indexed rule) stays consistent with the occurrences.
+	if meeting.Recurrence != nil {
+		meeting.Recurrence = getEffectiveRecurrence(*meeting, time.Now())
 	}
 
 	return meeting, nil
