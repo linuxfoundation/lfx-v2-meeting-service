@@ -44,6 +44,7 @@ func NewOccurrenceCalculator(logger *slog.Logger) *OccurrenceCalculator {
 type seriesSegment struct {
 	startUnix         int64 // unix timestamp of this segment's first occurrence
 	oldOccurrenceUnix int64 // for all_following segments: the original occurrence being replaced (0 for base)
+	timezone          string
 	recurrence        *models.ZoomMeetingRecurrence
 	duration          int
 	title             string
@@ -82,11 +83,6 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 	slices.SortFunc(segments, func(a, b seriesSegment) int {
 		return cmp.Compare(a.startUnix, b.startUnix)
 	})
-
-	timezone := meeting.Timezone
-	if timezone == "" {
-		timezone = "UTC"
-	}
 
 	// Build a global map: originalOccurrenceID → segment index, for replaced-occurrence dedup.
 	// An occurrence that appears here is "owned" by the replacing segment (not the base series).
@@ -131,8 +127,12 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 			}
 		}
 
+		segTimezone := seg.timezone
+		if segTimezone == "" {
+			segTimezone = "UTC"
+		}
 		segStart := time.Unix(seg.startUnix, 0)
-		rruleOccurrences, err := c.getRRuleOccurrences(segStart, timezone, seg.recurrence, nil)
+		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get rrule occurrences for segment starting at %d: %w", seg.startUnix, err)
 		}
@@ -235,8 +235,16 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 		}
 		newStart := time.Unix(newUnix, 0)
 
-		// Inherit duration from the effective segment at this time, then apply the override.
+		// Inherit defaults from the effective segment at this time, then apply the override.
+		// If this old_occurrence_id was also claimed by an all_following update, prefer that
+		// segment's properties — the single update's new time may precede the all_following
+		// anchor, which would otherwise cause effectiveSegmentForTime to fall back to base.
 		eff := effectiveSegmentForTime(segments, newUnix)
+		if afUo, found := allFollowingByOldID[uo.OldOccurrenceID]; found {
+			if anchorUnix, err := strconv.ParseInt(afUo.NewOccurrenceID, 10, 64); err == nil {
+				eff = effectiveSegmentForTime(segments, anchorUnix)
+			}
+		}
 		duration := eff.duration
 		if duration == 0 {
 			duration = meeting.Duration
@@ -313,6 +321,7 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 
 	base := seriesSegment{
 		startUnix:   startObj.Unix(),
+		timezone:    meeting.Timezone,
 		recurrence:  meeting.Recurrence,
 		duration:    meeting.Duration,
 		title:       meeting.Title,
@@ -348,6 +357,9 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 				"old_occurrence_id", uo.OldOccurrenceID)
 			continue
 		}
+		if uo.Timezone != "" {
+			curr.timezone = uo.Timezone
+		}
 		if uo.Recurrence != nil {
 			curr.recurrence = uo.Recurrence
 		}
@@ -363,6 +375,7 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 		segments = append(segments, seriesSegment{
 			startUnix:         newUnix,
 			oldOccurrenceUnix: oldUnix,
+			timezone:          curr.timezone,
 			recurrence:        curr.recurrence,
 			duration:          curr.duration,
 			title:             curr.title,
@@ -391,8 +404,8 @@ func effectiveSegmentForTime(segments []seriesSegment, unix int64) seriesSegment
 
 // getEffectiveRecurrence returns the recurrence rule that is active as of time t.
 // It walks the all_following updates sorted by start time and returns the last one
-// whose segment start is at or before t — mirroring ITX's GetRecurrenceAtTime logic.
-// If no all_following updates have started by t, the meeting's base recurrence is returned.
+// whose segment start is strictly before t — mirroring ITX's GetRecurrenceAtTime logic.
+// If no all_following update has started strictly before t, the base recurrence is returned.
 func getEffectiveRecurrence(meeting models.MeetingEventData, t time.Time) *models.ZoomMeetingRecurrence {
 	if meeting.Recurrence == nil {
 		return nil

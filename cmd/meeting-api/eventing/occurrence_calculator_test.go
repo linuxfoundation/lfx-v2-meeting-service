@@ -302,14 +302,16 @@ func TestParseByDay(t *testing.T) {
 func TestOccurrenceCalculator_QuarterlyCadenceChange(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 
-	// Base meeting: monthly on the 1st Thursday, starting 2025-02-06 (1st Thu of Feb 2025)
+	// Base meeting: monthly on the 1st Thursday, starting 2025-02-06 (1st Thu of Feb 2025).
 	// The Zoom-style pattern is type=3 (Monthly), repeat_interval=1, monthly_week=1, monthly_week_day=5 (Thu).
-	baseStart := time.Date(2025, 2, 6, 14, 0, 0, 0, time.UTC)
+	// baseStart matches augOldUnix (13:00 UTC) so the base RRULE actually emits the Aug slot —
+	// this ensures the bounding assertion would fail under the old (bound-by-new) behaviour.
+	baseStart := time.Date(2025, 2, 6, 13, 0, 0, 0, time.UTC)
 
 	// The cadence change to quarterly happens at the August 2025 occurrence.
-	// old_occurrence_id: the original August 7 (1st Thu of Aug 2025) monthly slot, unix=1754571600
-	// new_occurrence_id: August 7 at 14:00 (same date, adjusted time), unix=1754575200
-	// After the change: repeat_interval=3, so occurrences are every 3 months (Nov, Feb, May …)
+	// old_occurrence_id: the original August 7 (1st Thu of Aug 2025) monthly slot at 13:00 UTC.
+	// new_occurrence_id: August 7 at 14:00 (same date, time adjusted by PCC), unix=1754575200.
+	// After the change: repeat_interval=3, so occurrences are every 3 months (Nov, Feb, May …).
 	augOldUnix := time.Date(2025, 8, 7, 13, 0, 0, 0, time.UTC).Unix() // original RRULE slot
 	augNewUnix := time.Date(2025, 8, 7, 14, 0, 0, 0, time.UTC).Unix() // adjusted anchor
 	quarterlyRecurrence := &models.ZoomMeetingRecurrence{
