@@ -149,6 +149,12 @@ func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
 }
 
+// AllowedVotingStatus is the set of valid voting status filters for committee members.
+var AllowedVotingStatus = Type("AllowedVotingStatus", String, func() {
+	Description("Voting status filter for committee members")
+	Enum("voting_rep", "alt_voting_rep", "observer", "emeritus", "none")
+})
+
 // Committee represents a committee associated with a meeting
 var Committee = Type("Committee", func() {
 	Description("A committee associated with a meeting")
@@ -156,7 +162,7 @@ var Committee = Type("Committee", func() {
 		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
 		Format(FormatUUID)
 	})
-	Attribute("allowed_voting_statuses", ArrayOf(String), "Allowed voting statuses for committee members")
+	Attribute("allowed_voting_statuses", ArrayOf(AllowedVotingStatus), "Allowed voting statuses for committee members")
 })
 
 // Recurrence represents meeting recurrence settings
