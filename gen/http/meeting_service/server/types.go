@@ -8334,6 +8334,11 @@ func ValidateCommitteeRequestBody(body *CommitteeRequestBody) (err error) {
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
 	}
+	for _, e := range body.AllowedVotingStatuses {
+		if !(e == "voting_rep" || e == "alt_voting_rep" || e == "observer" || e == "emeritus" || e == "none") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.allowed_voting_statuses[*]", e, []any{"voting_rep", "alt_voting_rep", "observer", "emeritus", "none"}))
+		}
+	}
 	return
 }
 

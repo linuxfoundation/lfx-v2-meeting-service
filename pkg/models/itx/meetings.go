@@ -88,6 +88,7 @@ const (
 	CommitteeFilterAltVotingRep CommitteeFilter = "alt_voting_rep"
 	CommitteeFilterObserver     CommitteeFilter = "observer"
 	CommitteeFilterEmeritus     CommitteeFilter = "emeritus"
+	CommitteeFilterNone         CommitteeFilter = "none"
 )
 
 // Committee represents a committee associated with a meeting

@@ -4,6 +4,7 @@
 package eventing
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
@@ -17,15 +18,15 @@ import (
 )
 
 const (
-	occurrenceStatusAvailable = "available"
-	occurrenceStatusCancel    = "cancel"
-	meetingEndBuffer          = 40 * time.Minute
+	meetingEndBuffer = 40 * time.Minute
 )
 
 var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
 var typeName = []string{"Daily", "Weekly", "Monthly"}
 
-// OccurrenceCalculator calculates meeting occurrences based on RRULE recurrence patterns
+// OccurrenceCalculator calculates meeting occurrences based on RRULE recurrence patterns.
+// The algorithm mirrors the canonical ITX CalculateOccurrencesV2 logic to ensure that
+// what is stored in OpenSearch matches what ITX computes.
 type OccurrenceCalculator struct {
 	logger *slog.Logger
 }
@@ -37,333 +38,406 @@ func NewOccurrenceCalculator(logger *slog.Logger) *OccurrenceCalculator {
 	}
 }
 
-// CalculateOccurrences generates occurrence objects for a meeting, which can optionally include past or cancelled occurrences
+// seriesSegment represents a contiguous run of occurrences governed by a single recurrence pattern.
+// The base segment starts at the meeting's original StartTime.
+// Each all_following updated occurrence starts a new segment.
+type seriesSegment struct {
+	startUnix         int64 // unix timestamp of this segment's first occurrence
+	oldOccurrenceUnix int64 // for all_following segments: the original occurrence being replaced (0 for base)
+	timezone          string
+	recurrence        *models.ZoomMeetingRecurrence
+	duration          int
+	title             string
+	description       string
+}
+
+// CalculateOccurrences generates occurrence objects for a recurring meeting.
+//
+// The implementation is a port of ITX's CalculateOccurrencesV2:
+//  1. Build contiguous series segments (base + each all_following update).
+//  2. Expand each segment via RRULE, bounded by the next segment's oldOccurrenceUnix
+//     (the original-timeline occurrence that the next cadence change replaces).
+//  3. Global dedup: skip any occurrence that is replaced by an all_following update,
+//     except for the anchor occurrence of the segment that owns it.
+//  4. Overlay single (non-all_following) updated occurrences.
+//  5. Sort by occurrence ID (unix timestamp) and apply the limit.
+//
+// This is the canonical algorithm — diverging from it causes occurrence/rule mismatch
+// between OpenSearch (written here) and ITX (the source of truth).
 func (c *OccurrenceCalculator) CalculateOccurrences(
 	ctx context.Context,
 	meeting models.MeetingEventData,
 	pastOccurrences bool,
 	includeCancelled bool,
 	numOccurrencesToReturn int,
-) (result []models.Occurrence, err error) {
-	timerNow := time.Now()
-	// Occurrences only exist for recurring meetings
+) ([]models.Occurrence, error) {
 	if meeting.Recurrence == nil {
-		return result, nil
+		return nil, nil
 	}
 
-	meetingStartTime, err := time.Parse(time.RFC3339, meeting.StartTime)
+	// 1. Build series segments
+	segments, err := c.buildSeriesSegments(meeting)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse meeting start_time %s: %w", meeting.StartTime, err)
+		return nil, err
 	}
-
-	location := time.UTC
-	if meeting.Timezone != "" {
-		meetingStartTime, err = timeInLocation(meetingStartTime, meeting.Timezone)
-		if err != nil {
-			return nil, err
-		}
-
-		location = meetingStartTime.Location()
-	}
-
-	// Get all occurrences patterns to calculate occurrences
-	occurrencesPattern := []models.Occurrence{}
-	// First add the base meeting recurrence
-	// Store start times as Unix string
-	occurrencesPattern = append(occurrencesPattern, models.Occurrence{
-		OccurrenceID: strconv.FormatInt(meetingStartTime.Unix(), 10),
-		StartTime:    meetingStartTime, // base meeting start time
-		Duration:     meeting.Duration,
-		Recurrence:   meeting.Recurrence,
+	slices.SortFunc(segments, func(a, b seriesSegment) int {
+		return cmp.Compare(a.startUnix, b.startUnix)
 	})
-	// Then add all recurrences for occurrences with a recurrence pattern, and include
-	// start time to determine when the recurrence patterns start/end.
-	occurrenceStartTimeUnix := occurrencesPattern[0].OccurrenceID
-	occurrenceStartTimeFmt := occurrencesPattern[0].StartTime
-	for _, updatedOcc := range meeting.UpdatedOccurrences {
-		if updatedOcc.Recurrence != nil {
-			// Update start time to occurrence start time.
-			// For use in case an occurrence doesn't have a new start time.
-			if updatedOcc.NewOccurrenceID != "" {
-				occurrenceStartTimeUnix = updatedOcc.NewOccurrenceID
-				// Convert occurrence start time to timeRFC3339 format to make the time easier to read in the logs
-				occurrenceStartTimeUnixInt, err := strconv.ParseInt(occurrenceStartTimeUnix, 10, 64)
-				if err != nil {
-					return nil, fmt.Errorf("failed to convert occurrence start time %s to int: %w", occurrenceStartTimeUnix, err)
+
+	// Build a global map: originalOccurrenceID → segment index, for replaced-occurrence dedup.
+	// An occurrence that appears here is "owned" by the replacing segment (not the base series).
+	oldOccurrenceToSegmentIndex := make(map[string]int)
+	for i, seg := range segments {
+		if seg.oldOccurrenceUnix > 0 {
+			oldID := strconv.FormatInt(seg.oldOccurrenceUnix, 10)
+			oldOccurrenceToSegmentIndex[oldID] = i
+		}
+	}
+
+	// 2. Expand segments
+	occurrencesByID := make(map[string]models.Occurrence)
+	for si, seg := range segments {
+		var boundUnix int64
+
+		if seg.oldOccurrenceUnix == 0 {
+			// Base segment: check if an earlier all_following segment bounds it
+			for i := 0; i < si; i++ {
+				prevSeg := segments[i]
+				if prevSeg.oldOccurrenceUnix > 0 && prevSeg.startUnix < seg.startUnix {
+					boundUnix = prevSeg.oldOccurrenceUnix
+					c.logger.DebugContext(ctx, "base segment bounded by earlier all_following segment",
+						"base_start", seg.startUnix, "bound_at", boundUnix)
+					break
 				}
-				occurrenceStartTimeFmt = time.Unix(occurrenceStartTimeUnixInt, 0)
-			}
-			occurrencesPattern = append(occurrencesPattern, models.Occurrence{
-				OccurrenceID: occurrenceStartTimeUnix,
-				StartTime:    occurrenceStartTimeFmt,
-				Recurrence:   updatedOcc.Recurrence,
-				Duration:     updatedOcc.Duration,
-				Title:        updatedOcc.Title,
-				Description:  updatedOcc.Description,
-			})
-		}
-	}
-	slices.SortFunc(occurrencesPattern, func(a, b models.Occurrence) int {
-		aUnix, _ := strconv.ParseInt(a.OccurrenceID, 10, 64)
-		bUnix, _ := strconv.ParseInt(b.OccurrenceID, 10, 64)
-		if aUnix < bUnix {
-			return -1
-		} else if aUnix > bUnix {
-			return 1
-		}
-		return 0
-	})
-	c.logger.With("meeting_id", meeting.ID, "recurrences", occurrencesPattern).DebugContext(ctx, "list of recurrence patterns")
-
-	var allFollowing bool
-	var currentStartTime = meetingStartTime
-	var currentDuration int
-	var previousOccurrence models.Occurrence
-	var previousOldOccurrenceID string
-
-	// Loop through all recurrence patterns to generate the occurrences
-	// from each start time to the next recurrence pattern start time.
-	for occurrencePatternIdx, occurrencePattern := range occurrencesPattern {
-		c.logger.With("meeting_id", meeting.ID, "recurrence", occurrencePattern, "idx", occurrencePatternIdx).DebugContext(ctx, "current recurrence")
-		// Determine next recurrence start time to know how long recurrence pattern lasts
-		var nextRecurrenceTimeUnix int64
-		if occurrencePatternIdx < len(occurrencesPattern)-1 && occurrencesPattern[occurrencePatternIdx+1].OccurrenceID != "" {
-			nextRecurrenceTimeUnix, err = strconv.ParseInt(occurrencesPattern[occurrencePatternIdx+1].OccurrenceID, 10, 64)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert next recurrence start time %s to int: %w", occurrencesPattern[occurrencePatternIdx+1].OccurrenceID, err)
 			}
 		}
-		c.logger.With("meeting_id", meeting.ID, "current_recurrence", occurrencePattern, "next_recurrence_start_time_unix", nextRecurrenceTimeUnix, "next_recurrence_start_time", time.Unix(nextRecurrenceTimeUnix, 0).Format(time.RFC3339)).DebugContext(ctx, "next recurrence start time")
 
-		// Skip the recurrence pattern if past occurrences are not included
-		// and the next recurrence start time is before the current time, which means
-		// this whole recurrence pattern must also be in the past and thus can be skipped.
-
-		if nextRecurrenceTimeUnix != 0 && !pastOccurrences && nextRecurrenceTimeUnix < time.Now().Unix() {
-			continue
+		// If not yet bounded, check the next segment
+		if boundUnix == 0 && si+1 < len(segments) {
+			nextSeg := segments[si+1]
+			switch {
+			case nextSeg.oldOccurrenceUnix == 0 && seg.oldOccurrenceUnix > 0 && seg.startUnix < nextSeg.startUnix:
+				// all_following segment starts before the base segment — don't bound it
+				c.logger.DebugContext(ctx, "all_following segment starts before base; not bounding",
+					"seg_start", seg.startUnix, "base_start", nextSeg.startUnix)
+			case nextSeg.oldOccurrenceUnix > 0:
+				boundUnix = nextSeg.oldOccurrenceUnix
+			default:
+				boundUnix = nextSeg.startUnix
+			}
 		}
 
-		// Convert unix string start time into time.Time object
-		unixStartTime, err := strconv.ParseInt(occurrencePattern.OccurrenceID, 10, 64)
+		segTimezone := seg.timezone
+		if segTimezone == "" {
+			segTimezone = "UTC"
+		}
+		segStart := time.Unix(seg.startUnix, 0)
+		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, nil)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert recurrence start time %s to int: %w", occurrencePattern.OccurrenceID, err)
+			return nil, fmt.Errorf("failed to get rrule occurrences for segment starting at %d: %w", seg.startUnix, err)
 		}
-		recStartTime := time.Unix(unixStartTime, 0)
-		recStartTime, err = timeInLocation(recStartTime, meeting.Timezone)
-		if err != nil {
-			return nil, err
-		}
+		c.logger.DebugContext(ctx, "segment expanded",
+			"meeting_id", meeting.ID, "segment_idx", si,
+			"seg_start", seg.startUnix, "bound", boundUnix,
+			"occurrences_count", len(rruleOccurrences))
 
-		// Get occurrences based on reccurrence pattern and start time
-		occurrences, err := c.getRRuleOccurrences(recStartTime, meeting.Timezone, occurrencePattern.Recurrence, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get recurrence rule: %w", err)
-		}
-		occurrencesInLog := occurrences
-		// only show the first 100 occurrences to avoid spamming the logs
-		if len(occurrencesInLog) > 100 {
-			occurrencesInLog = occurrencesInLog[:100]
-		}
-		c.logger.With("meeting_id", meeting.ID, "start_time", recStartTime, "recurrence_rrule", occurrencePattern.Recurrence, "occurrences", occurrencesInLog).DebugContext(ctx, "rrule calculated occurrences")
-
-		currentStartTime = recStartTime
-		currentDuration = occurrencePattern.Duration
-
-		// We need to check below fields to ensure they are not empty
-		currentTitle := occurrencePattern.Title
-		currentDescription := occurrencePattern.Description
-		if occurrencePattern.Title == "" {
-			currentTitle = meeting.Title
-		}
-		if occurrencePattern.Description == "" {
-			currentDescription = meeting.Description
-		}
-		for _, o := range occurrences {
-			// Skip this recurrence pattern if the occurrence time
-			// is after the next recurrence start time.
-			if nextRecurrenceTimeUnix != 0 && nextRecurrenceTimeUnix < o.Unix() {
-				c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "skip recurrence pattern")
+		for _, o := range rruleOccurrences {
+			// Stop when we reach the boundary of the next segment
+			if boundUnix > 0 && o.Unix() >= boundUnix {
 				break
 			}
+			if !pastOccurrences && isOccurrencePast(o, seg.duration) {
+				continue
+			}
 			occurrenceID := strconv.FormatInt(o.Unix(), 10)
-			if occurrenceID == previousOccurrence.OccurrenceID {
-				// Skip if occurrence is the same as the previous one.
-				// This can happen if an occurrence has a recurrence pattern
-				// that is the same as the meeting itself, so the occurrence shows
-				// up in two recurrence patterns that we iterate through.
-				continue
-			}
-			c.logger.With("meeting_id", meeting.ID, "occurrence_id", occurrenceID, "occurrence_start_time", o).DebugContext(ctx, "current occurrence (as calculated by RRULE, before adjustments)")
 
-			// Need to check single updated occurrence first then all following updated occurrence
-			// so that the latter gets applied to the following occurrences
-			var isUpdated bool
-			var updateOccAllFollowing models.UpdatedOccurrence
-			var updateOccSingle models.UpdatedOccurrence
-			for _, updatedOcc := range meeting.UpdatedOccurrences {
-				if (updatedOcc.OldOccurrenceID == occurrenceID || updatedOcc.NewOccurrenceID == occurrenceID) && updatedOcc.AllFollowing {
-					c.logger.With("meeting_id", meeting.ID, "occurrence", updatedOcc).DebugContext(ctx, "is an all following updated occurrence")
-					isUpdated = true
-					updateOccAllFollowing = updatedOcc
-					allFollowing = true
-
-					// Update the current duration and start time variables because an updated occurrence
-					// with all the following enabled means the following occurrences need to use
-					// the new start time and duration - so we must keep track of those values
-					currentDuration = updatedOcc.Duration
-					currentTitle = updatedOcc.Title
-					currentDescription = updatedOcc.Description
-					unixStartTime, err := strconv.ParseInt(updatedOcc.NewOccurrenceID, 10, 64)
-					if err != nil {
-						return nil, fmt.Errorf("failed to convert updated occurrence start time %s to int: %w", updatedOcc.NewOccurrenceID, err)
-					}
-					currentStartTime = time.Unix(unixStartTime, 0).In(location)
-					c.logger.With("meeting_id", meeting.ID, "current_start_time", currentStartTime, "occurrence", updatedOcc).DebugContext(ctx, "current start time changed")
-				}
-				// We need to check if the updated occurrence record's old or new occurrence ID matches the currently iterated
-				// occurrence ID. But also it's possible that there was an all_following=true updated occurrence record that
-				// effectively moved the [occurrenceID] and therefore in that case we also need to check if the updated occurrence
-				// record's old or new occurrence matches the new occurrence ID of the all_following=true updated occurrence record.
-				isUpdatedSingle := (updatedOcc.OldOccurrenceID == occurrenceID || updatedOcc.NewOccurrenceID == occurrenceID) && !updatedOcc.AllFollowing
-				isUpdatedSingle = isUpdatedSingle || ((updatedOcc.OldOccurrenceID == updateOccAllFollowing.NewOccurrenceID || updatedOcc.NewOccurrenceID == updateOccAllFollowing.NewOccurrenceID) && allFollowing)
-				if isUpdatedSingle {
-					c.logger.With("meeting_id", meeting.ID, "occurrence", updatedOcc).DebugContext(ctx, "is a single updated occurrence")
-					isUpdated = true
-					updateOccSingle = updatedOcc
-				}
-			}
-
-			if updateOccAllFollowing != (models.UpdatedOccurrence{}) || updateOccSingle != (models.UpdatedOccurrence{}) {
-				var updatedOcc models.UpdatedOccurrence
-				if updateOccSingle != (models.UpdatedOccurrence{}) {
-					c.logger.With("meeting_id", meeting.ID, "occurrence", updateOccSingle).DebugContext(ctx, "single updated occurrence")
-					updatedOcc = updateOccSingle
-				} else {
-					c.logger.With("meeting_id", meeting.ID, "occurrence", updateOccAllFollowing).DebugContext(ctx, "all following updated occurrence")
-					updatedOcc = updateOccAllFollowing
-				}
-
-				// Skip past occurrences if no past occurrences are expected
-				unixStartTime, err := strconv.ParseInt(updatedOcc.NewOccurrenceID, 10, 64)
-				if err != nil {
-					return nil, fmt.Errorf("failed to convert updated occurrence start time %s to int: %w", updatedOcc.NewOccurrenceID, err)
-				}
-
-				// If updated occurrence does not have a duration, use meeting duration
-				if updatedOcc.Duration == 0 {
-					updatedOcc.Duration = meeting.Duration
-				}
-
-				if !pastOccurrences && isOccurrencePast(time.Unix(unixStartTime, 0), updatedOcc.Duration) {
-					c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "skipping updated occurrence because it is a past occurrence")
+			// Global dedup: skip occurrences replaced by an all_following update,
+			// unless this is the anchor of the current segment (the occurrence that triggers the new pattern).
+			if segIdx, isReplaced := oldOccurrenceToSegmentIndex[occurrenceID]; isReplaced {
+				isCurrentAnchor := seg.oldOccurrenceUnix > 0 &&
+					occurrenceID == strconv.FormatInt(seg.oldOccurrenceUnix, 10) &&
+					segIdx == si
+				if !isCurrentAnchor {
 					continue
 				}
-
-				// Skip updated occurrence if previous occurrence was an updated occurrence with the same old occurrenceID (we don't want to duplicate occurrence).
-				// This can happen if an occurrence was updated both singularly and with all the following with a recurrence.
-				if updatedOcc.OldOccurrenceID == previousOldOccurrenceID {
-					continue
-				}
-
-				occurrenceObj := models.Occurrence{
-					OccurrenceID: updatedOcc.NewOccurrenceID, // stored in unix time as a string
-					Title:        updatedOcc.Title,
-					Description:  updatedOcc.Description,
-					StartTime:    time.Unix(unixStartTime, 0).In(location), // stored time as a formatted string
-					Duration:     updatedOcc.Duration,
-					IsCancelled:  false,
-				}
-				if updateOccAllFollowing != (models.UpdatedOccurrence{}) {
-					occurrenceObj.Recurrence = updateOccAllFollowing.Recurrence
-				}
-				if occurrenceObj.Title == "" {
-					occurrenceObj.Title = meeting.Title
-				}
-				if occurrenceObj.Description == "" {
-					occurrenceObj.Description = meeting.Description
-				}
-
-				// Cancelled occurrences should have a status of "cancel" instead of "available".
-				// This logic is for updated occurrences, so we must also
-				// check within the cancelled occurrences for the new occurrence ID.
-				if slices.Contains(meeting.CancelledOccurrences, occurrenceID) || slices.Contains(meeting.CancelledOccurrences, updatedOcc.NewOccurrenceID) {
-					if !includeCancelled {
-						continue
-					}
-					occurrenceObj.IsCancelled = true
-				}
-
-				previousOccurrence = occurrenceObj // set new previous occurrence
-				previousOldOccurrenceID = updatedOcc.OldOccurrenceID
-				c.logger.With("meeting_id", meeting.ID, "occurrence", occurrenceObj).DebugContext(ctx, "adding updated occurrence")
-				result = append(result, occurrenceObj)
-				// Return list of occurrences once the specific number of occurrences to return has been reached
-				if len(result) == numOccurrencesToReturn {
-					c.logger.With("meeting_id", meeting.ID, "time_elapsed_microseconds", time.Since(timerNow).Microseconds(), "num_occurrences", len(result)).DebugContext(ctx, "calculated meeting occurrences list")
-					return result, nil
-				}
 			}
 
-			// If occurrence is an updated occurrence then it was already included
-			if isUpdated {
-				c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "occurrence already added")
-				continue
+			// Recurrence is only stamped on the anchor of an all_following segment.
+			// Base-segment occurrences never carry a Recurrence field.
+			var rec *models.ZoomMeetingRecurrence
+			if seg.oldOccurrenceUnix > 0 && o.Unix() == seg.startUnix {
+				rec = seg.recurrence
 			}
 
-			actualStartTime := o.UTC().Format(time.RFC3339)
-			if allFollowing && !currentStartTime.IsZero() {
-				actualStartTime = time.Date(o.Year(), o.Month(), o.Day(), currentStartTime.Hour(), currentStartTime.Minute(), currentStartTime.Second(), 0, location).UTC().Format(time.RFC3339)
+			title := seg.title
+			if title == "" {
+				title = meeting.Title
 			}
-			c.logger.With("meeting_id", meeting.ID, "adjusted_start_time", actualStartTime, "orig_start_time", o.Format(time.RFC3339), "is_adjusted", allFollowing && !currentStartTime.IsZero()).DebugContext(ctx, "occurrence after adjusting start time")
-			// Use meeting duration unless this occurrence is part of an updated occurrence recurrence with a set duration
-			actualDuration := meeting.Duration
-			if allFollowing && currentDuration != 0 {
-				actualDuration = currentDuration
+			description := seg.description
+			if description == "" {
+				description = meeting.Description
 			}
 
-			// Skip past occurrences if no past occurrences are expected
-			if !pastOccurrences && isOccurrencePast(o, actualDuration) {
-				c.logger.With("meeting_id", meeting.ID, "occurrence_id", o.Unix(), "occurrence_start_time", o).DebugContext(ctx, "skipping past occurrence")
-				continue
-			}
-
-			// We need to check below fields again here to ensure they are not empty
-			if currentTitle == "" {
-				currentTitle = meeting.Title
-			}
-			if currentDescription == "" {
-				currentDescription = meeting.Description
-			}
-
-			actualStartTimeObj, _ := time.Parse(time.RFC3339, actualStartTime)
-			occurrenceObj := models.Occurrence{
-				OccurrenceID: strconv.FormatInt(actualStartTimeObj.Unix(), 10),
-				StartTime:    actualStartTimeObj,
-				Duration:     actualDuration,
+			occ := models.Occurrence{
+				OccurrenceID: occurrenceID,
+				StartTime:    o.UTC(),
+				Duration:     seg.duration,
 				IsCancelled:  false,
-				Title:        currentTitle,
-				Description:  currentDescription,
+				Title:        title,
+				Description:  description,
+				Recurrence:   rec,
 			}
-			// Cancelled occurrences should have a status of "cancel" instead of "available",
+
 			if slices.Contains(meeting.CancelledOccurrences, occurrenceID) {
 				if !includeCancelled {
 					continue
 				}
-				occurrenceObj.IsCancelled = true
+				occ.IsCancelled = true
 			}
-			previousOccurrence = occurrenceObj // set new previous occurrence
-			c.logger.With("meeting_id", meeting.ID, "occurrence", occurrenceObj).DebugContext(ctx, "adding occurrence to list of occurrences")
-			result = append(result, occurrenceObj)
-			// Return list of occurrences once the specific number of occurrences to return has been reached
-			if len(result) == numOccurrencesToReturn {
-				c.logger.With("meeting_id", meeting.ID, "elapsed_time", time.Since(timerNow).String(), "num_occurrences", len(result)).DebugContext(ctx, "calculated meeting occurrences list")
-				return result, nil
-			}
+
+			occurrencesByID[occurrenceID] = occ
 		}
 	}
-	c.logger.With("meeting_id", meeting.ID, "elapsed_time", time.Since(timerNow).String(), "num_occurrences", len(result)).DebugContext(ctx, "calculated meeting occurrences list")
 
+	// 3. Overlay single (non-all_following) updated occurrences.
+	//    These override individual occurrences without starting a new recurrence series.
+	var singles []models.UpdatedOccurrence
+	allFollowingByOldID := make(map[string]models.UpdatedOccurrence)
+	for _, uo := range meeting.UpdatedOccurrences {
+		if uo.AllFollowing {
+			allFollowingByOldID[uo.OldOccurrenceID] = uo
+		} else {
+			singles = append(singles, uo)
+		}
+	}
+	slices.SortFunc(singles, func(a, b models.UpdatedOccurrence) int {
+		ai, _ := strconv.ParseInt(a.NewOccurrenceID, 10, 64)
+		bi, _ := strconv.ParseInt(b.NewOccurrenceID, 10, 64)
+		return cmp.Compare(ai, bi)
+	})
+
+	for _, uo := range singles {
+		delete(occurrencesByID, uo.OldOccurrenceID)
+
+		// If an all_following update generated an occurrence at a different ID for the same
+		// original occurrence, remove it too (the single update takes priority).
+		if afUo, found := allFollowingByOldID[uo.OldOccurrenceID]; found {
+			if afUo.NewOccurrenceID != uo.NewOccurrenceID {
+				delete(occurrencesByID, afUo.NewOccurrenceID)
+			}
+		}
+
+		newUnix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
+		if err != nil {
+			c.logger.DebugContext(ctx, "skipping single updated occurrence with unparseable NewOccurrenceID",
+				"new_occurrence_id", uo.NewOccurrenceID)
+			continue
+		}
+		newStart := time.Unix(newUnix, 0)
+
+		// Inherit defaults from the effective segment at this time, then apply the override.
+		// If this old_occurrence_id was also claimed by an all_following update, prefer that
+		// segment's properties — the single update's new time may precede the all_following
+		// anchor, which would otherwise cause effectiveSegmentForTime to fall back to base.
+		eff := effectiveSegmentForTime(segments, newUnix)
+		if afUo, found := allFollowingByOldID[uo.OldOccurrenceID]; found {
+			if anchorUnix, err := strconv.ParseInt(afUo.NewOccurrenceID, 10, 64); err == nil {
+				eff = effectiveSegmentForTime(segments, anchorUnix)
+			}
+		}
+		duration := eff.duration
+		if duration == 0 {
+			duration = meeting.Duration
+		}
+		if uo.Duration != 0 {
+			duration = uo.Duration
+		}
+
+		if !pastOccurrences && isOccurrencePast(newStart, duration) {
+			continue
+		}
+
+		title := uo.Title
+		if title == "" {
+			title = eff.title
+		}
+		if title == "" {
+			title = meeting.Title
+		}
+		description := uo.Description
+		if description == "" {
+			description = eff.description
+		}
+		if description == "" {
+			description = meeting.Description
+		}
+
+		occ := models.Occurrence{
+			OccurrenceID: uo.NewOccurrenceID,
+			StartTime:    newStart.UTC(),
+			Duration:     duration,
+			IsCancelled:  false,
+			Title:        title,
+			Description:  description,
+			Recurrence:   nil, // Single updates never start a new recurrence series
+		}
+		if slices.Contains(meeting.CancelledOccurrences, uo.NewOccurrenceID) {
+			if !includeCancelled {
+				continue
+			}
+			occ.IsCancelled = true
+		}
+		occurrencesByID[occ.OccurrenceID] = occ
+	}
+
+	// 4. Sort and apply the occurrence limit
+	result := make([]models.Occurrence, 0, len(occurrencesByID))
+	for _, occ := range occurrencesByID {
+		result = append(result, occ)
+	}
+	slices.SortFunc(result, func(a, b models.Occurrence) int {
+		ai, _ := strconv.ParseInt(a.OccurrenceID, 10, 64)
+		bi, _ := strconv.ParseInt(b.OccurrenceID, 10, 64)
+		return cmp.Compare(ai, bi)
+	})
+	if numOccurrencesToReturn > 0 && len(result) > numOccurrencesToReturn {
+		result = result[:numOccurrencesToReturn]
+	}
+
+	c.logger.DebugContext(ctx, "calculated occurrences",
+		"meeting_id", meeting.ID, "count", len(result))
 	return result, nil
+}
+
+// buildSeriesSegments builds the ordered list of contiguous series segments for a meeting.
+// The base segment covers the meeting's original recurrence pattern.
+// Each all_following updated occurrence starts a new segment from its NewOccurrenceID,
+// inheriting duration/title/description/recurrence from the previous segment when not set.
+func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventData) ([]seriesSegment, error) {
+	startObj, err := time.Parse(time.RFC3339, meeting.StartTime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse meeting start_time %q: %w", meeting.StartTime, err)
+	}
+
+	base := seriesSegment{
+		startUnix:   startObj.Unix(),
+		timezone:    meeting.Timezone,
+		recurrence:  meeting.Recurrence,
+		duration:    meeting.Duration,
+		title:       meeting.Title,
+		description: meeting.Description,
+	}
+	segments := []seriesSegment{base}
+
+	// Collect and sort all_following updates by their new start time (ascending)
+	var updates []models.UpdatedOccurrence
+	for _, uo := range meeting.UpdatedOccurrences {
+		if uo.AllFollowing {
+			updates = append(updates, uo)
+		}
+	}
+	slices.SortFunc(updates, func(a, b models.UpdatedOccurrence) int {
+		ai, _ := strconv.ParseInt(a.NewOccurrenceID, 10, 64)
+		bi, _ := strconv.ParseInt(b.NewOccurrenceID, 10, 64)
+		return cmp.Compare(ai, bi)
+	})
+
+	// Build segments by inheriting forward — each update only overrides what it explicitly sets.
+	curr := base
+	for _, uo := range updates {
+		newUnix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
+		if err != nil {
+			c.logger.Warn("failed to parse NewOccurrenceID for all_following update, skipping",
+				"new_occurrence_id", uo.NewOccurrenceID)
+			continue
+		}
+		oldUnix, err := strconv.ParseInt(uo.OldOccurrenceID, 10, 64)
+		if err != nil {
+			c.logger.Warn("failed to parse OldOccurrenceID for all_following update, skipping",
+				"old_occurrence_id", uo.OldOccurrenceID)
+			continue
+		}
+		if uo.Timezone != "" {
+			curr.timezone = uo.Timezone
+		}
+		if uo.Recurrence != nil {
+			curr.recurrence = uo.Recurrence
+		}
+		if uo.Duration != 0 {
+			curr.duration = uo.Duration
+		}
+		if uo.Title != "" {
+			curr.title = uo.Title
+		}
+		if uo.Description != "" {
+			curr.description = uo.Description
+		}
+		segments = append(segments, seriesSegment{
+			startUnix:         newUnix,
+			oldOccurrenceUnix: oldUnix,
+			timezone:          curr.timezone,
+			recurrence:        curr.recurrence,
+			duration:          curr.duration,
+			title:             curr.title,
+			description:       curr.description,
+		})
+	}
+	return segments, nil
+}
+
+// effectiveSegmentForTime returns the segment that governs a given unix timestamp.
+// Segments must be sorted by startUnix ascending before calling this.
+func effectiveSegmentForTime(segments []seriesSegment, unix int64) seriesSegment {
+	if len(segments) == 0 {
+		return seriesSegment{}
+	}
+	eff := segments[0]
+	for _, seg := range segments {
+		if seg.startUnix <= unix {
+			eff = seg
+		} else {
+			break
+		}
+	}
+	return eff
+}
+
+// getEffectiveRecurrence returns the recurrence rule that is active as of time t.
+// It walks the all_following updates sorted by start time and returns the last one
+// whose segment start is strictly before t — mirroring ITX's GetRecurrenceAtTime logic.
+// If no all_following update has started strictly before t, the base recurrence is returned.
+func getEffectiveRecurrence(meeting models.MeetingEventData, t time.Time) *models.ZoomMeetingRecurrence {
+	if meeting.Recurrence == nil {
+		return nil
+	}
+
+	type entry struct {
+		startUnix int64
+		rec       *models.ZoomMeetingRecurrence
+	}
+	var entries []entry
+	for _, uo := range meeting.UpdatedOccurrences {
+		if !uo.AllFollowing || uo.Recurrence == nil {
+			continue
+		}
+		unix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
+		if err != nil {
+			continue
+		}
+		entries = append(entries, entry{startUnix: unix, rec: uo.Recurrence})
+	}
+	slices.SortFunc(entries, func(a, b entry) int {
+		return cmp.Compare(a.startUnix, b.startUnix)
+	})
+
+	current := meeting.Recurrence
+	for _, e := range entries {
+		// Use the same "strictly after" test as ITX's GetRecurrenceAtTime.
+		if t.After(time.Unix(e.startUnix, 0)) {
+			current = e.rec
+		}
+	}
+	return current
 }
 
 func isOccurrencePast(startTime time.Time, duration int) bool {
@@ -488,7 +562,6 @@ func parseByDay(days string) (string, error) {
 		if weekdayNum < 1 || weekdayNum > 7 {
 			continue
 		}
-		// Prepend a comma only after we have already written at least one valid weekday.
 		if hasWritten {
 			weekdays.WriteString(",")
 		}
