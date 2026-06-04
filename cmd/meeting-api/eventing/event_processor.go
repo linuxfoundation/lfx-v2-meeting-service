@@ -15,26 +15,39 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
+	infraNATS "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/nats"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
+// InviteConfig carries the invite-feature settings into NewEventProcessor.
+type InviteConfig struct {
+	// Enabled controls whether invite sending is active.
+	Enabled bool
+	// SelfServeBaseURL is the LFX self-serve app URL embedded in invite emails as return_url.
+	SelfServeBaseURL string
+	// AcceptanceClient calls the ITX Zoom Service on invite acceptance.
+	// Must be non-nil when Enabled is true for the subscriber to start.
+	AcceptanceClient domain.InviteAcceptanceClient
+}
+
 // EventProcessor manages the lifecycle of event processing via NATS JetStream
 type EventProcessor struct {
-	nc           *nats.Conn
-	js           jetstream.JetStream
-	consumer     jetstream.Consumer
-	publisher    domain.EventPublisher
-	userLookup   domain.V1UserLookup
-	idMapper     domain.IDMapper
-	v1ObjectsKV  jetstream.KeyValue
-	v1MappingsKV jetstream.KeyValue
-	logger       *slog.Logger
-	config       eventing.Config
-	handlers     *EventHandlers
+	nc                *nats.Conn
+	js                jetstream.JetStream
+	consumer          jetstream.Consumer
+	publisher         domain.EventPublisher
+	userLookup        domain.V1UserLookup
+	idMapper          domain.IDMapper
+	v1ObjectsKV       jetstream.KeyValue
+	v1MappingsKV      jetstream.KeyValue
+	logger            *slog.Logger
+	config            eventing.Config
+	handlers          *EventHandlers
+	inviteAcceptedSub *InviteAcceptedSubscriber
 }
 
 // NewEventProcessor creates a new event processor
-func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger *slog.Logger) (*EventProcessor, error) {
+func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger *slog.Logger, inviteCfg InviteConfig) (*EventProcessor, error) {
 	// Connect to NATS
 	nc, err := nats.Connect(config.NATSURL)
 	if err != nil {
@@ -83,8 +96,14 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	// Create project slug lookup
 	projectLookup := eventing.NewNATSProjectLookup(nc)
 
-	// Create event handlers
-	handlers := NewEventHandlers(publisher, userLookup, idMapper, projectLookup, v1ObjectsKV, v1MappingsKV, logger)
+	// Create event handlers, with optional invite feature wired in.
+	handlerOpts := []EventHandlersOption{}
+	if inviteCfg.Enabled {
+		inviteSender := infraNATS.NewInviteSender(nc)
+		userReader := infraNATS.NewUserReader(nc)
+		handlerOpts = append(handlerOpts, WithInviteFeature(inviteSender, userReader, inviteCfg.SelfServeBaseURL))
+	}
+	handlers := NewEventHandlers(publisher, userLookup, idMapper, projectLookup, v1ObjectsKV, v1MappingsKV, logger, handlerOpts...)
 
 	ep := &EventProcessor{
 		nc:           nc,
@@ -99,7 +118,25 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 		handlers:     handlers,
 	}
 
+	// Start invite-accepted subscriber if the feature is enabled and an acceptance client is provided.
+	if inviteCfg.Enabled && inviteCfg.AcceptanceClient != nil {
+		sub := NewInviteAcceptedSubscriber(nc, inviteCfg.AcceptanceClient, logger)
+		if err := sub.Start(context.Background()); err != nil {
+			nc.Close()
+			return nil, fmt.Errorf("failed to start invite_accepted subscriber: %w", err)
+		}
+		ep.inviteAcceptedSub = sub
+		logger.Info("invite_accepted subscriber started")
+	} else if inviteCfg.Enabled {
+		logger.Warn("invite feature enabled but no acceptance client provided; invite_accepted subscriber not started")
+	}
+
 	return ep, nil
+}
+
+// Publisher returns the event publisher used by this processor.
+func (ep *EventProcessor) Publisher() domain.EventPublisher {
+	return ep.publisher
 }
 
 // Start begins processing events from the NATS JetStream.
@@ -175,9 +212,14 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 	}
 }
 
-// Stop gracefully stops the event processor
+// Stop gracefully stops the event processor and its subscribers
 func (ep *EventProcessor) Stop(ctx context.Context) error {
 	ep.logger.Info("stopping event processor")
+
+	// Stop invite-accepted subscriber before draining the NATS connection.
+	if ep.inviteAcceptedSub != nil {
+		ep.inviteAcceptedSub.Stop()
+	}
 
 	// Drain pending messages with timeout
 	drainCtx, cancel := context.WithTimeout(ctx, 30*time.Second)

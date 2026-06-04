@@ -2065,3 +2065,50 @@ func (c *Client) DeletePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	return nil
 }
+
+// acceptInviteRequestBody is the JSON payload for POST /v2/zoom/meetings/invite_accepted.
+type acceptInviteRequestBody struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+}
+
+// AcceptInvite calls the ITX Zoom Service to enrich all DynamoDB records (registrants,
+// past-meeting invitees, past-meeting attendees) tied to email with the accepted username
+// and profile data from the LFX user service. This is called after a user accepts their
+// LFID invite so that their Zoom records reflect the new LFID.
+func (c *Client) AcceptInvite(ctx context.Context, email, username string) error {
+	body, err := json.Marshal(acceptInviteRequestBody{Email: email, Username: username})
+	if err != nil {
+		return domain.NewInternalError("failed to marshal accept-invite request", err)
+	}
+
+	reqURL := fmt.Sprintf("%s/v2/zoom/meetings/invite_accepted", c.config.BaseURL)
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(body))
+	if err != nil {
+		return domain.NewInternalError("failed to create accept-invite request", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-scope", "manage:zoom")
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return domain.NewUnavailableError("ITX accept-invite request failed", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return domain.NewInternalError("failed to read accept-invite response", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return c.mapHTTPError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
+// Ensure Client implements domain.InviteAcceptanceClient.
+var _ domain.InviteAcceptanceClient = (*Client)(nil)

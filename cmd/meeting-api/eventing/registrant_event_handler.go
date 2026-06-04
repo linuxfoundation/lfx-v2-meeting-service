@@ -14,9 +14,11 @@ import (
 
 	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
+	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	meetingconstants "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -199,6 +201,13 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	// Best-effort LFID invite: send an invite when a new registrant has no LFID yet.
+	// Errors here are logged and swallowed — they must never block indexing or cause a retry.
+	if h.inviteEnabled() && indexerAction == indexerConstants.ActionCreated &&
+		registrantData.Username == "" && registrantData.Email != "" {
+		h.maybeSendInvite(ctx, funcLogger, registrantData.Email, registrantData.FirstName, registrantData.MeetingID)
+	}
+
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerAction), registrantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish registrant event")
@@ -254,6 +263,52 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 		deleteAccessSubject: deleteAccessSubject,
 		tombstoneKeyFmts:    []string{"v1_meeting_registrants.%s"},
 	})
+}
+
+// maybeSendInvite performs a best-effort LFID invite for a new registrant who
+// has no username. It pre-checks the auth service to avoid sending a duplicate
+// invite if the user already has an LFID. All errors are logged and swallowed;
+// this method must never cause a KV event to be retried.
+func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger, email, firstName, meetingID string) {
+	sub, err := h.userReader.SubByEmail(ctx, email)
+	if err == nil && sub != "" {
+		// User already has an LFID — no invite needed.
+		logger.DebugContext(ctx, "registrant already has LFID, skipping invite", "email", email)
+		return
+	}
+	if err != nil && !errors.Is(err, domain.ErrUserNotFound) {
+		// Transient auth-service failure — log and skip; do not block indexing.
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check LFID for registrant; skipping invite", "email", email)
+		return
+	}
+	// err == ErrUserNotFound (or nil with empty sub): no LFID — send invite.
+
+	name := strings.TrimSpace(firstName)
+	req := inviteapi.SendInviteRequest{
+		Recipient: &inviteapi.Recipient{
+			Email: email,
+			Name:  name,
+		},
+		Resource: &inviteapi.Resource{
+			UID:  meetingID,
+			Name: meetingID,
+			Type: meetingconstants.ResourceTypeMeeting,
+		},
+		Role:           string(inviteapi.InviteRoleMember),
+		ReturnURL:      h.selfServeBaseURL,
+		ExpirationDays: 30,
+	}
+
+	result, sendErr := h.inviteSender.SendInvite(ctx, req)
+	if sendErr != nil {
+		logger.With(logging.ErrKey, sendErr).WarnContext(ctx, "failed to send LFID invite for registrant; continuing", "email", email)
+		return
+	}
+	logger.InfoContext(ctx, "sent LFID invite for registrant",
+		"email", email,
+		"invite_uid", result.InviteUID,
+		"expires_at", result.ExpiresAt,
+	)
 }
 
 // =============================================================================

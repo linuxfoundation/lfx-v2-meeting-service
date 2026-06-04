@@ -30,6 +30,18 @@ type environment struct {
 	ITXConfig          itxConfig
 	IDMappingDisabled  bool
 	EventConfig        eventConfig
+	InviteConfig       inviteConfig
+}
+
+// inviteConfig holds LFID invite feature configuration.
+type inviteConfig struct {
+	// Enabled controls whether invite sending is active. Defaults to true.
+	// Set INVITE_FEATURE_ENABLED=false to disable.
+	Enabled bool
+	// SelfServeBaseURL is the LFX self-serve app base URL included in invite emails
+	// as the return_url (so the invited user lands back on the right page after
+	// creating their LFID). Sourced from LFX_SELF_SERVE_BASE_URL.
+	SelfServeBaseURL string
 }
 
 // itxConfig holds ITX proxy configuration
@@ -127,6 +139,7 @@ func parseEnv() environment {
 		ITXConfig:          parseITXConfig(),
 		IDMappingDisabled:  idMappingDisabled,
 		EventConfig:        parseEventConfig(),
+		InviteConfig:       parseInviteConfig(),
 	}
 }
 
@@ -233,5 +246,18 @@ func parseEventConfig() eventConfig {
 		AckWait:              ackWait,
 		MaxAckPending:        maxAckPending,
 		V1MappingsBucketName: v1MappingsBucketName,
+	}
+}
+
+// parseInviteConfig parses LFID invite feature configuration from environment variables.
+func parseInviteConfig() inviteConfig {
+	// Default: enabled unless explicitly set to "false".
+	enabled := os.Getenv("INVITE_FEATURE_ENABLED") != "false"
+
+	selfServeBaseURL := os.Getenv("LFX_SELF_SERVE_BASE_URL")
+
+	return inviteConfig{
+		Enabled:          enabled,
+		SelfServeBaseURL: selfServeBaseURL,
 	}
 }

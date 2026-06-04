@@ -11,3 +11,6 @@ const (
 	// MaxMeetingDurationMinutes is the maximum duration of a meeting in minutes
 	MaxMeetingDurationMinutes = 600
 )
+
+// ResourceTypeMeeting is the resource_type value used in invite payloads for meeting registrant invites.
+const ResourceTypeMeeting = "meeting"

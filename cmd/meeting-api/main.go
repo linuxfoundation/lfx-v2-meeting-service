@@ -148,7 +148,13 @@ func run() int {
 				V1MappingsBucketName: env.EventConfig.V1MappingsBucketName,
 			}
 
-			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default())
+			inviteCfg := apieventing.InviteConfig{
+				Enabled:          env.InviteConfig.Enabled,
+				SelfServeBaseURL: env.InviteConfig.SelfServeBaseURL,
+				AcceptanceClient: itxProxyClient,
+			}
+
+			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default(), inviteCfg)
 			if err != nil {
 				slog.With(logging.ErrKey, err).Error("failed to create event processor")
 				return 1
