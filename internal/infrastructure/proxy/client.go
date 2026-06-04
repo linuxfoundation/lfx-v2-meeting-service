@@ -2088,6 +2088,7 @@ func (c *Client) AcceptInvite(ctx context.Context, email, username string) error
 		return domain.NewInternalError("failed to create accept-invite request", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
 	httpReq.Header.Set("x-scope", "manage:zoom")
 
 	resp, err := c.httpClient.Do(httpReq)

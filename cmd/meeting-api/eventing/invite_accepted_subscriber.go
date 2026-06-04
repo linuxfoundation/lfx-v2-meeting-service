@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"time"
 
 	natsgo "github.com/nats-io/nats.go"
 
@@ -16,7 +17,10 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
-const inviteAcceptedQueueGroup = "meeting-service-invite-accepted"
+const (
+	inviteAcceptedQueueGroup  = "meeting-service-invite-accepted"
+	inviteAcceptedCallTimeout = 30 * time.Second
+)
 
 // InviteAcceptedSubscriber subscribes to lfx.invite-service.invite_accepted events
 // and calls the ITX Zoom Service to enrich all DynamoDB records tied to the acceptor's
@@ -68,7 +72,8 @@ func (s *InviteAcceptedSubscriber) Stop() {
 
 // handle processes a single InviteServiceAcceptedEvent message.
 func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), inviteAcceptedCallTimeout)
+	defer cancel()
 
 	var evt inviteapi.InviteServiceAcceptedEvent
 	if err := json.Unmarshal(msg.Data, &evt); err != nil {

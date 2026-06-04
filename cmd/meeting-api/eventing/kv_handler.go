@@ -159,7 +159,9 @@ func NewEventHandlers(
 type EventHandlersOption func(*EventHandlers)
 
 // WithInviteFeature wires invite-sending capability into the event handlers.
-// All three arguments must be non-nil; passing nil disables invite sending.
+// sender and reader must be non-nil, and selfServeBaseURL must be non-empty;
+// if any of these conditions is not met, inviteEnabled() returns false and no
+// invites are sent.
 func WithInviteFeature(sender domain.InviteSender, reader domain.UserReader, selfServeBaseURL string) EventHandlersOption {
 	return func(h *EventHandlers) {
 		h.inviteSender = sender
