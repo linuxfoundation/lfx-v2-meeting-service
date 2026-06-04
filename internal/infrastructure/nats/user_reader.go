@@ -57,7 +57,10 @@ func (r *NATSUserReader) SubByEmail(ctx context.Context, email string) (string, 
 			Success bool   `json:"success"`
 			Error   string `json:"error"`
 		}
-		if jsonErr := json.Unmarshal(msg.Data, &errResp); jsonErr == nil && !errResp.Success {
+		if jsonErr := json.Unmarshal(msg.Data, &errResp); jsonErr != nil {
+			return "", fmt.Errorf("failed to parse auth service response: %w", jsonErr)
+		}
+		if !errResp.Success {
 			// Treat a "not found" error as ErrUserNotFound; everything else as transient.
 			lowerErr := strings.ToLower(errResp.Error)
 			if strings.Contains(lowerErr, "not found") || strings.Contains(lowerErr, "no user") {
@@ -65,6 +68,9 @@ func (r *NATSUserReader) SubByEmail(ctx context.Context, email string) (string, 
 			}
 			return "", fmt.Errorf("auth service could not resolve email to sub: %s", errResp.Error)
 		}
+		// JSON parsed successfully and success=true; this shouldn't happen for a sub lookup —
+		// treat it as an unexpected response rather than a valid LFID.
+		return "", fmt.Errorf("auth service returned unexpected JSON response")
 	}
 
 	return sub, nil

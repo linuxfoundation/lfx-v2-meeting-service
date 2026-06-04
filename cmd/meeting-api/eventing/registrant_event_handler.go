@@ -201,13 +201,6 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
-	// Best-effort LFID invite: send an invite when a new registrant has no LFID yet.
-	// Errors here are logged and swallowed — they must never block indexing or cause a retry.
-	if h.inviteEnabled() && indexerAction == indexerConstants.ActionCreated &&
-		registrantData.Username == "" && registrantData.Email != "" {
-		h.maybeSendInvite(ctx, funcLogger, registrantData.Email, registrantData.FirstName, registrantData.MeetingID)
-	}
-
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishRegistrantEvent(ctx, string(indexerAction), registrantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish registrant event")
@@ -217,6 +210,15 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
+	}
+
+	// Best-effort LFID invite: send an invite when a new registrant has no LFID yet.
+	// Sent only after the registrant has been successfully written and indexed to avoid
+	// duplicate invites when the event is redelivered on transient failure.
+	// Errors here are logged and swallowed — they must never block indexing or cause a retry.
+	if h.inviteEnabled() && indexerAction == indexerConstants.ActionCreated &&
+		registrantData.Username == "" && registrantData.Email != "" {
+		h.maybeSendInvite(ctx, funcLogger, registrantData.Email, registrantData.FirstName, registrantData.MeetingID)
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed registrant")
@@ -273,12 +275,12 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 	sub, err := h.userReader.SubByEmail(ctx, email)
 	if err == nil && sub != "" {
 		// User already has an LFID — no invite needed.
-		logger.DebugContext(ctx, "registrant already has LFID, skipping invite", "email", email)
+		logger.DebugContext(ctx, "registrant already has LFID, skipping invite")
 		return
 	}
 	if err != nil && !errors.Is(err, domain.ErrUserNotFound) {
 		// Transient auth-service failure — log and skip; do not block indexing.
-		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check LFID for registrant; skipping invite", "email", email)
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check LFID for registrant; skipping invite")
 		return
 	}
 	// err == ErrUserNotFound (or nil with empty sub): no LFID — send invite.
@@ -301,11 +303,10 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 
 	result, sendErr := h.inviteSender.SendInvite(ctx, req)
 	if sendErr != nil {
-		logger.With(logging.ErrKey, sendErr).WarnContext(ctx, "failed to send LFID invite for registrant; continuing", "email", email)
+		logger.With(logging.ErrKey, sendErr).WarnContext(ctx, "failed to send LFID invite for registrant; continuing")
 		return
 	}
 	logger.InfoContext(ctx, "sent LFID invite for registrant",
-		"email", email,
 		"invite_uid", result.InviteUID,
 		"expires_at", result.ExpiresAt,
 	)

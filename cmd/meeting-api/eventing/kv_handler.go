@@ -170,7 +170,9 @@ func WithInviteFeature(sender domain.InviteSender, reader domain.UserReader, sel
 
 // inviteEnabled reports whether the invite feature is fully wired up.
 func (h *EventHandlers) inviteEnabled() bool {
-	return h.inviteSender != nil && h.userReader != nil
+	return h.inviteSender != nil &&
+		h.userReader != nil &&
+		strings.TrimSpace(h.selfServeBaseURL) != ""
 }
 
 // kvHandler routes KV bucket events to appropriate handlers

@@ -58,9 +58,9 @@ func (s *NATSInviteSender) SendInvite(ctx context.Context, req inviteapi.SendInv
 	}
 
 	return &domain.InviteResult{
-		InviteUID:      resp.InviteData.UID,
-		RecipientEmail: resp.InviteData.Email,
-		ExpiresAt:      resp.InviteData.ExpiresAt,
+		InviteUID:      resp.UID,
+		RecipientEmail: resp.Email,
+		ExpiresAt:      resp.ExpiresAt,
 	}, nil
 }
 

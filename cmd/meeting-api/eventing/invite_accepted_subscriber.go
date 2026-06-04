@@ -82,35 +82,26 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 	resourceType := evt.Resource.Type
 
 	if email == "" || username == "" {
-		s.logger.Warn("invite_accepted event missing email or username; discarding",
-			"email", email,
-			"username", username,
-		)
+		s.logger.Warn("invite_accepted event missing required fields; discarding")
 		return
 	}
 
-	// Only enrich records for meeting invites; skip other resource types.
-	if resourceType != "" && resourceType != meetingconstants.ResourceTypeMeeting {
+	// Only enrich records for meeting invites; discard anything else (including empty resource type).
+	if resourceType != meetingconstants.ResourceTypeMeeting {
 		s.logger.Debug("invite_accepted event is for a non-meeting resource; skipping",
 			"resource_type", resourceType,
-			"email", email,
 		)
 		return
 	}
 
 	s.logger.Info("processing invite_accepted enrichment",
-		"email", email,
-		"username", username,
 		"resource_type", resourceType,
 	)
 
 	if err := s.acceptanceClient.AcceptInvite(ctx, email, username); err != nil {
-		s.logger.With(logging.ErrKey, err).Warn("invite_accepted enrichment failed; best-effort, not retrying",
-			"email", email,
-			"username", username,
-		)
+		s.logger.With(logging.ErrKey, err).Warn("invite_accepted enrichment failed; best-effort, not retrying")
 		return
 	}
 
-	s.logger.Info("invite_accepted enrichment complete", "email", email, "username", username)
+	s.logger.Info("invite_accepted enrichment complete")
 }
