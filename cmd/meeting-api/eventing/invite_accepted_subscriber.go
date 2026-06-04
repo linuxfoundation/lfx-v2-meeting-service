@@ -14,7 +14,6 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
-	meetingconstants "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 const inviteAcceptedQueueGroup = "meeting-service-invite-accepted"
@@ -79,23 +78,14 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 
 	email := evt.Recipient.Email
 	username := evt.AcceptedBy
-	resourceType := evt.Resource.Type
 
 	if email == "" || username == "" {
 		s.logger.Warn("invite_accepted event missing required fields; discarding")
 		return
 	}
 
-	// Only enrich records for meeting invites; discard anything else (including empty resource type).
-	if resourceType != meetingconstants.ResourceTypeMeeting {
-		s.logger.Debug("invite_accepted event is for a non-meeting resource; skipping",
-			"resource_type", resourceType,
-		)
-		return
-	}
-
 	s.logger.Info("processing invite_accepted enrichment",
-		"resource_type", resourceType,
+		"resource_type", evt.Resource.Type,
 	)
 
 	if err := s.acceptanceClient.AcceptInvite(ctx, email, username); err != nil {
