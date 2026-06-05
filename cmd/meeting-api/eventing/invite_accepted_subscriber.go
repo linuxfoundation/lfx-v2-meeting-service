@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"sync"
 	"time"
 
 	natsgo "github.com/nats-io/nats.go"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	meetingconstants "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
@@ -31,6 +33,10 @@ type InviteAcceptedSubscriber struct {
 	acceptanceClient domain.InviteAcceptanceClient
 	logger           *slog.Logger
 	sub              *natsgo.Subscription
+
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 // NewInviteAcceptedSubscriber creates a new subscriber but does not start it.
@@ -47,13 +53,18 @@ func NewInviteAcceptedSubscriber(
 }
 
 // Start registers the NATS QueueSubscribe and begins processing acceptance events.
-func (s *InviteAcceptedSubscriber) Start(_ context.Context) error {
+func (s *InviteAcceptedSubscriber) Start(ctx context.Context) error {
+	s.ctx, s.cancel = context.WithCancel(ctx)
+
 	sub, err := s.nc.QueueSubscribe(
 		inviteapi.InviteServiceAcceptedSubject,
 		inviteAcceptedQueueGroup,
 		s.handle,
 	)
 	if err != nil {
+		if s.cancel != nil {
+			s.cancel()
+		}
 		return err
 	}
 	s.sub = sub
@@ -61,19 +72,25 @@ func (s *InviteAcceptedSubscriber) Start(_ context.Context) error {
 	return nil
 }
 
-// Stop drains the subscription. It is a no-op if Start was never called.
+// Stop cancels in-flight handlers, drains the subscription, and waits for handlers to finish.
 func (s *InviteAcceptedSubscriber) Stop() {
-	if s.sub == nil {
-		return
+	if s.cancel != nil {
+		s.cancel()
 	}
-	if err := s.sub.Drain(); err != nil {
-		s.logger.With(logging.ErrKey, err).Warn("error draining invite_accepted subscription")
+	if s.sub != nil {
+		if err := s.sub.Drain(); err != nil {
+			s.logger.With(logging.ErrKey, err).Warn("error draining invite_accepted subscription")
+		}
 	}
+	s.wg.Wait()
 }
 
 // handle processes a single InviteServiceAcceptedEvent message.
 func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
-	ctx, cancel := context.WithTimeout(context.Background(), inviteAcceptedCallTimeout)
+	s.wg.Add(1)
+	defer s.wg.Done()
+
+	ctx, cancel := context.WithTimeout(s.ctx, inviteAcceptedCallTimeout)
 	defer cancel()
 
 	var evt inviteapi.InviteServiceAcceptedEvent
@@ -82,33 +99,51 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 		return
 	}
 
+	if err := processInviteAcceptedEvent(ctx, evt, s.acceptanceClient, s.logger); err != nil {
+		s.logger.With(logging.ErrKey, err).Warn("invite_accepted enrichment failed; best-effort, not retrying",
+			"email", redaction.RedactEmail(evt.Recipient.Email),
+			"username", redaction.Redact(evt.AcceptedBy),
+		)
+	}
+}
+
+// processInviteAcceptedEvent validates an invite acceptance event and calls ITX to enrich
+// all Zoom records for the acceptor's email. Enrichment runs for every resource_type because
+// the ITX endpoint is keyed by email, mirroring project/committee reconciliation behavior.
+func processInviteAcceptedEvent(
+	ctx context.Context,
+	evt inviteapi.InviteServiceAcceptedEvent,
+	client domain.InviteAcceptanceClient,
+	logger *slog.Logger,
+) error {
 	email := evt.Recipient.Email
 	username := evt.AcceptedBy
 
 	if email == "" || username == "" {
-		s.logger.Warn("invite_accepted event missing required fields; discarding")
-		return
+		logger.Warn("invite_accepted event missing required fields; discarding")
+		return nil
 	}
 
-	// Enrich all Zoom records for this email regardless of resource_type, mirroring
-	// how project/committee services reconcile invite acceptance across all matching
-	// records rather than filtering to the invite's originating resource.
-	s.logger.Info("received invite_accepted event",
-		"email", redaction.RedactEmail(email),
-		"username", redaction.Redact(username),
-		"resource_type", evt.Resource.Type,
-	)
-
-	if err := s.acceptanceClient.AcceptInvite(ctx, email, username); err != nil {
-		s.logger.With(logging.ErrKey, err).Warn("invite_accepted enrichment failed; best-effort, not retrying",
+	if evt.Resource.Type != "" && evt.Resource.Type != meetingconstants.ResourceTypeMeeting {
+		logger.Debug("received invite_accepted event for non-meeting resource; enriching Zoom records by email",
+			"email", redaction.RedactEmail(email),
+			"resource_type", evt.Resource.Type,
+		)
+	} else {
+		logger.Debug("received invite_accepted event",
 			"email", redaction.RedactEmail(email),
 			"username", redaction.Redact(username),
+			"resource_type", evt.Resource.Type,
 		)
-		return
 	}
 
-	s.logger.Info("invite_accepted enrichment complete",
+	if err := client.AcceptInvite(ctx, email, username); err != nil {
+		return err
+	}
+
+	logger.Info("invite_accepted enrichment complete",
 		"email", redaction.RedactEmail(email),
 		"username", redaction.Redact(username),
 	)
+	return nil
 }

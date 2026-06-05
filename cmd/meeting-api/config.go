@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
@@ -30,18 +31,7 @@ type environment struct {
 	ITXConfig          itxConfig
 	IDMappingDisabled  bool
 	EventConfig        eventConfig
-	InviteConfig       inviteConfig
-}
-
-// inviteConfig holds LFID invite feature configuration.
-type inviteConfig struct {
-	// Enabled controls whether invite sending is active. Disabled by default;
-	// set INVITES_ENABLED=true to enable.
-	Enabled bool
-	// SelfServeBaseURL is the LFX self-serve app base URL included in invite emails
-	// as the return_url (so the invited user lands back on the right page after
-	// creating their LFID). Sourced from LFX_SELF_SERVE_BASE_URL.
-	SelfServeBaseURL string
+	InviteConfig       apieventing.InviteFeatureConfig
 }
 
 // itxConfig holds ITX proxy configuration
@@ -250,7 +240,7 @@ func parseEventConfig() eventConfig {
 }
 
 // parseInviteConfig parses LFID invite feature configuration from environment variables.
-func parseInviteConfig() inviteConfig {
+func parseInviteConfig() apieventing.InviteFeatureConfig {
 	enabled := os.Getenv("INVITES_ENABLED") == "true"
 
 	selfServeBaseURL := os.Getenv("LFX_SELF_SERVE_BASE_URL")
@@ -278,7 +268,7 @@ func parseInviteConfig() inviteConfig {
 		}
 	}
 
-	return inviteConfig{
+	return apieventing.InviteFeatureConfig{
 		Enabled:          enabled,
 		SelfServeBaseURL: selfServeBaseURL,
 	}

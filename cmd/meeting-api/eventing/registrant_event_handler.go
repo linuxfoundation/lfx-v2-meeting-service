@@ -219,7 +219,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// Errors here are logged and swallowed — they must never block indexing or cause a retry.
 	if h.inviteEnabled() && indexerAction == indexerConstants.ActionCreated &&
 		registrantData.Username == "" && registrantData.Email != "" {
-		h.maybeSendInvite(ctx, funcLogger, registrantData.Email, registrantData.FirstName, registrantData.MeetingID, registrantData.CreatedBy)
+		h.maybeSendInvite(ctx, funcLogger, registrantData.UID, registrantData.Email, registrantData.FirstName, registrantData.MeetingID, registrantData.CreatedBy)
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed registrant")
@@ -268,13 +268,27 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	})
 }
 
+// registrantLFIDInviteSentKeyFmt tracks that an LFID invite was already sent for a registrant,
+// preventing duplicate invites when KV events are redelivered after a partial write.
+const registrantLFIDInviteSentKeyFmt = "v1_meeting_registrant_lfid_invite_sent.%s"
+
+func registrantLFIDInviteSentKey(registrantUID string) string {
+	return fmt.Sprintf(registrantLFIDInviteSentKeyFmt, registrantUID)
+}
+
 // maybeSendInvite performs a best-effort LFID invite for a new registrant who
 // has no username. It pre-checks the auth service to avoid sending a duplicate
 // invite if the user already has an LFID. All errors are logged and swallowed;
 // this method must never cause a KV event to be retried.
-func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger, email, firstName, meetingID string, createdBy models.CreatedBy) {
+func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger, registrantUID, email, firstName, meetingID string, createdBy models.CreatedBy) {
 	email = strings.TrimSpace(email)
 	if email == "" {
+		return
+	}
+
+	inviteSentKey := registrantLFIDInviteSentKey(registrantUID)
+	if _, err := h.v1MappingsKV.Get(ctx, inviteSentKey); err == nil {
+		logger.DebugContext(ctx, "LFID invite already sent for registrant, skipping")
 		return
 	}
 
@@ -320,7 +334,7 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 			Name: meetingTitle,
 			Type: meetingconstants.ResourceTypeMeeting,
 		},
-		Role:           "Registrant",
+		Role:           meetingconstants.InviteRoleRegistrant,
 		ReturnURL:      returnURL,
 		ExpirationDays: 30,
 	}
@@ -340,6 +354,9 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 	if sendErr != nil {
 		logger.With(logging.ErrKey, sendErr).WarnContext(ctx, "failed to send LFID invite for registrant; continuing")
 		return
+	}
+	if _, err := h.v1MappingsKV.Put(ctx, inviteSentKey, []byte(result.InviteUID)); err != nil {
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant LFID invite sent marker")
 	}
 	logger.InfoContext(ctx, "sent LFID invite for registrant",
 		"invite_uid", result.InviteUID,

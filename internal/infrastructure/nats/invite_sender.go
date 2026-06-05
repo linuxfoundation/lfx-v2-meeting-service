@@ -10,25 +10,21 @@ import (
 	"log/slog"
 	"time"
 
-	natsgo "github.com/nats-io/nats.go"
-
 	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 )
 
-const (
-	inviteSenderTimeout = 10 * time.Second
-)
+const inviteSenderTimeout = 10 * time.Second
 
 // NATSInviteSender implements domain.InviteSender using NATS request/reply.
 type NATSInviteSender struct {
-	nc     *natsgo.Conn
+	nc     Requester
 	logger *slog.Logger
 }
 
 // NewInviteSender creates a new NATS-based invite sender.
-func NewInviteSender(nc *natsgo.Conn, logger *slog.Logger) *NATSInviteSender {
+func NewInviteSender(nc Requester, logger *slog.Logger) *NATSInviteSender {
 	logger.Info("invite sender initialized", "subject", inviteapi.SendInviteSubject)
 	return &NATSInviteSender{nc: nc, logger: logger}
 }
