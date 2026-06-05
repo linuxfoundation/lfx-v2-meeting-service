@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"strings"
 	"time"
 
@@ -272,6 +273,11 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 // invite if the user already has an LFID. All errors are logged and swallowed;
 // this method must never cause a KV event to be retried.
 func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger, email, firstName, meetingID string, createdBy models.CreatedBy) {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return
+	}
+
 	sub, err := h.userReader.SubByEmail(ctx, email)
 	if err == nil && sub != "" {
 		// User already has an LFID — no invite needed.
@@ -300,7 +306,7 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 
 	returnURL := fmt.Sprintf("%s/meetings/%s", strings.TrimRight(h.selfServeBaseURL, "/"), meetingID)
 	if meetingPassword != "" {
-		returnURL += "?password=" + meetingPassword
+		returnURL += "?password=" + url.QueryEscape(meetingPassword)
 	}
 
 	name := strings.TrimSpace(firstName)

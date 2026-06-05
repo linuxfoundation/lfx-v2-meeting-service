@@ -37,6 +37,7 @@ func NewUserReader(nc *natsgo.Conn, logger *slog.Logger) *NATSUserReader {
 // Returns domain.ErrUserNotFound when the auth service reports no account matches.
 // Returns a non-nil error for transient NATS or parsing failures.
 func (r *NATSUserReader) SubByEmail(ctx context.Context, email string) (string, error) {
+	email = strings.TrimSpace(email)
 	if email == "" {
 		return "", domain.ErrUserNotFound
 	}
