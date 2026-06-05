@@ -218,7 +218,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// Errors here are logged and swallowed — they must never block indexing or cause a retry.
 	if h.inviteEnabled() && indexerAction == indexerConstants.ActionCreated &&
 		registrantData.Username == "" && registrantData.Email != "" {
-		h.maybeSendInvite(ctx, funcLogger, registrantData.Email, registrantData.FirstName, registrantData.MeetingID)
+		h.maybeSendInvite(ctx, funcLogger, registrantData.Email, registrantData.FirstName, registrantData.MeetingID, registrantData.CreatedBy)
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed registrant")
@@ -271,7 +271,7 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 // has no username. It pre-checks the auth service to avoid sending a duplicate
 // invite if the user already has an LFID. All errors are logged and swallowed;
 // this method must never cause a KV event to be retried.
-func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger, email, firstName, meetingID string) {
+func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger, email, firstName, meetingID string, createdBy models.CreatedBy) {
 	sub, err := h.userReader.SubByEmail(ctx, email)
 	if err == nil && sub != "" {
 		// User already has an LFID — no invite needed.
@@ -317,6 +317,17 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 		Role:           "Registrant",
 		ReturnURL:      returnURL,
 		ExpirationDays: 30,
+	}
+	// Only set the inviter when we have a real human identity — skip "Zoom Events",
+	// which is an internal system actor and would look confusing in the invite email.
+	if (createdBy.Name != "" || createdBy.Email != "" || createdBy.Username != "") &&
+		createdBy.Name != "Zoom Events" {
+		req.Inviter = &inviteapi.Inviter{
+			Name:     createdBy.Name,
+			Email:    createdBy.Email,
+			Username: createdBy.Username,
+			Avatar:   createdBy.ProfilePicture,
+		}
 	}
 
 	result, sendErr := h.inviteSender.SendInvite(ctx, req)
