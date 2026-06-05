@@ -2082,6 +2082,8 @@ func (c *Client) AcceptInvite(ctx context.Context, email, username string) error
 		return domain.NewInternalError("failed to marshal accept-invite request", err)
 	}
 
+	slog.InfoContext(ctx, "ITX AcceptInvite request", "email", email, "username", username)
+
 	reqURL := fmt.Sprintf("%s/v2/zoom/meetings/invite_accepted", c.config.BaseURL)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(body))
 	if err != nil {

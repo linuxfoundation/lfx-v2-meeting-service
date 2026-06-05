@@ -89,14 +89,19 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 		return
 	}
 
-	s.logger.Info("processing invite_accepted enrichment",
+	s.logger.Info("received invite_accepted event",
+		"email", email,
+		"username", username,
 		"resource_type", evt.Resource.Type,
 	)
 
 	if err := s.acceptanceClient.AcceptInvite(ctx, email, username); err != nil {
-		s.logger.With(logging.ErrKey, err).Warn("invite_accepted enrichment failed; best-effort, not retrying")
+		s.logger.With(logging.ErrKey, err).Warn("invite_accepted enrichment failed; best-effort, not retrying",
+			"email", email,
+			"username", username,
+		)
 		return
 	}
 
-	s.logger.Info("invite_accepted enrichment complete")
+	s.logger.Info("invite_accepted enrichment complete", "email", email, "username", username)
 }

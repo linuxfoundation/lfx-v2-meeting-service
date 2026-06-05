@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -22,12 +23,14 @@ const (
 
 // NATSUserReader implements domain.UserReader using NATS request/reply to the auth service.
 type NATSUserReader struct {
-	nc *natsgo.Conn
+	nc     *natsgo.Conn
+	logger *slog.Logger
 }
 
 // NewUserReader creates a new NATS-based user reader.
-func NewUserReader(nc *natsgo.Conn) *NATSUserReader {
-	return &NATSUserReader{nc: nc}
+func NewUserReader(nc *natsgo.Conn, logger *slog.Logger) *NATSUserReader {
+	logger.Info("user reader initialized", "subject", authEmailToSubSubject)
+	return &NATSUserReader{nc: nc, logger: logger}
 }
 
 // SubByEmail returns the Auth0 "sub" for the LFID account that owns the given email address.

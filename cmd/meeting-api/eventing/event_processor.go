@@ -99,8 +99,8 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	// Create event handlers, with optional invite feature wired in.
 	handlerOpts := []EventHandlersOption{}
 	if inviteCfg.Enabled {
-		inviteSender := infraNATS.NewInviteSender(nc)
-		userReader := infraNATS.NewUserReader(nc)
+		inviteSender := infraNATS.NewInviteSender(nc, logger)
+		userReader := infraNATS.NewUserReader(nc, logger)
 		handlerOpts = append(handlerOpts, WithInviteFeature(inviteSender, userReader, inviteCfg.SelfServeBaseURL))
 	}
 	handlers := NewEventHandlers(publisher, userLookup, idMapper, projectLookup, v1ObjectsKV, v1MappingsKV, logger, handlerOpts...)

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	natsgo "github.com/nats-io/nats.go"
@@ -22,12 +23,14 @@ const (
 
 // NATSInviteSender implements domain.InviteSender using NATS request/reply.
 type NATSInviteSender struct {
-	nc *natsgo.Conn
+	nc     *natsgo.Conn
+	logger *slog.Logger
 }
 
 // NewInviteSender creates a new NATS-based invite sender.
-func NewInviteSender(nc *natsgo.Conn) *NATSInviteSender {
-	return &NATSInviteSender{nc: nc}
+func NewInviteSender(nc *natsgo.Conn, logger *slog.Logger) *NATSInviteSender {
+	logger.Info("invite sender initialized", "subject", inviteapi.SendInviteSubject)
+	return &NATSInviteSender{nc: nc, logger: logger}
 }
 
 // SendInvite sends an LFID invite request to the invite service over NATS and
