@@ -285,16 +285,22 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 	}
 	// err == ErrUserNotFound (or nil with empty sub): no LFID — send invite.
 
-	var meetingTitle string
+	var meetingTitle, meetingPassword string
 	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
 	if entry, kvErr := h.v1ObjectsKV.Get(ctx, meetingKey); kvErr == nil {
 		if data, decErr := decodeData(entry.Value()); decErr == nil {
 			meetingTitle = utils.GetString(data["topic"])
+			meetingPassword = utils.GetString(data["password"])
 		}
 	}
 	if meetingTitle == "" {
 		logger.WarnContext(ctx, "could not resolve meeting title; skipping invite to avoid confusing email")
 		return
+	}
+
+	returnURL := fmt.Sprintf("%s/meetings/%s", strings.TrimRight(h.selfServeBaseURL, "/"), meetingID)
+	if meetingPassword != "" {
+		returnURL += "?password=" + meetingPassword
 	}
 
 	name := strings.TrimSpace(firstName)
@@ -309,7 +315,7 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 			Type: meetingconstants.ResourceTypeMeeting,
 		},
 		Role:           "Registrant",
-		ReturnURL:      h.selfServeBaseURL,
+		ReturnURL:      returnURL,
 		ExpirationDays: 30,
 	}
 
