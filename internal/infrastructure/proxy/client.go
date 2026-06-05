@@ -19,6 +19,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 )
@@ -2082,7 +2083,7 @@ func (c *Client) AcceptInvite(ctx context.Context, email, username string) error
 		return domain.NewInternalError("failed to marshal accept-invite request", err)
 	}
 
-	slog.InfoContext(ctx, "ITX AcceptInvite request", "email", email, "username", username)
+	slog.InfoContext(ctx, "ITX AcceptInvite request", "email", redaction.RedactEmail(email), "username", redaction.Redact(username))
 
 	reqURL := fmt.Sprintf("%s/v2/zoom/meetings/invite_accepted", c.config.BaseURL)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(body))

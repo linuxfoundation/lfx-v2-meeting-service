@@ -29,7 +29,8 @@ type EventHandlers struct {
 	v1MappingsKV  jetstream.KeyValue
 	logger        *slog.Logger
 
-	// Invite feature fields. All three must be non-nil for invite sending to be active.
+	// Invite feature fields. inviteSender and userReader must be non-nil, and
+	// selfServeBaseURL must be non-empty, for invite sending to be active.
 	inviteSender     domain.InviteSender
 	userReader       domain.UserReader
 	selfServeBaseURL string
