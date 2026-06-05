@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.0
 	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.20
-	github.com/linuxfoundation/lfx-v2-invite-service v0.1.4-0.20260603200146-27b0e0162e1d
+	github.com/linuxfoundation/lfx-v2-invite-service v0.1.5-0.20260605060750-cef0d5251933
 	github.com/nats-io/nats.go v1.51.0
 	github.com/remychantenay/slog-otel v1.3.5
 	github.com/stretchr/testify v1.11.1
