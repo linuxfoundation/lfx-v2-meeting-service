@@ -35,8 +35,8 @@ type environment struct {
 
 // inviteConfig holds LFID invite feature configuration.
 type inviteConfig struct {
-	// Enabled controls whether invite sending is active. Defaults to true.
-	// Set INVITE_FEATURE_ENABLED=false to disable.
+	// Enabled controls whether invite sending is active. Disabled by default;
+	// set INVITES_ENABLED=true to enable.
 	Enabled bool
 	// SelfServeBaseURL is the LFX self-serve app base URL included in invite emails
 	// as the return_url (so the invited user lands back on the right page after
@@ -251,10 +251,19 @@ func parseEventConfig() eventConfig {
 
 // parseInviteConfig parses LFID invite feature configuration from environment variables.
 func parseInviteConfig() inviteConfig {
-	// Default: enabled unless explicitly set to "false".
-	enabled := os.Getenv("INVITE_FEATURE_ENABLED") != "false"
+	enabled := os.Getenv("INVITES_ENABLED") == "true"
 
 	selfServeBaseURL := os.Getenv("LFX_SELF_SERVE_BASE_URL")
+	if selfServeBaseURL == "" {
+		switch os.Getenv("LFX_ENVIRONMENT") {
+		case "prod":
+			selfServeBaseURL = "https://app.lfx.dev"
+		case "staging", "stg":
+			selfServeBaseURL = "https://app.staging.lfx.dev"
+		default:
+			selfServeBaseURL = "https://app.dev.lfx.dev"
+		}
+	}
 
 	if enabled {
 		parsed, err := url.ParseRequestURI(selfServeBaseURL)
