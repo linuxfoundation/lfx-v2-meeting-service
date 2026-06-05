@@ -268,7 +268,11 @@ func parseInviteConfig() inviteConfig {
 	if enabled {
 		parsed, err := url.ParseRequestURI(selfServeBaseURL)
 		if err != nil || parsed.Scheme == "" || parsed.Host == "" {
-			slog.With(logging.ErrKey, err, "url", selfServeBaseURL).
+			logAttrs := []any{"url", selfServeBaseURL}
+			if err != nil {
+				logAttrs = append([]any{logging.ErrKey, err}, logAttrs...)
+			}
+			slog.With(logAttrs...).
 				Error("LFX_SELF_SERVE_BASE_URL is missing or invalid; disabling invite feature")
 			enabled = false
 		}

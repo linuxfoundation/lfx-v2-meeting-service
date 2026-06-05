@@ -126,7 +126,6 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 			return nil, fmt.Errorf("failed to start invite_accepted subscriber: %w", err)
 		}
 		ep.inviteAcceptedSub = sub
-		logger.Info("invite_accepted subscriber started")
 	} else if inviteCfg.Enabled {
 		logger.Warn("invite feature enabled but no acceptance client provided; invite_accepted subscriber not started")
 	}

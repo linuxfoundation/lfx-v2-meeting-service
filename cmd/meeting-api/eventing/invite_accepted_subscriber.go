@@ -90,6 +90,9 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 		return
 	}
 
+	// Enrich all Zoom records for this email regardless of resource_type, mirroring
+	// how project/committee services reconcile invite acceptance across all matching
+	// records rather than filtering to the invite's originating resource.
 	s.logger.Info("received invite_accepted event",
 		"email", redaction.RedactEmail(email),
 		"username", redaction.Redact(username),
