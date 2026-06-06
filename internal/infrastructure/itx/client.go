@@ -1,7 +1,7 @@
 // Copyright The Linux Foundation and each contributor to LFX.
 // SPDX-License-Identifier: MIT
 
-package proxy
+package itx
 
 import (
 	"net/http"
@@ -18,16 +18,28 @@ type Config struct {
 	Timeout     time.Duration
 }
 
-// Client implements domain.ITXProxyClient.
+// Client implements domain.ITXProxyClient and exposes typed resource accessors.
 type Client struct {
 	httpClient *http.Client
 	config     Config
 }
 
-// NewClient creates a new ITX proxy client with OAuth2 M2M authentication using private key.
+// NewClient creates a new ITX client with OAuth2 M2M authentication using private key.
 func NewClient(config Config) *Client {
 	return &Client{
 		httpClient: newAuthenticatedHTTPClient(config),
+		config:     config,
+	}
+}
+
+// NewClientWithHTTPClient creates a Client that uses the provided HTTP client.
+// Intended for tests and tooling that do not need Auth0 M2M authentication.
+func NewClientWithHTTPClient(config Config, httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	return &Client{
+		httpClient: httpClient,
 		config:     config,
 	}
 }

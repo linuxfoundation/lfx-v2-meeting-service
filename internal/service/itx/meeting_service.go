@@ -5,7 +5,6 @@ package itx
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -215,54 +214,18 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 
 // mapRequestV2ToV1 maps v2 UIDs to v1 SFIDs in the request
 func (s *MeetingService) mapRequestV2ToV1(ctx context.Context, req *models.CreateITXMeetingRequest) error {
-	// Map project UID (v2) to project SFID (v1)
-	if req.ProjectUID != "" {
-		v1SFID, err := s.idMapper.MapProjectV2ToV1(ctx, req.ProjectUID)
-		if err != nil {
-			return err
-		}
-		req.ProjectUID = v1SFID
+	if err := mapProjectFieldV2ToV1(ctx, s.idMapper, &req.ProjectUID); err != nil {
+		return err
 	}
-
-	// Map committee UIDs (v2) to committee SFIDs (v1)
-	for i := range req.Committees {
-		if req.Committees[i].UID != "" {
-			v1SFID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.Committees[i].UID)
-			if err != nil {
-				return err
-			}
-			req.Committees[i].UID = v1SFID
-		}
-	}
-
-	return nil
+	return mapMeetingCommitteesV2ToV1(ctx, s.idMapper, req.Committees)
 }
 
 // mapResponseV1ToV2 maps v1 SFIDs to v2 UIDs in the response
 func (s *MeetingService) mapResponseV1ToV2(ctx context.Context, resp *itx.ZoomMeetingResponse) error {
-	// Map project SFID (v1) to project UID (v2)
-	if resp.Project != "" {
-		v2UID, err := s.idMapper.MapProjectV1ToV2(ctx, resp.Project)
-		if err != nil {
-			return err
-		}
-		resp.Project = v2UID
+	if err := mapProjectFieldV1ToV2(ctx, s.idMapper, &resp.Project); err != nil {
+		return err
 	}
-
-	// Map committee SFIDs (v1) to committee UIDs (v2). On any mapping failure, log a warning,
-	// leave the committee UID empty, and continue so the caller still receives the full response.
-	for i := range resp.Committees {
-		if resp.Committees[i].ID != "" {
-			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to map committee ID in meeting response; returning empty committee UID",
-					"v1_id", resp.Committees[i].ID, "err", err)
-				resp.Committees[i].ID = ""
-				continue
-			}
-			resp.Committees[i].ID = v2UID
-		}
-	}
-
+	mapMeetingCommitteesV1ToV2Graceful(ctx, s.idMapper, resp.Committees,
+		"failed to map committee ID in meeting response; returning empty committee UID")
 	return nil
 }
