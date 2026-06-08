@@ -140,7 +140,7 @@ The object UID is the **parent past meeting's `MeetingAndOccurrenceID`**, not th
 |---|---|---|
 | `object_type` | `v1_past_meeting` | Always |
 | `uid` | `MeetingAndOccurrenceID` (parent past meeting) | Always |
-| `username` | LFX username (from v1 `username` field) | Always (skipped if Username is empty) |
+| `username` | LFX username (from v1 `lf_sso` field) | Always (skipped if Username is empty) |
 | `relations` | Subset of `["host", "invitee", "attendee"]` | `"host"` added when `participant.Host == true`; `"invitee"` when `IsInvited == true`; `"attendee"` when `IsAttended == true` |
 | `mutually_exclusive_with` | `["host", "invitee", "attendee"]` | Always (all three, regardless of which relations are set) |
 
@@ -154,7 +154,7 @@ When a participant record is deleted but a sibling record still exists (e.g., an
 |---|---|
 | `object_type` | `v1_past_meeting` |
 | `uid` | `MeetingAndOccurrenceID` (parent past meeting) |
-| `username` | LFX username (from v1 `username` field) |
+| `username` | LFX username (from v1 `lf_sso` field) |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
 ### Delete

@@ -197,8 +197,8 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 | `first_name` | `first_name` | Direct copy |
 | `last_name` | `last_name` | Direct copy |
 | `email` | `email` | Direct copy |
-| `lf_sso` | `username` | Fallback to v1 user lookup if empty |
-| `user_id` | `user_id` | LF user ID → Auth0 format |
+| `username` | `username` | Direct copy; fallback to v1 user lookup (`lf_sso`) if empty |
+| `user_id` | `user_id` | Platform user ID (passed through); used for v1 user lookup when username is empty |
 | `host` | `host` | Parse string to bool |
 | `org` | `org_name` | Direct copy |
 | `profile_picture` | `avatar_url` | Direct copy |
@@ -294,7 +294,7 @@ userData := v1ObjectsKV.Get(key)
 
 ### FGA Member Usernames
 
-Registrant and past meeting participant FGA `member_put` / `member_remove` messages use the v1 LFX `username` field directly. No Auth0 sub conversion is performed before publishing to fga-sync.
+Registrant and past meeting participant FGA `member_put` / `member_remove` messages use the v1 LFX username directly (`username` for registrants, `lf_sso` for past meeting participants). No Auth0 sub conversion is performed before publishing to fga-sync.
 
 ### ID Mapping
 
