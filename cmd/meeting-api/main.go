@@ -1,7 +1,6 @@
 // Copyright The Linux Foundation and each contributor to LFX.
 // SPDX-License-Identifier: MIT
 
-// Package main is the ITX meeting proxy service that provides a lightweight proxy layer to the ITX Zoom API.
 package main
 
 import (
@@ -14,6 +13,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	natsgo "github.com/nats-io/nats.go"
 
 	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -125,6 +126,33 @@ func run() int {
 	authService := service.NewAuthService(jwtAuth)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
 
+	natsURL := os.Getenv("NATS_URL")
+
+	// Start invite_accepted subscriber independently of KV event processing.
+	var inviteAcceptedSub *apieventing.InviteAcceptedSubscriber
+	var inviteNatsConn *natsgo.Conn
+	if env.InviteConfig.Enabled {
+		if natsURL == "" {
+			slog.WarnContext(ctx, "INVITES_ENABLED but NATS_URL not set; invite_accepted subscriber will not start")
+		} else {
+			nc, err := natsgo.Connect(natsURL)
+			if err != nil {
+				slog.With(logging.ErrKey, err).WarnContext(ctx,
+					"failed to connect to NATS for invite_accepted subscriber; continuing without enrichment")
+			} else {
+				sub := apieventing.NewInviteAcceptedSubscriber(nc, itxClient, slog.Default())
+				if err := sub.Start(ctx); err != nil {
+					nc.Close()
+					slog.With(logging.ErrKey, err).WarnContext(ctx,
+						"failed to start invite_accepted subscriber; continuing without enrichment")
+				} else {
+					inviteNatsConn = nc
+					inviteAcceptedSub = sub
+				}
+			}
+		}
+	}
+
 	// Initialize event processor if enabled
 	var eventProcessor *apieventing.EventProcessor
 	var eventProcessorCancel context.CancelFunc
@@ -132,8 +160,6 @@ func run() int {
 	if env.EventConfig.Enabled {
 		slog.InfoContext(ctx, "initializing event processor")
 
-		// Get NATS URL from environment (reuse same URL as ID mapper)
-		natsURL := os.Getenv("NATS_URL")
 		if natsURL == "" {
 			slog.WarnContext(ctx, "EVENT_PROCESSING_ENABLED but NATS_URL not set, event processing will not start")
 		} else {
@@ -148,7 +174,7 @@ func run() int {
 				V1MappingsBucketName: env.EventConfig.V1MappingsBucketName,
 			}
 
-			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default())
+			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default(), env.InviteConfig)
 			if err != nil {
 				slog.With(logging.ErrKey, err).Error("failed to create event processor")
 				return 1
@@ -194,13 +220,31 @@ func run() int {
 	// This next line blocks until SIGINT or SIGTERM is received.
 	<-done
 
-	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel)
+	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel, inviteAcceptedSub, inviteNatsConn)
 
 	return 0
 }
 
 // gracefulShutdown handles graceful shutdown of the application
-func gracefulShutdown(httpServer *http.Server, gracefulCloseWG *sync.WaitGroup, cancel context.CancelFunc, eventProcessor *apieventing.EventProcessor, eventProcessorCancel context.CancelFunc) {
+func gracefulShutdown(
+	httpServer *http.Server,
+	gracefulCloseWG *sync.WaitGroup,
+	cancel context.CancelFunc,
+	eventProcessor *apieventing.EventProcessor,
+	eventProcessorCancel context.CancelFunc,
+	inviteAcceptedSub *apieventing.InviteAcceptedSubscriber,
+	inviteNatsConn *natsgo.Conn,
+) {
+	if inviteAcceptedSub != nil {
+		slog.Info("shutting down invite_accepted subscriber")
+		inviteAcceptedSub.Stop()
+	}
+	if inviteNatsConn != nil && !inviteNatsConn.IsClosed() {
+		if err := inviteNatsConn.Drain(); err != nil {
+			slog.With(logging.ErrKey, err).Error("error draining invite NATS connection")
+		}
+	}
+
 	// Shutdown event processor first if it exists
 	if eventProcessor != nil {
 		slog.Info("shutting down event processor")

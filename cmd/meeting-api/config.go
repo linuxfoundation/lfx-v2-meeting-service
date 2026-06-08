@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
@@ -30,6 +31,7 @@ type environment struct {
 	ITXConfig          itxConfig
 	IDMappingDisabled  bool
 	EventConfig        eventConfig
+	InviteConfig       apieventing.InviteFeatureConfig
 }
 
 // itxConfig holds ITX proxy configuration
@@ -88,18 +90,7 @@ func parseEnv() environment {
 		port = "8080"
 	}
 
-	lfxEnvironmentRaw := os.Getenv("LFX_ENVIRONMENT")
-	var lfxEnvironment string
-	switch lfxEnvironmentRaw {
-	case "dev", "development":
-		lfxEnvironment = "dev"
-	case "staging", "stg", "stage":
-		lfxEnvironment = "staging"
-	case "prod", "production":
-		lfxEnvironment = "prod"
-	default:
-		lfxEnvironment = "prod" // Default to production
-	}
+	lfxEnvironment := normalizeLFXEnvironment(os.Getenv("LFX_ENVIRONMENT"))
 
 	projectLogoBaseURL := os.Getenv("PROJECT_LOGO_BASE_URL")
 	if projectLogoBaseURL != "" {
@@ -127,6 +118,21 @@ func parseEnv() environment {
 		ITXConfig:          parseITXConfig(),
 		IDMappingDisabled:  idMappingDisabled,
 		EventConfig:        parseEventConfig(),
+		InviteConfig:       parseInviteConfig(lfxEnvironment),
+	}
+}
+
+// normalizeLFXEnvironment maps raw LFX_ENVIRONMENT values to dev|staging|prod.
+func normalizeLFXEnvironment(raw string) string {
+	switch raw {
+	case "dev", "development":
+		return "dev"
+	case "staging", "stg", "stage":
+		return "staging"
+	case "prod", "production":
+		return "prod"
+	default:
+		return "prod"
 	}
 }
 
@@ -233,5 +239,41 @@ func parseEventConfig() eventConfig {
 		AckWait:              ackWait,
 		MaxAckPending:        maxAckPending,
 		V1MappingsBucketName: v1MappingsBucketName,
+	}
+}
+
+// parseInviteConfig parses LFID invite feature configuration from environment variables.
+// lfxEnvironment must be the normalized value from normalizeLFXEnvironment.
+func parseInviteConfig(lfxEnvironment string) apieventing.InviteFeatureConfig {
+	enabled := os.Getenv("INVITES_ENABLED") == "true"
+
+	selfServeBaseURL := os.Getenv("LFX_SELF_SERVE_BASE_URL")
+	if selfServeBaseURL == "" {
+		switch lfxEnvironment {
+		case "prod":
+			selfServeBaseURL = "https://app.lfx.dev"
+		case "staging":
+			selfServeBaseURL = "https://app.staging.lfx.dev"
+		default:
+			selfServeBaseURL = "https://app.dev.lfx.dev"
+		}
+	}
+
+	if enabled {
+		parsed, err := url.ParseRequestURI(selfServeBaseURL)
+		if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+			logAttrs := []any{"url", selfServeBaseURL}
+			if err != nil {
+				logAttrs = append([]any{logging.ErrKey, err}, logAttrs...)
+			}
+			slog.With(logAttrs...).
+				Warn("LFX_SELF_SERVE_BASE_URL is missing or invalid; outbound invite sending disabled (invite_accepted subscriber remains active)")
+			selfServeBaseURL = ""
+		}
+	}
+
+	return apieventing.InviteFeatureConfig{
+		Enabled:          enabled,
+		SelfServeBaseURL: selfServeBaseURL,
 	}
 }
