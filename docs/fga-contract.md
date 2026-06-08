@@ -10,6 +10,16 @@ The full OpenFGA type definitions (relations, schema) for all object types are d
 
 ---
 
+## Prerequisites
+
+> **Deployment order (required):** `fga-sync` must be updated to accept LFX usernames in `GenericMemberData.Username` **before** this service version is deployed. See [LFXV2-1962](https://linuxfoundation.atlassian.net/browse/LFXV2-1962). If this service deploys first, `member_remove` messages keyed on LFX usernames will fail to revoke existing Auth0-sub tuples — a silent revocation failure, not just a functional mismatch.
+
+> **Username handling:** This service forwards v1 LFX usernames unchanged into `member_put` / `member_remove` messages. fga-sync builds OpenFGA user principals as `user:{username}` without additional validation or escaping (`lfx-v2-fga-sync/handler.go`). LFX usernames are expected to be valid LFID identifiers that do not contain OpenFGA-reserved characters (`:`, `*`, `#`).
+
+> **Username immutability:** FGA tuples are keyed on LFX usernames. The platform assumes v1 LFX usernames are immutable and never recycled — a recycled username would inherit the prior user's FGA relations (privilege escalation risk). This invariant is part of the broader sub→username migration ([LFXV2-1962](https://linuxfoundation.atlassian.net/browse/LFXV2-1962)).
+
+---
+
 ## Object Types
 
 - [V1 Meeting](#v1-meeting)
@@ -90,6 +100,8 @@ Published to `lfx.fga-sync.member_remove` when a registrant delete event is proc
 | `uid` | `MeetingID` (parent meeting) |
 | `username` | LFX username (from v1 `username` field on the delete payload) |
 | `relations` | `[]` (empty — removes all relations for the user) |
+
+> **Known asymmetry:** The create path may enrich `Username` via `LookupUser(user_id)` when v1 `username` is empty. The delete path reads v1 `username` directly from the delete payload — if the delete event omits username, `member_remove` is skipped even when create published a `member_put` via lookup fallback.
 
 ### Delete
 
