@@ -54,8 +54,10 @@ func (r *NATSUserReader) SubByEmail(ctx context.Context, email string) (string, 
 
 	if body[0] == '{' {
 		var envelope struct {
-			Success *bool  `json:"success"`
-			Error   string `json:"error,omitempty"`
+			Success  *bool  `json:"success"`
+			Error    string `json:"error,omitempty"`
+			Sub      string `json:"sub,omitempty"`
+			Username string `json:"username,omitempty"`
 		}
 		if err := json.Unmarshal(msg.Data, &envelope); err != nil {
 			return "", fmt.Errorf("failed to parse email_to_sub response: %w", err)
@@ -66,7 +68,14 @@ func (r *NATSUserReader) SubByEmail(ctx context.Context, email string) (string, 
 		if !*envelope.Success {
 			return "", domain.ErrUserNotFound
 		}
-		return "", fmt.Errorf("unexpected email_to_sub success envelope")
+		sub := strings.TrimSpace(envelope.Sub)
+		if sub == "" {
+			sub = strings.TrimSpace(envelope.Username)
+		}
+		if sub == "" {
+			return "", fmt.Errorf("email_to_sub success envelope missing subject")
+		}
+		return sub, nil
 	}
 
 	return body, nil

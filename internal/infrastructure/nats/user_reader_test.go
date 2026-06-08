@@ -55,9 +55,19 @@ func TestNATSUserReader_SubByEmail(t *testing.T) {
 			wantErrStr: "email_to_sub response missing success field",
 		},
 		{
-			name:       "JSON success envelope returns error instead of leaking JSON as subject",
-			reply:      replyMsg([]byte(`{"success":true,"username":"alice"}`)),
-			wantErrStr: "unexpected email_to_sub success envelope",
+			name:     "JSON success envelope with username extracts subject",
+			reply:    replyMsg([]byte(`{"success":true,"username":"auth0|alice"}`)),
+			wantUser: "auth0|alice",
+		},
+		{
+			name:     "JSON success envelope prefers sub over username",
+			reply:    replyMsg([]byte(`{"success":true,"sub":"auth0|alice","username":"ignored"}`)),
+			wantUser: "auth0|alice",
+		},
+		{
+			name:       "JSON success envelope missing subject returns descriptive error",
+			reply:      replyMsg([]byte(`{"success":true}`)),
+			wantErrStr: "email_to_sub success envelope missing subject",
 		},
 		{
 			name:       "malformed JSON object returns parse error",

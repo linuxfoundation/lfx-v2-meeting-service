@@ -63,3 +63,6 @@ func NewInternalError(message string, err ...error) *DomainError {
 func NewUnavailableError(message string, err ...error) *DomainError {
 	return &DomainError{Type: ErrorTypeUnavailable, Message: message, Err: errors.Join(err...)}
 }
+
+// ErrUserNotFound is returned by UserReader when no registered user matches the lookup.
+var ErrUserNotFound = errors.New("user not found")

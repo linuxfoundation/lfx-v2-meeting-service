@@ -108,8 +108,14 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 }
 
 // processInviteAcceptedEvent validates an invite acceptance event and calls ITX to enrich
-// all Zoom records for the acceptor's email. Enrichment runs for every resource_type because
-// the ITX endpoint is keyed by email, mirroring project/committee reconciliation behavior.
+// all Zoom records for the acceptor's email.
+//
+// Enrichment intentionally runs for every resource_type (meeting, project, committee, etc.)
+// because the ITX endpoint is keyed by email, mirroring project/committee reconciliation:
+// a user who accepts any LFID invite may have pending meeting registrant rows that need
+// username enrichment. This is a lightweight, idempotent POST keyed by email — acceptable
+// at current invite volumes; if platform-wide acceptance throughput grows significantly,
+// consider filtering on resource_type or moving enrichment to a shared worker.
 func processInviteAcceptedEvent(
 	ctx context.Context,
 	evt inviteapi.InviteServiceAcceptedEvent,

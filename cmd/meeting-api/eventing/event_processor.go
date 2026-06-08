@@ -19,9 +19,6 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
-// InviteConfig is an alias for InviteFeatureConfig kept for call-site readability.
-type InviteConfig = InviteFeatureConfig
-
 // EventProcessor manages the lifecycle of event processing via NATS JetStream
 type EventProcessor struct {
 	nc           *nats.Conn

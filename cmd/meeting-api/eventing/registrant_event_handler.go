@@ -318,8 +318,11 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 		return
 	}
 
-	returnURL := fmt.Sprintf("%s/meetings/%s", strings.TrimRight(h.selfServeBaseURL, "/"), meetingID)
+	returnURL := fmt.Sprintf("%s/meetings/%s", strings.TrimRight(h.selfServeBaseURL, "/"), url.PathEscape(meetingID))
 	if meetingPassword != "" {
+		// Intentional: pre-fill the self-serve meeting password field for registrants.
+		// Zoom passwords grant meeting access to link holders — they travel in the invite
+		// email URL and may appear in provider analytics, browser history, or forwarded mail.
 		returnURL += "?password=" + url.QueryEscape(meetingPassword)
 	}
 

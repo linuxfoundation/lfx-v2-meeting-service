@@ -3,14 +3,7 @@
 
 package domain
 
-import (
-	"context"
-	"errors"
-)
-
-// ErrUserNotFound is returned by UserReader.SubByEmail when the email is not
-// associated with any LFID account.
-var ErrUserNotFound = errors.New("user not found")
+import "context"
 
 // UserReader looks up LFID user data by email.
 type UserReader interface {
