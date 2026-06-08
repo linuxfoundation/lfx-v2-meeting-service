@@ -125,8 +125,11 @@ func (c *Client) doJSON(ctx context.Context, req apiRequest, dest any) error {
 	if err != nil {
 		return err
 	}
-	if dest == nil || len(respBody) == 0 {
-		return nil
+	if len(respBody) == 0 {
+		if dest == nil {
+			return nil
+		}
+		return domain.NewInternalError("empty response body", nil)
 	}
 
 	parseError := req.parseError

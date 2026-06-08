@@ -133,6 +133,7 @@ jobs:
       actions: read
       id-token: write
       packages: write
+    # Tag ref required: pinning the commit SHA breaks SLSA builder ref resolution.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       image: ${{ needs.release-helm-chart.outputs.image_name }}

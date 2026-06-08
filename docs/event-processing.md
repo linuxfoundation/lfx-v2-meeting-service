@@ -137,7 +137,11 @@ All invite operations are best-effort: errors are logged and never cause KV mess
 
 #### Invite acceptance enrichment (independent of event processing)
 
-When `INVITES_ENABLED=true` and `NATS_URL` is set, `main.go` starts a NATS queue subscriber on `lfx.invite-service.invite_accepted` (queue group: `meeting-service-invite-accepted`). On acceptance it calls the ITX endpoint `POST /v2/zoom/meetings/invite_accepted` to enrich all Zoom DynamoDB records for the acceptor's email, regardless of the invite's `resource_type` (mirroring project/committee reconciliation behavior).
+When `INVITES_ENABLED=true` and `NATS_URL` is set, `main.go` starts a NATS queue subscriber on
+`lfx.invite-service.invite_accepted` (queue group: `meeting-service-invite-accepted`). On acceptance it
+calls the ITX endpoint `POST /v2/zoom/meetings/invite_accepted` to enrich all Zoom DynamoDB records for
+the acceptor's email, regardless of the invite's `resource_type` (mirroring project/committee reconciliation
+behavior).
 
 The subscriber uses the process shutdown context, drains on stop, and waits for in-flight handlers to finish.
 
@@ -1196,8 +1200,8 @@ To add a new event type:
     "zoom_meeting_host_id": "host-zoom-id",
     "zoom_meeting_host_email": "host@example.com",
     "zoom_meeting_topic": "Weekly Team Sync",
-    "content": "## Overview\nTeam discussed Q1 roadmap and prioritized features.\n\n## Key Topics\n### Feature Planning\nDecided to focus on authentication improvements.\n\n### Bug Review\nIdentified 3 critical bugs requiring immediate attention.\n\n## Next Steps\n- Schedule design review for auth feature\n- Update roadmap documentation\n- Assign bug fixes to team members",
-    "edited_content": "## Overview\nTeam discussed Q1 roadmap and prioritized features.\n\n## Key Topics\n### Feature Planning\nDecided to focus on authentication improvements with OAuth2 support.\n\n### Bug Review\nIdentified 3 critical bugs:\n- Login timeout issue (#123)\n- Session expiration (#124)\n- Password reset flow (#125)\n\n## Next Steps\n- Schedule design review for auth feature (John)\n- Update roadmap documentation (Jane)\n- Assign bug fixes to team members",
+    "content": "## Overview\nTeam discussed Q1 roadmap.\n\n## Key Topics\n### Feature Planning\nFocus on authentication improvements.\n\n### Bug Review\nIdentified 3 critical bugs.\n\n## Next Steps\n- Schedule design review\n- Update roadmap documentation\n- Assign bug fixes",
+    "edited_content": "## Overview\nTeam discussed Q1 roadmap.\n\n## Key Topics\n### Feature Planning\nFocus on OAuth2 authentication.\n\n### Bug Review\nIdentified 3 critical bugs (#123, #124, #125).\n\n## Next Steps\n- Design review (John)\n- Update roadmap (Jane)\n- Assign bug fixes",
     "requires_approval": true,
     "approved": false,
     "platform": "Zoom",

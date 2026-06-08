@@ -42,6 +42,12 @@ func TestMapHTTPError(t *testing.T) {
 			body:       []byte(`{"message":"downstream unavailable"}`),
 			wantType:   domain.ErrorTypeUnavailable,
 		},
+		{
+			name:       "unauthorized",
+			statusCode: 401,
+			body:       []byte(`{"message":"invalid token"}`),
+			wantType:   domain.ErrorTypeValidation,
+		},
 	}
 
 	for _, tt := range tests {

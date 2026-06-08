@@ -28,7 +28,7 @@ type auth0TokenSource struct {
 func (a *auth0TokenSource) Token() (*oauth2.Token, error) {
 	ctx := a.ctx
 	if ctx == nil {
-		ctx = context.TODO()
+		ctx = context.Background()
 	}
 
 	body := oauth.LoginWithClientCredentialsRequest{
