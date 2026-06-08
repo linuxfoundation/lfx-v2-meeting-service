@@ -128,7 +128,7 @@ When `INVITES_ENABLED=true`, the meeting service participates in the platform LF
 During registrant create processing (`itx-zoom-meetings-registrants-v2.*`), after the registrant is indexed:
 
 1. Skip if the registrant already has a username (LFID) or if an invite was already sent for this registrant UID (tracked in `v1-mappings` as `v1_meeting_registrant_lfid_invite_sent.{registrant_uid}`).
-2. Look up the email via `lfx.auth-service.email_to_sub` — skip if an LFID already exists.
+2. Look up the email via `lfx.auth-service.email_to_username` — skip if an LFID already exists.
 3. Resolve the meeting title from the `v1-objects` KV bucket; skip if unavailable.
 4. Send `lfx.invite-service.send_invite` with `resource.type=meeting` and role `Registrant`.
 5. Store the invite UID in the sent-marker mapping key (best-effort).

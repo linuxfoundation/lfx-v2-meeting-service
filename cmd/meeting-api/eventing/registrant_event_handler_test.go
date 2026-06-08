@@ -23,12 +23,12 @@ import (
 )
 
 type stubUserReader struct {
-	sub string
-	err error
+	username string
+	err      error
 }
 
-func (s stubUserReader) SubByEmail(_ context.Context, _ string) (string, error) {
-	return s.sub, s.err
+func (s stubUserReader) UsernameByEmail(_ context.Context, _ string) (string, error) {
+	return s.username, s.err
 }
 
 type stubInviteSender struct {
@@ -94,7 +94,7 @@ func TestMaybeSendInvite(t *testing.T) {
 		},
 		{
 			name:       "skips when user already has LFID",
-			userReader: stubUserReader{sub: "auth0|existing"},
+			userReader: stubUserReader{username: "existing"},
 			setupMaps: func(kv *mockKeyValue) {
 				kv.On("Get", mock.Anything, inviteSentKey).Return(nil, jetstream.ErrKeyNotFound)
 			},

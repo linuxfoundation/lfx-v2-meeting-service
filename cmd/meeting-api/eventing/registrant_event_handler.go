@@ -291,8 +291,8 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 		return
 	}
 
-	sub, err := h.userReader.SubByEmail(ctx, email)
-	if err == nil && sub != "" {
+	username, err := h.userReader.UsernameByEmail(ctx, email)
+	if err == nil && username != "" {
 		// User already has an LFID — no invite needed.
 		logger.DebugContext(ctx, "registrant already has LFID, skipping invite")
 		return
