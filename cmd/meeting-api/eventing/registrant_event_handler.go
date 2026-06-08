@@ -245,14 +245,9 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	var deleteAccessSubject string
 
 	if username != "" {
-		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username, err := h.userLookup.MapUsernameToAuthSub(ctx, username)
-		if err != nil {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to resolve auth sub for registrant delete")
-			return true
-		}
 		meetingID := utils.GetString(v1Data["meeting_id"])
-		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, auth0Username); err != nil {
+		var err error
+		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, username); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}

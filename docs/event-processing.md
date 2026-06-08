@@ -292,23 +292,9 @@ userData := v1ObjectsKV.Get(key)
 }
 ```
 
-### Auth0 Sub Resolution
+### FGA Member Usernames
 
-FGA-sync requires usernames in Auth0 `sub` format (e.g., `auth0|jdoe`). The service delegates this conversion to the auth service over NATS:
-
-```text
-Subject:  lfx.auth-service.username_to_sub
-Request:  <v1 username string>  (e.g., "jdoe")
-Response: <Auth0 sub string>    (e.g., "auth0|jdoe")
-```
-
-This call is made for:
-
-- Registrant `member_put` FGA messages (when a registrant has a username)
-- Past meeting participant `member_put` FGA messages
-- Registrant delete access-control messages
-
-If the auth service is unavailable or returns an error, the event is NAK'd for retry. If an empty sub is returned, the username field is left empty and a warning is logged.
+Registrant and past meeting participant FGA `member_put` / `member_remove` messages use the v1 LFX `username` field directly. No Auth0 sub conversion is performed before publishing to fga-sync.
 
 ### ID Mapping
 
@@ -473,7 +459,7 @@ Subject: `lfx.fga-sync.update_access`
         "uid": "550e8400-e29b-41d4-a716-446655440000",
         "public": false,
         "relations": {
-            "organizer": ["auth0|jdoe"]
+            "organizer": ["jdoe"]
         },
         "references": {
             "project": ["project-uuid"],
@@ -495,7 +481,7 @@ For registrants, exactly one relation is sent â€” `"host"` or `"participant"` â€
     "operation": "member_put",
     "data": {
         "uid": "meeting-uuid",
-        "username": "auth0|jdoe",
+        "username": "jdoe",
         "relations": ["host"],
         "mutually_exclusive_with": ["participant"]
     }
@@ -510,7 +496,7 @@ For past meeting participants, all applicable relations (`"host"`, `"invitee"`, 
     "operation": "member_put",
     "data": {
         "uid": "meeting-and-occurrence-uuid",
-        "username": "auth0|jdoe",
+        "username": "jdoe",
         "relations": ["invitee", "attendee"],
         "mutually_exclusive_with": ["host", "invitee", "attendee"]
     }
@@ -1069,7 +1055,7 @@ To add a new event type:
     "meeting_id": "meeting-uuid",
     "project_uid": "proj-uuid",
     "committee_uid": "committee-uuid",
-    "user_id": "auth0|jdoe",
+    "user_id": "platform-user-id",
     "username": "jdoe",
     "email": "john.doe@example.com",
     "first_name": "John",
