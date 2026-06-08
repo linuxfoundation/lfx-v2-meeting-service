@@ -74,7 +74,7 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 |---|---|---|
 | `object_type` | `v1_meeting` | Always |
 | `uid` | `MeetingID` (parent meeting) | Always |
-| `username` | LFX username (from v1 `username` field) | Always (skipped if Username is empty) |
+| `username` | LFX username (`RegistrantEventData.Username`; from v1 `username`, with optional `LookupUser(user_id)` fallback) | Always (skipped if Username is empty after enrichment) |
 | `relations` | `["host"]` | When `registrant.Host == true` |
 | `relations` | `["participant"]` | When `registrant.Host == false` |
 | `mutually_exclusive_with` | `["participant"]` | When `registrant.Host == true` |
@@ -88,7 +88,7 @@ Published to `lfx.fga-sync.member_remove` when a registrant delete event is proc
 |---|---|
 | `object_type` | `v1_meeting` |
 | `uid` | `MeetingID` (parent meeting) |
-| `username` | LFX username (from v1 `username` field) |
+| `username` | LFX username (from v1 `username` field on the delete payload) |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
 ### Delete
