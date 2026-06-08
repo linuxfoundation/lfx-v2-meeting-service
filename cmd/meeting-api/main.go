@@ -137,17 +137,19 @@ func run() int {
 		} else {
 			nc, err := natsgo.Connect(natsURL)
 			if err != nil {
-				slog.With(logging.ErrKey, err).Error("failed to connect to NATS for invite_accepted subscriber")
-				return 1
+				slog.With(logging.ErrKey, err).WarnContext(ctx,
+					"failed to connect to NATS for invite_accepted subscriber; continuing without enrichment")
+			} else {
+				sub := apieventing.NewInviteAcceptedSubscriber(nc, itxProxyClient, slog.Default())
+				if err := sub.Start(ctx); err != nil {
+					nc.Close()
+					slog.With(logging.ErrKey, err).WarnContext(ctx,
+						"failed to start invite_accepted subscriber; continuing without enrichment")
+				} else {
+					inviteNatsConn = nc
+					inviteAcceptedSub = sub
+				}
 			}
-			inviteNatsConn = nc
-			sub := apieventing.NewInviteAcceptedSubscriber(nc, itxProxyClient, slog.Default())
-			if err := sub.Start(ctx); err != nil {
-				nc.Close()
-				slog.With(logging.ErrKey, err).Error("failed to start invite_accepted subscriber")
-				return 1
-			}
-			inviteAcceptedSub = sub
 		}
 	}
 
