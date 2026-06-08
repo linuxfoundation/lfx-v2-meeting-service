@@ -90,18 +90,7 @@ func parseEnv() environment {
 		port = "8080"
 	}
 
-	lfxEnvironmentRaw := os.Getenv("LFX_ENVIRONMENT")
-	var lfxEnvironment string
-	switch lfxEnvironmentRaw {
-	case "dev", "development":
-		lfxEnvironment = "dev"
-	case "staging", "stg", "stage":
-		lfxEnvironment = "staging"
-	case "prod", "production":
-		lfxEnvironment = "prod"
-	default:
-		lfxEnvironment = "prod" // Default to production
-	}
+	lfxEnvironment := normalizeLFXEnvironment(os.Getenv("LFX_ENVIRONMENT"))
 
 	projectLogoBaseURL := os.Getenv("PROJECT_LOGO_BASE_URL")
 	if projectLogoBaseURL != "" {
@@ -129,7 +118,21 @@ func parseEnv() environment {
 		ITXConfig:          parseITXConfig(),
 		IDMappingDisabled:  idMappingDisabled,
 		EventConfig:        parseEventConfig(),
-		InviteConfig:       parseInviteConfig(),
+		InviteConfig:       parseInviteConfig(lfxEnvironment),
+	}
+}
+
+// normalizeLFXEnvironment maps raw LFX_ENVIRONMENT values to dev|staging|prod.
+func normalizeLFXEnvironment(raw string) string {
+	switch raw {
+	case "dev", "development":
+		return "dev"
+	case "staging", "stg", "stage":
+		return "staging"
+	case "prod", "production":
+		return "prod"
+	default:
+		return "prod"
 	}
 }
 
@@ -240,15 +243,16 @@ func parseEventConfig() eventConfig {
 }
 
 // parseInviteConfig parses LFID invite feature configuration from environment variables.
-func parseInviteConfig() apieventing.InviteFeatureConfig {
+// lfxEnvironment must be the normalized value from normalizeLFXEnvironment.
+func parseInviteConfig(lfxEnvironment string) apieventing.InviteFeatureConfig {
 	enabled := os.Getenv("INVITES_ENABLED") == "true"
 
 	selfServeBaseURL := os.Getenv("LFX_SELF_SERVE_BASE_URL")
 	if selfServeBaseURL == "" {
-		switch os.Getenv("LFX_ENVIRONMENT") {
+		switch lfxEnvironment {
 		case "prod":
 			selfServeBaseURL = "https://app.lfx.dev"
-		case "staging", "stg":
+		case "staging":
 			selfServeBaseURL = "https://app.staging.lfx.dev"
 		default:
 			selfServeBaseURL = "https://app.dev.lfx.dev"
@@ -263,8 +267,8 @@ func parseInviteConfig() apieventing.InviteFeatureConfig {
 				logAttrs = append([]any{logging.ErrKey, err}, logAttrs...)
 			}
 			slog.With(logAttrs...).
-				Error("LFX_SELF_SERVE_BASE_URL is missing or invalid; disabling invite feature")
-			enabled = false
+				Warn("LFX_SELF_SERVE_BASE_URL is missing or invalid; outbound invite sending disabled (invite_accepted subscriber remains active)")
+			selfServeBaseURL = ""
 		}
 	}
 

@@ -107,6 +107,13 @@ func TestMaybeSendInvite(t *testing.T) {
 			},
 		},
 		{
+			name:       "skips on transient sent-marker lookup failure",
+			userReader: stubUserReader{err: domain.ErrUserNotFound},
+			setupMaps: func(kv *mockKeyValue) {
+				kv.On("Get", mock.Anything, inviteSentKey).Return(nil, errors.New("kv unavailable"))
+			},
+		},
+		{
 			name:       "skips when meeting title cannot be resolved",
 			userReader: stubUserReader{err: domain.ErrUserNotFound},
 			setupMaps: func(kv *mockKeyValue) {

@@ -290,6 +290,10 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 	if _, err := h.v1MappingsKV.Get(ctx, inviteSentKey); err == nil {
 		logger.DebugContext(ctx, "LFID invite already sent for registrant, skipping")
 		return
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		// Transient KV failure — skip rather than risk a duplicate invite.
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check LFID invite sent marker; skipping invite")
+		return
 	}
 
 	sub, err := h.userReader.SubByEmail(ctx, email)
