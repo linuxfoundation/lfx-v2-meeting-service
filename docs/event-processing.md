@@ -116,6 +116,30 @@ The system processes 12 different event types:
 | `EVENT_ACK_WAIT` | No | `30s` | Acknowledgment wait timeout |
 | `EVENT_MAX_ACK_PENDING` | No | `1000` | Maximum pending acks |
 | `NATS_URL` | Yes | - | NATS server connection URL |
+| `INVITES_ENABLED` | No | `false` | Enable LFID invite sending (registrant handler) and `invite_accepted` enrichment |
+| `LFX_SELF_SERVE_BASE_URL` | No | derived from `LFX_ENVIRONMENT` | Base URL embedded in invite emails as `return_url` |
+
+### LFID Invite Flow
+
+When `INVITES_ENABLED=true`, the meeting service participates in the platform LFID invite flow in two independent paths:
+
+#### Outbound invites (requires event processing)
+
+During registrant create processing (`itx-zoom-meetings-registrants-v2.*`), after the registrant is indexed:
+
+1. Skip if the registrant already has a username (LFID) or if an invite was already sent for this registrant UID (tracked in `v1-mappings` as `v1_meeting_registrant_lfid_invite_sent.{registrant_uid}`).
+2. Look up the email via `lfx.auth-service.email_to_sub` — skip if an LFID already exists.
+3. Resolve the meeting title from the `v1-objects` KV bucket; skip if unavailable.
+4. Send `lfx.invite-service.send_invite` with `resource.type=meeting` and role `Registrant`.
+5. Store the invite UID in the sent-marker mapping key (best-effort).
+
+All invite operations are best-effort: errors are logged and never cause KV message retries.
+
+#### Invite acceptance enrichment (independent of event processing)
+
+When `INVITES_ENABLED=true` and `NATS_URL` is set, `main.go` starts a NATS queue subscriber on `lfx.invite-service.invite_accepted` (queue group: `meeting-service-invite-accepted`). On acceptance it calls the ITX endpoint `POST /v2/zoom/meetings/invite_accepted` to enrich all Zoom DynamoDB records for the acceptor's email, regardless of the invite's `resource_type` (mirroring project/committee reconciliation behavior).
+
+The subscriber uses the process shutdown context, drains on stop, and waits for in-flight handlers to finish.
 
 ### Consumer Configuration
 

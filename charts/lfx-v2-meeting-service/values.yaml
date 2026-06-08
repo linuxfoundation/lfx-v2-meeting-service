@@ -104,6 +104,9 @@ app:
     # LFX_ENVIRONMENT is optional (dev, staging, prod) - defaults to prod if not set
     LFX_ENVIRONMENT:
       value: dev
+    # INVITES_ENABLED gates outbound invite requests for non-LFID users.
+    INVITES_ENABLED:
+      value: "false"
     # ITX_BASE_URL is the base URL for the ITX service (required)
     ITX_BASE_URL:
       value: https://api.dev.itx.linuxfoundation.org

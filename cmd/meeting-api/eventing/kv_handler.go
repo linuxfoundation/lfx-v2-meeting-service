@@ -28,6 +28,12 @@ type EventHandlers struct {
 	v1ObjectsKV   jetstream.KeyValue
 	v1MappingsKV  jetstream.KeyValue
 	logger        *slog.Logger
+
+	// Invite feature fields. inviteSender and userReader must be non-nil, and
+	// selfServeBaseURL must be non-empty, for invite sending to be active.
+	inviteSender     domain.InviteSender
+	userReader       domain.UserReader
+	selfServeBaseURL string
 }
 
 const tombstoneMarker = "!del"
@@ -133,8 +139,9 @@ func NewEventHandlers(
 	v1ObjectsKV jetstream.KeyValue,
 	v1MappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
+	opts ...EventHandlersOption,
 ) *EventHandlers {
-	return &EventHandlers{
+	h := &EventHandlers{
 		publisher:     publisher,
 		userLookup:    userLookup,
 		idMapper:      idMapper,
@@ -143,6 +150,32 @@ func NewEventHandlers(
 		v1MappingsKV:  v1MappingsKV,
 		logger:        logger,
 	}
+	for _, opt := range opts {
+		opt(h)
+	}
+	return h
+}
+
+// EventHandlersOption is a functional option for EventHandlers.
+type EventHandlersOption func(*EventHandlers)
+
+// WithInviteFeature wires invite-sending capability into the event handlers.
+// sender and reader must be non-nil, and selfServeBaseURL must be non-empty;
+// if any of these conditions is not met, inviteEnabled() returns false and no
+// invites are sent.
+func WithInviteFeature(sender domain.InviteSender, reader domain.UserReader, selfServeBaseURL string) EventHandlersOption {
+	return func(h *EventHandlers) {
+		h.inviteSender = sender
+		h.userReader = reader
+		h.selfServeBaseURL = selfServeBaseURL
+	}
+}
+
+// inviteEnabled reports whether the invite feature is fully wired up.
+func (h *EventHandlers) inviteEnabled() bool {
+	return h.inviteSender != nil &&
+		h.userReader != nil &&
+		strings.TrimSpace(h.selfServeBaseURL) != ""
 }
 
 // kvHandler routes KV bucket events to appropriate handlers
