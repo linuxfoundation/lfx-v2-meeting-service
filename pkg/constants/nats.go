@@ -3,5 +3,5 @@
 
 package constants
 
-// AuthEmailToSubSubject resolves a primary email address to an Auth0 subject via the auth service.
-const AuthEmailToSubSubject = "lfx.auth-service.email_to_sub"
+// AuthEmailToUsernameSubject resolves a primary email address to an LFX username via the auth service.
+const AuthEmailToUsernameSubject = "lfx.auth-service.email_to_username"

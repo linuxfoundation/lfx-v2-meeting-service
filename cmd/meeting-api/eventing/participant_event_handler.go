@@ -236,12 +236,8 @@ func (h *EventHandlers) fullDeleteInvitee(
 	var accessPayload []byte
 	var deleteAccessSubject string
 	if username != "" {
-		auth0Username, err := h.userLookup.MapUsernameToAuthSub(ctx, username)
-		if err != nil {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to resolve auth sub for invitee delete")
-			return true
-		}
-		if accessPayload, err = buildGenericMemberRemovePayload("v1_past_meeting", meetingAndOccurrenceID, auth0Username); err != nil {
+		var err error
+		if accessPayload, err = buildGenericMemberRemovePayload("v1_past_meeting", meetingAndOccurrenceID, username); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}
@@ -568,12 +564,8 @@ func (h *EventHandlers) fullDeleteAttendee(
 	var accessPayload []byte
 	var deleteAccessSubject string
 	if username != "" {
-		auth0Username, err := h.userLookup.MapUsernameToAuthSub(ctx, username)
-		if err != nil {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to resolve auth sub for attendee delete")
-			return true
-		}
-		if accessPayload, err = buildGenericMemberRemovePayload("v1_past_meeting", meetingAndOccurrenceID, auth0Username); err != nil {
+		var err error
+		if accessPayload, err = buildGenericMemberRemovePayload("v1_past_meeting", meetingAndOccurrenceID, username); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}

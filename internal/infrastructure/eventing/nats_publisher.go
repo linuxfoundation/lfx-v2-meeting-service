@@ -169,12 +169,6 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 	// fga-sync sets either "host" or "participant" exclusively — access as a participant
 	// is granted transitively via the schema (participant: [user] or host).
 	if registrant.Username != "" {
-		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username, err := lookupUsernameToAuthSub(ctx, p.nc, registrant.Username, p.logger)
-		if err != nil {
-			return fmt.Errorf("failed to resolve auth sub for registrant: %w", err)
-		}
-
 		relation := "participant"
 		mutuallyExclusive := "host"
 		if registrant.Host {
@@ -187,7 +181,7 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 			Operation:  "member_put",
 			Data: fgatypes.GenericMemberData{
 				UID:                   registrant.MeetingID,
-				Username:              auth0Username,
+				Username:              registrant.Username,
 				Relations:             []string{relation},
 				MutuallyExclusiveWith: []string{mutuallyExclusive},
 			},
@@ -396,18 +390,12 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 			relations = append(relations, "attendee")
 		}
 
-		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username, err := lookupUsernameToAuthSub(ctx, p.nc, participant.Username, p.logger)
-		if err != nil {
-			return fmt.Errorf("failed to resolve auth sub for participant: %w", err)
-		}
-
 		memberMsg := fgatypes.GenericFGAMessage{
 			ObjectType: "v1_past_meeting",
 			Operation:  "member_put",
 			Data: fgatypes.GenericMemberData{
 				UID:                   participant.MeetingAndOccurrenceID,
-				Username:              auth0Username,
+				Username:              participant.Username,
 				Relations:             relations,
 				MutuallyExclusiveWith: []string{"host", "invitee", "attendee"},
 			},
