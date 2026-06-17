@@ -61,6 +61,11 @@ func TestNatsHeaderCarrier_Set(t *testing.T) {
 		assert.Equal(t, []string{"00-trace-span-01"}, header["traceparent"])
 		assert.Equal(t, []string{"vendor=value"}, header["tracestate"])
 	})
+
+	t.Run("no-op on nil carrier", func(t *testing.T) {
+		var carrier natsHeaderCarrier
+		assert.NotPanics(t, func() { carrier.Set("key", "value") })
+	})
 }
 
 func TestNatsHeaderCarrier_Keys(t *testing.T) {
