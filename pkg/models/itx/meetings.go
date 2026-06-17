@@ -68,7 +68,7 @@ type CreateZoomMeetingRequest struct {
 
 	// AI features
 	ZoomAIEnabled            bool           `json:"zoom_ai_enabled"`
-	RequireAISummaryApproval bool           `json:"require_ai_summary_approval,omitempty"`
+	RequireAISummaryApproval bool           `json:"require_ai_summary_approval"`
 	AISummaryAccess          ArtifactAccess `json:"ai_summary_access,omitempty"`
 
 	// Email reminders
