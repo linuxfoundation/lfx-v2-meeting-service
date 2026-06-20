@@ -5,7 +5,6 @@ package itx
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
@@ -27,24 +26,11 @@ func NewPastMeetingService(pastMeetingClient domain.ITXPastMeetingClient, idMapp
 
 // CreatePastMeeting creates a past meeting via ITX proxy
 func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
-	// Map v2 project UID to v1 SFID before sending to ITX
-	if req.ProjectID != "" {
-		v1ID, err := s.idMapper.MapProjectV2ToV1(ctx, req.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-		req.ProjectID = v1ID
+	if err := mapProjectFieldV2ToV1(ctx, s.idMapper, &req.ProjectID); err != nil {
+		return nil, err
 	}
-
-	// Map committee UIDs to v1 IDs
-	for i := range req.Committees {
-		if req.Committees[i].ID != "" {
-			v1ID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.Committees[i].ID)
-			if err != nil {
-				return nil, err
-			}
-			req.Committees[i].ID = v1ID
-		}
+	if err := mapITXCommitteesV2ToV1(ctx, s.idMapper, req.Committees); err != nil {
+		return nil, err
 	}
 
 	resp, err := s.pastMeetingClient.CreatePastMeeting(ctx, req)
@@ -52,30 +38,11 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 		return nil, err
 	}
 
-	// Map v1 project ID back to v2 UID in response
-	if resp.ProjectID != "" {
-		v2UID, err := s.idMapper.MapProjectV1ToV2(ctx, resp.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-		resp.ProjectID = v2UID
+	if err := mapProjectFieldV1ToV2(ctx, s.idMapper, &resp.ProjectID); err != nil {
+		return nil, err
 	}
-
-	// Map committee IDs back to v2 UIDs. On any mapping failure, log a warning,
-	// leave the committee UID empty, and continue so the caller still receives the full response.
-	for i := range resp.Committees {
-		if resp.Committees[i].ID != "" {
-			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
-					"v1_id", resp.Committees[i].ID, "err", err)
-				resp.Committees[i].ID = ""
-				continue
-			}
-			resp.Committees[i].ID = v2UID
-		}
-	}
-
+	mapITXCommitteesV1ToV2Graceful(ctx, s.idMapper, resp.Committees,
+		"failed to map committee ID in past meeting response; returning empty committee UID")
 	return resp, nil
 }
 
@@ -86,53 +53,21 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID s
 		return nil, err
 	}
 
-	// Map v1 project ID back to v2 UID in response
-	if resp.ProjectID != "" {
-		v2UID, err := s.idMapper.MapProjectV1ToV2(ctx, resp.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-		resp.ProjectID = v2UID
+	if err := mapProjectFieldV1ToV2(ctx, s.idMapper, &resp.ProjectID); err != nil {
+		return nil, err
 	}
-
-	// Map committee IDs back to v2 UIDs. On any mapping failure, log a warning,
-	// leave the committee UID empty, and continue so the caller still receives the full response.
-	for i := range resp.Committees {
-		if resp.Committees[i].ID != "" {
-			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
-					"v1_id", resp.Committees[i].ID, "err", err)
-				resp.Committees[i].ID = ""
-				continue
-			}
-			resp.Committees[i].ID = v2UID
-		}
-	}
-
+	mapITXCommitteesV1ToV2Graceful(ctx, s.idMapper, resp.Committees,
+		"failed to map committee ID in past meeting response; returning empty committee UID")
 	return resp, nil
 }
 
 // UpdatePastMeeting updates a past meeting via ITX proxy
 func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeetingID string, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
-	// Map v2 project UID to v1 SFID before sending to ITX
-	if req.ProjectID != "" {
-		v1ID, err := s.idMapper.MapProjectV2ToV1(ctx, req.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-		req.ProjectID = v1ID
+	if err := mapProjectFieldV2ToV1(ctx, s.idMapper, &req.ProjectID); err != nil {
+		return nil, err
 	}
-
-	// Map committee UIDs to v1 IDs
-	for i := range req.Committees {
-		if req.Committees[i].ID != "" {
-			v1ID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.Committees[i].ID)
-			if err != nil {
-				return nil, err
-			}
-			req.Committees[i].ID = v1ID
-		}
+	if err := mapITXCommitteesV2ToV1(ctx, s.idMapper, req.Committees); err != nil {
+		return nil, err
 	}
 
 	_, err := s.pastMeetingClient.UpdatePastMeeting(ctx, pastMeetingID, req)

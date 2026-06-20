@@ -20,7 +20,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
+	itxclient "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
@@ -107,7 +107,7 @@ func run() int {
 	}
 
 	// Initialize ITX proxy client and services
-	itxProxyConfig := proxy.Config{
+	itxProxyConfig := itxclient.Config{
 		BaseURL:     env.ITXConfig.BaseURL,
 		ClientID:    env.ITXConfig.ClientID,
 		PrivateKey:  env.ITXConfig.PrivateKey,
@@ -115,14 +115,14 @@ func run() int {
 		Audience:    env.ITXConfig.Audience,
 		Timeout:     30 * time.Second,
 	}
-	itxProxyClient := proxy.NewClient(itxProxyConfig)
-	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper)
-	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
-	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper)
-	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient)
-	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper)
-	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxProxyClient)
-	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxProxyClient)
+	itxClient := itxclient.NewClient(itxProxyConfig)
+	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), idMapper)
+	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), idMapper)
+	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), idMapper)
+	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries())
+	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper)
+	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxClient.MeetingAttachments())
+	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxClient.PastMeetingAttachments())
 	authService := service.NewAuthService(jwtAuth)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
 
@@ -140,7 +140,7 @@ func run() int {
 				slog.With(logging.ErrKey, err).WarnContext(ctx,
 					"failed to connect to NATS for invite_accepted subscriber; continuing without enrichment")
 			} else {
-				sub := apieventing.NewInviteAcceptedSubscriber(nc, itxProxyClient, slog.Default())
+				sub := apieventing.NewInviteAcceptedSubscriber(nc, itxClient, slog.Default())
 				if err := sub.Start(ctx); err != nil {
 					nc.Close()
 					slog.With(logging.ErrKey, err).WarnContext(ctx,
