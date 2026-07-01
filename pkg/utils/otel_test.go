@@ -549,20 +549,21 @@ func TestSetupOTelSDKWithConfig_IPEndpoint(t *testing.T) {
 // TestNewSampler verifies that newSampler returns the correct sampler for
 // all supported OTEL_TRACES_SAMPLER values.
 func TestNewSampler(t *testing.T) {
+	const pbSuffix = ",remoteParentSampled:AlwaysOnSampler,remoteParentNotSampled:AlwaysOffSampler,localParentSampled:AlwaysOnSampler,localParentNotSampled:AlwaysOffSampler}"
 	tests := []struct {
-		name        string
-		sampler     string
-		samplerArg  string
-		wantNonNil  bool
+		name       string
+		sampler    string
+		samplerArg string
+		wantDesc   string
 	}{
-		{"empty defaults to parentbased_traceidratio", "", "", true},
-		{"always_on", "always_on", "", true},
-		{"always_off", "always_off", "", true},
-		{"traceidratio", "traceidratio", "0.5", true},
-		{"parentbased_always_on", "parentbased_always_on", "", true},
-		{"parentbased_always_off", "parentbased_always_off", "", true},
-		{"parentbased_traceidratio", "parentbased_traceidratio", "0.2", true},
-		{"unknown falls back to parentbased_traceidratio", "unknown_sampler", "", true},
+		{"empty defaults to parentbased_traceidratio", "", "", "ParentBased{root:TraceIDRatioBased{1}" + pbSuffix},
+		{"always_on", "always_on", "", "AlwaysOnSampler"},
+		{"always_off", "always_off", "", "AlwaysOffSampler"},
+		{"traceidratio", "traceidratio", "0.5", "TraceIDRatioBased{0.5}"},
+		{"parentbased_always_on", "parentbased_always_on", "", "ParentBased{root:AlwaysOnSampler" + pbSuffix},
+		{"parentbased_always_off", "parentbased_always_off", "", "ParentBased{root:AlwaysOffSampler" + pbSuffix},
+		{"parentbased_traceidratio", "parentbased_traceidratio", "0.2", "ParentBased{root:TraceIDRatioBased{0.2}" + pbSuffix},
+		{"unknown falls back to parentbased_traceidratio", "unknown_sampler", "", "ParentBased{root:TraceIDRatioBased{1}" + pbSuffix},
 	}
 
 	for _, tt := range tests {
@@ -572,8 +573,8 @@ func TestNewSampler(t *testing.T) {
 				TracesSamplerArg: tt.samplerArg,
 			}
 			s := newSampler(cfg)
-			if tt.wantNonNil && s == nil {
-				t.Error("expected non-nil sampler")
+			if got := s.Description(); got != tt.wantDesc {
+				t.Errorf("sampler description = %q, want %q", got, tt.wantDesc)
 			}
 		})
 	}
