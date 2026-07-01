@@ -96,6 +96,9 @@ type UpdateItxMeetingRequestBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// An optional note to include in the meeting update notification emails sent
+	// to registrants
+	UpdateNote *string `form:"update_note,omitempty" json:"update_note,omitempty" xml:"update_note,omitempty"`
 }
 
 // CreateItxRegistrantRequestBody is the type of the "Meeting Service" service
@@ -3882,6 +3885,7 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 		AiSummaryEnabled:         p.AiSummaryEnabled,
 		RequireAiSummaryApproval: p.RequireAiSummaryApproval,
 		ArtifactVisibility:       p.ArtifactVisibility,
+		UpdateNote:               p.UpdateNote,
 	}
 	if p.Committees != nil {
 		body.Committees = make([]*CommitteeRequestBody, len(p.Committees))
