@@ -114,7 +114,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 			id := resp.Committees[i].ID
 			goaResp.Committees[i] = &meetingservice.Committee{
 				UID:                   &id,
-				AllowedVotingStatuses: utils.CastSlice[string](resp.Committees[i].Filters),
+				AllowedVotingStatuses: filterVotingStatuses(resp.Committees[i].Filters),
 			}
 		}
 	}
@@ -241,4 +241,23 @@ func ConvertITXMeetingResponseResultToGoa(r *itx.MeetingResponseResult) *meeting
 		CreatedAt:    utils.StringPtrOmitEmpty(r.CreatedAt),
 		UpdatedAt:    utils.StringPtrOmitEmpty(r.UpdatedAt),
 	}
+}
+
+// filterVotingStatuses converts ITX committee filters to API enum values, dropping any
+// unrecognized values that ITX may return to avoid violating the OpenAPI contract.
+func filterVotingStatuses(filters []itx.CommitteeFilter) []meetingservice.AllowedVotingStatus {
+	known := map[itx.CommitteeFilter]struct{}{
+		itx.CommitteeFilterVotingRep:    {},
+		itx.CommitteeFilterAltVotingRep: {},
+		itx.CommitteeFilterObserver:     {},
+		itx.CommitteeFilterEmeritus:     {},
+		itx.CommitteeFilterNone:         {},
+	}
+	result := make([]meetingservice.AllowedVotingStatus, 0, len(filters))
+	for _, f := range filters {
+		if _, ok := known[f]; ok {
+			result = append(result, meetingservice.AllowedVotingStatus(f))
+		}
+	}
+	return result
 }

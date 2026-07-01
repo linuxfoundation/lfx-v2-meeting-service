@@ -9,14 +9,17 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"strings"
 	"time"
 
 	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
+	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	meetingconstants "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -210,6 +213,15 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
 	}
 
+	// Best-effort LFID invite: send an invite when a new registrant has no LFID yet.
+	// Sent only after the registrant has been successfully written and indexed to avoid
+	// duplicate invites when the event is redelivered on transient failure.
+	// Errors here are logged and swallowed — they must never block indexing or cause a retry.
+	if h.inviteEnabled() && indexerAction == indexerConstants.ActionCreated &&
+		registrantData.Username == "" && registrantData.Email != "" {
+		h.maybeSendInvite(ctx, funcLogger, registrantData.UID, registrantData.Email, registrantData.FirstName, registrantData.MeetingID, registrantData.CreatedBy)
+	}
+
 	funcLogger.InfoContext(ctx, "successfully processed registrant")
 	return false
 }
@@ -233,14 +245,9 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	var deleteAccessSubject string
 
 	if username != "" {
-		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username, err := h.userLookup.MapUsernameToAuthSub(ctx, username)
-		if err != nil {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to resolve auth sub for registrant delete")
-			return true
-		}
 		meetingID := utils.GetString(v1Data["meeting_id"])
-		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, auth0Username); err != nil {
+		var err error
+		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, username); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}
@@ -254,6 +261,109 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 		deleteAccessSubject: deleteAccessSubject,
 		tombstoneKeyFmts:    []string{"v1_meeting_registrants.%s"},
 	})
+}
+
+// registrantLFIDInviteSentKeyFmt tracks that an LFID invite was already sent for a registrant,
+// preventing duplicate invites when KV events are redelivered after a partial write.
+const registrantLFIDInviteSentKeyFmt = "v1_meeting_registrant_lfid_invite_sent.%s"
+
+func registrantLFIDInviteSentKey(registrantUID string) string {
+	return fmt.Sprintf(registrantLFIDInviteSentKeyFmt, registrantUID)
+}
+
+// maybeSendInvite performs a best-effort LFID invite for a new registrant who
+// has no username. It pre-checks the auth service to avoid sending a duplicate
+// invite if the user already has an LFID. All errors are logged and swallowed;
+// this method must never cause a KV event to be retried.
+func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger, registrantUID, email, firstName, meetingID string, createdBy models.CreatedBy) {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return
+	}
+
+	inviteSentKey := registrantLFIDInviteSentKey(registrantUID)
+	if _, err := h.v1MappingsKV.Get(ctx, inviteSentKey); err == nil {
+		logger.DebugContext(ctx, "LFID invite already sent for registrant, skipping")
+		return
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		// Transient KV failure — skip rather than risk a duplicate invite.
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check LFID invite sent marker; skipping invite")
+		return
+	}
+
+	username, err := h.userReader.UsernameByEmail(ctx, email)
+	if err == nil && username != "" {
+		// User already has an LFID — no invite needed.
+		logger.DebugContext(ctx, "registrant already has LFID, skipping invite")
+		return
+	}
+	if err != nil && !errors.Is(err, domain.ErrUserNotFound) {
+		// Transient auth-service failure — log and skip; do not block indexing.
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check LFID for registrant; skipping invite")
+		return
+	}
+	// err == ErrUserNotFound (or nil with empty sub): no LFID — send invite.
+
+	var meetingTitle, meetingPassword string
+	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
+	if entry, kvErr := h.v1ObjectsKV.Get(ctx, meetingKey); kvErr == nil {
+		if data, decErr := decodeData(entry.Value()); decErr == nil {
+			meetingTitle = utils.GetString(data["topic"])
+			meetingPassword = utils.GetString(data["password"])
+		}
+	}
+	if meetingTitle == "" {
+		logger.WarnContext(ctx, "could not resolve meeting title; skipping invite to avoid confusing email")
+		return
+	}
+
+	returnURL := fmt.Sprintf("%s/meetings/%s", strings.TrimRight(h.selfServeBaseURL, "/"), url.PathEscape(meetingID))
+	if meetingPassword != "" {
+		// Intentional: pre-fill the self-serve meeting password field for registrants.
+		// Zoom passwords grant meeting access to link holders — they travel in the invite
+		// email URL and may appear in provider analytics, browser history, or forwarded mail.
+		returnURL += "?password=" + url.QueryEscape(meetingPassword)
+	}
+
+	name := strings.TrimSpace(firstName)
+	req := inviteapi.SendInviteRequest{
+		Recipient: &inviteapi.Recipient{
+			Email: email,
+			Name:  name,
+		},
+		Resource: &inviteapi.Resource{
+			UID:  meetingID,
+			Name: meetingTitle,
+			Type: meetingconstants.ResourceTypeMeeting,
+		},
+		Role:           meetingconstants.InviteRoleRegistrant,
+		ReturnURL:      returnURL,
+		ExpirationDays: 30,
+	}
+	// Only set the inviter when we have a real human identity — skip "Zoom Events",
+	// which is an internal system actor and would look confusing in the invite email.
+	if (createdBy.Name != "" || createdBy.Email != "" || createdBy.Username != "") &&
+		createdBy.Name != "Zoom Events" {
+		req.Inviter = &inviteapi.Inviter{
+			Name:     createdBy.Name,
+			Email:    createdBy.Email,
+			Username: createdBy.Username,
+			Avatar:   createdBy.ProfilePicture,
+		}
+	}
+
+	result, sendErr := h.inviteSender.SendInvite(ctx, req)
+	if sendErr != nil {
+		logger.With(logging.ErrKey, sendErr).WarnContext(ctx, "failed to send LFID invite for registrant; continuing")
+		return
+	}
+	if _, err := h.v1MappingsKV.Put(ctx, inviteSentKey, []byte(result.InviteUID)); err != nil {
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant LFID invite sent marker")
+	}
+	logger.InfoContext(ctx, "sent LFID invite for registrant",
+		"invite_uid", result.InviteUID,
+		"expires_at", result.ExpiresAt,
+	)
 }
 
 // =============================================================================

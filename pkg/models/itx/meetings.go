@@ -68,7 +68,7 @@ type CreateZoomMeetingRequest struct {
 
 	// AI features
 	ZoomAIEnabled            bool           `json:"zoom_ai_enabled"`
-	RequireAISummaryApproval bool           `json:"require_ai_summary_approval,omitempty"`
+	RequireAISummaryApproval bool           `json:"require_ai_summary_approval"`
 	AISummaryAccess          ArtifactAccess `json:"ai_summary_access,omitempty"`
 
 	// Email reminders
@@ -91,6 +91,7 @@ const (
 	CommitteeFilterAltVotingRep CommitteeFilter = "alt_voting_rep"
 	CommitteeFilterObserver     CommitteeFilter = "observer"
 	CommitteeFilterEmeritus     CommitteeFilter = "emeritus"
+	CommitteeFilterNone         CommitteeFilter = "none"
 )
 
 // Committee represents a committee associated with a meeting

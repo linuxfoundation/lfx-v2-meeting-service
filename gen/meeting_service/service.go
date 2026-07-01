@@ -126,6 +126,9 @@ const ServiceName = "Meeting Service"
 // MethodKey key.
 var MethodNames = [40]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
 
+// Voting status filter for committee members
+type AllowedVotingStatus string
+
 type BadRequestError struct {
 	// HTTP status code
 	Code string
@@ -138,7 +141,7 @@ type Committee struct {
 	// Committee UID
 	UID *string
 	// Allowed voting statuses for committee members
-	AllowedVotingStatuses []string
+	AllowedVotingStatuses []AllowedVotingStatus
 }
 
 type ConflictError struct {

@@ -10,6 +10,10 @@ import (
 	"log/slog"
 
 	"github.com/nats-io/nats.go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	fgatypes "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/types"
@@ -169,12 +173,6 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 	// fga-sync sets either "host" or "participant" exclusively — access as a participant
 	// is granted transitively via the schema (participant: [user] or host).
 	if registrant.Username != "" {
-		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username, err := lookupUsernameToAuthSub(ctx, p.nc, registrant.Username, p.logger)
-		if err != nil {
-			return fmt.Errorf("failed to resolve auth sub for registrant: %w", err)
-		}
-
 		relation := "participant"
 		mutuallyExclusive := "host"
 		if registrant.Host {
@@ -187,7 +185,7 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 			Operation:  "member_put",
 			Data: fgatypes.GenericMemberData{
 				UID:                   registrant.MeetingID,
-				Username:              auth0Username,
+				Username:              registrant.Username,
 				Relations:             []string{relation},
 				MutuallyExclusiveWith: []string{mutuallyExclusive},
 			},
@@ -396,18 +394,12 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 			relations = append(relations, "attendee")
 		}
 
-		// The fga-sync service expects the username in the Auth0 "sub" format.
-		auth0Username, err := lookupUsernameToAuthSub(ctx, p.nc, participant.Username, p.logger)
-		if err != nil {
-			return fmt.Errorf("failed to resolve auth sub for participant: %w", err)
-		}
-
 		memberMsg := fgatypes.GenericFGAMessage{
 			ObjectType: "v1_past_meeting",
 			Operation:  "member_put",
 			Data: fgatypes.GenericMemberData{
 				UID:                   participant.MeetingAndOccurrenceID,
-				Username:              auth0Username,
+				Username:              participant.Username,
 				Relations:             relations,
 				MutuallyExclusiveWith: []string{"host", "invitee", "attendee"},
 			},
@@ -608,9 +600,34 @@ func (p *NATSPublisher) PublishIndexerDelete(ctx context.Context, subject, id st
 // PublishAccessDelete sends a pre-built access control message payload to subject.
 // The caller is responsible for marshalling the payload; pass []byte(id) for simple deletes.
 func (p *NATSPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
-	if err := p.nc.Publish(subject, payload); err != nil {
+	if err := p.publishWithSpan(ctx, subject, payload); err != nil {
 		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish access delete", "subject", subject)
-		return fmt.Errorf("failed to publish to %s: %w", subject, err)
+		return err
+	}
+	return nil
+}
+
+// publishWithSpan wraps conn.PublishMsg with an OTel producer span and injects
+// trace context into the NATS message headers.
+func (p *NATSPublisher) publishWithSpan(ctx context.Context, subject string, data []byte) error {
+	ctx, span := tracer.Start(ctx, "nats.publish",
+		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "nats"),
+			attribute.String("messaging.destination.name", subject),
+			attribute.Int("messaging.message.body.size", len(data)),
+		),
+	)
+	defer span.End()
+
+	msg := nats.NewMsg(subject)
+	msg.Data = data
+	otel.GetTextMapPropagator().Inject(ctx, natsHeaderCarrier(msg.Header))
+
+	if err := p.nc.PublishMsg(msg); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return domain.NewInternalError(fmt.Sprintf("failed to publish to subject %s", subject), err)
 	}
 	return nil
 }
@@ -623,9 +640,9 @@ func (p *NATSPublisher) publish(ctx context.Context, subject string, data interf
 		return fmt.Errorf("failed to marshal event data: %w", err)
 	}
 
-	if err := p.nc.Publish(subject, payload); err != nil {
+	if err := p.publishWithSpan(ctx, subject, payload); err != nil {
 		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish event", "subject", subject)
-		return fmt.Errorf("failed to publish to %s: %w", subject, err)
+		return err
 	}
 
 	p.logger.DebugContext(ctx, "successfully published event", "subject", subject, "payload_size", len(payload))

@@ -15,6 +15,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
+	infraNATS "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/nats"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
@@ -34,7 +35,7 @@ type EventProcessor struct {
 }
 
 // NewEventProcessor creates a new event processor
-func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger *slog.Logger) (*EventProcessor, error) {
+func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger *slog.Logger, inviteCfg InviteFeatureConfig) (*EventProcessor, error) {
 	// Connect to NATS
 	nc, err := nats.Connect(config.NATSURL)
 	if err != nil {
@@ -78,13 +79,19 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	}
 
 	// Create user lookup
-	userLookup := eventing.NewNATSUserLookup(nc, v1ObjectsKV, logger)
+	userLookup := eventing.NewNATSUserLookup(v1ObjectsKV, logger)
 
 	// Create project slug lookup
 	projectLookup := eventing.NewNATSProjectLookup(nc)
 
-	// Create event handlers
-	handlers := NewEventHandlers(publisher, userLookup, idMapper, projectLookup, v1ObjectsKV, v1MappingsKV, logger)
+	// Create event handlers, with optional invite feature wired in.
+	handlerOpts := []EventHandlersOption{}
+	if inviteCfg.Enabled {
+		inviteSender := infraNATS.NewInviteSender(nc, logger)
+		userReader := infraNATS.NewUserReader(nc, logger)
+		handlerOpts = append(handlerOpts, WithInviteFeature(inviteSender, userReader, inviteCfg.SelfServeBaseURL))
+	}
+	handlers := NewEventHandlers(publisher, userLookup, idMapper, projectLookup, v1ObjectsKV, v1MappingsKV, logger, handlerOpts...)
 
 	ep := &EventProcessor{
 		nc:           nc,
