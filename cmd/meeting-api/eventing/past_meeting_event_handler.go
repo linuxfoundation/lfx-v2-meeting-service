@@ -288,6 +288,16 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
 
+	// Resolve real recording availability from the sibling recording object (distinct from the
+	// recording_enabled config flag). Kept out of the pure converter so a transient KV failure
+	// retries the whole update rather than coupling conversion to KV.
+	hasRec, hasRecErr := hasRecordingForPastMeeting(ctx, pastMeetingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
+	if hasRecErr != nil {
+		funcLogger.With(logging.ErrKey, hasRecErr).ErrorContext(ctx, "failed to resolve recording availability for past meeting")
+		return isTransientError(hasRecErr)
+	}
+	pastMeetingData.HasRecording = hasRec
+
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)
 	indexerAction := indexerConstants.ActionCreated

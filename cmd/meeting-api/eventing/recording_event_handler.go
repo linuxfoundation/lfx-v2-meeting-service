@@ -304,6 +304,11 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store recording mapping")
 	}
 
+	// Re-index the parent past meeting so its has_recording flag reflects this recording.
+	if retry := h.retriggerPastMeetingIndexing(ctx, recordingData.MeetingAndOccurrenceID); retry {
+		return true
+	}
+
 	funcLogger.InfoContext(ctx, "successfully processed past meeting recording")
 	return false
 }
@@ -328,10 +333,15 @@ func (h *EventHandlers) handlePastMeetingRecordingDelete(
 		return true
 	}
 	// Delete transcript from indexer and tombstone the shared mapping key.
-	return h.handleMeetingTypeDelete(ctx, key, recordingID, []byte(recordingID), meetingDeleteConfig{
+	if retry := h.handleMeetingTypeDelete(ctx, key, recordingID, []byte(recordingID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_transcript",
 		tombstoneKeyFmts: []string{"v1_past_meeting_recordings.%s"},
-	})
+	}); retry {
+		return true
+	}
+
+	// Re-index the parent past meeting so its has_recording flag clears now the recording is gone.
+	return h.retriggerPastMeetingIndexing(ctx, recordingID)
 }
 
 // =============================================================================
