@@ -149,6 +149,12 @@ func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
 }
 
+func UpdateNoteAttribute() {
+	Attribute("update_note", String, "An optional note to include in the meeting update notification emails sent to registrants", func() {
+		MaxLength(500)
+	})
+}
+
 // AllowedVotingStatus is the set of valid voting status filters for committee members.
 var AllowedVotingStatus = Type("AllowedVotingStatus", String, func() {
 	Description("Voting status filter for committee members")
