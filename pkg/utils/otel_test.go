@@ -564,6 +564,9 @@ func TestNewSampler(t *testing.T) {
 		{"parentbased_always_off", "parentbased_always_off", "", "ParentBased{root:AlwaysOffSampler" + pbSuffix},
 		{"parentbased_traceidratio", "parentbased_traceidratio", "0.2", "ParentBased{root:TraceIDRatioBased{0.2}" + pbSuffix},
 		{"unknown falls back to parentbased_traceidratio", "unknown_sampler", "", "ParentBased{root:TraceIDRatioBased{1}" + pbSuffix},
+		{"traceidratio invalid arg falls back to 1.0", "traceidratio", "invalid", "TraceIDRatioBased{1}"},
+		{"traceidratio negative arg falls back to 1.0", "traceidratio", "-0.5", "TraceIDRatioBased{1}"},
+		{"parentbased_traceidratio out of range arg falls back to 1.0", "parentbased_traceidratio", "1.5", "ParentBased{root:TraceIDRatioBased{1}" + pbSuffix},
 	}
 
 	for _, tt := range tests {
