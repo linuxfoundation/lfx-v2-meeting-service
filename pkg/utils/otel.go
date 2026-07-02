@@ -278,7 +278,7 @@ func newSampler(cfg OTelConfig) trace.Sampler {
 				"provided-value", cfg.TracesSamplerArg, "error", err)
 			return 1.0
 		}
-		if r < 0.0 || r > 1.0 {
+		if !(r >= 0.0 && r <= 1.0) {
 			slog.Warn("OTEL_TRACES_SAMPLER_ARG out of range [0.0, 1.0], defaulting to 1.0",
 				"provided-value", cfg.TracesSamplerArg)
 			return 1.0
