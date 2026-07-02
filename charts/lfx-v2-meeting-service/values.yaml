@@ -80,10 +80,15 @@ app:
     # tracesExporter specifies the traces exporter: "otlp" or "none"
     # (default: "none")
     tracesExporter: "none"
-    # tracesSampleRatio specifies the sampling ratio for traces (0.0 to 1.0)
-    # A value of 1.0 means all traces are sampled, 0.5 means 50% are sampled
-    # (default: "1.0")
-    tracesSampleRatio: "1.0"
+    # tracesSampler specifies the OTEL_TRACES_SAMPLER type. Supported values:
+    # "always_on", "always_off", "traceidratio", "parentbased_always_on",
+    # "parentbased_always_off", "parentbased_traceidratio".
+    # When empty, the application defaults to parentbased_traceidratio.
+    tracesSampler: ""
+    # tracesSamplerArg specifies the OTEL_TRACES_SAMPLER_ARG value (sampling ratio for
+    # "traceidratio" and "parentbased_traceidratio" samplers). When empty, defaults to 1.0 (100%).
+    # (default: "")
+    tracesSamplerArg: ""
     # metricsExporter specifies the metrics exporter: "otlp" or "none"
     # (default: "none")
     metricsExporter: "none"
@@ -198,10 +203,11 @@ app:
     # (default: "none")
     # OTEL_TRACES_EXPORTER:
     #   value: otlp
-    # OTEL_TRACES_SAMPLE_RATIO specifies the sampling ratio for traces (0.0 to 1.0)
-    # A value of 1.0 means all traces are sampled, 0.5 means 50% are sampled
-    # (default: "1.0")
-    # OTEL_TRACES_SAMPLE_RATIO:
+    # OTEL_TRACES_SAMPLER specifies the sampler type (e.g. "parentbased_traceidratio")
+    # OTEL_TRACES_SAMPLER:
+    #   value: "parentbased_traceidratio"
+    # OTEL_TRACES_SAMPLER_ARG specifies the sampling ratio for traceidratio samplers (0.0 to 1.0)
+    # OTEL_TRACES_SAMPLER_ARG:
     #   value: "1.0"
     # OTEL_METRICS_EXPORTER specifies the metrics exporter: "otlp" or "none"
     # (default: "none")
