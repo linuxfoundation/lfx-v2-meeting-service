@@ -206,6 +206,7 @@ var _ = Service("Meeting Service", func() {
 			RequireAiSummaryApprovalAttribute()
 			ArtifactVisibilityAttribute()
 			RecurrenceAttribute()
+			UpdateNoteAttribute()
 			Required("meeting_id", "project_uid", "title", "start_time", "duration", "timezone", "visibility")
 		})
 
