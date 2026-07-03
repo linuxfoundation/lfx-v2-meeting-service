@@ -304,11 +304,6 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store recording mapping")
 	}
 
-	// Re-index the parent past meeting so its has_recording flag reflects this recording.
-	if retry := h.retriggerPastMeetingIndexing(ctx, recordingData.MeetingAndOccurrenceID); retry {
-		return true
-	}
-
 	funcLogger.InfoContext(ctx, "successfully processed past meeting recording")
 	return false
 }
@@ -332,24 +327,11 @@ func (h *EventHandlers) handlePastMeetingRecordingDelete(
 	}); retry {
 		return true
 	}
-	// Delete transcript from indexer (no tombstone yet).
-	if retry := h.handleMeetingTypeDelete(ctx, key, recordingID, []byte(recordingID), meetingDeleteConfig{
+	// Delete transcript from indexer and tombstone the shared mapping key.
+	return h.handleMeetingTypeDelete(ctx, key, recordingID, []byte(recordingID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_transcript",
-		tombstoneKeyFmts: []string{},
-	}); retry {
-		return true
-	}
-
-	// Re-index the parent past meeting so its has_recording flag clears now the recording is
-	// gone. Do this before tombstoning below so a transient failure here is genuinely retried
-	// on redelivery, instead of being skipped by the isTombstoned guard above.
-	if retry := h.retriggerPastMeetingIndexing(ctx, recordingID); retry {
-		return true
-	}
-
-	// Tombstone the shared mapping key now that everything has succeeded.
-	h.tombstoneMapping(ctx, fmt.Sprintf("v1_past_meeting_recordings.%s", recordingID))
-	return false
+		tombstoneKeyFmts: []string{"v1_past_meeting_recordings.%s"},
+	})
 }
 
 // =============================================================================

@@ -5,7 +5,6 @@ package eventing
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -76,53 +75,4 @@ func lookupProjectFromPastMeeting(
 		utils.GetString(pastMeetingData["project_slug"]),
 		utils.GetString(pastMeetingData["committee"]),
 		nil
-}
-
-// hasRecordingForPastMeeting reports whether a playable recording exists for the given occurrence.
-// Parity with the self-serve card: the card only ever surfaces the largest session (by total_size)
-// share_url, so we check that same session — counting a smaller-session-only URL would over-count
-// recordings the UI never exposes. A missing recording object is a permanent miss and returns
-// (false, nil); transient KV fetch or decode failures return a non-nil error (caller should retry).
-func hasRecordingForPastMeeting(
-	ctx context.Context,
-	meetingAndOccurrenceID string,
-	v1ObjectsKV jetstream.KeyValue,
-	logger *slog.Logger,
-) (bool, error) {
-	if meetingAndOccurrenceID == "" {
-		return false, nil
-	}
-	recordingKey := fmt.Sprintf("itx-zoom-past-meetings-recordings.%s", meetingAndOccurrenceID)
-	entry, kvErr := v1ObjectsKV.Get(ctx, recordingKey)
-	if kvErr != nil {
-		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
-			logger.DebugContext(ctx, "no recording object for past meeting", "key", recordingKey)
-			return false, nil
-		}
-		return false, domain.NewUnavailableError("transient error fetching recording", kvErr)
-	}
-	data, decErr := decodeData(entry.Value())
-	if decErr != nil {
-		return false, domain.NewUnavailableError("transient error decoding recording", decErr)
-	}
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		return false, domain.NewUnavailableError("transient error re-encoding recording", err)
-	}
-	var rec RecordingDBRaw
-	if err := json.Unmarshal(jsonBytes, &rec); err != nil {
-		return false, domain.NewUnavailableError("transient error decoding recording", err)
-	}
-	if len(rec.Sessions) == 0 {
-		return false, nil
-	}
-	// Mirror the frontend's getLargestSessionShareUrl reduce: seed with the first session, keep the
-	// strictly-larger one on ties (first wins), then report whether that session exposes a share_url.
-	largest := rec.Sessions[0]
-	for _, s := range rec.Sessions[1:] {
-		if s.TotalSize > largest.TotalSize {
-			largest = s
-		}
-	}
-	return largest.ShareURL != "", nil
 }

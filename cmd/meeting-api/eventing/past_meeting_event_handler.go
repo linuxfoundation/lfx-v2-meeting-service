@@ -63,6 +63,11 @@ type PastMeetingDBRaw struct {
 	// RecordingEnabled is whether the recording of the past meeting is enabled
 	RecordingEnabled bool `json:"recording_enabled"`
 
+	// HasRecording is true when a real recording exists for the past meeting — specifically when
+	// the largest recording session (by total size) has a non-empty share URL. This is synced from
+	// ITX (see ZoomPastMeeting.HasRecording) rather than computed here.
+	HasRecording bool `json:"has_recording"`
+
 	// ScheduledStartTime is the scheduled start time of the past meeting.
 	// This differs from the actual start time of the meeting because the [Sessions] stores
 	// the actual start and end times of the meeting from Zoom of when it officially started.
@@ -288,16 +293,6 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
 
-	// Resolve real recording availability from the sibling recording object (distinct from the
-	// recording_enabled config flag). Kept out of the pure converter so a transient KV failure
-	// retries the whole update rather than coupling conversion to KV.
-	hasRec, hasRecErr := hasRecordingForPastMeeting(ctx, pastMeetingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
-	if hasRecErr != nil {
-		funcLogger.With(logging.ErrKey, hasRecErr).ErrorContext(ctx, "failed to resolve recording availability for past meeting")
-		return isTransientError(hasRecErr)
-	}
-	pastMeetingData.HasRecording = hasRec
-
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)
 	indexerAction := indexerConstants.ActionCreated
@@ -455,6 +450,7 @@ func convertMapToPastMeetingData(
 		ArtifactVisibility:       artifactVisibility,
 		Restricted:               rawPastMeeting.Restricted,
 		RecordingEnabled:         rawPastMeeting.RecordingEnabled,
+		HasRecording:             rawPastMeeting.HasRecording,
 		RecordingAccess:          rawPastMeeting.RecordingAccess,
 		TranscriptEnabled:        rawPastMeeting.TranscriptEnabled,
 		TranscriptAccess:         rawPastMeeting.TranscriptAccess,
