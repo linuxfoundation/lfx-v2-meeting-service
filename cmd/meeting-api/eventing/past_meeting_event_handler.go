@@ -63,6 +63,11 @@ type PastMeetingDBRaw struct {
 	// RecordingEnabled is whether the recording of the past meeting is enabled
 	RecordingEnabled bool `json:"recording_enabled"`
 
+	// HasRecording is true when a real recording exists for the past meeting — specifically when
+	// the largest recording session (by total size) has a non-empty share URL. This is synced from
+	// ITX (see ZoomPastMeeting.HasRecording) rather than computed here.
+	HasRecording bool `json:"has_recording"`
+
 	// ScheduledStartTime is the scheduled start time of the past meeting.
 	// This differs from the actual start time of the meeting because the [Sessions] stores
 	// the actual start and end times of the meeting from Zoom of when it officially started.
@@ -445,6 +450,7 @@ func convertMapToPastMeetingData(
 		ArtifactVisibility:       artifactVisibility,
 		Restricted:               rawPastMeeting.Restricted,
 		RecordingEnabled:         rawPastMeeting.RecordingEnabled,
+		HasRecording:             rawPastMeeting.HasRecording,
 		RecordingAccess:          rawPastMeeting.RecordingAccess,
 		TranscriptEnabled:        rawPastMeeting.TranscriptEnabled,
 		TranscriptAccess:         rawPastMeeting.TranscriptAccess,
