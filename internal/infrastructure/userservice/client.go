@@ -100,6 +100,15 @@ func (a *auth0TokenSource) Token() (*oauth2.Token, error) {
 func NewClient(config Config) (*Client, error) {
 	ctx := context.Background()
 
+	if config.BaseURL == "" {
+		return nil, fmt.Errorf("user-service base URL is required")
+	}
+	if config.Auth0Domain == "" {
+		return nil, fmt.Errorf("user-service Auth0 domain is required")
+	}
+	if config.Audience == "" {
+		return nil, fmt.Errorf("user-service audience is required")
+	}
 	if config.ClientID == "" {
 		return nil, fmt.Errorf("user-service client ID is required")
 	}

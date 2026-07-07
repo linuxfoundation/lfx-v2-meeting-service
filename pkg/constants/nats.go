@@ -11,8 +11,10 @@ const AuthEmailToUsernameSubject = "lfx.auth-service.email_to_username"
 const PreferredEmailGetSubject = "lfx.meeting-service.preferred_email.get"
 
 // PreferredEmailSetSubject is the NATS RPC subject for setting a user's preferred
-// meeting-invite email. Request: {"user":"<lfid|username>","email_id":<string|null>}.
-// email_id null or "primary" clears the override. Reply: {"email_id","email"}.
+// meeting-invite email. Request: {"user":"<lfid|username>","email":<string|null>,"email_id":<string|null>}.
+// "email" (a verified address, resolved to its SFDC email-record ID) takes precedence over
+// "email_id" when both are set; a null/empty selection or "primary" clears the override.
+// Reply: {"email_id","email"}.
 const PreferredEmailSetSubject = "lfx.meeting-service.preferred_email.set"
 
 // PreferredEmailQueueGroup is the NATS queue group for the preferred-email responder,
