@@ -64,7 +64,7 @@ _(none set by this service — `organizer` is a derived relation in the FGA mode
 
 ### member_put (Registrant)
 
-Published to `lfx.fga-sync.member_put` when a registrant event is processed and the registrant has a non-empty `Username`. The username is resolved to an Auth0 `sub` value before sending.
+Published to `lfx.fga-sync.member_put` when a registrant event is processed and the registrant has a non-empty `Username`.
 
 The object UID is the **parent meeting ID**, not the registrant UID.
 
@@ -74,7 +74,7 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 |---|---|---|
 | `object_type` | `v1_meeting` | Always |
 | `uid` | `MeetingID` (parent meeting) | Always |
-| `username` | Auth0 `sub` of the registrant | Always (skipped if Username is empty) |
+| `username` | LFX username (`RegistrantEventData.Username`; from v1 `username`, with optional `LookupUser(user_id)` fallback) | Always (skipped if Username is empty after enrichment) |
 | `relations` | `["host"]` | When `registrant.Host == true` |
 | `relations` | `["participant"]` | When `registrant.Host == false` |
 | `mutually_exclusive_with` | `["participant"]` | When `registrant.Host == true` |
@@ -82,13 +82,13 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 
 ### member_remove (Registrant Delete)
 
-Published to `lfx.fga-sync.member_remove` when a registrant delete event is processed and the registrant has a non-empty `Username`. The username is resolved to an Auth0 `sub` value before sending.
+Published to `lfx.fga-sync.member_remove` when a registrant delete event is processed and the registrant has a non-empty `Username`.
 
 | Field | Value |
 |---|---|
 | `object_type` | `v1_meeting` |
 | `uid` | `MeetingID` (parent meeting) |
-| `username` | Auth0 `sub` of the registrant |
+| `username` | LFX username (from v1 `username` field on the delete payload) |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
 ### Delete
@@ -130,7 +130,7 @@ _(none set by this service)_
 
 ### member_put (Participant)
 
-Published to `lfx.fga-sync.member_put` when a participant event is processed and the participant has a non-empty `Username`. The username is resolved to an Auth0 `sub` value before sending.
+Published to `lfx.fga-sync.member_put` when a participant event is processed and the participant has a non-empty `Username`.
 
 The object UID is the **parent past meeting's `MeetingAndOccurrenceID`**, not the participant UID.
 
@@ -140,7 +140,7 @@ The object UID is the **parent past meeting's `MeetingAndOccurrenceID`**, not th
 |---|---|---|
 | `object_type` | `v1_past_meeting` | Always |
 | `uid` | `MeetingAndOccurrenceID` (parent past meeting) | Always |
-| `username` | Auth0 `sub` of the participant | Always (skipped if Username is empty) |
+| `username` | LFX username (from v1 `lf_sso` field) | Always (skipped if Username is empty) |
 | `relations` | Subset of `["host", "invitee", "attendee"]` | `"host"` added when `participant.Host == true`; `"invitee"` when `IsInvited == true`; `"attendee"` when `IsAttended == true` |
 | `mutually_exclusive_with` | `["host", "invitee", "attendee"]` | Always (all three, regardless of which relations are set) |
 
@@ -154,7 +154,7 @@ When a participant record is deleted but a sibling record still exists (e.g., an
 |---|---|
 | `object_type` | `v1_past_meeting` |
 | `uid` | `MeetingAndOccurrenceID` (parent past meeting) |
-| `username` | Auth0 `sub` of the participant |
+| `username` | LFX username (from v1 `lf_sso` field) |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
 ### Delete

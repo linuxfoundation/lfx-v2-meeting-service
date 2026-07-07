@@ -79,7 +79,7 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	}
 
 	// Create user lookup
-	userLookup := eventing.NewNATSUserLookup(nc, v1ObjectsKV, logger)
+	userLookup := eventing.NewNATSUserLookup(v1ObjectsKV, logger)
 
 	// Create project slug lookup
 	projectLookup := eventing.NewNATSProjectLookup(nc)

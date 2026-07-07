@@ -169,6 +169,7 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		YoutubeUploadEnabled:     req.YoutubeUploadEnabled,
 		ZoomAIEnabled:            req.AISummaryEnabled,
 		RequireAISummaryApproval: req.RequireAISummaryApproval,
+		Note:                     req.UpdateNote,
 	}
 
 	// Map artifact visibility to access controls only when the respective feature is enabled

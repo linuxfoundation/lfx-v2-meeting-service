@@ -7,8 +7,8 @@ import "context"
 
 // UserReader looks up LFID user data by email.
 type UserReader interface {
-	// SubByEmail returns the Auth0 "sub" identifier for the LFID account that owns
-	// the given email address. Returns ErrUserNotFound when no account matches.
+	// UsernameByEmail returns the LFX username for the LFID account that owns the given
+	// email address. Returns ErrUserNotFound when no account matches.
 	// Returns a non-nil error (other than ErrUserNotFound) for transient failures.
-	SubByEmail(ctx context.Context, email string) (string, error)
+	UsernameByEmail(ctx context.Context, email string) (string, error)
 }

@@ -96,6 +96,9 @@ type UpdateItxMeetingRequestBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// An optional note to include in the meeting update notification emails sent
+	// to registrants
+	UpdateNote *string `form:"update_note,omitempty" json:"update_note,omitempty" xml:"update_note,omitempty"`
 }
 
 // CreateItxRegistrantRequestBody is the type of the "Meeting Service" service
@@ -7179,6 +7182,7 @@ func NewUpdateItxMeetingPayload(body *UpdateItxMeetingRequestBody, meetingID str
 		AiSummaryEnabled:         body.AiSummaryEnabled,
 		RequireAiSummaryApproval: body.RequireAiSummaryApproval,
 		ArtifactVisibility:       body.ArtifactVisibility,
+		UpdateNote:               body.UpdateNote,
 	}
 	if body.Committees != nil {
 		v.Committees = make([]*meetingservice.Committee, len(body.Committees))
@@ -7956,6 +7960,11 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 	if body.Recurrence != nil {
 		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.UpdateNote != nil {
+		if utf8.RuneCountInString(*body.UpdateNote) > 500 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.update_note", *body.UpdateNote, utf8.RuneCountInString(*body.UpdateNote), 500, false))
 		}
 	}
 	return

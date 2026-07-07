@@ -63,6 +63,8 @@ func buildGenericDeleteAccessPayload(objectType, uid string) ([]byte, error) {
 
 // buildGenericMemberRemovePayload builds the JSON payload for a lfx.fga-sync.member_remove message.
 // An empty relations slice instructs fga-sync to remove ALL relations for the user.
+// Callers treat marshal failures as permanent errors (ACK, no retry) — they indicate code bugs,
+// not transient conditions like the old auth-service username_to_sub lookup could return.
 func buildGenericMemberRemovePayload(objectType, uid, username string) ([]byte, error) {
 	msg := fgatypes.GenericFGAMessage{
 		ObjectType: objectType,

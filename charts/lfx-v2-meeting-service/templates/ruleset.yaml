@@ -48,11 +48,13 @@ spec:
         {{- end }}
         {{- if .Values.openfga.enabled }}
         - authorizer: json_content_type
-        - authorizer: openfga_check
+        - authorizer: openfga_or_check
           config:
             values:
               relation: meetings_creator
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
+              or_relation: "{{ "{{- if and .Request.Body.committees (gt (len .Request.Body.committees) 0) -}}writer{{- end -}}" }}"
+              or_object: "{{ "{{- if and .Request.Body.committees (gt (len .Request.Body.committees) 0) -}}committee:{{- (index .Request.Body.committees 0).uid -}}{{- end -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
@@ -576,11 +578,13 @@ spec:
         {{- end }}
         {{- if .Values.openfga.enabled }}
         - authorizer: json_content_type
-        - authorizer: openfga_check
+        - authorizer: openfga_or_check
           config:
             values:
               relation: meetings_creator
               object: "project:{{ "{{- .Request.Body.project_uid -}}" }}"
+              or_relation: "{{ "{{- if and .Request.Body.committees (gt (len .Request.Body.committees) 0) -}}writer{{- end -}}" }}"
+              or_object: "{{ "{{- if and .Request.Body.committees (gt (len .Request.Body.committees) 0) -}}committee:{{- (index .Request.Body.committees 0).uid -}}{{- end -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests

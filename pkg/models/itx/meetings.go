@@ -68,7 +68,7 @@ type CreateZoomMeetingRequest struct {
 
 	// AI features
 	ZoomAIEnabled            bool           `json:"zoom_ai_enabled"`
-	RequireAISummaryApproval bool           `json:"require_ai_summary_approval,omitempty"`
+	RequireAISummaryApproval bool           `json:"require_ai_summary_approval"`
 	AISummaryAccess          ArtifactAccess `json:"ai_summary_access,omitempty"`
 
 	// Email reminders
@@ -78,6 +78,9 @@ type CreateZoomMeetingRequest struct {
 	// Advanced
 	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
+
+	// Update notification
+	Note string `json:"note,omitempty"`
 }
 
 // CommitteeFilter represents the voting status filter for committee members.

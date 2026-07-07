@@ -715,6 +715,7 @@ type PastMeetingEventData struct {
 	ArtifactVisibility       string               `json:"artifact_visibility,omitempty"`
 	Restricted               bool                 `json:"restricted"`
 	RecordingEnabled         bool                 `json:"recording_enabled"`
+	HasRecording             bool                 `json:"has_recording"` // true when a real recording (a session with a share_url) exists; distinct from the RecordingEnabled config flag
 	RecordingAccess          string               `json:"recording_access,omitempty"`
 	TranscriptEnabled        bool                 `json:"transcript_enabled"`
 	TranscriptAccess         string               `json:"transcript_access,omitempty"`
