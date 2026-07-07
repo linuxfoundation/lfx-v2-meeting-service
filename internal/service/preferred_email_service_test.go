@@ -143,4 +143,17 @@ func TestSetPreferredEmail(t *testing.T) {
 		assert.Nil(t, got)
 		client.AssertExpectations(t)
 	})
+
+	t.Run("email=primary clears even when email_id is set (email wins)", func(t *testing.T) {
+		client := &mockUserServiceClient{}
+		client.On("ResolveSFIDByUsername", ctx, "alice").Return("SFID1", nil)
+		client.On("ClearMeetingEmailPreference", ctx, "SFID1").Return(nil)
+
+		// email takes precedence: "primary" must clear, ignoring the provided email_id.
+		got, err := NewPreferredEmailService(client, slog.Default()).SetPreferredEmail(ctx, "alice", "primary", "e1")
+		require.NoError(t, err)
+		assert.Nil(t, got)
+		client.AssertNotCalled(t, "ResolveEmailID", mock.Anything, mock.Anything, mock.Anything)
+		client.AssertNotCalled(t, "SetMeetingEmailPreference", mock.Anything, mock.Anything, mock.Anything)
+	})
 }

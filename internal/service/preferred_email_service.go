@@ -62,15 +62,20 @@ func (s *PreferredEmailService) SetPreferredEmail(ctx context.Context, username,
 	email = strings.TrimSpace(email)
 	emailID = strings.TrimSpace(emailID)
 
-	// An address takes precedence and is resolved to its SFDC email-record ID.
-	if email != "" && !strings.EqualFold(email, primaryEmailSentinel) {
-		resolvedID, err := s.userClient.ResolveEmailID(ctx, sfid, email)
-		if err != nil {
-			s.logger.WarnContext(ctx, "failed to resolve email address to a verified record",
-				"user", redaction.Redact(username), logging.ErrKey, err)
-			return nil, err
+	// A provided address fully determines the selection (takes precedence over email_id):
+	// "primary" clears the override, any other address resolves to its SFDC email-record ID.
+	if email != "" {
+		if strings.EqualFold(email, primaryEmailSentinel) {
+			emailID = ""
+		} else {
+			resolvedID, err := s.userClient.ResolveEmailID(ctx, sfid, email)
+			if err != nil {
+				s.logger.WarnContext(ctx, "failed to resolve email address to a verified record",
+					"user", redaction.Redact(username), logging.ErrKey, err)
+				return nil, err
+			}
+			emailID = resolvedID
 		}
-		emailID = resolvedID
 	}
 
 	if emailID == "" || strings.EqualFold(emailID, primaryEmailSentinel) {

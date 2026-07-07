@@ -26,6 +26,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 const (
@@ -263,12 +264,14 @@ func (c *Client) ResolveEmailID(ctx context.Context, sfid, email string) (string
 		matchedUnverified = true
 	}
 
+	// Redact the address in the returned error — it propagates into logs via ErrKey.
+	redactedEmail := redaction.RedactEmail(email)
 	if matchedUnverified {
 		return "", domain.NewValidationError(
-			fmt.Sprintf("email %q is not a verified address on this account", email))
+			fmt.Sprintf("email %q is not a verified address on this account", redactedEmail))
 	}
 	return "", domain.NewUnavailableError(
-		fmt.Sprintf("email %q not yet available in user-service; retry", email))
+		fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail))
 }
 
 // GetMeetingEmailPreference returns the user's Type=Meeting email preference, or nil.
