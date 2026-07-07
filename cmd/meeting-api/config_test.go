@@ -31,6 +31,30 @@ func TestNormalizeLFXEnvironment(t *testing.T) {
 	}
 }
 
+func TestParseUserServiceConfig_DefaultBaseURLPerEnvironment(t *testing.T) {
+	tests := []struct {
+		env  string
+		want string
+	}{
+		{"prod", "https://api-gw.platform.linuxfoundation.org"},
+		{"staging", "https://api-gw.staging.platform.linuxfoundation.org"},
+		{"dev", "https://api-gw.dev.platform.linuxfoundation.org"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.env, func(t *testing.T) {
+			t.Setenv("USER_SERVICE_BASE_URL", "")
+			got := parseUserServiceConfig(tt.env)
+			assert.Equal(t, tt.want, got.BaseURL)
+		})
+	}
+}
+
+func TestParseUserServiceConfig_EnvOverridesDefault(t *testing.T) {
+	t.Setenv("USER_SERVICE_BASE_URL", "https://api-gw.custom.example.org")
+	got := parseUserServiceConfig("prod")
+	assert.Equal(t, "https://api-gw.custom.example.org", got.BaseURL)
+}
+
 func TestParseInviteConfig_DefaultURLUsesNormalizedEnvironment(t *testing.T) {
 	t.Setenv("INVITES_ENABLED", "true")
 	t.Setenv("LFX_SELF_SERVE_BASE_URL", "")
