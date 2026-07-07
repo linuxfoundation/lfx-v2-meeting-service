@@ -553,7 +553,13 @@ func (r *RegistrantEventData) SortName() string {
 func (r *RegistrantEventData) NameAndAliases() []string {
 	seen := make(map[string]bool)
 	var result []string
-	for _, v := range []string{r.Username, r.Email} {
+	first := strings.TrimSpace(r.FirstName)
+	last := strings.TrimSpace(r.LastName)
+	values := []string{r.Username, r.Email, first, last}
+	if first != "" && last != "" {
+		values = append(values, first+" "+last)
+	}
+	for _, v := range values {
 		v = strings.TrimSpace(v)
 		if v != "" && !seen[v] {
 			result = append(result, v)
@@ -870,7 +876,13 @@ func (p *PastMeetingParticipantEventData) SortName() string {
 func (p *PastMeetingParticipantEventData) NameAndAliases() []string {
 	seen := make(map[string]bool)
 	var result []string
-	for _, v := range []string{p.FirstName, p.LastName, p.Username} {
+	first := strings.TrimSpace(p.FirstName)
+	last := strings.TrimSpace(p.LastName)
+	values := []string{p.FirstName, p.LastName, p.Username}
+	if first != "" && last != "" {
+		values = append(values, first+" "+last)
+	}
+	for _, v := range values {
 		v = strings.TrimSpace(v)
 		if v != "" && !seen[v] {
 			result = append(result, v)
