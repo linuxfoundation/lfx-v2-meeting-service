@@ -268,7 +268,7 @@ func (c *Client) ResolveEmailID(ctx context.Context, sfid, email string) (string
 	redactedEmail := redaction.RedactEmail(email)
 	if matchedUnverified {
 		return "", domain.NewValidationError(
-			fmt.Sprintf("email %q is not a verified address on this account", redactedEmail))
+			fmt.Sprintf("email %q is not an active, verified address on this account", redactedEmail))
 	}
 	return "", domain.NewUnavailableError(
 		fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail))
