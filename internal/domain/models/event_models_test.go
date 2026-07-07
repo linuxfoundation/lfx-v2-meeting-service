@@ -18,20 +18,20 @@ func TestRegistrantEventData_NameAndAliases(t *testing.T) {
 		{
 			name: "includes combined full name alongside individual tokens",
 			data: RegistrantEventData{
-				FirstName: "Paul",
-				LastName:  "Hinz",
-				Username:  "phinz",
-				Email:     "phinz@example.com",
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Username:  "jsmith",
+				Email:     "jsmith@example.com",
 			},
-			expected: []string{"phinz", "phinz@example.com", "Paul", "Hinz", "Paul Hinz"},
+			expected: []string{"jsmith", "jsmith@example.com", "Jane", "Smith", "Jane Smith"},
 		},
 		{
 			name: "omits combined name when first or last name is missing",
 			data: RegistrantEventData{
-				FirstName: "Paul",
-				Username:  "phinz",
+				FirstName: "Jane",
+				Username:  "jsmith",
 			},
-			expected: []string{"phinz", "Paul"},
+			expected: []string{"jsmith", "Jane"},
 		},
 		{
 			name:     "empty when no fields set",
@@ -56,19 +56,19 @@ func TestPastMeetingParticipantEventData_NameAndAliases(t *testing.T) {
 		{
 			name: "includes combined full name alongside individual tokens",
 			data: PastMeetingParticipantEventData{
-				FirstName: "Paul",
-				LastName:  "Hinz",
-				Username:  "phinz",
+				FirstName: "Jane",
+				LastName:  "Smith",
+				Username:  "jsmith",
 			},
-			expected: []string{"Paul", "Hinz", "phinz", "Paul Hinz"},
+			expected: []string{"Jane", "Smith", "jsmith", "Jane Smith"},
 		},
 		{
 			name: "omits combined name when last name is missing",
 			data: PastMeetingParticipantEventData{
-				FirstName: "Paul",
-				Username:  "phinz",
+				FirstName: "Jane",
+				Username:  "jsmith",
 			},
-			expected: []string{"Paul", "phinz"},
+			expected: []string{"Jane", "jsmith"},
 		},
 		{
 			name:     "empty when no fields set",
