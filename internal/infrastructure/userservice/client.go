@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -264,12 +265,19 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 	}
 	httpReq.Header.Set("Accept", "application/json")
 
-	// Log only the URL path (not query) and body length — the query embeds SFIDs and
-	// response bodies contain email addresses, which are PII we must keep out of logs.
+	// Log only method/status/length — the URL path embeds the SFID and response bodies
+	// contain email addresses, both of which are identifiers we keep out of logs.
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
-		slog.DebugContext(ctx, "user-service request errored", "method", method, "path", httpReq.URL.Path, logging.ErrKey, err)
-		return domain.NewUnavailableError("user-service request failed", err)
+		// *url.Error embeds the full request URL (SFID in the path); unwrap it so the
+		// SFID isn't logged here or carried into the returned/replied error.
+		cause := err
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) && urlErr.Err != nil {
+			cause = urlErr.Err
+		}
+		slog.DebugContext(ctx, "user-service request errored", "method", method, logging.ErrKey, cause)
+		return domain.NewUnavailableError("user-service request failed", cause)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -279,7 +287,7 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 	}
 
 	slog.DebugContext(ctx, "user-service response",
-		"method", method, "path", httpReq.URL.Path, "status", resp.StatusCode, "body_len", len(respBody))
+		"method", method, "status", resp.StatusCode, "body_len", len(respBody))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return mapHTTPError(resp.StatusCode, respBody)
