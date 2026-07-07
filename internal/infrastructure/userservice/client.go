@@ -391,9 +391,11 @@ func (c *Client) doJSON(ctx context.Context, method, reqURL string, body, out an
 	}
 	httpReq.Header.Set("Accept", "application/json")
 
+	// Log only the URL path (not query) and body length — the query embeds usernames/SFIDs
+	// and response bodies contain email addresses, which are PII we must keep out of logs.
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
-		slog.DebugContext(ctx, "user-service request errored", "method", method, "url", reqURL, logging.ErrKey, err)
+		slog.DebugContext(ctx, "user-service request errored", "method", method, "path", httpReq.URL.Path, logging.ErrKey, err)
 		return domain.NewUnavailableError("user-service request failed", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -404,7 +406,7 @@ func (c *Client) doJSON(ctx context.Context, method, reqURL string, body, out an
 	}
 
 	slog.DebugContext(ctx, "user-service response",
-		"method", method, "url", reqURL, "status", resp.StatusCode, "body", truncate(string(respBody), 512))
+		"method", method, "path", httpReq.URL.Path, "status", resp.StatusCode, "body_len", len(respBody))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return mapHTTPError(resp.StatusCode, respBody)
@@ -444,12 +446,15 @@ func mapHTTPError(statusCode int, body []byte) error {
 	case http.StatusBadRequest:
 		return domain.NewValidationError(message)
 	case http.StatusUnauthorized, http.StatusForbidden:
-		return domain.NewValidationError(fmt.Sprintf("authentication/authorization failed: %s", message))
+		// The M2M principal (not the RPC caller) failed to auth — a server-side/config
+		// problem, so Internal rather than Validation (which callers read as bad input).
+		return domain.NewInternalError(fmt.Sprintf("user-service authentication/authorization failed: %s", message))
 	case http.StatusNotFound:
 		return domain.NewNotFoundError(message)
 	case http.StatusConflict:
 		return domain.NewConflictError(message)
-	case http.StatusServiceUnavailable:
+	case http.StatusTooManyRequests, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		// Transient upstream failures — keep them retryable.
 		return domain.NewUnavailableError(message)
 	default:
 		return domain.NewInternalError(message)

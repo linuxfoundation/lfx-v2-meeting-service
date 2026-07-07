@@ -251,7 +251,8 @@ func TestSetMeetingEmailPreference_WriteErrorNotPersisted(t *testing.T) {
 
 	_, err := testClient(server).SetMeetingEmailPreference(context.Background(), "SFID1", "new")
 	require.Error(t, err)
-	assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
+	// A 502 that did not persist maps to a retryable Unavailable error.
+	assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
 }
 
 func TestClearMeetingEmailPreference_DeleteErrorButGone(t *testing.T) {
@@ -328,11 +329,14 @@ func TestMapHTTPError(t *testing.T) {
 		want   domain.ErrorType
 	}{
 		{http.StatusBadRequest, domain.ErrorTypeValidation},
-		{http.StatusUnauthorized, domain.ErrorTypeValidation},
-		{http.StatusForbidden, domain.ErrorTypeValidation},
+		{http.StatusUnauthorized, domain.ErrorTypeInternal},
+		{http.StatusForbidden, domain.ErrorTypeInternal},
 		{http.StatusNotFound, domain.ErrorTypeNotFound},
 		{http.StatusConflict, domain.ErrorTypeConflict},
+		{http.StatusTooManyRequests, domain.ErrorTypeUnavailable},
+		{http.StatusBadGateway, domain.ErrorTypeUnavailable},
 		{http.StatusServiceUnavailable, domain.ErrorTypeUnavailable},
+		{http.StatusGatewayTimeout, domain.ErrorTypeUnavailable},
 		{http.StatusTeapot, domain.ErrorTypeInternal},
 	}
 	for _, tt := range tests {

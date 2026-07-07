@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // primaryEmailSentinel is the special email_id value that clears the override so the
@@ -35,7 +37,13 @@ func (s *PreferredEmailService) GetPreferredEmail(ctx context.Context, username 
 	if err != nil {
 		return nil, err
 	}
-	return s.userClient.GetMeetingEmailPreference(ctx, sfid)
+	pref, err := s.userClient.GetMeetingEmailPreference(ctx, sfid)
+	if err != nil {
+		s.logger.WarnContext(ctx, "failed to get preferred meeting email",
+			"user", redaction.Redact(username), logging.ErrKey, err)
+		return nil, err
+	}
+	return pref, nil
 }
 
 // SetPreferredEmail sets the user's preferred meeting-invite email.
@@ -58,6 +66,8 @@ func (s *PreferredEmailService) SetPreferredEmail(ctx context.Context, username,
 	if email != "" && !strings.EqualFold(email, primaryEmailSentinel) {
 		resolvedID, err := s.userClient.ResolveEmailID(ctx, sfid, email)
 		if err != nil {
+			s.logger.WarnContext(ctx, "failed to resolve email address to a verified record",
+				"user", redaction.Redact(username), logging.ErrKey, err)
 			return nil, err
 		}
 		emailID = resolvedID
@@ -65,12 +75,22 @@ func (s *PreferredEmailService) SetPreferredEmail(ctx context.Context, username,
 
 	if emailID == "" || strings.EqualFold(emailID, primaryEmailSentinel) {
 		if err := s.userClient.ClearMeetingEmailPreference(ctx, sfid); err != nil {
+			s.logger.WarnContext(ctx, "failed to clear preferred meeting email",
+				"user", redaction.Redact(username), logging.ErrKey, err)
 			return nil, err
 		}
+		s.logger.InfoContext(ctx, "cleared preferred meeting email override", "user", redaction.Redact(username))
 		return nil, nil
 	}
 
-	return s.userClient.SetMeetingEmailPreference(ctx, sfid, emailID)
+	pref, err := s.userClient.SetMeetingEmailPreference(ctx, sfid, emailID)
+	if err != nil {
+		s.logger.WarnContext(ctx, "failed to set preferred meeting email",
+			"user", redaction.Redact(username), logging.ErrKey, err)
+		return nil, err
+	}
+	s.logger.InfoContext(ctx, "set preferred meeting email", "user", redaction.Redact(username))
+	return pref, nil
 }
 
 // resolveSFID resolves an LFID/username to a Salesforce ID.
@@ -79,5 +99,11 @@ func (s *PreferredEmailService) resolveSFID(ctx context.Context, username string
 	if username == "" {
 		return "", domain.NewValidationError("user is required")
 	}
-	return s.userClient.ResolveSFIDByUsername(ctx, username)
+	sfid, err := s.userClient.ResolveSFIDByUsername(ctx, username)
+	if err != nil {
+		s.logger.WarnContext(ctx, "failed to resolve user to a Salesforce ID",
+			"user", redaction.Redact(username), logging.ErrKey, err)
+		return "", err
+	}
+	return sfid, nil
 }
