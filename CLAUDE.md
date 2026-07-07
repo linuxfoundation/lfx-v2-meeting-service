@@ -149,6 +149,17 @@ For ITX proxy functionality, configure these environment variables:
 - `ITX_AUTH0_DOMAIN`: Auth0 domain for OAuth2 (e.g., `linuxfoundation.auth0.com`)
 - `ITX_AUDIENCE`: OAuth2 audience for ITX service (e.g., `https://api.itx.linuxfoundation.org/`)
 
+### User Service Configuration (Optional)
+
+Backs the preferred meeting-invite email NATS RPC (LFXV2-2599) by proxying to the v1 user-service preferences API. The responder starts only when `USER_SERVICE_CLIENT_ID` and a credential (private key **or** client secret) are set **and** `NATS_URL` is configured; otherwise it is skipped with a log line.
+
+- `USER_SERVICE_BASE_URL`: v1 API-gateway base URL (defaults per `LFX_ENVIRONMENT`, e.g. `https://api-gw.dev.platform.linuxfoundation.org`)
+- `USER_SERVICE_CLIENT_ID`: OAuth2 M2M client ID authorized for the API gateway
+- `USER_SERVICE_CLIENT_PRIVATE_KEY`: RSA private key in PEM format for RS256 client-assertion (preferred)
+- `USER_SERVICE_CLIENT_SECRET`: client secret, used when a private key is not provided
+- `USER_SERVICE_AUTH0_DOMAIN`: Auth0 domain for the API-gateway M2M client
+- `USER_SERVICE_AUDIENCE`: OAuth2 audience for the API gateway (defaults to the base URL)
+
 ### ID Mapping Configuration (Optional)
 
 The service supports optional ID mapping between v1 and v2 systems:
@@ -283,3 +294,10 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 - `GET /itx/past_meetings/{past_meeting_id}` - Get past meeting
 - `PUT /itx/past_meetings/{past_meeting_id}` - Update past meeting
 - `DELETE /itx/past_meetings/{past_meeting_id}` - Delete past meeting
+
+### NATS RPC (preferred meeting-invite email — LFXV2-2599)
+
+Request/reply subjects served by the preferred-email responder (see User Service Configuration). The caller sends an LFID/username; meeting-service resolves the Salesforce ID via the v1 user-service and proxies to its preferences API (Phase 1 storage).
+
+- `lfx.meeting-service.preferred_email.get` — request `{"user":"<lfid|username>"}` → reply `{"email_id":string|null,"email":string|null}` (`null` ⇒ use primary)
+- `lfx.meeting-service.preferred_email.set` — request `{"user":"<lfid|username>","email":"<verified-address>"}` (or `{"...","email_id":<sfid>}`; `email` wins, `null`/`"primary"` clears) → reply `{"email_id","email"}` or `{"error":"..."}`. A verified `email` is resolved to its (auth0→SFDC synced) email-record ID; a not-yet-synced address returns a retryable error.

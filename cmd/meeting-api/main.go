@@ -20,7 +20,9 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
+	natsinfra "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/nats"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/userservice"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
@@ -153,6 +155,44 @@ func run() int {
 		}
 	}
 
+	// Start preferred-email RPC responder (LFXV2-2599) independently of KV event processing.
+	// It proxies get/set of a user's preferred meeting-invite email to the v1 user-service.
+	var preferredEmailResponder *natsinfra.PreferredEmailResponder
+	var preferredEmailNatsConn *natsgo.Conn
+	if env.UserServiceConfig.Configured() {
+		if natsURL == "" {
+			slog.WarnContext(ctx, "user-service configured but NATS_URL not set; preferred_email RPC responder will not start")
+		} else if userServiceClient, err := userservice.NewClient(userservice.Config{
+			BaseURL:      env.UserServiceConfig.BaseURL,
+			ClientID:     env.UserServiceConfig.ClientID,
+			PrivateKey:   env.UserServiceConfig.PrivateKey,
+			ClientSecret: env.UserServiceConfig.ClientSecret,
+			Auth0Domain:  env.UserServiceConfig.Auth0Domain,
+			Audience:     env.UserServiceConfig.Audience,
+			Timeout:      30 * time.Second,
+		}); err != nil {
+			slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to create user-service client; preferred_email RPC responder will not start")
+		} else {
+			nc, err := natsgo.Connect(natsURL)
+			if err != nil {
+				slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to connect to NATS for preferred_email responder; continuing without it")
+			} else {
+				preferredEmailService := service.NewPreferredEmailService(userServiceClient, slog.Default())
+				responder := natsinfra.NewPreferredEmailResponder(nc, preferredEmailService, slog.Default())
+				if err := responder.Start(ctx); err != nil {
+					nc.Close()
+					slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to start preferred_email responder; continuing without it")
+				} else {
+					preferredEmailNatsConn = nc
+					preferredEmailResponder = responder
+					slog.InfoContext(ctx, "preferred_email RPC responder initialized")
+				}
+			}
+		}
+	} else {
+		slog.InfoContext(ctx, "user-service not configured; preferred_email RPC responder disabled")
+	}
+
 	// Initialize event processor if enabled
 	var eventProcessor *apieventing.EventProcessor
 	var eventProcessorCancel context.CancelFunc
@@ -220,7 +260,7 @@ func run() int {
 	// This next line blocks until SIGINT or SIGTERM is received.
 	<-done
 
-	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel, inviteAcceptedSub, inviteNatsConn)
+	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel, inviteAcceptedSub, inviteNatsConn, preferredEmailResponder, preferredEmailNatsConn)
 
 	return 0
 }
@@ -234,6 +274,8 @@ func gracefulShutdown(
 	eventProcessorCancel context.CancelFunc,
 	inviteAcceptedSub *apieventing.InviteAcceptedSubscriber,
 	inviteNatsConn *natsgo.Conn,
+	preferredEmailResponder *natsinfra.PreferredEmailResponder,
+	preferredEmailNatsConn *natsgo.Conn,
 ) {
 	if inviteAcceptedSub != nil {
 		slog.Info("shutting down invite_accepted subscriber")
@@ -242,6 +284,16 @@ func gracefulShutdown(
 	if inviteNatsConn != nil && !inviteNatsConn.IsClosed() {
 		if err := inviteNatsConn.Drain(); err != nil {
 			slog.With(logging.ErrKey, err).Error("error draining invite NATS connection")
+		}
+	}
+
+	if preferredEmailResponder != nil {
+		slog.Info("shutting down preferred_email responder")
+		preferredEmailResponder.Stop()
+	}
+	if preferredEmailNatsConn != nil && !preferredEmailNatsConn.IsClosed() {
+		if err := preferredEmailNatsConn.Drain(); err != nil {
+			slog.With(logging.ErrKey, err).Error("error draining preferred_email NATS connection")
 		}
 	}
 

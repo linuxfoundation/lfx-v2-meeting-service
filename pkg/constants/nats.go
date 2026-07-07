@@ -5,3 +5,16 @@ package constants
 
 // AuthEmailToUsernameSubject resolves a primary email address to an LFX username via the auth service.
 const AuthEmailToUsernameSubject = "lfx.auth-service.email_to_username"
+
+// PreferredEmailGetSubject is the NATS RPC subject for reading a user's preferred
+// meeting-invite email. Request: {"user":"<lfid|username>"}. Reply: {"email_id","email"}.
+const PreferredEmailGetSubject = "lfx.meeting-service.preferred_email.get"
+
+// PreferredEmailSetSubject is the NATS RPC subject for setting a user's preferred
+// meeting-invite email. Request: {"user":"<lfid|username>","email_id":<string|null>}.
+// email_id null or "primary" clears the override. Reply: {"email_id","email"}.
+const PreferredEmailSetSubject = "lfx.meeting-service.preferred_email.set"
+
+// PreferredEmailQueueGroup is the NATS queue group for the preferred-email responder,
+// so multiple service replicas load-balance RPC requests.
+const PreferredEmailQueueGroup = "meeting-service-preferred-email"

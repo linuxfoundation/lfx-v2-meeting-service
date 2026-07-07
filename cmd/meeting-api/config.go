@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
@@ -29,6 +30,7 @@ type environment struct {
 	ProjectLogoBaseURL string
 	LFXAppOrigin       string
 	ITXConfig          itxConfig
+	UserServiceConfig  userServiceConfig
 	IDMappingDisabled  bool
 	EventConfig        eventConfig
 	InviteConfig       apieventing.InviteFeatureConfig
@@ -41,6 +43,23 @@ type itxConfig struct {
 	PrivateKey  string
 	Auth0Domain string
 	Audience    string
+}
+
+// userServiceConfig holds v1 user-service (API-gateway) client configuration for
+// the preferred meeting-invite email RPC. When ClientID and a credential
+// (PrivateKey or ClientSecret) are unset, the preferred-email responder is skipped.
+type userServiceConfig struct {
+	BaseURL      string
+	ClientID     string
+	PrivateKey   string
+	ClientSecret string
+	Auth0Domain  string
+	Audience     string
+}
+
+// Configured reports whether enough config is present to build the user-service client.
+func (c userServiceConfig) Configured() bool {
+	return c.ClientID != "" && (c.PrivateKey != "" || c.ClientSecret != "")
 }
 
 // eventConfig holds event processing configuration
@@ -116,6 +135,7 @@ func parseEnv() environment {
 		ProjectLogoBaseURL: projectLogoBaseURL,
 		LFXAppOrigin:       lfxAppOrigin,
 		ITXConfig:          parseITXConfig(),
+		UserServiceConfig:  parseUserServiceConfig(lfxEnvironment),
 		IDMappingDisabled:  idMappingDisabled,
 		EventConfig:        parseEventConfig(),
 		InviteConfig:       parseInviteConfig(lfxEnvironment),
@@ -171,6 +191,48 @@ func parseITXConfig() itxConfig {
 		PrivateKey:  privateKey,
 		Auth0Domain: auth0Domain,
 		Audience:    audience,
+	}
+}
+
+// parseUserServiceConfig parses v1 user-service (API-gateway) configuration for the
+// preferred meeting-invite email RPC. Unlike ITX config it never exits on missing
+// values: when unset, the preferred-email responder is simply not started.
+// lfxEnvironment must be the normalized value from normalizeLFXEnvironment.
+func parseUserServiceConfig(lfxEnvironment string) userServiceConfig {
+	baseURL := os.Getenv("USER_SERVICE_BASE_URL")
+	if baseURL == "" {
+		switch lfxEnvironment {
+		case "prod":
+			baseURL = "https://api-gw.platform.linuxfoundation.org"
+		case "staging":
+			baseURL = "https://api-gw.staging.platform.linuxfoundation.org"
+		default:
+			baseURL = "https://api-gw.dev.platform.linuxfoundation.org"
+		}
+	}
+
+	audience := os.Getenv("USER_SERVICE_AUDIENCE")
+	if audience == "" {
+		// The API-gateway audience is the gateway URL itself (trailing slash).
+		audience = strings.TrimRight(baseURL, "/") + "/"
+	}
+
+	auth0Domain := os.Getenv("USER_SERVICE_AUTH0_DOMAIN")
+	if auth0Domain == "" {
+		if lfxEnvironment == "prod" {
+			auth0Domain = "linuxfoundation.auth0.com"
+		} else {
+			auth0Domain = "linuxfoundation-dev.auth0.com"
+		}
+	}
+
+	return userServiceConfig{
+		BaseURL:      baseURL,
+		ClientID:     os.Getenv("USER_SERVICE_CLIENT_ID"),
+		PrivateKey:   os.Getenv("USER_SERVICE_CLIENT_PRIVATE_KEY"),
+		ClientSecret: os.Getenv("USER_SERVICE_CLIENT_SECRET"),
+		Auth0Domain:  auth0Domain,
+		Audience:     audience,
 	}
 }
 
