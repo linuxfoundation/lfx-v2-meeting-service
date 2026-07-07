@@ -272,7 +272,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Field | Value |
 |---|---|
 | `sort_name` | `email` (trimmed) |
-| `name_and_aliases` | `[username, email]` (deduplicated, omits empty values) |
+| `name_and_aliases` | `[username, email, first_name, last_name, "first_name last_name"]` (deduplicated, omits empty values) |
 | `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
@@ -518,7 +518,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Field | Value |
 |---|---|
 | `sort_name` | `email` (trimmed) |
-| `name_and_aliases` | `[first_name, last_name, username]` (deduplicated, omits empty values) |
+| `name_and_aliases` | `[first_name, last_name, username, "first_name last_name"]` (deduplicated, omits empty values) |
 | `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
