@@ -157,41 +157,7 @@ func run() int {
 
 	// Start preferred-email RPC responder (LFXV2-2599) independently of KV event processing.
 	// It proxies get/set of a user's preferred meeting-invite email to the v1 user-service.
-	var preferredEmailResponder *natsinfra.PreferredEmailResponder
-	var preferredEmailNatsConn *natsgo.Conn
-	if env.UserServiceConfig.Configured() {
-		if natsURL == "" {
-			slog.WarnContext(ctx, "user-service configured but NATS_URL not set; preferred_email RPC responder will not start")
-		} else if userServiceClient, err := userservice.NewClient(userservice.Config{
-			BaseURL:      env.UserServiceConfig.BaseURL,
-			ClientID:     env.UserServiceConfig.ClientID,
-			PrivateKey:   env.UserServiceConfig.PrivateKey,
-			ClientSecret: env.UserServiceConfig.ClientSecret,
-			Auth0Domain:  env.UserServiceConfig.Auth0Domain,
-			Audience:     env.UserServiceConfig.Audience,
-			Timeout:      30 * time.Second,
-		}); err != nil {
-			slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to create user-service client; preferred_email RPC responder will not start")
-		} else {
-			nc, err := natsgo.Connect(natsURL)
-			if err != nil {
-				slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to connect to NATS for preferred_email responder; continuing without it")
-			} else {
-				preferredEmailService := service.NewPreferredEmailService(userServiceClient, slog.Default())
-				responder := natsinfra.NewPreferredEmailResponder(nc, preferredEmailService, slog.Default())
-				if err := responder.Start(ctx); err != nil {
-					nc.Close()
-					slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to start preferred_email responder; continuing without it")
-				} else {
-					preferredEmailNatsConn = nc
-					preferredEmailResponder = responder
-					slog.InfoContext(ctx, "preferred_email RPC responder initialized")
-				}
-			}
-		}
-	} else {
-		slog.InfoContext(ctx, "user-service not configured; preferred_email RPC responder disabled")
-	}
+	preferredEmailResponder, preferredEmailNatsConn := startPreferredEmailResponder(ctx, env, natsURL)
 
 	// Initialize event processor if enabled
 	var eventProcessor *apieventing.EventProcessor
@@ -327,4 +293,49 @@ func gracefulShutdown(
 
 	// Wait for the HTTP graceful shutdown
 	gracefulCloseWG.Wait()
+}
+
+// startPreferredEmailResponder builds the user-service client and starts the preferred-email
+// NATS responder (LFXV2-2599). It is best-effort: any missing config or startup failure is
+// logged and the service continues without the responder (returns nil, nil).
+func startPreferredEmailResponder(ctx context.Context, env environment, natsURL string) (*natsinfra.PreferredEmailResponder, *natsgo.Conn) {
+	if !env.UserServiceConfig.Configured() {
+		slog.InfoContext(ctx, "user-service not configured; preferred_email RPC responder disabled")
+		return nil, nil
+	}
+	if natsURL == "" {
+		slog.WarnContext(ctx, "user-service configured but NATS_URL not set; preferred_email RPC responder will not start")
+		return nil, nil
+	}
+
+	userServiceClient, err := userservice.NewClient(userservice.Config{
+		BaseURL:      env.UserServiceConfig.BaseURL,
+		ClientID:     env.UserServiceConfig.ClientID,
+		PrivateKey:   env.UserServiceConfig.PrivateKey,
+		ClientSecret: env.UserServiceConfig.ClientSecret,
+		Auth0Domain:  env.UserServiceConfig.Auth0Domain,
+		Audience:     env.UserServiceConfig.Audience,
+		Timeout:      30 * time.Second,
+	})
+	if err != nil {
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to create user-service client; preferred_email RPC responder will not start")
+		return nil, nil
+	}
+
+	nc, err := natsgo.Connect(natsURL)
+	if err != nil {
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to connect to NATS for preferred_email responder; continuing without it")
+		return nil, nil
+	}
+
+	preferredEmailService := service.NewPreferredEmailService(userServiceClient, slog.Default())
+	responder := natsinfra.NewPreferredEmailResponder(nc, preferredEmailService, slog.Default())
+	if err := responder.Start(ctx); err != nil {
+		nc.Close()
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to start preferred_email responder; continuing without it")
+		return nil, nil
+	}
+
+	slog.InfoContext(ctx, "preferred_email RPC responder initialized")
+	return responder, nc
 }
