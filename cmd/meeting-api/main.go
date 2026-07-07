@@ -299,23 +299,14 @@ func gracefulShutdown(
 // NATS responder (LFXV2-2599). It is best-effort: any missing config or startup failure is
 // logged and the service continues without the responder (returns nil, nil).
 func startPreferredEmailResponder(ctx context.Context, env environment, natsURL string) (*natsinfra.PreferredEmailResponder, *natsgo.Conn) {
-	if !env.UserServiceConfig.Configured() {
-		slog.InfoContext(ctx, "user-service not configured; preferred_email RPC responder disabled")
-		return nil, nil
-	}
 	if natsURL == "" {
-		slog.WarnContext(ctx, "user-service configured but NATS_URL not set; preferred_email RPC responder will not start")
+		slog.InfoContext(ctx, "NATS_URL not set; preferred_email RPC responder will not start")
 		return nil, nil
 	}
 
 	userServiceClient, err := userservice.NewClient(userservice.Config{
-		BaseURL:      env.UserServiceConfig.BaseURL,
-		ClientID:     env.UserServiceConfig.ClientID,
-		PrivateKey:   env.UserServiceConfig.PrivateKey,
-		ClientSecret: env.UserServiceConfig.ClientSecret,
-		Auth0Domain:  env.UserServiceConfig.Auth0Domain,
-		Audience:     env.UserServiceConfig.Audience,
-		Timeout:      30 * time.Second,
+		BaseURL: env.UserServiceConfig.BaseURL,
+		Timeout: 30 * time.Second,
 	})
 	if err != nil {
 		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to create user-service client; preferred_email RPC responder will not start")

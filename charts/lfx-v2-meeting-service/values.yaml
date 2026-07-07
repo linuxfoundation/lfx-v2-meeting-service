@@ -144,40 +144,13 @@ app:
     ITX_AUDIENCE:
       value: https://api.dev.itx.linuxfoundation.org/
     # User Service (LFXV2-2599): backs the preferred meeting-invite email NATS RPC
-    # (lfx.meeting-service.preferred_email.get/set) by proxying to the v1 user-service
-    # preferences API. The responder starts only when USER_SERVICE_CLIENT_ID and a
-    # credential are set AND NATS_URL is configured; otherwise it is skipped.
+    # (lfx.meeting-service.preferred_email.get/set). The RPC calls the v1 user-service
+    # preferences API AS the user, using the bearer token forwarded in the request from
+    # self-serve, so no service credentials are configured here. The responder starts
+    # whenever NATS_URL is configured.
     # USER_SERVICE_BASE_URL is the v1 API-gateway base URL
     USER_SERVICE_BASE_URL:
       value: https://api-gw.dev.platform.linuxfoundation.org
-    # USER_SERVICE_CLIENT_ID is the OAuth2 M2M client ID authorized for the API gateway
-    USER_SERVICE_CLIENT_ID:
-      valueFrom:
-        secretKeyRef:
-          name: meeting-secrets
-          key: user_service_client_id
-          optional: true
-    # USER_SERVICE_CLIENT_PRIVATE_KEY is an RSA private key (PEM) for RS256 client-assertion.
-    # Provide this OR USER_SERVICE_CLIENT_SECRET.
-    USER_SERVICE_CLIENT_PRIVATE_KEY:
-      valueFrom:
-        secretKeyRef:
-          name: meeting-secrets
-          key: user_service_client_private_key
-          optional: true
-    # USER_SERVICE_CLIENT_SECRET is used when a private key is not provided.
-    USER_SERVICE_CLIENT_SECRET:
-      valueFrom:
-        secretKeyRef:
-          name: meeting-secrets
-          key: user_service_client_secret
-          optional: true
-    # USER_SERVICE_AUTH0_DOMAIN is the Auth0 domain for the API-gateway M2M client
-    USER_SERVICE_AUTH0_DOMAIN:
-      value: linuxfoundation-dev.auth0.com
-    # USER_SERVICE_AUDIENCE is the OAuth2 audience for the API gateway (defaults to base URL)
-    USER_SERVICE_AUDIENCE:
-      value: https://api-gw.dev.platform.linuxfoundation.org/
     # ID_MAPPING_DISABLED disables v1/v2 ID mapping (optional, defaults to false)
     # Set to "true" to disable ID mapping and pass IDs through unchanged
     ID_MAPPING_DISABLED:

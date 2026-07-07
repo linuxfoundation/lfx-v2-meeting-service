@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
@@ -46,20 +45,10 @@ type itxConfig struct {
 }
 
 // userServiceConfig holds v1 user-service (API-gateway) client configuration for
-// the preferred meeting-invite email RPC. When ClientID and a credential
-// (PrivateKey or ClientSecret) are unset, the preferred-email responder is skipped.
+// the preferred meeting-invite email RPC. The RPC calls user-service AS the user via a
+// bearer token forwarded by self-serve, so only the gateway base URL is needed.
 type userServiceConfig struct {
-	BaseURL      string
-	ClientID     string
-	PrivateKey   string
-	ClientSecret string
-	Auth0Domain  string
-	Audience     string
-}
-
-// Configured reports whether enough config is present to build the user-service client.
-func (c userServiceConfig) Configured() bool {
-	return c.ClientID != "" && (c.PrivateKey != "" || c.ClientSecret != "")
+	BaseURL string
 }
 
 // eventConfig holds event processing configuration
@@ -195,9 +184,8 @@ func parseITXConfig() itxConfig {
 }
 
 // parseUserServiceConfig parses v1 user-service (API-gateway) configuration for the
-// preferred meeting-invite email RPC. Unlike ITX config it never exits on missing
-// values: when unset, the preferred-email responder is simply not started.
-// lfxEnvironment must be the normalized value from normalizeLFXEnvironment.
+// preferred meeting-invite email RPC. lfxEnvironment must be the normalized value from
+// normalizeLFXEnvironment.
 func parseUserServiceConfig(lfxEnvironment string) userServiceConfig {
 	baseURL := os.Getenv("USER_SERVICE_BASE_URL")
 	if baseURL == "" {
@@ -211,29 +199,7 @@ func parseUserServiceConfig(lfxEnvironment string) userServiceConfig {
 		}
 	}
 
-	audience := os.Getenv("USER_SERVICE_AUDIENCE")
-	if audience == "" {
-		// The API-gateway audience is the gateway URL itself (trailing slash).
-		audience = strings.TrimRight(baseURL, "/") + "/"
-	}
-
-	auth0Domain := os.Getenv("USER_SERVICE_AUTH0_DOMAIN")
-	if auth0Domain == "" {
-		if lfxEnvironment == "prod" {
-			auth0Domain = "linuxfoundation.auth0.com"
-		} else {
-			auth0Domain = "linuxfoundation-dev.auth0.com"
-		}
-	}
-
-	return userServiceConfig{
-		BaseURL:      baseURL,
-		ClientID:     os.Getenv("USER_SERVICE_CLIENT_ID"),
-		PrivateKey:   os.Getenv("USER_SERVICE_CLIENT_PRIVATE_KEY"),
-		ClientSecret: os.Getenv("USER_SERVICE_CLIENT_SECRET"),
-		Auth0Domain:  auth0Domain,
-		Audience:     audience,
-	}
+	return userServiceConfig{BaseURL: baseURL}
 }
 
 // parseEventConfig parses event processing configuration from environment variables

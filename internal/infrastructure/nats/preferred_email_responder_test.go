@@ -42,27 +42,27 @@ func TestNewPreferredEmailReply(t *testing.T) {
 func TestPreferredEmailRequest_Decoding(t *testing.T) {
 	t.Run("null email_id decodes to nil pointer", func(t *testing.T) {
 		var req preferredEmailRequest
-		require.NoError(t, json.Unmarshal([]byte(`{"user":"alice","email_id":null}`), &req))
-		assert.Equal(t, "alice", req.User)
+		require.NoError(t, json.Unmarshal([]byte(`{"token":"jwt","email_id":null}`), &req))
+		assert.Equal(t, "jwt", req.Token)
 		assert.Nil(t, req.EmailID)
 	})
 
 	t.Run("omitted email_id decodes to nil pointer", func(t *testing.T) {
 		var req preferredEmailRequest
-		require.NoError(t, json.Unmarshal([]byte(`{"user":"alice"}`), &req))
+		require.NoError(t, json.Unmarshal([]byte(`{"token":"jwt"}`), &req))
 		assert.Nil(t, req.EmailID)
 	})
 
 	t.Run("concrete email_id decodes to its value", func(t *testing.T) {
 		var req preferredEmailRequest
-		require.NoError(t, json.Unmarshal([]byte(`{"user":"alice","email_id":"e1"}`), &req))
+		require.NoError(t, json.Unmarshal([]byte(`{"token":"jwt","email_id":"e1"}`), &req))
 		require.NotNil(t, req.EmailID)
 		assert.Equal(t, "e1", *req.EmailID)
 	})
 
 	t.Run("email address decodes to its value", func(t *testing.T) {
 		var req preferredEmailRequest
-		require.NoError(t, json.Unmarshal([]byte(`{"user":"alice","email":"alice@work.com"}`), &req))
+		require.NoError(t, json.Unmarshal([]byte(`{"token":"jwt","email":"alice@work.com"}`), &req))
 		require.NotNil(t, req.Email)
 		assert.Equal(t, "alice@work.com", *req.Email)
 		assert.Nil(t, req.EmailID)

@@ -3,8 +3,8 @@
 
 // Package userservice provides an HTTP client for the v1 user-service preferences
 // API, used to read and write a user's preferred meeting-invite email (Phase 1
-// storage for LFXV2-2599). It mirrors the ITX proxy client's Auth0 M2M setup but
-// targets the v1 API-gateway audience.
+// storage for LFXV2-2599). It calls the v1 API gateway AS the user, using the bearer
+// token forwarded from self-serve.
 package userservice
 
 import (
@@ -19,19 +19,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/auth0/go-auth0/authentication"
-	"github.com/auth0/go-auth0/authentication/oauth"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"golang.org/x/oauth2"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 const (
-	tokenExpiryLeeway = 60 * time.Second
-
 	// apiPath is the user-service prefix behind the LFX API gateway.
 	apiPath = "/user-service/v1"
 
@@ -46,112 +40,32 @@ const (
 type Config struct {
 	// BaseURL is the API-gateway root, e.g. https://api-gw.dev.platform.linuxfoundation.org
 	BaseURL string
-	// ClientID is the Auth0 M2M client ID.
-	ClientID string
-	// PrivateKey is an RSA private key in PEM format for client-assertion (RS256) auth.
-	// Takes precedence over ClientSecret when both are set.
-	PrivateKey string
-	// ClientSecret is the Auth0 M2M client secret, used when PrivateKey is empty.
-	ClientSecret string
-	// Auth0Domain is the Auth0 tenant domain.
-	Auth0Domain string
-	// Audience is the OAuth2 audience for the API gateway.
-	Audience string
 	// Timeout bounds each HTTP request.
 	Timeout time.Duration
 }
 
-// Client implements domain.UserServiceClient against the v1 user-service API.
+// Client implements domain.UserServiceClient against the v1 user-service API, calling
+// it as the user via their bearer token.
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
 }
 
-// auth0TokenSource implements oauth2.TokenSource using the Auth0 SDK.
-type auth0TokenSource struct {
-	ctx        context.Context
-	authConfig *authentication.Authentication
-	audience   string
-}
-
-// Token implements the oauth2.TokenSource interface.
-func (a *auth0TokenSource) Token() (*oauth2.Token, error) {
-	ctx := a.ctx
-	if ctx == nil {
-		ctx = context.TODO()
-	}
-
-	tokenSet, err := a.authConfig.OAuth.LoginWithClientCredentials(ctx, oauth.LoginWithClientCredentialsRequest{
-		Audience: a.audience,
-	}, oauth.IDTokenValidationOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get token from Auth0: %w", err)
-	}
-
-	return &oauth2.Token{
-		AccessToken:  tokenSet.AccessToken,
-		TokenType:    tokenSet.TokenType,
-		RefreshToken: tokenSet.RefreshToken,
-		Expiry:       time.Now().Add(time.Duration(tokenSet.ExpiresIn)*time.Second - tokenExpiryLeeway),
-	}, nil
-}
-
-// NewClient creates a new user-service client with OAuth2 M2M authentication.
-// It uses private-key client-assertion when PrivateKey is set, otherwise a client secret.
+// NewClient creates a new user-service client.
 func NewClient(config Config) (*Client, error) {
-	ctx := context.Background()
-
 	if config.BaseURL == "" {
 		return nil, fmt.Errorf("user-service base URL is required")
 	}
-	if config.Auth0Domain == "" {
-		return nil, fmt.Errorf("user-service Auth0 domain is required")
-	}
-	if config.Audience == "" {
-		return nil, fmt.Errorf("user-service audience is required")
-	}
-	if config.ClientID == "" {
-		return nil, fmt.Errorf("user-service client ID is required")
-	}
-	if config.PrivateKey == "" && config.ClientSecret == "" {
-		return nil, fmt.Errorf("user-service requires either a private key or a client secret")
-	}
 
-	// otel-instrumented HTTP client for the Auth0 token requests.
-	otelClient := &http.Client{
+	httpClient := &http.Client{
 		Transport: otelhttp.NewTransport(http.DefaultTransport),
 		Timeout:   config.Timeout,
 	}
-
-	authOpts := []authentication.Option{
-		authentication.WithClientID(config.ClientID),
-		authentication.WithClient(otelClient),
-	}
-	if config.PrivateKey != "" {
-		authOpts = append(authOpts, authentication.WithClientAssertion(config.PrivateKey, "RS256"))
-	} else {
-		authOpts = append(authOpts, authentication.WithClientSecret(config.ClientSecret))
-	}
-
-	authConfig, err := authentication.New(ctx, config.Auth0Domain, authOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Auth0 client: %w", err)
-	}
-
-	tokenSource := &auth0TokenSource{ctx: ctx, authConfig: authConfig, audience: config.Audience}
-	reuseTokenSource := oauth2.ReuseTokenSource(nil, tokenSource)
-
-	// HTTP client that auto-manages tokens; wrap the transport with otelhttp so API
-	// calls appear in traces.
-	httpClient := oauth2.NewClient(ctx, reuseTokenSource)
-	httpClient.Transport = otelhttp.NewTransport(httpClient.Transport)
-	httpClient.Timeout = config.Timeout
-
 	return newClient(httpClient, config.BaseURL), nil
 }
 
 // newClient builds a Client from a ready HTTP client and base URL. It is the shared
-// constructor used by NewClient and tests (which inject an unauthenticated client).
+// constructor used by NewClient and tests.
 func newClient(httpClient *http.Client, baseURL string) *Client {
 	return &Client{
 		httpClient: httpClient,
@@ -161,14 +75,9 @@ func newClient(httpClient *http.Client, baseURL string) *Client {
 
 // --- user-service DTOs (subset of the swagger schema) ---
 
-type userListResponse struct {
-	Data []struct {
-		ID string `json:"ID"`
-	} `json:"Data"`
-}
-
-// userResponse is the subset of GET /v1/users/{sfid} we need: the user's email records.
-type userResponse struct {
+// meResponse is the subset of GET /v1/me (me-user) we need: the SFID and email records.
+type meResponse struct {
+	ID     string      `json:"ID"`
 	Emails []userEmail `json:"Emails"`
 }
 
@@ -205,78 +114,33 @@ type updateEmailPreferenceRequest struct {
 	IsDefault bool   `json:"IsDefault"`
 }
 
-// ResolveSFIDByUsername returns the Salesforce ID for the given LFID/username.
-func (c *Client) ResolveSFIDByUsername(ctx context.Context, username string) (string, error) {
-	username = strings.TrimSpace(username)
-	if username == "" {
-		return "", domain.NewValidationError("username is required")
+// GetSelf resolves the calling user's SFID and email records from their bearer token.
+func (c *Client) GetSelf(ctx context.Context, token string) (*domain.Self, error) {
+	reqURL := fmt.Sprintf("%s%s/me", c.baseURL, apiPath)
+
+	var me meResponse
+	if err := c.doJSON(ctx, token, http.MethodGet, reqURL, nil, &me); err != nil {
+		return nil, err
+	}
+	if me.ID == "" {
+		return nil, domain.NewInternalError("user-service /v1/me returned no user ID")
 	}
 
-	q := url.Values{}
-	q.Set("username", username)
-	reqURL := fmt.Sprintf("%s%s/users/search?%s", c.baseURL, apiPath, q.Encode())
-
-	var result userListResponse
-	if err := c.doJSON(ctx, http.MethodGet, reqURL, nil, &result); err != nil {
-		return "", err
+	self := &domain.Self{SFID: me.ID, Emails: make([]domain.SelfEmail, 0, len(me.Emails))}
+	for _, e := range me.Emails {
+		self.Emails = append(self.Emails, domain.SelfEmail{
+			ID:       e.ID,
+			Address:  e.EmailAddress,
+			Active:   e.Active,
+			Verified: e.IsVerified,
+		})
 	}
-
-	for _, u := range result.Data {
-		if u.ID != "" {
-			return u.ID, nil
-		}
-	}
-	return "", domain.ErrUserNotFound
-}
-
-// ResolveEmailID returns the Salesforce ID of the user's email record matching the given
-// address (case-insensitive). The email must be an active, VERIFIED record on the account —
-// meeting invites must only ever be routed to a verified address. A matching-but-unverified
-// address is a validation error; a completely unknown address yields a retryable
-// UnavailableError (verified emails sync into SFDC from auth0 asynchronously). This method
-// never creates records.
-func (c *Client) ResolveEmailID(ctx context.Context, sfid, email string) (string, error) {
-	sfid = strings.TrimSpace(sfid)
-	if sfid == "" {
-		return "", domain.NewValidationError("salesforce ID is required")
-	}
-	email = strings.TrimSpace(email)
-	if email == "" {
-		return "", domain.NewValidationError("email is required")
-	}
-
-	reqURL := fmt.Sprintf("%s%s/users/%s", c.baseURL, apiPath, url.PathEscape(sfid))
-	var user userResponse
-	if err := c.doJSON(ctx, http.MethodGet, reqURL, nil, &user); err != nil {
-		return "", err
-	}
-
-	matchedUnverified := false
-	for i := range user.Emails {
-		e := user.Emails[i]
-		if e.ID == "" || !strings.EqualFold(strings.TrimSpace(e.EmailAddress), email) {
-			continue
-		}
-		if e.Active && e.IsVerified {
-			return e.ID, nil
-		}
-		// Address belongs to the user but is not usable as an invite target.
-		matchedUnverified = true
-	}
-
-	// Redact the address in the returned error — it propagates into logs via ErrKey.
-	redactedEmail := redaction.RedactEmail(email)
-	if matchedUnverified {
-		return "", domain.NewValidationError(
-			fmt.Sprintf("email %q is not an active, verified address on this account", redactedEmail))
-	}
-	return "", domain.NewUnavailableError(
-		fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail))
+	return self, nil
 }
 
 // GetMeetingEmailPreference returns the user's Type=Meeting email preference, or nil.
-func (c *Client) GetMeetingEmailPreference(ctx context.Context, sfid string) (*domain.PreferredEmail, error) {
-	pref, err := c.getMeetingPreference(ctx, sfid)
+func (c *Client) GetMeetingEmailPreference(ctx context.Context, token, sfid string) (*domain.PreferredEmail, error) {
+	pref, err := c.getMeetingPreference(ctx, token, sfid)
 	if err != nil {
 		return nil, err
 	}
@@ -287,13 +151,13 @@ func (c *Client) GetMeetingEmailPreference(ctx context.Context, sfid string) (*d
 }
 
 // SetMeetingEmailPreference upserts the user's Type=Meeting email preference.
-func (c *Client) SetMeetingEmailPreference(ctx context.Context, sfid, emailID string) (*domain.PreferredEmail, error) {
+func (c *Client) SetMeetingEmailPreference(ctx context.Context, token, sfid, emailID string) (*domain.PreferredEmail, error) {
 	emailID = strings.TrimSpace(emailID)
 	if emailID == "" {
 		return nil, domain.NewValidationError("email_id is required to set a preference")
 	}
 
-	existing, err := c.getMeetingPreference(ctx, sfid)
+	existing, err := c.getMeetingPreference(ctx, token, sfid)
 	if err != nil {
 		return nil, err
 	}
@@ -303,18 +167,18 @@ func (c *Client) SetMeetingEmailPreference(ctx context.Context, sfid, emailID st
 	if existing != nil {
 		reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails/%s", c.baseURL, apiPath, url.PathEscape(sfid), url.PathEscape(existing.ID))
 		body := updateEmailPreferenceRequest{EmailID: emailID, IsDefault: true}
-		writeErr = c.doJSON(ctx, http.MethodPatch, reqURL, body, &result)
+		writeErr = c.doJSON(ctx, token, http.MethodPatch, reqURL, body, &result)
 	} else {
 		reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails", c.baseURL, apiPath, url.PathEscape(sfid))
 		body := createEmailPreferenceRequest{EmailID: emailID, Type: meetingPreferenceType, IsDefault: true}
-		writeErr = c.doJSON(ctx, http.MethodPost, reqURL, body, &result)
+		writeErr = c.doJSON(ctx, token, http.MethodPost, reqURL, body, &result)
 	}
 
 	if writeErr != nil {
 		// The user-service preferences write path commits the change but can return a
 		// bodyless upstream 5xx (observed on PATCH). Verify by re-reading: if the stored
 		// preference now matches the requested EmailID, treat the write as successful.
-		if pref, verifyErr := c.getMeetingPreference(ctx, sfid); verifyErr == nil && pref != nil && pref.EmailID == emailID {
+		if pref, verifyErr := c.getMeetingPreference(ctx, token, sfid); verifyErr == nil && pref != nil && pref.EmailID == emailID {
 			slog.DebugContext(ctx, "user-service write returned an error but the change was persisted; treating as success",
 				logging.ErrKey, writeErr)
 			return &domain.PreferredEmail{PreferenceID: pref.ID, EmailID: pref.EmailID, Email: pref.Email}, nil
@@ -326,8 +190,8 @@ func (c *Client) SetMeetingEmailPreference(ctx context.Context, sfid, emailID st
 }
 
 // ClearMeetingEmailPreference removes the user's Type=Meeting preference (no-op if none).
-func (c *Client) ClearMeetingEmailPreference(ctx context.Context, sfid string) error {
-	existing, err := c.getMeetingPreference(ctx, sfid)
+func (c *Client) ClearMeetingEmailPreference(ctx context.Context, token, sfid string) error {
+	existing, err := c.getMeetingPreference(ctx, token, sfid)
 	if err != nil {
 		return err
 	}
@@ -336,9 +200,9 @@ func (c *Client) ClearMeetingEmailPreference(ctx context.Context, sfid string) e
 	}
 
 	reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails/%s", c.baseURL, apiPath, url.PathEscape(sfid), url.PathEscape(existing.ID))
-	if delErr := c.doJSON(ctx, http.MethodDelete, reqURL, nil, nil); delErr != nil {
+	if delErr := c.doJSON(ctx, token, http.MethodDelete, reqURL, nil, nil); delErr != nil {
 		// As with the upsert path, verify the delete actually landed despite an upstream error.
-		if pref, verifyErr := c.getMeetingPreference(ctx, sfid); verifyErr == nil && pref == nil {
+		if pref, verifyErr := c.getMeetingPreference(ctx, token, sfid); verifyErr == nil && pref == nil {
 			slog.DebugContext(ctx, "user-service delete returned an error but the record is gone; treating as success",
 				logging.ErrKey, delErr)
 			return nil
@@ -349,7 +213,7 @@ func (c *Client) ClearMeetingEmailPreference(ctx context.Context, sfid string) e
 }
 
 // getMeetingPreference fetches the single Type=Meeting preference record, or nil if absent.
-func (c *Client) getMeetingPreference(ctx context.Context, sfid string) (*emailPreference, error) {
+func (c *Client) getMeetingPreference(ctx context.Context, token, sfid string) (*emailPreference, error) {
 	sfid = strings.TrimSpace(sfid)
 	if sfid == "" {
 		return nil, domain.NewValidationError("salesforce ID is required")
@@ -360,7 +224,7 @@ func (c *Client) getMeetingPreference(ctx context.Context, sfid string) (*emailP
 	reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails?%s", c.baseURL, apiPath, url.PathEscape(sfid), q.Encode())
 
 	var result emailPreferenceListResponse
-	if err := c.doJSON(ctx, http.MethodGet, reqURL, nil, &result); err != nil {
+	if err := c.doJSON(ctx, token, http.MethodGet, reqURL, nil, &result); err != nil {
 		return nil, err
 	}
 
@@ -373,9 +237,14 @@ func (c *Client) getMeetingPreference(ctx context.Context, sfid string) (*emailP
 	return nil, nil
 }
 
-// doJSON performs an HTTP request with an optional JSON body and decodes a JSON
-// response into out (out may be nil for no-content responses).
-func (c *Client) doJSON(ctx context.Context, method, reqURL string, body, out any) error {
+// doJSON performs an HTTP request as the user (bearer token) with an optional JSON body
+// and decodes a JSON response into out (out may be nil for no-content responses).
+func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body, out any) error {
+	token = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(token), "Bearer "))
+	if token == "" {
+		return domain.NewValidationError("user token is required")
+	}
+
 	var reader io.Reader
 	if body != nil {
 		encoded, err := json.Marshal(body)
@@ -389,13 +258,14 @@ func (c *Client) doJSON(ctx context.Context, method, reqURL string, body, out an
 	if err != nil {
 		return domain.NewInternalError("failed to create request", err)
 	}
+	httpReq.Header.Set("Authorization", "Bearer "+token)
 	if body != nil {
 		httpReq.Header.Set("Content-Type", "application/json")
 	}
 	httpReq.Header.Set("Accept", "application/json")
 
-	// Log only the URL path (not query) and body length — the query embeds usernames/SFIDs
-	// and response bodies contain email addresses, which are PII we must keep out of logs.
+	// Log only the URL path (not query) and body length — the query embeds SFIDs and
+	// response bodies contain email addresses, which are PII we must keep out of logs.
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		slog.DebugContext(ctx, "user-service request errored", "method", method, "path", httpReq.URL.Path, logging.ErrKey, err)
@@ -449,9 +319,9 @@ func mapHTTPError(statusCode int, body []byte) error {
 	case http.StatusBadRequest:
 		return domain.NewValidationError(message)
 	case http.StatusUnauthorized, http.StatusForbidden:
-		// The M2M principal (not the RPC caller) failed to auth — a server-side/config
-		// problem, so Internal rather than Validation (which callers read as bad input).
-		return domain.NewInternalError(fmt.Sprintf("user-service authentication/authorization failed: %s", message))
+		// The user's forwarded token is missing/expired/unauthorized — a caller-supplied
+		// credential problem, so surface it as a validation error.
+		return domain.NewValidationError(fmt.Sprintf("user token rejected by user-service: %s", message))
 	case http.StatusNotFound:
 		return domain.NewNotFoundError(message)
 	case http.StatusConflict:

@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -13,13 +14,14 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
-// primaryEmailSentinel is the special email_id value that clears the override so the
+// primaryEmailSentinel is the special email/email_id value that clears the override so the
 // user's primary email is used (mirrors the myprofile "use primary" behavior).
 const primaryEmailSentinel = "primary"
 
 // PreferredEmailService orchestrates reading and writing a user's preferred
-// meeting-invite email: it resolves the LFID/username to a Salesforce ID and then
-// delegates storage to the v1 user-service (Phase 1).
+// meeting-invite email. It acts AS the user via their bearer token (forwarded by
+// self-serve): it resolves the user from the token and delegates storage to the v1
+// user-service (Phase 1).
 type PreferredEmailService struct {
 	userClient domain.UserServiceClient
 	logger     *slog.Logger
@@ -32,29 +34,27 @@ func NewPreferredEmailService(userClient domain.UserServiceClient, logger *slog.
 
 // GetPreferredEmail returns the user's preferred meeting-invite email, or nil when
 // no override is set (use primary).
-func (s *PreferredEmailService) GetPreferredEmail(ctx context.Context, username string) (*domain.PreferredEmail, error) {
-	sfid, err := s.resolveSFID(ctx, username)
+func (s *PreferredEmailService) GetPreferredEmail(ctx context.Context, token string) (*domain.PreferredEmail, error) {
+	self, err := s.getSelf(ctx, token)
 	if err != nil {
 		return nil, err
 	}
-	pref, err := s.userClient.GetMeetingEmailPreference(ctx, sfid)
+	pref, err := s.userClient.GetMeetingEmailPreference(ctx, token, self.SFID)
 	if err != nil {
 		s.logger.WarnContext(ctx, "failed to get preferred meeting email",
-			"user", redaction.Redact(username), logging.ErrKey, err)
+			"user", redaction.Redact(self.SFID), logging.ErrKey, err)
 		return nil, err
 	}
 	return pref, nil
 }
 
-// SetPreferredEmail sets the user's preferred meeting-invite email.
-//
-// The selection may be given as a verified email address (email) or as an SFDC email
-// record ID (emailID); email takes precedence when non-empty. An empty selection, or the
-// "primary" sentinel, clears the override, in which case a nil PreferredEmail is returned.
-// When an address is given it is resolved to its (auth0→SFDC synced) email-record ID; a
-// not-yet-synced address surfaces the client's retryable error.
-func (s *PreferredEmailService) SetPreferredEmail(ctx context.Context, username, email, emailID string) (*domain.PreferredEmail, error) {
-	sfid, err := s.resolveSFID(ctx, username)
+// SetPreferredEmail sets the user's preferred meeting-invite email. The selection may be
+// given as a verified email address (email) or an SFDC email-record ID (emailID); email
+// takes precedence when non-empty. An empty selection, or the "primary" sentinel, clears
+// the override, in which case a nil PreferredEmail is returned. An address is resolved to
+// its (auth0→SFDC synced) email-record ID and must be an active, verified email.
+func (s *PreferredEmailService) SetPreferredEmail(ctx context.Context, token, email, emailID string) (*domain.PreferredEmail, error) {
+	self, err := s.getSelf(ctx, token)
 	if err != nil {
 		return nil, err
 	}
@@ -68,10 +68,10 @@ func (s *PreferredEmailService) SetPreferredEmail(ctx context.Context, username,
 		if strings.EqualFold(email, primaryEmailSentinel) {
 			emailID = ""
 		} else {
-			resolvedID, err := s.userClient.ResolveEmailID(ctx, sfid, email)
+			resolvedID, err := resolveVerifiedEmailID(self, email)
 			if err != nil {
 				s.logger.WarnContext(ctx, "failed to resolve email address to a verified record",
-					"user", redaction.Redact(username), logging.ErrKey, err)
+					"user", redaction.Redact(self.SFID), logging.ErrKey, err)
 				return nil, err
 			}
 			emailID = resolvedID
@@ -79,36 +79,57 @@ func (s *PreferredEmailService) SetPreferredEmail(ctx context.Context, username,
 	}
 
 	if emailID == "" || strings.EqualFold(emailID, primaryEmailSentinel) {
-		if err := s.userClient.ClearMeetingEmailPreference(ctx, sfid); err != nil {
+		if err := s.userClient.ClearMeetingEmailPreference(ctx, token, self.SFID); err != nil {
 			s.logger.WarnContext(ctx, "failed to clear preferred meeting email",
-				"user", redaction.Redact(username), logging.ErrKey, err)
+				"user", redaction.Redact(self.SFID), logging.ErrKey, err)
 			return nil, err
 		}
-		s.logger.InfoContext(ctx, "cleared preferred meeting email override", "user", redaction.Redact(username))
+		s.logger.InfoContext(ctx, "cleared preferred meeting email override", "user", redaction.Redact(self.SFID))
 		return nil, nil
 	}
 
-	pref, err := s.userClient.SetMeetingEmailPreference(ctx, sfid, emailID)
+	pref, err := s.userClient.SetMeetingEmailPreference(ctx, token, self.SFID, emailID)
 	if err != nil {
 		s.logger.WarnContext(ctx, "failed to set preferred meeting email",
-			"user", redaction.Redact(username), logging.ErrKey, err)
+			"user", redaction.Redact(self.SFID), logging.ErrKey, err)
 		return nil, err
 	}
-	s.logger.InfoContext(ctx, "set preferred meeting email", "user", redaction.Redact(username))
+	s.logger.InfoContext(ctx, "set preferred meeting email", "user", redaction.Redact(self.SFID))
 	return pref, nil
 }
 
-// resolveSFID resolves an LFID/username to a Salesforce ID.
-func (s *PreferredEmailService) resolveSFID(ctx context.Context, username string) (string, error) {
-	username = strings.TrimSpace(username)
-	if username == "" {
-		return "", domain.NewValidationError("user is required")
+// getSelf resolves the calling user from their bearer token.
+func (s *PreferredEmailService) getSelf(ctx context.Context, token string) (*domain.Self, error) {
+	if strings.TrimSpace(token) == "" {
+		return nil, domain.NewValidationError("user token is required")
 	}
-	sfid, err := s.userClient.ResolveSFIDByUsername(ctx, username)
-	if err != nil {
-		s.logger.WarnContext(ctx, "failed to resolve user to a Salesforce ID",
-			"user", redaction.Redact(username), logging.ErrKey, err)
-		return "", err
+	return s.userClient.GetSelf(ctx, token)
+}
+
+// resolveVerifiedEmailID finds the SFDC email-record ID for the given address among the
+// user's emails. The address must be an active, verified record (invites must only route to
+// a verified address): a matching-but-unusable address is a ValidationError, while an
+// unknown address returns a retryable UnavailableError (SFDC emails sync from auth0
+// asynchronously).
+func resolveVerifiedEmailID(self *domain.Self, email string) (string, error) {
+	email = strings.TrimSpace(email)
+	matchedUnusable := false
+	for _, e := range self.Emails {
+		if e.ID == "" || !strings.EqualFold(strings.TrimSpace(e.Address), email) {
+			continue
+		}
+		if e.Active && e.Verified {
+			return e.ID, nil
+		}
+		matchedUnusable = true
 	}
-	return sfid, nil
+
+	// Redact the address in the returned error — it propagates into logs via ErrKey.
+	redactedEmail := redaction.RedactEmail(email)
+	if matchedUnusable {
+		return "", domain.NewValidationError(
+			fmt.Sprintf("email %q is not an active, verified address on this account", redactedEmail))
+	}
+	return "", domain.NewUnavailableError(
+		fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail))
 }

@@ -19,32 +19,43 @@ type PreferredEmail struct {
 	Email string
 }
 
-// UserServiceClient resolves a user's Salesforce ID and manages their preferred
-// meeting-invite email via the v1 user-service preferences API.
-//
-// Phase 1 storage lives in the v1 user-service (identical to the legacy myprofile
-// path) so itx-service-zoom keeps reading the preference unchanged through cutover.
-type UserServiceClient interface {
-	// ResolveSFIDByUsername returns the Salesforce ID for the given LFID/username.
-	// Returns ErrUserNotFound when no user matches.
-	ResolveSFIDByUsername(ctx context.Context, username string) (string, error)
+// Self is the calling user's identity as resolved from their bearer token via the
+// v1 user-service /v1/me endpoint.
+type Self struct {
+	// SFID is the user's Salesforce ID.
+	SFID string
+	// Emails is the user's email records (used to resolve an address to its EmailID).
+	Emails []SelfEmail
+}
 
-	// ResolveEmailID returns the Salesforce ID of the user's email record matching the
-	// given address. The email must be an active, verified record on the account (invites
-	// must only route to a verified address): a matching-but-unverified address is a
-	// ValidationError, while an unknown address returns a retryable UnavailableError (SFDC
-	// email records sync from auth0 asynchronously). The method never creates records.
-	ResolveEmailID(ctx context.Context, sfid, email string) (string, error)
+// SelfEmail is a single email record on the user's account.
+type SelfEmail struct {
+	ID       string
+	Address  string
+	Active   bool
+	Verified bool
+}
+
+// UserServiceClient reads a user's identity and manages their preferred meeting-invite
+// email via the v1 user-service preferences API, acting AS the user via their bearer token.
+//
+// Phase 1 storage lives in the v1 user-service (identical to the legacy myprofile path)
+// so itx-service-zoom keeps reading the preference unchanged through cutover. Calls use
+// the user's token (forwarded by self-serve), so they run with the user's own identity
+// and authorization.
+type UserServiceClient interface {
+	// GetSelf resolves the calling user (SFID + email records) from their bearer token.
+	GetSelf(ctx context.Context, token string) (*Self, error)
 
 	// GetMeetingEmailPreference returns the user's Type=Meeting email preference.
 	// Returns nil when no override is set (use primary).
-	GetMeetingEmailPreference(ctx context.Context, sfid string) (*PreferredEmail, error)
+	GetMeetingEmailPreference(ctx context.Context, token, sfid string) (*PreferredEmail, error)
 
 	// SetMeetingEmailPreference upserts the user's Type=Meeting email preference to
 	// the given verified-email record ID (EmailID) and returns the resulting selection.
-	SetMeetingEmailPreference(ctx context.Context, sfid, emailID string) (*PreferredEmail, error)
+	SetMeetingEmailPreference(ctx context.Context, token, sfid, emailID string) (*PreferredEmail, error)
 
 	// ClearMeetingEmailPreference removes the user's Type=Meeting email preference so
 	// their primary email is used. It is a no-op when no preference exists.
-	ClearMeetingEmailPreference(ctx context.Context, sfid string) error
+	ClearMeetingEmailPreference(ctx context.Context, token, sfid string) error
 }

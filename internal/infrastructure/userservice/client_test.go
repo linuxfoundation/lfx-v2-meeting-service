@@ -17,100 +17,66 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 )
 
-// testClient returns a Client pointed at the given test server with no auth transport.
+const testToken = "test-user-token"
+
+// testClient returns a Client pointed at the given test server.
 func testClient(server *httptest.Server) *Client {
 	return newClient(server.Client(), server.URL)
 }
 
-func TestResolveSFIDByUsername(t *testing.T) {
-	t.Run("returns SFID from first result", func(t *testing.T) {
+func TestGetSelf(t *testing.T) {
+	t.Run("returns SFID and emails, forwarding the bearer token", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Equal(t, "/user-service/v1/users/search", r.URL.Path)
-			assert.Equal(t, "alice", r.URL.Query().Get("username"))
-			_ = json.NewEncoder(w).Encode(userListResponse{Data: []struct {
-				ID string `json:"ID"`
-			}{{ID: "00Q4100000XcQnBEAV"}}})
+			assert.Equal(t, "/user-service/v1/me", r.URL.Path)
+			assert.Equal(t, "Bearer "+testToken, r.Header.Get("Authorization"))
+			_ = json.NewEncoder(w).Encode(meResponse{
+				ID: "SFID1",
+				Emails: []userEmail{
+					{ID: "e-1", EmailAddress: "alice@work.com", Active: true, IsVerified: true},
+					{ID: "e-2", EmailAddress: "old@work.com", Active: false, IsVerified: true},
+				},
+			})
 		}))
 		defer server.Close()
 
-		sfid, err := testClient(server).ResolveSFIDByUsername(context.Background(), "alice")
+		self, err := testClient(server).GetSelf(context.Background(), testToken)
 		require.NoError(t, err)
-		assert.Equal(t, "00Q4100000XcQnBEAV", sfid)
+		assert.Equal(t, "SFID1", self.SFID)
+		require.Len(t, self.Emails, 2)
+		assert.Equal(t, "alice@work.com", self.Emails[0].Address)
+		assert.True(t, self.Emails[0].Verified)
 	})
 
-	t.Run("empty result returns ErrUserNotFound", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			_ = json.NewEncoder(w).Encode(userListResponse{})
+	t.Run("strips a Bearer prefix from the provided token", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "Bearer "+testToken, r.Header.Get("Authorization"))
+			_ = json.NewEncoder(w).Encode(meResponse{ID: "SFID1"})
 		}))
 		defer server.Close()
 
-		_, err := testClient(server).ResolveSFIDByUsername(context.Background(), "ghost")
-		assert.ErrorIs(t, err, domain.ErrUserNotFound)
+		_, err := testClient(server).GetSelf(context.Background(), "Bearer "+testToken)
+		require.NoError(t, err)
 	})
 
-	t.Run("blank username is a validation error", func(t *testing.T) {
+	t.Run("blank token is a validation error", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-			t.Fatal("should not call the server for a blank username")
+			t.Fatal("should not call the server for a blank token")
 		}))
 		defer server.Close()
 
-		_, err := testClient(server).ResolveSFIDByUsername(context.Background(), "  ")
-		assert.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
-	})
-}
-
-func TestResolveEmailID(t *testing.T) {
-	t.Run("matches a verified, active address case-insensitively", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Equal(t, "/user-service/v1/users/SFID1", r.URL.Path)
-			_ = json.NewEncoder(w).Encode(userResponse{Emails: []userEmail{
-				{ID: "e-inactive", EmailAddress: "old@work.com", Active: false, IsVerified: true},
-				{ID: "e-1", EmailAddress: "Alice@Work.com", Active: true, IsVerified: true},
-			}})
-		}))
-		defer server.Close()
-
-		id, err := testClient(server).ResolveEmailID(context.Background(), "SFID1", "alice@work.com")
-		require.NoError(t, err)
-		assert.Equal(t, "e-1", id)
-	})
-
-	t.Run("unverified match is a validation error (never routes invites to it)", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			_ = json.NewEncoder(w).Encode(userResponse{Emails: []userEmail{
-				{ID: "e-1", EmailAddress: "alice@work.com", Active: true, IsVerified: false},
-			}})
-		}))
-		defer server.Close()
-
-		_, err := testClient(server).ResolveEmailID(context.Background(), "SFID1", "alice@work.com")
+		_, err := testClient(server).GetSelf(context.Background(), "  ")
 		assert.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
 	})
 
-	t.Run("not-yet-synced address returns retryable unavailable error", func(t *testing.T) {
+	t.Run("empty ID is an internal error", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			_ = json.NewEncoder(w).Encode(userResponse{Emails: []userEmail{
-				{ID: "e-1", EmailAddress: "other@work.com", Active: true, IsVerified: true},
-			}})
+			_ = json.NewEncoder(w).Encode(meResponse{})
 		}))
 		defer server.Close()
 
-		_, err := testClient(server).ResolveEmailID(context.Background(), "SFID1", "new@work.com")
-		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
-	})
-
-	t.Run("inactive (even if verified) match is not used", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			_ = json.NewEncoder(w).Encode(userResponse{Emails: []userEmail{
-				{ID: "e-1", EmailAddress: "alice@work.com", Active: false, IsVerified: true},
-			}})
-		}))
-		defer server.Close()
-
-		_, err := testClient(server).ResolveEmailID(context.Background(), "SFID1", "alice@work.com")
-		assert.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
+		_, err := testClient(server).GetSelf(context.Background(), testToken)
+		assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
 	})
 }
 
@@ -120,18 +86,18 @@ func TestGetMeetingEmailPreference(t *testing.T) {
 			assert.Equal(t, http.MethodGet, r.Method)
 			assert.Equal(t, "/user-service/v1/users/SFID1/preferences/emails", r.URL.Path)
 			assert.Equal(t, "type eq meeting", r.URL.Query().Get("$filter"))
+			assert.Equal(t, "Bearer "+testToken, r.Header.Get("Authorization"))
 			_ = json.NewEncoder(w).Encode(emailPreferenceListResponse{Data: []emailPreference{
 				{ID: "pref-1", EmailID: "email-sfid", Email: "alice@work.com", Type: "Meeting"},
 			}})
 		}))
 		defer server.Close()
 
-		pref, err := testClient(server).GetMeetingEmailPreference(context.Background(), "SFID1")
+		pref, err := testClient(server).GetMeetingEmailPreference(context.Background(), testToken, "SFID1")
 		require.NoError(t, err)
 		require.NotNil(t, pref)
 		assert.Equal(t, "pref-1", pref.PreferenceID)
 		assert.Equal(t, "email-sfid", pref.EmailID)
-		assert.Equal(t, "alice@work.com", pref.Email)
 	})
 
 	t.Run("returns nil when no preference set", func(t *testing.T) {
@@ -140,7 +106,7 @@ func TestGetMeetingEmailPreference(t *testing.T) {
 		}))
 		defer server.Close()
 
-		pref, err := testClient(server).GetMeetingEmailPreference(context.Background(), "SFID1")
+		pref, err := testClient(server).GetMeetingEmailPreference(context.Background(), testToken, "SFID1")
 		require.NoError(t, err)
 		assert.Nil(t, pref)
 	})
@@ -166,7 +132,7 @@ func TestSetMeetingEmailPreference_CreateWhenAbsent(t *testing.T) {
 	}))
 	defer server.Close()
 
-	pref, err := testClient(server).SetMeetingEmailPreference(context.Background(), "SFID1", "email-sfid")
+	pref, err := testClient(server).SetMeetingEmailPreference(context.Background(), testToken, "SFID1", "email-sfid")
 	require.NoError(t, err)
 	assert.True(t, posted, "expected POST when no preference exists")
 	assert.Equal(t, "email-sfid", postBody.EmailID)
@@ -202,11 +168,10 @@ func TestSetMeetingEmailPreference_PatchWhenPresent(t *testing.T) {
 	}))
 	defer server.Close()
 
-	pref, err := testClient(server).SetMeetingEmailPreference(context.Background(), "SFID1", "new")
+	pref, err := testClient(server).SetMeetingEmailPreference(context.Background(), testToken, "SFID1", "new")
 	require.NoError(t, err)
 	assert.True(t, patched, "expected PATCH when a preference already exists")
 	assert.Equal(t, "new", pref.EmailID)
-	assert.Equal(t, "new@work.com", pref.Email)
 }
 
 func TestSetMeetingEmailPreference_WriteErrorButPersisted(t *testing.T) {
@@ -216,10 +181,9 @@ func TestSetMeetingEmailPreference_WriteErrorButPersisted(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPatch {
 			patched = true
-			w.WriteHeader(http.StatusBadGateway) // 502, empty body
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
-		// GET preference: before the write returns "old"; after the write returns "new".
 		emailID := "old"
 		if patched {
 			emailID = "new"
@@ -230,14 +194,13 @@ func TestSetMeetingEmailPreference_WriteErrorButPersisted(t *testing.T) {
 	}))
 	defer server.Close()
 
-	pref, err := testClient(server).SetMeetingEmailPreference(context.Background(), "SFID1", "new")
+	pref, err := testClient(server).SetMeetingEmailPreference(context.Background(), testToken, "SFID1", "new")
 	require.NoError(t, err)
 	require.NotNil(t, pref)
 	assert.Equal(t, "new", pref.EmailID)
 }
 
 func TestSetMeetingEmailPreference_WriteErrorNotPersisted(t *testing.T) {
-	// The PATCH errors and the change did NOT land (GET still shows the old value). Expect the error.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPatch {
 			w.WriteHeader(http.StatusBadGateway)
@@ -249,14 +212,13 @@ func TestSetMeetingEmailPreference_WriteErrorNotPersisted(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := testClient(server).SetMeetingEmailPreference(context.Background(), "SFID1", "new")
+	_, err := testClient(server).SetMeetingEmailPreference(context.Background(), testToken, "SFID1", "new")
 	require.Error(t, err)
 	// A 502 that did not persist maps to a retryable Unavailable error.
 	assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
 }
 
 func TestClearMeetingEmailPreference_DeleteErrorButGone(t *testing.T) {
-	// DELETE returns a bodyless 502 but the record is actually removed. Expect success.
 	deleted := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
@@ -274,7 +236,7 @@ func TestClearMeetingEmailPreference_DeleteErrorButGone(t *testing.T) {
 	}))
 	defer server.Close()
 
-	require.NoError(t, testClient(server).ClearMeetingEmailPreference(context.Background(), "SFID1"))
+	require.NoError(t, testClient(server).ClearMeetingEmailPreference(context.Background(), testToken, "SFID1"))
 }
 
 func TestSetMeetingEmailPreference_BlankEmailID(t *testing.T) {
@@ -283,7 +245,7 @@ func TestSetMeetingEmailPreference_BlankEmailID(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := testClient(server).SetMeetingEmailPreference(context.Background(), "SFID1", "  ")
+	_, err := testClient(server).SetMeetingEmailPreference(context.Background(), testToken, "SFID1", "  ")
 	assert.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
 }
 
@@ -306,7 +268,7 @@ func TestClearMeetingEmailPreference(t *testing.T) {
 		}))
 		defer server.Close()
 
-		require.NoError(t, testClient(server).ClearMeetingEmailPreference(context.Background(), "SFID1"))
+		require.NoError(t, testClient(server).ClearMeetingEmailPreference(context.Background(), testToken, "SFID1"))
 		assert.True(t, deleted, "expected DELETE for existing preference")
 	})
 
@@ -319,7 +281,7 @@ func TestClearMeetingEmailPreference(t *testing.T) {
 		}))
 		defer server.Close()
 
-		require.NoError(t, testClient(server).ClearMeetingEmailPreference(context.Background(), "SFID1"))
+		require.NoError(t, testClient(server).ClearMeetingEmailPreference(context.Background(), testToken, "SFID1"))
 	})
 }
 
@@ -329,8 +291,8 @@ func TestMapHTTPError(t *testing.T) {
 		want   domain.ErrorType
 	}{
 		{http.StatusBadRequest, domain.ErrorTypeValidation},
-		{http.StatusUnauthorized, domain.ErrorTypeInternal},
-		{http.StatusForbidden, domain.ErrorTypeInternal},
+		{http.StatusUnauthorized, domain.ErrorTypeValidation},
+		{http.StatusForbidden, domain.ErrorTypeValidation},
 		{http.StatusNotFound, domain.ErrorTypeNotFound},
 		{http.StatusConflict, domain.ErrorTypeConflict},
 		{http.StatusTooManyRequests, domain.ErrorTypeUnavailable},

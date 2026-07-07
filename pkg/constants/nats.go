@@ -7,11 +7,12 @@ package constants
 const AuthEmailToUsernameSubject = "lfx.auth-service.email_to_username"
 
 // PreferredEmailGetSubject is the NATS RPC subject for reading a user's preferred
-// meeting-invite email. Request: {"user":"<lfid|username>"}. Reply: {"email_id","email"}.
+// meeting-invite email. Request: {"token":"<user bearer token>"}. The user is resolved from
+// the token (the RPC calls user-service as the user). Reply: {"email_id","email"}.
 const PreferredEmailGetSubject = "lfx.meeting-service.preferred_email.get"
 
 // PreferredEmailSetSubject is the NATS RPC subject for setting a user's preferred
-// meeting-invite email. Request: {"user":"<lfid|username>","email":<string|null>,"email_id":<string|null>}.
+// meeting-invite email. Request: {"token":"<user bearer token>","email":<string|null>,"email_id":<string|null>}.
 // "email" (a verified address, resolved to its SFDC email-record ID) takes precedence over
 // "email_id" when both are set; a null/empty selection or "primary" clears the override.
 // Reply: {"email_id","email"}.

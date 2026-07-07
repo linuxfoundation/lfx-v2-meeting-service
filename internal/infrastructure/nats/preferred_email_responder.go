@@ -15,23 +15,24 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 const preferredEmailCallTimeout = 15 * time.Second
 
-// PreferredEmailProvider is the service behavior the responder needs.
+// PreferredEmailProvider is the service behavior the responder needs. All calls act AS the
+// user via the bearer token forwarded in the request.
 type PreferredEmailProvider interface {
 	// GetPreferredEmail returns the user's preferred meeting-invite email, or nil for primary.
-	GetPreferredEmail(ctx context.Context, username string) (*domain.PreferredEmail, error)
+	GetPreferredEmail(ctx context.Context, token string) (*domain.PreferredEmail, error)
 	// SetPreferredEmail sets the preference from a verified address (email) or an SFDC
 	// email-record ID (emailID); email takes precedence. An empty selection or "primary" clears it.
-	SetPreferredEmail(ctx context.Context, username, email, emailID string) (*domain.PreferredEmail, error)
+	SetPreferredEmail(ctx context.Context, token, email, emailID string) (*domain.PreferredEmail, error)
 }
 
-// preferredEmailRequest is the RPC request payload for get/set.
+// preferredEmailRequest is the RPC request payload for get/set. Token is the user's bearer
+// token, forwarded by self-serve; the user's identity is resolved from it.
 type preferredEmailRequest struct {
-	User    string  `json:"user"`
+	Token   string  `json:"token"`
 	Email   *string `json:"email,omitempty"`
 	EmailID *string `json:"email_id,omitempty"`
 }
@@ -127,9 +128,9 @@ func (r *PreferredEmailResponder) handleGet(msg *natsgo.Msg) {
 		return
 	}
 
-	pref, err := r.service.GetPreferredEmail(ctx, req.User)
+	pref, err := r.service.GetPreferredEmail(ctx, req.Token)
 	if err != nil {
-		r.respondError(msg, req.User, "get", err)
+		r.respondError(msg, "get", err)
 		return
 	}
 	r.respondSuccess(msg, pref)
@@ -157,9 +158,9 @@ func (r *PreferredEmailResponder) handleSet(msg *natsgo.Msg) {
 		emailID = *req.EmailID
 	}
 
-	pref, err := r.service.SetPreferredEmail(ctx, req.User, email, emailID)
+	pref, err := r.service.SetPreferredEmail(ctx, req.Token, email, emailID)
 	if err != nil {
-		r.respondError(msg, req.User, "set", err)
+		r.respondError(msg, "set", err)
 		return
 	}
 	r.respondSuccess(msg, pref)
@@ -194,11 +195,10 @@ func newPreferredEmailReply(pref *domain.PreferredEmail) preferredEmailReply {
 	return reply
 }
 
-// respondError logs and replies with an error envelope.
-func (r *PreferredEmailResponder) respondError(msg *natsgo.Msg, user, op string, err error) {
+// respondError logs and replies with an error envelope. The user's token is never logged.
+func (r *PreferredEmailResponder) respondError(msg *natsgo.Msg, op string, err error) {
 	r.logger.With(logging.ErrKey, err).Warn("preferred_email request failed",
 		"op", op,
-		"user", redaction.Redact(user),
 		"error_type", domain.GetErrorType(err),
 	)
 	r.reply(msg, errorReply{Error: err.Error()})
