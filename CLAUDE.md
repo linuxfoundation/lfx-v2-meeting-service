@@ -149,6 +149,12 @@ For ITX proxy functionality, configure these environment variables:
 - `ITX_AUTH0_DOMAIN`: Auth0 domain for OAuth2 (e.g., `linuxfoundation.auth0.com`)
 - `ITX_AUDIENCE`: OAuth2 audience for ITX service (e.g., `https://api.itx.linuxfoundation.org/`)
 
+### User Service Configuration (Optional)
+
+Backs the preferred meeting-invite email NATS RPC (LFXV2-2599). The RPC calls the v1 user-service preferences API **as the user**, using the bearer token forwarded in the request payload by self-serve (`{"token": "..."}`) — so no service credentials are configured here. The responder starts whenever `NATS_URL` is configured.
+
+- `USER_SERVICE_BASE_URL`: v1 API-gateway base URL (defaults per `LFX_ENVIRONMENT`, e.g. `https://api-gw.dev.platform.linuxfoundation.org`)
+
 ### ID Mapping Configuration (Optional)
 
 The service supports optional ID mapping between v1 and v2 systems:
@@ -283,3 +289,10 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 - `GET /itx/past_meetings/{past_meeting_id}` - Get past meeting
 - `PUT /itx/past_meetings/{past_meeting_id}` - Update past meeting
 - `DELETE /itx/past_meetings/{past_meeting_id}` - Delete past meeting
+
+### NATS RPC (preferred meeting-invite email — LFXV2-2599)
+
+Request/reply subjects served by the preferred-email responder (see User Service Configuration). The caller forwards the user's bearer token; meeting-service resolves the user (SFID + emails) from it via `GET /v1/me` and proxies to the user-service preferences API **as the user** (Phase 1 storage).
+
+- `lfx.meeting-service.preferred_email.get` — request `{"token":"<user bearer token>"}` → reply `{"email_id":string|null,"email":string|null}` (`null` ⇒ use primary)
+- `lfx.meeting-service.preferred_email.set` — request `{"token":"<user bearer token>","email":"<verified-address>"}` (or `{"token":"...","email_id":<sfid>}`; `email` wins, `null`/`"primary"` clears) → reply `{"email_id","email"}` or `{"error":"..."}`. A verified `email` is resolved to its (auth0→SFDC synced) email-record ID; a not-yet-synced address returns a retryable error.
