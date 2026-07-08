@@ -12,6 +12,9 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/vmihailenco/msgpack/v5"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	fgatypes "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/types"
 
@@ -182,6 +185,18 @@ func (h *EventHandlers) inviteEnabled() bool {
 
 // kvHandler routes KV bucket events to appropriate handlers
 func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) (retry bool) {
+	msgCtx := otel.GetTextMapPropagator().Extract(ctx, natsHeaderCarrier(msg.Headers()))
+	msgCtx, span := tracer.Start(msgCtx, "nats.process",
+		trace.WithSpanKind(trace.SpanKindConsumer),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "nats"),
+			attribute.String("messaging.destination.name", msg.Subject()),
+			attribute.String("messaging.operation.type", "process"),
+		),
+	)
+	defer span.End()
+	ctx = msgCtx
+
 	// Extract key from subject (format: $KV.v1-objects.{key})
 	subject := msg.Subject()
 	parts := strings.Split(subject, ".")

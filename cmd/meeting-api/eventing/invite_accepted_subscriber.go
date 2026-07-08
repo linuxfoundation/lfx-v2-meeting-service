@@ -11,6 +11,9 @@ import (
 	"time"
 
 	natsgo "github.com/nats-io/nats.go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 
@@ -90,7 +93,17 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 	s.wg.Add(1)
 	defer s.wg.Done()
 
-	ctx, cancel := context.WithTimeout(s.ctx, inviteAcceptedCallTimeout)
+	msgCtx := otel.GetTextMapPropagator().Extract(context.Background(), natsHeaderCarrier(msg.Header))
+	msgCtx, span := tracer.Start(msgCtx, "nats.process",
+		trace.WithSpanKind(trace.SpanKindConsumer),
+		trace.WithAttributes(
+			attribute.String("messaging.system", "nats"),
+			attribute.String("messaging.destination.name", msg.Subject),
+		),
+	)
+	defer span.End()
+
+	ctx, cancel := context.WithTimeout(trace.ContextWithSpan(s.ctx, span), inviteAcceptedCallTimeout)
 	defer cancel()
 
 	var evt inviteapi.InviteServiceAcceptedEvent
