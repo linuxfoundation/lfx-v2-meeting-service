@@ -94,11 +94,12 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 	defer s.wg.Done()
 
 	msgCtx := otel.GetTextMapPropagator().Extract(context.Background(), natsHeaderCarrier(msg.Header))
-	msgCtx, span := tracer.Start(msgCtx, "nats.process",
+	_, span := tracer.Start(msgCtx, "nats.process",
 		trace.WithSpanKind(trace.SpanKindConsumer),
 		trace.WithAttributes(
 			attribute.String("messaging.system", "nats"),
 			attribute.String("messaging.destination.name", msg.Subject),
+			attribute.String("messaging.operation.type", "process"),
 		),
 	)
 	defer span.End()
