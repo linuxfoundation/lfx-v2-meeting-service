@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -290,7 +292,16 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 		"method", method, "status", resp.StatusCode, "body_len", len(respBody))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return mapHTTPError(resp.StatusCode, respBody)
+		domainErr := mapHTTPError(resp.StatusCode, respBody)
+		if resp.StatusCode >= 500 {
+			// Record a status-only error for telemetry to avoid leaking PII
+			// (email addresses can appear in user-service error bodies).
+			// The full domain error with the original message is returned to the caller.
+			span := trace.SpanFromContext(ctx)
+			span.RecordError(fmt.Errorf("HTTP %d", resp.StatusCode))
+			span.SetStatus(codes.Error, fmt.Sprintf("HTTP %d", resp.StatusCode))
+		}
+		return domainErr
 	}
 
 	if out == nil || len(respBody) == 0 {
