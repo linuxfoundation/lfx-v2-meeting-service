@@ -22,10 +22,12 @@
 //
 //	NATS_URL=nats://localhost:4222 go run ./scripts/backfill_participant_mappings/
 //	NATS_URL=nats://localhost:4222 go run ./scripts/backfill_participant_mappings/ -apply
+//	NATS_URL=nats://localhost:4222 go run ./scripts/backfill_participant_mappings/ -apply -workers 50
 //
 // Flags:
 //
-//	-apply  Write updated mapping values (default: dry-run, logs only)
+//	-apply    Write updated mapping values (default: dry-run, logs only)
+//	-workers  Number of concurrent workers for object-lookup + mapping-write (default: 20)
 //
 // Build:
 //
@@ -42,6 +44,8 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -87,8 +91,16 @@ var configs = []mappingConfig{
 	},
 }
 
+// legacyEntry holds the data collected during the watch scan phase.
+type legacyEntry struct {
+	mappingKey   string
+	currentValue string
+	uid          string
+}
+
 func main() {
 	apply := flag.Bool("apply", false, "write updated mapping values (default: dry-run, logs only)")
+	workers := flag.Int("workers", 20, "number of concurrent workers for object-lookup + mapping-write")
 	flag.Parse()
 
 	natsURL := os.Getenv("NATS_URL")
@@ -101,6 +113,7 @@ func main() {
 	slog.InfoContext(ctx, "backfill_participant_mappings starting",
 		"nats_url", natsURL,
 		"apply", *apply,
+		"workers", *workers,
 	)
 
 	nc, err := nats.Connect(natsURL,
@@ -114,11 +127,11 @@ func main() {
 	}
 	defer nc.Close()
 
-	exitCode := run(ctx, nc, *apply)
+	exitCode := run(ctx, nc, *apply, *workers)
 	os.Exit(exitCode)
 }
 
-func run(ctx context.Context, nc *nats.Conn, apply bool) int {
+func run(ctx context.Context, nc *nats.Conn, apply bool, workers int) int {
 	js, err := jetstream.New(nc)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create JetStream context", "error", err)
@@ -140,7 +153,7 @@ func run(ctx context.Context, nc *nats.Conn, apply bool) int {
 	var totalUpdated, totalSkipped, totalFailed, totalNotFound int
 
 	for _, cfg := range configs {
-		updated, skipped, failed, notFound, err := backfillType(ctx, objectsKV, mappingsKV, cfg, apply)
+		updated, skipped, failed, notFound, err := backfillType(ctx, objectsKV, mappingsKV, cfg, apply, workers)
 		if err != nil {
 			slog.ErrorContext(ctx, "fatal error during backfill", "mapping_prefix", cfg.mappingPrefix, "error", err)
 			return 1
@@ -173,109 +186,164 @@ func run(ctx context.Context, nc *nats.Conn, apply bool) int {
 	return 0
 }
 
-// backfillType scans all live entries under cfg.mappingPrefix and upgrades any
-// non-JSON value to the {"uid","username","meeting_id"} JSON format.
+// backfillType runs in two phases:
+//  1. Scan: drain the KV watch to collect all legacy (non-JSON) entries — fast,
+//     NATS streams them all to the client in one shot.
+//  2. Process: fan the legacy entries out to `workers` goroutines, each doing
+//     Get(v1 object) + Put(mapping) concurrently.
 func backfillType(
 	ctx context.Context,
 	objectsKV, mappingsKV jetstream.KeyValue,
 	cfg mappingConfig,
 	apply bool,
+	workers int,
 ) (updated, skipped, failed, notFound int, err error) {
+	// --- Phase 1: scan ---
 	watchKey := cfg.mappingPrefix + ".>"
 	watcher, watchErr := mappingsKV.Watch(ctx, watchKey, jetstream.IgnoreDeletes())
 	if watchErr != nil {
 		return 0, 0, 0, 0, fmt.Errorf("watch %q: %w", watchKey, watchErr)
 	}
-	defer watcher.Stop()
 
+	var legacy []legacyEntry
 	for entry := range watcher.Updates() {
 		if entry == nil {
-			// Nil signals end of initial values; stop here (we don't process live changes).
-			break
+			break // nil = end of initial values
 		}
-
-		mappingKey := entry.Key()
 		currentValue := string(entry.Value())
-
-		// Already JSON — nothing to do.
 		if strings.HasPrefix(currentValue, "{") {
 			skipped++
 			continue
 		}
-
-		// Derive the UID from the mapping key suffix.
-		uid := strings.TrimPrefix(mappingKey, cfg.mappingPrefix+".")
-		if uid == "" || uid == mappingKey {
-			slog.WarnContext(ctx, "unexpected mapping key format, skipping", "key", mappingKey)
+		uid := strings.TrimPrefix(entry.Key(), cfg.mappingPrefix+".")
+		if uid == "" || uid == entry.Key() {
+			slog.WarnContext(ctx, "unexpected mapping key format, skipping", "key", entry.Key())
 			skipped++
 			continue
 		}
+		legacy = append(legacy, legacyEntry{
+			mappingKey:   entry.Key(),
+			currentValue: currentValue,
+			uid:          uid,
+		})
+	}
+	watcher.Stop()
 
-		// Look up the v1 object to recover username and meeting ID.
-		objectKey := cfg.objectPrefix + uid
-		objectEntry, getErr := objectsKV.Get(ctx, objectKey)
-		if getErr != nil {
-			if errors.Is(getErr, jetstream.ErrKeyNotFound) {
-				slog.WarnContext(ctx, "v1 object not found for mapping key",
-					"mapping_key", mappingKey,
-					"object_key", objectKey,
-				)
-				notFound++
-				continue
-			}
-			slog.ErrorContext(ctx, "failed to get v1 object",
-				"mapping_key", mappingKey,
-				"object_key", objectKey,
-				"error", getErr,
-			)
-			failed++
-			continue
-		}
+	slog.InfoContext(ctx, "scan complete",
+		"mapping_prefix", cfg.mappingPrefix,
+		"legacy_count", len(legacy),
+		"already_json", skipped,
+	)
 
-		objectData, decErr := decodeData(objectEntry.Value())
-		if decErr != nil {
-			slog.ErrorContext(ctx, "failed to decode v1 object",
-				"mapping_key", mappingKey,
-				"object_key", objectKey,
-				"error", decErr,
-			)
-			failed++
-			continue
-		}
-
-		username := getString(objectData, cfg.usernameField)
-		meetingID := getString(objectData, cfg.meetingIDField)
-
-		newValue := buildMappingValue(uid, username, meetingID)
-
-		if !apply {
-			slog.InfoContext(ctx, "[dry-run] would update mapping",
-				"mapping_key", mappingKey,
-				"old_value", currentValue,
-				"new_value", newValue,
-			)
-			updated++
-			continue
-		}
-
-		if _, putErr := mappingsKV.Put(ctx, mappingKey, []byte(newValue)); putErr != nil {
-			slog.ErrorContext(ctx, "failed to write updated mapping",
-				"mapping_key", mappingKey,
-				"error", putErr,
-			)
-			failed++
-			continue
-		}
-
-		slog.InfoContext(ctx, "updated mapping",
-			"mapping_key", mappingKey,
-			"old_value", currentValue,
-			"new_value", newValue,
-		)
-		updated++
+	if len(legacy) == 0 {
+		return 0, skipped, 0, 0, nil
 	}
 
-	return updated, skipped, failed, notFound, nil
+	// --- Phase 2: concurrent processing ---
+	var (
+		atomicUpdated  atomic.Int64
+		atomicFailed   atomic.Int64
+		atomicNotFound atomic.Int64
+	)
+
+	work := make(chan legacyEntry, len(legacy))
+	for _, e := range legacy {
+		work <- e
+	}
+	close(work)
+
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for e := range work {
+				switch processEntry(ctx, objectsKV, mappingsKV, cfg, e, apply) {
+				case resultUpdated:
+					atomicUpdated.Add(1)
+				case resultFailed:
+					atomicFailed.Add(1)
+				case resultNotFound:
+					atomicNotFound.Add(1)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	return int(atomicUpdated.Load()), skipped, int(atomicFailed.Load()), int(atomicNotFound.Load()), nil
+}
+
+type entryResult int
+
+const (
+	resultUpdated  entryResult = iota
+	resultFailed   entryResult = iota
+	resultNotFound entryResult = iota
+)
+
+func processEntry(
+	ctx context.Context,
+	objectsKV, mappingsKV jetstream.KeyValue,
+	cfg mappingConfig,
+	e legacyEntry,
+	apply bool,
+) entryResult {
+	objectKey := cfg.objectPrefix + e.uid
+	objectEntry, getErr := objectsKV.Get(ctx, objectKey)
+	if getErr != nil {
+		if errors.Is(getErr, jetstream.ErrKeyNotFound) {
+			slog.WarnContext(ctx, "v1 object not found for mapping key",
+				"mapping_key", e.mappingKey,
+				"object_key", objectKey,
+			)
+			return resultNotFound
+		}
+		slog.ErrorContext(ctx, "failed to get v1 object",
+			"mapping_key", e.mappingKey,
+			"object_key", objectKey,
+			"error", getErr,
+		)
+		return resultFailed
+	}
+
+	objectData, decErr := decodeData(objectEntry.Value())
+	if decErr != nil {
+		slog.ErrorContext(ctx, "failed to decode v1 object",
+			"mapping_key", e.mappingKey,
+			"object_key", objectKey,
+			"error", decErr,
+		)
+		return resultFailed
+	}
+
+	username := getString(objectData, cfg.usernameField)
+	meetingID := getString(objectData, cfg.meetingIDField)
+	newValue := buildMappingValue(e.uid, username, meetingID)
+
+	if !apply {
+		slog.InfoContext(ctx, "[dry-run] would update mapping",
+			"mapping_key", e.mappingKey,
+			"old_value", e.currentValue,
+			"new_value", newValue,
+		)
+		return resultUpdated
+	}
+
+	if _, putErr := mappingsKV.Put(ctx, e.mappingKey, []byte(newValue)); putErr != nil {
+		slog.ErrorContext(ctx, "failed to write updated mapping",
+			"mapping_key", e.mappingKey,
+			"error", putErr,
+		)
+		return resultFailed
+	}
+
+	slog.InfoContext(ctx, "updated mapping",
+		"mapping_key", e.mappingKey,
+		"old_value", e.currentValue,
+		"new_value", newValue,
+	)
+	return resultUpdated
 }
 
 // registrantMappingData is the JSON structure written to v1-mappings.
