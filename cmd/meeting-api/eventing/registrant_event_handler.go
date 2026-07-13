@@ -197,16 +197,24 @@ func (h *EventHandlers) handleRegistrantUpdate(
 
 	// Determine action (created vs updated) and retrieve the previously-stored username
 	// so we can detect when it has been cleared and revoke stale FGA access.
+	// Distinguish ErrKeyNotFound (first-time create) from transient errors: a transient
+	// failure would make us treat this as a create, overwrite the mapping, and permanently
+	// lose the old username — exactly the stale-access condition we are trying to fix.
 	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantData.UID)
 	indexerAction := indexerConstants.ActionCreated
 	oldUsername := ""
 	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
 		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading registrant mapping, will retry")
+		return true
 	}
 
 	// If the username was removed or changed during an update, revoke the old FGA access
 	// before publishing the new state so the user never has more access than intended.
+	// Retry transient publish failures: if we continue and store the new mapping, the old
+	// username is lost and the stale tuple can never be recovered.
 	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != registrantData.Username {
 		payload, err := buildGenericMemberRemovePayload("v1_meeting", registrantData.MeetingID, oldUsername)
 		if err != nil {
@@ -215,6 +223,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		}
 		if err := h.publisher.PublishAccessDelete(ctx, fgaconstants.GenericMemberRemoveSubject, payload); err != nil {
 			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish FGA remove for old registrant username")
+			return isTransientError(err)
 		}
 	}
 
@@ -225,10 +234,13 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	}
 
 	// Store uid, username, and meetingID in the mapping so future updates and deletes
-	// can recover them without an extra lookup.
+	// can recover them without an extra lookup. Retry transient write failures: the mapping
+	// is the only durable record of the current username, so losing it prevents future
+	// username-change detection.
 	mappingValue := buildRegistrantMappingValue(registrantData.UID, registrantData.Username, registrantData.MeetingID)
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
+		return isTransientError(err)
 	}
 
 	// Best-effort LFID invite: send an invite when a new registrant has no LFID yet.
@@ -252,6 +264,8 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantUID)
 
 	// Fetch the mapping once: check for tombstone and extract username/meetingID in one round-trip.
+	// Retry transient errors: if this fails and we fall through with empty username, we skip
+	// FGA removal and tombstone the mapping, making stale access unrecoverable.
 	username := ""
 	meetingID := ""
 	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
@@ -260,6 +274,9 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 			return false
 		}
 		_, username, meetingID = parseRegistrantMappingValue(string(entry.Value()))
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading registrant mapping on delete, will retry")
+		return true
 	}
 	if username == "" {
 		username = utils.GetString(v1Data["username"])
