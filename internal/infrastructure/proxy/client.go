@@ -21,6 +21,8 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/oauth2"
 )
 
@@ -169,7 +171,7 @@ func (c *Client) CreateZoomMeeting(ctx context.Context, req *itx.CreateZoomMeeti
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -211,7 +213,7 @@ func (c *Client) GetZoomMeeting(ctx context.Context, meetingID string) (*itx.Zoo
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -252,7 +254,7 @@ func (c *Client) DeleteZoomMeeting(ctx context.Context, meetingID string) error 
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -294,7 +296,7 @@ func (c *Client) UpdateZoomMeeting(ctx context.Context, meetingID string, req *i
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -330,7 +332,7 @@ func (c *Client) GetMeetingCount(ctx context.Context, projectID string) (*itx.Me
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -396,7 +398,7 @@ func (c *Client) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkReq
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -445,7 +447,7 @@ func (c *Client) CreateRegistrant(ctx context.Context, meetingID string, req *it
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -487,7 +489,7 @@ func (c *Client) GetRegistrant(ctx context.Context, meetingID, registrantID stri
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -535,7 +537,7 @@ func (c *Client) UpdateRegistrant(ctx context.Context, meetingID, registrantID s
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -570,7 +572,7 @@ func (c *Client) DeleteRegistrant(ctx context.Context, meetingID, registrantID s
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -606,7 +608,7 @@ func (c *Client) GetRegistrantICS(ctx context.Context, meetingID, registrantID s
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Return ICS content as-is (binary data)
@@ -644,7 +646,7 @@ func (c *Client) ResendRegistrantInvitation(ctx context.Context, meetingID, regi
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -691,7 +693,7 @@ func (c *Client) ResendMeetingInvitations(ctx context.Context, meetingID string,
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -726,7 +728,7 @@ func (c *Client) RegisterCommitteeMembers(ctx context.Context, meetingID string)
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -768,7 +770,7 @@ func (c *Client) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID s
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -803,7 +805,7 @@ func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID s
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -846,7 +848,7 @@ func (c *Client) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrence
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Unmarshal response
@@ -894,7 +896,7 @@ func (c *Client) CreatePastMeeting(ctx context.Context, req *itx.CreatePastMeeti
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Unmarshal response
@@ -936,7 +938,7 @@ func (c *Client) GetPastMeeting(ctx context.Context, pastMeetingID string) (*itx
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Unmarshal response
@@ -986,7 +988,7 @@ func (c *Client) UpdatePastMeeting(ctx context.Context, pastMeetingID string, re
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Success - ITX returns 204 No Content, return nil
@@ -1023,7 +1025,7 @@ func (c *Client) DeletePastMeeting(ctx context.Context, pastMeetingID string) er
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -1059,7 +1061,7 @@ func (c *Client) GetPastMeetingSummary(ctx context.Context, pastMeetingID, summa
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Unmarshal response
@@ -1108,7 +1110,7 @@ func (c *Client) UpdatePastMeetingSummary(ctx context.Context, pastMeetingID, su
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Unmarshal response
@@ -1149,6 +1151,22 @@ func (c *Client) mapHTTPError(statusCode int, body []byte) error {
 	}
 }
 
+// recordAndMapHTTPError maps a non-2xx status code to a domain error and, for
+// 5xx responses, records the error on the active OTel span so that Datadog
+// surfaces error.message / error.type.
+func (c *Client) recordAndMapHTTPError(ctx context.Context, statusCode int, body []byte) error {
+	err := c.mapHTTPError(statusCode, body)
+	if statusCode >= 500 {
+		// Record a status-only error for telemetry to avoid leaking upstream
+		// server-supplied message text (which may echo user-identifiable data).
+		// The full domain error with the original message is returned to the caller.
+		span := trace.SpanFromContext(ctx)
+		span.RecordError(fmt.Errorf("HTTP %d", statusCode))
+		span.SetStatus(codes.Error, fmt.Sprintf("HTTP %d", statusCode))
+	}
+	return err
+}
+
 // CreateInvitee creates an invitee for a past meeting via the ITX proxy
 func (c *Client) CreateInvitee(ctx context.Context, pastMeetingID string, req *itx.CreateInviteeRequest) (*itx.InviteeResponse, error) {
 	url := fmt.Sprintf("%s/v2/zoom/past_meetings/%s/invitees", c.config.BaseURL, pastMeetingID)
@@ -1186,7 +1204,7 @@ func (c *Client) CreateInvitee(ctx context.Context, pastMeetingID string, req *i
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Unmarshal response
@@ -1235,7 +1253,7 @@ func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID str
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Success - ITX returns 204 No Content, return nil
@@ -1272,7 +1290,7 @@ func (c *Client) DeleteInvitee(ctx context.Context, pastMeetingID, inviteeID str
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -1315,7 +1333,7 @@ func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Unmarshal response
@@ -1364,7 +1382,7 @@ func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID s
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Success - ITX returns 204 No Content, return nil
@@ -1401,7 +1419,7 @@ func (c *Client) DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID s
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -1459,7 +1477,7 @@ func (c *Client) CreateMeetingAttachmentPresignURL(ctx context.Context, meetingI
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -1512,7 +1530,7 @@ func (c *Client) GetMeetingAttachmentDownloadURL(ctx context.Context, meetingID,
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -1572,7 +1590,7 @@ func (c *Client) CreatePastMeetingAttachmentPresignURL(ctx context.Context, meet
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -1625,7 +1643,7 @@ func (c *Client) GetPastMeetingAttachmentDownloadURL(ctx context.Context, meetin
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -1685,7 +1703,7 @@ func (c *Client) CreateMeetingAttachment(ctx context.Context, meetingID string, 
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -1738,7 +1756,7 @@ func (c *Client) GetMeetingAttachment(ctx context.Context, meetingID, attachment
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -1799,7 +1817,7 @@ func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachm
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// ITX returns 204 No Content on successful update
@@ -1846,7 +1864,7 @@ func (c *Client) DeleteMeetingAttachment(ctx context.Context, meetingID, attachm
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -1900,7 +1918,7 @@ func (c *Client) CreatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -1953,7 +1971,7 @@ func (c *Client) GetPastMeetingAttachment(ctx context.Context, meetingAndOccurre
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, c.mapHTTPError(resp.StatusCode, respBody)
+		return nil, c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// Parse response
@@ -2014,7 +2032,7 @@ func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	// ITX returns 204 No Content on successful update
@@ -2061,7 +2079,7 @@ func (c *Client) DeletePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
@@ -2108,7 +2126,7 @@ func (c *Client) AcceptInvite(ctx context.Context, email, username string) error
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return c.mapHTTPError(resp.StatusCode, respBody)
+		return c.recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return nil
