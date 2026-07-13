@@ -257,27 +257,6 @@ func backfillType(
 	}
 	close(work)
 
-	// Progress reporter: logs done/total every 5 seconds until workers finish.
-	progressDone := make(chan struct{})
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				done := atomicDone.Load()
-				slog.InfoContext(ctx, "progress",
-					"mapping_prefix", cfg.mappingPrefix,
-					"done", done,
-					"total", total,
-					"remaining", int64(total)-done,
-				)
-			case <-progressDone:
-				return
-			}
-		}
-	}()
-
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
@@ -292,12 +271,15 @@ func backfillType(
 				case resultNotFound:
 					atomicNotFound.Add(1)
 				}
-				atomicDone.Add(1)
+				done := atomicDone.Add(1)
+				slog.InfoContext(ctx, "progress",
+					"mapping_prefix", cfg.mappingPrefix,
+					"progress", fmt.Sprintf("%d/%d", done, total),
+				)
 			}
 		}()
 	}
 	wg.Wait()
-	close(progressDone)
 
 	return int(atomicUpdated.Load()), skipped, int(atomicFailed.Load()), int(atomicNotFound.Load()), nil
 }
