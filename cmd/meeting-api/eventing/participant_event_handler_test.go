@@ -234,12 +234,14 @@ func TestHandleInviteeUpdate_Update_UsernameCleared(t *testing.T) {
 
 	inviteeMappingKey := "v1_past_meeting_invitees." + uid
 	oldXrefKey := "v1_participant_by_meeting_user.invitee." + meeting + "." + oldUser
+	attendeeXrefKey := "v1_participant_by_meeting_user.attendee." + meeting + "." + oldUser
 
 	oldMapping := buildRegistrantMappingValue(uid, oldUser, meeting)
 
 	objectsKV := &mockKeyValue{}
 	mappingsKV := &mockKeyValue{}
 	mappingsKV.On("Get", mock.Anything, inviteeMappingKey).Return(mockKeyValueEntry{key: inviteeMappingKey, value: []byte(oldMapping)}, nil)
+	mappingsKV.On("Get", mock.Anything, attendeeXrefKey).Return(nil, jetstream.ErrKeyNotFound)
 	// Tombstone old xref
 	mappingsKV.On("Put", mock.Anything, oldXrefKey, []byte(tombstoneMarker)).Return(uint64(1), nil)
 	// Store new mapping (username now empty)
@@ -275,14 +277,16 @@ func TestHandleInviteeUpdate_Update_UsernameChanged(t *testing.T) {
 	inviteeMappingKey := "v1_past_meeting_invitees." + uid
 	oldXrefKey := "v1_participant_by_meeting_user.invitee." + meeting + "." + oldUser
 	newXrefKey := "v1_participant_by_meeting_user.invitee." + meeting + "." + newUser
-	attendeeXrefKey := "v1_participant_by_meeting_user.attendee." + meeting + "." + newUser
+	attendeeXrefKeyNewUser := "v1_participant_by_meeting_user.attendee." + meeting + "." + newUser
+	attendeeXrefKeyOldUser := "v1_participant_by_meeting_user.attendee." + meeting + "." + oldUser
 
 	oldMapping := buildRegistrantMappingValue(uid, oldUser, meeting)
 
 	objectsKV := &mockKeyValue{}
 	mappingsKV := &mockKeyValue{}
 	mappingsKV.On("Get", mock.Anything, inviteeMappingKey).Return(mockKeyValueEntry{key: inviteeMappingKey, value: []byte(oldMapping)}, nil)
-	mappingsKV.On("Get", mock.Anything, attendeeXrefKey).Return(nil, jetstream.ErrKeyNotFound)
+	mappingsKV.On("Get", mock.Anything, attendeeXrefKeyNewUser).Return(nil, jetstream.ErrKeyNotFound)
+	mappingsKV.On("Get", mock.Anything, attendeeXrefKeyOldUser).Return(nil, jetstream.ErrKeyNotFound)
 	mappingsKV.On("Put", mock.Anything, oldXrefKey, []byte(tombstoneMarker)).Return(uint64(1), nil)
 	mappingsKV.On("Put", mock.Anything, inviteeMappingKey, mock.MatchedBy(func(v []byte) bool {
 		var d registrantMappingData
@@ -378,10 +382,12 @@ func TestHandleInviteeUpdate_RemovePublishFailure_Transient_NAK(t *testing.T) {
 
 	inviteeMappingKey := "v1_past_meeting_invitees." + uid
 	oldMapping := buildRegistrantMappingValue(uid, oldUser, meeting)
+	attendeeXrefKey := "v1_participant_by_meeting_user.attendee." + meeting + "." + oldUser
 
 	objectsKV := &mockKeyValue{}
 	mappingsKV := &mockKeyValue{}
 	mappingsKV.On("Get", mock.Anything, inviteeMappingKey).Return(mockKeyValueEntry{key: inviteeMappingKey, value: []byte(oldMapping)}, nil)
+	mappingsKV.On("Get", mock.Anything, attendeeXrefKey).Return(nil, jetstream.ErrKeyNotFound)
 
 	pub := &stubParticipantPublisher{accessDeleteErr: errors.New("connection refused")}
 	h := newParticipantHandler(mappingsKV, objectsKV, pub)
@@ -442,12 +448,14 @@ func TestHandleAttendeeUpdate_Update_UsernameCleared(t *testing.T) {
 
 	attendeeMappingKey := "v1_past_meeting_attendees." + uid
 	oldXrefKey := "v1_participant_by_meeting_user.attendee." + meeting + "." + oldUser
+	inviteeXrefKey := "v1_participant_by_meeting_user.invitee." + meeting + "." + oldUser
 
 	oldMapping := buildRegistrantMappingValue(uid, oldUser, meeting)
 
 	objectsKV := &mockKeyValue{}
 	mappingsKV := &mockKeyValue{}
 	mappingsKV.On("Get", mock.Anything, attendeeMappingKey).Return(mockKeyValueEntry{key: attendeeMappingKey, value: []byte(oldMapping)}, nil)
+	mappingsKV.On("Get", mock.Anything, inviteeXrefKey).Return(nil, jetstream.ErrKeyNotFound)
 	mappingsKV.On("Put", mock.Anything, oldXrefKey, []byte(tombstoneMarker)).Return(uint64(1), nil)
 	mappingsKV.On("Put", mock.Anything, attendeeMappingKey, mock.MatchedBy(func(v []byte) bool {
 		var d registrantMappingData

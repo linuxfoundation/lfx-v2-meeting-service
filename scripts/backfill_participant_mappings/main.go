@@ -96,12 +96,18 @@ type legacyEntry struct {
 	mappingKey   string
 	currentValue string
 	uid          string
+	revision     uint64
 }
 
 func main() {
 	apply := flag.Bool("apply", false, "write updated mapping values (default: dry-run, logs only)")
 	workers := flag.Int("workers", 20, "number of concurrent workers for object-lookup + mapping-write")
 	flag.Parse()
+
+	if *workers < 1 {
+		slog.Error("workers must be >= 1", "workers", *workers)
+		os.Exit(1)
+	}
 
 	natsURL := os.Getenv("NATS_URL")
 	if natsURL == "" {
@@ -233,9 +239,12 @@ func backfillType(
 			mappingKey:   entry.Key(),
 			currentValue: currentValue,
 			uid:          uid,
+			revision:     entry.Revision(),
 		})
 	}
-	watcher.Stop()
+	if stopErr := watcher.Stop(); stopErr != nil {
+		slog.WarnContext(ctx, "failed to stop watcher", "mapping_prefix", cfg.mappingPrefix, "error", stopErr)
+	}
 
 	slog.InfoContext(ctx, "scan complete",
 		"mapping_prefix", cfg.mappingPrefix,
@@ -282,11 +291,13 @@ func backfillType(
 					atomicNotFound.Add(1)
 				}
 				done := atomicDone.Add(1)
-				slog.InfoContext(ctx, "progress",
-					"mapping_prefix", cfg.mappingPrefix,
-					"progress", fmt.Sprintf("%d/%d", done, total),
-					"with_username", atomicWithUsername.Load(),
-				)
+				if done%100 == 0 || done == int64(total) {
+					slog.InfoContext(ctx, "progress",
+						"mapping_prefix", cfg.mappingPrefix,
+						"progress", fmt.Sprintf("%d/%d", done, total),
+						"with_username", atomicWithUsername.Load(),
+					)
+				}
 			}
 		}()
 	}
@@ -353,7 +364,13 @@ func processEntry(
 		return resultUpdated, username != ""
 	}
 
-	if _, putErr := mappingsKV.Put(ctx, e.mappingKey, []byte(newValue)); putErr != nil {
+	if _, putErr := mappingsKV.Update(ctx, e.mappingKey, []byte(newValue), e.revision); putErr != nil {
+		if errors.Is(putErr, jetstream.ErrKeyExists) {
+			// A live handler wrote a newer value after the scan; skip — the current value is valid.
+			slog.InfoContext(ctx, "skipping: mapping updated by live handler since scan",
+				"mapping_key", e.mappingKey)
+			return resultUpdated, username != ""
+		}
 		slog.ErrorContext(ctx, "failed to write updated mapping",
 			"mapping_key", e.mappingKey,
 			"error", putErr,
