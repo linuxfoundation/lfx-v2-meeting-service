@@ -202,11 +202,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	oldUsername := ""
 	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
-		stored := string(entry.Value())
-		// Entries written before this change stored "1" as a sentinel; treat those as unknown.
-		if stored != "1" && stored != tombstoneMarker {
-			oldUsername = stored
-		}
+		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
 	}
 
 	// If the username was removed or changed during an update, revoke the old FGA access
@@ -228,8 +224,10 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		return isTransientError(err)
 	}
 
-	// Store username in the mapping so future updates can detect username changes.
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(registrantData.Username)); err != nil {
+	// Store uid, username, and meetingID in the mapping so future updates and deletes
+	// can recover them without an extra lookup.
+	mappingValue := buildRegistrantMappingValue(registrantData.UID, registrantData.Username, registrantData.MeetingID)
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
 	}
 
@@ -257,15 +255,24 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 		return false
 	}
 
-	// Extract username to conditionally send the access control message.
-	// Without a username, access control cannot identify which user to remove access for.
-	username := utils.GetString(v1Data["username"])
+	// Prefer the stored mapping for username and meetingID; fall back to v1Data for
+	// records that predate the rich mapping format.
+	username := ""
+	meetingID := ""
+	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+		_, username, meetingID = parseRegistrantMappingValue(string(entry.Value()))
+	}
+	if username == "" {
+		username = utils.GetString(v1Data["username"])
+	}
+	if meetingID == "" {
+		meetingID = utils.GetString(v1Data["meeting_id"])
+	}
 
 	var accessPayload []byte
 	var deleteAccessSubject string
 
 	if username != "" {
-		meetingID := utils.GetString(v1Data["meeting_id"])
 		var err error
 		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, username); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
@@ -273,7 +280,7 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 		}
 		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
 	} else {
-		funcLogger.DebugContext(ctx, "no username in v1Data, skipping access control message for registrant delete")
+		funcLogger.DebugContext(ctx, "no username in mapping or v1Data, skipping access control message for registrant delete")
 	}
 
 	return h.handleMeetingTypeDelete(ctx, key, registrantUID, accessPayload, meetingDeleteConfig{
@@ -614,4 +621,22 @@ func mapInviteResponseType(inviteResponseType string) (string, error) {
 		return "declined", nil
 	}
 	return "", fmt.Errorf("invalid invite response type: %s", inviteResponseType)
+}
+
+// buildRegistrantMappingValue encodes uid, username, and meetingID into a single string
+// so they can be recovered on delete and on subsequent updates without an extra lookup.
+// Username must not contain "|" — the pipe delimiter would corrupt parseRegistrantMappingValue.
+func buildRegistrantMappingValue(uid, username, meetingID string) string {
+	return fmt.Sprintf("%s|%s|%s", uid, username, meetingID)
+}
+
+// parseRegistrantMappingValue decodes a value written by buildRegistrantMappingValue.
+// Returns empty strings for all fields when the value is in an unrecognised legacy format
+// (e.g. the old "1" sentinel written before username tracking was added).
+func parseRegistrantMappingValue(value string) (uid, username, meetingID string) {
+	parts := strings.SplitN(value, "|", 3)
+	if len(parts) == 3 {
+		return parts[0], parts[1], parts[2]
+	}
+	return "", "", ""
 }
