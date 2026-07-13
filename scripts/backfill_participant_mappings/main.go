@@ -245,10 +245,11 @@ func backfillType(
 	// --- Phase 2: concurrent processing ---
 	total := len(legacy)
 	var (
-		atomicDone     atomic.Int64
-		atomicUpdated  atomic.Int64
-		atomicFailed   atomic.Int64
-		atomicNotFound atomic.Int64
+		atomicDone         atomic.Int64
+		atomicUpdated      atomic.Int64
+		atomicWithUsername atomic.Int64
+		atomicFailed       atomic.Int64
+		atomicNotFound     atomic.Int64
 	)
 
 	work := make(chan legacyEntry, total)
@@ -263,9 +264,13 @@ func backfillType(
 		go func() {
 			defer wg.Done()
 			for e := range work {
-				switch processEntry(ctx, objectsKV, mappingsKV, cfg, e, apply) {
+				result, hasUsername := processEntry(ctx, objectsKV, mappingsKV, cfg, e, apply)
+				switch result {
 				case resultUpdated:
 					atomicUpdated.Add(1)
+					if hasUsername {
+						atomicWithUsername.Add(1)
+					}
 				case resultFailed:
 					atomicFailed.Add(1)
 				case resultNotFound:
@@ -275,6 +280,7 @@ func backfillType(
 				slog.InfoContext(ctx, "progress",
 					"mapping_prefix", cfg.mappingPrefix,
 					"progress", fmt.Sprintf("%d/%d", done, total),
+					"with_username", atomicWithUsername.Load(),
 				)
 			}
 		}()
@@ -292,13 +298,15 @@ const (
 	resultNotFound entryResult = iota
 )
 
+// processEntry looks up the v1 object for e, builds the JSON mapping value, and
+// writes it (when apply=true). Returns the result and whether the username was non-empty.
 func processEntry(
 	ctx context.Context,
 	objectsKV, mappingsKV jetstream.KeyValue,
 	cfg mappingConfig,
 	e legacyEntry,
 	apply bool,
-) entryResult {
+) (entryResult, bool) {
 	objectKey := cfg.objectPrefix + e.uid
 	objectEntry, getErr := objectsKV.Get(ctx, objectKey)
 	if getErr != nil {
@@ -307,14 +315,14 @@ func processEntry(
 				"mapping_key", e.mappingKey,
 				"object_key", objectKey,
 			)
-			return resultNotFound
+			return resultNotFound, false
 		}
 		slog.ErrorContext(ctx, "failed to get v1 object",
 			"mapping_key", e.mappingKey,
 			"object_key", objectKey,
 			"error", getErr,
 		)
-		return resultFailed
+		return resultFailed, false
 	}
 
 	objectData, decErr := decodeData(objectEntry.Value())
@@ -324,7 +332,7 @@ func processEntry(
 			"object_key", objectKey,
 			"error", decErr,
 		)
-		return resultFailed
+		return resultFailed, false
 	}
 
 	username := getString(objectData, cfg.usernameField)
@@ -337,7 +345,7 @@ func processEntry(
 			"old_value", e.currentValue,
 			"new_value", newValue,
 		)
-		return resultUpdated
+		return resultUpdated, username != ""
 	}
 
 	if _, putErr := mappingsKV.Put(ctx, e.mappingKey, []byte(newValue)); putErr != nil {
@@ -345,7 +353,7 @@ func processEntry(
 			"mapping_key", e.mappingKey,
 			"error", putErr,
 		)
-		return resultFailed
+		return resultFailed, false
 	}
 
 	slog.InfoContext(ctx, "updated mapping",
@@ -353,7 +361,7 @@ func processEntry(
 		"old_value", e.currentValue,
 		"new_value", newValue,
 	)
-	return resultUpdated
+	return resultUpdated, username != ""
 }
 
 // registrantMappingData is the JSON structure written to v1-mappings.
