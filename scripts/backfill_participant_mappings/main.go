@@ -125,9 +125,9 @@ func main() {
 		slog.ErrorContext(ctx, "failed to connect to NATS", "error", err)
 		os.Exit(1)
 	}
-	defer nc.Close()
 
 	exitCode := run(ctx, nc, *apply, *workers)
+	nc.Close()
 	os.Exit(exitCode)
 }
 
