@@ -117,7 +117,7 @@ func main() {
 	)
 
 	nc, err := nats.Connect(natsURL,
-		nats.Timeout(10*time.Second),
+		nats.Timeout(60*time.Second),
 		nats.MaxReconnects(5),
 		nats.ReconnectWait(2*time.Second),
 	)
