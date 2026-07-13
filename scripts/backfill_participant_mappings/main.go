@@ -211,7 +211,10 @@ func backfillType(
 			break // nil = end of initial values
 		}
 		currentValue := string(entry.Value())
-		if strings.HasPrefix(currentValue, "{") {
+		// Skip already-JSON entries and tombstones. Tombstones are written as a
+		// regular Put with value "!del" (not a NATS-level delete), so IgnoreDeletes()
+		// alone does not filter them out.
+		if strings.HasPrefix(currentValue, "{") || currentValue == "!del" {
 			skipped++
 			continue
 		}
