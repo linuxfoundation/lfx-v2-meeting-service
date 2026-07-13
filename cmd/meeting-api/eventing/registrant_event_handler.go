@@ -250,16 +250,15 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	funcLogger := h.logger.With("key", key, "registrant_uid", registrantUID)
 
 	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantUID)
-	if h.isTombstoned(ctx, mappingKey) {
-		funcLogger.DebugContext(ctx, "registrant delete already processed, skipping")
-		return false
-	}
 
-	// Prefer the stored mapping for username and meetingID; fall back to v1Data for
-	// records that predate the rich mapping format.
+	// Fetch the mapping once: check for tombstone and extract username/meetingID in one round-trip.
 	username := ""
 	meetingID := ""
 	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+		if entryIsTombstoned(entry) {
+			funcLogger.DebugContext(ctx, "registrant delete already processed, skipping")
+			return false
+		}
 		_, username, meetingID = parseRegistrantMappingValue(string(entry.Value()))
 	}
 	if username == "" {
