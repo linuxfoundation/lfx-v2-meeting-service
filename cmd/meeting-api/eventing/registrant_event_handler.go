@@ -211,6 +211,13 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		return true
 	}
 
+	// For updates, use the raw source username to honour explicit clears.
+	// Enrichment (filling username from user_id) applies only on creates — an update
+	// that clears the username field must revoke FGA access even when user_id still resolves.
+	if indexerAction == indexerConstants.ActionUpdated {
+		registrantData.Username = utils.GetString(v1Data["username"])
+	}
+
 	// If the username was removed or changed during an update, revoke the old FGA access
 	// before publishing the new state so the user never has more access than intended.
 	// Retry transient publish failures: if we continue and store the new mapping, the old
@@ -639,17 +646,34 @@ func mapInviteResponseType(inviteResponseType string) (string, error) {
 	return "", fmt.Errorf("invalid invite response type: %s", inviteResponseType)
 }
 
-// buildRegistrantMappingValue encodes uid, username, and meetingID into a single string
+// registrantMappingData holds the encoded data for a registrant mapping.
+type registrantMappingData struct {
+	UID       string `json:"uid"`
+	Username  string `json:"username"`
+	MeetingID string `json:"meeting_id"`
+}
+
+// buildRegistrantMappingValue encodes uid, username, and meetingID as JSON
 // so they can be recovered on delete and on subsequent updates without an extra lookup.
-// Username must not contain "|" — the pipe delimiter would corrupt parseRegistrantMappingValue.
+// Uses JSON encoding to safely handle usernames containing special characters like "|".
 func buildRegistrantMappingValue(uid, username, meetingID string) string {
-	return fmt.Sprintf("%s|%s|%s", uid, username, meetingID)
+	b, _ := json.Marshal(registrantMappingData{UID: uid, Username: username, MeetingID: meetingID})
+	return string(b)
 }
 
 // parseRegistrantMappingValue decodes a value written by buildRegistrantMappingValue.
 // Returns empty strings for all fields when the value is in an unrecognised legacy format
-// (e.g. the old "1" sentinel written before username tracking was added).
+// (e.g. the old "1" sentinel written before username tracking was added, or pipe-delimited values).
+// Supports both JSON and legacy pipe-delimited format for backward compatibility.
 func parseRegistrantMappingValue(value string) (uid, username, meetingID string) {
+	// Try JSON format first
+	if strings.HasPrefix(value, "{") {
+		var d registrantMappingData
+		if err := json.Unmarshal([]byte(value), &d); err == nil {
+			return d.UID, d.Username, d.MeetingID
+		}
+	}
+	// Legacy pipe-delimited: uid|username|meetingID
 	parts := strings.SplitN(value, "|", 3)
 	if len(parts) == 3 {
 		return parts[0], parts[1], parts[2]

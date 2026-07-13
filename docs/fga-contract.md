@@ -80,9 +80,13 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 | `mutually_exclusive_with` | `["participant"]` | When `registrant.Host == true` |
 | `mutually_exclusive_with` | `["host"]` | When `registrant.Host == false` |
 
-### member_remove (Registrant Delete)
+### member_remove (Registrant)
 
-Published to `lfx.fga-sync.member_remove` when a registrant delete event is processed and the registrant has a non-empty `Username`.
+Published to `lfx.fga-sync.member_remove` in two cases:
+
+**On registrant delete:** when a registrant delete event is processed and the registrant has a non-empty `Username`.
+
+**On registrant update — username cleared or changed:** when a registrant update event is processed and the previously-stored `Username` is non-empty and differs from the new `Username` (including when cleared to `""`). The remove is published **before** the new `member_put` so the user never holds more permissions than intended.
 
 | Field | Value |
 |---|---|

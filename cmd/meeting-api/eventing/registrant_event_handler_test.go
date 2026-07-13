@@ -221,3 +221,427 @@ func TestProcessInviteAcceptedEvent_clientError(t *testing.T) {
 	err := processInviteAcceptedEvent(context.Background(), evt, client, slog.Default())
 	require.Error(t, err)
 }
+
+// stubEventPublisher implements EventPublisher for testing handleRegistrantUpdate.
+type stubEventPublisher struct {
+	registrantCalls   []registrantPublishCall
+	accessDeleteCalls []accessDeleteCall
+	registrantErr     error
+	accessDeleteErr   error
+}
+
+type registrantPublishCall struct {
+	action     string
+	registrant *models.RegistrantEventData
+}
+
+type accessDeleteCall struct {
+	subject string
+	payload []byte
+}
+
+func (s *stubEventPublisher) PublishRegistrantEvent(_ context.Context, action string, r *models.RegistrantEventData) error {
+	s.registrantCalls = append(s.registrantCalls, registrantPublishCall{action: action, registrant: r})
+	return s.registrantErr
+}
+
+func (s *stubEventPublisher) PublishAccessDelete(_ context.Context, subject string, payload []byte) error {
+	s.accessDeleteCalls = append(s.accessDeleteCalls, accessDeleteCall{subject: subject, payload: payload})
+	return s.accessDeleteErr
+}
+
+// Stub out unused interface methods
+func (s *stubEventPublisher) PublishMeetingEvent(_ context.Context, _ string, _ *models.MeetingEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishInviteResponseEvent(_ context.Context, _ string, _ *models.InviteResponseEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishPastMeetingEvent(_ context.Context, _ string, _ *models.PastMeetingEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishPastMeetingParticipantEvent(_ context.Context, _ string, _ *models.PastMeetingParticipantEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishPastMeetingRecordingEvent(_ context.Context, _ string, _ *models.RecordingEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishPastMeetingTranscriptEvent(_ context.Context, _ string, _ *models.TranscriptEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishPastMeetingSummaryEvent(_ context.Context, _ string, _ *models.SummaryEventData, _ string) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishMeetingAttachmentEvent(_ context.Context, _ string, _ *models.MeetingAttachmentEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishPastMeetingAttachmentEvent(_ context.Context, _ string, _ *models.PastMeetingAttachmentEventData) error {
+	return nil
+}
+
+func (s *stubEventPublisher) PublishIndexerDelete(_ context.Context, _, _ string) error {
+	return nil
+}
+
+func (s *stubEventPublisher) Close() error {
+	return nil
+}
+
+func TestHandleRegistrantUpdate_Create_NoRemove(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      username,
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(nil, jetstream.ErrKeyNotFound)
+	mappingsKV.On("Put", mock.Anything, registrantMappingKey, mock.MatchedBy(func(v []byte) bool {
+		// Verify it's valid JSON
+		var d registrantMappingData
+		return json.Unmarshal(v, &d) == nil && d.UID == uid && d.Username == username && d.MeetingID == meetingID
+	})).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 0)
+	require.Len(t, publisher.registrantCalls, 1)
+	assert.Equal(t, "created", publisher.registrantCalls[0].action)
+	assert.Equal(t, username, publisher.registrantCalls[0].registrant.Username)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantUpdate_Update_UnchangedUsername(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      username,
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	// Existing mapping with alice
+	oldMapping := buildRegistrantMappingValue(uid, username, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(mockKeyValueEntry{key: registrantMappingKey, value: []byte(oldMapping)}, nil)
+	mappingsKV.On("Put", mock.Anything, registrantMappingKey, mock.MatchedBy(func(v []byte) bool {
+		var d registrantMappingData
+		return json.Unmarshal(v, &d) == nil && d.Username == username
+	})).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 0)
+	require.Len(t, publisher.registrantCalls, 1)
+	assert.Equal(t, "updated", publisher.registrantCalls[0].action)
+	assert.Equal(t, username, publisher.registrantCalls[0].registrant.Username)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantUpdate_Update_UsernameChanged(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		oldUser   = "alice"
+		newUser   = "bob"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      newUser,
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	// Existing mapping with alice
+	oldMapping := buildRegistrantMappingValue(uid, oldUser, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(mockKeyValueEntry{key: registrantMappingKey, value: []byte(oldMapping)}, nil)
+	mappingsKV.On("Put", mock.Anything, registrantMappingKey, mock.MatchedBy(func(v []byte) bool {
+		var d registrantMappingData
+		return json.Unmarshal(v, &d) == nil && d.Username == newUser
+	})).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 1)
+	require.Len(t, publisher.registrantCalls, 1)
+	assert.Equal(t, "updated", publisher.registrantCalls[0].action)
+	assert.Equal(t, newUser, publisher.registrantCalls[0].registrant.Username)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantUpdate_Update_UsernameCleared(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		oldUser   = "alice"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      "", // Cleared
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	// Existing mapping with alice
+	oldMapping := buildRegistrantMappingValue(uid, oldUser, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(mockKeyValueEntry{key: registrantMappingKey, value: []byte(oldMapping)}, nil)
+	mappingsKV.On("Put", mock.Anything, registrantMappingKey, mock.MatchedBy(func(v []byte) bool {
+		var d registrantMappingData
+		return json.Unmarshal(v, &d) == nil && d.Username == ""
+	})).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 1)
+	require.Len(t, publisher.registrantCalls, 1)
+	assert.Equal(t, "updated", publisher.registrantCalls[0].action)
+	assert.Equal(t, "", publisher.registrantCalls[0].registrant.Username)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantUpdate_LegacySentinel(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      username,
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	// Existing mapping with legacy "1" sentinel
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(mockKeyValueEntry{key: registrantMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Put", mock.Anything, registrantMappingKey, mock.MatchedBy(func(v []byte) bool {
+		var d registrantMappingData
+		return json.Unmarshal(v, &d) == nil && d.Username == username
+	})).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 0, "legacy sentinel should not trigger remove")
+	require.Len(t, publisher.registrantCalls, 1)
+	assert.Equal(t, "updated", publisher.registrantCalls[0].action)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantUpdate_RemovePublishFailure_Transient_NAK(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		oldUser   = "alice"
+		newUser   = "bob"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      newUser,
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	oldMapping := buildRegistrantMappingValue(uid, oldUser, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(mockKeyValueEntry{key: registrantMappingKey, value: []byte(oldMapping)}, nil)
+
+	publisher := &stubEventPublisher{
+		accessDeleteErr: errors.New("transient publish failure"),
+	}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.True(t, retry, "should retry on transient publish failure")
+	require.Len(t, publisher.accessDeleteCalls, 1)
+	require.Len(t, publisher.registrantCalls, 0, "should not publish registrant event if remove fails")
+	mappingsKV.AssertNotCalled(t, "Put")
+}
+
+func TestHandleRegistrantUpdate_MappingWriteFailure_Transient_NAK(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      username,
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	oldMapping := buildRegistrantMappingValue(uid, username, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(mockKeyValueEntry{key: registrantMappingKey, value: []byte(oldMapping)}, nil)
+	mappingsKV.On("Put", mock.Anything, registrantMappingKey, mock.Anything).Return(uint64(0), errors.New("transient write failure"))
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.True(t, retry, "should retry on transient write failure")
+	require.Len(t, publisher.registrantCalls, 1)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantUpdate_MappingReadTransientError_NAK(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	v1Data := map[string]interface{}{
+		"registrant_id": uid,
+		"meeting_id":    meetingID,
+		"username":      username,
+		"created_at":    "2024-01-01T00:00:00Z",
+	}
+
+	meetingMappingKey := "v1_meetings." + meetingID
+	registrantMappingKey := "v1_meeting_registrants." + uid
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, meetingMappingKey).Return(mockKeyValueEntry{key: meetingMappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, registrantMappingKey).Return(nil, errors.New("transient connection error"))
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+		userLookup:   nil,
+		idMapper:     nil,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "test-key", v1Data)
+	require.True(t, retry, "should retry on transient read error")
+	require.Len(t, publisher.registrantCalls, 0)
+	mappingsKV.AssertNotCalled(t, "Put")
+}
