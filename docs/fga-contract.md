@@ -92,7 +92,7 @@ Published to `lfx.fga-sync.member_remove` in two cases:
 |---|---|
 | `object_type` | `v1_meeting` |
 | `uid` | `MeetingID` (parent meeting) |
-| `username` | LFX username (from v1 `username` field on the delete payload) |
+| `username` | Old LFX username — on updates: from the stored mapping (pre-update value); on deletes: from the stored mapping if present, otherwise from the v1 `username` field on the delete payload |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
 ### Delete

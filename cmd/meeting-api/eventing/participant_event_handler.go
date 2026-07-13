@@ -189,8 +189,35 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		}
 		siblingAttendeeExists := xrefErr == nil && !entryIsTombstoned(attendeeXrefEntry)
 
-		// Only revoke FGA access if no attendee record survives
+		if siblingAttendeeExists {
+			// An attendee record still grants the old username access.
+			// Send a member_put with only the attendee's relations so stale invitee/host roles are cleared.
+			siblingAttendeeID := string(attendeeXrefEntry.Value())
+			siblingEntry, siblingErr := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-attendees."+siblingAttendeeID)
+			if siblingErr != nil {
+				if !errors.Is(siblingErr, jetstream.ErrKeyNotFound) {
+					funcLogger.With(logging.ErrKey, siblingErr).WarnContext(ctx, "transient error fetching sibling attendee for partial update, will retry")
+					return true
+				}
+				// Attendee is gone — fall through to full remove.
+				siblingAttendeeExists = false
+			} else {
+				siblingData, decErr := decodeData(siblingEntry.Value())
+				if decErr == nil {
+					siblingParticipant, convErr := convertMapToAttendeeParticipantData(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
+					if convErr == nil {
+						siblingParticipant.IsInvited = false
+						siblingParticipant.IsAttended = true
+						if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
+							funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old invitee username")
+							return isTransientError(pubErr)
+						}
+					}
+				}
+			}
+		}
 		if !siblingAttendeeExists {
+			// No attendee record survives — fully revoke old username's access.
 			payload, err := buildGenericMemberRemovePayload("v1_past_meeting", participantData.MeetingAndOccurrenceID, oldUsername)
 			if err != nil {
 				funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old invitee username")
@@ -569,8 +596,35 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		}
 		siblingInviteeExists := xrefErr == nil && !entryIsTombstoned(inviteeXrefEntry)
 
-		// Only revoke FGA access if no invitee record survives
+		if siblingInviteeExists {
+			// An invitee record still grants the old username access.
+			// Send a member_put with only the invitee's relations so stale attendee/host roles are cleared.
+			siblingInviteeID := string(inviteeXrefEntry.Value())
+			siblingEntry, siblingErr := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-invitees."+siblingInviteeID)
+			if siblingErr != nil {
+				if !errors.Is(siblingErr, jetstream.ErrKeyNotFound) {
+					funcLogger.With(logging.ErrKey, siblingErr).WarnContext(ctx, "transient error fetching sibling invitee for partial update, will retry")
+					return true
+				}
+				// Invitee is gone — fall through to full remove.
+				siblingInviteeExists = false
+			} else {
+				siblingData, decErr := decodeData(siblingEntry.Value())
+				if decErr == nil {
+					siblingParticipant, convErr := convertMapToInviteeParticipantData(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
+					if convErr == nil {
+						siblingParticipant.IsInvited = true
+						siblingParticipant.IsAttended = false
+						if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
+							funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old attendee username")
+							return isTransientError(pubErr)
+						}
+					}
+				}
+			}
+		}
 		if !siblingInviteeExists {
+			// No invitee record survives — fully revoke old username's access.
 			payload, err := buildGenericMemberRemovePayload("v1_past_meeting", participantData.MeetingAndOccurrenceID, oldUsername)
 			if err != nil {
 				funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old attendee username")

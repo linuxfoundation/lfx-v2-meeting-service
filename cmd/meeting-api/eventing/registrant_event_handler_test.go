@@ -645,3 +645,154 @@ func TestHandleRegistrantUpdate_MappingReadTransientError_NAK(t *testing.T) {
 	require.Len(t, publisher.registrantCalls, 0)
 	mappingsKV.AssertNotCalled(t, "Put")
 }
+
+// Tests for handleRegistrantDelete
+
+func TestHandleRegistrantDelete_ValidMapping_SendsRemove(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	mappingKey := "v1_meeting_registrants." + uid
+	mapping := buildRegistrantMappingValue(uid, username, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, mappingKey).Return(mockKeyValueEntry{key: mappingKey, value: []byte(mapping)}, nil)
+	mappingsKV.On("Put", mock.Anything, mappingKey, []byte("!del")).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+	}
+
+	key := "itx-zoom-meetings-registrants-v2." + uid
+	retry := h.handleRegistrantDelete(context.Background(), key, nil)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 1)
+	assert.Equal(t, "lfx.fga-sync.member_remove", publisher.accessDeleteCalls[0].subject)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantDelete_LegacySentinel_FallsBackToPayload(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	mappingKey := "v1_meeting_registrants." + uid
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, mappingKey).Return(mockKeyValueEntry{key: mappingKey, value: []byte("1")}, nil)
+	mappingsKV.On("Put", mock.Anything, mappingKey, []byte("!del")).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+	}
+
+	v1Data := map[string]interface{}{
+		"meeting_id": meetingID,
+		"username":   username,
+	}
+
+	key := "itx-zoom-meetings-registrants-v2." + uid
+	retry := h.handleRegistrantDelete(context.Background(), key, v1Data)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 1)
+	assert.Equal(t, "lfx.fga-sync.member_remove", publisher.accessDeleteCalls[0].subject)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantDelete_Tombstoned_SkipsRemove(t *testing.T) {
+	const (
+		uid = "reg-1"
+	)
+
+	mappingKey := "v1_meeting_registrants." + uid
+	tombstone := "!del"
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, mappingKey).Return(mockKeyValueEntry{key: mappingKey, value: []byte(tombstone)}, nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+	}
+
+	key := "itx-zoom-meetings-registrants-v2." + uid
+	retry := h.handleRegistrantDelete(context.Background(), key, nil)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 0, "should not publish remove for tombstoned mapping")
+	mappingsKV.AssertNotCalled(t, "Delete")
+}
+
+func TestHandleRegistrantDelete_MappingNotFound_UsesPayload(t *testing.T) {
+	const (
+		uid       = "reg-1"
+		meetingID = "mtg-1"
+		username  = "alice"
+	)
+
+	mappingKey := "v1_meeting_registrants." + uid
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, mappingKey).Return(nil, jetstream.ErrKeyNotFound)
+	mappingsKV.On("Put", mock.Anything, mappingKey, []byte("!del")).Return(uint64(1), nil)
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+	}
+
+	v1Data := map[string]interface{}{
+		"meeting_id": meetingID,
+		"username":   username,
+	}
+
+	key := "itx-zoom-meetings-registrants-v2." + uid
+	retry := h.handleRegistrantDelete(context.Background(), key, v1Data)
+	require.False(t, retry)
+	require.Len(t, publisher.accessDeleteCalls, 1)
+	assert.Equal(t, "lfx.fga-sync.member_remove", publisher.accessDeleteCalls[0].subject)
+	mappingsKV.AssertExpectations(t)
+}
+
+func TestHandleRegistrantDelete_TransientMappingError_NAK(t *testing.T) {
+	const (
+		uid = "reg-1"
+	)
+
+	mappingKey := "v1_meeting_registrants." + uid
+
+	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, mappingKey).Return(nil, errors.New("transient connection error"))
+
+	publisher := &stubEventPublisher{}
+
+	h := &EventHandlers{
+		v1MappingsKV: mappingsKV,
+		publisher:    publisher,
+		logger:       slog.Default(),
+	}
+
+	key := "itx-zoom-meetings-registrants-v2." + uid
+	retry := h.handleRegistrantDelete(context.Background(), key, nil)
+	require.True(t, retry, "should retry on transient mapping error")
+	require.Len(t, publisher.accessDeleteCalls, 0)
+	mappingsKV.AssertNotCalled(t, "Delete")
+}

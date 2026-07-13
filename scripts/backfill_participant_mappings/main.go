@@ -217,8 +217,10 @@ func backfillType(
 	}
 
 	var legacy []legacyEntry
+	nilSeen := false
 	for entry := range watcher.Updates() {
 		if entry == nil {
+			nilSeen = true
 			break // nil = end of initial values
 		}
 		currentValue := string(entry.Value())
@@ -244,6 +246,9 @@ func backfillType(
 	}
 	if stopErr := watcher.Stop(); stopErr != nil {
 		slog.WarnContext(ctx, "failed to stop watcher", "mapping_prefix", cfg.mappingPrefix, "error", stopErr)
+	}
+	if !nilSeen {
+		return 0, 0, 0, 0, fmt.Errorf("watcher for %q closed without delivering initial values (context may have expired or watcher failed)", watchKey)
 	}
 
 	slog.InfoContext(ctx, "scan complete",

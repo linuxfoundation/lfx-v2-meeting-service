@@ -662,9 +662,9 @@ func buildRegistrantMappingValue(uid, username, meetingID string) string {
 }
 
 // parseRegistrantMappingValue decodes a value written by buildRegistrantMappingValue.
-// Returns empty strings for all fields when the value is in an unrecognised legacy format
-// (e.g. the old "1" sentinel written before username tracking was added, or pipe-delimited values).
-// Supports both JSON and legacy pipe-delimited format for backward compatibility.
+// Supports JSON (primary) and legacy pipe-delimited format (uid|username|meetingID) for
+// backward compatibility. Returns empty strings for all fields when the value is in an
+// unrecognised format (e.g. the old "1" sentinel written before username tracking was added).
 func parseRegistrantMappingValue(value string) (uid, username, meetingID string) {
 	// Try JSON format first
 	if strings.HasPrefix(value, "{") {
