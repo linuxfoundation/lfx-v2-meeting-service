@@ -199,8 +199,13 @@ func backfillType(
 	workers int,
 ) (updated, skipped, failed, notFound int, err error) {
 	// --- Phase 1: scan ---
+	// Give the Watch consumer creation and initial-value delivery a long deadline.
+	// The nats.go jetstream package applies an internal 5-second timeout when the
+	// context has no deadline; overriding it with an explicit one prevents that.
 	watchKey := cfg.mappingPrefix + ".>"
-	watcher, watchErr := mappingsKV.Watch(ctx, watchKey, jetstream.IgnoreDeletes())
+	watchCtx, watchCancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer watchCancel()
+	watcher, watchErr := mappingsKV.Watch(watchCtx, watchKey, jetstream.IgnoreDeletes())
 	if watchErr != nil {
 		return 0, 0, 0, 0, fmt.Errorf("watch %q: %w", watchKey, watchErr)
 	}
