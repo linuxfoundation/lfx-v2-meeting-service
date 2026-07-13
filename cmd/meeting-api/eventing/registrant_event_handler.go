@@ -195,11 +195,31 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		return true
 	}
 
-	// Determine action (created vs updated)
+	// Determine action (created vs updated) and retrieve the previously-stored username
+	// so we can detect when it has been cleared and revoke stale FGA access.
 	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantData.UID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+	oldUsername := ""
+	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+		stored := string(entry.Value())
+		// Entries written before this change stored "1" as a sentinel; treat those as unknown.
+		if stored != "1" && stored != tombstoneMarker {
+			oldUsername = stored
+		}
+	}
+
+	// If the username was removed or changed during an update, revoke the old FGA access
+	// before publishing the new state so the user never has more access than intended.
+	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != registrantData.Username {
+		payload, err := buildGenericMemberRemovePayload("v1_meeting", registrantData.MeetingID, oldUsername)
+		if err != nil {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old username")
+			return false
+		}
+		if err := h.publisher.PublishAccessDelete(ctx, fgaconstants.GenericMemberRemoveSubject, payload); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish FGA remove for old registrant username")
+		}
 	}
 
 	// Publish to indexer and FGA-sync
@@ -208,8 +228,8 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		return isTransientError(err)
 	}
 
-	// Store mapping
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	// Store username in the mapping so future updates can detect username changes.
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(registrantData.Username)); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
 	}
 
