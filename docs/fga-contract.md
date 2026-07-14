@@ -80,15 +80,19 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 | `mutually_exclusive_with` | `["participant"]` | When `registrant.Host == true` |
 | `mutually_exclusive_with` | `["host"]` | When `registrant.Host == false` |
 
-### member_remove (Registrant Delete)
+### member_remove (Registrant)
 
-Published to `lfx.fga-sync.member_remove` when a registrant delete event is processed and the registrant has a non-empty `Username`.
+Published to `lfx.fga-sync.member_remove` in two cases:
+
+**On registrant delete:** when a registrant delete event is processed and the registrant has a non-empty `Username`.
+
+**On registrant update — username cleared or changed:** when a registrant update event is processed and the previously-stored `Username` is non-empty and differs from the new `Username` (including when cleared to `""`). The remove is published **before** the new `member_put` so the user never holds more permissions than intended.
 
 | Field | Value |
 |---|---|
 | `object_type` | `v1_meeting` |
 | `uid` | `MeetingID` (parent meeting) |
-| `username` | LFX username (from v1 `username` field on the delete payload) |
+| `username` | Old LFX username — on updates: from the stored mapping (pre-update value); on deletes: from the stored mapping if present, otherwise from the v1 `username` field on the delete payload |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
 ### Delete
@@ -144,6 +148,19 @@ The object UID is the **parent past meeting's `MeetingAndOccurrenceID`**, not th
 | `relations` | Subset of `["host", "invitee", "attendee"]` | `"host"` added when `participant.Host == true`; `"invitee"` when `IsInvited == true`; `"attendee"` when `IsAttended == true` |
 | `mutually_exclusive_with` | `["host", "invitee", "attendee"]` | Always (all three, regardless of which relations are set) |
 
+### member_remove (Participant Username Change)
+
+Published to `lfx.fga-sync.member_remove` when a participant update event clears or changes the previously-stored `Username` (i.e., `oldUsername != ""` and `oldUsername != newUsername`). The remove is published **before** the new `member_put` so the user never holds more permissions than intended.
+
+This remove is **skipped** when a sibling record (attendee for an invitee update, invitee for an attendee update) still grants the old username access on the same `MeetingAndOccurrenceID`. In that case only the stale cross-reference key is tombstoned; the sibling record continues to grant access.
+
+| Field | Value |
+|---|---|
+| `object_type` | `v1_past_meeting` |
+| `uid` | `MeetingAndOccurrenceID` (parent past meeting) |
+| `username` | Old LFX username (from v1 `lf_sso` field, previous value) |
+| `relations` | `[]` (empty — removes all relations for the user on this object) |
+
 ### member_remove (Participant Full Delete)
 
 Published to `lfx.fga-sync.member_remove` when a participant is fully deleted — i.e., no sibling invitee or attendee record remains for the same user on the same past meeting. Skipped if `Username` is empty.
@@ -175,6 +192,7 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Create/update past meeting | `v1_past_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete past meeting | `v1_past_meeting` | `lfx.fga-sync.delete_access` | Always sent |
 | Create/update participant (with username) | `v1_past_meeting` | `lfx.fga-sync.member_put` | Skipped if `Username` is empty |
+| Update participant — username cleared or changed | `v1_past_meeting` | `lfx.fga-sync.member_remove` | Sent for old username before new `member_put`; skipped if sibling invitee/attendee record still grants old username access |
 | Delete participant (full delete, with username) | `v1_past_meeting` | `lfx.fga-sync.member_remove` | Sent when no invitee/attendee sibling record remains; skipped if `Username` is empty |
 | Delete participant (partial delete, with username) | `v1_past_meeting` | `lfx.fga-sync.member_put` | Sent when a sibling invitee/attendee record still exists — updates remaining relations instead of removing |
 | Create/update recording | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
