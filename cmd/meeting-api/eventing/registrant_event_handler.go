@@ -213,9 +213,20 @@ func (h *EventHandlers) handleRegistrantUpdate(
 
 	// For updates, use the raw source username to honour explicit clears.
 	// Enrichment (filling username from user_id) applies only on creates — an update
-	// that clears the username field must revoke FGA access even when user_id still resolves.
+	// that explicitly clears the username field must revoke FGA access even when user_id
+	// still resolves.
+	//
+	// A sparse CDC payload may omit "username" entirely; in that case the field was
+	// decoded to "" by convertMapToRegistrantData, which is indistinguishable from an
+	// explicit clear. Guard with a key-presence check: absent key → retain the stored
+	// username so the revocation comparison sees no change; present key → honour the
+	// new value (including an explicit clear to "").
 	if indexerAction == indexerConstants.ActionUpdated {
-		registrantData.Username = utils.GetString(v1Data["username"])
+		if rawUsername, ok := v1Data["username"]; ok {
+			registrantData.Username = utils.GetString(rawUsername)
+		} else {
+			registrantData.Username = oldUsername
+		}
 	}
 
 	// If the username was removed or changed during an update, revoke the old FGA access

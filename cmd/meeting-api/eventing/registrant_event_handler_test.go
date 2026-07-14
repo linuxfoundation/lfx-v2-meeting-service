@@ -22,6 +22,72 @@ import (
 	meetingconstants "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
+// stubV1UserLookup is a no-op lookup used in tests that do not exercise user enrichment.
+type stubV1UserLookup struct{}
+
+func (stubV1UserLookup) LookupUser(_ context.Context, _ string) (*domain.V1User, error) {
+	return nil, nil
+}
+
+// stubIDMapper is a no-op mapper for tests that don't involve committee mapping.
+type stubIDMapper struct{}
+
+func (stubIDMapper) MapProjectV2ToV1(_ context.Context, _ string) (string, error)   { return "", nil }
+func (stubIDMapper) MapProjectV1ToV2(_ context.Context, _ string) (string, error)   { return "", nil }
+func (stubIDMapper) MapCommitteeV2ToV1(_ context.Context, _ string) (string, error) { return "", nil }
+func (stubIDMapper) MapCommitteeV1ToV2(_ context.Context, _ string) (string, error) { return "", nil }
+func (stubIDMapper) MapInviteeIDToParticipantV2(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+func (stubIDMapper) MapAttendeeIDToParticipantV2(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+func (stubIDMapper) MapParticipantV2ToInviteeID(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+func (stubIDMapper) MapParticipantV2ToAttendeeID(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+
+// mockEventPublisher is a testify mock for domain.EventPublisher.
+type mockEventPublisher struct{ mock.Mock }
+
+func (m *mockEventPublisher) PublishMeetingEvent(_ context.Context, _ string, _ *models.MeetingEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishRegistrantEvent(ctx context.Context, action string, r *models.RegistrantEventData) error {
+	return m.Called(ctx, action, r).Error(0)
+}
+func (m *mockEventPublisher) PublishInviteResponseEvent(_ context.Context, _ string, _ *models.InviteResponseEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingEvent(_ context.Context, _ string, _ *models.PastMeetingEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingParticipantEvent(_ context.Context, _ string, _ *models.PastMeetingParticipantEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingRecordingEvent(_ context.Context, _ string, _ *models.RecordingEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingTranscriptEvent(_ context.Context, _ string, _ *models.TranscriptEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingSummaryEvent(_ context.Context, _ string, _ *models.SummaryEventData, _ string) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishMeetingAttachmentEvent(_ context.Context, _ string, _ *models.MeetingAttachmentEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingAttachmentEvent(_ context.Context, _ string, _ *models.PastMeetingAttachmentEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishIndexerDelete(_ context.Context, _, _ string) error { return nil }
+func (m *mockEventPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
+	return m.Called(ctx, subject, payload).Error(0)
+}
+func (m *mockEventPublisher) Close() error { return nil }
+
 type stubUserReader struct {
 	username string
 	err      error
@@ -220,4 +286,84 @@ func TestProcessInviteAcceptedEvent_clientError(t *testing.T) {
 
 	err := processInviteAcceptedEvent(context.Background(), evt, client, slog.Default())
 	require.Error(t, err)
+}
+
+// TestHandleRegistrantUpdate_SparseUpdate_NoSpuriousRevocation verifies that a sparse CDC
+// update payload — one that omits the "username" key entirely — does not trigger a
+// member_remove even when the stored mapping contains an existing username.
+// This guards against the bug where utils.GetString(v1Data["username"]) returns ""
+// for both an absent key (sparse update) and an explicit clear, making them
+// indistinguishable without the key-presence check.
+func TestHandleRegistrantUpdate_SparseUpdate_NoSpuriousRevocation(t *testing.T) {
+	const (
+		registrantUID = "reg-1"
+		meetingID     = "meeting-1"
+		oldUsername   = "alice"
+	)
+
+	storedMapping := buildRegistrantMappingValue(registrantUID, oldUsername, meetingID)
+
+	tests := []struct {
+		name                  string
+		v1Data                map[string]interface{}
+		wantAccessDeleteCalls int
+	}{
+		{
+			name: "sparse update (username key absent) does not revoke",
+			v1Data: map[string]interface{}{
+				"registrant_id": registrantUID,
+				"meeting_id":    meetingID,
+				// "username" key intentionally absent — simulates sparse CDC payload
+			},
+			wantAccessDeleteCalls: 0,
+		},
+		{
+			name: "explicit clear (username key present and empty) revokes",
+			v1Data: map[string]interface{}{
+				"registrant_id": registrantUID,
+				"meeting_id":    meetingID,
+				"username":      "", // explicit clear — must revoke
+			},
+			wantAccessDeleteCalls: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mappingsKV := &mockKeyValue{}
+			publisher := &mockEventPublisher{}
+
+			// Parent meeting exists
+			mappingsKV.On("Get", mock.Anything, "v1_meetings."+meetingID).
+				Return(mockKeyValueEntry{key: "v1_meetings." + meetingID, value: []byte("1")}, nil)
+
+			// Existing registrant mapping with a username
+			mappingsKV.On("Get", mock.Anything, "v1_meeting_registrants."+registrantUID).
+				Return(mockKeyValueEntry{key: "v1_meeting_registrants." + registrantUID, value: []byte(storedMapping)}, nil)
+
+			// Mapping write after update
+			mappingsKV.On("Put", mock.Anything, "v1_meeting_registrants."+registrantUID, mock.Anything).
+				Return(uint64(2), nil)
+
+			publisher.On("PublishRegistrantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			if tt.wantAccessDeleteCalls > 0 {
+				publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			}
+
+			h := &EventHandlers{
+				publisher:    publisher,
+				userLookup:   stubV1UserLookup{},
+				idMapper:     stubIDMapper{},
+				v1MappingsKV: mappingsKV,
+				logger:       slog.Default(),
+			}
+
+			retry := h.handleRegistrantUpdate(context.Background(), "itx-zoom-meetings-registrants-v2."+registrantUID, tt.v1Data)
+
+			assert.False(t, retry)
+			publisher.AssertNumberOfCalls(t, "PublishAccessDelete", tt.wantAccessDeleteCalls)
+			mappingsKV.AssertExpectations(t)
+			publisher.AssertExpectations(t)
+		})
+	}
 }
