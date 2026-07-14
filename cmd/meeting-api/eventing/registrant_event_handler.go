@@ -216,17 +216,12 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// that explicitly clears the username field must revoke FGA access even when user_id
 	// still resolves.
 	//
-	// A sparse CDC payload may omit "username" entirely; in that case the field was
-	// decoded to "" by convertMapToRegistrantData, which is indistinguishable from an
-	// explicit clear. Guard with a key-presence check: absent key → retain the stored
-	// username so the revocation comparison sees no change; present key → honour the
-	// new value (including an explicit clear to "").
+	// When v1 removes a username, the CDC payload omits the "username" key entirely —
+	// the same shape as a sparse update that didn't touch the field. Since these two cases
+	// are indistinguishable by key-presence, always use the decoded value: absent key →
+	// empty string, which correctly triggers revocation of the previously-stored username.
 	if indexerAction == indexerConstants.ActionUpdated {
-		if rawUsername, ok := v1Data["username"]; ok {
-			registrantData.Username = utils.GetString(rawUsername)
-		} else {
-			registrantData.Username = oldUsername
-		}
+		registrantData.Username = utils.GetString(v1Data["username"])
 	}
 
 	// If the username was removed or changed during an update, revoke the old FGA access
