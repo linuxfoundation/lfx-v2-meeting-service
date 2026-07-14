@@ -288,13 +288,13 @@ func TestProcessInviteAcceptedEvent_clientError(t *testing.T) {
 	require.Error(t, err)
 }
 
-// TestHandleRegistrantUpdate_SparseUpdate_NoSpuriousRevocation verifies that a sparse CDC
-// update payload — one that omits the "username" key entirely — does not trigger a
-// member_remove even when the stored mapping contains an existing username.
-// This guards against the bug where utils.GetString(v1Data["username"]) returns ""
-// for both an absent key (sparse update) and an explicit clear, making them
-// indistinguishable without the key-presence check.
-func TestHandleRegistrantUpdate_SparseUpdate_NoSpuriousRevocation(t *testing.T) {
+// TestHandleRegistrantUpdate_UsernameCleared verifies that a CDC update that results in an
+// empty username — whether the "username" key is absent (v1 removes the field on clear) or
+// explicitly present as "" — revokes the previously-stored FGA access.
+//
+// Both shapes are treated identically: utils.GetString(v1Data["username"]) returns "" in
+// either case, which correctly triggers a member_remove against the stored oldUsername.
+func TestHandleRegistrantUpdate_UsernameCleared(t *testing.T) {
 	const (
 		registrantUID = "reg-1"
 		meetingID     = "meeting-1"
@@ -304,27 +304,24 @@ func TestHandleRegistrantUpdate_SparseUpdate_NoSpuriousRevocation(t *testing.T) 
 	storedMapping := buildRegistrantMappingValue(registrantUID, oldUsername, meetingID)
 
 	tests := []struct {
-		name                  string
-		v1Data                map[string]interface{}
-		wantAccessDeleteCalls int
+		name   string
+		v1Data map[string]interface{}
 	}{
 		{
-			name: "sparse update (username key absent) does not revoke",
+			name: "username key absent (v1 clear CDC shape) revokes",
 			v1Data: map[string]interface{}{
 				"registrant_id": registrantUID,
 				"meeting_id":    meetingID,
-				// "username" key intentionally absent — simulates sparse CDC payload
+				// "username" key absent — shape v1 sends when username is removed
 			},
-			wantAccessDeleteCalls: 0,
 		},
 		{
-			name: "explicit clear (username key present and empty) revokes",
+			name: "username key present and empty revokes",
 			v1Data: map[string]interface{}{
 				"registrant_id": registrantUID,
 				"meeting_id":    meetingID,
-				"username":      "", // explicit clear — must revoke
+				"username":      "",
 			},
-			wantAccessDeleteCalls: 1,
 		},
 	}
 
@@ -333,22 +330,15 @@ func TestHandleRegistrantUpdate_SparseUpdate_NoSpuriousRevocation(t *testing.T) 
 			mappingsKV := &mockKeyValue{}
 			publisher := &mockEventPublisher{}
 
-			// Parent meeting exists
 			mappingsKV.On("Get", mock.Anything, "v1_meetings."+meetingID).
 				Return(mockKeyValueEntry{key: "v1_meetings." + meetingID, value: []byte("1")}, nil)
-
-			// Existing registrant mapping with a username
 			mappingsKV.On("Get", mock.Anything, "v1_meeting_registrants."+registrantUID).
 				Return(mockKeyValueEntry{key: "v1_meeting_registrants." + registrantUID, value: []byte(storedMapping)}, nil)
-
-			// Mapping write after update
 			mappingsKV.On("Put", mock.Anything, "v1_meeting_registrants."+registrantUID, mock.Anything).
 				Return(uint64(2), nil)
 
 			publisher.On("PublishRegistrantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-			if tt.wantAccessDeleteCalls > 0 {
-				publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-			}
+			publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 			h := &EventHandlers{
 				publisher:    publisher,
@@ -361,9 +351,54 @@ func TestHandleRegistrantUpdate_SparseUpdate_NoSpuriousRevocation(t *testing.T) 
 			retry := h.handleRegistrantUpdate(context.Background(), "itx-zoom-meetings-registrants-v2."+registrantUID, tt.v1Data)
 
 			assert.False(t, retry)
-			publisher.AssertNumberOfCalls(t, "PublishAccessDelete", tt.wantAccessDeleteCalls)
+			publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 1)
 			mappingsKV.AssertExpectations(t)
 			publisher.AssertExpectations(t)
 		})
 	}
+}
+
+// TestHandleRegistrantUpdate_UsernameUnchanged verifies that an update where the username
+// is the same as the stored value does not trigger a member_remove.
+func TestHandleRegistrantUpdate_UsernameUnchanged(t *testing.T) {
+	const (
+		registrantUID = "reg-2"
+		meetingID     = "meeting-2"
+		username      = "bob"
+	)
+
+	storedMapping := buildRegistrantMappingValue(registrantUID, username, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	publisher := &mockEventPublisher{}
+
+	mappingsKV.On("Get", mock.Anything, "v1_meetings."+meetingID).
+		Return(mockKeyValueEntry{key: "v1_meetings." + meetingID, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, "v1_meeting_registrants."+registrantUID).
+		Return(mockKeyValueEntry{key: "v1_meeting_registrants." + registrantUID, value: []byte(storedMapping)}, nil)
+	mappingsKV.On("Put", mock.Anything, "v1_meeting_registrants."+registrantUID, mock.Anything).
+		Return(uint64(2), nil)
+
+	publisher.On("PublishRegistrantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	h := &EventHandlers{
+		publisher:    publisher,
+		userLookup:   stubV1UserLookup{},
+		idMapper:     stubIDMapper{},
+		v1MappingsKV: mappingsKV,
+		logger:       slog.Default(),
+	}
+
+	v1Data := map[string]interface{}{
+		"registrant_id": registrantUID,
+		"meeting_id":    meetingID,
+		"username":      username,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "itx-zoom-meetings-registrants-v2."+registrantUID, v1Data)
+
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
 }
